@@ -1,7 +1,7 @@
 # US-01: Extend ModuleManifest with cross-cutting slots
 
 > PRD: [Plugin Contract](README.md)
-> Status: Not started
+> Status: In progress
 
 ## Description
 
@@ -9,14 +9,14 @@ As a platform engineer, I want `ModuleManifest` to carry every slot the cross-cu
 
 ## Acceptance Criteria
 
-- [ ] `ModuleManifest` adds `capabilities?: readonly Capability[]` (typed RBAC scope ids); the existing `provides` field is removed.
-- [ ] `ModuleFrontendManifest` is unchanged structurally (already has `routes`, `navConfig`, `overlay`).
-- [ ] `ModuleBackendManifest` adds `aiTools?: readonly AiToolDescriptor[]`, `migrations?: readonly MigrationDescriptor[]`, and `ingestSources?: readonly IngestSourceDescriptor[]` (the last only as a typed slot — Cerebrum is the only consumer).
-- [ ] Top-level adds `features?: readonly FeatureManifest[]`, `search?: readonly SearchAdapterDescriptor[]`, and `uriHandler?: UriHandlerDescriptor`.
-- [ ] New descriptor types are exported from `@pops/types` with JSDoc on every field.
-- [ ] `assertModuleManifest()` validates each new slot's structural shape; failures name the offending field with the module id in the error.
-- [ ] Every existing module manifest (`packages/app-finance`, `app-media`, `app-inventory`, `app-cerebrum`, `app-ai`, `overlay-ego`) compiles against the new shape with no behaviour change. Slots that don't apply yet are simply omitted.
-- [ ] Type tests in `packages/types` exercise: `Capability` typed-scope inference, `MODULES` id union narrowing, descriptor optionality.
+- [x] `ModuleManifest` adds `capabilities?: readonly Capability[]` (typed RBAC scope ids); the existing `provides` field is removed.
+- [x] `ModuleFrontendManifest` is unchanged structurally (already has `routes`, `navConfig`, `overlay`).
+- [x] `ModuleBackendManifest` adds `aiTools?: readonly AiToolDescriptor[]`, `migrations?: readonly MigrationDescriptor[]`, and `ingestSources?: readonly IngestSourceDescriptor[]` (the last only as a typed slot — Cerebrum is the only consumer).
+- [x] Top-level adds `features?: readonly FeatureManifest[]`, `search?: readonly SearchAdapterDescriptor[]`, and `uriHandler?: UriHandlerDescriptor`.
+- [x] New descriptor types are exported from `@pops/types` with JSDoc on every field.
+- [x] `assertModuleManifest()` validates each new slot's structural shape; failures name the offending field with the module id in the error.
+- [x] Every existing module manifest (`packages/app-finance`, `app-media`, `app-inventory`, `app-cerebrum`, `app-ai`, `overlay-ego`) compiles against the new shape with no behaviour change. Slots that don't apply yet are simply omitted.
+- [x] Type tests in `packages/types` exercise: `Capability` typed-scope inference, `MODULES` id union narrowing, descriptor optionality.
 
 ## Notes
 

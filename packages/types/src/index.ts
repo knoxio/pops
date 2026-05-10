@@ -24,6 +24,12 @@ export type {
   FeatureScope,
   FeatureStatus,
 } from './feature-manifest.js';
+export type { Capability } from './capability.js';
+export type { UriHandlerDescriptor, UriResolution } from './uri-handler.js';
+export type { AiToolDescriptor, AiToolHandler, AiToolResult } from './ai-tool.js';
+export type { MigrationDescriptor } from './migration.js';
+export type { SearchAdapterDescriptor } from './search-adapter.js';
+export type { IngestSourceDescriptor } from './ingest-source.js';
 export { assertModuleManifest } from './module-manifest.js';
 export type {
   ModuleBackendManifest,
