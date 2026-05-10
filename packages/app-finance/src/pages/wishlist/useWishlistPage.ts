@@ -1,4 +1,4 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -61,7 +61,9 @@ export function useWishlistPage() {
   });
 
   const form = useForm<WishlistFormValues>({
-    resolver: zodResolver(WishlistItemSchema),
+    // Zod 4 implements Standard Schema v1, so we use the generic resolver —
+    // the dedicated `zodResolver` overloads are currently broken under Zod 4.
+    resolver: standardSchemaResolver(WishlistItemSchema),
     defaultValues: DEFAULT_WISHLIST_VALUES,
   });
 

@@ -1,4 +1,5 @@
 export { aiBudgets } from './ai-budgets.js';
+export { aiInferenceDaily } from './ai-inference-daily.js';
 export { aiInferenceLog } from './ai-inference-log.js';
 export { aiModelPricing } from './ai-model-pricing.js';
 export { aiProviders } from './ai-providers.js';

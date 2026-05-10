@@ -63,6 +63,10 @@ export interface CrossSourceIndexJobData {
   sourceTypes?: string[];
 }
 
+export interface AiLogRetentionJobData {
+  type: 'aiLogRetention';
+}
+
 export interface ClassifyEngramJobData {
   type: 'classifyEngram';
   engramId: string;
@@ -100,7 +104,7 @@ export type GliaJobData =
   | GliaAuditJobData;
 
 export type CurationQueueJobData = ClassifyEngramJobData | GliaJobData | GenericJobData;
-export type DefaultQueueJobData = CrossSourceIndexJobData;
+export type DefaultQueueJobData = CrossSourceIndexJobData | AiLogRetentionJobData;
 
 // ---------------------------------------------------------------------------
 // pops-dead-letter queue

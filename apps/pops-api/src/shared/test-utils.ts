@@ -449,6 +449,29 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_ai_inference_log_context_id ON ai_inference_log(context_id);
     CREATE INDEX IF NOT EXISTS idx_ai_inference_log_status ON ai_inference_log(status);
 
+    CREATE TABLE IF NOT EXISTS ai_inference_daily (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      operation TEXT NOT NULL,
+      domain TEXT,
+      total_calls INTEGER NOT NULL DEFAULT 0,
+      total_input_tokens INTEGER NOT NULL DEFAULT 0,
+      total_output_tokens INTEGER NOT NULL DEFAULT 0,
+      total_cost_usd REAL NOT NULL DEFAULT 0,
+      avg_latency_ms INTEGER NOT NULL DEFAULT 0,
+      error_count INTEGER NOT NULL DEFAULT 0,
+      timeout_count INTEGER NOT NULL DEFAULT 0,
+      cache_hit_count INTEGER NOT NULL DEFAULT 0,
+      budget_blocked_count INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_inference_daily_key
+      ON ai_inference_daily(date, provider, model, operation, domain);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_daily_date ON ai_inference_daily(date);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_daily_provider_model
+      ON ai_inference_daily(provider, model);
+
     CREATE TABLE IF NOT EXISTS ai_providers (
       id TEXT PRIMARY KEY NOT NULL,
       name TEXT NOT NULL,

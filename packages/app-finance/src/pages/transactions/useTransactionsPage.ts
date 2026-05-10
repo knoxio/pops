@@ -1,4 +1,4 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -120,7 +120,7 @@ export function useTransactionsPage() {
   );
 
   const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(TransactionFormSchema),
+    resolver: standardSchemaResolver(TransactionFormSchema),
     defaultValues: DEFAULT_TRANSACTION_VALUES,
   });
 

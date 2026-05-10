@@ -5,6 +5,7 @@ import {
   CROSS_SOURCE_TYPES,
   CrossSourceIndexer,
 } from '../../modules/cerebrum/thalamus/cross-source.js';
+import { runRetention } from '../../modules/core/ai-observability/retention.js';
 
 import type { Job } from 'bullmq';
 
@@ -27,5 +28,23 @@ export async function process(job: Job<DefaultQueueJobData>): Promise<unknown> {
     return result;
   }
 
-  throw new Error(`Default handler not implemented for type: ${job.data.type}`);
+  if (job.data.type === 'aiLogRetention') {
+    const result = runRetention();
+    logger.info(
+      {
+        rowsAggregated: result.rowsAggregated,
+        bucketsWritten: result.bucketsWritten,
+        batches: result.batches,
+        cutoff: result.cutoff,
+      },
+      'AI inference log retention complete'
+    );
+    return result;
+  }
+
+  // Exhaustiveness guard — `data` is the discriminated union; if a new
+  // member is added the compiler will surface a "not assignable to never"
+  // error here so we know to extend the handler.
+  const _exhaustive: never = job.data;
+  throw new Error(`Default handler not implemented for data: ${JSON.stringify(_exhaustive)}`);
 }

@@ -5,13 +5,9 @@ import { aiInferenceLog } from '@pops/db-types';
 import { getDrizzle } from '../../../db.js';
 import { buildGroupings } from './group-stats.js';
 
-import type {
-  HistoryOutput,
-  LatencyStats,
-  ObservabilityFilters,
-  QualityMetrics,
-  StatsOutput,
-} from './types.js';
+import type { LatencyStats, ObservabilityFilters, QualityMetrics, StatsOutput } from './types.js';
+
+export { getHistory } from './history.js';
 
 function buildWhere(filters: ObservabilityFilters): ReturnType<typeof and> | undefined {
   const conditions = [];
@@ -95,36 +91,6 @@ export function getStats(filters: ObservabilityFilters = {}): StatsOutput {
     cacheHitRate: overall.totalCalls > 0 ? overall.cacheHits / overall.totalCalls : 0,
     errorRate: overall.totalCalls > 0 ? overall.errors / overall.totalCalls : 0,
     ...groupings,
-  };
-}
-
-export function getHistory(filters: ObservabilityFilters = {}): HistoryOutput {
-  const db = getDrizzle();
-  const where = buildWhere(filters);
-
-  const records = db
-    .select({
-      date: sql<string>`DATE(${aiInferenceLog.createdAt})`,
-      calls: sql<number>`COUNT(*)`,
-      inputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
-      outputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.outputTokens}), 0)`,
-      costUsd: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-      cacheHits: sql<number>`SUM(CASE WHEN ${aiInferenceLog.cached} = 1 THEN 1 ELSE 0 END)`,
-      errors: sql<number>`SUM(CASE WHEN ${aiInferenceLog.status} IN ('error','timeout','budget-blocked') THEN 1 ELSE 0 END)`,
-    })
-    .from(aiInferenceLog)
-    .where(where)
-    .groupBy(sql`DATE(${aiInferenceLog.createdAt})`)
-    .orderBy(desc(sql`DATE(${aiInferenceLog.createdAt})`))
-    .all();
-
-  return {
-    records,
-    summary: {
-      totalCostUsd: records.reduce((s, r) => s + r.costUsd, 0),
-      totalCalls: records.reduce((s, r) => s + r.calls, 0),
-      totalCacheHits: records.reduce((s, r) => s + r.cacheHits, 0),
-    },
   };
 }
 

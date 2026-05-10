@@ -1,4 +1,4 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -84,7 +84,10 @@ function buildSubmit(
 export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
   const [editingRule, setEditingRule] = useState<Correction | null>(null);
   const form = useForm<RuleFormValues>({
-    resolver: zodResolver(RuleFormSchema),
+    // Zod 4 implements Standard Schema v1, so we use the generic
+    // standard-schema resolver — the dedicated `zodResolver` overloads are
+    // currently broken under Zod 4 (typeName/_def shape mismatch).
+    resolver: standardSchemaResolver(RuleFormSchema),
     defaultValues: DEFAULT_RULE_FORM_VALUES,
   });
   const { createMutation, updateMutation } = useRuleMutations(onClose);

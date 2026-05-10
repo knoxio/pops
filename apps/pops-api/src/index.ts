@@ -9,6 +9,10 @@ import { createApp } from './app.js';
 import { closeDb } from './db.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
+import {
+  registerAiLogRetentionScheduler,
+  unregisterAiLogRetentionScheduler,
+} from './modules/core/ai-observability/scheduler.js';
 import { startupCleanup } from './modules/core/envs/registry.js';
 import { startTtlWatcher } from './modules/core/envs/ttl-watcher.js';
 import { resumeSchedulerIfEnabled, stopPlexSchedulerTask } from './modules/media/plex/scheduler.js';
@@ -58,6 +62,11 @@ startThalamus().catch((err) => {
   console.error('[thalamus] Failed to start:', err);
 });
 
+// Register AI inference log retention scheduler (PRD-092 US-08)
+registerAiLogRetentionScheduler().catch((err: unknown) => {
+  console.error('[ai-retention] Failed to register scheduler:', err);
+});
+
 async function shutdown(signal: string): Promise<void> {
   console.warn(`[pops-api] ${signal} — shutting down`);
   // 1. Stop accepting new requests
@@ -67,6 +76,7 @@ async function shutdown(signal: string): Promise<void> {
   stopPlexSchedulerTask();
   // 3. Stop Thalamus file watcher
   await stopThalamus();
+  await unregisterAiLogRetentionScheduler();
   // 4. Wait for any in-progress rotation cycle to finish
   if (process.env['NODE_ENV'] !== 'test') {
     await waitForCycleEnd();

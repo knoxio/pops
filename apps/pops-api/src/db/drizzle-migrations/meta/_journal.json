@@ -372,6 +372,13 @@
       "when": 1778429000000,
       "tag": "0052_budgets_active_default_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1778430616039,
+      "tag": "0053_ai_inference_daily",
+      "breakpoints": true
     }
   ]
 }

@@ -58,6 +58,7 @@ import type { wishList } from './schema/wishlist.js';
 // Re-export Drizzle table objects for use in queries
 export {
   aiBudgets,
+  aiInferenceDaily,
   aiInferenceLog,
   aiModelPricing,
   aiProviders,
@@ -121,6 +122,7 @@ export type TransactionTagRuleRow = InferSelectModel<typeof transactionTagRules>
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type AiInferenceLogRow = InferSelectModel<typeof aiInferenceLog>;
 export type AiInferenceLogInsert = InferInsertModel<typeof aiInferenceLog>;
+export type { AiInferenceDailyInsert, AiInferenceDailyRow } from './schema/ai-inference-daily.js';
 export type AiProviderRow = InferSelectModel<typeof aiProviders>;
 export type AiProviderInsert = InferInsertModel<typeof aiProviders>;
 export type AiModelPricingRow = InferSelectModel<typeof aiModelPricing>;
@@ -146,70 +148,25 @@ export type ItemUploadedFileRow = InferSelectModel<typeof itemUploadedFiles>;
 export type ItemDocumentRow = InferSelectModel<typeof itemDocuments>;
 export type SettingRow = InferSelectModel<typeof settings>;
 
-// Insert types (what you pass to an INSERT statement)
-export type TransactionInsert = InferInsertModel<typeof transactions>;
-export type EntityInsert = InferInsertModel<typeof entities>;
-export type BudgetInsert = InferInsertModel<typeof budgets>;
-export type InventoryInsert = InferInsertModel<typeof homeInventory>;
-export type WishListInsert = InferInsertModel<typeof wishList>;
-export type TransactionCorrectionInsert = InferInsertModel<typeof transactionCorrections>;
-export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
-export type EnvironmentInsert = InferInsertModel<typeof environments>;
-export type MovieInsert = InferInsertModel<typeof movies>;
-export type TvShowInsert = InferInsertModel<typeof tvShows>;
-export type SeasonInsert = InferInsertModel<typeof seasons>;
-export type EpisodeInsert = InferInsertModel<typeof episodes>;
-export type MediaWatchlistInsert = InferInsertModel<typeof mediaWatchlist>;
-export type WatchHistoryInsert = InferInsertModel<typeof watchHistory>;
-export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimensions>;
-export type ComparisonInsert = InferInsertModel<typeof comparisons>;
-export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
-export type LocationInsert = InferInsertModel<typeof locations>;
-export type ItemConnectionInsert = InferInsertModel<typeof itemConnections>;
-export type ItemPhotoInsert = InferInsertModel<typeof itemPhotos>;
-export type ItemUploadedFileInsert = InferInsertModel<typeof itemUploadedFiles>;
-export type ItemDocumentInsert = InferInsertModel<typeof itemDocuments>;
-export type SettingInsert = InferInsertModel<typeof settings>;
 export type SyncLogRow = InferSelectModel<typeof syncLogs>;
-export type SyncLogInsert = InferInsertModel<typeof syncLogs>;
 export type SyncJobResultRow = InferSelectModel<typeof syncJobResults>;
-export type SyncJobResultInsert = InferInsertModel<typeof syncJobResults>;
 export type DismissedDiscoverRow = InferSelectModel<typeof dismissedDiscover>;
-export type DismissedDiscoverInsert = InferInsertModel<typeof dismissedDiscover>;
 export type EngramIndexRow = InferSelectModel<typeof engramIndex>;
-export type EngramIndexInsert = InferInsertModel<typeof engramIndex>;
 export type EngramScopeRow = InferSelectModel<typeof engramScopes>;
-export type EngramScopeInsert = InferInsertModel<typeof engramScopes>;
 export type EngramTagRow = InferSelectModel<typeof engramTags>;
-export type EngramTagInsert = InferInsertModel<typeof engramTags>;
 export type EngramLinkRow = InferSelectModel<typeof engramLinks>;
-export type EngramLinkInsert = InferInsertModel<typeof engramLinks>;
 export type ReflexExecutionRow = InferSelectModel<typeof reflexExecutions>;
-export type ReflexExecutionInsert = InferInsertModel<typeof reflexExecutions>;
 export type ComparisonSkipCooloffRow = InferSelectModel<typeof comparisonSkipCooloffs>;
-export type ComparisonSkipCooloffInsert = InferInsertModel<typeof comparisonSkipCooloffs>;
 export type ComparisonStalenessRow = InferSelectModel<typeof comparisonStaleness>;
-export type ComparisonStalenessInsert = InferInsertModel<typeof comparisonStaleness>;
 export type DebriefSessionRow = InferSelectModel<typeof debriefSessions>;
-export type DebriefSessionInsert = InferInsertModel<typeof debriefSessions>;
 export type DebriefResultRow = InferSelectModel<typeof debriefResults>;
-export type DebriefResultInsert = InferInsertModel<typeof debriefResults>;
 export type TierOverrideRow = InferSelectModel<typeof tierOverrides>;
-export type TierOverrideInsert = InferInsertModel<typeof tierOverrides>;
 export type DebriefStatusRow = InferSelectModel<typeof debriefStatus>;
-export type DebriefStatusInsert = InferInsertModel<typeof debriefStatus>;
 export type ShelfImpressionRow = InferSelectModel<typeof shelfImpressions>;
-export type ShelfImpressionInsert = InferInsertModel<typeof shelfImpressions>;
 export type RotationLogRow = InferSelectModel<typeof rotationLog>;
-export type RotationLogInsert = InferInsertModel<typeof rotationLog>;
 export type RotationSourceRow = InferSelectModel<typeof rotationSources>;
-export type RotationSourceInsert = InferInsertModel<typeof rotationSources>;
 export type RotationCandidateRow = InferSelectModel<typeof rotationCandidates>;
-export type RotationCandidateInsert = InferInsertModel<typeof rotationCandidates>;
 export type RotationExclusionRow = InferSelectModel<typeof rotationExclusions>;
-export type RotationExclusionInsert = InferInsertModel<typeof rotationExclusions>;
 export type NudgeLogRow = InferSelectModel<typeof nudgeLog>;
-export type NudgeLogInsert = InferInsertModel<typeof nudgeLog>;
-
-// Constants
+export * from './insert-types.js';
 export * from './constants.js';

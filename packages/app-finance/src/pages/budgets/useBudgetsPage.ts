@@ -1,4 +1,4 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -74,7 +74,7 @@ export function useBudgetsPage() {
   });
 
   const form = useForm<BudgetFormValues>({
-    resolver: zodResolver(BudgetFormSchema),
+    resolver: standardSchemaResolver(BudgetFormSchema),
     defaultValues: DEFAULT_FORM_VALUES,
   });
 

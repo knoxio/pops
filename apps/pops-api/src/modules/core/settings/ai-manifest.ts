@@ -48,5 +48,20 @@ export const aiConfigManifest: SettingsManifest = {
         },
       ],
     },
+    {
+      id: 'retention',
+      title: 'Log Retention',
+      fields: [
+        {
+          key: 'ai.logRetentionDays',
+          label: 'Inference Log Retention (days)',
+          type: 'number',
+          description:
+            'How many days of raw `ai_inference_log` rows to keep. Older rows are aggregated into `ai_inference_daily` and removed by the nightly retention job.',
+          default: '90',
+          validation: { min: 1 },
+        },
+      ],
+    },
   ],
 };

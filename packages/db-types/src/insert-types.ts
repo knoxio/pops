@@ -1,0 +1,92 @@
+/**
+ * Drizzle `InferInsertModel<T>` aliases for every table. Split out of
+ * `index.ts` to keep that file under the file-size lint cap.
+ *
+ * Re-exported from `index.ts` so all existing imports continue to work.
+ */
+import type { InferInsertModel } from 'drizzle-orm';
+
+import type { aiUsage } from './schema/ai-usage.js';
+import type { budgets } from './schema/budgets.js';
+import type { comparisonDimensions } from './schema/comparison-dimensions.js';
+import type { comparisonSkipCooloffs } from './schema/comparison-skip-cooloffs.js';
+import type { comparisonStaleness } from './schema/comparison-staleness.js';
+import type { comparisons } from './schema/comparisons.js';
+import type { transactionCorrections } from './schema/corrections.js';
+import type { debriefResults } from './schema/debrief-results.js';
+import type { debriefSessions } from './schema/debrief-sessions.js';
+import type { debriefStatus } from './schema/debrief-status.js';
+import type { dismissedDiscover } from './schema/dismissed-discover.js';
+import type { engramIndex, engramLinks, engramScopes, engramTags } from './schema/engrams.js';
+import type { entities } from './schema/entities.js';
+import type { environments } from './schema/environments.js';
+import type { episodes } from './schema/episodes.js';
+import type { homeInventory } from './schema/inventory.js';
+import type { itemConnections } from './schema/item-connections.js';
+import type { itemDocuments } from './schema/item-documents.js';
+import type { itemPhotos } from './schema/item-photos.js';
+import type { itemUploadedFiles } from './schema/item-uploaded-files.js';
+import type { locations } from './schema/locations.js';
+import type { mediaScores } from './schema/media-scores.js';
+import type { mediaWatchlist } from './schema/media-watchlist.js';
+import type { movies } from './schema/movies.js';
+import type { nudgeLog } from './schema/nudge-log.js';
+import type { reflexExecutions } from './schema/reflex-executions.js';
+import type { rotationCandidates } from './schema/rotation-candidates.js';
+import type { rotationExclusions } from './schema/rotation-exclusions.js';
+import type { rotationLog } from './schema/rotation-log.js';
+import type { rotationSources } from './schema/rotation-sources.js';
+import type { seasons } from './schema/seasons.js';
+import type { settings } from './schema/settings.js';
+import type { shelfImpressions } from './schema/shelf-impressions.js';
+import type { syncJobResults } from './schema/sync-job-results.js';
+import type { syncLogs } from './schema/sync-logs.js';
+import type { tierOverrides } from './schema/tier-overrides.js';
+import type { transactions } from './schema/transactions.js';
+import type { tvShows } from './schema/tv-shows.js';
+import type { watchHistory } from './schema/watch-history.js';
+import type { wishList } from './schema/wishlist.js';
+
+export type TransactionInsert = InferInsertModel<typeof transactions>;
+export type EntityInsert = InferInsertModel<typeof entities>;
+export type BudgetInsert = InferInsertModel<typeof budgets>;
+export type InventoryInsert = InferInsertModel<typeof homeInventory>;
+export type WishListInsert = InferInsertModel<typeof wishList>;
+export type TransactionCorrectionInsert = InferInsertModel<typeof transactionCorrections>;
+export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
+export type EnvironmentInsert = InferInsertModel<typeof environments>;
+export type MovieInsert = InferInsertModel<typeof movies>;
+export type TvShowInsert = InferInsertModel<typeof tvShows>;
+export type SeasonInsert = InferInsertModel<typeof seasons>;
+export type EpisodeInsert = InferInsertModel<typeof episodes>;
+export type MediaWatchlistInsert = InferInsertModel<typeof mediaWatchlist>;
+export type WatchHistoryInsert = InferInsertModel<typeof watchHistory>;
+export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimensions>;
+export type ComparisonInsert = InferInsertModel<typeof comparisons>;
+export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
+export type LocationInsert = InferInsertModel<typeof locations>;
+export type ItemConnectionInsert = InferInsertModel<typeof itemConnections>;
+export type ItemPhotoInsert = InferInsertModel<typeof itemPhotos>;
+export type ItemUploadedFileInsert = InferInsertModel<typeof itemUploadedFiles>;
+export type ItemDocumentInsert = InferInsertModel<typeof itemDocuments>;
+export type SettingInsert = InferInsertModel<typeof settings>;
+export type SyncLogInsert = InferInsertModel<typeof syncLogs>;
+export type SyncJobResultInsert = InferInsertModel<typeof syncJobResults>;
+export type DismissedDiscoverInsert = InferInsertModel<typeof dismissedDiscover>;
+export type EngramIndexInsert = InferInsertModel<typeof engramIndex>;
+export type EngramScopeInsert = InferInsertModel<typeof engramScopes>;
+export type EngramTagInsert = InferInsertModel<typeof engramTags>;
+export type EngramLinkInsert = InferInsertModel<typeof engramLinks>;
+export type ReflexExecutionInsert = InferInsertModel<typeof reflexExecutions>;
+export type ComparisonSkipCooloffInsert = InferInsertModel<typeof comparisonSkipCooloffs>;
+export type ComparisonStalenessInsert = InferInsertModel<typeof comparisonStaleness>;
+export type DebriefSessionInsert = InferInsertModel<typeof debriefSessions>;
+export type DebriefResultInsert = InferInsertModel<typeof debriefResults>;
+export type TierOverrideInsert = InferInsertModel<typeof tierOverrides>;
+export type DebriefStatusInsert = InferInsertModel<typeof debriefStatus>;
+export type ShelfImpressionInsert = InferInsertModel<typeof shelfImpressions>;
+export type RotationLogInsert = InferInsertModel<typeof rotationLog>;
+export type RotationSourceInsert = InferInsertModel<typeof rotationSources>;
+export type RotationCandidateInsert = InferInsertModel<typeof rotationCandidates>;
+export type RotationExclusionInsert = InferInsertModel<typeof rotationExclusions>;
+export type NudgeLogInsert = InferInsertModel<typeof nudgeLog>;
