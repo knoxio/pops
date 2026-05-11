@@ -10,7 +10,7 @@ As a user on the go (via Moltbot on Telegram or the pops CLI), I want to fire of
 ## Acceptance Criteria
 
 - [x] A `pops cerebrum capture "text"` CLI command accepts raw text as a single argument or from stdin and creates a capture engram
-- [x] Moltbot accepts a `/capture` command (or a configurable prefix/trigger) followed by raw text and creates an engram via the same `quickCapture` path — defined in `apps/moltbot/skills/pops-cerebrum/SKILL.md`
+- [x] Moltbot accepts a `/capture` command (or a configurable prefix/trigger) followed by raw text and creates an engram through the same quick-capture flow
 - [x] Quick capture assigns `type: capture`, `source: moltbot` (or `cli` depending on channel), and the fallback scope from `scope-rules.toml`
 - [x] Quick capture skips classification, entity extraction, and scope inference at ingestion time — the engram is written immediately
 - [x] A background job is enqueued (via BullMQ) to run Cortex classification and entity extraction on the captured engram asynchronously

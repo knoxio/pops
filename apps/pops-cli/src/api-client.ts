@@ -50,8 +50,10 @@ function isTrpcSuccess<T>(value: unknown): value is TrpcSuccess<T> {
   if (typeof value !== 'object' || value === null) return false;
   if (!('result' in value)) return false;
   const result = (value as { result?: unknown }).result;
-  if (typeof result !== 'object' || result === null) return false;
-  return 'data' in result;
+  if (typeof result !== 'object' || result === null || !('data' in result)) return false;
+  const data = (result as { data?: unknown }).data;
+  if (typeof data !== 'object' || data === null) return false;
+  return 'json' in data;
 }
 
 function isTrpcFailure(value: unknown): value is TrpcFailure {
