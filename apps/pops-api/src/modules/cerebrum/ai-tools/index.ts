@@ -12,6 +12,7 @@ import { engramWriteSchema, handleEngramWrite } from './engram-write.js';
  */
 import { cerebrumIngestSchema, handleCerebrumIngest } from './ingest.js';
 import { cerebrumQuerySchema, handleCerebrumQuery } from './query.js';
+import { cerebrumQuickCaptureSchema, handleCerebrumQuickCapture } from './quick-capture.js';
 import { cerebrumSearchSchema, handleCerebrumSearch } from './search.js';
 
 import type { AiToolDescriptor } from '@pops/types';
@@ -30,6 +31,13 @@ export const cerebrumAiTools: readonly AiToolDescriptor[] = [
       'Ingest new content into the Cerebrum knowledge base. Accepts plain text, Markdown, or JSON. Runs classification, entity extraction, and scope inference automatically.',
     inputSchema: cerebrumIngestSchema,
     handler: handleCerebrumIngest,
+  },
+  {
+    name: 'cerebrum.quick_capture',
+    description:
+      'Lowest-friction capture path — store a raw thought as an engram immediately. Classification, entity extraction, and scope inference run asynchronously. Use this when the agent has a single piece of raw text to land with zero ceremony.',
+    inputSchema: cerebrumQuickCaptureSchema,
+    handler: handleCerebrumQuickCapture,
   },
   {
     name: 'cerebrum.engram.read',
@@ -57,6 +65,7 @@ export const cerebrumAiTools: readonly AiToolDescriptor[] = [
 export {
   handleCerebrumIngest,
   handleCerebrumQuery,
+  handleCerebrumQuickCapture,
   handleCerebrumSearch,
   handleEngramRead,
   handleEngramWrite,

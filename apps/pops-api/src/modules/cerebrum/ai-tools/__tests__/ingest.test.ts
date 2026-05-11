@@ -3,10 +3,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { handleJsonBody } from '../ingest.js';
 import { parseResult } from './test-helpers.js';
 
+// Spy that records the last `submit` argument so we can assert what the
+// handler forwarded to the IngestService.
+const submitCalls: Record<string, unknown>[] = [];
+
 // Mock the IngestService to avoid DB dependency in unit tests
 vi.mock('../../ingest/pipeline.js', () => ({
   IngestService: class MockIngestService {
     async submit(input: Record<string, unknown>) {
+      submitCalls.push(input);
       return {
         engram: {
           id: 'eng_20260427_1200_test',
@@ -154,5 +159,88 @@ describe('handleCerebrumIngest', () => {
       scopes: ['valid', 42, null, 'also-valid'] as unknown as string[],
     });
     expect(result.isError).toBeUndefined();
+  });
+});
+
+describe('handleCerebrumIngest — JSON metadata extraction (PRD-081 US-02 AC #7)', () => {
+  it('lifts type/scopes/tags from a JSON body when the caller omits them', async () => {
+    submitCalls.length = 0;
+    const json = JSON.stringify({
+      title: 'Sprint review',
+      type: 'meeting',
+      scopes: ['work.sprint'],
+      tags: ['retro'],
+      attendees: ['alice', 'bob'],
+      decisions: ['ship friday'],
+    });
+    await handleCerebrumIngest({ body: json });
+
+    const call = submitCalls[0];
+    expect(call).toBeDefined();
+    expect(call?.['title']).toBe('Sprint review');
+    expect(call?.['type']).toBe('meeting');
+    expect(call?.['scopes']).toEqual(['work.sprint']);
+    expect(call?.['tags']).toEqual(['retro']);
+    expect(call?.['customFields']).toEqual({
+      attendees: ['alice', 'bob'],
+      decisions: ['ship friday'],
+    });
+  });
+
+  it('caller-supplied fields win over JSON-derived fields', async () => {
+    submitCalls.length = 0;
+    const json = JSON.stringify({
+      title: 'JSON title',
+      type: 'meeting',
+      scopes: ['work.json'],
+      data: 'kept',
+    });
+    await handleCerebrumIngest({
+      body: json,
+      title: 'Caller title',
+      type: 'note',
+      scopes: ['personal'],
+    });
+
+    const call = submitCalls[0];
+    expect(call?.['title']).toBe('Caller title');
+    expect(call?.['type']).toBe('note');
+    expect(call?.['scopes']).toEqual(['personal']);
+    // Non-native keys still flow through as customFields.
+    expect(call?.['customFields']).toEqual({ data: 'kept' });
+  });
+
+  it('merges caller-supplied tags with JSON-derived tags, deduping', async () => {
+    submitCalls.length = 0;
+    const json = JSON.stringify({ tags: ['from-json', 'shared'] });
+    await handleCerebrumIngest({
+      body: json,
+      tags: ['from-caller', 'shared'],
+    });
+
+    const call = submitCalls[0];
+    expect(call?.['tags']).toEqual(['from-caller', 'shared', 'from-json']);
+  });
+
+  it('does not include a customFields key when the JSON has no extra fields', async () => {
+    submitCalls.length = 0;
+    const json = JSON.stringify({ title: 'Only metadata', tags: ['x'] });
+    await handleCerebrumIngest({ body: json });
+
+    const call = submitCalls[0];
+    expect(call).not.toHaveProperty('customFields');
+  });
+
+  it('non-object JSON (array) contributes no derived metadata', async () => {
+    submitCalls.length = 0;
+    await handleCerebrumIngest({ body: '[1, 2, 3]' });
+
+    const call = submitCalls[0];
+    expect(call).toBeDefined();
+    expect(call).not.toHaveProperty('customFields');
+    // Body is still wrapped in a fenced code block.
+    const forwardedBody = call?.['body'];
+    expect(typeof forwardedBody).toBe('string');
+    expect((forwardedBody as string).startsWith('```json')).toBe(true);
   });
 });

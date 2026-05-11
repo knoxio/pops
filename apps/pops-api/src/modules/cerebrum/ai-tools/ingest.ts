@@ -1,9 +1,11 @@
 /**
  * cerebrum.ingest — ingest content into the engram knowledge base.
  *
- * Delegates to IngestService. Also handles structured JSON detection:
- * if the body starts with `{` or `[` and parses as valid JSON, it is
- * converted to Markdown with the JSON in a fenced code block.
+ * Delegates to IngestService. Also handles structured JSON detection: when the
+ * body parses as a JSON object, POPS-native fields (`title`, `type`, `scopes`,
+ * `tags`) are lifted into the ingest request (unless the caller provided
+ * their own) and remaining keys land in `customFields` so they end up as
+ * frontmatter (PRD-081 US-02 AC #7).
  */
 import { IngestService } from '../ingest/pipeline.js';
 import { mapServiceError, toolError, toolSuccess } from './result.js';
@@ -18,7 +20,23 @@ interface IngestArgs {
   tags?: string[];
 }
 
+interface JsonBodyResult {
+  body: string;
+  derivedTitle: string | null;
+  derivedType: string | null;
+  derivedScopes: string[] | null;
+  derivedTags: string[] | null;
+  customFields: Record<string, unknown>;
+}
+
 const TITLE_KEYS = ['title', 'name', 'subject', 'label'] as const;
+
+/**
+ * Keys that map directly onto POPS engram frontmatter and ingest request
+ * params. When the structured JSON body contains them, they are lifted out
+ * rather than being stuffed back into `customFields`.
+ */
+const NATIVE_FIELD_KEYS = new Set<string>(['title', 'type', 'scopes', 'tags']);
 
 /** Try to extract a title from a JSON object's well-known keys, falling back to a key summary. */
 function deriveTitleFromObject(obj: Record<string, unknown>): string | null {
@@ -37,30 +55,114 @@ function deriveTitleFromObject(obj: Record<string, unknown>): string | null {
   return null;
 }
 
+function emptyJsonResult(body: string): JsonBodyResult {
+  return {
+    body,
+    derivedTitle: null,
+    derivedType: null,
+    derivedScopes: null,
+    derivedTags: null,
+    customFields: {},
+  };
+}
+
+function pickStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  const out = value.filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+  return out.length > 0 ? out : null;
+}
+
 /**
- * Detect structured JSON and convert to Markdown.
- * Returns a new body and optional derived title.
+ * Pull the native engram fields out of a parsed JSON object. Caller-supplied
+ * values still win at the handler level — this just surfaces what the JSON
+ * itself offered.
  */
-function handleJsonBody(body: string): { body: string; derivedTitle: string | null } {
+function extractNativeFields(obj: Record<string, unknown>): {
+  derivedTitle: string | null;
+  derivedType: string | null;
+  derivedScopes: string[] | null;
+  derivedTags: string[] | null;
+} {
+  const titleRaw = obj['title'];
+  const derivedTitle =
+    typeof titleRaw === 'string' && titleRaw.trim().length > 0
+      ? titleRaw.trim().slice(0, 120)
+      : deriveTitleFromObject(obj);
+  const typeRaw = obj['type'];
+  const derivedType =
+    typeof typeRaw === 'string' && typeRaw.trim().length > 0 ? typeRaw.trim() : null;
+  return {
+    derivedTitle,
+    derivedType,
+    derivedScopes: pickStringArray(obj['scopes']),
+    derivedTags: pickStringArray(obj['tags']),
+  };
+}
+
+function extractCustomFields(obj: Record<string, unknown>): Record<string, unknown> {
+  const customFields: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (NATIVE_FIELD_KEYS.has(key)) continue;
+    customFields[key] = value;
+  }
+  return customFields;
+}
+
+function tryParseJson(trimmed: string): unknown | undefined {
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Detect structured JSON and convert to Markdown. When the body is a plain
+ * JSON object, POPS-native fields are lifted out and the remaining keys are
+ * returned as `customFields` so they can be persisted into the engram
+ * frontmatter. Arrays and non-object JSON are still rendered as a fenced
+ * code block but contribute no extracted metadata.
+ */
+function handleJsonBody(body: string): JsonBodyResult {
   const trimmed = body.trim();
   if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-    return { body, derivedTitle: null };
+    return emptyJsonResult(body);
   }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch {
-    return { body, derivedTitle: null };
-  }
-
-  const isPlainObject = parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed);
-  const derivedTitle = isPlainObject
-    ? deriveTitleFromObject(parsed as Record<string, unknown>)
-    : null;
+  const parsed = tryParseJson(trimmed);
+  if (parsed === undefined) return emptyJsonResult(body);
 
   const mdBody = `\`\`\`json\n${trimmed}\n\`\`\``;
-  return { body: mdBody, derivedTitle };
+  const isPlainObject = parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed);
+  if (!isPlainObject) {
+    return { ...emptyJsonResult(mdBody), body: mdBody };
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  return {
+    body: mdBody,
+    ...extractNativeFields(obj),
+    customFields: extractCustomFields(obj),
+  };
+}
+
+/**
+ * Combine caller-supplied tags with tags lifted out of a JSON body. Both
+ * sources contribute; duplicates are stripped while preserving the order in
+ * which tags first appeared.
+ */
+function mergeTags(
+  callerTags: string[] | undefined,
+  jsonTags: string[] | null
+): string[] | undefined {
+  if (!callerTags && !jsonTags) return undefined;
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const tag of [...(callerTags ?? []), ...(jsonTags ?? [])]) {
+    if (seen.has(tag)) continue;
+    seen.add(tag);
+    merged.push(tag);
+  }
+  return merged.length > 0 ? merged : undefined;
 }
 
 function parseArgs(raw: Record<string, unknown>): IngestArgs {
@@ -84,17 +186,21 @@ export async function handleCerebrumIngest(raw: Record<string, unknown>): Promis
   }
 
   try {
-    const { body: processedBody, derivedTitle } = handleJsonBody(args.body);
-    const title = args.title ?? derivedTitle ?? undefined;
+    const json = handleJsonBody(args.body);
+    const title = args.title ?? json.derivedTitle ?? undefined;
+    const type = args.type ?? json.derivedType ?? undefined;
+    const scopes = args.scopes ?? json.derivedScopes ?? undefined;
+    const tags = mergeTags(args.tags, json.derivedTags);
 
     const svc = new IngestService();
     const result = await svc.submit({
-      body: processedBody,
+      body: json.body,
       title,
-      type: args.type,
-      scopes: args.scopes,
-      tags: args.tags,
+      type,
+      scopes,
+      tags,
       source: 'agent',
+      ...(Object.keys(json.customFields).length > 0 ? { customFields: json.customFields } : {}),
     });
 
     return toolSuccess({
