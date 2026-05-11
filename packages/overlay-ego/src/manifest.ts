@@ -1,7 +1,7 @@
 import { EgoOverlay } from './EgoOverlay';
 
 /**
- * Ego overlay module manifest (PRD-099).
+ * Ego overlay module manifest (PRD-099 + PRD-101 US-07).
  *
  * Dual-surface: declares both `'overlay'` (the floating chat panel rendered
  * into a shell chrome slot) and `'app'` (the `/cerebrum/chat` route, which
@@ -9,7 +9,10 @@ import { EgoOverlay } from './EgoOverlay';
  * + hooks as the overlay). The two surfaces share conversation state via
  * the tRPC `ego.*` queries.
  *
- * Metadata-only at this PRD — the runtime loader (PRD-100) is the consumer.
+ * Since PRD-101 US-07 the manifest also carries a lazy `component` loader
+ * the shell consumes via `React.lazy` to mount the overlay into the
+ * declared chrome slot without importing the overlay package directly
+ * from `RootLayout`.
  */
 import type { ModuleManifest } from '@pops/types';
 
@@ -26,6 +29,7 @@ export const manifest: ModuleManifest<unknown, unknown, unknown> = {
     overlay: {
       chromeSlot: EGO_OVERLAY_CHROME_SLOT,
       shortcut: EGO_OVERLAY_SHORTCUT,
+      component: () => import('./EgoOverlay').then((m) => ({ default: m.EgoOverlay })),
     },
   },
 };

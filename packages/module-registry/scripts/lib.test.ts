@@ -74,6 +74,36 @@ describe('validateManifests', () => {
     expect(() => validateManifests(bad)).toThrow(/URI handler type 'thing'/);
   });
 
+  it('warns (without throwing) on unknown overlay chromeSlot values (US-07)', () => {
+    const messages: string[] = [];
+    const sample: readonly ModuleManifest[] = [
+      {
+        id: 'rogue',
+        name: 'Rogue',
+        surfaces: ['overlay'],
+        frontend: { overlay: { chromeSlot: 'totally-made-up' } },
+      },
+    ];
+    expect(() => validateManifests(sample, (m) => messages.push(m))).not.toThrow();
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatch(/rogue/);
+    expect(messages[0]).toMatch(/totally-made-up/);
+  });
+
+  it('does not warn on known overlay chromeSlot values', () => {
+    const messages: string[] = [];
+    const sample: readonly ModuleManifest[] = [
+      {
+        id: 'ego',
+        name: 'Ego',
+        surfaces: ['overlay', 'app'],
+        frontend: { overlay: { chromeSlot: 'assistant' } },
+      },
+    ];
+    expect(() => validateManifests(sample, (m) => messages.push(m))).not.toThrow();
+    expect(messages).toEqual([]);
+  });
+
   it('fails on AI tool name collisions', () => {
     const handler = async () => ({ content: [{ type: 'text' as const, text: '' }] });
     const bad: readonly ModuleManifest[] = [

@@ -9,7 +9,12 @@ interface UIState {
   sidebarOpen: boolean;
   railOpen: boolean;
   pageNavOpen: boolean;
-  chatOverlayOpen: boolean;
+  /**
+   * Open state for each installed overlay, keyed by module id (PRD-101 US-07).
+   * Replaces the previous per-overlay `chatOverlayOpen` flag so the shell can
+   * mount any registered overlay without growing a new field per module.
+   */
+  overlays: Record<string, boolean>;
   /**
    * When true, the next location-change close of the PageNav overlay is
    * suppressed. Used by AppRail to prevent the navigation it triggers from
@@ -23,8 +28,8 @@ interface UIState {
   togglePageNav: () => void;
   setPageNavOpen: (open: boolean) => void;
   setSkipNextPageNavClose: (skip: boolean) => void;
-  toggleChatOverlay: () => void;
-  setChatOverlayOpen: (open: boolean) => void;
+  toggleOverlay: (moduleId: string) => void;
+  setOverlayOpen: (moduleId: string, open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -33,7 +38,7 @@ export const useUIStore = create<UIState>()(
       sidebarOpen: true,
       railOpen: true,
       pageNavOpen: false,
-      chatOverlayOpen: false,
+      overlays: {},
       skipNextPageNavClose: false,
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -42,8 +47,12 @@ export const useUIStore = create<UIState>()(
       togglePageNav: () => set((state) => ({ pageNavOpen: !state.pageNavOpen })),
       setPageNavOpen: (open) => set({ pageNavOpen: open }),
       setSkipNextPageNavClose: (skip) => set({ skipNextPageNavClose: skip }),
-      toggleChatOverlay: () => set((state) => ({ chatOverlayOpen: !state.chatOverlayOpen })),
-      setChatOverlayOpen: (open) => set({ chatOverlayOpen: open }),
+      toggleOverlay: (moduleId) =>
+        set((state) => ({
+          overlays: { ...state.overlays, [moduleId]: !(state.overlays[moduleId] ?? false) },
+        })),
+      setOverlayOpen: (moduleId, open) =>
+        set((state) => ({ overlays: { ...state.overlays, [moduleId]: open } })),
     }),
     {
       name: 'pops-ui-storage',

@@ -37,4 +37,5 @@ export type {
   ModuleManifest,
   ModuleOverlayConfig,
   ModuleSurface,
+  OverlayComponentLoader,
 } from './module-manifest.js';
