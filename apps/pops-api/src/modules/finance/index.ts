@@ -8,6 +8,7 @@ import { importsRouter } from './imports/router.js';
 import { financeManifest } from './settings-manifest.js';
 import { transactionsRouter } from './transactions/router.js';
 import { transactionsSearchAdapter } from './transactions/search-adapter.js';
+import { financeUriHandler } from './uri-handler.js';
 import { wishlistRouter } from './wishlist/router.js';
 import { wishlistSearchAdapter } from './wishlist/search-adapter.js';
 
@@ -30,4 +31,5 @@ export const manifest: ModuleManifest<typeof financeRouter> = {
   backend: { router: financeRouter },
   settings: [financeManifest],
   search: [transactionsSearchAdapter, budgetsSearchAdapter, wishlistSearchAdapter],
+  uriHandler: financeUriHandler,
 };

@@ -25,7 +25,7 @@ export type {
   FeatureStatus,
 } from './feature-manifest.js';
 export type { Capability } from './capability.js';
-export type { UriHandlerDescriptor, UriResolution } from './uri-handler.js';
+export type { UriHandlerDescriptor, UriResolution, UriResolverResult } from './uri-handler.js';
 export type { AiToolDescriptor, AiToolHandler, AiToolResult } from './ai-tool.js';
 export type { MigrationDescriptor } from './migration.js';
 export type { SearchAdapterDescriptor } from './search-adapter.js';

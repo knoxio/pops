@@ -13,6 +13,7 @@ import { paperlessRouter } from './paperless/router.js';
 import { photosRouter } from './photos/index.js';
 import { reportsRouter } from './reports/index.js';
 import { inventoryManifest } from './settings-manifest.js';
+import { inventoryUriHandler } from './uri-handler.js';
 
 import type { ModuleManifest } from '@pops/types';
 
@@ -38,4 +39,5 @@ export const manifest: ModuleManifest<typeof inventoryRouter> = {
   settings: [inventoryManifest],
   features: [inventoryFeaturesManifest],
   search: [inventoryItemsSearchAdapter],
+  uriHandler: inventoryUriHandler,
 };

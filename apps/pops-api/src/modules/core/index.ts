@@ -23,6 +23,7 @@ import { coreOperationalManifest } from './settings/operational-manifest.js';
 import { settingsRouter } from './settings/router.js';
 import { shellRouter } from './shell/router.js';
 import { tagRulesRouter } from './tag-rules/router.js';
+import { uriRouter } from './uri/router.js';
 
 import type { ModuleManifest } from '@pops/types';
 
@@ -41,6 +42,7 @@ export const coreRouter = router({
   search: searchRouter,
   serviceAccounts: serviceAccountsRouter,
   shell: shellRouter,
+  uri: uriRouter,
 });
 
 /**

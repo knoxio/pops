@@ -19,6 +19,7 @@ import { tvShowsSearchAdapter } from './search/tv-shows-adapter.js';
 import { arrManifest, plexManifest, rotationManifest } from './settings/manifests.js';
 import { mediaOperationalManifest } from './settings/operational-manifest.js';
 import { tvShowsRouter } from './tv-shows/index.js';
+import { mediaUriHandler } from './uri-handler.js';
 import { watchHistoryRouter } from './watch-history/router.js';
 import { watchlistRouter } from './watchlist/router.js';
 
@@ -53,4 +54,5 @@ export const manifest: ModuleManifest<typeof mediaRouter> = {
   settings: [plexManifest, arrManifest, rotationManifest, mediaOperationalManifest],
   features: [mediaFeaturesManifest],
   search: [moviesSearchAdapter, tvShowsSearchAdapter],
+  uriHandler: mediaUriHandler,
 };
