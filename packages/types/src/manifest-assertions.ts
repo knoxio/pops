@@ -203,14 +203,15 @@ export function assertFrontend(
   context: string
 ): void {
   if (value === undefined) return;
-  if (!isObject(value)) {
-    fail(context, `'frontend' must be an object when set`);
-  }
+  if (!isObject(value)) fail(context, `'frontend' must be an object when set`);
   if (!surfaces.includes('overlay')) return;
-  if (!isObject(value.overlay)) {
+  if (!isObject(value.overlay))
     fail(context, `'frontend.overlay' is required when surfaces includes 'overlay'`);
-  }
-  if (typeof value.overlay.chromeSlot !== 'string') {
+  const o = value.overlay;
+  if (typeof o.chromeSlot !== 'string')
     fail(context, `'frontend.overlay.chromeSlot' must be a string`);
-  }
+  if (o.shortcut !== undefined && typeof o.shortcut !== 'string')
+    fail(context, `'frontend.overlay.shortcut' must be a string when set`);
+  if (o.component !== undefined && typeof o.component !== 'function')
+    fail(context, `'frontend.overlay.component' must be a function when set`);
 }

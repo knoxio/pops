@@ -1,5 +1,6 @@
 import { findActiveApp } from '@/app/nav/path-utils';
 import { registeredApps } from '@/app/nav/registry';
+import { installedOverlays } from '@/app/overlays/registry';
 import { useUIStore } from '@/store/uiStore';
 import { Outlet, useLocation } from 'react-router';
 
@@ -9,18 +10,24 @@ import { Outlet, useLocation } from 'react-router';
  * Desktop (≥1024px): AppRail (icons) + PageNav (page links) push content
  * Tablet (768–1023px): AppRail visible, PageNav as overlay on app icon click
  * Mobile (<768px): Hamburger opens Sidebar overlay with all pages
+ *
+ * Overlays (PRD-101 US-07) are mounted from the module registry via
+ * `OverlayHost` — `RootLayout` itself does not import overlay components.
  */
 import { AppContextProvider } from '@pops/navigation';
 import { cn, ErrorBoundary } from '@pops/ui';
 
+import { OverlayHost } from '../overlays/OverlayHost';
+import { useOverlayShortcuts } from '../overlays/useOverlayShortcuts';
 import { ChatFab } from './ChatFab';
-import { ChatOverlay } from './ChatOverlay';
 import { AmbientBackground } from './root-layout/AmbientBackground';
 import { NavRegion } from './root-layout/NavRegion';
 import { usePageNavAutoClose } from './root-layout/usePageNavAutoClose';
 import { Sidebar } from './Sidebar';
 import { SkipLink } from './SkipLink';
 import { TopBar } from './TopBar';
+
+const EGO_OVERLAY_INSTALLED = installedOverlays.some((o) => o.moduleId === 'ego');
 
 export function RootLayout() {
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
@@ -31,6 +38,7 @@ export function RootLayout() {
   const appColorClass = activeApp?.color ? `app-${activeApp.color}` : undefined;
 
   usePageNavAutoClose(location.pathname, setPageNavOpen);
+  useOverlayShortcuts();
 
   return (
     <AppContextProvider>
@@ -58,8 +66,27 @@ export function RootLayout() {
           </div>
         </div>
 
-        <ChatFab />
-        <ChatOverlay />
+        {EGO_OVERLAY_INSTALLED && <ChatFab />}
+
+        {/*
+         * One host per known chrome slot (PRD-101 US-07). Each host mounts
+         * only the overlays whose manifest declares that slot, so slot
+         * declarations actually drive placement rather than being purely
+         * informational. Positioning is intentionally bare — overlays own
+         * their own visual chrome (fixed positioning, z-index, etc.); the
+         * host wrappers are anchors so future slot-specific layout (e.g.
+         * a notification stack region) can replace these without touching
+         * overlay packages.
+         */}
+        <div data-overlay-slot="assistant">
+          <OverlayHost slot="assistant" />
+        </div>
+        <div data-overlay-slot="notification">
+          <OverlayHost slot="notification" />
+        </div>
+        <div data-overlay-slot="command">
+          <OverlayHost slot="command" />
+        </div>
       </div>
     </AppContextProvider>
   );

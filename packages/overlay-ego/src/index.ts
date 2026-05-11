@@ -16,9 +16,4 @@ export { EgoFab } from './EgoFab';
 export type { EgoFabProps } from './EgoFab';
 export { EgoOverlay } from './EgoOverlay';
 export type { EgoOverlayProps } from './EgoOverlay';
-export {
-  EGO_OVERLAY_CHROME_SLOT,
-  EGO_OVERLAY_SHORTCUT,
-  EgoOverlayComponent,
-  manifest,
-} from './manifest';
+export { EGO_OVERLAY_CHROME_SLOT, EGO_OVERLAY_SHORTCUT, manifest } from './manifest';

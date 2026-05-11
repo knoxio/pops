@@ -290,4 +290,45 @@ describe('assertModuleManifest — frontend overlay invariant', () => {
       })
     ).not.toThrow();
   });
+
+  it('accepts an overlay declaration with a lazy component loader', () => {
+    expect(() =>
+      assertModuleManifest({
+        id: 'ego',
+        name: 'Ego',
+        surfaces: ['overlay'],
+        frontend: {
+          overlay: {
+            chromeSlot: 'assistant',
+            shortcut: 'mod+i',
+            component: () => Promise.resolve({ default: () => null }),
+          },
+        },
+      })
+    ).not.toThrow();
+  });
+
+  it('rejects an overlay component that is not a function', () => {
+    expect(() =>
+      assertModuleManifest({
+        id: 'ego',
+        name: 'Ego',
+        surfaces: ['overlay'],
+        frontend: {
+          overlay: { chromeSlot: 'assistant', component: 'not a function' },
+        },
+      })
+    ).toThrow(/frontend\.overlay\.component/);
+  });
+
+  it('rejects a non-string shortcut', () => {
+    expect(() =>
+      assertModuleManifest({
+        id: 'ego',
+        name: 'Ego',
+        surfaces: ['overlay'],
+        frontend: { overlay: { chromeSlot: 'assistant', shortcut: 42 } },
+      })
+    ).toThrow(/frontend\.overlay\.shortcut/);
+  });
 });

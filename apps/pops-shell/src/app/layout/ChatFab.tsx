@@ -5,11 +5,13 @@ import { EgoFab } from '@pops/overlay-ego';
 /**
  * Shell wiring for the Ego overlay's floating action button (PRD-099).
  * Visual + behaviour live in `@pops/overlay-ego`; this file binds toggle
- * state to the shell's `useUIStore`.
+ * state to the shell's `useUIStore` (PRD-101 US-07 generic overlay map).
  */
-export function ChatFab() {
-  const open = useUIStore((state) => state.chatOverlayOpen);
-  const toggleChatOverlay = useUIStore((state) => state.toggleChatOverlay);
+const EGO_MODULE_ID = 'ego';
 
-  return <EgoFab open={open} onToggle={toggleChatOverlay} />;
+export function ChatFab() {
+  const open = useUIStore((state) => state.overlays[EGO_MODULE_ID] ?? false);
+  const toggleOverlay = useUIStore((state) => state.toggleOverlay);
+
+  return <EgoFab open={open} onToggle={() => toggleOverlay(EGO_MODULE_ID)} />;
 }

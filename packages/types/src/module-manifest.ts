@@ -47,6 +47,16 @@ import type { UriHandlerDescriptor } from './uri-handler.js';
  */
 export type ModuleSurface = 'app' | 'overlay';
 
+/**
+ * Lazy loader for an overlay component. The shell calls this to obtain the
+ * overlay's default-exported React component and wraps the mount in a
+ * `Suspense` boundary.
+ *
+ * Typed as `unknown` payload so `@pops/types` stays React-agnostic; the
+ * shell narrows to `ComponentType<OverlayComponentProps>` at the call site.
+ */
+export type OverlayComponentLoader = () => Promise<{ default: unknown }>;
+
 export interface ModuleOverlayConfig {
   /**
    * Identifier of the chrome slot the overlay mounts into. Slot names are
@@ -59,6 +69,17 @@ export interface ModuleOverlayConfig {
    * as `mousetrap`/`tinykeys` (e.g. `mod+i`). Resolved by the shell.
    */
   shortcut?: string;
+  /**
+   * Optional lazy component reference. When set, the shell mounts the
+   * resolved component into `chromeSlot` inside a `Suspense` boundary so
+   * the overlay code is split out of the shell bundle and only loaded when
+   * the module is installed.
+   *
+   * Shape mirrors `() => import('./Overlay').then(m => ({ default: m.Overlay }))`
+   * — the shell consumes it via `React.lazy`. The default-export wrapper
+   * keeps `@pops/types` free of any direct React import.
+   */
+  component?: OverlayComponentLoader;
 }
 
 /**

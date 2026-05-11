@@ -1,7 +1,5 @@
-import { EgoOverlay } from './EgoOverlay';
-
 /**
- * Ego overlay module manifest (PRD-099).
+ * Ego overlay module manifest (PRD-099 + PRD-101 US-07).
  *
  * Dual-surface: declares both `'overlay'` (the floating chat panel rendered
  * into a shell chrome slot) and `'app'` (the `/cerebrum/chat` route, which
@@ -9,7 +7,13 @@ import { EgoOverlay } from './EgoOverlay';
  * + hooks as the overlay). The two surfaces share conversation state via
  * the tRPC `ego.*` queries.
  *
- * Metadata-only at this PRD — the runtime loader (PRD-100) is the consumer.
+ * Since PRD-101 US-07 the manifest also carries a lazy `component` loader
+ * the shell consumes via `React.lazy` to mount the overlay into the
+ * declared chrome slot without importing the overlay package directly
+ * from the shell layout. The loader is the *only* path through which the
+ * overlay component reaches the shell — there is intentionally no eager
+ * re-export, so simply importing the manifest does not pull the overlay
+ * (and its `react` + chat-stack transitive cost) into the shell bundle.
  */
 import type { ModuleManifest } from '@pops/types';
 
@@ -26,11 +30,7 @@ export const manifest: ModuleManifest<unknown, unknown, unknown> = {
     overlay: {
       chromeSlot: EGO_OVERLAY_CHROME_SLOT,
       shortcut: EGO_OVERLAY_SHORTCUT,
+      component: () => import('./EgoOverlay').then((m) => ({ default: m.EgoOverlay })),
     },
   },
 };
-
-// Re-export the overlay component reference for the shell. We keep the
-// component-typed reference out of the manifest itself so @pops/types
-// doesn't need to know about React.
-export const EgoOverlayComponent = EgoOverlay;

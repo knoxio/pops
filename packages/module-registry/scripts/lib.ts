@@ -5,6 +5,8 @@
  */
 import { assertModuleManifest, type ModuleManifest } from '@pops/types';
 
+import { warnUnknownChromeSlots } from './chrome-slots.js';
+
 /**
  * Project the serialisable subset of a `ModuleManifest` — id, name,
  * version, surfaces, description, dependsOn, capabilities — plus structural
@@ -94,13 +96,22 @@ function assertAiToolNamesUnique(manifests: readonly ModuleManifest[]): void {
  * shape errors): this helper additionally enforces duplicate ids, unknown
  * `dependsOn` targets, URI handler type collisions, and global AI tool
  * name collisions.
+ *
+ * Unknown `frontend.overlay.chromeSlot` values are reported via the
+ * optional `warn` callback (defaults to `process.stderr`) — slot names are
+ * conventional, not enumerable from the type system, so this is a warning
+ * not a hard error (PRD-101 US-07 acceptance criterion).
  */
-export function validateManifests(manifests: readonly ModuleManifest[]): void {
+export function validateManifests(
+  manifests: readonly ModuleManifest[],
+  warn: (message: string) => void = (msg) => process.stderr.write(`warning: ${msg}\n`)
+): void {
   assertEachManifest(manifests);
   assertUniqueIds(manifests);
   assertDependenciesResolvable(manifests);
   assertUriHandlersDisjoint(manifests);
   assertAiToolNamesUnique(manifests);
+  warnUnknownChromeSlots(manifests, warn);
 }
 
 export function project(m: ModuleManifest): SerialisableModule {
@@ -240,9 +251,14 @@ export function renderFile(modules: readonly SerialisableModule[]): string {
 export function buildRegistrySource(
   manifests: readonly ModuleManifest[],
   knownIds: readonly string[],
-  env: Readonly<Record<string, string | undefined>>
+  env: Readonly<Record<string, string | undefined>>,
+  warn?: (message: string) => void
 ): { source: string; count: number } {
-  validateManifests(manifests);
+  if (warn !== undefined) {
+    validateManifests(manifests, warn);
+  } else {
+    validateManifests(manifests);
+  }
   const installed = new Set(resolveInstalledIds(knownIds, env));
   const selected = manifests.filter((m) => installed.has(m.id));
   const sorted = selected.toSorted((a, b) => a.id.localeCompare(b.id, 'en'));
