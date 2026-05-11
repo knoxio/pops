@@ -12,10 +12,8 @@
  * The schema_migrations table is populated so that runMigrations() is a no-op
  * when it later runs against a database initialized by this function.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { TAG_VOCABULARY_V1 } from '../shared/tag-vocabulary.js';
+import { markDrizzleMigrationsApplied } from './migrations-runner.js';
 
 import type BetterSqlite3 from 'better-sqlite3';
 
@@ -962,31 +960,15 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     insertMigration.run(migration);
   }
 
-  // Also mark all Drizzle migrations as applied (schema already incorporates them)
-  try {
-    const drizzleMigrationsDir = join(import.meta.dirname, 'drizzle-migrations');
-    const journalPath = join(drizzleMigrationsDir, 'meta', '_journal.json');
-    const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as {
-      entries: { idx: number; tag: string; when: number }[];
-    };
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        hash TEXT NOT NULL,
-        created_at NUMERIC
-      )
-    `);
-
-    const insertDrizzle = db.prepare(
-      'INSERT OR IGNORE INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'
-    );
-    for (const entry of journal.entries) {
-      // Use the journal's `when` timestamp so Drizzle's timestamp-based check
-      // treats all pre-seeded migrations as already applied (folderMillis <= created_at).
-      insertDrizzle.run(entry.tag, entry.when);
-    }
-  } catch {
-    // Non-fatal — Drizzle migrate at startup will handle it
-  }
+  // Also mark all Drizzle migrations as applied (schema already incorporates them).
+  //
+  // We delegate to `markDrizzleMigrationsApplied` so the recorded hashes match
+  // `sha256(sql)` — the same convention used by the per-module migration
+  // runner (PRD-101 US-09) when it decides whether a journal entry is already
+  // applied. Previously this loop stored the migration *tag* in the hash
+  // column, which the stock drizzle-orm migrator tolerated (it skips by
+  // timestamp), but which causes the per-module runner to attempt to
+  // re-apply every migration on boot — crashing with
+  // "table `budgets` already exists" on the first non-IF-NOT-EXISTS DDL.
+  markDrizzleMigrationsApplied(db);
 }

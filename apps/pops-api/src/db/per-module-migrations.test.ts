@@ -287,6 +287,104 @@ describe('runPerModuleMigrations', () => {
       expect(names).toContain('beta');
     });
   });
+
+  it('treats every journal entry as already applied when __drizzle_migrations records sha256(sql) per entry (fresh-DB pre-seed contract)', async () => {
+    // Regression for the Playwright E2E failure where `pnpm dev:init` ran
+    // `initializeSchema` (which creates every table) and then the API boot
+    // path invoked the per-module runner — the previous schema initializer
+    // stored migration *tags* in the hash column, so the runner re-attempted
+    // every journal entry and crashed on "table `budgets` already exists".
+    // After the fix, `initializeSchema` records `sha256(sql)` per entry, so
+    // the runner observes a full hash match and applies nothing.
+    //
+    // This test exercises the runner directly with the same hashing
+    // convention `markDrizzleMigrationsApplied` now uses; if the runner ever
+    // drifts away from `sha256(sql)` the fresh-DB-then-migrate path will
+    // regress and this assertion will trip.
+    const { createHash } = await import('node:crypto');
+    const dir = fakeJournalDir();
+    const sqls = [
+      'CREATE TABLE budgets (id INTEGER);',
+      'CREATE TABLE entities (id INTEGER);',
+      'CREATE TABLE transactions (id INTEGER);',
+    ];
+    const tags = sqls.map((_, i) => `000${i}_seeded`);
+    writeJournal(
+      dir,
+      sqls.map((sql, i) => ({ tag: tags[i] ?? '', sql }))
+    );
+    const mod = await loadRunnerWithJournalDir(dir);
+
+    await withDb((db) => {
+      // Create the tables (mirrors `initializeSchema`).
+      for (const sql of sqls) db.exec(sql);
+      // Pre-seed __drizzle_migrations with sha256(sql) — the contract that
+      // `markDrizzleMigrationsApplied` (and the per-module runner) agrees on.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hash TEXT NOT NULL,
+          created_at NUMERIC
+        )
+      `);
+      const insert = db.prepare(
+        'INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'
+      );
+      for (const sql of sqls) {
+        insert.run(createHash('sha256').update(sql).digest('hex'), Date.now());
+      }
+
+      const a = makeManifest(
+        'core',
+        sqls.map((sql, i) => ({ id: tags[i] ?? '', sql }))
+      );
+      const knownOwners = mod.migrationOwnershipMap([a]);
+
+      const result = mod.runPerModuleMigrations(db, [a], knownOwners);
+
+      expect(result.applied).toEqual([]);
+      expect(result.alreadyApplied).toEqual(tags);
+      expect(result.skipped).toEqual([]);
+      expect(result.unowned).toEqual([]);
+    });
+  });
+
+  it('crashes if __drizzle_migrations stores tag names instead of sha256(sql) — guards against the pre-PRD-101 schema-init bug', async () => {
+    // Negative regression: prior to the fix, `initializeSchema` recorded
+    // each migration's *tag* in the hash column. Drizzle's stock migrator
+    // tolerated that because it skipped by timestamp, but the per-module
+    // runner uses hash equality and would re-run every migration, blowing
+    // up on the first non-IF-NOT-EXISTS DDL. This test pins the contract:
+    // tag-as-hash MUST produce a re-application attempt that fails when
+    // the table is non-idempotent.
+    const dir = fakeJournalDir();
+    const sql = 'CREATE TABLE budgets (id INTEGER);';
+    writeJournal(dir, [{ tag: '0000_seeded', sql }]);
+    const mod = await loadRunnerWithJournalDir(dir);
+
+    await withDb((db) => {
+      db.exec(sql);
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hash TEXT NOT NULL,
+          created_at NUMERIC
+        )
+      `);
+      // Wrong: tag in the hash column. Reproduces the bug.
+      db.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)').run(
+        '0000_seeded',
+        Date.now()
+      );
+
+      const a = makeManifest('core', [{ id: '0000_seeded', sql }]);
+      const knownOwners = mod.migrationOwnershipMap([a]);
+
+      expect(() => mod.runPerModuleMigrations(db, [a], knownOwners)).toThrow(
+        /table .?budgets.? already exists/
+      );
+    });
+  });
 });
 
 describe('warnOrphanMigrations', () => {
