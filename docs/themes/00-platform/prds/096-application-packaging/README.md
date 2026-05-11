@@ -13,7 +13,7 @@ A deployer needs only:
 
 1. **A Docker host** with `docker` and `docker compose v2`
 2. **The compose file** — fetched once, kept in sync via `git pull` on the pops repo, or vendored
-3. **An `.env` file** — populated from `.env.example`, supplies things like `CLOUDFLARE_TUNNEL_TOKEN`, `POPS_DOMAIN`, optional `POPS_IMAGE_TAG`, `DOCKER_CONFIG_DIR`
+3. **An `.env` file** — populated from `.env.example`, supplies things like `POPS_DOMAIN`, optional `POPS_IMAGE_TAG`, `DOCKER_CONFIG_DIR`
 4. **A `secrets/` directory** with one file per secret (file contents = secret value, mode 600)
 5. **GHCR access** — public packages = no setup; private packages = `docker login ghcr.io` once
 
@@ -38,7 +38,7 @@ Publishing is automatic on every push to `main` (see [`publish-images.yml`](../.
 - network names (`pops-frontend`, `pops-backend`, `pops-documents`)
 - volume names (`pops-sqlite-data`, `pops-redis-data`, `pops-paperless-*`, `pops-metabase-data`)
 - secret names (the 10 files in `secrets/`)
-- env var names consumed (`POPS_IMAGE_TAG`, `CLOUDFLARE_TUNNEL_TOKEN`, `PAPERLESS_BASE_URL`, etc.)
+- env var names consumed (`POPS_IMAGE_TAG`, `POPS_DOMAIN`, `PAPERLESS_BASE_URL`, etc.)
 
 …break every deployer downstream and must be treated as breaking changes (announce, version-tag, document migration).
 

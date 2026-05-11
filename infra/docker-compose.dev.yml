@@ -213,16 +213,6 @@ services:
       moltbot-validator:
         condition: service_completed_successfully
 
-  # ── CLOUDFLARE TUNNEL ────────────────────────────────────────────
-  cloudflared:
-    image: cloudflare/cloudflared:2025.2.0
-    container_name: pops-cloudflared
-    restart: unless-stopped
-    networks:
-      - frontend
-      - documents
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-
 networks:
   frontend:
     name: pops-frontend

@@ -20,7 +20,7 @@ Cut a release when **any** of these change in a way deployers can observe:
 - network names (`pops-frontend`, `pops-backend`, `pops-documents`)
 - volume names (`pops-sqlite-data`, `pops-redis-data`, `pops-paperless-*`, `pops-metabase-data`)
 - secret names (any of the 10 files in `secrets/`)
-- env vars consumed by compose (`POPS_IMAGE_TAG`, `CLOUDFLARE_TUNNEL_TOKEN`, `PAPERLESS_BASE_URL`, …)
+- env vars consumed by compose (`POPS_IMAGE_TAG`, `POPS_DOMAIN`, `PAPERLESS_BASE_URL`, …)
 - the image names or registries themselves
 
 Internal app refactors that don't change the compose contract don't need a release cut — the `main` and `sha-*` tags are sufficient for fresh deployers.
