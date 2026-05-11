@@ -1,7 +1,7 @@
 # US-11: Contract test matrix
 
 > PRD: [Plugin Contract](README.md)
-> Status: Done
+> Status: Partial — full install-set switching across separate shell builds deferred (see unchecked criterion below).
 
 ## Description
 
@@ -9,21 +9,22 @@ As a platform maintainer, I want CI to exercise the full contract under represen
 
 ## Acceptance Criteria
 
-- [x] Build-time contract violations fail the registry build:
-  - [x] A manifest with missing `id` fails with a message naming `id`.
-  - [x] A manifest with `dependsOn` referencing an absent module fails with both module ids named.
-  - [x] Two manifests claiming the same `uriHandler.types` entry fail with both module ids named.
-  - [x] Two manifests declaring an `aiTools` entry with the same name fail with both module ids named.
-  - [x] Two manifests declaring the same `id` fail.
-- [x] Runtime install-set tests parametrised over `[all-modules, finance-only, no-overlays]` cover every cross-cutting consumer:
-  - [x] With every module installed: settings, features, search, AI tools, and URI resolver return the full set.
-  - [x] With finance-only: every consumer returns only the finance + core entries; absent modules do not appear in any list and `isEnabled` for an absent-module key throws.
-  - [x] With no overlays: the overlay subset of the install set is empty.
-- [x] An E2E spec covers the install-set boundary surfaces today's shell builds:
-  - [x] Direct navigation to an unknown URL renders the 404 page (distinct from `NotInstalledPage`).
-  - [x] Direct navigation to an installed module root renders that module.
-  - [ ] Full install-set switching (rebuild `MODULES` between Playwright runs, then assert `POPS_APPS=finance` shows `NotInstalledPage` for `/media` and zero media search results) is tracked as a follow-up — install set is baked at registry build time, so two-shell switching needs harness changes.
-- [x] CI fails if `packages/module-registry/src/generated.ts` differs from the output of `pnpm registry:build` (the guard shipped with PRD-101 US-02 and is the gate for this story).
+- [x] Build-time contract violations fail the registry build, and every failure message names the offending module id(s):
+  - [x] A manifest missing the id field fails with a message naming the id field.
+  - [x] A manifest depending on an absent module fails with both module ids named.
+  - [x] Two manifests claiming the same URI handler type fail with both module ids named.
+  - [x] Two manifests declaring the same AI tool name fail with both module ids named.
+  - [x] Two manifests declaring the same id fail.
+- [x] Runtime install-set tests parametrised over representative install sets cover every cross-cutting consumer (settings, features, search, AI tools, URI resolver):
+  - [x] With every module installed, every consumer returns the full set.
+  - [x] With a single-module install set, every consumer returns only that module's entries; absent modules do not appear in any list and feature lookups for an absent-module key throw.
+  - [x] With no overlay modules installed, the overlay subset of the install set is empty.
+- [x] An E2E spec covers the install-set boundary surfaces of the shell:
+  - [x] Direct navigation to an unknown URL renders the 404 page, distinct from the "module not installed" page.
+  - [x] Direct navigation to a known-but-not-installed module id renders the "module not installed" page, distinct from the 404 page.
+  - [x] Direct navigation to an installed module's root renders that module.
+  - [ ] Full install-set switching across two shell builds (boot one build with a restricted install set, navigate to an excluded module, expect "module not installed"; boot another build with the full install set, search the excluded module, expect results) is tracked as a follow-up — the install set is baked at registry build time, so two-suite switching needs harness changes.
+- [x] CI fails when the published module registry source diverges from the output of the registry build (guard shipped with PRD-101 US-02).
 
 ## Notes
 

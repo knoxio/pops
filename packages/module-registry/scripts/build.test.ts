@@ -1,19 +1,11 @@
 /**
  * Build-time contract violation matrix (PRD-101 US-11).
  *
- * Layered on top of `lib.test.ts` (which exercises each validator in isolation),
- * this file enforces the user-facing contract surface of `pnpm registry:build`
- * end-to-end via `buildRegistrySource`. Every failure mode listed in the
- * "Edge Cases" table of the PRD has a corresponding assertion here so a
- * regression that papers over the error message — rather than the underlying
- * check — still trips this matrix.
- *
- * Goals:
- *   - Every failure message names the offending module id(s) (operators must
- *     never have to grep manifests to figure out who broke the build).
- *   - Cross-manifest invariants (uniqueness, dependsOn, URI/AI tool collisions)
- *     are enforced before `generated.ts` is emitted; the source string is
- *     never produced for an invalid input.
+ * Invariants enforced here that `lib.test.ts` does not:
+ *   - Every failure message names the offending module id(s) so operators
+ *     never have to grep manifests to locate the break.
+ *   - Cross-manifest invariants are enforced *before* the generated source
+ *     is emitted — an invalid input must never produce a partial artefact.
  */
 import { describe, expect, it } from 'vitest';
 

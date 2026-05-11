@@ -1,25 +1,11 @@
 /**
  * Runtime install-set contract matrix (PRD-101 US-11).
  *
- * Parametrised over three representative install sets — `all-modules`,
- * `finance-only`, `no-overlays` — and exercises every cross-cutting consumer
- * the platform builds on top of `@pops/module-registry`:
- *
- *   - Settings aggregator (`getAllSettingsManifests`)
- *   - Features aggregator (`getFeatureManifests`)
- *   - AI tool aggregator (`listTools`)
- *   - URI resolver dispatch (`resolveUri` + `module-absent` placeholder)
- *
- * Each case swaps `installedManifests()` via `__setInstalledManifestsOverride`
- * to simulate the matching install set without spinning the real env loader
- * or `MODULES` regeneration. Search adapter aggregation is exercised
- * separately under `search-adapters.test.ts` (it joins through
- * `@pops/module-registry`'s `isModuleId` rather than `installedManifests`,
- * and therefore needs `MODULES` itself to vary — not the override).
- *
- * Migration runner coverage lives in `apps/pops-api/src/db/per-module-migrations.test.ts`
- * (landed under PRD-101 US-09); that file uses the same install-set-by-id
- * approach this matrix uses for the in-process consumers.
+ * Why an override instead of regenerating `MODULES`: `MODULES` is `as const`
+ * literal data emitted at registry build time, so per-case mutation is not
+ * possible without a separate build. The override targets the in-process
+ * aggregators only; search-adapter aggregation (which joins through
+ * `isModuleId` on `MODULES` itself) is covered separately.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
