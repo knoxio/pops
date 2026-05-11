@@ -306,6 +306,41 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_ai_inference_daily_provider_model
       ON ai_inference_daily(provider, model);
 
+    CREATE TABLE IF NOT EXISTS ai_alert_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      type TEXT NOT NULL,
+      scope_provider TEXT,
+      scope_model TEXT,
+      threshold_value REAL NOT NULL,
+      window_minutes INTEGER,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ai_alert_rules_type ON ai_alert_rules(type);
+    CREATE INDEX IF NOT EXISTS idx_ai_alert_rules_enabled ON ai_alert_rules(enabled);
+
+    CREATE TABLE IF NOT EXISTS ai_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      rule_id INTEGER REFERENCES ai_alert_rules(id) ON DELETE SET NULL,
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      scope_detail TEXT,
+      metric_value REAL NOT NULL,
+      threshold_value REAL NOT NULL,
+      acknowledged INTEGER NOT NULL DEFAULT 0,
+      acknowledged_at TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ai_alerts_created_at ON ai_alerts(created_at);
+    CREATE INDEX IF NOT EXISTS idx_ai_alerts_type ON ai_alerts(type);
+    CREATE INDEX IF NOT EXISTS idx_ai_alerts_severity ON ai_alerts(severity);
+    CREATE INDEX IF NOT EXISTS idx_ai_alerts_acknowledged ON ai_alerts(acknowledged);
+    CREATE INDEX IF NOT EXISTS idx_ai_alerts_dedupe ON ai_alerts(type, scope_detail, created_at);
+
     CREATE TABLE IF NOT EXISTS transaction_corrections (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       description_pattern TEXT NOT NULL,

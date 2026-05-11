@@ -10,6 +10,10 @@ import { closeDb } from './db.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
 import {
+  registerAiAlertsScheduler,
+  unregisterAiAlertsScheduler,
+} from './modules/core/ai-alerts/scheduler.js';
+import {
   registerAiLogRetentionScheduler,
   unregisterAiLogRetentionScheduler,
 } from './modules/core/ai-observability/scheduler.js';
@@ -67,6 +71,11 @@ registerAiLogRetentionScheduler().catch((err: unknown) => {
   console.error('[ai-retention] Failed to register scheduler:', err);
 });
 
+// Register AI alert evaluator scheduler (PRD-092 US-07)
+registerAiAlertsScheduler().catch((err: unknown) => {
+  console.error('[ai-alerts] Failed to register scheduler:', err);
+});
+
 async function shutdown(signal: string): Promise<void> {
   console.warn(`[pops-api] ${signal} — shutting down`);
   // 1. Stop accepting new requests
@@ -77,6 +86,7 @@ async function shutdown(signal: string): Promise<void> {
   // 3. Stop Thalamus file watcher
   await stopThalamus();
   await unregisterAiLogRetentionScheduler();
+  await unregisterAiAlertsScheduler();
   // 4. Wait for any in-progress rotation cycle to finish
   if (process.env['NODE_ENV'] !== 'test') {
     await waitForCycleEnd();

@@ -1,3 +1,5 @@
+export { aiAlertRules } from './ai-alert-rules.js';
+export { aiAlerts } from './ai-alerts.js';
 export { aiBudgets } from './ai-budgets.js';
 export { aiInferenceDaily } from './ai-inference-daily.js';
 export { aiInferenceLog } from './ai-inference-log.js';

@@ -67,6 +67,10 @@ export interface AiLogRetentionJobData {
   type: 'aiLogRetention';
 }
 
+export interface AiAlertEvaluationJobData {
+  type: 'aiAlertEvaluation';
+}
+
 export interface ClassifyEngramJobData {
   type: 'classifyEngram';
   engramId: string;
@@ -104,7 +108,10 @@ export type GliaJobData =
   | GliaAuditJobData;
 
 export type CurationQueueJobData = ClassifyEngramJobData | GliaJobData | GenericJobData;
-export type DefaultQueueJobData = CrossSourceIndexJobData | AiLogRetentionJobData;
+export type DefaultQueueJobData =
+  | CrossSourceIndexJobData
+  | AiLogRetentionJobData
+  | AiAlertEvaluationJobData;
 
 // ---------------------------------------------------------------------------
 // pops-dead-letter queue

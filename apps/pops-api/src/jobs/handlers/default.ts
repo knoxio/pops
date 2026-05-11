@@ -5,6 +5,7 @@ import {
   CROSS_SOURCE_TYPES,
   CrossSourceIndexer,
 } from '../../modules/cerebrum/thalamus/cross-source.js';
+import { runEvaluation } from '../../modules/core/ai-alerts/evaluator.js';
 import { runRetention } from '../../modules/core/ai-observability/retention.js';
 
 import type { Job } from 'bullmq';
@@ -38,6 +39,20 @@ export async function process(job: Job<DefaultQueueJobData>): Promise<unknown> {
         cutoff: result.cutoff,
       },
       'AI inference log retention complete'
+    );
+    return result;
+  }
+
+  if (job.data.type === 'aiAlertEvaluation') {
+    const result = await runEvaluation();
+    logger.info(
+      {
+        rulesEvaluated: result.rulesEvaluated,
+        candidates: result.candidates,
+        deduped: result.deduped,
+        fired: result.alerts.length,
+      },
+      'AI alert evaluation complete'
     );
     return result;
   }

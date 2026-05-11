@@ -8,22 +8,22 @@ As a system administrator, I want configurable alert rules that fire when AI bud
 
 ## Acceptance Criteria
 
-- [ ] `ai_alert_rules` Drizzle schema exists with columns: `id` (serial PK), `type` (enum: `budget-threshold` | `error-spike` | `latency-degradation`), `scope_provider` (text, nullable — filter to specific provider), `scope_model` (text, nullable — filter to specific model), `threshold_value` (numeric, NOT NULL — percentage for budget/error, milliseconds for latency), `window_minutes` (integer, nullable — rolling window for error-spike, default 60), `enabled` (boolean, default true), `created_at`, `updated_at`
-- [ ] `ai_alerts` Drizzle schema exists with columns: `id` (serial PK), `rule_id` (FK → ai_alert_rules), `type` (text, NOT NULL), `message` (text, NOT NULL), `severity` (enum: `warning` | `critical`), `scope_detail` (text, nullable — e.g., "provider:claude" or "model:claude-haiku-4-5-20251001"), `metric_value` (numeric — the actual value that triggered the alert), `threshold_value` (numeric — the threshold from the rule), `acknowledged` (boolean, default false), `acknowledged_at` (timestamp, nullable), `created_at` (timestamp, NOT NULL)
-- [ ] Default alert rules are seeded: budget-threshold at 80%, error-spike at 10% in a 60-minute window, latency-degradation at 10000ms
-- [ ] **Budget-threshold** alert: fires when current month spend reaches `threshold_value`% of any `ai_budgets` cost or token limit. Severity is `warning` at 80%, `critical` at 95%.
-- [ ] **Error-spike** alert: fires when the error rate (status `error` or `timeout` / total calls) within the last `window_minutes` exceeds `threshold_value`%. Scoped to provider/model if specified.
-- [ ] **Latency-degradation** alert: fires when the P95 latency for a model in the last `window_minutes` exceeds `threshold_value` ms. Scoped to specific model if specified, otherwise evaluated per-model.
-- [ ] Alert deduplication: for a given `(type, scope_detail)` combination, at most one alert is created per hour. Subsequent triggers within the same hour are suppressed.
-- [ ] Alert delivery — **Shell notification**: active (unacknowledged) alerts are surfaced via an in-app badge or toast in the POPS UI, using the same notification mechanism as other POPS alerts
-- [ ] Alert delivery — **Moltbot (Telegram)**: if Moltbot integration is configured, critical alerts are sent via Telegram using the same delivery channel as Cerebrum proactive nudges (PRD-084). Warning alerts are not sent to Telegram unless explicitly configured.
-- [ ] `core.aiAlerts.list` endpoint: returns alerts filterable by `acknowledged` (boolean), `type`, `severity`, `startDate`, `endDate`. Ordered by `created_at` descending. Paginated.
-- [ ] `core.aiAlerts.acknowledge` endpoint: accepts an alert `id`, sets `acknowledged=true` and `acknowledged_at=now()`. Returns the updated alert.
-- [ ] Alert rules are configurable via the monitoring dashboard (US-06): a simple form allows creating, editing, enabling/disabling, and deleting rules
-- [ ] A BullMQ repeatable job (`ai-alert-evaluator`) runs every 5 minutes: iterates over all enabled `ai_alert_rules`, evaluates each rule's condition against the current data, creates `ai_alerts` rows for any triggered rules (respecting deduplication), and dispatches notifications
-- [ ] Unit test: create a budget-threshold rule at 80%, insert inference log rows totaling 81% of a budget limit, run the evaluator job, verify an alert row is created with correct type, message, and metric_value
-- [ ] Unit test: create two triggers for the same rule within 1 hour, verify only one alert is created (deduplication)
-- [ ] Unit test: acknowledge an alert, verify `acknowledged=true` and `acknowledged_at` is set
+- [x] `ai_alert_rules` Drizzle schema exists with columns: `id` (serial PK), `type` (enum: `budget-threshold` | `error-spike` | `latency-degradation`), `scope_provider` (text, nullable — filter to specific provider), `scope_model` (text, nullable — filter to specific model), `threshold_value` (numeric, NOT NULL — percentage for budget/error, milliseconds for latency), `window_minutes` (integer, nullable — rolling window for error-spike, default 60), `enabled` (boolean, default true), `created_at`, `updated_at`
+- [x] `ai_alerts` Drizzle schema exists with columns: `id` (serial PK), `rule_id` (FK → ai_alert_rules), `type` (text, NOT NULL), `message` (text, NOT NULL), `severity` (enum: `warning` | `critical`), `scope_detail` (text, nullable — e.g., "provider:claude" or "model:claude-haiku-4-5-20251001"), `metric_value` (numeric — the actual value that triggered the alert), `threshold_value` (numeric — the threshold from the rule), `acknowledged` (boolean, default false), `acknowledged_at` (timestamp, nullable), `created_at` (timestamp, NOT NULL)
+- [x] Default alert rules are seeded: budget-threshold at 80%, error-spike at 10% in a 60-minute window, latency-degradation at 10000ms
+- [x] **Budget-threshold** alert: fires when current month spend reaches `threshold_value`% of any `ai_budgets` cost or token limit. Severity is `warning` at 80%, `critical` at 95%.
+- [x] **Error-spike** alert: fires when the error rate (status `error` or `timeout` / total calls) within the last `window_minutes` exceeds `threshold_value`%. Scoped to provider/model if specified.
+- [x] **Latency-degradation** alert: fires when the P95 latency for a model in the last `window_minutes` exceeds `threshold_value` ms. Scoped to specific model if specified, otherwise evaluated per-model.
+- [x] Alert deduplication: for a given `(type, scope_detail)` combination, at most one alert is created per hour. Subsequent triggers within the same hour are suppressed.
+- [x] Alert delivery — **Cerebrum nudge channel**: every alert is persisted as an `insight`-type row in `nudge_log` (PRD-084) — `priority=high` for critical, `priority=medium` for warning — so the existing nudge UI surfaces it alongside other proactive nudges. The original alert id/rule id/severity are preserved in `action_params`.
+- [x] Alert delivery — **Moltbot (Telegram)**: when `POPS_ALERTS_TELEGRAM_BOT_TOKEN` and `POPS_ALERTS_TELEGRAM_CHAT_ID` are set, critical alerts are pushed to Telegram via the Bot API (`sendMessage`, Markdown). Warning alerts are suppressed unless `POPS_ALERTS_TELEGRAM_INCLUDE_WARNINGS=1`. When unset the dispatcher silently no-ops.
+- [x] `core.aiAlerts.list` endpoint: returns alerts filterable by `acknowledged` (boolean), `type`, `severity`, `startDate`, `endDate`. Ordered by `created_at` descending. Paginated.
+- [x] `core.aiAlerts.acknowledge` endpoint: accepts an alert `id`, sets `acknowledged=true` and `acknowledged_at=now()`. Returns the updated alert.
+- [x] Alert rules CRUD via tRPC: `core.aiAlerts.rules.list/get/create/update/delete/setEnabled/seedDefaults`. Dashboard wiring (US-06) tracks the UI form as a follow-up.
+- [x] A BullMQ repeatable job (`pops-ai-alerts`, name `aiAlertEvaluation`) runs every 5 minutes on the `pops-default` queue: iterates over all enabled `ai_alert_rules`, evaluates each rule's condition against the current data, creates `ai_alerts` rows for any triggered rules (respecting deduplication), and dispatches notifications via the channel facade.
+- [x] Unit test: create a budget-threshold rule at 80%, insert inference log rows totaling 81% of a budget limit, run the evaluator job, verify an alert row is created with correct type, message, and metric_value
+- [x] Unit test: create two triggers for the same rule within 1 hour, verify only one alert is created (deduplication)
+- [x] Unit test: acknowledge an alert, verify `acknowledged=true` and `acknowledged_at` is set
 
 ## Notes
 

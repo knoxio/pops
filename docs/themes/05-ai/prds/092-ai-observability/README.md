@@ -128,16 +128,16 @@ Build a multi-provider observability layer that tracks every AI inference call a
 
 ## User Stories
 
-| #   | Story                                                         | Summary                                                                                           | Status      | Parallelisable          |
-| --- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------- | ----------------------- |
-| 01  | [us-01-provider-registry](us-01-provider-registry.md)         | Provider and model pricing tables, CRUD API, health check, seed Claude defaults                   | Done        | No (first)              |
-| 02  | [us-02-inference-log-schema](us-02-inference-log-schema.md)   | `ai_inference_log` table, migration from `ai_usage`, budget tables                                | Done        | Yes                     |
-| 03  | [us-03-inference-middleware](us-03-inference-middleware.md)   | Transparent tracking wrapper for all AI calls with automatic provider/model/latency logging       | Partial     | Blocked by us-01, us-02 |
-| 04  | [us-04-budget-enforcement](us-04-budget-enforcement.md)       | Pre-call budget checks, exceeded actions (block/warn/fallback), budget status API                 | Partial     | Blocked by us-02        |
-| 05  | [us-05-stats-and-metrics-api](us-05-stats-and-metrics-api.md) | Replaces existing stats/history API with multi-provider, latency, and quality metrics             | Partial     | Blocked by us-02        |
-| 06  | [us-06-monitoring-dashboard](us-06-monitoring-dashboard.md)   | Enhanced AI Ops dashboard with provider breakdown, latency charts, budget status, quality metrics | Partial     | Blocked by us-05        |
-| 07  | [us-07-alert-rules](us-07-alert-rules.md)                     | Budget threshold, error spike, and latency degradation alerts with notification delivery          | Not started | Blocked by us-05        |
-| 08  | [us-08-log-retention](us-08-log-retention.md)                 | Scheduled cleanup job, configurable retention period, aggregation of aged-out data                | Done        | Blocked by us-02        |
+| #   | Story                                                         | Summary                                                                                           | Status  | Parallelisable          |
+| --- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------- | ----------------------- |
+| 01  | [us-01-provider-registry](us-01-provider-registry.md)         | Provider and model pricing tables, CRUD API, health check, seed Claude defaults                   | Done    | No (first)              |
+| 02  | [us-02-inference-log-schema](us-02-inference-log-schema.md)   | `ai_inference_log` table, migration from `ai_usage`, budget tables                                | Done    | Yes                     |
+| 03  | [us-03-inference-middleware](us-03-inference-middleware.md)   | Transparent tracking wrapper for all AI calls with automatic provider/model/latency logging       | Partial | Blocked by us-01, us-02 |
+| 04  | [us-04-budget-enforcement](us-04-budget-enforcement.md)       | Pre-call budget checks, exceeded actions (block/warn/fallback), budget status API                 | Partial | Blocked by us-02        |
+| 05  | [us-05-stats-and-metrics-api](us-05-stats-and-metrics-api.md) | Replaces existing stats/history API with multi-provider, latency, and quality metrics             | Partial | Blocked by us-02        |
+| 06  | [us-06-monitoring-dashboard](us-06-monitoring-dashboard.md)   | Enhanced AI Ops dashboard with provider breakdown, latency charts, budget status, quality metrics | Partial | Blocked by us-05        |
+| 07  | [us-07-alert-rules](us-07-alert-rules.md)                     | Budget threshold, error spike, and latency degradation alerts with notification delivery          | Done    | Blocked by us-05        |
+| 08  | [us-08-log-retention](us-08-log-retention.md)                 | Scheduled cleanup job, configurable retention period, aggregation of aged-out data                | Done    | Blocked by us-02        |
 
 US-01 and US-02 can parallelise. US-03 merges them. US-04, US-05, US-08 can parallelise after US-02. US-06 and US-07 depend on the metrics API (US-05).
 

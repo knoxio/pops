@@ -73,6 +73,7 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0052_budgets_active_default_zero': 'finance',
   '0053_ai_inference_daily': 'core',
   '0054_service_accounts': 'core',
+  '0055_ai_alert_rules': 'core',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

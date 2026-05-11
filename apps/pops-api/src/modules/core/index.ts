@@ -5,6 +5,7 @@
  * not included here.
  */
 import { router } from '../../trpc.js';
+import { aiAlertsRouter } from './ai-alerts/router.js';
 import { aiBudgetsRouter } from './ai-budgets/router.js';
 import { aiObservabilityRouter } from './ai-observability/router.js';
 import { aiProvidersRouter } from './ai-providers/router.js';
@@ -34,6 +35,7 @@ export const coreRouter = router({
   aiObservability: aiObservabilityRouter,
   aiProviders: aiProvidersRouter,
   aiBudgets: aiBudgetsRouter,
+  aiAlerts: aiAlertsRouter,
   corrections: correctionsRouter,
   jobs: jobsRouter,
   embeddings: embeddingsRouter,

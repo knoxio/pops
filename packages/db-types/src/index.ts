@@ -7,6 +7,8 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
+import type { aiAlertRules } from './schema/ai-alert-rules.js';
+import type { aiAlerts } from './schema/ai-alerts.js';
 import type { aiBudgets } from './schema/ai-budgets.js';
 import type { aiInferenceLog } from './schema/ai-inference-log.js';
 import type { aiModelPricing } from './schema/ai-model-pricing.js';
@@ -57,6 +59,8 @@ import type { wishList } from './schema/wishlist.js';
 
 // Re-export Drizzle table objects for use in queries
 export {
+  aiAlertRules,
+  aiAlerts,
   aiBudgets,
   aiInferenceDaily,
   aiInferenceLog,
@@ -130,6 +134,10 @@ export type AiModelPricingRow = InferSelectModel<typeof aiModelPricing>;
 export type AiModelPricingInsert = InferInsertModel<typeof aiModelPricing>;
 export type AiBudgetRow = InferSelectModel<typeof aiBudgets>;
 export type AiBudgetInsert = InferInsertModel<typeof aiBudgets>;
+export type AiAlertRuleRow = InferSelectModel<typeof aiAlertRules>;
+export type AiAlertRuleInsert = InferInsertModel<typeof aiAlertRules>;
+export type AiAlertRow = InferSelectModel<typeof aiAlerts>;
+export type AiAlertInsert = InferInsertModel<typeof aiAlerts>;
 export type EmbeddingRow = InferSelectModel<typeof embeddings>;
 export type EmbeddingInsert = InferInsertModel<typeof embeddings>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
