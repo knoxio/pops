@@ -13,10 +13,12 @@ import { mapServiceError, toolError, toolSuccess } from './result.js';
 
 import type { AiToolResult } from '@pops/types';
 
+const PLEXUS_SOURCE_PATTERN = /^plexus:.+$/;
+
 function isEngramSource(value: unknown): value is EngramSource {
   if (typeof value !== 'string') return false;
   if ((ENGRAM_SOURCES as readonly string[]).includes(value)) return true;
-  return value.startsWith('plexus:');
+  return PLEXUS_SOURCE_PATTERN.test(value);
 }
 
 export async function handleCerebrumQuickCapture(
@@ -51,8 +53,10 @@ export const cerebrumQuickCaptureSchema = {
   properties: {
     text: {
       type: 'string' as const,
+      minLength: 1,
+      pattern: '\\S',
       description:
-        'Raw text to capture. Stored immediately as a capture engram; classification, entity extraction, and scope inference run asynchronously.',
+        'Raw text to capture. Must contain at least one non-whitespace character. Stored immediately as a capture engram; classification, entity extraction, and scope inference run asynchronously.',
     },
     source: {
       type: 'string' as const,

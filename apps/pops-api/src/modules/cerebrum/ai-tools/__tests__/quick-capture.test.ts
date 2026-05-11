@@ -93,6 +93,12 @@ describe('handleCerebrumQuickCapture', () => {
     expect(quickCaptureCalls[0]?.source).toBeUndefined();
   });
 
+  it('rejects a bare `plexus:` source (the pattern requires a name)', async () => {
+    quickCaptureCalls.length = 0;
+    await handleCerebrumQuickCapture({ text: 'no name', source: 'plexus:' });
+    expect(quickCaptureCalls[0]?.source).toBeUndefined();
+  });
+
   it('maps a thrown ValidationError to a VALIDATION_ERROR tool result', async () => {
     quickCaptureImpl = async () => {
       throw new ValidationError({ message: 'engram body is empty' });
