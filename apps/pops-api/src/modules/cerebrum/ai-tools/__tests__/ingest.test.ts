@@ -243,4 +243,33 @@ describe('handleCerebrumIngest — JSON metadata extraction (PRD-081 US-02 AC #7
     expect(typeof forwardedBody).toBe('string');
     expect((forwardedBody as string).startsWith('```json')).toBe(true);
   });
+
+  it('rejects prototype-pollution keys when lifting JSON into customFields', async () => {
+    submitCalls.length = 0;
+    const json = JSON.stringify({
+      data: 'kept',
+      __proto__: { polluted: true },
+      constructor: { tampered: true },
+      prototype: 'no',
+    });
+    await handleCerebrumIngest({ body: json });
+
+    const call = submitCalls[0];
+    const customFields = call?.['customFields'];
+    expect(customFields).toEqual({ data: 'kept' });
+    expect(Object.getPrototypeOf({}).polluted).toBeUndefined();
+  });
+
+  it('trims whitespace from JSON-derived scopes/tags', async () => {
+    submitCalls.length = 0;
+    const json = JSON.stringify({
+      scopes: ['  work.sprint  ', ' personal '],
+      tags: [' retro ', '  raw'],
+    });
+    await handleCerebrumIngest({ body: json });
+
+    const call = submitCalls[0];
+    expect(call?.['scopes']).toEqual(['work.sprint', 'personal']);
+    expect(call?.['tags']).toEqual(['retro', 'raw']);
+  });
 });

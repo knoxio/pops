@@ -1,13 +1,12 @@
 /**
  * cerebrum.ingest — ingest content into the engram knowledge base.
  *
- * Delegates to IngestService. Also handles structured JSON detection: when the
- * body parses as a JSON object, POPS-native fields (`title`, `type`, `scopes`,
- * `tags`) are lifted into the ingest request (unless the caller provided
- * their own) and remaining keys land in `customFields` so they end up as
- * frontmatter (PRD-081 US-02 AC #7).
+ * Delegates to IngestService. JSON detection and metadata lifting live in
+ * `ingest-json.ts`; this file handles arg parsing, tag merging, and the
+ * MCP-side request/response envelope.
  */
 import { IngestService } from '../ingest/pipeline.js';
+import { handleJsonBody } from './ingest-json.js';
 import { mapServiceError, toolError, toolSuccess } from './result.js';
 
 import type { AiToolResult } from '@pops/types';
@@ -18,131 +17,6 @@ interface IngestArgs {
   type?: string;
   scopes?: string[];
   tags?: string[];
-}
-
-interface JsonBodyResult {
-  body: string;
-  derivedTitle: string | null;
-  derivedType: string | null;
-  derivedScopes: string[] | null;
-  derivedTags: string[] | null;
-  customFields: Record<string, unknown>;
-}
-
-const TITLE_KEYS = ['title', 'name', 'subject', 'label'] as const;
-
-/**
- * Keys that map directly onto POPS engram frontmatter and ingest request
- * params. When the structured JSON body contains them, they are lifted out
- * rather than being stuffed back into `customFields`.
- */
-const NATIVE_FIELD_KEYS = new Set<string>(['title', 'type', 'scopes', 'tags']);
-
-/** Try to extract a title from a JSON object's well-known keys, falling back to a key summary. */
-function deriveTitleFromObject(obj: Record<string, unknown>): string | null {
-  for (const key of TITLE_KEYS) {
-    const val = obj[key];
-    if (typeof val === 'string' && val.trim().length > 0) {
-      return val.trim().slice(0, 120);
-    }
-  }
-
-  const keys = Object.keys(obj);
-  if (keys.length > 0) {
-    return `JSON: ${keys.slice(0, 5).join(', ')}${keys.length > 5 ? '…' : ''}`;
-  }
-
-  return null;
-}
-
-function emptyJsonResult(body: string): JsonBodyResult {
-  return {
-    body,
-    derivedTitle: null,
-    derivedType: null,
-    derivedScopes: null,
-    derivedTags: null,
-    customFields: {},
-  };
-}
-
-function pickStringArray(value: unknown): string[] | null {
-  if (!Array.isArray(value)) return null;
-  const out = value.filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
-  return out.length > 0 ? out : null;
-}
-
-/**
- * Pull the native engram fields out of a parsed JSON object. Caller-supplied
- * values still win at the handler level — this just surfaces what the JSON
- * itself offered.
- */
-function extractNativeFields(obj: Record<string, unknown>): {
-  derivedTitle: string | null;
-  derivedType: string | null;
-  derivedScopes: string[] | null;
-  derivedTags: string[] | null;
-} {
-  const titleRaw = obj['title'];
-  const derivedTitle =
-    typeof titleRaw === 'string' && titleRaw.trim().length > 0
-      ? titleRaw.trim().slice(0, 120)
-      : deriveTitleFromObject(obj);
-  const typeRaw = obj['type'];
-  const derivedType =
-    typeof typeRaw === 'string' && typeRaw.trim().length > 0 ? typeRaw.trim() : null;
-  return {
-    derivedTitle,
-    derivedType,
-    derivedScopes: pickStringArray(obj['scopes']),
-    derivedTags: pickStringArray(obj['tags']),
-  };
-}
-
-function extractCustomFields(obj: Record<string, unknown>): Record<string, unknown> {
-  const customFields: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (NATIVE_FIELD_KEYS.has(key)) continue;
-    customFields[key] = value;
-  }
-  return customFields;
-}
-
-function tryParseJson(trimmed: string): unknown | undefined {
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Detect structured JSON and convert to Markdown. When the body is a plain
- * JSON object, POPS-native fields are lifted out and the remaining keys are
- * returned as `customFields` so they can be persisted into the engram
- * frontmatter. Arrays and non-object JSON are still rendered as a fenced
- * code block but contribute no extracted metadata.
- */
-function handleJsonBody(body: string): JsonBodyResult {
-  const trimmed = body.trim();
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-    return emptyJsonResult(body);
-  }
-  const parsed = tryParseJson(trimmed);
-  if (parsed === undefined) return emptyJsonResult(body);
-
-  const mdBody = `\`\`\`json\n${trimmed}\n\`\`\``;
-  const isPlainObject = parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed);
-  if (!isPlainObject) {
-    return { ...emptyJsonResult(mdBody), body: mdBody };
-  }
-
-  const obj = parsed as Record<string, unknown>;
-  return {
-    body: mdBody,
-    ...extractNativeFields(obj),
-    customFields: extractCustomFields(obj),
-  };
 }
 
 /**
@@ -247,5 +121,5 @@ export const cerebrumIngestSchema = {
   required: ['body'] as const,
 };
 
-// Exported for testing
-export { handleJsonBody };
+// Re-export for tests that exercise the JSON detector directly.
+export { handleJsonBody } from './ingest-json.js';

@@ -10,7 +10,7 @@ As an AI agent (Claude Code session or external tool), I want to write engrams t
 ## Acceptance Criteria
 
 - [x] An MCP tool `cerebrum.ingest` is registered with the pops MCP server, accepting parameters: `body` (required), `title` (optional), `type` (optional), `scopes` (optional string array), `tags` (optional string array)
-- [x] An MCP tool `cerebrum.quick_capture` is registered for lightweight capture, accepting a `text` parameter (and optional `source`) — delegates to `IngestService.quickCapture`
+- [x] An MCP tool `cerebrum.quick_capture` is registered for lightweight capture, accepting a `text` parameter (and optional `source`) and returning the captured engram's id, file path, type, and scopes
 - [x] The tRPC procedure `cerebrum.ingest.submit` accepts the full `IngestionRequest` schema and runs the complete pipeline (normalise, classify, extract, scope, deduplicate, write)
 - [x] When `type` is omitted, the pipeline runs Cortex classification on the body and assigns the inferred type
 - [x] When `scopes` are omitted, the pipeline runs scope inference (source-based rules first, then LLM-based analysis)
