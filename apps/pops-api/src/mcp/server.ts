@@ -18,12 +18,12 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 import { mcpError } from './errors.js';
-import { dispatchTool, toolDefinitions } from './tools/index.js';
+import { dispatchTool, listTools } from './tools/index.js';
 
 const server = new Server({ name: 'cerebrum', version: '1.0.0' }, { capabilities: { tools: {} } });
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: toolDefinitions,
+  tools: listTools(),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {

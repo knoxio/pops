@@ -1,3 +1,4 @@
+import { cerebrumAiTools } from '../../mcp/tools/manifest.js';
 import { mergeRouters, router } from '../../trpc.js';
 import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';
@@ -45,6 +46,6 @@ export const manifest: ModuleManifest<typeof cerebrumRouter> = {
   surfaces: ['app'],
   description:
     'Engram storage, retrieval, ingest/emit, plexus, reflex, glia — knowledge graph and agents.',
-  backend: { router: cerebrumRouter },
+  backend: { router: cerebrumRouter, aiTools: cerebrumAiTools },
   settings: [cerebrumManifest],
 };
