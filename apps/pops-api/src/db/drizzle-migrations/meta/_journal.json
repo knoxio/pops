@@ -393,6 +393,13 @@
       "when": 1778475109881,
       "tag": "0055_ai_alert_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1778485800000,
+      "tag": "0056_ai_observability_repair",
+      "breakpoints": true
     }
   ]
 }

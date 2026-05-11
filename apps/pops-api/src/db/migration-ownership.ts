@@ -74,6 +74,7 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0053_ai_inference_daily': 'core',
   '0054_service_accounts': 'core',
   '0055_ai_alert_rules': 'core',
+  '0056_ai_observability_repair': 'core',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

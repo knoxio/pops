@@ -51,6 +51,12 @@ export const coreMigrationTags: readonly string[] = [
   '0054_service_accounts',
   // ai_alert_rules + ai_alerts (PRD-092 US-07).
   '0055_ai_alert_rules',
+  // Repair migration for 0034 — restores ai_providers / ai_model_pricing
+  // / ai_budgets + Claude seeds on DBs where 0034 was partially applied
+  // (initializeSchema(db) won the race against the journal walk on some
+  // long-lived prod DBs). Idempotent: CREATE TABLE IF NOT EXISTS +
+  // INSERT OR IGNORE. See knoxio/pops#2603.
+  '0056_ai_observability_repair',
 ];
 
 export const coreMigrations: readonly MigrationDescriptor[] = drizzleMigrations(coreMigrationTags);
