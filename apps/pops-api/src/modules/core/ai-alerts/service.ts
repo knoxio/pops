@@ -80,7 +80,7 @@ export function updateRule(input: UpdateAlertRuleInput): AlertRule {
   if (input.scopeModel !== undefined) patch.scopeModel = input.scopeModel;
   if (input.thresholdValue !== undefined) patch.thresholdValue = input.thresholdValue;
   if (input.windowMinutes !== undefined) patch.windowMinutes = input.windowMinutes;
-  if (input.enabled !== undefined) patch.enabled = input.enabled ? 1 : 0;
+  if (input.enabled !== undefined) patch.enabled = input.enabled === false ? 0 : 1;
   const result = db
     .update(aiAlertRules)
     .set(patch)
