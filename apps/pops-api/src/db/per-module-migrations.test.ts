@@ -1,14 +1,6 @@
 /**
- * Per-module migration runner tests (PRD-101 US-09, #2543).
- *
- * Exercises the filter logic against a real (in-memory) drizzle journal:
- *   - migrations owned by absent modules are skipped and not recorded
- *   - re-running with the same install set is a no-op
- *   - adding an absent module on a re-run applies its previously-skipped tags
- *   - orphan tags (recorded but owned by an absent module) emit a warning
- *
- * Tests use synthetic manifests + journal entries written to a temp dir so
- * they don't depend on the live ownership map evolving over time.
+ * Synthetic manifests + journal entries are written to a temp dir so tests
+ * don't depend on the live ownership map evolving over time.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -70,10 +62,20 @@ function writeJournal(dir: string, tags: readonly { tag: string; sql: string }[]
 }
 
 /**
- * Override the module-under-test's view of the drizzle directory by
- * importing it after mocking the migrations-runner export. Returns the
- * mocked module reference so tests can call its exports directly.
+ * Guarantees the DB handle is closed even if an assertion fails — otherwise
+ * a leaked handle can keep the temp dir busy on Windows / make subsequent
+ * tests flaky. Awaits async callbacks before closing so the handle remains
+ * valid for the duration of the callback.
  */
+async function withDb<T>(run: (db: BetterSqlite3.Database) => T | Promise<T>): Promise<T> {
+  const db = new BetterSqlite3(dbPath);
+  try {
+    return await run(db);
+  } finally {
+    db.close();
+  }
+}
+
 async function loadRunnerWithJournalDir(
   drizzleDir: string
 ): Promise<typeof import('./per-module-migrations.js')> {
@@ -132,46 +134,42 @@ describe('runPerModuleMigrations', () => {
     ]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const a = makeManifest('a', [
-      { id: '001_a_setup', sql: 'CREATE TABLE a (id INTEGER);' },
-      { id: '003_a_extra', sql: 'CREATE TABLE a_extra (id INTEGER);' },
-    ]);
-    const b = makeManifest('b', [{ id: '002_b_setup', sql: 'CREATE TABLE b (id INTEGER);' }]);
+    await withDb((db) => {
+      const a = makeManifest('a', [
+        { id: '001_a_setup', sql: 'CREATE TABLE a (id INTEGER);' },
+        { id: '003_a_extra', sql: 'CREATE TABLE a_extra (id INTEGER);' },
+      ]);
+      const b = makeManifest('b', [{ id: '002_b_setup', sql: 'CREATE TABLE b (id INTEGER);' }]);
 
-    const knownOwners = mod.migrationOwnershipMap([a, b]);
-    const result = mod.runPerModuleMigrations(db, [a], knownOwners);
+      const knownOwners = mod.migrationOwnershipMap([a, b]);
+      const result = mod.runPerModuleMigrations(db, [a], knownOwners);
 
-    expect(result.applied).toEqual(['001_a_setup', '003_a_extra']);
-    expect(result.skipped).toEqual(['002_b_setup']);
+      expect(result.applied).toEqual(['001_a_setup', '003_a_extra']);
+      expect(result.skipped).toEqual(['002_b_setup']);
 
-    // Tables for a exist; table for b doesn't.
-    const tables = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-      .all() as { name: string }[];
-    const names = tables.map((t) => t.name);
-    expect(names).toContain('a');
-    expect(names).toContain('a_extra');
-    expect(names).not.toContain('b');
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        .all() as { name: string }[];
+      const names = tables.map((t) => t.name);
+      expect(names).toContain('a');
+      expect(names).toContain('a_extra');
+      expect(names).not.toContain('b');
 
-    // Re-running with the same install set must be a no-op (alreadyApplied).
-    const second = mod.runPerModuleMigrations(db, [a], knownOwners);
-    expect(second.applied).toEqual([]);
-    expect(second.skipped).toEqual(['002_b_setup']);
-    expect(second.alreadyApplied).toEqual(['001_a_setup', '003_a_extra']);
+      const second = mod.runPerModuleMigrations(db, [a], knownOwners);
+      expect(second.applied).toEqual([]);
+      expect(second.skipped).toEqual(['002_b_setup']);
+      expect(second.alreadyApplied).toEqual(['001_a_setup', '003_a_extra']);
 
-    // Adding module b on the third run brings in the previously-skipped tag.
-    const third = mod.runPerModuleMigrations(db, [a, b], knownOwners);
-    expect(third.applied).toEqual(['002_b_setup']);
-    expect(third.skipped).toEqual([]);
-    expect(third.alreadyApplied).toEqual(['001_a_setup', '003_a_extra']);
+      const third = mod.runPerModuleMigrations(db, [a, b], knownOwners);
+      expect(third.applied).toEqual(['002_b_setup']);
+      expect(third.skipped).toEqual([]);
+      expect(third.alreadyApplied).toEqual(['001_a_setup', '003_a_extra']);
 
-    const tablesAfter = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-      .all() as { name: string }[];
-    expect(tablesAfter.map((t) => t.name)).toContain('b');
-
-    db.close();
+      const tablesAfter = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        .all() as { name: string }[];
+      expect(tablesAfter.map((t) => t.name)).toContain('b');
+    });
   });
 
   it('does not record skipped migrations in __drizzle_migrations', async () => {
@@ -182,19 +180,18 @@ describe('runPerModuleMigrations', () => {
     ]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const a = makeManifest('a', [{ id: '001_a', sql: 'CREATE TABLE x (id INTEGER);' }]);
-    const b = makeManifest('b', [{ id: '002_b', sql: 'CREATE TABLE y (id INTEGER);' }]);
-    const knownOwners = mod.migrationOwnershipMap([a, b]);
+    await withDb((db) => {
+      const a = makeManifest('a', [{ id: '001_a', sql: 'CREATE TABLE x (id INTEGER);' }]);
+      const b = makeManifest('b', [{ id: '002_b', sql: 'CREATE TABLE y (id INTEGER);' }]);
+      const knownOwners = mod.migrationOwnershipMap([a, b]);
 
-    mod.runPerModuleMigrations(db, [a], knownOwners);
+      mod.runPerModuleMigrations(db, [a], knownOwners);
 
-    const recorded = db.prepare('SELECT COUNT(*) AS cnt FROM __drizzle_migrations').get() as {
-      cnt: number;
-    };
-    expect(recorded.cnt).toBe(1);
-
-    db.close();
+      const recorded = db.prepare('SELECT COUNT(*) AS cnt FROM __drizzle_migrations').get() as {
+        cnt: number;
+      };
+      expect(recorded.cnt).toBe(1);
+    });
   });
 
   it('reports unowned tags without applying them', async () => {
@@ -205,26 +202,24 @@ describe('runPerModuleMigrations', () => {
     ]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const a = makeManifest('a', [{ id: '002_a', sql: 'CREATE TABLE a (id INTEGER);' }]);
+    await withDb((db) => {
+      const a = makeManifest('a', [{ id: '002_a', sql: 'CREATE TABLE a (id INTEGER);' }]);
 
-    const result = mod.runPerModuleMigrations(db, [a]);
+      const result = mod.runPerModuleMigrations(db, [a]);
 
-    expect(result.applied).toEqual(['002_a']);
-    expect(result.unowned).toEqual(['001_orphan']);
-    // orphan_t table not created.
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
-      name: string;
-    }[];
-    expect(tables.map((t) => t.name)).not.toContain('orphan_t');
-
-    db.close();
+      expect(result.applied).toEqual(['002_a']);
+      expect(result.unowned).toEqual(['001_orphan']);
+      const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+        name: string;
+      }[];
+      expect(tables.map((t) => t.name)).not.toContain('orphan_t');
+    });
   });
 
   it('refreshes the applied-hash cache after each insert (handles identical SQL bodies)', async () => {
-    // Two distinct tags that share the same SQL body — drizzle generates
-    // these for idempotent re-creation migrations. Without the cache update
-    // after insert, the second entry would be re-executed and fail.
+    // Drizzle generates duplicate-SQL entries for idempotent re-creation
+    // migrations; without the cache update the second entry would re-execute
+    // and crash on non-idempotent statements.
     const dir = fakeJournalDir();
     const sharedSql = 'CREATE TABLE IF NOT EXISTS shared_t (id INTEGER);';
     writeJournal(dir, [
@@ -233,20 +228,17 @@ describe('runPerModuleMigrations', () => {
     ]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const a = makeManifest('a', [
-      { id: '001_first', sql: sharedSql },
-      { id: '002_second', sql: sharedSql },
-    ]);
+    await withDb((db) => {
+      const a = makeManifest('a', [
+        { id: '001_first', sql: sharedSql },
+        { id: '002_second', sql: sharedSql },
+      ]);
 
-    const result = mod.runPerModuleMigrations(db, [a]);
+      const result = mod.runPerModuleMigrations(db, [a]);
 
-    // First tag applies; second is recognised as already applied (same hash)
-    // because the cache was updated mid-loop.
-    expect(result.applied).toEqual(['001_first']);
-    expect(result.alreadyApplied).toEqual(['002_second']);
-
-    db.close();
+      expect(result.applied).toEqual(['001_first']);
+      expect(result.alreadyApplied).toEqual(['002_second']);
+    });
   });
 
   it('exposes a by-owner variant for boot-time use', async () => {
@@ -257,19 +249,18 @@ describe('runPerModuleMigrations', () => {
     ]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const owners = new Map([
-      ['001_a', 'a'],
-      ['002_b', 'b'],
-    ]);
-    const installedIds = new Set(['a']);
+    await withDb((db) => {
+      const owners = new Map([
+        ['001_a', 'a'],
+        ['002_b', 'b'],
+      ]);
+      const installedIds = new Set(['a']);
 
-    const result = mod.runPerModuleMigrationsByOwner(db, installedIds, owners);
+      const result = mod.runPerModuleMigrationsByOwner(db, installedIds, owners);
 
-    expect(result.applied).toEqual(['001_a']);
-    expect(result.skipped).toEqual(['002_b']);
-
-    db.close();
+      expect(result.applied).toEqual(['001_a']);
+      expect(result.skipped).toEqual(['002_b']);
+    });
   });
 
   it('honours --> statement-breakpoint markers in migration SQL', async () => {
@@ -282,20 +273,19 @@ describe('runPerModuleMigrations', () => {
     writeJournal(dir, [{ tag: '001_multi', sql: breakpointSql }]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const a = makeManifest('a', [{ id: '001_multi', sql: breakpointSql }]);
+    await withDb((db) => {
+      const a = makeManifest('a', [{ id: '001_multi', sql: breakpointSql }]);
 
-    const result = mod.runPerModuleMigrations(db, [a]);
+      const result = mod.runPerModuleMigrations(db, [a]);
 
-    expect(result.applied).toEqual(['001_multi']);
-    const tables = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-      .all() as { name: string }[];
-    const names = tables.map((t) => t.name);
-    expect(names).toContain('alpha');
-    expect(names).toContain('beta');
-
-    db.close();
+      expect(result.applied).toEqual(['001_multi']);
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        .all() as { name: string }[];
+      const names = tables.map((t) => t.name);
+      expect(names).toContain('alpha');
+      expect(names).toContain('beta');
+    });
   });
 });
 
@@ -308,26 +298,25 @@ describe('warnOrphanMigrations', () => {
     ]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const a = makeManifest('a', [{ id: '001_a', sql: 'CREATE TABLE x (id INTEGER);' }]);
-    const b = makeManifest('b', [{ id: '002_b', sql: 'CREATE TABLE y (id INTEGER);' }]);
-
-    const knownOwners = mod.migrationOwnershipMap([a, b]);
-
-    // Bootstrap: install both, then drop b from the manifest list.
-    mod.runPerModuleMigrations(db, [a, b], knownOwners);
-
     const { logger } = await import('../lib/logger.js');
-    const warnSpy = vi.spyOn(logger, 'warn');
 
-    const orphans = mod.warnOrphanMigrations(db, [a], knownOwners);
+    await withDb(async (db) => {
+      const a = makeManifest('a', [{ id: '001_a', sql: 'CREATE TABLE x (id INTEGER);' }]);
+      const b = makeManifest('b', [{ id: '002_b', sql: 'CREATE TABLE y (id INTEGER);' }]);
 
-    expect(orphans).toEqual(['002_b']);
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    const [payload] = warnSpy.mock.calls[0] ?? [];
-    expect(payload).toMatchObject({ orphanMigrations: ['002_b'] });
+      const knownOwners = mod.migrationOwnershipMap([a, b]);
 
-    db.close();
+      mod.runPerModuleMigrations(db, [a, b], knownOwners);
+
+      const warnSpy = vi.spyOn(logger, 'warn');
+
+      const orphans = mod.warnOrphanMigrations(db, [a], knownOwners);
+
+      expect(orphans).toEqual(['002_b']);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      const [payload] = warnSpy.mock.calls[0] ?? [];
+      expect(payload).toMatchObject({ orphanMigrations: ['002_b'] });
+    });
   });
 
   it('does not warn when every recorded migration is owned by an installed module', async () => {
@@ -335,18 +324,18 @@ describe('warnOrphanMigrations', () => {
     writeJournal(dir, [{ tag: '001_a', sql: 'CREATE TABLE x (id INTEGER);' }]);
     const mod = await loadRunnerWithJournalDir(dir);
 
-    const db = new BetterSqlite3(dbPath);
-    const a = makeManifest('a', [{ id: '001_a', sql: 'CREATE TABLE x (id INTEGER);' }]);
-
-    mod.runPerModuleMigrations(db, [a]);
-
     const { logger } = await import('../lib/logger.js');
-    const warnSpy = vi.spyOn(logger, 'warn');
-    const orphans = mod.warnOrphanMigrations(db, [a]);
 
-    expect(orphans).toEqual([]);
-    expect(warnSpy).not.toHaveBeenCalled();
+    await withDb(async (db) => {
+      const a = makeManifest('a', [{ id: '001_a', sql: 'CREATE TABLE x (id INTEGER);' }]);
 
-    db.close();
+      mod.runPerModuleMigrations(db, [a]);
+
+      const warnSpy = vi.spyOn(logger, 'warn');
+      const orphans = mod.warnOrphanMigrations(db, [a]);
+
+      expect(orphans).toEqual([]);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
   });
 });

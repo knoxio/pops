@@ -26,6 +26,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { z } from 'zod';
+
 import { logger } from '../lib/logger.js';
 import { DRIZZLE_MIGRATIONS_DIRECTORY } from './migrations-runner.js';
 
@@ -33,19 +35,21 @@ import type BetterSqlite3 from 'better-sqlite3';
 
 import type { ModuleManifest } from '@pops/types';
 
-interface JournalEntry {
-  idx: number;
-  version: string;
-  when: number;
-  tag: string;
-  breakpoints: boolean;
-}
+const journalEntrySchema = z.object({
+  idx: z.number(),
+  version: z.string(),
+  when: z.number(),
+  tag: z.string(),
+  breakpoints: z.boolean(),
+});
 
-interface Journal {
-  version: string;
-  dialect: string;
-  entries: JournalEntry[];
-}
+const journalSchema = z.object({
+  version: z.string(),
+  dialect: z.string(),
+  entries: z.array(journalEntrySchema),
+});
+
+type Journal = z.infer<typeof journalSchema>;
 
 /**
  * Read the drizzle journal. Returns an empty entry list if the file is
@@ -53,15 +57,21 @@ interface Journal {
  * artefacts yet.
  */
 export function readJournal(): Journal {
+  const journalPath = join(DRIZZLE_MIGRATIONS_DIRECTORY, 'meta', '_journal.json');
+  let raw: string;
   try {
-    const journalPath = join(DRIZZLE_MIGRATIONS_DIRECTORY, 'meta', '_journal.json');
-    return JSON.parse(readFileSync(journalPath, 'utf8')) as Journal;
+    raw = readFileSync(journalPath, 'utf8');
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       return { version: '7', dialect: 'sqlite', entries: [] };
     }
     throw err;
   }
+  const parsed = journalSchema.safeParse(JSON.parse(raw));
+  if (!parsed.success) {
+    throw new Error(`Invalid drizzle journal at ${journalPath}: ${parsed.error.message}`);
+  }
+  return parsed.data;
 }
 
 /**

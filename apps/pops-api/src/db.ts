@@ -21,7 +21,7 @@ import {
 import { initializeSchema } from './db/schema.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { isVecAvailable, tryLoadVecExtension } from './db/vec-loader.js';
-import { readInstalledModules } from './modules/env-modules.js';
+import { readInstalledModules, type InstalledModules } from './modules/env-modules.js';
 
 let prodDb: BetterSqlite3.Database | null = null;
 
@@ -77,6 +77,15 @@ function isVecMigrationError(err: unknown): err is Error {
 }
 
 /**
+ * Build the install-set of module ids (core + installed apps + installed
+ * overlays). Centralised because both the migration runner and the
+ * orphan-warning path need the same view of which modules are installed.
+ */
+function makeInstalledIds(installed: InstalledModules): Set<string> {
+  return new Set<string>(['core', ...installed.apps, ...installed.overlays]);
+}
+
+/**
  * Apply drizzle journal entries owned by the current install set.
  *
  * Replaces the historical `migrate(drizzleDb, { migrationsFolder })` call:
@@ -98,8 +107,7 @@ function applyDrizzleMigrations(db: BetterSqlite3.Database, vecLoaded: boolean):
     if (!hasDrizzleMigrationsTable(db)) {
       markDrizzleBaselineMigrationsApplied(db);
     }
-    const installed = readInstalledModules();
-    const installedIds = new Set<string>(['core', ...installed.apps, ...installed.overlays]);
+    const installedIds = makeInstalledIds(readInstalledModules());
     runPerModuleMigrationsByOwner(db, installedIds, migrationOwners);
   } catch (err) {
     if (!vecLoaded && isVecMigrationError(err)) {
@@ -125,8 +133,7 @@ function applyDrizzleMigrations(db: BetterSqlite3.Database, vecLoaded: boolean):
  */
 function warnAbsentModuleMigrations(db: BetterSqlite3.Database): void {
   try {
-    const installed = readInstalledModules();
-    const installedIds = new Set<string>(['core', ...installed.apps, ...installed.overlays]);
+    const installedIds = makeInstalledIds(readInstalledModules());
     warnOrphanMigrationsByOwner(db, installedIds, migrationOwners);
   } catch (err) {
     // Non-fatal — the warning is informational; if env parsing fails the
