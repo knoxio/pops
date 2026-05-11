@@ -12,10 +12,9 @@ import { useTranslation } from 'react-i18next';
 import { Button, EmptyState, Input, PageHeader, Skeleton } from '@pops/ui';
 
 import { useEngramListModel } from '../engrams/useEngramListModel';
+import { TOUCH_TARGET_MIN_HEIGHT } from '../utils/touchTarget';
 import { EngramFilterBar } from './engrams-list/EngramFilterBar';
 import { EngramTable } from './engrams-list/EngramTable';
-
-const TOUCH_TARGET_MIN_HEIGHT = 'min-h-[44px]';
 
 type Model = ReturnType<typeof useEngramListModel>;
 

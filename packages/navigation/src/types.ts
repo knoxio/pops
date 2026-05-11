@@ -17,6 +17,7 @@ export type AppName = 'finance' | 'media' | 'inventory' | 'ai' | 'cerebrum';
  * Add a name here AND add the corresponding import + entry in icon-map.ts.
  */
 export type IconName =
+  | 'Activity'
   | 'ArrowLeftRight'
   | 'BarChart3'
   | 'Bell'
@@ -42,12 +43,14 @@ export type IconName =
   | 'Network'
   | 'Package'
   | 'PiggyBank'
+  | 'Plug'
   | 'Search'
   | 'Settings'
   | 'ShieldCheck'
   | 'Shuffle'
   | 'Star'
-  | 'Trophy';
+  | 'Trophy'
+  | 'Zap';
 
 /** An entity the user is currently viewing (e.g. a specific movie or transaction). */
 export interface AppContextEntity {

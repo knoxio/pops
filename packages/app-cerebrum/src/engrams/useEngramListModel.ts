@@ -11,9 +11,11 @@
  * consumer of the returned shape.
  */
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { trpc } from '@pops/api-client';
 
+import { extractMessage } from '../utils/errors';
 import {
   DEFAULT_ENGRAM_FILTERS,
   ENGRAM_STATUSES,
@@ -77,14 +79,6 @@ function buildSearchInput(filters: EngramListFilters, offset: number, limit: num
   };
 }
 
-function extractMessage(err: unknown): string {
-  if (err && typeof err === 'object' && 'message' in err) {
-    const msg = (err as { message?: unknown }).message;
-    if (typeof msg === 'string') return msg;
-  }
-  return 'Unknown error';
-}
-
 function extractRetrievalIds(results: unknown): string[] {
   if (!Array.isArray(results)) return [];
   const ids: string[] = [];
@@ -137,6 +131,7 @@ interface BrowseHook {
  * `cerebrum.engrams.list` query with status/scope/tag filters.
  */
 function useBrowseList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
+  const { t } = useTranslation('cerebrum');
   const query = trpc.cerebrum.engrams.list.useQuery(
     buildListInput(filters, offset, DEFAULT_PAGE_SIZE),
     { enabled }
@@ -146,7 +141,7 @@ function useBrowseList(filters: EngramListFilters, offset: number, enabled: bool
       engrams: query.data?.engrams ?? [],
       total: query.data?.total ?? 0,
       isLoading: query.isLoading,
-      error: query.error ? { message: extractMessage(query.error) } : null,
+      error: query.error ? { message: extractMessage(query.error, t('errors.unknown')) } : null,
     },
     retry: () => void query.refetch(),
   };
@@ -158,6 +153,7 @@ function useBrowseList(filters: EngramListFilters, offset: number, enabled: bool
  * into full Engram rows.
  */
 function useSearchList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
+  const { t } = useTranslation('cerebrum');
   const searchQuery = trpc.cerebrum.retrieval.search.useQuery(
     buildSearchInput(filters, offset, DEFAULT_PAGE_SIZE),
     { enabled }
@@ -178,7 +174,7 @@ function useSearchList(filters: EngramListFilters, offset: number, enabled: bool
       isLoading: searchQuery.isLoading || (ids.length > 0 && hydration.isLoading),
       error: (() => {
         const errSrc = searchQuery.error ?? hydration.error;
-        return errSrc ? { message: extractMessage(errSrc) } : null;
+        return errSrc ? { message: extractMessage(errSrc, t('errors.unknown')) } : null;
       })(),
     },
     retry: () => {

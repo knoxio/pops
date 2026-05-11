@@ -32,6 +32,24 @@ const EngramsListPage = lazy(() =>
 const EngramDetailPage = lazy(() =>
   import('./pages/EngramDetailPage').then((m) => ({ default: m.EngramDetailPage }))
 );
+const ReflexListPage = lazy(() =>
+  import('./pages/ReflexListPage').then((m) => ({ default: m.ReflexListPage }))
+);
+const ReflexDetailPage = lazy(() =>
+  import('./pages/ReflexDetailPage').then((m) => ({ default: m.ReflexDetailPage }))
+);
+const PlexusListPage = lazy(() =>
+  import('./pages/PlexusListPage').then((m) => ({ default: m.PlexusListPage }))
+);
+const PlexusDetailPage = lazy(() =>
+  import('./pages/PlexusDetailPage').then((m) => ({ default: m.PlexusDetailPage }))
+);
+const GliaDashboardPage = lazy(() =>
+  import('./pages/GliaDashboardPage').then((m) => ({ default: m.GliaDashboardPage }))
+);
+const DocumentsPage = lazy(() =>
+  import('./pages/DocumentsPage').then((m) => ({ default: m.DocumentsPage }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -54,6 +72,12 @@ export const navConfig = {
   items: [
     { path: '', label: 'Ingest', labelKey: 'cerebrum.ingest', icon: 'FileText' },
     { path: '/engrams', label: 'Engrams', labelKey: 'cerebrum.engrams.nav', icon: 'Library' },
+    {
+      path: '/documents',
+      label: 'Documents',
+      labelKey: 'cerebrum.documents.nav',
+      icon: 'FileText',
+    },
     { path: '/nudges', label: 'Nudges', labelKey: 'cerebrum.nudges', icon: 'Bell' },
     {
       path: '/proposals',
@@ -61,6 +85,9 @@ export const navConfig = {
       labelKey: 'cerebrum.proposals',
       icon: 'GitPullRequest',
     },
+    { path: '/glia', label: 'Glia', labelKey: 'cerebrum.glia.nav', icon: 'Activity' },
+    { path: '/reflex', label: 'Reflex', labelKey: 'cerebrum.reflex.nav', icon: 'Zap' },
+    { path: '/plexus', label: 'Plexus', labelKey: 'cerebrum.plexus.nav', icon: 'Plug' },
     { path: '/admin', label: 'AI Usage', labelKey: 'cerebrum.admin.usage', icon: 'BarChart3' },
     {
       path: '/admin/prompts',
@@ -80,6 +107,12 @@ export const routes: RouteObject[] = [
   { path: 'proposals', element: <ProposalQueuePage /> },
   { path: 'engrams', element: <EngramsListPage /> },
   { path: 'engrams/:id', element: <EngramDetailPage /> },
+  { path: 'documents', element: <DocumentsPage /> },
+  { path: 'reflex', element: <ReflexListPage /> },
+  { path: 'reflex/:name', element: <ReflexDetailPage /> },
+  { path: 'plexus', element: <PlexusListPage /> },
+  { path: 'plexus/:adapterId', element: <PlexusDetailPage /> },
+  { path: 'glia', element: <GliaDashboardPage /> },
   // /cerebrum/admin/* is composed by the shell from @pops/app-ai;
   // see apps/pops-shell/src/app/router.tsx.
 ];

@@ -8,10 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@pops/ui';
 
 import { ENGRAM_SOURCES, ENGRAM_STATUSES, type EngramStatus } from '../../engrams/types';
+import { TOUCH_TARGET_MIN_HEIGHT } from '../../utils/touchTarget';
 
 import type { useEngramListModel } from '../../engrams/useEngramListModel';
-
-const TOUCH_TARGET_MIN_HEIGHT = 'min-h-[44px]';
 
 type Model = ReturnType<typeof useEngramListModel>;
 

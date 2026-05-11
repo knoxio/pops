@@ -1,4 +1,5 @@
 import {
+  Activity,
   ArrowLeftRight,
   BarChart3,
   Bell,
@@ -25,12 +26,14 @@ import {
   Network,
   Package,
   PiggyBank,
+  Plug,
   Search,
   Settings,
   ShieldCheck,
   Shuffle,
   Star,
   Trophy,
+  Zap,
 } from 'lucide-react';
 
 /**
@@ -51,6 +54,7 @@ import type { IconName } from '@pops/navigation';
  * type to `string`.
  */
 export const iconMap = {
+  Activity,
   ArrowLeftRight,
   BarChart3,
   Bell,
@@ -76,10 +80,12 @@ export const iconMap = {
   Network,
   Package,
   PiggyBank,
+  Plug,
   Search,
   Settings,
   ShieldCheck,
   Shuffle,
   Star,
   Trophy,
+  Zap,
 } satisfies Record<IconName, LucideIcon>;

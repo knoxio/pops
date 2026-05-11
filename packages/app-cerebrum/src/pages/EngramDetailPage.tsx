@@ -12,10 +12,9 @@ import { useParams } from 'react-router';
 import { Button, PageHeader, Skeleton } from '@pops/ui';
 
 import { useEngramDetailModel } from '../engrams/useEngramDetailModel';
+import { TOUCH_TARGET_MIN_HEIGHT } from '../utils/touchTarget';
 import { EngramEditForm } from './engram-detail/EngramEditForm';
 import { ConnectionsPanel, MetadataPanel, TrustBadge } from './engram-detail/EngramSidePanels';
-
-const TOUCH_TARGET_MIN_HEIGHT = 'min-h-[44px]';
 
 type Model = ReturnType<typeof useEngramDetailModel>;
 
