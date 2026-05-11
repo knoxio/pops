@@ -88,19 +88,19 @@ Each existing hand-rolled registry collapses into a registry consumer. The shape
 
 ## User Stories
 
-| #   | Story                                                                     | Summary                                                                                                                 | Parallelisable   |
-| --- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| 01  | [us-01-extend-manifest](us-01-extend-manifest.md)                         | Extend `ModuleManifest` with `capabilities`, `features`, `search`, `uriHandler`, `aiTools`, `migrations` slots          | Yes              |
-| 02  | [us-02-build-time-registry](us-02-build-time-registry.md)                 | `@pops/module-registry` package generated from manifests + env contract; CI guard                                       | Blocked by 01    |
-| 03  | [us-03-routing-from-registry](us-03-routing-from-registry.md)             | Shell routing and API composition read from `MODULES`; remove hard-coded import lists. Done.                            | Blocked by 02    |
-| 04  | [us-04-settings-from-registry](us-04-settings-from-registry.md)           | Settings page consumes `MODULES`; delete `settingsRegistry.register`. Done.                                             | Blocked by 02    |
-| 05  | [us-05-features-from-registry](us-05-features-from-registry.md)           | Features admin consumes `MODULES`; delete `featuresRegistry.register`                                                   | Blocked by 02    |
-| 06  | [us-06-search-from-registry](us-06-search-from-registry.md)               | Search engine consumes `MODULES`; delete `registerSearchAdapter` side-effect imports. Closes #2522 (search half). Done. | Blocked by 02    |
-| 07  | [us-07-overlay-mount-from-registry](us-07-overlay-mount-from-registry.md) | Shell mounts overlays into `chromeSlot` declared in manifest; remove hard-wired `<ChatOverlay />`. Done.                | Blocked by 02    |
-| 08  | [us-08-uri-resolver](us-08-uri-resolver.md)                               | Implement ADR-012 resolver as a registry consumer; absent-module URIs return placeholder. Closes #2522 (URI half).      | Blocked by 02    |
-| 09  | [us-09-migration-runner](us-09-migration-runner.md)                       | Runner consumes per-module migration declarations; absent modules skip. Closes #2523.                                   | Blocked by 02    |
-| 10  | [us-10-ai-tool-aggregation](us-10-ai-tool-aggregation.md)                 | Ego and MCP expose a single merged AI tool surface based on the installed module set. Done.                             | Blocked by 02    |
-| 11  | [us-11-test-matrix](us-11-test-matrix.md)                                 | Contract violations fail at build; install-set matrix exercised in CI                                                   | Blocked by 03–10 |
+| #   | Story                                                                     | Summary                                                                                                                        | Parallelisable   |
+| --- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| 01  | [us-01-extend-manifest](us-01-extend-manifest.md)                         | Extend `ModuleManifest` with `capabilities`, `features`, `search`, `uriHandler`, `aiTools`, `migrations` slots                 | Yes              |
+| 02  | [us-02-build-time-registry](us-02-build-time-registry.md)                 | `@pops/module-registry` package generated from manifests + env contract; CI guard                                              | Blocked by 01    |
+| 03  | [us-03-routing-from-registry](us-03-routing-from-registry.md)             | Shell routing and API composition read from `MODULES`; remove hard-coded import lists. Done.                                   | Blocked by 02    |
+| 04  | [us-04-settings-from-registry](us-04-settings-from-registry.md)           | Settings page consumes `MODULES`; delete `settingsRegistry.register`. Done.                                                    | Blocked by 02    |
+| 05  | [us-05-features-from-registry](us-05-features-from-registry.md)           | Features admin consumes `MODULES`; delete `featuresRegistry.register`                                                          | Blocked by 02    |
+| 06  | [us-06-search-from-registry](us-06-search-from-registry.md)               | Search engine consumes `MODULES`; delete `registerSearchAdapter` side-effect imports. Closes #2522 (search half). Done.        | Blocked by 02    |
+| 07  | [us-07-overlay-mount-from-registry](us-07-overlay-mount-from-registry.md) | Shell mounts overlays into `chromeSlot` declared in manifest; remove hard-wired `<ChatOverlay />`. Done.                       | Blocked by 02    |
+| 08  | [us-08-uri-resolver](us-08-uri-resolver.md)                               | Implement ADR-012 resolver as a registry consumer; absent-module URIs return placeholder. Closes #2522 (URI half).             | Blocked by 02    |
+| 09  | [us-09-migration-runner](us-09-migration-runner.md)                       | Runner consumes per-module migration declarations; absent modules skip. Closes #2523.                                          | Blocked by 02    |
+| 10  | [us-10-ai-tool-aggregation](us-10-ai-tool-aggregation.md)                 | Ego and MCP expose a single merged AI tool surface based on the installed module set. Done.                                    | Blocked by 02    |
+| 11  | [us-11-test-matrix](us-11-test-matrix.md)                                 | Contract violations fail at build; install-set matrix exercised in CI. Partial — install-set switching across builds deferred. | Blocked by 03–10 |
 
 ## Out of Scope
 
