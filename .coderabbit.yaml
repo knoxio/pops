@@ -1,0 +1,139 @@
+# CodeRabbit configuration — https://docs.coderabbit.ai/reference/yaml-template
+#
+# Goal: an opinionated reviewer that blocks merges on real issues rather than
+# leaving advisory comments. We pair this with branch protection so "Request
+# changes" reviews must be resolved before merge.
+
+language: en-US
+early_access: false
+tone_instructions: "Be direct. No filler praise. Critique mistakes clearly. Match the project's terse house style."
+
+reviews:
+  # When CodeRabbit finds blocking issues, post a formal "Request changes"
+  # review instead of a plain comment. CodeRabbit then auto-flips the review
+  # to "approved" once every flagged comment is resolved — pair with branch
+  # protection that requires conversation resolution so the PR can't merge
+  # until each finding is addressed. CodeRabbit's auto-approval is bot-issued
+  # and does not satisfy a "required approving reviews" rule on its own; keep
+  # that rule for the human reviewer.
+  request_changes_workflow: true
+
+  # Assertive profile: surface more issues, including style and correctness
+  # nits. The repo's CLAUDE.md asks for adversarial review — this matches.
+  profile: assertive
+
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  assess_linked_issues: true
+
+  # Run an auto-review on every PR opened against the configured base
+  # branches. With `request_changes_workflow: true` set above, CodeRabbit
+  # may auto-mark its own review approved once flagged comments are
+  # resolved — that's intentional. Branch protection still gates merge on a
+  # human approving review and on resolved conversations.
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches:
+      - main
+    ignore_title_keywords:
+      - WIP
+      - DRAFT
+
+  # Skip noisy or generated files. Add to this list if reviews repeatedly
+  # spend time on output that humans don't read.
+  path_filters:
+    - '!**/dist/**'
+    - '!**/node_modules/**'
+    - '!**/.next/**'
+    - '!**/.turbo/**'
+    - '!**/coverage/**'
+    - '!**/*.lock'
+    - '!**/pnpm-lock.yaml'
+    - '!**/package-lock.json'
+    - '!**/*.snap'
+    - '!**/__snapshots__/**'
+    # Snapshots are massive auto-generated JSON; keep `_journal.json` in
+    # scope so the migration-number check below can read it.
+    - '!apps/pops-api/src/db/drizzle-migrations/meta/*_snapshot.json'
+
+  # Per-area instructions surface project-specific rules to the reviewer
+  # (mirrors CLAUDE.md / AGENTS.md). Keep these tight — long prompts dilute
+  # the signal.
+  path_instructions:
+    - path: '**/*.{ts,tsx}'
+      instructions: |
+        - Flag any `as any` or `as unknown as T`. Both are forbidden per CLAUDE.md.
+        - Flag eslint-disable, ts-ignore, ts-expect-error suppressions. Fix root cause instead.
+        - Flag duplicated logic across files (DRY violations).
+        - Flag comments that explain *what* the code does — only WHY-comments are kept.
+        - Flag broad try/catch that swallows errors silently.
+    - path: 'apps/pops-api/src/db/drizzle-migrations/*.sql'
+      instructions: |
+        - Verify the migration is idempotent and reversible where SQLite allows.
+        - Flag any `DROP TABLE` or `DROP COLUMN` without an explicit data-preservation step.
+        - Check the migration number matches the next sequential idx in `_journal.json`.
+    - path: 'packages/db-types/src/schema/**'
+      instructions: |
+        - Any schema change must be paired with a generated migration in `apps/pops-api/src/db/drizzle-migrations/`.
+        - Flag default-value changes that don't match the corresponding Zod schema in `apps/pops-api/src/`.
+    - path: '.github/workflows/**'
+      instructions: |
+        - Flag any new secrets reference — only existing GITHUB_TOKEN / repo secrets are allowed.
+        - Pin actions to a major version (`@v6`) or a SHA, matching the existing usage in this repo.
+        - Don't introduce `--no-verify`, `--admin`, or hook-bypass flags.
+    - path: 'docs/themes/**/prds/**'
+      instructions: |
+        - Only flag missing acceptance criteria when a PR claims to "close" the US — otherwise PRD edits are informational.
+        - Don't ask for stylistic rewrites of business-rule prose.
+    - path: 'infra/docker-compose*.yml'
+      instructions: |
+        - Flag any service exposed on the host without a documented reason (Cloudflare Tunnel is the standard ingress).
+        - Flag inline secrets — production secrets must use Docker file-based secrets from `/run/secrets/`.
+
+  # Tools that already lint the codebase locally / in CI. Disable the
+  # equivalents inside CodeRabbit to avoid duplicate noise.
+  tools:
+    ast-grep:
+      essential_rules: true
+    biome:
+      enabled: false
+    eslint:
+      enabled: false # repo uses oxlint
+    oxc:
+      enabled: true
+    actionlint:
+      enabled: true
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    gitleaks:
+      enabled: true
+    hadolint:
+      enabled: true
+    dotenvLint:
+      enabled: true
+    languagetool:
+      enabled: false # too noisy on prose in PRDs
+    semgrep:
+      enabled: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
