@@ -14,6 +14,15 @@
  * untouched — every entry already in `__drizzle_migrations` is treated as
  * applied and no re-application is attempted.
  *
+ * Hash drift (#2610): a sister table `__pops_migration_tags` records each
+ * applied migration by tag. When the SQL file is edited after apply the
+ * tag still matches but the hash differs — the runner skips the re-run
+ * with a warning, because one-way statements (e.g. `UPDATE … SET new_col
+ * = old_col` after a rename) would crash on the now-missing column. On
+ * first boot after upgrade, hashes already in `__drizzle_migrations` are
+ * backfilled into `__pops_migration_tags` so tag tracking starts without
+ * extra operator work.
+ *
  * Skipped (absent-module) migrations are NOT recorded — re-enabling the
  * module on a subsequent boot brings them in naturally.
  *
@@ -31,14 +40,13 @@
  * `no such column`) still crash the boot since they signal the migration's
  * preconditions are not actually met.
  */
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { z } from 'zod';
 
-import { logger } from '../lib/logger.js';
-import { isAlreadyAppliedError, splitStatements } from './migration-backfill.js';
+import { classifyOrApply, type ApplyCaches } from './migration-apply.js';
+import { appliedTags, ensureAppliedTagsTable } from './migration-tag-tracking.js';
 import { DRIZZLE_MIGRATIONS_DIRECTORY } from './migrations-runner.js';
 
 import type BetterSqlite3 from 'better-sqlite3';
@@ -148,19 +156,6 @@ function appliedHashes(db: BetterSqlite3.Database): Set<string> {
   return new Set(rows.map((r) => r.hash));
 }
 
-function readMigrationSql(tag: string): string {
-  return readFileSync(join(DRIZZLE_MIGRATIONS_DIRECTORY, `${tag}.sql`), 'utf8');
-}
-
-/**
- * Drizzle's hashing function. `drizzle-orm/migrator` records each applied
- * migration as `sha256(sql)`. We reproduce the same hash here so a DB
- * upgraded from the pre-PRD-101 runtime keeps working unchanged.
- */
-function hashSql(sql: string): string {
-  return createHash('sha256').update(sql).digest('hex');
-}
-
 /**
  * Result returned by {@link runPerModuleMigrations}. Distinguishes applied,
  * skipped (owned by an absent module), and orphan (already-applied but
@@ -184,47 +179,6 @@ export interface PerModuleMigrationResult {
   unowned: readonly string[];
   /** Tags whose hash is already recorded — no action taken. */
   alreadyApplied: readonly string[];
-}
-
-type ApplyOutcome = 'applied' | 'backfilled';
-
-interface ApplyMigrationArgs {
-  db: BetterSqlite3.Database;
-  tag: string;
-  sql: string;
-  hash: string;
-  insert: BetterSqlite3.Statement;
-}
-
-/**
- * Apply one migration's SQL inside a transaction. Per-statement errors
- * matching the "already applied" patterns (see `migration-backfill.ts`)
- * are caught and logged; any other error aborts the transaction. Returns
- * `backfilled` if at least one statement was skipped — useful so callers
- * can surface schema-vs-migration drift to the operator.
- */
-function applyMigration({ db, tag, sql, hash, insert }: ApplyMigrationArgs): ApplyOutcome {
-  let didBackfill = false;
-  db.transaction(() => {
-    for (const stmt of splitStatements(sql)) {
-      try {
-        db.exec(stmt);
-      } catch (err) {
-        if (!isAlreadyAppliedError(err)) throw err;
-        didBackfill = true;
-        logger.info(
-          {
-            migrationTag: tag,
-            statementPreview: stmt.slice(0, 80),
-            sqliteError: (err as Error).message,
-          },
-          `[db] Migration "${tag}" statement already applied to schema — recording hash without re-running.`
-        );
-      }
-    }
-    insert.run(hash, Date.now());
-  })();
-  return didBackfill ? 'backfilled' : 'applied';
 }
 
 /**
@@ -272,6 +226,21 @@ export function runPerModuleMigrations(
  * tag whose owner is installed is treated as installed too — the static
  * ownership map is authoritative.
  */
+type Bucket = keyof PerModuleMigrationResult;
+
+function classifyOwnership(
+  tag: string,
+  installedIds: ReadonlySet<string>,
+  owners: ReadonlyMap<string, string>,
+  installedTags: ReadonlySet<string> | undefined
+): Bucket | null {
+  const owner = owners.get(tag);
+  if (owner === undefined) return 'unowned';
+  if (!installedIds.has(owner)) return 'skipped';
+  if (installedTags !== undefined && !installedTags.has(tag)) return 'skipped';
+  return null;
+}
+
 export function runPerModuleMigrationsByOwner(
   db: BetterSqlite3.Database,
   installedIds: ReadonlySet<string>,
@@ -279,61 +248,30 @@ export function runPerModuleMigrationsByOwner(
   installedTags?: ReadonlySet<string>
 ): PerModuleMigrationResult {
   ensureDrizzleTable(db);
+  ensureAppliedTagsTable(db);
 
-  const journal = readJournal();
+  const buckets: Record<Bucket, string[]> = {
+    applied: [],
+    backfilled: [],
+    skipped: [],
+    unowned: [],
+    alreadyApplied: [],
+  };
+  const caches: ApplyCaches = {
+    knownHashes: appliedHashes(db),
+    knownTags: appliedTags(db),
+    insertDrizzle: db.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'),
+    insertTag: db.prepare(
+      'INSERT OR REPLACE INTO __pops_migration_tags (tag, hash, applied_at) VALUES (?, ?, ?)'
+    ),
+  };
 
-  const applied: string[] = [];
-  const backfilled: string[] = [];
-  const skipped: string[] = [];
-  const unowned: string[] = [];
-  const alreadyApplied: string[] = [];
-
-  const knownHashes = appliedHashes(db);
-  const insert = db.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)');
-
-  for (const entry of journal.entries) {
-    // Classify ownership BEFORE the hash short-circuit. If we checked the
-    // hash first, a duplicate-SQL entry owned by an absent or unknown
-    // module would be silently bucketed as `alreadyApplied` — hiding the
-    // manifest/ownership drift this result is meant to surface. Ownership
-    // classification is the authoritative signal; hash equality only
-    // matters once we've confirmed the tag belongs to the install set.
-    const owner = owners.get(entry.tag);
-    if (owner === undefined) {
-      // No declared owner — treat as absent and warn. This is a contract
-      // violation; CI (US-11) should catch it, but we don't want a missing
-      // ownership entry to silently apply migrations to a partial install.
-      unowned.push(entry.tag);
-      continue;
-    }
-    if (!installedIds.has(owner)) {
-      skipped.push(entry.tag);
-      continue;
-    }
-    if (installedTags !== undefined && !installedTags.has(entry.tag)) {
-      // Owner is installed but manifest doesn't list the tag — possible
-      // if the ownership map and manifest disagree. Skip defensively.
-      skipped.push(entry.tag);
-      continue;
-    }
-
-    const sql = readMigrationSql(entry.tag);
-    const hash = hashSql(sql);
-
-    if (knownHashes.has(hash)) {
-      alreadyApplied.push(entry.tag);
-      continue;
-    }
-
-    const outcome = applyMigration({ db, tag: entry.tag, sql, hash, insert });
-    // Keep the applied-hash cache in sync so subsequent journal entries
-    // with the same SQL body (e.g. idempotent re-creation migrations) are
-    // recognised as already applied within this same boot.
-    knownHashes.add(hash);
-    (outcome === 'backfilled' ? backfilled : applied).push(entry.tag);
+  for (const entry of readJournal().entries) {
+    const early = classifyOwnership(entry.tag, installedIds, owners, installedTags);
+    buckets[early ?? classifyOrApply(db, entry.tag, caches)].push(entry.tag);
   }
 
-  return { applied, backfilled, skipped, unowned, alreadyApplied };
+  return buckets;
 }
 
 // Orphan-migration warning is split into `./migration-orphan-warn.js` to
