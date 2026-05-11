@@ -436,4 +436,45 @@ describe('warnOrphanMigrations', () => {
       expect(warnSpy).not.toHaveBeenCalled();
     });
   });
+
+  it('suppresses orphan warnings for tags whose SQL hash collides with another journal entry (duplicate-SQL ambiguity)', async () => {
+    // Two modules ship a migration with byte-identical SQL bodies (e.g. an
+    // idempotent `CREATE TABLE IF NOT EXISTS` pattern). When only module A
+    // is installed and its tag is applied, `__drizzle_migrations` records
+    // one hash that maps to BOTH journal entries — there is no way to tell
+    // which tag was actually applied. Without ambiguity handling the orphan
+    // path would flag module B's tag as an orphan even though it never ran.
+    // The apply path already tolerates this collision (the second duplicate
+    // becomes `alreadyApplied`); the warning path must match.
+    const dir = fakeJournalDir();
+    const sharedSql = 'CREATE TABLE IF NOT EXISTS shared_t (id INTEGER);';
+    writeJournal(dir, [
+      { tag: '001_a_shared', sql: sharedSql },
+      { tag: '002_b_shared', sql: sharedSql },
+    ]);
+    const mod = await loadRunnerWithJournalDir(dir);
+
+    const { logger } = await import('../lib/logger.js');
+
+    await withDb(async (db) => {
+      const a = makeManifest('a', [{ id: '001_a_shared', sql: sharedSql }]);
+      const b = makeManifest('b', [{ id: '002_b_shared', sql: sharedSql }]);
+
+      const knownOwners = mod.migrationOwnershipMap([a, b]);
+
+      // Install only A — its tag applies, then B's duplicate-hash tag is
+      // observed as `alreadyApplied` because the hash is now present.
+      const applyResult = mod.runPerModuleMigrations(db, [a], knownOwners);
+      expect(applyResult.applied).toEqual(['001_a_shared']);
+
+      const warnSpy = vi.spyOn(logger, 'warn');
+
+      // Now ask the orphan path: with only A installed, is B's tag orphaned?
+      // It must NOT be — the hash is ambiguous and could equally belong to A.
+      const orphans = mod.warnOrphanMigrations(db, [a], knownOwners);
+
+      expect(orphans).toEqual([]);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+  });
 });

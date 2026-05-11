@@ -317,6 +317,17 @@ export function warnOrphanMigrations(
  * Accepts the install-set of module ids directly plus the canonical
  * ownership map from `migration-ownership.ts`. Behaviour is identical
  * to {@link warnOrphanMigrations}.
+ *
+ * Ambiguity handling: when two or more journal entries share the same
+ * SQL body (and therefore the same hash) — e.g. duplicate idempotent
+ * `CREATE TABLE IF NOT EXISTS` migrations across modules — `__drizzle_migrations`
+ * records a single hash without any tag attribution. We cannot tell which
+ * tag was applied, so we suppress the orphan warning for every tag sharing
+ * an ambiguous hash. The apply path already handles this on its side
+ * (the second duplicate-hash entry is treated as `alreadyApplied`); the
+ * warning path needs to match or it will spuriously flag the absent
+ * module's tag as orphaned whenever the installed module's tag with the
+ * same SQL is applied.
  */
 export function warnOrphanMigrationsByOwner(
   db: BetterSqlite3.Database,
@@ -328,10 +339,21 @@ export function warnOrphanMigrationsByOwner(
   const journal = readJournal();
   const recorded = appliedHashes(db);
 
+  // Count how many journal entries map to each hash. Any hash that appears
+  // more than once is ambiguous — we cannot attribute the recorded hash to
+  // a specific tag — so all entries sharing that hash are excluded from
+  // the orphan warning.
+  const hashCounts = new Map<string, number>();
+  for (const entry of journal.entries) {
+    const hash = hashSql(readMigrationSql(entry.tag));
+    hashCounts.set(hash, (hashCounts.get(hash) ?? 0) + 1);
+  }
+
   const orphans: string[] = [];
   for (const entry of journal.entries) {
-    const sql = readMigrationSql(entry.tag);
-    if (!recorded.has(hashSql(sql))) continue;
+    const hash = hashSql(readMigrationSql(entry.tag));
+    if (!recorded.has(hash)) continue;
+    if ((hashCounts.get(hash) ?? 0) > 1) continue;
     const owner = owners.get(entry.tag);
     if (owner === undefined) continue;
     if (!installedIds.has(owner)) orphans.push(entry.tag);
