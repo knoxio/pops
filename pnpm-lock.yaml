@@ -201,6 +201,9 @@ importers:
       '@pops/app-media':
         specifier: workspace:*
         version: link:../../packages/app-media
+      '@pops/module-registry':
+        specifier: workspace:*
+        version: link:../../packages/module-registry
       '@pops/navigation':
         specifier: workspace:*
         version: link:../../packages/navigation

@@ -1,97 +1,105 @@
 /**
- * Shell router configuration
+ * Shell route table — composed from the build-time module registry
+ * (`@pops/module-registry` → `installedAppManifests()`).
  *
- * RootLayout provides the top bar + sidebar chrome.
- * Finance routes are lazily loaded from @pops/app-finance.
+ * PRD-101 US-03 removes the per-module hand-coded `<Route>` list from this
+ * file: route entries derive from the install set, the runtime
+ * `RequireModule` guard is gone, and direct navigation to an absent
+ * module's URL renders `NotInstalledPage` via the catch-all.
  *
- * The former /ai top-level route has been merged into /cerebrum/admin/*
- * (see issue #2333). Legacy /ai/* URLs redirect to /cerebrum/admin/*.
+ * Cross-module composition (e.g. `/cerebrum/admin/*` surfacing AI admin
+ * pages from `@pops/app-ai`) lives in `./route-extensions` so this file
+ * stays free of inline module-id literals.
  */
 import { Suspense } from 'react';
-import { createBrowserRouter, Link, Navigate, Outlet } from 'react-router';
+import { createBrowserRouter, Link, Navigate, useLocation } from 'react-router';
 
-import { routes as aiAdminRoutes } from '@pops/app-ai';
-import { routes as cerebrumRoutes } from '@pops/app-cerebrum';
-import { routes as financeRoutes } from '@pops/app-finance';
-import { routes as inventoryRoutes } from '@pops/app-inventory';
-import { routes as mediaRoutes } from '@pops/app-media';
+import { KNOWN_MODULES } from '@pops/module-registry';
 
 import { IndexRedirect } from './IndexRedirect';
+import { installedAppManifests } from './installed-modules';
 import { RootLayout } from './layout/RootLayout';
 import { FeaturesPage } from './pages/features-page/FeaturesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { NotInstalledPage } from './pages/NotInstalledPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { RequireModule } from './RequireModule';
+import { extensionsFor } from './route-extensions';
+
+import type { RouteObject } from 'react-router';
+
+/**
+ * Catch-all element: if the URL's first path segment names a known
+ * buildable module (`KNOWN_MODULES`) that isn't installed in this build,
+ * render `NotInstalledPage`. Otherwise fall through to `NotFoundPage`.
+ *
+ * Using the full `KNOWN_MODULES` set (rather than just `MODULES`) here
+ * means the "not installed" message fires for any module the codebase
+ * could ship — including ones excluded by `POPS_APPS` — while truly
+ * unknown paths still get a proper 404.
+ */
+function UnmatchedRoute() {
+  const { pathname } = useLocation();
+  const first = pathname.split('/').find((s) => s.length > 0) ?? '';
+  const knownModules: readonly string[] = KNOWN_MODULES;
+  if (first.length > 0 && knownModules.includes(first)) {
+    return <NotInstalledPage />;
+  }
+  return <NotFoundPage />;
+}
 
 const SuspenseFallback = (
   <div className="flex items-center justify-center h-64 text-muted-foreground">Loading…</div>
 );
 
 /**
- * Wrap lazy-loaded routes with Suspense so React can show a fallback
- * while the chunk loads.
+ * Wrap a route subtree in `<Suspense>` so React can show a fallback while
+ * the lazy chunk loads. Routes without an element (layout routes) are
+ * left as-is.
  */
-const withSuspense = (routes: typeof financeRoutes) =>
-  routes.map((route) => ({
+function withSuspense(routes: readonly RouteObject[]): RouteObject[] {
+  return routes.map((route) => ({
     ...route,
     element: route.element ? (
       <Suspense fallback={SuspenseFallback}>{route.element}</Suspense>
     ) : undefined,
   }));
+}
+
+/**
+ * Build one router-level entry per installed app module. Each entry mounts
+ * the module's routes under `/<id>/*` plus any cross-module extensions
+ * declared in `./route-extensions`.
+ */
+function appRouteEntries(): RouteObject[] {
+  return installedAppManifests().map((manifest) => ({
+    path: manifest.id,
+    children: [...withSuspense(manifest.frontend.routes), ...extensionsFor(manifest.id)],
+  }));
+}
+
+const ErrorElement = (
+  <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
+    <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
+    <p className="text-muted-foreground mb-6">An unexpected error occurred.</p>
+    <Link
+      to="/"
+      className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 motion-safe:transition-colors"
+    >
+      Go home
+    </Link>
+  </div>
+);
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
-    errorElement: (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
-        <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
-        <p className="text-muted-foreground mb-6">An unexpected error occurred.</p>
-        <Link
-          to="/"
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          Go home
-        </Link>
-      </div>
-    ),
+    errorElement: ErrorElement,
     children: [
       { index: true, element: <IndexRedirect /> },
-      {
-        path: 'finance',
-        element: <RequireModule moduleId="finance" />,
-        children: withSuspense(financeRoutes),
-      },
-      {
-        path: 'media',
-        element: <RequireModule moduleId="media" />,
-        children: withSuspense(mediaRoutes),
-      },
-      {
-        path: 'inventory',
-        element: <RequireModule moduleId="inventory" />,
-        children: withSuspense(inventoryRoutes),
-      },
-      {
-        path: 'cerebrum',
-        element: <RequireModule moduleId="cerebrum" />,
-        children: [
-          ...withSuspense(cerebrumRoutes),
-          // /cerebrum/admin/* surfaces app-ai pages — composed here in
-          // the shell rather than inside @pops/app-cerebrum (PRD-097
-          // boundaries forbid app-* → app-* imports).
-          {
-            path: 'admin',
-            element: (
-              <Suspense fallback={SuspenseFallback}>
-                <Outlet />
-              </Suspense>
-            ),
-            children: aiAdminRoutes,
-          },
-        ],
-      },
-      // Legacy /ai/* redirects — keep bookmarks and deep-links working.
+      ...appRouteEntries(),
+      // Legacy /ai/* redirects — keep bookmarks and deep-links working
+      // after the AI app merged into /cerebrum/admin (#2333).
       { path: 'ai', element: <Navigate to="/cerebrum" replace /> },
       { path: 'ai/prompts', element: <Navigate to="/cerebrum/admin/prompts" replace /> },
       { path: 'ai/config', element: <Navigate to="/settings#ai.config" replace /> },
@@ -99,7 +107,12 @@ export const router = createBrowserRouter([
       { path: 'ai/cache', element: <Navigate to="/cerebrum/admin/cache" replace /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'features', element: <FeaturesPage /> },
-      { path: '*', element: <NotFoundPage /> },
+      // Catch-all: if the first path segment names a buildable module
+      // (`KNOWN_MODULES`) the operator excluded via `POPS_APPS`, render
+      // NotInstalledPage. Genuinely unknown paths render NotFoundPage.
+      // Both decisions happen inside `UnmatchedRoute` so the route table
+      // stays free of inline module-id literals.
+      { path: '*', element: <UnmatchedRoute /> },
     ],
   },
 ]);
