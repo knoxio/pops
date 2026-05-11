@@ -53,35 +53,20 @@ vi.mock('../../modules/cerebrum/instance.js', () => ({
   }),
 }));
 
-const { dispatchTool, toolDefinitions } = await import('../tools/index.js');
+const { dispatchTool, listTools } = await import('../tools/index.js');
 
-describe('toolDefinitions', () => {
-  it('registers exactly 5 tools', () => {
-    expect(toolDefinitions).toHaveLength(5);
-  });
-
-  it('includes cerebrum.search', () => {
-    expect(toolDefinitions.some((t) => t.name === 'cerebrum.search')).toBe(true);
-  });
-
-  it('includes cerebrum.ingest', () => {
-    expect(toolDefinitions.some((t) => t.name === 'cerebrum.ingest')).toBe(true);
-  });
-
-  it('includes cerebrum.engram.read', () => {
-    expect(toolDefinitions.some((t) => t.name === 'cerebrum.engram.read')).toBe(true);
-  });
-
-  it('includes cerebrum.engram.write', () => {
-    expect(toolDefinitions.some((t) => t.name === 'cerebrum.engram.write')).toBe(true);
-  });
-
-  it('includes cerebrum.query', () => {
-    expect(toolDefinitions.some((t) => t.name === 'cerebrum.query')).toBe(true);
+describe('listTools', () => {
+  it('returns every cerebrum tool declared in the manifest', () => {
+    const names = listTools().map((t) => t.name);
+    expect(names).toContain('cerebrum.search');
+    expect(names).toContain('cerebrum.ingest');
+    expect(names).toContain('cerebrum.engram.read');
+    expect(names).toContain('cerebrum.engram.write');
+    expect(names).toContain('cerebrum.query');
   });
 
   it('all tools have a description and inputSchema', () => {
-    for (const tool of toolDefinitions) {
+    for (const tool of listTools()) {
       expect(tool.description).toBeTruthy();
       expect(tool.inputSchema).toBeDefined();
       expect(tool.inputSchema['type']).toBe('object');

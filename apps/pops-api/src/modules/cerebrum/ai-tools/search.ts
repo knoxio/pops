@@ -3,14 +3,14 @@
  *
  * Delegates to HybridSearchService and maps results to the MCP output format.
  */
-import { getDrizzle } from '../../db.js';
-import { HybridSearchService } from '../../modules/cerebrum/retrieval/hybrid-search.js';
-import { getSettingValue } from '../../modules/core/settings/service.js';
-import { mapServiceError, mcpError, mcpSuccess } from '../errors.js';
+import { getDrizzle } from '../../../db.js';
+import { getSettingValue } from '../../core/settings/service.js';
+import { HybridSearchService } from '../retrieval/hybrid-search.js';
+import { mapServiceError, toolError, toolSuccess } from './result.js';
 
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { AiToolResult } from '@pops/types';
 
-import type { RetrievalResult } from '../../modules/cerebrum/retrieval/types.js';
+import type { RetrievalResult } from '../retrieval/types.js';
 
 function getMcpSearchSnippetLength(): number {
   return getSettingValue('cerebrum.mcp.searchSnippetLength', 200);
@@ -69,11 +69,11 @@ function parseArgs(raw: Record<string, unknown>): SearchArgs {
   return { query, scopes, limit };
 }
 
-export async function handleCerebrumSearch(raw: Record<string, unknown>): Promise<CallToolResult> {
+export async function handleCerebrumSearch(raw: Record<string, unknown>): Promise<AiToolResult> {
   const args = parseArgs(raw);
 
   if (!args.query.trim()) {
-    return mcpError('query is required and must be non-empty', 'VALIDATION_ERROR');
+    return toolError('query is required and must be non-empty', 'VALIDATION_ERROR');
   }
 
   try {
@@ -93,7 +93,7 @@ export async function handleCerebrumSearch(raw: Record<string, unknown>): Promis
       0.8
     );
 
-    return mcpSuccess({ results: results.map(mapResult) });
+    return toolSuccess({ results: results.map(mapResult) });
   } catch (err) {
     return mapServiceError(err);
   }

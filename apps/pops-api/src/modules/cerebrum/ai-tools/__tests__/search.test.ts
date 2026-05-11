@@ -2,11 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { parseResult } from './test-helpers.js';
 
-import type { RetrievalResult } from '../../modules/cerebrum/retrieval/types.js';
+import type { RetrievalResult } from '../../retrieval/types.js';
 
 // Mock the DB and HybridSearchService
-vi.mock('../../db.js', () => ({
+vi.mock('../../../../db.js', () => ({
   getDrizzle: () => ({}),
+}));
+
+// Silence logger; mapServiceError logs the raw error server-side now.
+vi.mock('../../../../lib/logger.js', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
 const mockHybridResults: RetrievalResult[] = [
@@ -32,13 +37,13 @@ const mockHybridResults: RetrievalResult[] = [
 
 const mockHybrid = vi.fn().mockResolvedValue(mockHybridResults);
 
-vi.mock('../../modules/cerebrum/retrieval/hybrid-search.js', () => ({
+vi.mock('../../retrieval/hybrid-search.js', () => ({
   HybridSearchService: class MockHybridSearchService {
     hybrid = mockHybrid;
   },
 }));
 
-const { handleCerebrumSearch } = await import('../tools/cerebrum-search.js');
+const { handleCerebrumSearch } = await import('../search.js');
 
 describe('handleCerebrumSearch', () => {
   it('returns VALIDATION_ERROR for empty query', async () => {
@@ -120,12 +125,14 @@ describe('handleCerebrumSearch', () => {
     );
   });
 
-  it('handles search service errors gracefully', async () => {
+  it('handles search service errors gracefully without leaking the raw message', async () => {
     mockHybrid.mockRejectedValueOnce(new Error('DB connection failed'));
     const result = await handleCerebrumSearch({ query: 'test' });
     const parsed = parseResult(result) as { error: string; code: string };
     expect(parsed.code).toBe('INTERNAL_ERROR');
-    expect(parsed.error).toBe('DB connection failed');
+    // Raw exception messages must not be surfaced to tool consumers.
+    expect(parsed.error).not.toContain('DB connection failed');
+    expect(parsed.error).toBe('An unexpected internal error occurred');
     expect(result.isError).toBe(true);
   });
 });

@@ -5,10 +5,10 @@
  * if the body starts with `{` or `[` and parses as valid JSON, it is
  * converted to Markdown with the JSON in a fenced code block.
  */
-import { IngestService } from '../../modules/cerebrum/ingest/pipeline.js';
-import { mapServiceError, mcpError, mcpSuccess } from '../errors.js';
+import { IngestService } from '../ingest/pipeline.js';
+import { mapServiceError, toolError, toolSuccess } from './result.js';
 
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { AiToolResult } from '@pops/types';
 
 interface IngestArgs {
   body: string;
@@ -76,11 +76,11 @@ function parseArgs(raw: Record<string, unknown>): IngestArgs {
   return { body, title, type, scopes, tags };
 }
 
-export async function handleCerebrumIngest(raw: Record<string, unknown>): Promise<CallToolResult> {
+export async function handleCerebrumIngest(raw: Record<string, unknown>): Promise<AiToolResult> {
   const args = parseArgs(raw);
 
   if (!args.body.trim()) {
-    return mcpError('body is required and must be non-empty', 'VALIDATION_ERROR');
+    return toolError('body is required and must be non-empty', 'VALIDATION_ERROR');
   }
 
   try {
@@ -97,7 +97,7 @@ export async function handleCerebrumIngest(raw: Record<string, unknown>): Promis
       source: 'agent',
     });
 
-    return mcpSuccess({
+    return toolSuccess({
       engram: {
         id: result.engram.id,
         title: result.engram.title,

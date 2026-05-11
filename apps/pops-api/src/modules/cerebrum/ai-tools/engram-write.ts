@@ -3,12 +3,12 @@
  *
  * Delegates to EngramService.update() and returns updated metadata.
  */
-import { getEngramService } from '../../modules/cerebrum/instance.js';
-import { mapServiceError, mcpError, mcpSuccess } from '../errors.js';
+import { getEngramService } from '../instance.js';
+import { mapServiceError, toolError, toolSuccess } from './result.js';
 
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { AiToolResult } from '@pops/types';
 
-import type { UpdateEngramInput } from '../../modules/cerebrum/engrams/service.js';
+import type { UpdateEngramInput } from '../engrams/service.js';
 
 interface WriteArgs {
   id: string;
@@ -31,11 +31,11 @@ function parseArgs(raw: Record<string, unknown>): WriteArgs {
   return { id, body, title, scopes, tags };
 }
 
-export async function handleEngramWrite(raw: Record<string, unknown>): Promise<CallToolResult> {
+export async function handleEngramWrite(raw: Record<string, unknown>): Promise<AiToolResult> {
   const args = parseArgs(raw);
 
   if (!args.id.trim()) {
-    return mcpError('id is required', 'VALIDATION_ERROR');
+    return toolError('id is required', 'VALIDATION_ERROR');
   }
 
   const hasChanges =
@@ -45,7 +45,7 @@ export async function handleEngramWrite(raw: Record<string, unknown>): Promise<C
     args.tags !== undefined;
 
   if (!hasChanges) {
-    return mcpError('at least one field to update must be provided', 'VALIDATION_ERROR');
+    return toolError('at least one field to update must be provided', 'VALIDATION_ERROR');
   }
 
   try {
@@ -58,7 +58,7 @@ export async function handleEngramWrite(raw: Record<string, unknown>): Promise<C
 
     const engram = svc.update(args.id, changes);
 
-    return mcpSuccess({
+    return toolSuccess({
       engram: {
         id: engram.id,
         title: engram.title,

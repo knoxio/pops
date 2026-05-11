@@ -16,7 +16,7 @@ Implements the recommendations from [docs/ideas/modular-apps-spike.md](../../../
 | 098 | [Module Manifest](../prds/098-module-manifest/README.md)                   | `ModuleManifest` type + adoption across every app and api module (metadata-only)                               | Done        |
 | 099 | [Overlay Surfaces](../prds/099-overlay-surfaces/README.md)                 | Overlay surface category, `packages/overlay-ego` extraction, ego as dual-surface                               | In progress |
 | 100 | [Module Runtime — Tier 1](../prds/100-module-runtime-tier-1/README.md)     | `POPS_APPS` / `POPS_OVERLAYS` env loader, manifest-driven router composition, gated migrations                 | Done        |
-| 101 | [Plugin Contract](../prds/101-plugin-contract/README.md)                   | Extended `ModuleManifest` with all cross-cutting slots; build-time `@pops/module-registry`; consumer migration | Not started |
+| 101 | [Plugin Contract](../prds/101-plugin-contract/README.md)                   | Extended `ModuleManifest` with all cross-cutting slots; build-time `@pops/module-registry`; consumer migration | In progress |
 
 Parallelisation:
 

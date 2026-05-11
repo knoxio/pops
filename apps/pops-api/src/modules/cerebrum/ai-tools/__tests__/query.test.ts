@@ -4,14 +4,19 @@ import { extractText, parseResult } from './test-helpers.js';
 
 const mockAsk = vi.fn();
 
-vi.mock('../../modules/cerebrum/query/query-service.js', () => ({
+vi.mock('../../query/query-service.js', () => ({
   QueryService: class MockQueryService {
     ask = mockAsk;
   },
 }));
 
+// Silence logger; mapServiceError logs unexpected errors server-side.
+vi.mock('../../../../lib/logger.js', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
 // Import after mock setup.
-const { handleCerebrumQuery } = await import('../tools/cerebrum-query.js');
+const { handleCerebrumQuery } = await import('../query.js');
 
 describe('cerebrum.query MCP tool', () => {
   beforeEach(() => {
@@ -91,12 +96,17 @@ describe('cerebrum.query MCP tool', () => {
     expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({ maxSources: 3 }));
   });
 
-  it('handles service errors gracefully', async () => {
+  it('handles service errors gracefully without leaking the raw message', async () => {
     mockAsk.mockRejectedValue(new Error('LLM unavailable'));
 
     const result = await handleCerebrumQuery({ question: 'test' });
     expect(result.isError).toBe(true);
-    expect(extractText(result)).toContain('LLM unavailable');
+    const text = extractText(result);
+    // Raw exception messages must not be surfaced to tool consumers.
+    expect(text).not.toContain('LLM unavailable');
+    expect(text).toContain('An unexpected internal error occurred');
+    const parsed = parseResult(result) as { code: string };
+    expect(parsed.code).toBe('INTERNAL_ERROR');
   });
 
   it('filters invalid domain values', async () => {

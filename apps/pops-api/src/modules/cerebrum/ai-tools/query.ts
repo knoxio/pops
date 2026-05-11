@@ -4,13 +4,13 @@
  * Delegates to QueryService.ask() for one-shot, stateless answers with citations.
  * Limits retrieval to top-3 results for low MCP latency.
  */
-import { QueryService } from '../../modules/cerebrum/query/query-service.js';
-import { getSettingValue } from '../../modules/core/settings/service.js';
-import { mapServiceError, mcpError, mcpSuccess } from '../errors.js';
+import { getSettingValue } from '../../core/settings/service.js';
+import { QueryService } from '../query/query-service.js';
+import { mapServiceError, toolError, toolSuccess } from './result.js';
 
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { AiToolResult } from '@pops/types';
 
-import type { QueryDomain } from '../../modules/cerebrum/query/types.js';
+import type { QueryDomain } from '../query/types.js';
 
 function getMcpQueryMaxSources(): number {
   return getSettingValue('cerebrum.mcp.queryMaxSources', 3);
@@ -31,11 +31,11 @@ function parseArgs(raw: Record<string, unknown>): QueryArgs {
   return { question, scopes };
 }
 
-export async function handleCerebrumQuery(raw: Record<string, unknown>): Promise<CallToolResult> {
+export async function handleCerebrumQuery(raw: Record<string, unknown>): Promise<AiToolResult> {
   const args = parseArgs(raw);
 
   if (!args.question.trim()) {
-    return mcpError('question is required and must be non-empty', 'VALIDATION_ERROR');
+    return toolError('question is required and must be non-empty', 'VALIDATION_ERROR');
   }
 
   try {
@@ -54,7 +54,7 @@ export async function handleCerebrumQuery(raw: Record<string, unknown>): Promise
       domains,
     });
 
-    return mcpSuccess({
+    return toolSuccess({
       answer: result.answer,
       citations: result.sources.map((s) => ({
         id: s.id,

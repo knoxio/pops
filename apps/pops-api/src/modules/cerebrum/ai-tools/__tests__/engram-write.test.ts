@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { NotFoundError, ValidationError } from '../../shared/errors.js';
+import { NotFoundError, ValidationError } from '../../../../shared/errors.js';
 import { parseResult } from './test-helpers.js';
 
-import type { Engram } from '../../modules/cerebrum/engrams/types.js';
+import type { Engram } from '../../engrams/types.js';
 
 const mockUpdate = vi.fn();
 
-vi.mock('../../modules/cerebrum/instance.js', () => ({
+vi.mock('../../instance.js', () => ({
   getEngramService: () => ({
     update: mockUpdate,
   }),
 }));
 
-const { handleEngramWrite } = await import('../tools/cerebrum-engram-write.js');
+const { handleEngramWrite } = await import('../engram-write.js');
 
 function makeEngram(overrides: Partial<Engram> = {}): Engram {
   return {

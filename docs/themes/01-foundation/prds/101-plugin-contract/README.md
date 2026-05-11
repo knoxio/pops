@@ -1,7 +1,7 @@
 # PRD-101: Plugin Contract
 
 > Epic: [Modular Module Runtime](../../epics/10-modular-module-runtime.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -99,7 +99,7 @@ Each existing hand-rolled registry collapses into a registry consumer. The shape
 | 07  | [us-07-overlay-mount-from-registry](us-07-overlay-mount-from-registry.md) | Shell mounts overlays into `chromeSlot` declared in manifest; remove hard-wired `<ChatOverlay />`                       | Blocked by 02    |
 | 08  | [us-08-uri-resolver](us-08-uri-resolver.md)                               | Implement ADR-012 resolver as a registry consumer; absent-module URIs return placeholder. Closes #2522 (URI half).      | Blocked by 02    |
 | 09  | [us-09-migration-runner](us-09-migration-runner.md)                       | Runner consumes per-module migration declarations; absent modules skip. Closes #2523.                                   | Blocked by 02    |
-| 10  | [us-10-ai-tool-aggregation](us-10-ai-tool-aggregation.md)                 | Ego / MCP server enumerates tools from `MODULES`; per-module ad-hoc registration removed                                | Blocked by 02    |
+| 10  | [us-10-ai-tool-aggregation](us-10-ai-tool-aggregation.md)                 | Ego and MCP expose a single merged AI tool surface based on the installed module set. Done.                             | Blocked by 02    |
 | 11  | [us-11-test-matrix](us-11-test-matrix.md)                                 | Contract violations fail at build; install-set matrix exercised in CI                                                   | Blocked by 03–10 |
 
 ## Out of Scope

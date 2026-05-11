@@ -1,4 +1,5 @@
 import { mergeRouters, router } from '../../trpc.js';
+import { cerebrumAiTools } from './ai-tools/index.js';
 import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';
 import { scopesRouter } from './engrams/scopes-router.js';
@@ -45,6 +46,6 @@ export const manifest: ModuleManifest<typeof cerebrumRouter> = {
   surfaces: ['app'],
   description:
     'Engram storage, retrieval, ingest/emit, plexus, reflex, glia — knowledge graph and agents.',
-  backend: { router: cerebrumRouter },
+  backend: { router: cerebrumRouter, aiTools: cerebrumAiTools },
   settings: [cerebrumManifest],
 };

@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { handleJsonBody } from '../tools/cerebrum-ingest.js';
+import { handleJsonBody } from '../ingest.js';
 import { parseResult } from './test-helpers.js';
 
 // Mock the IngestService to avoid DB dependency in unit tests
-vi.mock('../../modules/cerebrum/ingest/pipeline.js', () => ({
+vi.mock('../../ingest/pipeline.js', () => ({
   IngestService: class MockIngestService {
     async submit(input: Record<string, unknown>) {
       return {
@@ -24,7 +24,7 @@ vi.mock('../../modules/cerebrum/ingest/pipeline.js', () => ({
 }));
 
 // Dynamic import of handler AFTER mock is set up
-const { handleCerebrumIngest } = await import('../tools/cerebrum-ingest.js');
+const { handleCerebrumIngest } = await import('../ingest.js');
 
 describe('handleJsonBody', () => {
   it('returns the original body for non-JSON content', () => {

@@ -4,10 +4,10 @@
  * Delegates to EngramService.read() and returns engram metadata + body.
  * Blocks access if all scopes are secret.
  */
-import { getEngramService } from '../../modules/cerebrum/instance.js';
-import { mapServiceError, mcpError, mcpSuccess } from '../errors.js';
+import { getEngramService } from '../instance.js';
+import { mapServiceError, toolError, toolSuccess } from './result.js';
 
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { AiToolResult } from '@pops/types';
 
 function isSecretScope(scope: string): boolean {
   return scope.split('.').includes('secret');
@@ -22,11 +22,11 @@ function parseArgs(raw: Record<string, unknown>): { id: string } {
   return { id };
 }
 
-export async function handleEngramRead(raw: Record<string, unknown>): Promise<CallToolResult> {
+export async function handleEngramRead(raw: Record<string, unknown>): Promise<AiToolResult> {
   const { id } = parseArgs(raw);
 
   if (!id.trim()) {
-    return mcpError('id is required', 'VALIDATION_ERROR');
+    return toolError('id is required', 'VALIDATION_ERROR');
   }
 
   try {
@@ -34,13 +34,13 @@ export async function handleEngramRead(raw: Record<string, unknown>): Promise<Ca
     const { engram, body } = svc.read(id);
 
     if (allScopesSecret(engram.scopes)) {
-      return mcpError(
+      return toolError(
         `Engram '${id}' is fully secret-scoped and cannot be read via MCP`,
         'SCOPE_BLOCKED'
       );
     }
 
-    return mcpSuccess({
+    return toolSuccess({
       engram: {
         id: engram.id,
         title: engram.title,
