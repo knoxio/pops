@@ -6,6 +6,7 @@ import { scopesRouter } from './engrams/scopes-router.js';
 import { tagsRouter } from './engrams/tags-router.js';
 import { gliaRouter as gliaTrustRouter } from './glia/router.js';
 import { ingestRouter } from './ingest/router.js';
+import { cerebrumMigrations } from './migrations.js';
 import { nudgesRouter } from './nudges/router.js';
 import { plexusRouter } from './plexus/router.js';
 import { queryRouter } from './query/router.js';
@@ -46,6 +47,6 @@ export const manifest: ModuleManifest<typeof cerebrumRouter> = {
   surfaces: ['app'],
   description:
     'Engram storage, retrieval, ingest/emit, plexus, reflex, glia — knowledge graph and agents.',
-  backend: { router: cerebrumRouter, aiTools: cerebrumAiTools },
+  backend: { router: cerebrumRouter, aiTools: cerebrumAiTools, migrations: cerebrumMigrations },
   settings: [cerebrumManifest],
 };

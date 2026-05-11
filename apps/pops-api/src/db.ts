@@ -6,6 +6,7 @@ import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
+import { migrationOwners } from './db/migration-ownership.js';
 import {
   DRIZZLE_MIGRATIONS_DIRECTORY,
   getPendingMigrations,
@@ -15,9 +16,11 @@ import {
   markVecMigrationApplied,
   runMigrations,
 } from './db/migrations-runner.js';
+import { warnOrphanMigrationsByOwner } from './db/per-module-migrations.js';
 import { initializeSchema } from './db/schema.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { isVecAvailable, tryLoadVecExtension } from './db/vec-loader.js';
+import { readInstalledModules } from './modules/env-modules.js';
 
 let prodDb: BetterSqlite3.Database | null = null;
 
@@ -92,6 +95,28 @@ function applyDrizzleMigrations(db: BetterSqlite3.Database, vecLoaded: boolean):
   }
 }
 
+/**
+ * Warn about migrations recorded in `__drizzle_migrations` whose owning
+ * module is not in the current install set (`POPS_APPS` / `POPS_OVERLAYS`).
+ * Data is preserved; the warning is operator info only (PRD-101 US-09).
+ *
+ * Reads the install set via `readInstalledModules()` rather than the live
+ * manifest graph — manifest exports transitively import `db.ts` via their
+ * tRPC routers, so pulling them here would create an import cycle.
+ */
+function warnAbsentModuleMigrations(db: BetterSqlite3.Database): void {
+  try {
+    const installed = readInstalledModules();
+    const installedIds = new Set<string>(['core', ...installed.apps, ...installed.overlays]);
+    warnOrphanMigrationsByOwner(db, installedIds, migrationOwners);
+  } catch (err) {
+    // Non-fatal — the warning is informational; if env parsing fails the
+    // boot path will surface the same error through `readInstalledModules`
+    // when other consumers call it.
+    console.warn('[db] Could not compute orphan-migration warning:', err);
+  }
+}
+
 function openDatabase(path: string): BetterSqlite3.Database {
   const db = new BetterSqlite3(path);
   configureConnection(db);
@@ -101,6 +126,7 @@ function openDatabase(path: string): BetterSqlite3.Database {
 
   if (isFreshDatabase(db)) {
     initializeFreshDatabase(db);
+    warnAbsentModuleMigrations(db);
     return db;
   }
 
@@ -113,6 +139,7 @@ function openDatabase(path: string): BetterSqlite3.Database {
   // Drizzle. (#2375)
   applyDrizzleMigrations(db, vecLoaded);
   applyManualMigrations(db, path);
+  warnAbsentModuleMigrations(db);
   return db;
 }
 
