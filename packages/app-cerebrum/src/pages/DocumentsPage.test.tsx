@@ -125,4 +125,13 @@ describe('DocumentsPage', () => {
     });
     expect(screen.getByTestId('documents-result-notice')).toBeInTheDocument();
   });
+
+  it('surfaces an error toast when generation fails', () => {
+    renderPage();
+    act(() => {
+      generateCallbacks.onError?.(new Error('Generation failed'));
+    });
+    expect(toastErrorMock).toHaveBeenCalledWith('Generation failed');
+    expect(screen.getByTestId('documents-result-empty')).toBeInTheDocument();
+  });
 });

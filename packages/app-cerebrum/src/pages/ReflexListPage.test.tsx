@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -111,10 +111,12 @@ describe('ReflexListPage', () => {
     });
     renderPage();
     expect(screen.getAllByTestId('reflex-row')).toHaveLength(2);
-    const fireButtons = screen.getAllByRole('button', { name: /fire/i });
-    const firstFire = fireButtons[0];
-    expect(firstFire).toBeDefined();
-    if (firstFire) await userEvent.click(firstFire);
+    const targetRow = screen.getByText('consolidate-notes').closest('[data-testid="reflex-row"]');
+    expect(targetRow).toBeTruthy();
+    if (!(targetRow instanceof HTMLElement)) {
+      throw new Error('Expected reflex-row for consolidate-notes');
+    }
+    await userEvent.click(within(targetRow).getByRole('button', { name: /fire/i }));
     expect(mockTestMutate).toHaveBeenCalledWith({ name: 'consolidate-notes' });
   });
 
@@ -131,14 +133,14 @@ describe('ReflexListPage', () => {
       refetch: vi.fn(),
     });
     renderPage();
-    const switches = screen.getAllByRole('switch');
-    const first = switches[0];
-    const second = switches[1];
-    expect(first).toBeDefined();
-    expect(second).toBeDefined();
-    if (first) await userEvent.click(first);
+    const rowA = screen.getByText('a').closest('[data-testid="reflex-row"]');
+    const rowB = screen.getByText('b').closest('[data-testid="reflex-row"]');
+    if (!(rowA instanceof HTMLElement) || !(rowB instanceof HTMLElement)) {
+      throw new Error('Expected reflex-row elements for a and b');
+    }
+    await userEvent.click(within(rowA).getByRole('switch'));
     expect(mockDisableMutate).toHaveBeenCalledWith({ name: 'a' });
-    if (second) await userEvent.click(second);
+    await userEvent.click(within(rowB).getByRole('switch'));
     expect(mockEnableMutate).toHaveBeenCalledWith({ name: 'b' });
   });
 });
