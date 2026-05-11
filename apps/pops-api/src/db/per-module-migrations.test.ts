@@ -575,3 +575,123 @@ describe('warnOrphanMigrations', () => {
     });
   });
 });
+
+describe('hash drift (issue #2610)', () => {
+  it('skips the re-run when a migration file is edited after apply', async () => {
+    const { createHash } = await import('node:crypto');
+    const dir = fakeJournalDir();
+    const originalSql = [
+      'CREATE TABLE renamed_t (id INTEGER, new_col TEXT);',
+      '--> statement-breakpoint',
+      // The "one-way" statement that would fail if re-run on a DB where
+      // the migration already took effect (old_col no longer exists).
+      'UPDATE renamed_t SET new_col = old_col WHERE old_col IS NOT NULL;',
+    ].join('\n');
+    writeJournal(dir, [{ tag: '0034_rename', sql: originalSql }]);
+    const originalHash = createHash('sha256').update(originalSql).digest('hex');
+
+    // Now edit the file (a comment fix — body changes, hash differs) and
+    // re-run with the post-edit content visible to the runner.
+    const editedSql = `-- minor comment fix\n${originalSql}`;
+    writeFileSync(join(dir, '0034_rename.sql'), editedSql);
+    const mod = await loadRunnerWithJournalDir(dir);
+
+    await withDb((db) => {
+      // Pre-create the schema in its post-migration shape (no `old_col`)
+      // and record the migration as already applied under its ORIGINAL
+      // hash + tag — i.e. the state a real DB would be in after a normal
+      // apply followed by an unrelated edit to the SQL file.
+      db.exec('CREATE TABLE renamed_t (id INTEGER, new_col TEXT);');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hash TEXT NOT NULL,
+          created_at NUMERIC
+        )
+      `);
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS "__pops_migration_tags" (
+          tag TEXT PRIMARY KEY,
+          hash TEXT NOT NULL,
+          applied_at INTEGER NOT NULL
+        )
+      `);
+      const now = Date.now();
+      db.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)').run(
+        originalHash,
+        now
+      );
+      db.prepare('INSERT INTO __pops_migration_tags (tag, hash, applied_at) VALUES (?, ?, ?)').run(
+        '0034_rename',
+        originalHash,
+        now
+      );
+
+      // Boot the runner against the edited SQL. It must NOT re-execute the
+      // UPDATE — that would throw `no such column: old_col`. The tag is on
+      // file, the hash drifted, the migration's effects are already in the
+      // schema. Detect drift, skip re-run.
+      const editedA = makeManifest('a', [{ id: '0034_rename', sql: editedSql }]);
+      const result = mod.runPerModuleMigrations(db, [editedA]);
+
+      expect(result.applied).toEqual([]);
+      expect(result.alreadyApplied).toEqual(['0034_rename']);
+    });
+  });
+
+  it('backfills __pops_migration_tags from existing __drizzle_migrations on first boot after upgrade', async () => {
+    const { createHash } = await import('node:crypto');
+    const dir = fakeJournalDir();
+    const sql = 'CREATE TABLE legacy_t (id INTEGER);';
+    writeJournal(dir, [{ tag: '0010_legacy', sql }]);
+    const mod = await loadRunnerWithJournalDir(dir);
+
+    await withDb((db) => {
+      // DB applied this migration under the old hash-only tracking.
+      db.exec(sql);
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hash TEXT NOT NULL,
+          created_at NUMERIC
+        )
+      `);
+      const hash = createHash('sha256').update(sql).digest('hex');
+      db.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)').run(
+        hash,
+        Date.now()
+      );
+
+      const a = makeManifest('a', [{ id: '0010_legacy', sql }]);
+      const result = mod.runPerModuleMigrations(db, [a]);
+
+      expect(result.alreadyApplied).toEqual(['0010_legacy']);
+
+      // Tag table has been backfilled.
+      const tagRow = db
+        .prepare('SELECT tag, hash FROM __pops_migration_tags WHERE tag = ?')
+        .get('0010_legacy') as { tag: string; hash: string } | undefined;
+      expect(tagRow).toBeDefined();
+      expect(tagRow?.hash).toBe(hash);
+    });
+  });
+
+  it('records the tag alongside the hash on every fresh apply', async () => {
+    const dir = fakeJournalDir();
+    const sql = 'CREATE TABLE fresh_t (id INTEGER);';
+    writeJournal(dir, [{ tag: '0001_fresh', sql }]);
+    const mod = await loadRunnerWithJournalDir(dir);
+
+    await withDb((db) => {
+      const a = makeManifest('a', [{ id: '0001_fresh', sql }]);
+      mod.runPerModuleMigrations(db, [a]);
+
+      const rows = db.prepare('SELECT tag, hash FROM __pops_migration_tags').all() as {
+        tag: string;
+        hash: string;
+      }[];
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.tag).toBe('0001_fresh');
+    });
+  });
+});
