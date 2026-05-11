@@ -44,12 +44,37 @@ export function toolError(message: string, code: CerebrumToolErrorCode): AiToolR
  * the caller receives a generic message so we never leak stack traces, SQL
  * fragments, or other internals through MCP / Ego responses.
  */
+/**
+ * Pull a human-readable message out of a ValidationError's `details` payload.
+ *
+ * The service layer throws `new ValidationError({ message: '<reason>' })` so
+ * the field-level reason lives inside `details`, not in the top-level
+ * `Error.message` (which is always "Validation failed"). The MCP / Ego
+ * surface needs the actual reason, otherwise agents and humans see
+ * indistinguishable generic strings for every validation failure.
+ */
+function extractValidationMessage(err: ValidationError): string {
+  const details = err.details;
+  if (typeof details === 'string' && details.trim().length > 0) {
+    return details;
+  }
+  if (
+    typeof details === 'object' &&
+    details !== null &&
+    typeof (details as { message?: unknown }).message === 'string'
+  ) {
+    const message = (details as { message: string }).message;
+    if (message.trim().length > 0) return message;
+  }
+  return err.message;
+}
+
 export function mapServiceError(err: unknown): AiToolResult {
   if (err instanceof NotFoundError) {
     return toolError(err.message, 'NOT_FOUND');
   }
   if (err instanceof ValidationError) {
-    return toolError(err.message, 'VALIDATION_ERROR');
+    return toolError(extractValidationMessage(err), 'VALIDATION_ERROR');
   }
   logger.error({ err }, '[cerebrum.ai-tools] unhandled service error');
   return toolError('An unexpected internal error occurred', 'INTERNAL_ERROR');

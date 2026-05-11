@@ -19,6 +19,14 @@ vi.mock('../../modules/cerebrum/ingest/pipeline.js', () => ({
         scopeInference: { scopes: [], source: 'fallback', confidence: 0 },
       };
     }
+    async quickCapture() {
+      return {
+        id: 'eng_test_capture',
+        path: 'personal/capture/eng_test_capture.md',
+        type: 'capture',
+        scopes: ['personal.captures'],
+      };
+    }
   },
 }));
 vi.mock('../../modules/cerebrum/query/query-service.js', () => ({
@@ -60,6 +68,7 @@ describe('listTools', () => {
     const names = listTools().map((t) => t.name);
     expect(names).toContain('cerebrum.search');
     expect(names).toContain('cerebrum.ingest');
+    expect(names).toContain('cerebrum.quickCapture');
     expect(names).toContain('cerebrum.engram.read');
     expect(names).toContain('cerebrum.engram.write');
     expect(names).toContain('cerebrum.query');
@@ -87,6 +96,11 @@ describe('dispatchTool', () => {
 
   it('dispatches cerebrum.ingest', () => {
     const result = dispatchTool('cerebrum.ingest', { body: 'content' });
+    expect(result).toBeInstanceOf(Promise);
+  });
+
+  it('dispatches cerebrum.quickCapture', () => {
+    const result = dispatchTool('cerebrum.quickCapture', { text: 'a fleeting thought' });
     expect(result).toBeInstanceOf(Promise);
   });
 

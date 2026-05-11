@@ -51,10 +51,10 @@ raw input → normalize → classify type → match template → extract entitie
 
 ### MCP Tools
 
-| Tool                     | Parameters                          | Description                                           |
-| ------------------------ | ----------------------------------- | ----------------------------------------------------- |
-| `cerebrum_ingest`        | body, title?, type?, scopes?, tags? | Full ingestion via MCP — used by Claude Code sessions |
-| `cerebrum_quick_capture` | text                                | Quick capture via MCP — raw text in, engram out       |
+| Tool                    | Parameters                          | Description                                                                                                     |
+| ----------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `cerebrum.ingest`       | body, title?, type?, scopes?, tags? | Full ingestion via MCP — used by Claude Code sessions; runs the full pipeline (classify, extract, infer, write) |
+| `cerebrum.quickCapture` | text                                | Quick capture via MCP — raw text in, capture engram out; classification runs asynchronously                     |
 
 ## Business Rules
 
@@ -94,7 +94,7 @@ raw input → normalize → classify type → match template → extract entitie
 | #   | Story                                                 | Summary                                                                                                  | Status  | Parallelisable |
 | --- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------- | -------------- |
 | 01  | [us-01-manual-input](us-01-manual-input.md)           | Shell UI form for creating engrams: type selector, template fields, body editor, scope picker, tag input | Done    | No (first)     |
-| 02  | [us-02-agent-input](us-02-agent-input.md)             | MCP tools and API endpoint for writing engrams from Claude Code or external tools                        | Partial | Yes            |
+| 02  | [us-02-agent-input](us-02-agent-input.md)             | MCP tools and API endpoint for writing engrams from Claude Code or external tools                        | Done    | Yes            |
 | 03  | [us-03-quick-capture](us-03-quick-capture.md)         | Minimal-friction capture for Moltbot/CLI: raw text in, classified later                                  | Partial | Yes            |
 | 04  | [us-04-classification](us-04-classification.md)       | LLM-based content classification: infer type, match template, suggest tags                               | Done    | Yes            |
 | 05  | [us-05-entity-extraction](us-05-entity-extraction.md) | Extract people, projects, dates, topics from body into tags and frontmatter                              | Done    | Yes            |

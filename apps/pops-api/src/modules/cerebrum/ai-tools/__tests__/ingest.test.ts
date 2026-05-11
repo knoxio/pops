@@ -3,10 +3,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { handleJsonBody } from '../ingest.js';
 import { parseResult } from './test-helpers.js';
 
+/**
+ * Captured arguments from the most recent IngestService method calls. The
+ * mock writes here so individual tests can assert exactly what reached the
+ * pipeline (title, customFields, source, etc.) without exposing the mock
+ * class outside this scope.
+ */
+const lastSubmit: { input?: Record<string, unknown> } = {};
+const lastQuickCapture: { text?: string; source?: string } = {};
+
 // Mock the IngestService to avoid DB dependency in unit tests
 vi.mock('../../ingest/pipeline.js', () => ({
   IngestService: class MockIngestService {
     async submit(input: Record<string, unknown>) {
+      lastSubmit.input = input;
       return {
         engram: {
           id: 'eng_20260427_1200_test',
@@ -20,11 +30,21 @@ vi.mock('../../ingest/pipeline.js', () => ({
         scopeInference: { scopes: ['personal'], source: 'rules', confidence: 0.9 },
       };
     }
+    async quickCapture(text: string, source: string) {
+      lastQuickCapture.text = text;
+      lastQuickCapture.source = source;
+      return {
+        id: 'eng_20260427_1200_capture',
+        path: 'personal/capture/eng_20260427_1200_capture.md',
+        type: 'capture',
+        scopes: ['personal.captures'],
+      };
+    }
   },
 }));
 
 // Dynamic import of handler AFTER mock is set up
-const { handleCerebrumIngest } = await import('../ingest.js');
+const { handleCerebrumIngest, handleCerebrumQuickCapture } = await import('../ingest.js');
 
 describe('handleJsonBody', () => {
   it('returns the original body for non-JSON content', () => {
@@ -105,6 +125,50 @@ describe('handleJsonBody', () => {
     const result = handleJsonBody(json);
     expect(result.derivedTitle).toBe('Fallback');
   });
+
+  it('extracts scalar JSON fields into extractedFields', () => {
+    const json = '{"priority": 3, "active": true, "owner": "alice", "title": "T"}';
+    const result = handleJsonBody(json);
+    expect(result.extractedFields).toEqual({
+      priority: 3,
+      active: true,
+      owner: 'alice',
+    });
+  });
+
+  it('promotes scalar arrays to extractedFields', () => {
+    const json = '{"tags_seen": ["a", "b", "c"], "counts": [1, 2, 3]}';
+    const result = handleJsonBody(json);
+    expect(result.extractedFields).toEqual({
+      tags_seen: ['a', 'b', 'c'],
+      counts: [1, 2, 3],
+    });
+  });
+
+  it('skips nested object values in extractedFields', () => {
+    const json = '{"meta": {"nested": true}, "level": "high"}';
+    const result = handleJsonBody(json);
+    expect(result.extractedFields).toEqual({ level: 'high' });
+    expect(result.extractedFields['meta']).toBeUndefined();
+  });
+
+  it('skips reserved keys (title/name/body/content) in extractedFields', () => {
+    const json =
+      '{"title": "t", "name": "n", "body": "b", "content": "c", "text": "x", "other": "keep"}';
+    const result = handleJsonBody(json);
+    expect(result.extractedFields).toEqual({ other: 'keep' });
+  });
+
+  it('returns empty extractedFields for arrays', () => {
+    const json = '[1, 2, 3]';
+    const result = handleJsonBody(json);
+    expect(result.extractedFields).toEqual({});
+  });
+
+  it('returns empty extractedFields for non-JSON content', () => {
+    const result = handleJsonBody('plain text');
+    expect(result.extractedFields).toEqual({});
+  });
 });
 
 describe('handleCerebrumIngest', () => {
@@ -154,5 +218,87 @@ describe('handleCerebrumIngest', () => {
       scopes: ['valid', 42, null, 'also-valid'] as unknown as string[],
     });
     expect(result.isError).toBeUndefined();
+  });
+
+  it('forwards source=agent and full args to IngestService.submit', async () => {
+    lastSubmit.input = undefined;
+    await handleCerebrumIngest({
+      body: 'agent body',
+      title: 'Agent Title',
+      type: 'note',
+      scopes: ['personal'],
+      tags: ['t1', 't2'],
+    });
+    expect(lastSubmit.input).toMatchObject({
+      body: 'agent body',
+      title: 'Agent Title',
+      type: 'note',
+      scopes: ['personal'],
+      tags: ['t1', 't2'],
+      source: 'agent',
+    });
+  });
+
+  it('promotes JSON metadata into customFields', async () => {
+    lastSubmit.input = undefined;
+    await handleCerebrumIngest({
+      body: '{"title": "Doc", "priority": 5, "owner": "alice"}',
+    });
+    expect(lastSubmit.input?.['customFields']).toEqual({
+      priority: 5,
+      owner: 'alice',
+    });
+  });
+
+  it('does not pass customFields when JSON object has no extractable scalars', async () => {
+    lastSubmit.input = undefined;
+    await handleCerebrumIngest({ body: '{"title": "Only Title"}' });
+    expect(lastSubmit.input?.['customFields']).toBeUndefined();
+  });
+
+  it('returns the engram id, file path, type, and scopes from submit', async () => {
+    const result = await handleCerebrumIngest({ body: 'hello' });
+    const parsed = parseResult(result) as {
+      engram: { id: string; type: string; scopes: string[]; filePath: string };
+    };
+    expect(parsed.engram.id).toBe('eng_20260427_1200_test');
+    expect(parsed.engram.filePath).toBe('personal/note/eng_20260427_1200_test.md');
+    expect(parsed.engram.type).toBe('note');
+    expect(parsed.engram.scopes).toEqual(['personal']);
+  });
+});
+
+describe('handleCerebrumQuickCapture', () => {
+  it('returns VALIDATION_ERROR for empty text', async () => {
+    const result = await handleCerebrumQuickCapture({ text: '   ' });
+    const parsed = parseResult(result) as { code: string };
+    expect(parsed.code).toBe('VALIDATION_ERROR');
+    expect(result.isError).toBe(true);
+  });
+
+  it('returns VALIDATION_ERROR for missing text', async () => {
+    const result = await handleCerebrumQuickCapture({});
+    const parsed = parseResult(result) as { code: string };
+    expect(parsed.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('delegates to IngestService.quickCapture with source=agent', async () => {
+    lastQuickCapture.text = undefined;
+    lastQuickCapture.source = undefined;
+    await handleCerebrumQuickCapture({ text: 'a quick thought' });
+    expect(lastQuickCapture.text).toBe('a quick thought');
+    expect(lastQuickCapture.source).toBe('agent');
+  });
+
+  it('returns the captured engram id, path, type, and scopes', async () => {
+    const result = await handleCerebrumQuickCapture({ text: 'quick' });
+    expect(result.isError).toBeUndefined();
+    const parsed = parseResult(result) as {
+      engram: { id: string; type: string; scopes: string[]; filePath: string };
+    };
+    expect(parsed.engram.id).toBe('eng_20260427_1200_capture');
+    expect(parsed.engram.type).toBe('capture');
+    expect(parsed.engram.scopes).toEqual(['personal.captures']);
+    expect(parsed.engram.filePath).toBe('personal/capture/eng_20260427_1200_capture.md');
   });
 });

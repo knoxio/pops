@@ -10,7 +10,12 @@ import { engramWriteSchema, handleEngramWrite } from './engram-write.js';
  * the merged surface via MCP `tools/list` and Ego's tool context — there is
  * no per-module ad-hoc registration.
  */
-import { cerebrumIngestSchema, handleCerebrumIngest } from './ingest.js';
+import {
+  cerebrumIngestSchema,
+  cerebrumQuickCaptureSchema,
+  handleCerebrumIngest,
+  handleCerebrumQuickCapture,
+} from './ingest.js';
 import { cerebrumQuerySchema, handleCerebrumQuery } from './query.js';
 import { cerebrumSearchSchema, handleCerebrumSearch } from './search.js';
 
@@ -30,6 +35,13 @@ export const cerebrumAiTools: readonly AiToolDescriptor[] = [
       'Ingest new content into the Cerebrum knowledge base. Accepts plain text, Markdown, or JSON. Runs classification, entity extraction, and scope inference automatically.',
     inputSchema: cerebrumIngestSchema,
     handler: handleCerebrumIngest,
+  },
+  {
+    name: 'cerebrum.quickCapture',
+    description:
+      'Quick-capture raw text into the Cerebrum knowledge base. Stores immediately as type=capture; classification, entity extraction and scope inference run asynchronously after storage. Use this for low-latency fire-and-forget capture (Moltbot, mobile).',
+    inputSchema: cerebrumQuickCaptureSchema,
+    handler: handleCerebrumQuickCapture,
   },
   {
     name: 'cerebrum.engram.read',
@@ -57,6 +69,7 @@ export const cerebrumAiTools: readonly AiToolDescriptor[] = [
 export {
   handleCerebrumIngest,
   handleCerebrumQuery,
+  handleCerebrumQuickCapture,
   handleCerebrumSearch,
   handleEngramRead,
   handleEngramWrite,
