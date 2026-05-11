@@ -59,7 +59,9 @@ reviews:
     - '!**/package-lock.json'
     - '!**/*.snap'
     - '!**/__snapshots__/**'
-    - '!apps/pops-api/src/db/drizzle-migrations/meta/**'
+    # Snapshots are massive auto-generated JSON; keep `_journal.json` in
+    # scope so the migration-number check below can read it.
+    - '!apps/pops-api/src/db/drizzle-migrations/meta/*_snapshot.json'
 
   # Per-area instructions surface project-specific rules to the reviewer
   # (mirrors CLAUDE.md / AGENTS.md). Keep these tight — long prompts dilute
