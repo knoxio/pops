@@ -51,21 +51,31 @@ export function readQueryHistory(storage: Storage = window.localStorage): QueryH
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(isHistoryEntry);
-  } catch {
+  } catch (err) {
+    // Fallback is safe (empty history), but a parse/storage failure is
+    // worth surfacing so real regressions don't go unnoticed.
+    console.warn('[cerebrum.query] failed to read history', describeError(err));
     return [];
   }
 }
 
-/** Persist the history. Silently no-ops on quota errors. */
+/** Persist the history. No-ops on quota errors but logs a diagnostic. */
 export function writeQueryHistory(
   entries: QueryHistoryEntry[],
   storage: Storage = window.localStorage
 ): void {
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_ENTRIES)));
-  } catch {
-    // Out of quota / private browsing — losing history is acceptable.
+  } catch (err) {
+    // Out of quota / private browsing — losing history is acceptable,
+    // but log so unexpected write failures stay diagnosable.
+    console.warn('[cerebrum.query] failed to persist history', describeError(err));
   }
+}
+
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
 }
 
 /**
@@ -90,15 +100,20 @@ function isSameQuery(a: QueryHistoryEntry, b: QueryHistoryEntry): boolean {
   return (
     a.question === b.question &&
     a.includeSecret === b.includeSecret &&
-    arraysEqual(a.scopes, b.scopes) &&
-    arraysEqual(a.domains, b.domains)
+    sameSet(a.scopes, b.scopes) &&
+    sameSet(a.domains, b.domains)
   );
 }
 
-function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
+// Scope/domain filter order isn't semantically meaningful — compare
+// sorted copies so ['work.*','personal.*'] and ['personal.*','work.*']
+// dedupe to the same row.
+function sameSet(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) {
-    if (a[i] !== b[i]) return false;
+  const sortedA = [...a].toSorted();
+  const sortedB = [...b].toSorted();
+  for (let i = 0; i < sortedA.length; i += 1) {
+    if (sortedA[i] !== sortedB[i]) return false;
   }
   return true;
 }

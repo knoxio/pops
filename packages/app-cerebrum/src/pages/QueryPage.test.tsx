@@ -154,7 +154,7 @@ describe('QueryPage', () => {
           question: 'replay me',
           scopes: ['work.*'],
           domains: ['engrams'],
-          includeSecret: false,
+          includeSecret: true,
           lastConfidence: 'medium',
           lastSourceCount: 3,
         },
@@ -166,23 +166,31 @@ describe('QueryPage', () => {
       question: 'replay me',
       scopes: ['work.*'],
       domains: ['engrams'],
+      includeSecret: true,
     });
   });
 
   it('dispatches save-as-document via the emit pipeline', async () => {
     renderPage();
     await userEvent.type(screen.getByLabelText('Question'), 'topic q');
+    await userEvent.type(screen.getByLabelText('Scopes (comma-separated)'), 'work.engineering');
     await userEvent.click(screen.getByTestId('query-ask'));
     act(() => {
       askCallbacks.onSuccess?.({
         answer: 'answer',
         sources: [],
-        scopes: [],
+        scopes: ['work.engineering'],
         confidence: 'low',
       });
     });
     await userEvent.click(screen.getByTestId('query-save-document'));
-    expect(mockEmitMutate).toHaveBeenCalledWith({ mode: 'report', query: 'topic q' });
+    expect(mockEmitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'report',
+        query: 'topic q',
+        scopes: ['work.engineering'],
+      })
+    );
     act(() => {
       emitCallbacks.onSuccess?.({ document: { title: 'Saved doc' } });
     });

@@ -78,6 +78,23 @@ describe('history-storage', () => {
     expect(next).toEqual([dupe]);
   });
 
+  it('dedupes regardless of scope/domain ordering', () => {
+    const first = buildEntry({
+      id: '1',
+      question: 'q',
+      scopes: ['work.*', 'personal.*'],
+      domains: ['engrams', 'transactions'],
+    });
+    const reordered = buildEntry({
+      id: '2',
+      question: 'q',
+      scopes: ['personal.*', 'work.*'],
+      domains: ['transactions', 'engrams'],
+    });
+    const next = appendHistoryEntry([first], reordered);
+    expect(next).toEqual([reordered]);
+  });
+
   it('caps the history to the configured maximum', () => {
     const entries = Array.from({ length: QUERY_HISTORY_MAX_ENTRIES + 5 }, (_, i) =>
       buildEntry({ id: String(i), question: `q${i}` })

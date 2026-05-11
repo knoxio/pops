@@ -16,6 +16,18 @@ import {
 
 import type { QueryAnswer, QueryHistoryEntry } from './types';
 
+/**
+ * Collision-resistant id for history rows. `updateStats` / `remove`
+ * key off this id, so a same-millisecond duplicate would mutate or
+ * delete the wrong row.
+ */
+function generateHistoryId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export interface HistoryState {
   history: QueryHistoryEntry[];
   addEntry: (entry: QueryHistoryEntry) => void;
@@ -31,7 +43,7 @@ export function buildHistoryEntry(input: {
   includeSecret?: boolean;
 }): QueryHistoryEntry {
   return {
-    id: Date.now().toString(),
+    id: generateHistoryId(),
     submittedAt: new Date().toISOString(),
     question: input.question,
     scopes: input.scopes ?? [],
