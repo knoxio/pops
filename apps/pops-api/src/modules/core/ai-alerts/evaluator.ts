@@ -16,14 +16,14 @@ import { aiAlertRules } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
-import { insertAlert, isDuplicate } from './alerts-store.js';
+import { insertAlertIfNotDuplicate } from './alerts-store.js';
 import { dispatchAlert } from './dispatch.js';
 import { evaluateBudgetThreshold } from './evaluators/budget.js';
 import { evaluateErrorSpike } from './evaluators/error-spike.js';
 import { evaluateLatencyDegradation } from './evaluators/latency.js';
 import { ruleRowToRule } from './mappers.js';
 
-import type { AlertCandidate, AlertRule, DispatchedAlert } from './types.js';
+import type { AlertCandidate, AlertRule, DispatchedAlert, FiredAlert } from './types.js';
 
 export { DEDUP_WINDOW_MINUTES, acknowledgeAlert, listAlerts } from './alerts-store.js';
 export type { ListAlertsFilters } from './alerts-store.js';
@@ -64,12 +64,10 @@ export function loadEnabledRules(db: ReturnType<typeof getDrizzle>): AlertRule[]
   return db.select().from(aiAlertRules).where(eq(aiAlertRules.enabled, 1)).all().map(ruleRowToRule);
 }
 
-async function persistAndDispatch(
-  candidate: AlertCandidate,
-  deps: EvaluatorDeps,
+async function dispatchPersistedAlert(
+  alert: FiredAlert,
   dispatchEnabled: boolean
 ): Promise<DispatchedAlert> {
-  const alert = insertAlert(deps.db, candidate, deps.now);
   if (!dispatchEnabled) return { ...alert, channels: [] };
   const results = await dispatchAlert(alert);
   const channels = results.filter((r) => r.delivered).map((r) => r.channel);
@@ -96,11 +94,12 @@ export async function runEvaluation(
     const candidates = evaluateRule(rule, { db, now });
     totalCandidates += candidates.length;
     for (const candidate of candidates) {
-      if (isDuplicate(db, candidate, now)) {
+      const persisted = insertAlertIfNotDuplicate(db, candidate, now);
+      if (!persisted) {
         dedupedCount += 1;
         continue;
       }
-      fired.push(await persistAndDispatch(candidate, { db, now }, dispatchEnabled));
+      fired.push(await dispatchPersistedAlert(persisted, dispatchEnabled));
     }
   }
   logger.info(

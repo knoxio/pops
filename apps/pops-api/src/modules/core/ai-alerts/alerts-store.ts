@@ -62,6 +62,27 @@ export function insertAlert(
   return alertRowToAlert(row);
 }
 
+/**
+ * Atomically check-then-insert: returns the persisted row when the candidate
+ * was new, or `null` when an alert with the same `(type, scope_detail)` is
+ * already present inside the rolling dedup window.
+ *
+ * The dedup window is time-based and therefore cannot be expressed as a
+ * static UNIQUE constraint; we wrap the check and the insert in a single
+ * SQLite write transaction so two concurrent evaluator runs cannot both
+ * pass the duplicate check and double-fire.
+ */
+export function insertAlertIfNotDuplicate(
+  db: ReturnType<typeof getDrizzle>,
+  candidate: AlertCandidate,
+  now: Date
+): FiredAlert | null {
+  return db.transaction((tx) => {
+    if (isDuplicate(tx, candidate, now)) return null;
+    return insertAlert(tx, candidate, now);
+  });
+}
+
 export interface ListAlertsFilters {
   acknowledged?: boolean;
   type?: AlertRuleType;

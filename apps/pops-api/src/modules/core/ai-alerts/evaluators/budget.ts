@@ -49,25 +49,32 @@ function getUsage(
   return { totalTokens: agg?.totalTokens ?? 0, totalCost: agg?.totalCost ?? 0 };
 }
 
+/**
+ * Build a metric per configured limit. A budget may set both cost and token
+ * limits; we must report on whichever is most utilised so a runaway token
+ * count never hides behind a comfortable dollar spend (and vice versa).
+ */
 function computeMetrics(
   budget: typeof aiBudgets.$inferSelect,
   usage: { totalTokens: number; totalCost: number }
 ): BudgetMetrics | null {
+  const metrics: BudgetMetrics[] = [];
   if (budget.monthlyCostLimit != null && budget.monthlyCostLimit > 0) {
-    return {
+    metrics.push({
       percentage: (usage.totalCost / budget.monthlyCostLimit) * 100,
       limitDescription: `$${budget.monthlyCostLimit.toFixed(2)} monthly cost limit`,
       usedDescription: `$${usage.totalCost.toFixed(2)} spent`,
-    };
+    });
   }
   if (budget.monthlyTokenLimit != null && budget.monthlyTokenLimit > 0) {
-    return {
+    metrics.push({
       percentage: (usage.totalTokens / budget.monthlyTokenLimit) * 100,
       limitDescription: `${budget.monthlyTokenLimit} monthly token limit`,
       usedDescription: `${usage.totalTokens} tokens used`,
-    };
+    });
   }
-  return null;
+  if (metrics.length === 0) return null;
+  return metrics.reduce((max, m) => (m.percentage > max.percentage ? m : max));
 }
 
 export function evaluateBudgetThreshold(

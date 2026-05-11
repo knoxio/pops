@@ -15,10 +15,19 @@ import { rollingWindowStart } from './shared.js';
 import type { getDrizzle } from '../../../../db.js';
 import type { AlertCandidate, AlertRule, AlertSeverity } from '../types.js';
 
-function percentile(sorted: number[], p: number): number {
+/**
+ * Nearest-rank percentile. The previous implementation used
+ * `Math.floor(p * n)` which selects the *max* element for common sample
+ * sizes (e.g. `p=0.95`, `n=20` → idx 19), overstating P95 and producing
+ * false-positive alerts. We use the standard nearest-rank formula:
+ * `ceil(p * n) - 1`, clamped to the array bounds.
+ */
+export function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
-  const idx = Math.floor(p * sorted.length);
-  return sorted[Math.min(idx, sorted.length - 1)] ?? 0;
+  const clampedP = Math.min(Math.max(p, 0), 1);
+  const rank = Math.ceil(clampedP * sorted.length) - 1;
+  const idx = Math.min(Math.max(rank, 0), sorted.length - 1);
+  return sorted[idx] ?? 0;
 }
 
 function severity(p95: number, threshold: number): AlertSeverity {
