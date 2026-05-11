@@ -1,7 +1,7 @@
 # US-02: Agent Input via MCP and API
 
 > PRD: [PRD-081: Ingestion Pipeline](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
