@@ -73,7 +73,7 @@ function matchesSpec(spec: ShortcutSpec, e: KeyboardEvent): boolean {
  * never matches so misconfigured shortcuts fail closed rather than
  * binding the wrong key.
  */
-function compileShortcut(shortcut: string): (e: KeyboardEvent) => boolean {
+export function compileShortcut(shortcut: string): (e: KeyboardEvent) => boolean {
   const spec = parseShortcut(shortcut);
   if (spec === null) return () => false;
   return (e) => matchesSpec(spec, e);

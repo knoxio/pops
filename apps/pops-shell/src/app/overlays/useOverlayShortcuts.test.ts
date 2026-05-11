@@ -2,67 +2,33 @@
  * Tests for the shell-centralised overlay shortcut wiring (PRD-101 US-07).
  *
  * The hook itself is render-time only, so we test the pure shortcut
- * matcher (the part with all the branching) via a small re-implementation
- * mirror that exercises every modifier path. Acceptance criterion for
- * "shortcuts wired centrally" is covered by the hook's existence and its
- * use in `RootLayout`; this file guards the matcher against accidental
- * regressions in the parser and matcher.
+ * matcher (the part with all the branching) directly. Acceptance
+ * criterion for "shortcuts wired centrally" is covered by the hook's
+ * existence and its use in `RootLayout`; this file guards the matcher
+ * against accidental regressions in the parser and matcher by importing
+ * the production implementation so a regression in shipped code fails
+ * this suite.
  */
 import { describe, expect, it } from 'vitest';
 
-interface KeyEventLike {
-  key: string;
-  metaKey: boolean;
-  ctrlKey: boolean;
-  altKey: boolean;
-  shiftKey: boolean;
+import { compileShortcut } from './useOverlayShortcuts';
+
+interface KeyEventInit {
+  key?: string;
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
 }
 
-function makeEvent(partial: Partial<KeyEventLike>): KeyEventLike {
-  return {
+function makeEvent(partial: KeyEventInit): KeyboardEvent {
+  return new KeyboardEvent('keydown', {
     key: partial.key ?? '',
     metaKey: partial.metaKey ?? false,
     ctrlKey: partial.ctrlKey ?? false,
     altKey: partial.altKey ?? false,
     shiftKey: partial.shiftKey ?? false,
-  };
-}
-
-// Mirror of compileShortcut from useOverlayShortcuts.ts. Duplicated here
-// so the assertions read as a contract on the parser semantics rather
-// than coupling to the file path of the implementation.
-const VALID_MODIFIERS = new Set(['mod', 'ctrl', 'meta', 'alt', 'option', 'shift']);
-
-function compileShortcut(shortcut: string): (e: KeyEventLike) => boolean {
-  const parts = shortcut
-    .toLowerCase()
-    .split('+')
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
-  if (parts.length === 0) return () => false;
-  const key = parts[parts.length - 1];
-  if (key === undefined || VALID_MODIFIERS.has(key)) return () => false;
-  const modifierTokens = parts.slice(0, -1);
-  if (modifierTokens.some((token) => !VALID_MODIFIERS.has(token))) return () => false;
-  const modifiers = new Set(modifierTokens);
-  const needsMod = modifiers.has('mod');
-  const needsCtrl = modifiers.has('ctrl');
-  const needsMeta = modifiers.has('meta');
-  const needsAlt = modifiers.has('alt') || modifiers.has('option');
-  const needsShift = modifiers.has('shift');
-  return (e) => {
-    if (e.key.toLowerCase() !== key) return false;
-    if (!needsShift && e.shiftKey) return false;
-    if (!needsAlt && e.altKey) return false;
-    if (!needsCtrl && !needsMod && e.ctrlKey) return false;
-    if (!needsMeta && !needsMod && e.metaKey) return false;
-    if (needsMod && !(e.metaKey || e.ctrlKey)) return false;
-    if (needsCtrl && !e.ctrlKey) return false;
-    if (needsMeta && !e.metaKey) return false;
-    if (needsAlt && !e.altKey) return false;
-    if (needsShift && !e.shiftKey) return false;
-    return true;
-  };
+  });
 }
 
 describe('compileShortcut — mod+i', () => {

@@ -21,5 +21,5 @@ As a platform engineer, I want the shell to mount overlays into chrome slots dec
 
 ## Notes
 
-- `chromeSlot` is a free-form string today; if the slot catalogue stabilises, promote to a string-literal union in a follow-up.
-- The overlay component is loaded lazily so absent overlays don't bloat the shell bundle.
+- `chromeSlot` is an identifier for a named UI region; the allowed values are defined by the shell's slot catalogue.
+- Overlay components are loaded lazily so absent overlays don't contribute to the shell bundle.
