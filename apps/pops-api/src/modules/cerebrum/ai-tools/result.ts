@@ -8,6 +8,7 @@
  * directly. Keeping these helpers inside the cerebrum module ensures the
  * module owns its AI tool surface without importing from `mcp/`.
  */
+import { logger } from '../../../lib/logger.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 
 import type { AiToolResult } from '@pops/types';
@@ -34,7 +35,15 @@ export function toolError(message: string, code: CerebrumToolErrorCode): AiToolR
   };
 }
 
-/** Map a thrown service-layer error to a tool error result. */
+/**
+ * Map a thrown service-layer error to a tool error result.
+ *
+ * Known typed errors (`NotFoundError`, `ValidationError`) carry caller-safe
+ * messages and are surfaced as-is. Anything else is treated as an unexpected
+ * internal failure: the original error is logged server-side for diagnosis and
+ * the caller receives a generic message so we never leak stack traces, SQL
+ * fragments, or other internals through MCP / Ego responses.
+ */
 export function mapServiceError(err: unknown): AiToolResult {
   if (err instanceof NotFoundError) {
     return toolError(err.message, 'NOT_FOUND');
@@ -42,6 +51,6 @@ export function mapServiceError(err: unknown): AiToolResult {
   if (err instanceof ValidationError) {
     return toolError(err.message, 'VALIDATION_ERROR');
   }
-  const message = err instanceof Error ? err.message : String(err);
-  return toolError(message, 'INTERNAL_ERROR');
+  logger.error({ err }, '[cerebrum.ai-tools] unhandled service error');
+  return toolError('An unexpected internal error occurred', 'INTERNAL_ERROR');
 }

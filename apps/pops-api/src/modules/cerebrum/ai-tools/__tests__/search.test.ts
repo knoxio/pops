@@ -9,6 +9,11 @@ vi.mock('../../../../db.js', () => ({
   getDrizzle: () => ({}),
 }));
 
+// Silence logger; mapServiceError logs the raw error server-side now.
+vi.mock('../../../../lib/logger.js', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
 const mockHybridResults: RetrievalResult[] = [
   {
     sourceType: 'engram',
@@ -120,12 +125,14 @@ describe('handleCerebrumSearch', () => {
     );
   });
 
-  it('handles search service errors gracefully', async () => {
+  it('handles search service errors gracefully without leaking the raw message', async () => {
     mockHybrid.mockRejectedValueOnce(new Error('DB connection failed'));
     const result = await handleCerebrumSearch({ query: 'test' });
     const parsed = parseResult(result) as { error: string; code: string };
     expect(parsed.code).toBe('INTERNAL_ERROR');
-    expect(parsed.error).toBe('DB connection failed');
+    // Raw exception messages must not be surfaced to tool consumers.
+    expect(parsed.error).not.toContain('DB connection failed');
+    expect(parsed.error).toBe('An unexpected internal error occurred');
     expect(result.isError).toBe(true);
   });
 });

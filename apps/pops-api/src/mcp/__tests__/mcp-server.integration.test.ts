@@ -277,7 +277,7 @@ describe('cerebrum.search', () => {
     );
   });
 
-  it('maps service errors to MCP error format', async () => {
+  it('maps service errors to MCP error format without leaking the raw message', async () => {
     mockHybrid.mockRejectedValue(new Error('Database connection lost'));
 
     const result = await handleCerebrumSearch({ query: 'test' });
@@ -285,7 +285,9 @@ describe('cerebrum.search', () => {
     expect(result.isError).toBe(true);
     const parsed = parseResult(result) as { code: string; error: string };
     expect(parsed.code).toBe('INTERNAL_ERROR');
-    expect(parsed.error).toBe('Database connection lost');
+    // Raw exception messages must not be surfaced to tool consumers.
+    expect(parsed.error).not.toContain('Database connection lost');
+    expect(parsed.error).toBe('An unexpected internal error occurred');
   });
 });
 

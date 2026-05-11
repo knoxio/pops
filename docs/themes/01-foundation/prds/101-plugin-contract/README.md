@@ -1,7 +1,7 @@
 # PRD-101: Plugin Contract
 
 > Epic: [Modular Module Runtime](../../epics/10-modular-module-runtime.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
