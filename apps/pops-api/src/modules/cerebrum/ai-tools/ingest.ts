@@ -115,19 +115,31 @@ export function handleJsonBody(body: string): JsonBodyResult {
 
 // Lenient string-array coercion: array inputs may include non-string entries
 // (agents sometimes send mixed JSON). Drop those rather than reject the call
-// — the dropped values weren't meaningful scopes/tags anyway.
-const stringArrayLenient = z.preprocess(
-  (value) =>
-    Array.isArray(value)
-      ? value.filter((entry): entry is string => typeof entry === 'string')
-      : value,
-  z.array(z.string()).optional()
-);
+// — the dropped values weren't meaningful scopes/tags anyway. A non-array
+// value (e.g. a stray string) falls through `.catch(undefined)` instead of
+// blowing up the whole call.
+const stringArrayLenient = z
+  .preprocess(
+    (value) =>
+      Array.isArray(value)
+        ? value.filter((entry): entry is string => typeof entry === 'string')
+        : value,
+    z.array(z.string()).optional()
+  )
+  .catch(undefined);
+
+// Each field carries its own `.catch` so that an agent sending a wrongly-typed
+// value (e.g. `body: 123` or `title: ["array"]`) falls back to the field-level
+// default without aborting the whole parse. Object-level `.catch` is not used
+// here because in Zod v4 it does not recover from individual field failures —
+// see https://zod.dev/api/modifiers/catch — so it would swallow real errors
+// while still failing the parse for unrelated reasons.
+const optionalString = z.string().optional().catch(undefined);
 
 const ingestArgsSchema = z.object({
-  body: z.string().optional().default(''),
-  title: z.string().optional(),
-  type: z.string().optional(),
+  body: z.string().catch('').default(''),
+  title: optionalString,
+  type: optionalString,
   scopes: stringArrayLenient,
   tags: stringArrayLenient,
 });
@@ -135,9 +147,7 @@ const ingestArgsSchema = z.object({
 type IngestArgs = z.infer<typeof ingestArgsSchema>;
 
 function parseIngestArgs(raw: Record<string, unknown>): IngestArgs {
-  // `.catch` keeps the handler resilient to unexpected shapes — empty body
-  // falls through to the existing VALIDATION_ERROR path below.
-  return ingestArgsSchema.catch({ body: '' }).parse(raw);
+  return ingestArgsSchema.parse(raw);
 }
 
 export async function handleCerebrumIngest(raw: Record<string, unknown>): Promise<AiToolResult> {
@@ -212,7 +222,7 @@ export const cerebrumIngestSchema = {
 // ---------------------------------------------------------------------------
 
 const quickCaptureArgsSchema = z.object({
-  text: z.string().optional().default(''),
+  text: z.string().catch('').default(''),
 });
 
 /**
@@ -224,7 +234,7 @@ const quickCaptureArgsSchema = z.object({
 export async function handleCerebrumQuickCapture(
   raw: Record<string, unknown>
 ): Promise<AiToolResult> {
-  const args = quickCaptureArgsSchema.catch({ text: '' }).parse(raw);
+  const args = quickCaptureArgsSchema.parse(raw);
 
   if (!args.text.trim()) {
     return toolError('text is required and must be non-empty', 'VALIDATION_ERROR');
