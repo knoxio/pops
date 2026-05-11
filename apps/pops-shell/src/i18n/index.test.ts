@@ -226,6 +226,19 @@ describe('translation lookups', () => {
     expect(i18n.t('navigation:inventory.connections')).toBe('Connections');
   });
 
+  // #2611: six cerebrum sub-nav labelKeys were missing from the catalog,
+  // so half the cerebrum sidebar rendered raw keys like
+  // `cerebrum.engrams.nav`. Pin each one so a future regression fails here
+  // instead of in the field.
+  it('resolves every cerebrum sub-nav label (regression for #2611)', () => {
+    expect(i18n.t('navigation:cerebrum.engrams.nav')).toBe('Engrams');
+    expect(i18n.t('navigation:cerebrum.query.nav')).toBe('Query');
+    expect(i18n.t('navigation:cerebrum.documents.nav')).toBe('Documents');
+    expect(i18n.t('navigation:cerebrum.glia.nav')).toBe('Glia');
+    expect(i18n.t('navigation:cerebrum.reflex.nav')).toBe('Reflex');
+    expect(i18n.t('navigation:cerebrum.plexus.nav')).toBe('Plexus');
+  });
+
   it('resolves finance namespace keys', () => {
     expect(i18n.t('finance:dashboard')).toBe('Dashboard');
     expect(i18n.t('finance:budgets')).toBe('Budgets');
@@ -235,6 +248,15 @@ describe('translation lookups', () => {
     expect(i18n.t('finance:filter.account')).toBe('Account');
     expect(i18n.t('finance:filter.type')).toBe('Type');
     expect(i18n.t('finance:filter.tag')).toBe('Tag');
+    // #2611: `column.date` was missing — the transactions table rendered
+    // a raw `COLUMN.DATE` header. Pin every column header used by the
+    // transactions list.
+    expect(i18n.t('finance:column.date')).toBe('Date');
+    expect(i18n.t('finance:column.description')).toBe('Description');
+    expect(i18n.t('finance:column.account')).toBe('Account');
+    expect(i18n.t('finance:column.amount')).toBe('Amount');
+    expect(i18n.t('finance:column.type')).toBe('Type');
+    expect(i18n.t('finance:column.tags')).toBe('Tags');
   });
 
   it('resolves ai namespace keys', () => {

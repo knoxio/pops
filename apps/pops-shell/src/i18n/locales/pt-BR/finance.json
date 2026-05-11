@@ -148,6 +148,7 @@
   "column.account": "Conta",
   "column.type": "Tipo",
   "column.tags": "Tags",
+  "column.date": "Data",
   "column.abn": "ABN",
   "column.aliases": "Alias",
   "column.defaultType": "Tipo Padrão",

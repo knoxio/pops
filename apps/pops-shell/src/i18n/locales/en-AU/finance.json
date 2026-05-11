@@ -148,6 +148,7 @@
   "column.account": "Account",
   "column.type": "Type",
   "column.tags": "Tags",
+  "column.date": "Date",
   "column.abn": "ABN",
   "column.aliases": "Aliases",
   "column.defaultType": "Default Type",
