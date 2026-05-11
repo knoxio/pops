@@ -1,7 +1,7 @@
 # US-03: Routing and API composition from the registry
 
 > PRD: [Plugin Contract](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a platform engineer, I want the shell's route table and the API's root tRPC r
 
 ## Acceptance Criteria
 
-- [ ] `apps/pops-shell/src/app/router.tsx` builds its app-route list from `MODULES.filter(m => m.surfaces.includes('app'))`. No module name appears literally in the router file.
-- [ ] `RequireModule` is removed; the shell already only mounts routes for installed modules so the runtime guard becomes redundant. Direct navigation to an absent module's URL still renders `NotInstalledPage` via a catch-all route.
-- [ ] `apps/pops-api/src/router.ts` composes the root tRPC router from `MODULES.map(m => m.backend?.router).filter(Boolean)`. No module name appears literally in the root router file.
-- [ ] `moduleGate` middleware (PRD-100) is retained as a defence-in-depth check on procedure paths but no longer performs the primary gating — absent modules' routers are not in the root.
-- [ ] `core.shell.manifest` continues to return `{ apps, overlays }` derived from `MODULES`; the OpenAPI mirror is unchanged.
-- [ ] Existing E2E tests covering install-set scenarios (finance-only, cerebrum-absent) still pass.
+- [x] `apps/pops-shell/src/app/router.tsx` builds its app-route list from `MODULES.filter(m => m.surfaces.includes('app'))` (via the shell aggregator `installedAppManifests()`). No module name appears literally in the router file; cross-module composition (cerebrum admin ⇐ ai) lives in `route-extensions.tsx`.
+- [x] `RequireModule` is removed; the shell already only mounts routes for installed modules so the runtime guard becomes redundant. Direct navigation to an absent module's URL still renders `NotInstalledPage` via a catch-all route that recognises `KNOWN_MODULES` first-segments and falls through to `NotFoundPage` otherwise.
+- [x] `apps/pops-api/src/router.ts` composes the root tRPC router from `installedManifests()` (which reads `MODULES.map(m => m.backend?.router).filter(Boolean)`). No module name appears literally in the root router file — the only `id` references are the `KNOWN_ROUTERS` table that binds metadata to live router instances.
+- [x] `moduleGate` middleware (PRD-100) is retained as a defence-in-depth check on procedure paths but no longer performs the primary gating — absent modules' routers are not in the root.
+- [x] `core.shell.manifest` continues to return `{ apps, overlays }` derived from `MODULES`; the OpenAPI mirror is unchanged.
+- [x] Existing E2E tests covering install-set scenarios (finance-only, cerebrum-absent) still pass.
 
 ## Notes
 

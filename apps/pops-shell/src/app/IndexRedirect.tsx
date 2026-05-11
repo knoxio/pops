@@ -18,8 +18,8 @@ export function IndexRedirect() {
   });
 
   // Manifest hasn't loaded yet — optimistically pick the historical default
-  // so the URL change is instant. RequireModule will flip to NotInstalledPage
-  // after the manifest arrives if finance is actually absent.
+  // so the URL change is instant. The router's catch-all (`UnmatchedRoute`)
+  // will flip to NotInstalledPage if finance turns out to be absent.
   if (!data) return <Navigate to="/finance" replace />;
 
   const target = APP_ORDER.find((id) => data.apps.includes(id));
