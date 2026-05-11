@@ -1,11 +1,12 @@
 /**
  * cerebrum.ingest — ingest content into the engram knowledge base.
  *
- * Delegates to IngestService. Also handles structured JSON detection:
- * if the body starts with `{` or `[` and parses as valid JSON, it is
- * converted to Markdown with the JSON in a fenced code block.
+ * Delegates to IngestService. JSON detection and metadata lifting live in
+ * `ingest-json.ts`; this file handles arg parsing, tag merging, and the
+ * MCP-side request/response envelope.
  */
 import { IngestService } from '../ingest/pipeline.js';
+import { handleJsonBody } from './ingest-json.js';
 import { mapServiceError, toolError, toolSuccess } from './result.js';
 
 import type { AiToolResult } from '@pops/types';
@@ -18,62 +19,59 @@ interface IngestArgs {
   tags?: string[];
 }
 
-const TITLE_KEYS = ['title', 'name', 'subject', 'label'] as const;
-
-/** Try to extract a title from a JSON object's well-known keys, falling back to a key summary. */
-function deriveTitleFromObject(obj: Record<string, unknown>): string | null {
-  for (const key of TITLE_KEYS) {
-    const val = obj[key];
-    if (typeof val === 'string' && val.trim().length > 0) {
-      return val.trim().slice(0, 120);
-    }
+/**
+ * Combine caller-supplied tags with tags lifted out of a JSON body. Both
+ * sources contribute; duplicates are stripped while preserving the order in
+ * which tags first appeared.
+ */
+function mergeTags(
+  callerTags: string[] | undefined,
+  jsonTags: string[] | null
+): string[] | undefined {
+  if (!callerTags && !jsonTags) return undefined;
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const tag of [...(callerTags ?? []), ...(jsonTags ?? [])]) {
+    if (seen.has(tag)) continue;
+    seen.add(tag);
+    merged.push(tag);
   }
-
-  const keys = Object.keys(obj);
-  if (keys.length > 0) {
-    return `JSON: ${keys.slice(0, 5).join(', ')}${keys.length > 5 ? '…' : ''}`;
-  }
-
-  return null;
+  return merged.length > 0 ? merged : undefined;
 }
 
 /**
- * Detect structured JSON and convert to Markdown.
- * Returns a new body and optional derived title.
+ * Treat blank or whitespace-only string args as if the caller had omitted
+ * them. Without this, `title: ''` would suppress the JSON-derived title via
+ * `args.title ?? json.derivedTitle` because `??` does not fall through for
+ * empty strings.
  */
-function handleJsonBody(body: string): { body: string; derivedTitle: string | null } {
-  const trimmed = body.trim();
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-    return { body, derivedTitle: null };
+function optionalTrimmedString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function optionalStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: string[] = [];
+  for (const v of value) {
+    if (typeof v !== 'string') continue;
+    const trimmed = v.trim();
+    if (trimmed.length === 0) continue;
+    out.push(trimmed);
   }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(trimmed);
-  } catch {
-    return { body, derivedTitle: null };
-  }
-
-  const isPlainObject = parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed);
-  const derivedTitle = isPlainObject
-    ? deriveTitleFromObject(parsed as Record<string, unknown>)
-    : null;
-
-  const mdBody = `\`\`\`json\n${trimmed}\n\`\`\``;
-  return { body: mdBody, derivedTitle };
+  return out.length > 0 ? out : undefined;
 }
 
 function parseArgs(raw: Record<string, unknown>): IngestArgs {
   const body = typeof raw['body'] === 'string' ? raw['body'] : '';
-  const title = typeof raw['title'] === 'string' ? raw['title'] : undefined;
-  const type = typeof raw['type'] === 'string' ? raw['type'] : undefined;
-  const scopes = Array.isArray(raw['scopes'])
-    ? (raw['scopes'] as unknown[]).filter((s): s is string => typeof s === 'string')
-    : undefined;
-  const tags = Array.isArray(raw['tags'])
-    ? (raw['tags'] as unknown[]).filter((s): s is string => typeof s === 'string')
-    : undefined;
-  return { body, title, type, scopes, tags };
+  return {
+    body,
+    title: optionalTrimmedString(raw['title']),
+    type: optionalTrimmedString(raw['type']),
+    scopes: optionalStringArray(raw['scopes']),
+    tags: optionalStringArray(raw['tags']),
+  };
 }
 
 export async function handleCerebrumIngest(raw: Record<string, unknown>): Promise<AiToolResult> {
@@ -84,17 +82,21 @@ export async function handleCerebrumIngest(raw: Record<string, unknown>): Promis
   }
 
   try {
-    const { body: processedBody, derivedTitle } = handleJsonBody(args.body);
-    const title = args.title ?? derivedTitle ?? undefined;
+    const json = handleJsonBody(args.body);
+    const title = args.title ?? json.derivedTitle ?? undefined;
+    const type = args.type ?? json.derivedType ?? undefined;
+    const scopes = args.scopes ?? json.derivedScopes ?? undefined;
+    const tags = mergeTags(args.tags, json.derivedTags);
 
     const svc = new IngestService();
     const result = await svc.submit({
-      body: processedBody,
+      body: json.body,
       title,
-      type: args.type,
-      scopes: args.scopes,
-      tags: args.tags,
+      type,
+      scopes,
+      tags,
       source: 'agent',
+      ...(Object.keys(json.customFields).length > 0 ? { customFields: json.customFields } : {}),
     });
 
     return toolSuccess({
@@ -141,5 +143,5 @@ export const cerebrumIngestSchema = {
   required: ['body'] as const,
 };
 
-// Exported for testing
-export { handleJsonBody };
+// Re-export for tests that exercise the JSON detector directly.
+export { handleJsonBody } from './ingest-json.js';
