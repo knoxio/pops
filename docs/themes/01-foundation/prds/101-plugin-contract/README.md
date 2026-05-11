@@ -100,7 +100,7 @@ Each existing hand-rolled registry collapses into a registry consumer. The shape
 | 08  | [us-08-uri-resolver](us-08-uri-resolver.md)                               | Implement ADR-012 resolver as a registry consumer; absent-module URIs return placeholder. Closes #2522 (URI half).      | Blocked by 02    |
 | 09  | [us-09-migration-runner](us-09-migration-runner.md)                       | Runner consumes per-module migration declarations; absent modules skip. Closes #2523.                                   | Blocked by 02    |
 | 10  | [us-10-ai-tool-aggregation](us-10-ai-tool-aggregation.md)                 | Ego and MCP expose a single merged AI tool surface based on the installed module set. Done.                             | Blocked by 02    |
-| 11  | [us-11-test-matrix](us-11-test-matrix.md)                                 | Contract violations fail at build; install-set matrix exercised in CI                                                   | Blocked by 03–10 |
+| 11  | [us-11-test-matrix](us-11-test-matrix.md)                                 | Contract violations fail at build; install-set matrix exercised in CI. Done.                                            | Blocked by 03–10 |
 
 ## Out of Scope
 
