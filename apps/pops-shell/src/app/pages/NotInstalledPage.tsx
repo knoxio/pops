@@ -26,8 +26,11 @@ export function NotInstalledPage() {
       <p className="text-muted-foreground mb-6 max-w-prose">
         The page at <code className="font-mono">{pathname}</code> belongs to the{' '}
         {moduleId ? <code className="font-mono">{moduleId}</code> : <span>requested</span>} module,
-        which is not installed in this deployment. Update <code>POPS_APPS</code> in your environment
-        and restart the server to enable it.
+        which is not installed in this deployment. The install set is fixed at build time —
+        page-routed apps come from <code>POPS_APPS</code> and overlay modules (e.g.{' '}
+        <code className="font-mono">ego</code>) from <code>POPS_OVERLAYS</code>. Update the relevant
+        env var, then rebuild and redeploy the shell to enable this module; restarting the running
+        server is not sufficient.
       </p>
       <Button asChild>
         <Link to="/">Go home</Link>

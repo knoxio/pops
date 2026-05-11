@@ -66,13 +66,13 @@ describe('installedAppManifests (PRD-101 US-03)', () => {
   });
 
   it('production path reads from MODULES (build-time registry)', () => {
-    // No override applied — `installedFrontendManifests` should pick up
-    // every manifest that the committed `MODULES` registry installs.
-    // The committed `generated.ts` installs every known module, so the
-    // list must be non-empty and every entry must satisfy the
-    // frontend-manifest contract (`surfaces` declared).
+    // No override applied — `installedFrontendManifests` reads from the
+    // committed `MODULES` registry. The shell deliberately supports builds
+    // with an empty install set (e.g. `POPS_APPS=` at registry:build time),
+    // so we don't assert a minimum length here; we only assert the
+    // manifest contract for whatever the registry returns.
     const live = installedFrontendManifests();
-    expect(live.length).toBeGreaterThan(0);
+    expect(Array.isArray(live)).toBe(true);
     for (const m of live) {
       expect(typeof m.id).toBe('string');
       expect(Array.isArray(m.surfaces)).toBe(true);

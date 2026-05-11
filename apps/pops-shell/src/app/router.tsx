@@ -83,7 +83,7 @@ const ErrorElement = (
     <p className="text-muted-foreground mb-6">An unexpected error occurred.</p>
     <Link
       to="/"
-      className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+      className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 motion-safe:transition-colors"
     >
       Go home
     </Link>

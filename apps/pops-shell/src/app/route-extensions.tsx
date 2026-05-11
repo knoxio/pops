@@ -31,8 +31,14 @@ const AI_ID = 'ai';
  * top-level route. Returns an empty array when the host module has no
  * extensions or when the donor module isn't installed.
  *
- * The donor-installed check uses the build-time `isModuleId` guard so
- * the type narrows automatically when `POPS_APPS` excludes the donor.
+ * The `@pops/app-ai` import above is a hard workspace dependency, so the
+ * module is always resolvable. The `isModuleId` check is a runtime test
+ * against the `MODULES` constant — which is itself generated at build time
+ * from `POPS_APPS` / `POPS_OVERLAYS` — so when the AI module is excluded
+ * from the install set, `isModuleId('ai')` returns `false` and the
+ * `aiAdminRoutes` reference is never reached. Vite's production build
+ * tree-shakes the unused `aiAdminRoutes` import in that case, so the dead
+ * routes don't ship in the bundle.
  */
 export function extensionsFor(hostModuleId: string): readonly RouteObject[] {
   if (hostModuleId !== CEREBRUM_ID) return [];
