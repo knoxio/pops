@@ -10,6 +10,7 @@ import { comparisonsRouter } from './comparisons/index.js';
 import { discoveryRouter } from './discovery/index.js';
 import { mediaFeaturesManifest } from './features.js';
 import { libraryRouter } from './library/index.js';
+import { mediaMigrations } from './migrations.js';
 import { moviesRouter } from './movies/router.js';
 import { plexRouter } from './plex/index.js';
 import { rotationRouter } from './rotation/router.js';
@@ -50,7 +51,7 @@ export const manifest: ModuleManifest<typeof mediaRouter> = {
   version: '0.1.0',
   surfaces: ['app'],
   description: 'Movies, TV shows, watchlist, watch history, Plex/TMDB/TVDB sync.',
-  backend: { router: mediaRouter },
+  backend: { router: mediaRouter, migrations: mediaMigrations },
   settings: [plexManifest, arrManifest, rotationManifest, mediaOperationalManifest],
   features: [mediaFeaturesManifest],
   search: [moviesSearchAdapter, tvShowsSearchAdapter],

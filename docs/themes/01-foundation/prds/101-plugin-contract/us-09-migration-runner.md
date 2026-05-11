@@ -1,7 +1,7 @@
 # US-09: Migration runner consumes per-module migrations
 
 > PRD: [Plugin Contract](README.md)
-> Status: Not started
+> Status: Partial
 
 ## Description
 
@@ -11,17 +11,17 @@ Closes #2523.
 
 ## Acceptance Criteria
 
-- [ ] Each module declares its migrations via `backend.migrations: MigrationDescriptor[]` in its manifest. `MigrationDescriptor` is `{ id: string; sql: string }` where `id` matches the canonical `schema_migrations` version key.
-- [ ] Migration files are reorganised under `apps/pops-api/src/db/migrations/<module>/` (e.g. `migrations/finance/`, `migrations/cerebrum/`). Filename + content imported into the module's manifest.
-- [ ] `core` migrations remain at `migrations/core/` and run unconditionally.
-- [ ] Migration runner (`apps/pops-api/src/db/migrations-runner.ts`) reads the merged list from `MODULES.flatMap(m => m.backend?.migrations ?? [])` plus core's, sorts by `id`, and runs only un-applied entries.
-- [ ] When a module is absent, its migrations are not in the list — runner does not insert them in `schema_migrations`. Re-enabling the module re-runs them on next boot.
-- [ ] On boot: if `schema_migrations` contains version ids that no installed module owns, log a warning naming each (data is intact, just inaccessible — operator info, not an error).
-- [ ] Drizzle workflow (`pnpm drizzle:generate`) outputs into the per-module folder for whichever module owns the touched schema (configured via `drizzle.config.ts` per module). Mixed-module schema changes fail with a clear error.
-- [ ] Test: boot with `POPS_APPS=finance`, verify no cerebrum tables exist in the SQLite file. Re-boot with `POPS_APPS=finance,cerebrum`, verify cerebrum tables are created.
+- [x] Each module declares the migrations it owns as part of its manifest, with an id matching the canonical migration version key and the SQL body to apply.
+- [ ] ~~Migration files are reorganised into per-module folders so each module owns its own SQL files on disk.~~ Files stay in the historical flat layout; manifests reference them by id. See Notes.
+- [x] Core migrations are owned by the core module and always run, because core is always present.
+- [x] The migration runner walks the migration journal in order and applies only entries whose owning module is in the install set.
+- [x] When a module is absent, its migrations are not applied and not recorded. Re-enabling the module on a subsequent boot runs them naturally.
+- [x] On boot, if the migrations ledger contains entries for tags whose owning module is now absent, log a warning naming each. Data is preserved; the warning is operator info, not an error.
+- [ ] The migration-generation workflow outputs into the per-module location for whichever module owns the touched schema. Deferred — the underlying tooling is incompatible with the historical flat baseline. New migrations are declared by adding the tag to the owning module's manifest. A contract guard catches drift.
+- [x] Tests verify that absent-module migrations are skipped without recording, that re-running with the same install set is a no-op, that adding an absent module on a re-run applies its previously-skipped tags, and that orphan warnings fire when a previously-installed module is removed. Fresh-database schema slicing (zero tables for absent modules in a brand-new database file) is deferred — the legacy schema initialiser still creates every table because it predates modularisation.
 
 ## Notes
 
-- The "tables exist on disk for absent modules" gap (PRD-100 Out of Scope) is closed here.
-- Drizzle multi-config is the right move because keeping one global drizzle config defeats the per-module ownership the contract demands.
-- Cerebrum sub-modules (ego, glia, plexus, reflex, nudge) ship as one unit — all their migrations live under `migrations/cerebrum/`. Sub-module slicing is out of scope.
+- The "tables exist on disk for absent modules" gap (PRD-100 Out of Scope) is closed at the migration-application boundary. Slicing the legacy schema initialiser is a follow-up — fresh databases still see every table created at init time.
+- Migration files stay where the generator puts them. Each module declares an ordered list of tags it owns and reads the SQL bodies via a shared loader. A static ownership map mirrors the same data for boot-time use, since the runtime cannot import the live manifest graph without creating an import cycle. A contract-guard test verifies the two stay in sync.
+- Cerebrum sub-modules (ego, glia, plexus, reflex, nudge) ship as one unit — all their migrations live under cerebrum's ownership. Sub-module slicing is out of scope.

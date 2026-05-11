@@ -5,6 +5,7 @@ import { router } from '../../trpc.js';
 import { budgetsRouter } from './budgets/router.js';
 import { budgetsSearchAdapter } from './budgets/search-adapter.js';
 import { importsRouter } from './imports/router.js';
+import { financeMigrations } from './migrations.js';
 import { financeManifest } from './settings-manifest.js';
 import { transactionsRouter } from './transactions/router.js';
 import { transactionsSearchAdapter } from './transactions/search-adapter.js';
@@ -28,7 +29,7 @@ export const manifest: ModuleManifest<typeof financeRouter> = {
   version: '0.1.0',
   surfaces: ['app'],
   description: 'Transactions, budgets, entities, and import pipeline.',
-  backend: { router: financeRouter },
+  backend: { router: financeRouter, migrations: financeMigrations },
   settings: [financeManifest],
   search: [transactionsSearchAdapter, budgetsSearchAdapter, wishlistSearchAdapter],
   uriHandler: financeUriHandler,

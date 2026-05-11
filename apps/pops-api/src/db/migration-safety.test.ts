@@ -193,6 +193,81 @@ describe('migration safety', () => {
 
       db.close();
     });
+
+    it('pre-marks every drizzle journal entry with sha256(sql) — per-module runner contract', async () => {
+      // Regression for the Playwright failure (PRD-101 US-09): the schema
+      // initializer previously stored migration *tags* in the hash column,
+      // which broke the per-module runner's `sha256(sql)` equality check
+      // and caused "table `budgets` already exists" on first boot.
+      const { createHash } = await import('node:crypto');
+      const { readJournal } = await import('./per-module-migrations.js');
+
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('journal_mode = WAL');
+      initializeSchema(db);
+
+      const recorded = new Set(
+        (db.prepare('SELECT hash FROM __drizzle_migrations').all() as { hash: string }[]).map(
+          (r) => r.hash
+        )
+      );
+
+      const drizzleDir = join(__dirname, 'drizzle-migrations');
+      const journal = readJournal();
+      for (const entry of journal.entries) {
+        const sql = readFileSync(join(drizzleDir, `${entry.tag}.sql`), 'utf8');
+        const expected = createHash('sha256').update(sql).digest('hex');
+        expect(recorded.has(expected)).toBe(true);
+      }
+
+      db.close();
+    });
+
+    it('per-module migration runner is a no-op against a freshly initialized DB', async () => {
+      // End-to-end regression: real `initializeSchema` → real per-module
+      // runner → zero migrations applied. This is the exact boot path that
+      // crashed under Playwright before the fix.
+      const { runPerModuleMigrations } = await import('./per-module-migrations.js');
+      const { migrationOwners } = await import('./migration-ownership.js');
+      const { readJournal } = await import('./per-module-migrations.js');
+
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('journal_mode = WAL');
+      initializeSchema(db);
+
+      // Build a minimal manifest carrying every owned tag — the runner only
+      // needs the install-set + owners to honour the hash short-circuit.
+      const journal = readJournal();
+      const installedIds = new Set(
+        [...migrationOwners.values()].filter((id): id is string => Boolean(id))
+      );
+      const allTags = journal.entries.map((e) => e.tag);
+      const manifests = [...installedIds].map((id) => ({
+        id,
+        name: id,
+        surfaces: ['app'] as const,
+        backend: {
+          router: {},
+          migrations: allTags
+            .filter((t) => migrationOwners.get(t) === id)
+            .map((id) => ({ id, sql: '' })),
+        },
+      }));
+
+      const result = runPerModuleMigrations(db, manifests, migrationOwners);
+
+      expect(result.applied).toEqual([]);
+      // Every entry whose owner is installed must be a no-op.
+      const expectedAlreadyApplied = allTags
+        .filter((t) => {
+          const owner = migrationOwners.get(t);
+          return owner !== undefined && installedIds.has(owner);
+        })
+        .toSorted();
+      expect([...result.alreadyApplied].toSorted()).toEqual(expectedAlreadyApplied);
+
+      db.close();
+    });
   });
 
   describe('schema idempotency', () => {

@@ -16,6 +16,7 @@ import { entitiesSearchAdapter } from './entities/search-adapter.js';
 import { coreFeaturesManifest } from './features/manifest.js';
 import { featuresRouter } from './features/router.js';
 import { jobsRouter } from './jobs/router.js';
+import { coreMigrations } from './migrations.js';
 import { searchRouter } from './search/router.js';
 import { serviceAccountsRouter } from './service-accounts/router.js';
 import { aiConfigManifest } from './settings/ai-manifest.js';
@@ -57,7 +58,7 @@ export const manifest: ModuleManifest<typeof coreRouter> = {
   surfaces: ['app'],
   description:
     'Cross-cutting platform services: entities, AI usage/providers, settings, features, search.',
-  backend: { router: coreRouter },
+  backend: { router: coreRouter, migrations: coreMigrations },
   settings: [aiConfigManifest, coreOperationalManifest],
   features: [coreFeaturesManifest],
   search: [entitiesSearchAdapter],
