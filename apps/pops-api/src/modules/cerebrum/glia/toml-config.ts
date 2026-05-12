@@ -131,7 +131,12 @@ export function loadGliaToml(engramRoot: string): PartialGraduationThresholds {
   try {
     content = readFileSync(path, 'utf8');
   } catch (err) {
-    console.warn(`[cerebrum] glia.toml read failed at ${path}: ${(err as Error).message}`);
+    // If the file was removed between statSync and readFileSync, ENOENT is
+    // an expected race and should stay quiet — same policy as the stat path.
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code !== 'ENOENT') {
+      console.warn(`[cerebrum] glia.toml read failed at ${path}: ${(err as Error).message}`);
+    }
     cache.delete(path);
     return {};
   }
