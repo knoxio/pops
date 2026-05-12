@@ -1,18 +1,3 @@
-/**
- * Daily observability summary job (PRD-092 US-05).
- *
- * Aggregates the last 30 days of `ai_inference_log` rows into a single JSON
- * blob and stores it under settings key `ai.observabilitySummary`. The
- * dashboard reads this row for fast first-paint instead of re-running the
- * heavier aggregation queries on every load.
- *
- * Pure-ish service:
- *  - `computeSummary` is a deterministic function over the bound Drizzle
- *    handle and is what the unit tests exercise (the test context swaps the
- *    underlying DB before each test via `setDb`).
- *  - `runSummary` is the worker entry point — it calls `computeSummary` and
- *    persists the result via `setRawSetting`.
- */
 import { and, asc, desc, gte, lt, sql, type SQL } from 'drizzle-orm';
 
 import { aiInferenceLog } from '@pops/db-types';
@@ -85,12 +70,6 @@ const EMPTY_OVERALL: OverallRow = {
   errors: 0,
 };
 
-/**
- * Build the time-window predicate shared by all three aggregate queries.
- * Inclusive lower bound, exclusive upper bound — future-dated rows are
- * excluded because `windowEndIso` is pinned to "now" at the top of
- * `computeSummary`.
- */
 function windowWhere(windowStartIso: string, windowEndIso: string): SQL | undefined {
   return and(
     gte(aiInferenceLog.createdAt, windowStartIso),
@@ -148,10 +127,7 @@ function fetchByProvider(windowStartIso: string, windowEndIso: string): Provider
 }
 
 function fetchByModel(windowStartIso: string, windowEndIso: string): ModelBreakdown[] {
-  // `avgLatencyMs` only considers `success` non-cached rows with
-  // `latency_ms > 0` — matching the same filter used elsewhere in the
-  // observability module so the numbers reconcile with the live dashboard.
-  // SQLite returns NULL for AVG over an empty set; coerced to 0 below.
+  // avgLatencyMs filter mirrors the live dashboard so cached and live numbers reconcile.
   const rows = getDrizzle()
     .select({
       provider: aiInferenceLog.provider,
@@ -170,7 +146,7 @@ function fetchByModel(windowStartIso: string, windowEndIso: string): ModelBreakd
     .from(aiInferenceLog)
     .where(windowWhere(windowStartIso, windowEndIso))
     .groupBy(aiInferenceLog.provider, aiInferenceLog.model)
-    .orderBy(desc(sql<number>`COUNT(*)`), asc(aiInferenceLog.model))
+    .orderBy(desc(sql<number>`COUNT(*)`), asc(aiInferenceLog.model), asc(aiInferenceLog.provider))
     .all();
 
   return rows.map((r) => ({
@@ -184,7 +160,6 @@ function fetchByModel(windowStartIso: string, windowEndIso: string): ModelBreakd
   }));
 }
 
-/** Compute the ISO timestamp `windowDays` ago from `now`. */
 export function computeWindowStart(windowDays: number, now: Date = new Date()): string {
   return new Date(now.getTime() - windowDays * 24 * 60 * 60 * 1000).toISOString();
 }
@@ -196,13 +171,11 @@ export interface ComputeSummaryOptions {
   now?: Date;
 }
 
-/**
- * Aggregate the last `windowDays` of `ai_inference_log` into a single
- * summary object. Deterministic given the active DB handle (resolved via
- * `getDrizzle()`), `now`, and `windowDays`.
- */
 export function computeSummary(opts: ComputeSummaryOptions = {}): ObservabilitySummary {
   const windowDays = opts.windowDays ?? SUMMARY_WINDOW_DAYS;
+  if (!Number.isInteger(windowDays) || windowDays <= 0) {
+    throw new RangeError(`windowDays must be a positive integer, got ${windowDays}`);
+  }
   const now = opts.now ?? new Date();
   const windowStart = computeWindowStart(windowDays, now);
   const windowEnd = now.toISOString();
@@ -235,12 +208,6 @@ export interface RunSummaryResult {
   summary: ObservabilitySummaryEnvelope;
 }
 
-/**
- * Compute and persist the 30-day rolling summary to the settings table.
- *
- * Idempotent — re-running overwrites the cached value. Safe to call from
- * the BullMQ worker without further locking.
- */
 export function runSummary(opts: RunSummaryOptions = {}): RunSummaryResult {
   const summary = computeSummary(opts);
   const computedAt = summary.windowEnd;

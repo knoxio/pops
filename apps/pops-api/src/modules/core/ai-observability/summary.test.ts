@@ -106,6 +106,13 @@ describe('computeSummary', () => {
     expect(summary.totalCalls).toBe(1);
   });
 
+  it.each([0, -1, 1.5, Number.NaN])(
+    'rejects non-positive-integer windowDays (%s)',
+    (windowDays) => {
+      expect(() => computeSummary({ now: NOW, windowDays })).toThrow(RangeError);
+    }
+  );
+
   it('computes cacheHitRate and errorRate as fractions of total calls', () => {
     seedAiUsage(db, { created_at: isoDaysAgo(1), cached: 1, status: 'success' });
     seedAiUsage(db, { created_at: isoDaysAgo(1), cached: 0, status: 'success' });
