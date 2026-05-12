@@ -6,21 +6,18 @@
  *   retrieve — retrieval-only (no LLM), returns sources
  *   explain  — debug: shows what the pipeline would do without executing
  */
-import Anthropic from '@anthropic-ai/sdk';
-
 import { getDrizzle } from '../../../db.js';
-import { getEnv } from '../../../env.js';
-import { withRateLimitRetry } from '../../../lib/ai-retry.js';
-import { trackInference } from '../../../lib/inference-middleware.js';
-import { logger } from '../../../lib/logger.js';
-import { getAiModel, getSettingValue } from '../../core/settings/service.js';
+import { getSettingValue } from '../../core/settings/service.js';
 import { ContextAssemblyService } from '../retrieval/context-assembly.js';
 import { HybridSearchService } from '../retrieval/hybrid-search.js';
 import { CitationParser } from './citation-parser.js';
 import { buildQuerySystemPrompt } from './prompts.js';
+import { callQueryLlm } from './query-llm.js';
+import { streamQueryAnswer } from './query-stream.js';
 import { QueryScopeInferencer } from './scope-inferencer.js';
 
-import type { RetrievalFilters } from '../retrieval/types.js';
+import type { RetrievalFilters, RetrievalResult } from '../retrieval/types.js';
+import type { QueryStreamEvent } from './query-stream.js';
 import type {
   ConfidenceLevel,
   QueryDomain,
@@ -30,25 +27,39 @@ import type {
   SourceCitation,
 } from './types.js';
 
-const OPERATION = 'cerebrum.query';
-
-function getQueryModel(): string {
-  return getAiModel('ai.modelOverrides.query', 'claude-sonnet-4-6');
-}
-
-function getQueryMaxSources(): number {
-  return getSettingValue('cerebrum.query.maxSources', 10);
-}
-
-function getQueryRelevanceThreshold(): number {
-  return getSettingValue('cerebrum.query.relevanceThreshold', 0.3);
-}
-
-function getQueryTokenBudget(): number {
-  return getSettingValue('cerebrum.query.tokenBudget', 4096);
-}
+const getQueryMaxSources = (): number => getSettingValue('cerebrum.query.maxSources', 10);
+const getQueryRelevanceThreshold = (): number =>
+  getSettingValue('cerebrum.query.relevanceThreshold', 0.3);
+const getQueryTokenBudget = (): number => getSettingValue('cerebrum.query.tokenBudget', 4096);
 
 const NO_INFO_ANSWER = "I don't have information about that.";
+
+type PreparedQuery =
+  | { kind: 'no-results'; scopes: string[] }
+  | {
+      kind: 'prepared';
+      question: string;
+      scopes: string[];
+      results: RetrievalResult[];
+      systemPrompt: string;
+    };
+
+/**
+ * Emit a single-event "no results" stream so the SSE route doesn't have to
+ * special-case the empty-retrieval branch.
+ */
+async function* emitNoResultsStream(scopes: string[]): AsyncGenerator<QueryStreamEvent> {
+  yield { type: 'token', text: NO_INFO_ANSWER };
+  yield {
+    type: 'done',
+    answer: NO_INFO_ANSWER,
+    sources: [],
+    scopes,
+    confidence: 'low',
+    tokensIn: 0,
+    tokensOut: 0,
+  };
+}
 
 /** Map domain names to Thalamus sourceType values. */
 const DOMAIN_MAP: Record<QueryDomain, string> = {
@@ -97,45 +108,23 @@ export class QueryService {
    * Full NL Q&A pipeline: infer scopes → retrieve → LLM → parse citations.
    */
   async ask(request: QueryRequest): Promise<QueryResponse> {
-    const question = request.question.trim();
-    const maxSources = request.maxSources ?? getQueryMaxSources();
-    const includeSecret = request.includeSecret ?? false;
-
-    // 1. Scope inference.
-    const scopeResult = this.inferencer.infer(question, undefined, request.scopes, includeSecret);
-
-    // 2. Build filters and retrieve.
-    const filters = buildRetrievalFilters(scopeResult.scopes, includeSecret, request.domains);
-    const hybridSearch = new HybridSearchService(getDrizzle());
-    const relevanceThreshold = getQueryRelevanceThreshold();
-    const results = await hybridSearch.hybrid(question, filters, maxSources, relevanceThreshold);
-
-    // 3. Zero results → short-circuit.
-    if (results.length === 0) {
+    const prepared = await this.prepareCommon(request);
+    if (prepared.kind === 'no-results') {
       return {
         answer: NO_INFO_ANSWER,
         sources: [],
-        scopes: scopeResult.scopes,
+        scopes: prepared.scopes,
         confidence: 'low',
       };
     }
 
-    // 4. Assemble context for LLM.
-    const assembled = this.assembler.assemble({
-      query: question,
-      results,
-      tokenBudget: getQueryTokenBudget(),
-      includeMetadata: true,
-    });
+    // Generate answer via LLM (non-streaming).
+    const llmAnswer = await callQueryLlm(prepared.systemPrompt, prepared.question);
 
-    // 5. Generate answer via LLM.
-    const systemPrompt = buildQuerySystemPrompt(assembled.context);
-    const llmAnswer = await this.callLlm(systemPrompt, question);
+    // Parse citations.
+    const { cleanedAnswer, citations } = this.citationParser.parse(llmAnswer, prepared.results);
 
-    // 6. Parse citations.
-    const { cleanedAnswer, citations } = this.citationParser.parse(llmAnswer, results);
-
-    // 7. Compute confidence — downgrade if zero valid citations.
+    // Compute confidence — downgrade if zero valid citations.
     let confidence = computeConfidence(citations);
     if (citations.length === 0) {
       confidence = 'low';
@@ -144,8 +133,65 @@ export class QueryService {
     return {
       answer: cleanedAnswer,
       sources: citations,
-      scopes: scopeResult.scopes,
+      scopes: prepared.scopes,
       confidence,
+    };
+  }
+
+  /**
+   * Streaming variant of `ask()`. Performs the same retrieval and context
+   * assembly pipeline up-front, then returns an async generator that yields
+   * `token` events while the LLM streams and a final `done` event with
+   * parsed citations + confidence.
+   *
+   * Used by `POST /api/cerebrum/query/stream` (PRD-082, issue #2596).
+   */
+  async prepareStream(request: QueryRequest): Promise<AsyncGenerator<QueryStreamEvent>> {
+    const prepared = await this.prepareCommon(request);
+    if (prepared.kind === 'no-results') {
+      return emitNoResultsStream(prepared.scopes);
+    }
+
+    return streamQueryAnswer({
+      systemPrompt: prepared.systemPrompt,
+      question: prepared.question,
+      retrievedResults: prepared.results,
+      scopes: prepared.scopes,
+    });
+  }
+
+  /**
+   * Shared pre-LLM pipeline used by both the one-shot `ask()` and the
+   * streaming `prepareStream()` entry points.
+   */
+  private async prepareCommon(request: QueryRequest): Promise<PreparedQuery> {
+    const question = request.question.trim();
+    const maxSources = request.maxSources ?? getQueryMaxSources();
+    const includeSecret = request.includeSecret ?? false;
+
+    const scopeResult = this.inferencer.infer(question, undefined, request.scopes, includeSecret);
+    const filters = buildRetrievalFilters(scopeResult.scopes, includeSecret, request.domains);
+    const hybridSearch = new HybridSearchService(getDrizzle());
+    const relevanceThreshold = getQueryRelevanceThreshold();
+    const results = await hybridSearch.hybrid(question, filters, maxSources, relevanceThreshold);
+
+    if (results.length === 0) {
+      return { kind: 'no-results', scopes: scopeResult.scopes };
+    }
+
+    const assembled = this.assembler.assemble({
+      query: question,
+      results,
+      tokenBudget: getQueryTokenBudget(),
+      includeMetadata: true,
+    });
+
+    return {
+      kind: 'prepared',
+      question,
+      scopes: scopeResult.scopes,
+      results,
+      systemPrompt: buildQuerySystemPrompt(assembled.context),
     };
   }
 
@@ -206,46 +252,6 @@ export class QueryService {
       },
       secretNotice,
     };
-  }
-
-  /** Call the LLM for answer generation. Gracefully degrades if API key is missing. */
-  private async callLlm(systemPrompt: string, question: string): Promise<string> {
-    const apiKey = getEnv('ANTHROPIC_API_KEY');
-    if (!apiKey) {
-      logger.warn('[QueryEngine] ANTHROPIC_API_KEY not set — returning retrieval-only answer');
-      return "I don't have enough information to answer that fully. (LLM unavailable)";
-    }
-
-    const client = new Anthropic({ apiKey, maxRetries: 0 });
-    const model = getQueryModel();
-
-    try {
-      const response = await trackInference(
-        { provider: 'claude', model, operation: OPERATION, domain: 'cerebrum' },
-        () =>
-          withRateLimitRetry(
-            () =>
-              client.messages.create({
-                model,
-                max_tokens: 1024,
-                temperature: 0,
-                system: systemPrompt,
-                messages: [{ role: 'user', content: question }],
-              }),
-            OPERATION,
-            { logger, logPrefix: '[QueryEngine]' }
-          )
-      );
-
-      const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
-      return text;
-    } catch (err) {
-      logger.error(
-        { error: err instanceof Error ? err.message : String(err) },
-        '[QueryEngine] LLM call failed'
-      );
-      return "I don't have enough information to answer that fully. (LLM error)";
-    }
   }
 }
 

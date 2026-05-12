@@ -11,6 +11,7 @@ import { envRouter } from './modules/core/envs/router.js';
 import { readInstalledModules } from './modules/env-modules.js';
 import { openApiDocument } from './openapi.js';
 import { appRouter } from './router.js';
+import cerebrumQueryStreamRouter from './routes/cerebrum/query-stream.js';
 import egoChatStreamRouter from './routes/ego/chat-stream.js';
 import healthRouter from './routes/health.js';
 import inventoryDocumentFilesRouter from './routes/inventory/document-files.js';
@@ -83,6 +84,9 @@ export function createApp(): express.Express {
   // Ego SSE streaming — POST /api/ego/chat/stream
   // Placed after auth + env context so the user is authenticated and the DB is scoped.
   app.use(egoChatStreamRouter);
+
+  // Cerebrum Query SSE streaming — POST /api/cerebrum/query/stream (PRD-082, issue #2596).
+  app.use(cerebrumQueryStreamRouter);
 
   // OpenAPI spec endpoint
   app.get('/api/openapi.json', (_req, res) => {

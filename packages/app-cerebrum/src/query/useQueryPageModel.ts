@@ -6,10 +6,10 @@
  * component stays a dumb consumer and so each sub-piece stays
  * unit-testable in isolation.
  *
- * Streaming is not yet supported server-side — `cerebrum.query.ask`
- * returns the answer in one shot. When PRD-082 adds streaming, the
- * answer panel is already laid out for a progressively-rendered
- * answer; only the mutation wrapper needs to change.
+ * Streaming is wired through the SSE endpoint
+ * `/api/cerebrum/query/stream` (issue #2596) via `useAskMutation`. The
+ * answer panel state is updated incrementally as tokens arrive and the
+ * citation set is appended on the final `done` event.
  */
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
