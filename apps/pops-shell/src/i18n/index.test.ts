@@ -266,6 +266,8 @@ describe('translation lookups', () => {
 
   it('resolves finance rules and prompt-template keys (moved out of ai)', () => {
     expect(i18n.t('finance:rules.title')).toBe('Categorisation Rules');
+    expect(i18n.t('navigation:finance.rules')).toBe('Rules');
+    expect(i18n.t('navigation:finance.promptTemplates')).toBe('Prompt Templates');
   });
 
   it('resolves media namespace keys', () => {

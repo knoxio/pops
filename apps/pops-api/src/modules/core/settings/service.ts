@@ -145,27 +145,26 @@ export function getSettingValue<T extends string | number>(key: string, fallback
  *  3. `ai.model` — the global default
  *  4. `fallback` — the hardcoded compile-time floor
  *
- * Empty-string values count as "not set" so an explicit blank in the
- * settings UI cleanly falls through to the next layer.
+ * Empty/whitespace-only values count as "not set" — an accidental blank
+ * in the settings UI must not poison the model id passed to Anthropic.
  */
-const LEGACY_OVERRIDE_KEYS: Record<string, string> = {
+const LEGACY_OVERRIDE_KEYS = {
   'ai.modelOverrides.query': 'cerebrum.query.model',
   'ai.modelOverrides.emit': 'cerebrum.emit.model',
   'ai.modelOverrides.classifier': 'cerebrum.classifier.model',
   'ai.modelOverrides.entityExtractor': 'cerebrum.entityExtractor.model',
   'ai.modelOverrides.scopeInference': 'cerebrum.scopeInference.model',
   'ai.modelOverrides.auditorContradiction': 'cerebrum.auditor.contradictionModel',
-};
+} as const;
 
-export function getAiModel(overrideKey: string, fallback: string): string {
-  const override = getSettingValue(overrideKey, '');
+export type AiModelOverrideKey = keyof typeof LEGACY_OVERRIDE_KEYS;
+
+export function getAiModel(overrideKey: AiModelOverrideKey, fallback: string): string {
+  const override = getSettingValue(overrideKey, '').trim();
   if (override) return override;
-  const legacy = LEGACY_OVERRIDE_KEYS[overrideKey];
-  if (legacy) {
-    const legacyValue = getSettingValue(legacy, '');
-    if (legacyValue) return legacyValue;
-  }
-  const globalDefault = getSettingValue('ai.model', '');
+  const legacyValue = getSettingValue(LEGACY_OVERRIDE_KEYS[overrideKey], '').trim();
+  if (legacyValue) return legacyValue;
+  const globalDefault = getSettingValue('ai.model', '').trim();
   if (globalDefault) return globalDefault;
   return fallback;
 }

@@ -20,20 +20,9 @@ export function findActiveApp(pathname: string, apps: AppNavConfig[]): AppNavCon
 }
 
 /**
- * Pick the active item for an app given the current pathname.
- *
- * Returns the item whose `basePath + itemPath` matches the pathname at a
- * segment boundary and whose full path is the longest among matching
- * siblings. This is what keeps `/admin/prompts` from also highlighting
- * the `/admin` item.
- *
- * Empty `itemPath` is the app's index/default page; it only wins when
- * the pathname is exactly the basePath (or basePath + '/').
- */
-/**
- * The "match length" of an item against the current pathname, or -1 if the
- * item doesn't match. Longer match wins, which keeps `/admin/prompts` from
- * also highlighting the parent `/admin` item.
+ * Returns the length of the matched prefix, or -1 if no match. Longer
+ * matches win so `/admin/prompts` highlights only `/admin/prompts`, not
+ * also the parent `/admin` sibling.
  */
 function itemMatchLength(pathname: string, basePath: string, itemPath: string): number {
   if (itemPath === '') {
