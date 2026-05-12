@@ -10,7 +10,7 @@ function PaperlessLink({ href }: { href: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="relative inline-flex items-center text-xs text-primary whitespace-nowrap hover:underline before:absolute before:-inset-3 before:content-['']"
+      className="inline-flex min-h-11 items-center text-xs text-primary whitespace-nowrap hover:underline"
       onClick={(e) => e.stopPropagation()}
     >
       View Warranty

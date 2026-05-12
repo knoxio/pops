@@ -14,7 +14,7 @@ function ExpandToggle({ isExpanded, onToggle }: ExpandToggleProps) {
     <span
       role="button"
       tabIndex={-1}
-      className="relative shrink-0 p-0.5 rounded hover:bg-accent before:absolute before:-inset-3 before:content-['']"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center p-0.5 rounded hover:bg-accent"
       onClick={(e) => {
         e.stopPropagation();
         onToggle();

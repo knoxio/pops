@@ -39,7 +39,7 @@ function ErrorMessage({ message, onRetry }: { message: string; onRetry: () => vo
         {message}{' '}
         <button
           onClick={onRetry}
-          className="relative text-primary underline before:absolute before:-inset-3 before:content-['']"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary underline"
         >
           Try again
         </button>

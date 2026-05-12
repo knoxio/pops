@@ -34,7 +34,7 @@ function ExpandToggle({ open }: { open: boolean }) {
     <CollapsibleTrigger asChild onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
-        className="relative p-0.5 rounded hover:bg-muted before:absolute before:-inset-3 before:content-['']"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center p-0.5 rounded hover:bg-muted"
         aria-label={open ? 'Collapse' : 'Expand'}
       >
         {open ? (
