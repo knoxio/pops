@@ -48,7 +48,7 @@ describe('computeWindowStart', () => {
 
 describe('computeSummary', () => {
   it('returns zeros when there is no data', () => {
-    const summary = computeSummary({ db, now: NOW });
+    const summary = computeSummary({ now: NOW });
     expect(summary.totalCalls).toBe(0);
     expect(summary.totalInputTokens).toBe(0);
     expect(summary.totalOutputTokens).toBe(0);
@@ -75,7 +75,7 @@ describe('computeSummary', () => {
       cost_usd: 0.002,
     });
 
-    const summary = computeSummary({ db, now: NOW });
+    const summary = computeSummary({ now: NOW });
     expect(summary.totalCalls).toBe(2);
     expect(summary.totalInputTokens).toBe(300);
     expect(summary.totalOutputTokens).toBe(60);
@@ -88,8 +88,22 @@ describe('computeSummary', () => {
     seedAiUsage(db, { created_at: isoDaysAgo(31) });
     seedAiUsage(db, { created_at: isoDaysAgo(90) });
 
-    const summary = computeSummary({ db, now: NOW });
+    const summary = computeSummary({ now: NOW });
     expect(summary.totalCalls).toBe(2);
+  });
+
+  it('ignores rows with future timestamps (after windowEnd)', () => {
+    // In-window baseline.
+    seedAiUsage(db, { created_at: isoDaysAgo(1) });
+    // Future-dated rows — bogus clock skew or backdated inserts — must not
+    // be counted in the rolling window.
+    const oneMinuteAhead = new Date(NOW.getTime() + 60_000).toISOString();
+    const oneDayAhead = new Date(NOW.getTime() + DAY_MS).toISOString();
+    seedAiUsage(db, { created_at: oneMinuteAhead });
+    seedAiUsage(db, { created_at: oneDayAhead });
+
+    const summary = computeSummary({ now: NOW });
+    expect(summary.totalCalls).toBe(1);
   });
 
   it('computes cacheHitRate and errorRate as fractions of total calls', () => {
@@ -99,7 +113,7 @@ describe('computeSummary', () => {
     seedAiUsage(db, { created_at: isoDaysAgo(1), cached: 0, status: 'timeout' });
     seedAiUsage(db, { created_at: isoDaysAgo(1), cached: 0, status: 'budget-blocked' });
 
-    const summary = computeSummary({ db, now: NOW });
+    const summary = computeSummary({ now: NOW });
     expect(summary.totalCalls).toBe(5);
     expect(summary.cacheHitRate).toBeCloseTo(1 / 5);
     expect(summary.errorRate).toBeCloseTo(3 / 5);
@@ -110,7 +124,7 @@ describe('computeSummary', () => {
     seedAiUsage(db, { created_at: isoDaysAgo(1), provider: 'claude' });
     seedAiUsage(db, { created_at: isoDaysAgo(1), provider: 'openai' });
 
-    const summary = computeSummary({ db, now: NOW });
+    const summary = computeSummary({ now: NOW });
     expect(summary.byProvider).toHaveLength(2);
     expect(summary.byProvider[0]?.provider).toBe('claude');
     expect(summary.byProvider[0]?.calls).toBe(2);
@@ -158,7 +172,7 @@ describe('computeSummary', () => {
       cached: 0,
     });
 
-    const summary = computeSummary({ db, now: NOW });
+    const summary = computeSummary({ now: NOW });
     const a = summary.byModel.find((m) => m.model === 'model-a');
     const b = summary.byModel.find((m) => m.model === 'model-b');
     expect(a?.calls).toBe(4);
@@ -173,7 +187,7 @@ describe('runSummary', () => {
     seedAiUsage(db, { created_at: isoDaysAgo(1), input_tokens: 50, cost_usd: 0.0005 });
     seedAiUsage(db, { created_at: isoDaysAgo(2), input_tokens: 50, cost_usd: 0.0005 });
 
-    const { summary } = runSummary({ db, now: NOW });
+    const { summary } = runSummary({ now: NOW });
     expect(summary.totalCalls).toBe(2);
     expect(summary.computedAt).toBe(NOW.toISOString());
 
@@ -190,12 +204,12 @@ describe('runSummary', () => {
 
   it('overwrites the previous cached value on re-run', () => {
     seedAiUsage(db, { created_at: isoDaysAgo(1) });
-    runSummary({ db, now: NOW });
+    runSummary({ now: NOW });
 
     // Add more usage and re-run with a later "now".
     const later = new Date(NOW.getTime() + 60_000);
     seedAiUsage(db, { created_at: isoDaysAgo(1) });
-    runSummary({ db, now: later });
+    runSummary({ now: later });
 
     const row = getSettingOrNull(OBSERVABILITY_SUMMARY_SETTING_KEY);
     const parsed = JSON.parse(row!.value) as ObservabilitySummaryEnvelope;
@@ -204,7 +218,7 @@ describe('runSummary', () => {
   });
 
   it('writes a zeroed summary when there is no usage data', () => {
-    const { summary } = runSummary({ db, now: NOW });
+    const { summary } = runSummary({ now: NOW });
     expect(summary.totalCalls).toBe(0);
     expect(summary.byProvider).toEqual([]);
     expect(summary.byModel).toEqual([]);
