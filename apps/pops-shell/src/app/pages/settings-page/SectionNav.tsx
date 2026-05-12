@@ -70,7 +70,7 @@ export function SectionNav({ manifests, activeId, onSelect }: SectionNavProps) {
                   key={m.id}
                   onClick={() => onSelect(m.id)}
                   className={cn(
-                    'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-left group',
+                    'w-full min-h-11 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-left group',
                     isActive
                       ? 'bg-app-accent text-app-accent-foreground shadow-sm'
                       : 'text-foreground/80 hover:bg-muted hover:text-foreground'

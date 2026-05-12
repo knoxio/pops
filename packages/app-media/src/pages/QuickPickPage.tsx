@@ -98,7 +98,7 @@ function QuickPickHeader({
               onClick={() => {
                 setCount(n);
               }}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+              className={`relative min-w-11 min-h-9 px-3 py-1 text-sm font-medium rounded-md transition-colors before:absolute before:-inset-1.5 before:content-[''] ${
                 n === count
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted'

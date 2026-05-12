@@ -36,7 +36,7 @@ function RefreshButton({ isFetching, refetch }: { isFetching: boolean; refetch: 
         type="button"
         onClick={() => refetch()}
         disabled={isFetching}
-        className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+        className="relative inline-flex items-center gap-1.5 text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline before:absolute before:-inset-3 before:content-['']"
         aria-label="Refresh movie pool"
       >
         <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} />

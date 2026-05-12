@@ -3,7 +3,7 @@
  *
  * Extracted from action-service.ts to keep files under the max-lines limit.
  */
-import { and, asc, desc, eq, gte, isNull, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNotNull, isNull, lt, lte, sql } from 'drizzle-orm';
 
 import { gliaActions, gliaTrustState } from '@pops/db-types/schema';
 
@@ -199,6 +199,11 @@ export function countAutonomousRevertsSince(
         eq(gliaActions.actionType, actionType),
         eq(gliaActions.status, 'reverted'),
         isNull(gliaActions.decidedAt),
+        // `revertedAt` is not schema-enforced as non-null, but in SQLite
+        // `gte(col, value)` returns false for nulls and silently drops the
+        // row. Make the intent explicit so a row with status='reverted' but
+        // null revertedAt is excluded by design rather than by accident.
+        isNotNull(gliaActions.revertedAt),
         gte(gliaActions.revertedAt, sinceIso)
       )
     )

@@ -80,7 +80,7 @@ function WatchedToggle({
       }}
       disabled={isToggling || isUpcoming}
       aria-label={watchedAriaLabel(item, isUpcoming, isWatched)}
-      className={`mt-0.5 shrink-0 flex items-center justify-center h-5 w-5 rounded border transition-colors ${watchedClass(isToggling, isUpcoming, isWatched)}`}
+      className={`relative mt-0.5 shrink-0 flex items-center justify-center h-5 w-5 rounded border transition-colors before:absolute before:-inset-3 before:content-[''] ${watchedClass(isToggling, isUpcoming, isWatched)}`}
     >
       {isWatched && <Check className="h-3.5 w-3.5" />}
     </button>
@@ -106,7 +106,7 @@ function ExpandToggle({
           ? `Hide overview for episode ${item.episodeNumber}`
           : `Show overview for episode ${item.episodeNumber}`
       }
-      className="mt-0.5 text-muted-foreground shrink-0 hover:text-foreground"
+      className="relative mt-0.5 text-muted-foreground shrink-0 hover:text-foreground before:absolute before:-inset-3.5 before:content-['']"
     >
       {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
     </button>

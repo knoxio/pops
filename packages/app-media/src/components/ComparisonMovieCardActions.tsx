@@ -24,7 +24,7 @@ export function WatchlistButton({
             onToggle();
           }}
           disabled={pending}
-          className={`p-1.5 rounded-full backdrop-blur-sm transition-colors ${
+          className={`relative p-1.5 rounded-full backdrop-blur-sm transition-colors before:absolute before:-inset-2 before:content-[''] ${
             isOnWatchlist
               ? 'bg-app-accent/90 text-app-accent-foreground hover:bg-destructive/90 hover:text-white'
               : 'bg-black/50 text-white/80 hover:text-white hover:bg-black/70'
@@ -87,7 +87,7 @@ function ActionIconButton({
             onClick();
           }}
           disabled={disabled}
-          className={`p-2 rounded-full bg-black/40 text-white/80 ${hoverColor} hover:bg-black/60 backdrop-blur-sm transition-colors`}
+          className={`relative p-2 rounded-full bg-black/40 text-white/80 ${hoverColor} hover:bg-black/60 backdrop-blur-sm transition-colors before:absolute before:-inset-1.5 before:content-['']`}
           aria-label={ariaLabel}
           data-testid={testId}
         >

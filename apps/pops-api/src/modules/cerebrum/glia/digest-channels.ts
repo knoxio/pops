@@ -100,7 +100,9 @@ export async function deliverMoltbotDigest(
 
   const header = `🧠 *Glia ${report.period} digest*`;
   // Telegram MarkdownV2 chokes on raw `.`, `(`, `)` etc — escape the plain
-  // body before sending. The header is a static literal so it's safe.
+  // body before sending. The header is safe to leave un-escaped: `report.period`
+  // is a union literal ('daily' | 'weekly'), so no user-controlled or
+  // punctuation-bearing input reaches the formatted line.
   const text = `${header}\n\n${escapeTelegramMarkdownV2(body)}`;
 
   await fetchTransport.send(config, text);

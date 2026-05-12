@@ -37,7 +37,10 @@ function ErrorMessage({ message, onRetry }: { message: string; onRetry: () => vo
       <p className="mb-2 text-lg">Could not load debrief</p>
       <p className="text-sm">
         {message}{' '}
-        <button onClick={onRetry} className="text-primary underline">
+        <button
+          onClick={onRetry}
+          className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary underline"
+        >
           Try again
         </button>
       </p>

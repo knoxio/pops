@@ -159,7 +159,7 @@ export function LogEntry({ entry }: { entry: LogEntryData }) {
     <Collapsible open={open} onOpenChange={setOpen}>
       <Card className={getBorderClass(hasError, wasSkipped)}>
         <CollapsibleTrigger asChild>
-          <button className="w-full text-left">
+          <button className="min-h-11 w-full text-left">
             <LogEntryHeader entry={entry} open={open} hasError={hasError} wasSkipped={wasSkipped} />
           </button>
         </CollapsibleTrigger>

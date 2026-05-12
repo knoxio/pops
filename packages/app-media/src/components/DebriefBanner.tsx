@@ -39,7 +39,7 @@ export function DebriefBanner() {
       <button
         type="button"
         aria-label="Dismiss debrief banner"
-        className="absolute right-3 top-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        className="absolute right-3 top-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 before:absolute before:-inset-3.5 before:content-['']"
         onClick={() => {
           setDismissed(true);
         }}

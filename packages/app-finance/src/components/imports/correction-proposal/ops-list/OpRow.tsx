@@ -39,7 +39,7 @@ export function OpRow({ op, selected, disabled, onSelect, onDelete }: OpRowProps
         </div>
         <button
           type="button"
-          className="text-muted-foreground hover:text-destructive p-1"
+          className="relative text-muted-foreground hover:text-destructive p-1 before:absolute before:-inset-3 before:content-['']"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();

@@ -81,7 +81,7 @@ export function BrowseRuleSidebarRowSortable(props: RowProps) {
       <div className="flex items-start gap-1">
         <button
           type="button"
-          className="mt-0.5 shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing"
+          className="relative mt-0.5 shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing before:absolute before:-inset-3 before:content-['']"
           aria-label={`Drag to reorder rule: ${rule.descriptionPattern}`}
           onClick={(e) => e.stopPropagation()}
           {...listeners}
@@ -90,7 +90,7 @@ export function BrowseRuleSidebarRowSortable(props: RowProps) {
         </button>
         <button
           type="button"
-          className="min-w-0 flex-1 cursor-pointer text-left"
+          className="min-h-11 min-w-0 flex-1 cursor-pointer text-left"
           onClick={onSelect}
         >
           <BrowseRuleSidebarRowContent rule={rule} hasLocalOp={hasLocalOp} />

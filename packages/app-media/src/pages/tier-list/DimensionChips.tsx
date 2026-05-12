@@ -22,7 +22,7 @@ export function DimensionChips({
           aria-selected={effectiveDimension === dim.id}
           onClick={() => onChange(dim.id)}
           className={cn(
-            'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
+            'min-h-11 min-w-11 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
             effectiveDimension === dim.id
               ? 'bg-primary text-primary-foreground border-primary'
               : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground'

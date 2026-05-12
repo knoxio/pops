@@ -12,7 +12,7 @@ export function Section(props: {
     <div className="border rounded-lg">
       <button
         type="button"
-        className="flex w-full items-center justify-between px-4 py-3 text-left font-medium hover:bg-muted/50"
+        className="flex min-h-11 w-full items-center justify-between px-4 py-3 text-left font-medium hover:bg-muted/50"
         onClick={() => setOpen(!open)}
       >
         <span>

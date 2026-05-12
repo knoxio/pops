@@ -44,7 +44,7 @@ function ScopeDropdown({
         <button
           key={s.value}
           type="button"
-          className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center justify-between"
+          className="w-full min-h-11 px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center justify-between"
           onClick={() => onSelect(s.value)}
         >
           <span>{s.label}</span>

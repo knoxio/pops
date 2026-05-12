@@ -11,7 +11,7 @@ export function UndoToast({ toastId, onUndo }: { toastId: string | number; onUnd
         <span className="text-sm text-foreground">Comparison deleted</span>
         <button
           onClick={onUndo}
-          className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+          className="flex min-h-11 items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
         >
           <Undo2 className="h-3.5 w-3.5" />
           Undo

@@ -50,7 +50,7 @@ function TagDropdown({
         <button
           key={item.tag}
           type="button"
-          className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center justify-between"
+          className="w-full min-h-11 px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center justify-between"
           onClick={() => onSelect(item.tag)}
         >
           <span>{item.tag}</span>

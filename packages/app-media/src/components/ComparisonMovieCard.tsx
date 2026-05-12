@@ -88,7 +88,7 @@ export function ComparisonMovieCard(props: ComparisonMovieCardProps) {
       <button
         onClick={onPick}
         disabled={disabled}
-        className={`font-semibold text-sm text-center truncate px-1 transition-colors hover:text-primary ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
+        className={`min-h-11 w-full font-semibold text-sm text-center truncate px-1 transition-colors hover:text-primary ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
       >
         {movie.title}
       </button>

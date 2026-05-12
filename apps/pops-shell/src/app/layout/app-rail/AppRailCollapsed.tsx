@@ -21,7 +21,7 @@ export function AppRailCollapsed({ className, onToggle }: AppRailCollapsedProps)
     >
       <button
         onClick={onToggle}
-        className="min-w-9 min-h-9 flex items-center justify-center hover:bg-muted rounded-lg"
+        className="relative min-w-9 min-h-9 flex items-center justify-center hover:bg-muted rounded-lg before:absolute before:-inset-1 before:content-['']"
         aria-label={t('expandAppRail')}
       >
         <PanelLeftOpen className="h-4 w-4 text-muted-foreground" />

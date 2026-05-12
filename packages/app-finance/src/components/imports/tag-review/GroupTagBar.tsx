@@ -111,7 +111,7 @@ function PickerDropdown({
       {filtered.slice(0, 10).map((tag) => (
         <button
           key={tag}
-          className="w-full text-left px-3 py-1 text-xs hover:bg-accent transition-colors"
+          className="w-full min-h-11 text-left px-3 py-1 text-xs hover:bg-accent transition-colors"
           onMouseDown={(e) => {
             e.preventDefault();
             onPick(tag);

@@ -5,6 +5,7 @@
  * the existing nudges.list tRPC endpoint.
  */
 import { trpc } from '@pops/api-client';
+import { ButtonPrimitive } from '@pops/ui';
 
 import { ContradictionsPanel } from '../components/ContradictionsPanel';
 import { NudgeCard } from '../components/NudgeCard';
@@ -33,12 +34,9 @@ export function NudgesPage() {
     return (
       <div className="p-6 text-center" data-testid="nudges-error">
         <p className="text-destructive mb-3">Failed to load nudges. {message}</p>
-        <button
-          className="px-3 py-1.5 text-sm rounded border border-border bg-background hover:bg-muted"
-          onClick={() => void refetch()}
-        >
+        <ButtonPrimitive variant="outline" size="sm" onClick={() => void refetch()}>
           Retry
-        </button>
+        </ButtonPrimitive>
       </div>
     );
   }

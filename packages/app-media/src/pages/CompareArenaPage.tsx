@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
+import { ButtonPrimitive } from '@pops/ui';
 
 import { BlacklistConfirmDialog } from '../components/BlacklistConfirmDialog';
 import { ComparisonMovieCardSkeleton } from '../components/ComparisonMovieCard';
@@ -19,12 +20,10 @@ function ArenaError({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="text-center py-12 text-muted-foreground">
       <p className="text-lg mb-2">Something went wrong</p>
-      <p className="text-sm">
-        {message}{' '}
-        <button onClick={onRetry} className="text-primary underline">
-          Try again
-        </button>
-      </p>
+      <p className="text-sm">{message}</p>
+      <ButtonPrimitive variant="link" size="sm" onClick={onRetry} className="mt-2">
+        Try again
+      </ButtonPrimitive>
     </div>
   );
 }

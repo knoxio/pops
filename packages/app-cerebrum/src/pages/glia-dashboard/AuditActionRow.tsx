@@ -34,7 +34,7 @@ function AffectedIdsCell({ ids }: { ids: readonly string[] }) {
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="cursor-help bg-transparent p-0 text-left underline decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="relative cursor-help bg-transparent p-0 text-left underline decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 before:absolute before:-inset-3 before:content-['']"
             data-testid="glia-audit-affected-more"
           >
             {visible}
