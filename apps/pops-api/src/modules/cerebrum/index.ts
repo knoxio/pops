@@ -1,3 +1,9 @@
+/**
+ * Cerebrum domain — engram storage and retrieval.
+ * See docs/themes/06-cerebrum for the full spec.
+ */
+import { cerebrumManifest } from '@pops/module-registry/settings';
+
 import { mergeRouters, router } from '../../trpc.js';
 import { cerebrumAiTools } from './ai-tools/index.js';
 import { emitRouter } from './emit/router.js';
@@ -12,11 +18,6 @@ import { plexusRouter } from './plexus/router.js';
 import { queryRouter } from './query/router.js';
 import { reflexRouter } from './reflex/router.js';
 import { retrievalRouter } from './retrieval/router.js';
-/**
- * Cerebrum domain — engram storage and retrieval.
- * See docs/themes/06-cerebrum for the full spec.
- */
-import { cerebrumManifest } from './settings-manifest.js';
 import { templatesRouter } from './templates/router.js';
 import { indexRouter } from './thalamus/router.js';
 import { gliaRouter as gliaWorkersRouter } from './workers/router.js';

@@ -17,7 +17,7 @@ import {
   __resetInstalledManifestsOverride,
   __setInstalledManifestsOverride,
 } from './installed-modules.js';
-import { getAllSettingsManifests, getBackendManifests } from './manifests.js';
+import { getBackendManifests } from './manifests.js';
 
 import type {
   AiToolDescriptor,
@@ -196,23 +196,12 @@ describe.each(INSTALL_SETS)('install-set $label', (set) => {
   });
 
   // -------------------------------------------------------------------------
-  // Settings consumer
-
-  it('settings aggregator returns only installed modules sections', () => {
-    const sections = getAllSettingsManifests();
-    const ids = sections.map((s) => s.id);
-    for (const m of set.manifests) {
-      for (const s of m.settings ?? []) {
-        expect(ids).toContain(s.id);
-      }
-    }
-    // No section can name a module outside the install set.
-    for (const id of ids) {
-      const owner = id.split('.')[0];
-      if (owner === undefined) continue;
-      expect(set.installed.has(owner)).toBe(true);
-    }
-  });
+  // Backend manifests consumer
+  //
+  // Settings filtering is now compile-time: `MODULES.flatMap(m => m.settings ?? [])`
+  // emits only installed modules' sections after `pnpm registry:build`. The
+  // matrix-level invariant ("absent modules cannot leak sections") is covered
+  // by `packages/module-registry/scripts/lib.test.ts`.
 
   it('backend manifests aggregator matches the install set exactly', () => {
     const ids = getBackendManifests().map((m) => m.id);

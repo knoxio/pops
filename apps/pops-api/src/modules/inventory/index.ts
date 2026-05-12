@@ -1,3 +1,5 @@
+import { inventoryManifest } from '@pops/module-registry/settings';
+
 /**
  * Inventory domain — home inventory items, locations, connections, and photos.
  */
@@ -13,7 +15,6 @@ import { inventoryMigrations } from './migrations.js';
 import { paperlessRouter } from './paperless/router.js';
 import { photosRouter } from './photos/index.js';
 import { reportsRouter } from './reports/index.js';
-import { inventoryManifest } from './settings-manifest.js';
 import { inventoryUriHandler } from './uri-handler.js';
 
 import type { ModuleManifest } from '@pops/types';

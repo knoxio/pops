@@ -172,44 +172,6 @@ describe('settings.delete', () => {
 });
 
 // ---------------------------------------------------------------------------
-// settings.getManifests — aggregates from the backend module manifests
-// (PRD-101 US-04). Validates that the live install set produces the
-// previously-registered sections in stable order.
-// ---------------------------------------------------------------------------
-
-describe('settings.getManifests', () => {
-  it('returns the union of every module manifest section, sorted by order', async () => {
-    const result = await caller.core.settings.getManifests();
-    const ids = result.manifests.map((m) => m.id);
-
-    // Each module's settings declarations contribute their sections — see
-    // each module's `index.ts` for the canonical list. The aggregator sorts
-    // by SettingsManifest.order so the page renders sections deterministically.
-    expect(ids).toContain('finance');
-    expect(ids).toContain('inventory');
-    expect(ids).toContain('media.plex');
-    expect(ids).toContain('media.arr');
-    expect(ids).toContain('media.rotation');
-    expect(ids).toContain('media.operational');
-    expect(ids).toContain('cerebrum');
-    expect(ids).toContain('ego');
-    expect(ids).toContain('ai.config');
-    expect(ids).toContain('core.operational');
-
-    const orders = result.manifests.map((m) => m.order);
-    const sorted = [...orders].toSorted((a, b) => a - b);
-    expect(orders).toEqual(sorted);
-  });
-
-  it('every aggregated manifest declares a non-empty groups list', async () => {
-    const result = await caller.core.settings.getManifests();
-    for (const m of result.manifests) {
-      expect(m.groups.length).toBeGreaterThan(0);
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
 // settings.getBulk
 // ---------------------------------------------------------------------------
 

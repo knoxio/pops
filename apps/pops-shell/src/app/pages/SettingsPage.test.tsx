@@ -3,13 +3,24 @@
  *
  * Issue: #2464 — hash changes after initial mount must update the active group
  * (back/forward, address-bar edits, programmatic `window.location.hash = '...'`).
+ *
+ * PRD-101 US-04 follow-up: the page reads settings from `@pops/module-registry`
+ * directly. Tests mock the registry to inject a deterministic manifest list.
  */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  getManifests: vi.fn(),
   setBulkMutate: vi.fn(),
+  manifests: [
+    { id: 'finance', title: 'Finance', order: 0, groups: [] },
+    { id: 'media.plex', title: 'Plex', order: 1, groups: [] },
+    { id: 'cerebrum', title: 'Cerebrum', order: 2, groups: [] },
+  ],
+}));
+
+vi.mock('@pops/module-registry', () => ({
+  MODULES: [{ id: 'mock', settings: mocks.manifests }],
 }));
 
 vi.mock('@/lib/trpc', () => ({
@@ -17,7 +28,6 @@ vi.mock('@/lib/trpc', () => ({
     useUtils: () => ({}),
     core: {
       settings: {
-        getManifests: { useQuery: () => mocks.getManifests() },
         getBulk: { useQuery: () => ({ data: { settings: {} }, isLoading: false }) },
         setBulk: { useMutation: () => ({ mutate: mocks.setBulkMutate }) },
       },
@@ -37,12 +47,6 @@ vi.mock('@/components/settings/SectionRenderer', () => ({
 
 import { SettingsPage } from './SettingsPage';
 
-const MANIFESTS = [
-  { id: 'finance', title: 'Finance', order: 0, groups: [] },
-  { id: 'media.plex', title: 'Plex', order: 1, groups: [] },
-  { id: 'cerebrum', title: 'Cerebrum', order: 2, groups: [] },
-];
-
 function setHash(hash: string) {
   window.history.replaceState(null, '', `#${hash}`);
   fireEvent(window, new HashChangeEvent('hashchange'));
@@ -50,10 +54,6 @@ function setHash(hash: string) {
 
 describe('SettingsPage hash-based deep linking', () => {
   beforeEach(() => {
-    mocks.getManifests.mockReturnValue({
-      data: { manifests: MANIFESTS },
-      isLoading: false,
-    });
     window.history.replaceState(null, '', '/settings');
   });
 

@@ -1,12 +1,12 @@
 import { SectionRenderer } from '@/components/settings/SectionRenderer';
-import { trpc } from '@/lib/trpc';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { MODULES } from '@pops/module-registry';
 import { Select } from '@pops/ui';
 
 import { SectionNav } from './settings-page/SectionNav';
-import { SettingsEmpty, SettingsLoading } from './settings-page/SettingsLoading';
+import { SettingsEmpty } from './settings-page/SettingsLoading';
 import { useHashSelectedId } from './settings-page/useHashSelectedId';
 import { useTestActionHandler } from './settings-page/useTestActionHandler';
 
@@ -27,12 +27,24 @@ function ManifestPanel({
   );
 }
 
+/**
+ * Aggregate every installed module's settings sections (PRD-101 US-04 follow-up).
+ * `MODULES` is the build-time install set — sections from absent modules are
+ * elided at compile time, not filtered at runtime. The per-module narrow
+ * tuple types are widened back to `SettingsManifest` via the inner-callback
+ * return annotation so the sort comparator gets the contract type.
+ */
+function getManifests(): SettingsManifest[] {
+  return MODULES.flatMap((m): readonly SettingsManifest[] =>
+    'settings' in m && m.settings !== undefined ? m.settings : []
+  ).toSorted((a, b) => a.order - b.order);
+}
+
 export function SettingsPage() {
   const { t } = useTranslation('shell');
-  const { data, isLoading } = trpc.core.settings.getManifests.useQuery();
-  const manifests = useMemo(() => (data?.manifests ?? []) as SettingsManifest[], [data?.manifests]);
   const handleTestAction = useTestActionHandler();
 
+  const manifests = useMemo(() => getManifests(), []);
   const [selectedId, setSelectedId] = useHashSelectedId(manifests);
 
   const handleSelect = useCallback(
@@ -48,7 +60,6 @@ export function SettingsPage() {
     [manifests, selectedId]
   );
 
-  if (isLoading) return <SettingsLoading />;
   if (!manifests.length) return <SettingsEmpty />;
 
   return (

@@ -3,13 +3,14 @@
  * test file can call them without invoking `main()` (which writes to disk
  * and exits the process).
  */
-import { assertModuleManifest, type ModuleManifest } from '@pops/types';
+import { assertModuleManifest, type ModuleManifest, type SettingsManifest } from '@pops/types';
 
 import { warnUnknownChromeSlots } from './chrome-slots.js';
 
 /**
  * Project the serialisable subset of a `ModuleManifest` — id, name,
- * version, surfaces, description, dependsOn, capabilities — plus structural
+ * version, surfaces, description, dependsOn, capabilities, plus the live
+ * `settings` slot (pure data, PRD-101 US-04 follow-up) — and structural
  * flags consumers can read without importing the live manifest. Code-bearing
  * slots (`backend.router`, `frontend.routes`, handler functions) are
  * intentionally elided; consumer wiring re-attaches them at the call site.
@@ -25,6 +26,7 @@ export interface SerialisableModule {
   readonly hasBackend: boolean;
   readonly hasFrontend: boolean;
   readonly overlay?: { readonly chromeSlot: string; readonly shortcut?: string };
+  readonly settings?: readonly SettingsManifest[];
 }
 
 function assertEachManifest(manifests: readonly ModuleManifest[]): void {
@@ -130,6 +132,7 @@ export function project(m: ModuleManifest): SerialisableModule {
       overlay !== undefined
         ? { chromeSlot: overlay.chromeSlot, shortcut: overlay.shortcut }
         : undefined,
+    settings: m.settings !== undefined ? [...m.settings] : undefined,
   };
 }
 
@@ -139,6 +142,11 @@ export function project(m: ModuleManifest): SerialisableModule {
  * known modules; comma-separated list = install only those (intersected
  * with `KNOWN_MODULES`).
  *
+ * `alwaysInstalled` ids stay in the result regardless of env restrictions —
+ * `core` is the always-mounted platform shell (PRD-100), so excluding it
+ * from `MODULES` via `POPS_APPS=finance` would amount to "no core" which is
+ * never the intent.
+ *
  * Unknown ids in the env vars are silently dropped at this layer because
  * `apps/pops-api/src/modules/env-modules.ts` is the canonical strict
  * validator at boot. The registry build only needs to know the resulting
@@ -146,7 +154,8 @@ export function project(m: ModuleManifest): SerialisableModule {
  */
 export function resolveInstalledIds(
   knownIds: readonly string[],
-  env: Readonly<Record<string, string | undefined>>
+  env: Readonly<Record<string, string | undefined>>,
+  alwaysInstalled: readonly string[] = []
 ): readonly string[] {
   const fromEnv = (raw: string | undefined): readonly string[] => {
     if (raw === undefined || raw.trim() === '') return [];
@@ -163,84 +172,26 @@ export function resolveInstalledIds(
     return knownIds;
   }
 
-  const envSet = new Set<string>([...fromEnv(appsRaw), ...fromEnv(overlaysRaw)]);
+  const envSet = new Set<string>([
+    ...fromEnv(appsRaw),
+    ...fromEnv(overlaysRaw),
+    ...alwaysInstalled,
+  ]);
   const known = new Set(knownIds);
   return knownIds.filter((id) => envSet.has(id) && known.has(id));
 }
 
-function quote(value: string): string {
-  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
-}
+export { renderFile } from './render.js';
+import { renderFile } from './render.js';
 
-function renderModule(m: SerialisableModule): string {
-  const lines: string[] = ['  {'];
-  lines.push(`    id: ${quote(m.id)},`);
-  lines.push(`    name: ${quote(m.name)},`);
-  if (m.version !== undefined) lines.push(`    version: ${quote(m.version)},`);
-  lines.push(`    surfaces: [${m.surfaces.map(quote).join(', ')}] as const,`);
-  if (m.description !== undefined) lines.push(`    description: ${quote(m.description)},`);
-  if (m.dependsOn !== undefined) {
-    lines.push(`    dependsOn: [${m.dependsOn.map(quote).join(', ')}] as const,`);
-  }
-  if (m.capabilities !== undefined) {
-    lines.push(`    capabilities: [${m.capabilities.map(quote).join(', ')}] as const,`);
-  }
-  lines.push(`    hasBackend: ${m.hasBackend},`);
-  lines.push(`    hasFrontend: ${m.hasFrontend},`);
-  if (m.overlay !== undefined) {
-    const inner = [`chromeSlot: ${quote(m.overlay.chromeSlot)}`];
-    if (m.overlay.shortcut !== undefined) {
-      inner.push(`shortcut: ${quote(m.overlay.shortcut)}`);
-    }
-    lines.push(`    overlay: { ${inner.join(', ')} },`);
-  }
-  lines.push('  }');
-  return lines.join('\n');
-}
-
-/**
- * Render the generated TypeScript source for a sorted list of modules.
- * Single-quoted strings and explicit `as const` tuples are emitted so the
- * output matches the project's oxfmt style and so consumers get exact
- * literal narrowing on `id` and `surfaces`.
- */
-export function renderFile(modules: readonly SerialisableModule[]): string {
-  const header = [
-    '/**',
-    ' * GENERATED FILE — do not edit by hand.',
-    ' *',
-    ' * Built from `packages/module-registry/scripts/known-modules.ts` by',
-    ' * `pnpm registry:build`. CI verifies this file is up to date; commit',
-    ' * regenerated output alongside any change to the source manifest list.',
-    ' *',
-    ' * See `docs/themes/01-foundation/prds/101-plugin-contract/us-02-build-time-registry.md`.',
-    ' */',
-  ].join('\n');
-
-  const idLiteralUnion = modules.map((m) => quote(m.id)).join(' | ');
-
-  const knownModulesLine =
-    modules.length === 0
-      ? 'export const KNOWN_MODULES: readonly string[] = [] as const;'
-      : `export const KNOWN_MODULES = [${modules.map((m) => quote(m.id)).join(', ')}] as const;`;
-
-  const modulesBody = modules.length === 0 ? '' : `\n${modules.map(renderModule).join(',\n')},\n`;
-
-  const idTypeLine =
-    modules.length === 0
-      ? 'export type GeneratedModuleId = never;'
-      : `export type GeneratedModuleId = ${idLiteralUnion};`;
-
-  return [
-    header,
-    '',
-    knownModulesLine,
-    '',
-    `export const MODULES = [${modulesBody}] as const;`,
-    '',
-    idTypeLine,
-    '',
-  ].join('\n');
+export interface BuildRegistryOptions {
+  /** Captures chrome-slot warnings during validation; falls back to stderr. */
+  warn?: (message: string) => void;
+  /**
+   * Module ids that stay in `MODULES` even when `POPS_APPS` / `POPS_OVERLAYS`
+   * would otherwise restrict the install set. `core` is the canonical example.
+   */
+  alwaysInstalled?: readonly string[];
 }
 
 /**
@@ -252,14 +203,15 @@ export function buildRegistrySource(
   manifests: readonly ModuleManifest[],
   knownIds: readonly string[],
   env: Readonly<Record<string, string | undefined>>,
-  warn?: (message: string) => void
+  options: BuildRegistryOptions = {}
 ): { source: string; count: number } {
+  const { warn, alwaysInstalled = [] } = options;
   if (warn !== undefined) {
     validateManifests(manifests, warn);
   } else {
     validateManifests(manifests);
   }
-  const installed = new Set(resolveInstalledIds(knownIds, env));
+  const installed = new Set(resolveInstalledIds(knownIds, env, alwaysInstalled));
   const selected = manifests.filter((m) => installed.has(m.id));
   const sorted = selected.toSorted((a, b) => a.id.localeCompare(b.id, 'en'));
   const projected = sorted.map(project);

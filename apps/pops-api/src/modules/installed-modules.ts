@@ -81,12 +81,6 @@ export function installedManifests(): readonly ModuleManifest[] {
   if (testOverride !== null) return testOverride;
 
   const out: ModuleManifest[] = [];
-  // `core` is the always-mounted platform shell — it never appears in
-  // `KNOWN_MODULES` (PRD-100), so we prepend it unconditionally before
-  // joining `MODULES` to the live manifests.
-  const core = liveManifestById('core');
-  if (core !== undefined) out.push(core);
-
   for (const m of MODULES) {
     const live = liveManifestById(m.id);
     if (live !== undefined) out.push(live);

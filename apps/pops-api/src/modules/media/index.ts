@@ -4,6 +4,13 @@
 // Side-effect: register rotation source adapters
 import './rotation/register-sources.js';
 
+import {
+  arrManifest,
+  mediaOperationalManifest,
+  plexManifest,
+  rotationManifest,
+} from '@pops/module-registry/settings';
+
 import { router } from '../../trpc.js';
 import { arrRouter } from './arr/index.js';
 import { comparisonsRouter } from './comparisons/index.js';
@@ -17,8 +24,6 @@ import { rotationRouter } from './rotation/router.js';
 import { searchRouter } from './search/index.js';
 import { moviesSearchAdapter } from './search/movies-adapter.js';
 import { tvShowsSearchAdapter } from './search/tv-shows-adapter.js';
-import { arrManifest, plexManifest, rotationManifest } from './settings/manifests.js';
-import { mediaOperationalManifest } from './settings/operational-manifest.js';
 import { tvShowsRouter } from './tv-shows/index.js';
 import { mediaUriHandler } from './uri-handler.js';
 import { watchHistoryRouter } from './watch-history/router.js';

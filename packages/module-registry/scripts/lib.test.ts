@@ -158,6 +158,18 @@ describe('resolveInstalledIds', () => {
   it('treats whitespace-only env as "no list provided" (returns intersection of [])', () => {
     expect(resolveInstalledIds(known, { POPS_APPS: '   ', POPS_OVERLAYS: '' })).toEqual([]);
   });
+
+  it('keeps alwaysInstalled ids in the result regardless of env restrictions', () => {
+    const knownPlusCore = ['core', ...known];
+    expect(resolveInstalledIds(knownPlusCore, { POPS_APPS: 'finance' }, ['core'])).toEqual([
+      'core',
+      'finance',
+    ]);
+  });
+
+  it('alwaysInstalled has no effect when env is unset (already includes everything)', () => {
+    expect(resolveInstalledIds(known, {}, ['finance'])).toEqual(known);
+  });
 });
 
 describe('project', () => {
@@ -181,6 +193,26 @@ describe('project', () => {
     const p = project(m);
     expect(p.capabilities).toEqual(['a.read']);
     expect(p.capabilities).not.toBe(m.capabilities);
+  });
+
+  it('clones the settings slot so consumers cannot mutate the source manifest', () => {
+    const settings = [
+      {
+        id: 'a.section',
+        title: 'Section',
+        order: 1,
+        groups: [{ id: 'g', title: 'g', fields: [] }],
+      },
+    ];
+    const m: ModuleManifest = { id: 'a', name: 'A', surfaces: ['app'], settings };
+    const p = project(m);
+    expect(p.settings).toEqual(settings);
+    expect(p.settings).not.toBe(settings);
+  });
+
+  it('leaves settings undefined when the manifest does not declare any', () => {
+    const m: ModuleManifest = { id: 'a', name: 'A', surfaces: ['app'] };
+    expect(project(m).settings).toBeUndefined();
   });
 });
 
@@ -218,6 +250,57 @@ describe('buildRegistrySource', () => {
     expect(out.source).toContain("surfaces: ['app'] as const");
     expect(out.source).toContain("surfaces: ['overlay', 'app'] as const");
     expect(out.source).toContain("export type GeneratedModuleId = 'ego' | 'finance' | 'media'");
+  });
+
+  it('emits the settings slot as an inline literal typed as SettingsManifest[]', () => {
+    const sample: readonly ModuleManifest[] = [
+      {
+        id: 'finance',
+        name: 'Finance',
+        surfaces: ['app'],
+        settings: [
+          {
+            id: 'finance.aiCategorizer',
+            title: 'AI Categorizer',
+            order: 140,
+            groups: [
+              {
+                id: 'g',
+                title: 'g',
+                fields: [
+                  { key: 'finance.aiCategorizer.model', label: 'Categorizer Model', type: 'text' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const out = buildRegistrySource(sample, ['finance'], {});
+    expect(out.source).toContain("import type { SettingsManifest } from '@pops/types'");
+    expect(out.source).toContain("id: 'finance.aiCategorizer'");
+    expect(out.source).toContain('satisfies readonly SettingsManifest[]');
+  });
+
+  it('omits the SettingsManifest import when no manifest declares settings', () => {
+    const out = buildRegistrySource(SAMPLE, ['finance', 'media', 'ego'], {});
+    expect(out.source).not.toContain('SettingsManifest');
+  });
+
+  it('respects alwaysInstalled when env filters would otherwise exclude a module', () => {
+    const sample: readonly ModuleManifest[] = [
+      { id: 'core', name: 'Core', surfaces: ['app'] },
+      { id: 'finance', name: 'Finance', surfaces: ['app'] },
+    ];
+    const out = buildRegistrySource(
+      sample,
+      ['core', 'finance'],
+      { POPS_APPS: 'finance' },
+      { alwaysInstalled: ['core'] }
+    );
+    expect(out.count).toBe(2);
+    expect(out.source).toContain("id: 'core'");
+    expect(out.source).toContain("id: 'finance'");
   });
 });
 

@@ -7,10 +7,9 @@ import { z } from 'zod';
 import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
-import { getAllSettingsManifests } from '../../manifests.js';
 import { SETTINGS_KEY_VALUES } from './keys.js';
 import * as service from './service.js';
-import { SettingListSchema, SettingsManifestSchema, SettingSchema, toSetting } from './types.js';
+import { SettingListSchema, SettingSchema, toSetting } from './types.js';
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -95,17 +94,6 @@ export const settingsRouter = router({
         }
         throw err;
       }
-    }),
-
-  /**
-   * Return every module's settings sections, aggregated from each backend
-   * manifest's `settings` slot (PRD-101 US-04). Replaces the previous
-   * `settingsRegistry.getAll()` runtime aggregation.
-   */
-  getManifests: protectedProcedure
-    .output(z.object({ manifests: z.array(SettingsManifestSchema) }))
-    .query(() => {
-      return { manifests: getAllSettingsManifests() };
     }),
 
   /** Fetch multiple settings by key — missing keys are omitted from result */

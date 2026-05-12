@@ -1,3 +1,5 @@
+import { aiConfigManifest, coreOperationalManifest } from '@pops/module-registry/settings';
+
 /**
  * Core domain — cross-cutting concerns shared across finance & inventory.
  *
@@ -20,8 +22,6 @@ import { jobsRouter } from './jobs/router.js';
 import { coreMigrations } from './migrations.js';
 import { searchRouter } from './search/router.js';
 import { serviceAccountsRouter } from './service-accounts/router.js';
-import { aiConfigManifest } from './settings/ai-manifest.js';
-import { coreOperationalManifest } from './settings/operational-manifest.js';
 import { settingsRouter } from './settings/router.js';
 import { shellRouter } from './shell/router.js';
 import { tagRulesRouter } from './tag-rules/router.js';

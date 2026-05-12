@@ -328,6 +328,12 @@
         "typescript/explicit-function-return-type": "off",
         "typescript/explicit-module-boundary-types": "off"
       }
+    },
+    {
+      "files": ["packages/module-registry/src/generated.ts"],
+      "rules": {
+        "max-lines": "off"
+      }
     }
   ],
   "settings": {

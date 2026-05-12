@@ -1,6 +1,3 @@
-import { mergeRouters, router } from '../../../trpc.js';
-import { contextRouter } from './router-context.js';
-import { chatRouter, conversationsRouter } from './router.js';
 /**
  * Ego domain — conversational AI interface to Cerebrum (PRD-087).
  *
@@ -10,7 +7,11 @@ import { chatRouter, conversationsRouter } from './router.js';
  *   ego.context.setScopes                    — explicit scope override (US-04)
  *   ego.context.getActive                    — current context state (US-03)
  */
-import { egoManifest } from './settings-manifest.js';
+import { egoManifest } from '@pops/module-registry/settings';
+
+import { mergeRouters, router } from '../../../trpc.js';
+import { contextRouter } from './router-context.js';
+import { chatRouter, conversationsRouter } from './router.js';
 
 import type { ModuleManifest } from '@pops/types';
 

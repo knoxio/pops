@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { findModule, isModuleId, KNOWN_MODULES, MODULES } from './index.js';
 
+import type { SettingsManifest } from '@pops/types';
+
 describe('@pops/module-registry exports', () => {
   it('MODULES is non-empty after the registry build', () => {
     // Sanity check: the registry build is the prerequisite for any consumer
@@ -47,6 +49,40 @@ describe('@pops/module-registry exports', () => {
       const overlayPresent = 'overlay' in m && m.overlay !== undefined;
       expect(overlayPresent).toBe(includesOverlay);
     }
+  });
+
+  it("exposes each module's settings slot inline (PRD-101 US-04 follow-up)", () => {
+    // The settings slot is the live `SettingsManifest[]` declared by each
+    // module. `MODULES.flatMap(m => m.settings ?? [])` is the documented
+    // consumer surface for the settings page and credentials resolver.
+    // The flatMap callback's return annotation widens each module's narrow
+    // settings tuple back to the contract type — `satisfies readonly
+    // SettingsManifest[]` in `generated.ts` guards structural compatibility
+    // at codegen time, so this widening is purely a type ergonomics step.
+    const aggregated = MODULES.flatMap((m): readonly SettingsManifest[] =>
+      'settings' in m && m.settings !== undefined ? m.settings : []
+    );
+    const ids = aggregated.map((s) => s.id);
+    expect(ids).toContain('finance');
+    expect(ids).toContain('inventory');
+    expect(ids).toContain('media.plex');
+    expect(ids).toContain('media.arr');
+    expect(ids).toContain('media.rotation');
+    expect(ids).toContain('media.operational');
+    expect(ids).toContain('cerebrum');
+    expect(ids).toContain('ego');
+    expect(ids).toContain('ai.config');
+    expect(ids).toContain('core.operational');
+    for (const m of aggregated) {
+      expect(m.groups.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('core is always installed regardless of env restrictions', () => {
+    // `core` is the platform shell — `POPS_APPS` gates optional modules only.
+    // The registry must always include it so the settings page surfaces
+    // `ai.config` / `core.operational` even on a minimal install.
+    expect(MODULES.some((m) => m.id === 'core')).toBe(true);
   });
 });
 

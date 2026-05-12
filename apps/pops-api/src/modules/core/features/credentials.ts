@@ -1,16 +1,29 @@
+import { MODULES } from '@pops/module-registry';
+
 import { getEnv } from '../../../env.js';
-import { getAllSettingsManifests } from '../../manifests.js';
 import { getSettingOrNull } from '../settings/service.js';
 
-import type { FeatureCredentialStatus, FeatureDefinition, SettingsField } from '@pops/types';
+import type {
+  FeatureCredentialStatus,
+  FeatureDefinition,
+  SettingsField,
+  SettingsManifest,
+} from '@pops/types';
 
 /**
- * Find the `SettingsField` for a given key by scanning every module's
- * declared settings sections. Reads from the manifest aggregator rather
- * than the deleted `settingsRegistry` (PRD-101 US-04).
+ * Find the `SettingsField` for a given key by scanning every installed
+ * module's declared settings sections. Reads from the build-time module
+ * registry (PRD-101 US-04 follow-up): `MODULES.flatMap(m => m.settings ?? [])`.
+ *
+ * The flatMap callback widens each module's narrow `settings` tuple back to
+ * the contract type — the `satisfies readonly SettingsManifest[]` clause in
+ * `generated.ts` already guards structural compatibility at codegen time.
  */
 function findSettingsField(key: string): SettingsField | null {
-  for (const manifest of getAllSettingsManifests()) {
+  const sections = MODULES.flatMap((m): readonly SettingsManifest[] =>
+    'settings' in m && m.settings !== undefined ? m.settings : []
+  );
+  for (const manifest of sections) {
     for (const group of manifest.groups) {
       const field = group.fields.find((f) => f.key === key);
       if (field) return field;

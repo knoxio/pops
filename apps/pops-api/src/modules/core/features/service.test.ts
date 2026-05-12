@@ -1,6 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { seedSetting, setupTestContext } from '../../../shared/test-utils.js';
+
+// `credentials.ts` reads settings fields from `@pops/module-registry`'s
+// build-time `MODULES` constant (PRD-101 US-04 follow-up). Tests inject
+// synthetic settings manifests through a mocked registry; the mutable
+// `mockModules` array (kept hoisted so the factory captures it) lets each
+// test push manifests with `registerSettingsManifest()` and have
+// `findSettingsField()` resolve them.
+const { mockModules } = vi.hoisted(() => ({ mockModules: [] as { settings?: unknown }[] }));
+vi.mock('@pops/module-registry', () => ({
+  MODULES: mockModules,
+}));
+
 import {
   __resetInstalledManifestsOverride,
   __setInstalledManifestsOverride,
@@ -39,12 +51,14 @@ beforeEach(() => {
   ({ db } = ctx.setup());
   installed = [];
   applyInstalled();
+  mockModules.length = 0;
 });
 
 afterEach(() => {
   __resetInstalledManifestsOverride();
   ctx.teardown();
   vi.unstubAllEnvs();
+  mockModules.length = 0;
 });
 
 /**
@@ -98,6 +112,10 @@ function registerSettingsManifest(fieldKeys: { key: string; envFallback?: string
       },
     ],
   };
+  // `credentials.ts` reads from the mocked `MODULES` (see top-of-file
+  // `vi.mock`). `installed`/`installedManifests` still drives the feature
+  // aggregator path; both surfaces have to agree on what's installed.
+  mockModules.push({ settings: [manifest] });
   installed.push({
     id: manifest.id,
     name: manifest.title,

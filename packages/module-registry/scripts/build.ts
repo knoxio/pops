@@ -27,7 +27,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { KNOWN_MODULE_IDS, MANIFEST_SOURCES } from './known-modules.js';
+import { ALWAYS_INSTALLED_IDS, KNOWN_MODULE_IDS, MANIFEST_SOURCES } from './known-modules.js';
 import { buildRegistrySource } from './lib.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -57,7 +57,9 @@ async function formatGeneratedFile(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const { source, count } = buildRegistrySource(MANIFEST_SOURCES, KNOWN_MODULE_IDS, process.env);
+  const { source, count } = buildRegistrySource(MANIFEST_SOURCES, KNOWN_MODULE_IDS, process.env, {
+    alwaysInstalled: ALWAYS_INSTALLED_IDS,
+  });
   await mkdir(dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, source, 'utf8');
   await formatGeneratedFile();

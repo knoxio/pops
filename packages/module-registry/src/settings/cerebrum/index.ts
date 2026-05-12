@@ -1,5 +1,5 @@
-import { emitGroup, queryGroup } from './settings/query-emit-manifest.js';
-import { ingestGroup, retrievalGroup } from './settings/retrieval-ingest-manifest.js';
+import { emitGroup, queryGroup } from './query-emit-manifest.js';
+import { ingestGroup, retrievalGroup } from './retrieval-ingest-manifest.js';
 import {
   engramsGroup,
   gliaGroup,
@@ -7,7 +7,7 @@ import {
   nudgesGroup,
   plexusGroup,
   thalamusGroup,
-} from './settings/subsystem-manifest.js';
+} from './subsystem-manifest.js';
 
 /**
  * Cerebrum settings manifest — assembled from domain-specific group files

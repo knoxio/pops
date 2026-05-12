@@ -1,3 +1,5 @@
+import { financeManifest } from '@pops/module-registry/settings';
+
 /**
  * Finance domain — transactions, budgets, imports, wishlist.
  */
@@ -6,7 +8,6 @@ import { budgetsRouter } from './budgets/router.js';
 import { budgetsSearchAdapter } from './budgets/search-adapter.js';
 import { importsRouter } from './imports/router.js';
 import { financeMigrations } from './migrations.js';
-import { financeManifest } from './settings-manifest.js';
 import { transactionsRouter } from './transactions/router.js';
 import { transactionsSearchAdapter } from './transactions/search-adapter.js';
 import { financeUriHandler } from './uri-handler.js';
