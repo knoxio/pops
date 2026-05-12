@@ -10,6 +10,7 @@ import { parseEngramFile, serializeEngram } from './file.js';
 import { archiveEngram } from './handlers/archive-engram.js';
 import { changeEngramType } from './handlers/change-type.js';
 import { createEngram, type CreateEngramInput } from './handlers/create-engram.js';
+import { deleteEngram, type DeleteResult } from './handlers/delete-engram.js';
 import {
   absolutePath,
   applyTitleChange,
@@ -24,7 +25,8 @@ import {
   type ListEngramsResult,
 } from './handlers/list-engrams.js';
 import { reindexEngrams } from './handlers/rebuild-index.js';
-import { getIndexRow, upsertIndex } from './handlers/upsert-index.js';
+import { restoreEngram, type RestoreResult } from './handlers/restore-engram.js';
+import { findIndexRow, getIndexRow, upsertIndex } from './handlers/upsert-index.js';
 import { canTransitionStatus, type EngramFrontmatter, type EngramStatus } from './schema.js';
 import { buildEngram, type Engram } from './types.js';
 
@@ -147,6 +149,31 @@ export class EngramService {
   archive(id: string): Engram {
     archiveEngram({ root: this.root, db: this.db, now: this.now }, id);
     return this.loadEngram(id);
+  }
+
+  /**
+   * Move an archived engram back to `{type}/{id}.md` with `status: active`.
+   * Inverse of `archive()`. Idempotent — restoring an already-active engram is
+   * a no-op. Used by Glia prune/consolidate revert (PRD-086 US-04).
+   */
+  restore(id: string): { engram: Engram; result: RestoreResult } {
+    const result = restoreEngram({ root: this.root, db: this.db, now: this.now }, id);
+    return { engram: this.loadEngram(id), result };
+  }
+
+  /**
+   * Hard-delete an engram: removes the file, index row, outbound link rows
+   * (cascade), and strips inbound link references from other engrams'
+   * frontmatter. Used by consolidate revert to remove the merged engram.
+   * Idempotent — deleting a non-existent engram is a no-op.
+   */
+  hardDelete(id: string): DeleteResult {
+    return deleteEngram({ root: this.root, db: this.db, now: this.now }, id);
+  }
+
+  /** True iff `id` is present in the engram index. */
+  exists(id: string): boolean {
+    return findIndexRow(this.db, id) !== null;
   }
 
   /**

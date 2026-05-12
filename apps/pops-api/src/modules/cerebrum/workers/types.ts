@@ -85,6 +85,12 @@ export interface ConsolidatePayload extends PayloadBase {
   mergedLinks: string[];
   mergedBody: string;
   scope: string;
+  /**
+   * Engram ID of the merged file produced by `executeMerge`. Set only after
+   * the merge runs (non-propose phases). Required for `consolidate` revert
+   * to locate and remove the merged engram (PRD-086 US-04, #2576).
+   */
+  mergedEngramId?: string;
 }
 
 /** Linker-specific payload. */

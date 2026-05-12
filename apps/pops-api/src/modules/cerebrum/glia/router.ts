@@ -17,7 +17,9 @@ import {
   ValidationError,
 } from '../../../shared/errors.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { getEngramService } from '../instance.js';
 import { getGliaServices } from './instance.js';
+import { executeRevert } from './revert-operations.js';
 import { ACTION_STATUSES, ACTION_TYPES, USER_DECISIONS } from './types.js';
 
 import type { ActionType } from './types.js';
@@ -118,16 +120,23 @@ const actionsRouter = router({
     }
   }),
 
-  /** Revert an executed action. */
+  /**
+   * Revert an executed action.
+   *
+   * Flow: flip the DB state first (idempotent — re-reverting returns the same
+   * row), then perform the file-level restore via `executeRevert`. The DB
+   * state change is the source of truth for "this action has been reverted"
+   * even when individual file ops report partial failures, so the caller can
+   * inspect `revertResult.errors` and retry the filesystem side without
+   * double-counting the revert in trust state. PRD-086 US-04, #2576.
+   */
   revert: protectedProcedure.input(z.object({ id: z.string().min(1) })).mutation(({ input }) => {
     try {
       const { actionService, trustMachine } = getGliaServices();
       const action = actionService.revertAction(input.id);
-
-      // Eagerly evaluate demotion after every revert
+      const revertResult = executeRevert(action, getEngramService());
       const transition = trustMachine.checkGraduation(action.actionType as ActionType);
-
-      return { action, transition };
+      return { action, transition, revertResult };
     } catch (err) {
       toTrpcError(err);
     }

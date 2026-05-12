@@ -120,14 +120,19 @@ export class ConsolidatorWorker extends WorkerBase {
       phase
     );
     if (phase !== 'propose') {
-      this.executeMerge(cluster, mergePlan);
+      const mergedId = this.executeMerge(cluster, mergePlan);
+      mergePlan.mergedEngramId = mergedId;
       action.status = 'executed';
     }
     return action;
   }
 
-  /** Execute a merge — create consolidated engram and archive originals. */
-  private executeMerge(cluster: Engram[], plan: ConsolidatePayload): void {
+  /**
+   * Execute a merge — create the consolidated engram and archive originals.
+   * Returns the merged engram's ID so the caller can record it on the action
+   * payload (needed for revert per PRD-086 US-04).
+   */
+  private executeMerge(cluster: Engram[], plan: ConsolidatePayload): string {
     const dominantType = findDominantType(cluster);
     const merged = this.engramService.create({
       title: plan.mergedTitle,
@@ -143,5 +148,6 @@ export class ConsolidatorWorker extends WorkerBase {
     for (const original of cluster) {
       this.engramService.archive(original.id);
     }
+    return merged.id;
   }
 }
