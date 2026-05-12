@@ -3,7 +3,7 @@
  *
  * Extracted from action-service.ts to keep files under the max-lines limit.
  */
-import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 
 import { gliaActions, gliaTrustState } from '@pops/db-types/schema';
 
@@ -121,6 +121,86 @@ export function getTrustStateByType(
 /** List all trust states. */
 export function listAllTrustStates(db: BetterSQLite3Database): GliaTrustState[] {
   return db.select().from(gliaTrustState).all().map(toTrustState);
+}
+
+/**
+ * Query autonomous actions executed in a window.
+ *
+ * Autonomous = `status='executed'` AND `decided_at IS NULL` (workers acted
+ * without user approval). Window is matched against `executed_at` because
+ * created_at could be earlier than execution for delayed worker runs.
+ *
+ * No pagination — digest windows are bounded (daily/weekly) and the volume
+ * is expected to be small. If this assumption breaks, callers should add
+ * a cap rather than mutating this helper into a paged query.
+ */
+export function listAutonomousActionsInWindow(
+  db: BetterSQLite3Database,
+  startDate: string,
+  endDate: string
+): GliaAction[] {
+  const rows = db
+    .select()
+    .from(gliaActions)
+    .where(
+      and(
+        eq(gliaActions.status, 'executed'),
+        isNull(gliaActions.decidedAt),
+        gte(gliaActions.executedAt, startDate),
+        lte(gliaActions.executedAt, endDate)
+      )
+    )
+    .orderBy(asc(gliaActions.executedAt))
+    .all();
+  return rows.map(toGliaAction);
+}
+
+/**
+ * Count autonomous actions still in `executed` status since a given timestamp.
+ *
+ * Excludes reverted rows so the digest can compute the rejection rate as
+ * `reverted / (executed + reverted)` without double-counting actions that
+ * have already been rolled back.
+ */
+export function countAutonomousExecutionsSince(
+  db: BetterSQLite3Database,
+  actionType: ActionType,
+  sinceIso: string
+): number {
+  const result = db
+    .select({ count: sql<number>`count(*)` })
+    .from(gliaActions)
+    .where(
+      and(
+        eq(gliaActions.actionType, actionType),
+        eq(gliaActions.status, 'executed'),
+        isNull(gliaActions.decidedAt),
+        gte(gliaActions.executedAt, sinceIso)
+      )
+    )
+    .get();
+  return result?.count ?? 0;
+}
+
+/** Count autonomous reverts (decided_at IS NULL, status=reverted) since timestamp. */
+export function countAutonomousRevertsSince(
+  db: BetterSQLite3Database,
+  actionType: ActionType,
+  sinceIso: string
+): number {
+  const result = db
+    .select({ count: sql<number>`count(*)` })
+    .from(gliaActions)
+    .where(
+      and(
+        eq(gliaActions.actionType, actionType),
+        eq(gliaActions.status, 'reverted'),
+        isNull(gliaActions.decidedAt),
+        gte(gliaActions.revertedAt, sinceIso)
+      )
+    )
+    .get();
+  return result?.count ?? 0;
 }
 
 /** Count reverts within a rolling window for a given action type. */

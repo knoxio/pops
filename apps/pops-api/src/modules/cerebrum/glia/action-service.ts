@@ -12,11 +12,14 @@ import { gliaActions, gliaTrustState } from '@pops/db-types/schema';
 
 import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors.js';
 import {
+  countAutonomousExecutionsSince,
+  countAutonomousRevertsSince,
   countRevertsInWindow,
   generateActionId,
   getActionById,
   getTrustStateByType,
   listAllTrustStates,
+  listAutonomousActionsInWindow,
   queryActions,
   toGliaAction,
 } from './helpers.js';
@@ -190,6 +193,21 @@ export class GliaActionService {
   }
   countRevertsInWindow(actionType: ActionType, windowStart: string): number {
     return countRevertsInWindow(this.db, actionType, windowStart);
+  }
+
+  /** Autonomous actions executed in a window (used by the digest). */
+  listAutonomousActionsInWindow(startDate: string, endDate: string): GliaAction[] {
+    return listAutonomousActionsInWindow(this.db, startDate, endDate);
+  }
+
+  /** Count autonomous executions for a type since a given timestamp. */
+  countAutonomousExecutionsSince(actionType: ActionType, sinceIso: string): number {
+    return countAutonomousExecutionsSince(this.db, actionType, sinceIso);
+  }
+
+  /** Count autonomous reverts for a type since a given timestamp. */
+  countAutonomousRevertsSince(actionType: ActionType, sinceIso: string): number {
+    return countAutonomousRevertsSince(this.db, actionType, sinceIso);
   }
 
   /** Update trust state directly (used by the trust machine). */

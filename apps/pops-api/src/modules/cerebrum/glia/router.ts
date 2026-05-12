@@ -20,6 +20,8 @@ import { protectedProcedure, router } from '../../../trpc.js';
 import { getGliaServices } from './instance.js';
 import { ACTION_STATUSES, ACTION_TYPES, USER_DECISIONS } from './types.js';
 
+const periodSchema = z.enum(['daily', 'weekly']);
+
 import type { ActionType } from './types.js';
 
 const actionTypeSchema = z.enum(ACTION_TYPES);
@@ -172,7 +174,40 @@ const trustStateRouter = router({
   }),
 });
 
+/**
+ * `cerebrum.glia.digest` — summarise autonomous actions for the configured
+ * period and (optionally) deliver via shell + Moltbot.
+ *
+ * Suppression rules (PRD-086 US-04 AC #6):
+ *   - Action types in `silent` phase do not emit a digest.
+ *   - Empty periods are not delivered.
+ *
+ * The returned payload reflects whatever ran: callers can read
+ * `delivery.attempted` and `delivery.suppressedReason` to understand why a
+ * notification did or did not fire.
+ */
+const digestProcedure = protectedProcedure
+  .input(
+    z
+      .object({
+        period: periodSchema.optional(),
+        actionType: actionTypeSchema.optional(),
+        rejectionRateThreshold: z.number().gt(0).lte(1).optional(),
+        deliver: z.boolean().optional(),
+      })
+      .optional()
+  )
+  .mutation(async ({ input }) => {
+    try {
+      const { digestService } = getGliaServices();
+      return digestService.generate(input ?? {});
+    } catch (err) {
+      toTrpcError(err);
+    }
+  });
+
 export const gliaRouter = router({
   actions: actionsRouter,
   trustState: trustStateRouter,
+  digest: digestProcedure,
 });

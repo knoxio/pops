@@ -1,10 +1,28 @@
 /**
- * Digest reports for glia actions (#2248).
+ * Digest reports for glia actions (#2248, #2577).
  *
  * Generates daily/weekly digest summaries of glia curation activity.
  * Reports include action counts by type, approval rates, and notable events.
+ *
+ * The autonomous-action digest used by `cerebrum.glia.digest` lives in
+ * `autonomous-digest.ts` — re-exported here so consumers can import either
+ * surface from the same module path.
  */
 import type { GliaAction, ActionType } from './types.js';
+
+export {
+  DEFAULT_REJECTION_RATE_ANOMALY_THRESHOLD,
+  buildAutonomousDigest,
+  renderAutonomousDigestText,
+} from './autonomous-digest.js';
+
+export type {
+  AutonomousDigestInput,
+  AutonomousDigestReport,
+  DigestActionEntry,
+  DigestActionGroup,
+  DigestAnomaly,
+} from './autonomous-digest.js';
 
 /** A single digest report. */
 export interface DigestReport {
