@@ -6,8 +6,15 @@
  * - missing/unreadable toml falls back to the settings DB
  * - mtime invalidation picks up in-process edits without restart
  */
-import * as fs from 'node:fs';
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -165,13 +172,13 @@ propose_to_act_report_min_approved = 5
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     let errnoCode: string | undefined;
-    fs.chmodSync(configDir, 0o000);
+    chmodSync(configDir, 0o000);
     try {
       // The stat call should throw an errno error. Capture it directly to
       // assert the precondition and skip the test if the platform doesn't
       // enforce dir perms (e.g., running as root in CI).
       try {
-        fs.statSync(gliaTomlPath(root));
+        statSync(gliaTomlPath(root));
       } catch (err) {
         errnoCode = (err as NodeJS.ErrnoException).code;
       }
@@ -187,7 +194,7 @@ propose_to_act_report_min_approved = 5
       expect(message).toContain('stat failed');
     } finally {
       // Restore perms so afterEach can remove the directory.
-      fs.chmodSync(configDir, 0o700);
+      chmodSync(configDir, 0o700);
       warnSpy.mockRestore();
     }
   });

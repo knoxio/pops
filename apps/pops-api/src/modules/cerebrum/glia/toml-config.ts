@@ -37,26 +37,25 @@ export function gliaTomlPath(engramRoot: string): string {
 const nonNegativeInt = z.number().int().nonnegative();
 const rejectionRate = z.number().min(0).max(1);
 
-const graduationSchema = z
-  .object({
-    propose_to_act_report_min_approved: nonNegativeInt.optional(),
-    propose_to_act_report_max_rejection_rate: rejectionRate.optional(),
-    act_report_to_silent_min_days: nonNegativeInt.optional(),
-    demotion_revert_threshold: nonNegativeInt.optional(),
-    demotion_window_days: nonNegativeInt.optional(),
-  })
-  .strip();
+// Zod v4 strips unknown keys from object schemas by default — no explicit
+// `.strip()` is required (and `z.strictObject` would be too aggressive here
+// since users may add commented-out keys or future fields the parser hasn't
+// learned yet).
+const graduationSchema = z.object({
+  propose_to_act_report_min_approved: nonNegativeInt.optional(),
+  propose_to_act_report_max_rejection_rate: rejectionRate.optional(),
+  act_report_to_silent_min_days: nonNegativeInt.optional(),
+  demotion_revert_threshold: nonNegativeInt.optional(),
+  demotion_window_days: nonNegativeInt.optional(),
+});
 
-const gliaTomlSchema = z
-  .object({
-    trust: z
-      .object({
-        graduation: graduationSchema.optional(),
-      })
-      .strip()
-      .optional(),
-  })
-  .strip();
+const gliaTomlSchema = z.object({
+  trust: z
+    .object({
+      graduation: graduationSchema.optional(),
+    })
+    .optional(),
+});
 
 /** Parse the `[trust.graduation]` block into a partial thresholds object. */
 export function parseGliaToml(content: string): PartialGraduationThresholds {
