@@ -10,6 +10,7 @@ import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
 import { aiBudgets, aiInferenceLog, aiModelPricing, aiProviders } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { logger } from '../../../lib/logger.js';
 import { getSettingOrNull, setRawSetting } from '../settings/service.js';
 import { upsertBudget } from './service.js';
 
@@ -144,7 +145,13 @@ export function evaluateBudgetsForCall(
   provider: string,
   operation: string
 ): { breaches: BudgetBreach[]; allBudgets: ApplicableBudget[] } {
-  const allBudgets = listApplicableBudgets(provider, operation);
+  let allBudgets: ApplicableBudget[];
+  try {
+    allBudgets = listApplicableBudgets(provider, operation);
+  } catch (err) {
+    logger.warn({ err, provider, operation }, '[ai-budgets] failed to read budgets — failing open');
+    return { breaches: [], allBudgets: [] };
+  }
   const breaches: BudgetBreach[] = [];
   for (const b of allBudgets) {
     const breach = evaluateBreach(b);
@@ -174,12 +181,15 @@ export function migrateLegacyBudgetSettings(): void {
   if (getSettingOrNull(LEGACY_MIGRATED_FLAG_KEY)) return;
 
   const db = getDrizzle();
-  const existingGlobal = db
+  // Skip if either: a global-scoped row already exists, or a row with id='global'
+  // already exists under a different scope. upsertBudget keys on id, so the
+  // latter would silently clobber unrelated data.
+  const conflict = db
     .select({ id: aiBudgets.id })
     .from(aiBudgets)
-    .where(eq(aiBudgets.scopeType, 'global'))
+    .where(sql`${aiBudgets.scopeType} = 'global' OR ${aiBudgets.id} = 'global'`)
     .get();
-  if (existingGlobal) {
+  if (conflict) {
     setRawSetting(LEGACY_MIGRATED_FLAG_KEY, '1');
     return;
   }
