@@ -87,11 +87,12 @@ export function ContradictionsPanel() {
   }
 
   const rows = (data?.contradictions ?? []) as ContradictionRow[];
+  const total = data?.total ?? rows.length;
 
   return (
     <section className="space-y-3" data-testid="contradictions-panel">
       <div className="flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold">Contradictions ({rows.length})</h3>
+        <h3 className="text-sm font-semibold">Contradictions ({total})</h3>
         <span className="text-xs text-muted-foreground">
           Pairs of engrams the LLM flagged as conflicting.
         </span>

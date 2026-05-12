@@ -137,7 +137,14 @@ export function listContradictions(
   if (opts.status !== null && opts.status !== undefined) {
     conditions.push(eq(nudgeLog.status, opts.status));
   }
-  conditions.push(sql`json_extract(${nudgeLog.actionParams}, '$.contradiction') IS NOT NULL`);
+  // Require every field that the UI projection needs so total === rows after pagination.
+  conditions.push(
+    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.engramA') IS NOT NULL`,
+    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.engramB') IS NOT NULL`,
+    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.excerptA') IS NOT NULL`,
+    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.excerptB') IS NOT NULL`,
+    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.conflict') IS NOT NULL`
+  );
 
   const where = and(...conditions);
   const limit = opts.limit ?? 50;

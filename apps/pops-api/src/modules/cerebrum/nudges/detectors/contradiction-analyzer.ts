@@ -73,21 +73,15 @@ export class NoopContradictionAnalyzer implements ContradictionAnalyzer {
   }
 }
 
-/**
- * Schema for the analyzer LLM response.
- *
- * Both shapes the model is permitted to emit must pass — `{ contradiction:
- * false }` and the full evidence object. Optional string fields are
- * declared at the boundary so consumers don't reach for `unknown` casts
- * downstream. Any value that fails this schema is treated as "no
- * contradiction" — see `parseAnalyzerResponse`.
- */
-const contradictionResultSchema = z.object({
-  contradiction: z.boolean(),
-  conflict: z.string().optional(),
-  excerptA: z.string().optional(),
-  excerptB: z.string().optional(),
-});
+const contradictionResultSchema = z.discriminatedUnion('contradiction', [
+  z.object({ contradiction: z.literal(false) }),
+  z.object({
+    contradiction: z.literal(true),
+    conflict: z.string().trim().min(1),
+    excerptA: z.string().trim().min(1),
+    excerptB: z.string().trim().min(1),
+  }),
+]);
 
 type LlmContradictionResponse = z.infer<typeof contradictionResultSchema>;
 
@@ -137,35 +131,17 @@ function extractJson(raw: string): LlmContradictionResponse | null {
   return result.success ? result.data : null;
 }
 
-/**
- * Parse the LLM JSON response.
- *
- * Returns null for any malformed payload, missing fields, type
- * mismatches, or `contradiction: false`. We deliberately do NOT raise on
- * parse errors — a parse failure means "no evidence of a contradiction
- * we can present to the user", which is functionally the same as no
- * contradiction.
- */
 export function parseAnalyzerResponse(raw: string): {
   conflict: string;
   excerptA: string;
   excerptB: string;
 } | null {
   const parsed = extractJson(raw);
-  if (!parsed) return null;
-  if (parsed.contradiction !== true) return null;
-
-  const conflict = parsed.conflict?.trim() ?? '';
-  const excerptA = parsed.excerptA?.trim() ?? '';
-  const excerptB = parsed.excerptB?.trim() ?? '';
-  if (conflict.length === 0 || excerptA.length === 0 || excerptB.length === 0) {
-    return null;
-  }
-
+  if (!parsed || parsed.contradiction !== true) return null;
   return {
-    conflict,
-    excerptA: clipExcerpt(excerptA),
-    excerptB: clipExcerpt(excerptB),
+    conflict: parsed.conflict,
+    excerptA: clipExcerpt(parsed.excerptA),
+    excerptB: clipExcerpt(parsed.excerptB),
   };
 }
 
