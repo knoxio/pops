@@ -139,8 +139,6 @@ describe('POST /api/cerebrum/query/stream', () => {
     expect(res.status).toBe(200);
     expect(res.contentType).toContain('text/event-stream');
 
-    // eslint-disable-next-line no-console
-    console.log('DEBUG status=', res.status, 'body length=', res.body.length, 'body=', res.body);
     const events = parseSseBody(res.body);
     expect(events).toHaveLength(3);
     expect(events[0]).toEqual({ type: 'token', text: 'Hello' });

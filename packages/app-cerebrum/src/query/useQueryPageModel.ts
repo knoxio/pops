@@ -1,15 +1,5 @@
 /**
  * View model for the Query page (`/cerebrum/query`, PRD-082).
- *
- * Composes the history state, mutation wrappers and action callbacks
- * extracted into sibling modules. Kept deliberately small so the page
- * component stays a dumb consumer and so each sub-piece stays
- * unit-testable in isolation.
- *
- * Streaming is wired through the SSE endpoint
- * `/api/cerebrum/query/stream` (issue #2596) via `useAskMutation`. The
- * answer panel state is updated incrementally as tokens arrive and the
- * citation set is appended on the final `done` event.
  */
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

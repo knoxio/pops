@@ -72,7 +72,6 @@ function makeStreamResponse(events: StreamEvent[]): Response {
 }
 
 const fetchMock = vi.fn();
-const originalFetch = globalThis.fetch;
 
 function renderPage() {
   return render(
@@ -87,11 +86,11 @@ beforeEach(() => {
   emitPending = false;
   emitCallbacks = {};
   window.localStorage.clear();
-  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  vi.stubGlobal('fetch', fetchMock);
 });
 
 afterEach(() => {
-  globalThis.fetch = originalFetch;
+  vi.unstubAllGlobals();
 });
 
 describe('QueryPage', () => {
@@ -148,7 +147,6 @@ describe('QueryPage', () => {
     await userEvent.type(screen.getByLabelText('Question'), 'what did i decide?');
     await userEvent.click(screen.getByTestId('query-ask'));
 
-    // Stream completes; full answer + citations + confidence are visible.
     await waitFor(() => {
       expect(screen.getByText('You decided to ship.')).toBeInTheDocument();
     });
@@ -172,8 +170,6 @@ describe('QueryPage', () => {
   });
 
   it('renders intermediate token text before the done event arrives', async () => {
-    // Hand-crafted stream: we hold the controller so we can flush tokens
-    // one-by-one and assert the panel re-renders between them.
     const encoder = new TextEncoder();
     let controllerRef: ReadableStreamDefaultController<Uint8Array> | null = null;
     const body = new ReadableStream<Uint8Array>({
