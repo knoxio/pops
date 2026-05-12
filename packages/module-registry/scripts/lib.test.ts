@@ -309,4 +309,36 @@ describe('renderFile', () => {
     const out = renderFile([]);
     expect(out.endsWith('\n')).toBe(true);
   });
+
+  it('escapes control characters and line/paragraph separators in emitted string literals', () => {
+    const name = [
+      'line',
+      String.fromCharCode(10),
+      'tab',
+      String.fromCharCode(9),
+      'sep',
+      String.fromCharCode(0x2028),
+      'para',
+      String.fromCharCode(0x2029),
+      "quote'",
+      'back\\',
+    ].join('');
+    const out = renderFile([
+      {
+        id: 'ctrl',
+        name,
+        surfaces: ['app'],
+        hasBackend: false,
+        hasFrontend: true,
+      },
+    ]);
+    const nameLine = out.split('\n').find((l) => l.includes('name:'));
+    expect(nameLine).toBeDefined();
+    expect(nameLine).toContain('\\n');
+    expect(nameLine).toContain('\\t');
+    expect(nameLine).toContain('\\u2028');
+    expect(nameLine).toContain('\\u2029');
+    expect(nameLine).toContain("\\'");
+    expect(nameLine).toContain('\\\\');
+  });
 });
