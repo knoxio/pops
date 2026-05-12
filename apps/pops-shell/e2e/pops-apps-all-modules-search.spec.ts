@@ -2,20 +2,17 @@
 // media results here and none under POPS_APPS=finance.
 import { expect, test } from '@playwright/test';
 
-import { useRealApi } from './helpers/use-real-api';
+import { bootShellAndAwaitSearch, unrouteAll } from './helpers/shell-search';
 
 const query = 'Matrix';
 
 test.describe('Shell — search includes media results (all-modules build)', () => {
   test.beforeEach(async ({ page }) => {
-    await useRealApi(page);
-    await page.goto('/');
-    await expect(page).toHaveURL(/\/finance/);
-    await expect(page.getByRole('textbox', { name: 'Search POPS' })).toBeVisible();
+    await bootShellAndAwaitSearch(page);
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await unrouteAll(page);
   });
 
   test('searching "Matrix" surfaces a movies result against the seeded library', async ({

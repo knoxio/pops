@@ -9,20 +9,17 @@
  */
 import { expect, test } from '@playwright/test';
 
-import { useRealApi } from './helpers/use-real-api';
+import { bootShellAndAwaitSearch, unrouteAll } from './helpers/shell-search';
 
 const query = 'Matrix';
 
 test.describe('Shell — search narrows to installed modules (finance-only build)', () => {
   test.beforeEach(async ({ page }) => {
-    await useRealApi(page);
-    await page.goto('/');
-    await expect(page).toHaveURL(/\/finance/);
-    await expect(page.getByRole('textbox', { name: 'Search POPS' })).toBeVisible();
+    await bootShellAndAwaitSearch(page);
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await unrouteAll(page);
   });
 
   test('searching "Matrix" returns no movies results when media is uninstalled', async ({
