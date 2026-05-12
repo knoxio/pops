@@ -7,6 +7,7 @@ import {
 } from '../../modules/cerebrum/thalamus/cross-source.js';
 import { runEvaluation } from '../../modules/core/ai-alerts/evaluator.js';
 import { runRetention } from '../../modules/core/ai-observability/retention.js';
+import { runSummary } from '../../modules/core/ai-observability/summary.js';
 
 import type { Job } from 'bullmq';
 
@@ -39,6 +40,21 @@ export async function process(job: Job<DefaultQueueJobData>): Promise<unknown> {
         cutoff: result.cutoff,
       },
       'AI inference log retention complete'
+    );
+    return result;
+  }
+
+  if (job.data.type === 'aiObservabilitySummary') {
+    const result = runSummary();
+    logger.info(
+      {
+        totalCalls: result.summary.totalCalls,
+        providers: result.summary.byProvider.length,
+        models: result.summary.byModel.length,
+        windowStart: result.summary.windowStart,
+        computedAt: result.summary.computedAt,
+      },
+      'AI observability summary complete'
     );
     return result;
   }

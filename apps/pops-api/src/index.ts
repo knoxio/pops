@@ -17,6 +17,10 @@ import {
   registerAiLogRetentionScheduler,
   unregisterAiLogRetentionScheduler,
 } from './modules/core/ai-observability/scheduler.js';
+import {
+  registerAiObservabilitySummaryScheduler,
+  unregisterAiObservabilitySummaryScheduler,
+} from './modules/core/ai-observability/summary-scheduler.js';
 import { startupCleanup } from './modules/core/envs/registry.js';
 import { startTtlWatcher } from './modules/core/envs/ttl-watcher.js';
 import { resumeSchedulerIfEnabled, stopPlexSchedulerTask } from './modules/media/plex/scheduler.js';
@@ -76,6 +80,11 @@ registerAiAlertsScheduler().catch((err: unknown) => {
   console.error('[ai-alerts] Failed to register scheduler:', err);
 });
 
+// Register AI observability summary scheduler (PRD-092 US-05)
+registerAiObservabilitySummaryScheduler().catch((err: unknown) => {
+  console.error('[ai-observability-summary] Failed to register scheduler:', err);
+});
+
 async function shutdown(signal: string): Promise<void> {
   console.warn(`[pops-api] ${signal} — shutting down`);
   // 1. Stop accepting new requests
@@ -87,6 +96,7 @@ async function shutdown(signal: string): Promise<void> {
   await stopThalamus();
   await unregisterAiLogRetentionScheduler();
   await unregisterAiAlertsScheduler();
+  await unregisterAiObservabilitySummaryScheduler();
   // 4. Wait for any in-progress rotation cycle to finish
   if (process.env['NODE_ENV'] !== 'test') {
     await waitForCycleEnd();
