@@ -95,7 +95,9 @@ describe('parseAnalyzerResponse', () => {
     expect(out?.conflict).toBe('C');
   });
 
-  it('clips excerpts longer than 240 chars', () => {
+  it('hard-cuts excerpts longer than 240 chars without appending ellipsis', () => {
+    // Excerpts are presented as verbatim quotes — appending any character
+    // (ellipsis, marker, etc.) would mutate the quoted source text.
     const long = 'x'.repeat(300);
     const raw = JSON.stringify({
       contradiction: true,
@@ -104,8 +106,43 @@ describe('parseAnalyzerResponse', () => {
       excerptB: 'short',
     });
     const out = parseAnalyzerResponse(raw);
-    expect(out?.excerptA.length).toBeLessThanOrEqual(240);
-    expect(out?.excerptA.endsWith('…')).toBe(true);
+    expect(out?.excerptA.length).toBe(240);
+    // No ellipsis, no sentinel — the cut is clean.
+    expect(out?.excerptA.endsWith('…')).toBe(false);
+    expect(out?.excerptA).toBe('x'.repeat(240));
+  });
+
+  it('returns null when contradiction field has wrong type (zod boundary)', () => {
+    // `contradiction` is required to be boolean — a string here is a
+    // schema violation and must collapse to the safe "no contradiction"
+    // default.
+    const raw = JSON.stringify({
+      contradiction: 'yes',
+      conflict: 'C',
+      excerptA: 'a',
+      excerptB: 'b',
+    });
+    expect(parseAnalyzerResponse(raw)).toBeNull();
+  });
+
+  it('returns null when excerpt fields are not strings', () => {
+    const raw = JSON.stringify({
+      contradiction: true,
+      conflict: 'C',
+      excerptA: 123,
+      excerptB: 'b',
+    });
+    expect(parseAnalyzerResponse(raw)).toBeNull();
+  });
+
+  it('returns null when conflict is not a string', () => {
+    const raw = JSON.stringify({
+      contradiction: true,
+      conflict: { nested: 'oops' },
+      excerptA: 'a',
+      excerptB: 'b',
+    });
+    expect(parseAnalyzerResponse(raw)).toBeNull();
   });
 });
 

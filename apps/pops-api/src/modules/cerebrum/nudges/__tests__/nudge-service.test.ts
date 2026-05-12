@@ -260,25 +260,28 @@ describe('NudgeService', () => {
 
   describe('act', () => {
     function pendingRow(actionType = 'review') {
+      // Mirrors drizzle's `select()` output: camelCase JS-side property
+      // names that map to snake_case SQL columns. The mock DB returns
+      // these directly to `rowToNudge`, which expects the drizzle shape.
       return {
         id: 'nudge_123',
         type: 'staleness',
         title: 'Test',
         body: 'Body',
-        engram_ids: '["eng_1"]',
+        engramIds: '["eng_1"]',
         priority: 'medium',
         status: 'pending',
-        created_at: '2026-04-27T10:00:00Z',
-        expires_at: null,
-        acted_at: null,
-        action_type: actionType,
-        action_label: 'Mark as reviewed',
-        action_params: '{"engramId":"eng_1"}',
+        createdAt: '2026-04-27T10:00:00Z',
+        expiresAt: null,
+        actedAt: null,
+        actionType,
+        actionLabel: 'Mark as reviewed',
+        actionParams: '{"engramId":"eng_1"}',
       };
     }
 
     function actedRow(actionType = 'review') {
-      return { ...pendingRow(actionType), status: 'acted', acted_at: '2026-04-27T10:00:00Z' };
+      return { ...pendingRow(actionType), status: 'acted', actedAt: '2026-04-27T10:00:00Z' };
     }
 
     it('marks a pending review nudge as acted and bumps modified_at', async () => {
@@ -397,15 +400,15 @@ describe('NudgeService', () => {
         type: 'staleness',
         title: 'Stale engram',
         body: 'Body text',
-        engram_ids: '["eng_1"]',
+        engramIds: '["eng_1"]',
         priority: 'medium',
         status: 'pending',
-        created_at: '2026-04-27T10:00:00Z',
-        expires_at: null,
-        acted_at: null,
-        action_type: 'review',
-        action_label: 'Review',
-        action_params: '{}',
+        createdAt: '2026-04-27T10:00:00Z',
+        expiresAt: null,
+        actedAt: null,
+        actionType: 'review',
+        actionLabel: 'Review',
+        actionParams: '{}',
       };
       const mockDb = createMockDb([[nudgeRow], [{ total: 1 }]]);
 

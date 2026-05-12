@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { PatternDetector } from '../detectors/patterns.js';
+const loggerMock = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() };
+vi.mock('../../../../lib/logger.js', () => ({ logger: loggerMock }));
+
+const { PatternDetector } = await import('../detectors/patterns.js');
 
 import type { ContradictionAnalyzer } from '../detectors/contradiction-analyzer.js';
 import type { EngramSummary, NudgeThresholds } from '../types.js';
@@ -353,11 +356,21 @@ describe('PatternDetector', () => {
         bodyReader: () => 'body',
       });
 
+      loggerMock.warn.mockClear();
       const result = await detector.detect([a, b, c]);
       // 3 pairs total; first throws, the remaining two should produce
       // nudges so the scan as a whole degrades gracefully.
       const contradictions = result.nudges.filter((n) => n.title.startsWith('Contradiction'));
       expect(contradictions.length).toBeGreaterThanOrEqual(1);
+
+      // The swallowed per-pair error must be logged so silent regressions
+      // are catchable in production telemetry.
+      const errorWarnings = loggerMock.warn.mock.calls.filter(
+        (call) => typeof call[1] === 'string' && call[1].includes('contradiction analyzer failed')
+      );
+      expect(errorWarnings).toHaveLength(1);
+      const [warnCtx] = errorWarnings[0] ?? [];
+      expect(warnCtx).toMatchObject({ engramA: expect.any(String), engramB: expect.any(String) });
     });
 
     it('falls back to noop analyzer when no analyzer is configured', async () => {

@@ -12,6 +12,7 @@
 import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
+import { logger } from '../../../lib/logger.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { getEngramService } from '../instance.js';
@@ -36,10 +37,15 @@ function getService(): NudgeService {
   const patternDetector = new PatternDetector({
     thresholds: activeThresholds,
     contradictionAnalyzer: new LlmContradictionAnalyzer(),
-    bodyReader: (id) => {
+    bodyReader: (engramId) => {
       try {
-        return engramService.read(id).body;
-      } catch {
+        return engramService.read(engramId).body;
+      } catch (err) {
+        // A thrown read (deleted engram, IO failure, secret-scope guard)
+        // surfaces here. We swallow the throw so the detector pass keeps
+        // running, but we log so silent gaps in contradiction coverage
+        // are observable.
+        logger.warn({ err, engramId }, '[contradictions] failed to read engram body');
         return null;
       }
     },
@@ -164,15 +170,21 @@ export const nudgesRouter = router({
         .object({
           status: nudgeStatusSchema.nullable().optional(),
           limit: z.number().int().positive().max(100).optional(),
+          offset: z.number().int().nonnegative().optional(),
         })
         .optional()
     )
     .query(({ input }) => {
       const status = input?.status === undefined ? 'pending' : input.status;
-      const result = getService().list({
-        type: 'pattern',
-        ...(status === null ? {} : { status }),
+      // Filtering happens at the SQL layer (json_extract on
+      // action_params) so the page slice contains only contradictions
+      // and `total` is the count of contradictions — not the count of
+      // all pattern nudges. Without that, recurring/emerging rows could
+      // fill a page and hide actual contradictions.
+      const result = getService().listContradictions({
+        status,
         limit: input?.limit ?? 50,
+        offset: input?.offset ?? 0,
       });
       const contradictions = result.nudges
         .map((nudge) => {
@@ -188,7 +200,7 @@ export const nudgesRouter = router({
           };
         })
         .filter((row): row is NonNullable<typeof row> => row !== null);
-      return { contradictions, total: contradictions.length };
+      return { contradictions, total: result.total };
     }),
 
   /** Update detection thresholds. */

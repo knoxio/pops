@@ -7,11 +7,17 @@ import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { engramIndex, engramScopes, engramTags, nudgeLog } from '@pops/db-types';
 
 import { logger } from '../../../lib/logger.js';
-import { generateNudgeId } from './nudge-helpers.js';
+import { generateNudgeId, rowToNudge } from './nudge-helpers.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
-import type { EngramSummary, NudgeCandidate, NudgeThresholds } from './types.js';
+import type {
+  EngramSummary,
+  Nudge,
+  NudgeCandidate,
+  NudgeStatus,
+  NudgeThresholds,
+} from './types.js';
 
 /** Group rows by engramId into a multi-value map. */
 function buildLookup(rows: { engramId: string; val: string }[]): Map<string, string[]> {
@@ -113,6 +119,45 @@ function isInCooldown(
     const existing = JSON.stringify((JSON.parse(row.engramIds) as string[]).toSorted());
     return existing === sortedIds;
   });
+}
+
+/**
+ * List contradiction pattern nudges (PRD-084 US-03).
+ *
+ * Filters at the SQL layer with a `json_extract` predicate on
+ * `action_params` so non-contradiction pattern nudges (recurring,
+ * emerging) cannot consume page slots or inflate `total`. Pagination
+ * applies after the filter, which is what makes it honest.
+ */
+export function listContradictions(
+  db: BetterSQLite3Database,
+  opts: { status?: NudgeStatus | null; limit?: number; offset?: number } = {}
+): { nudges: Nudge[]; total: number } {
+  const conditions = [eq(nudgeLog.type, 'pattern')];
+  if (opts.status !== null && opts.status !== undefined) {
+    conditions.push(eq(nudgeLog.status, opts.status));
+  }
+  conditions.push(sql`json_extract(${nudgeLog.actionParams}, '$.contradiction') IS NOT NULL`);
+
+  const where = and(...conditions);
+  const limit = opts.limit ?? 50;
+  const offset = opts.offset ?? 0;
+
+  const rows = db
+    .select()
+    .from(nudgeLog)
+    .where(where)
+    .orderBy(sql`${nudgeLog.createdAt} desc`)
+    .limit(limit)
+    .offset(offset)
+    .all();
+
+  const [totalRow] = db.select({ total: count() }).from(nudgeLog).where(where).all();
+
+  return {
+    nudges: rows.map((r) => rowToNudge(r)),
+    total: totalRow?.total ?? 0,
+  };
 }
 
 /** Enforce the max pending nudges cap by expiring oldest. */

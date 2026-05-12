@@ -12,6 +12,7 @@
  * when no body reader is wired in) the contradiction pass is a no-op and
  * the detector behaves exactly as it did before #2580.
  */
+import { logger } from '../../../../lib/logger.js';
 import { NoopContradictionAnalyzer } from './contradiction-analyzer.js';
 import { buildContradictionPairs } from './contradiction-pairs.js';
 import {
@@ -205,8 +206,13 @@ export class PatternDetector {
       let evidence: ContradictionEvidence | null = null;
       try {
         evidence = await this.contradictionAnalyzer.analyze(pair.a.id, bodyA, pair.b.id, bodyB);
-      } catch {
-        // Single-pair failures must not abort the rest of the scan.
+      } catch (err) {
+        // Single-pair failures must not abort the rest of the scan, but
+        // we still emit telemetry so silent regressions are catchable.
+        logger.warn(
+          { err, engramA: pair.a.id, engramB: pair.b.id },
+          '[patterns] contradiction analyzer failed for pair'
+        );
         continue;
       }
       if (!evidence) continue;

@@ -12,7 +12,12 @@ import { nudgeLog } from '@pops/db-types';
 import { logger } from '../../../lib/logger.js';
 import { ConcatenationSynthesizer, executeConsolidationAct } from './consolidation-act.js';
 import { rowToNudge } from './nudge-helpers.js';
-import { enforcePendingCap, loadActiveEngrams, persistCandidates } from './nudge-persistence.js';
+import {
+  enforcePendingCap,
+  listContradictions,
+  loadActiveEngrams,
+  persistCandidates,
+} from './nudge-persistence.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
@@ -22,7 +27,6 @@ import type { BodySynthesizer } from './consolidation-act.js';
 import type { ConsolidationDetector } from './detectors/consolidation.js';
 import type { PatternDetector } from './detectors/patterns.js';
 import type { StalenessDetector } from './detectors/staleness.js';
-import type { NudgeLogRow } from './nudge-helpers.js';
 import type { Nudge, NudgeStatus, NudgeThresholds, NudgeType } from './types.js';
 
 export interface NudgeServiceDeps {
@@ -129,15 +133,23 @@ export class NudgeService {
     const [totalRow] = (where ? countQuery.where(where) : countQuery).all();
 
     return {
-      nudges: rows.map((r) => rowToNudge(r as unknown as NudgeLogRow)),
+      nudges: rows.map((r) => rowToNudge(r)),
       total: totalRow?.total ?? 0,
     };
+  }
+
+  /** List contradiction pattern nudges with SQL-level filtering. */
+  listContradictions(opts: { status?: NudgeStatus | null; limit?: number; offset?: number } = {}): {
+    nudges: Nudge[];
+    total: number;
+  } {
+    return listContradictions(this.db, opts);
   }
 
   /** Get a single nudge by ID. */
   get(id: string): Nudge | null {
     const [row] = this.db.select().from(nudgeLog).where(eq(nudgeLog.id, id)).all();
-    return row ? rowToNudge(row as unknown as NudgeLogRow) : null;
+    return row ? rowToNudge(row) : null;
   }
 
   /** Dismiss a nudge — permanently mark it as dismissed. */

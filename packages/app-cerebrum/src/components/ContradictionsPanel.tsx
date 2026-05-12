@@ -29,7 +29,7 @@ function ExcerptBlock({ engramId, excerpt }: { engramId: string; excerpt: string
     <div className="border border-border rounded p-2 bg-background">
       <Link
         to={`/cerebrum/engrams/${engramId}`}
-        className="text-xs font-mono text-sky-500 hover:underline"
+        className="text-xs font-mono text-app-accent hover:underline"
       >
         {engramId}
       </Link>
@@ -51,7 +51,7 @@ function ContradictionCard({ row }: { row: ContradictionRow }) {
           <h4 className="font-medium text-sm">{row.conflict}</h4>
           <p className="text-xs text-muted-foreground mt-0.5">{row.title}</p>
         </div>
-        <span className="text-[10px] uppercase tracking-wide text-rose-500 font-semibold">
+        <span className="text-xs uppercase tracking-wide text-destructive font-semibold">
           {row.priority}
         </span>
       </div>

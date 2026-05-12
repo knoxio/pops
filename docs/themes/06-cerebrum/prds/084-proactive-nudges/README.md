@@ -53,14 +53,32 @@ Define the proactive nudge system that surfaces system-initiated suggestions wit
 
 ## API Surface
 
-| Procedure                   | Input                                      | Output                               | Notes                                                       |
-| --------------------------- | ------------------------------------------ | ------------------------------------ | ----------------------------------------------------------- |
-| `cerebrum.nudges.list`      | type?, status?, priority?, limit?, offset? | `{ nudges: Nudge[], total: number }` | List nudges with optional filters                           |
-| `cerebrum.nudges.get`       | id                                         | `{ nudge: Nudge }`                   | Get a specific nudge with full context                      |
-| `cerebrum.nudges.dismiss`   | id                                         | `{ success: boolean }`               | Mark nudge as dismissed — it will not resurface             |
-| `cerebrum.nudges.act`       | id                                         | `{ result: ActionResult }`           | Execute the nudge's suggested action                        |
-| `cerebrum.nudges.scan`      | type?: string                              | `{ created: number }`                | Trigger an on-demand nudge scan (normally runs on schedule) |
-| `cerebrum.nudges.configure` | thresholds: NudgeThresholds                | `{ success: boolean }`               | Update detection thresholds                                 |
+| Procedure                        | Input                                      | Output                                       | Notes                                                                        |
+| -------------------------------- | ------------------------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------- |
+| `cerebrum.nudges.list`           | type?, status?, priority?, limit?, offset? | `{ nudges: Nudge[], total: number }`         | List nudges with optional filters                                            |
+| `cerebrum.nudges.get`            | id                                         | `{ nudge: Nudge }`                           | Get a specific nudge with full context                                       |
+| `cerebrum.nudges.dismiss`        | id                                         | `{ success: boolean }`                       | Mark nudge as dismissed — it will not resurface                              |
+| `cerebrum.nudges.act`            | id                                         | `{ result: ActionResult }`                   | Execute the nudge's suggested action                                         |
+| `cerebrum.nudges.scan`           | type?: string                              | `{ created: number }`                        | Trigger an on-demand nudge scan (normally runs on schedule)                  |
+| `cerebrum.nudges.contradictions` | status?, limit?, offset?                   | `{ contradictions: Contradiction[], total }` | Paginated list of contradiction-type pattern nudges with structured excerpts |
+| `cerebrum.nudges.configure`      | thresholds: NudgeThresholds                | `{ success: boolean }`                       | Update detection thresholds                                                  |
+
+### Contradiction (US-03)
+
+Surfaced by `cerebrum.nudges.contradictions`. Each row carries both source engram IDs plus a short verbatim excerpt from each side and the LLM-generated conflict summary, so a reader can assess the conflict without opening either source engram. The status filter defaults to `pending`; pass `null` to include dismissed/acted/expired rows. `total` reflects the filtered count so pagination is honest.
+
+| Field       | Type   | Description                                                          |
+| ----------- | ------ | -------------------------------------------------------------------- |
+| `id`        | string | Nudge ID this contradiction is derived from                          |
+| `createdAt` | string | ISO 8601 timestamp                                                   |
+| `status`    | string | `pending`, `dismissed`, `acted`, `expired`                           |
+| `priority`  | string | `low`, `medium`, `high` — contradiction nudges are emitted at `high` |
+| `title`     | string | Short summary (max 100 characters)                                   |
+| `engramA`   | string | ID of the first engram in the contradicting pair                     |
+| `engramB`   | string | ID of the second engram in the contradicting pair                    |
+| `excerptA`  | string | Verbatim excerpt from engram A (≤ 240 chars, no ellipsis padding)    |
+| `excerptB`  | string | Verbatim excerpt from engram B (≤ 240 chars, no ellipsis padding)    |
+| `conflict`  | string | One-sentence LLM-generated description of the conflict               |
 
 ### NudgeThresholds (configurable)
 

@@ -11,6 +11,7 @@
  * checked once that work lands.
  */
 import Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
 
 import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
@@ -72,12 +73,23 @@ export class NoopContradictionAnalyzer implements ContradictionAnalyzer {
   }
 }
 
-interface LlmContradictionResponse {
-  contradiction: boolean;
-  conflict?: unknown;
-  excerptA?: unknown;
-  excerptB?: unknown;
-}
+/**
+ * Schema for the analyzer LLM response.
+ *
+ * Both shapes the model is permitted to emit must pass — `{ contradiction:
+ * false }` and the full evidence object. Optional string fields are
+ * declared at the boundary so consumers don't reach for `unknown` casts
+ * downstream. Any value that fails this schema is treated as "no
+ * contradiction" — see `parseAnalyzerResponse`.
+ */
+const contradictionResultSchema = z.object({
+  contradiction: z.boolean(),
+  conflict: z.string().optional(),
+  excerptA: z.string().optional(),
+  excerptB: z.string().optional(),
+});
+
+type LlmContradictionResponse = z.infer<typeof contradictionResultSchema>;
 
 function getModel(): string {
   return getAiModel('ai.modelOverrides.patternContradiction', 'claude-haiku-4-20250514');
@@ -88,55 +100,51 @@ function truncate(body: string, max = MAX_BODY_CHARS): string {
   return body.slice(0, max) + '...';
 }
 
+/**
+ * Hard-cut an excerpt at `MAX_EXCERPT_CHARS`.
+ *
+ * Excerpts are presented to the user as verbatim quotes from a source
+ * engram; appending any sentinel character (e.g. an ellipsis) would
+ * silently mutate the quoted text. We instead truncate cleanly — callers
+ * that need to indicate truncation can compare lengths against
+ * `MAX_EXCERPT_CHARS`.
+ */
 function clipExcerpt(value: string): string {
   const trimmed = value.trim();
   if (trimmed.length <= MAX_EXCERPT_CHARS) return trimmed;
-  return trimmed.slice(0, MAX_EXCERPT_CHARS - 1) + '…';
+  return trimmed.slice(0, MAX_EXCERPT_CHARS);
 }
 
-function isString(value: unknown): value is string {
-  return typeof value === 'string';
-}
-
-/** Extract and parse the first JSON object embedded in a string. */
+/**
+ * Extract the first JSON object embedded in a string and validate it
+ * against `contradictionResultSchema`. Returns null on any failure —
+ * unparseable substring, JSON syntax error, or schema mismatch.
+ */
 function extractJson(raw: string): LlmContradictionResponse | null {
   const trimmed = raw.trim();
   if (trimmed.length === 0) return null;
   const jsonStart = trimmed.indexOf('{');
   const jsonEnd = trimmed.lastIndexOf('}');
   if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) return null;
+
+  let parsedJson: unknown;
   try {
-    return JSON.parse(trimmed.slice(jsonStart, jsonEnd + 1)) as LlmContradictionResponse;
+    parsedJson = JSON.parse(trimmed.slice(jsonStart, jsonEnd + 1));
   } catch {
     return null;
   }
-}
-
-/** All three required fields are non-empty strings. */
-function hasContradictionFields(
-  parsed: LlmContradictionResponse
-): parsed is LlmContradictionResponse & {
-  conflict: string;
-  excerptA: string;
-  excerptB: string;
-} {
-  return (
-    isString(parsed.conflict) &&
-    isString(parsed.excerptA) &&
-    isString(parsed.excerptB) &&
-    parsed.conflict.trim().length > 0 &&
-    parsed.excerptA.trim().length > 0 &&
-    parsed.excerptB.trim().length > 0
-  );
+  const result = contradictionResultSchema.safeParse(parsedJson);
+  return result.success ? result.data : null;
 }
 
 /**
  * Parse the LLM JSON response.
  *
- * Returns null for any malformed payload, missing fields, or `contradiction:
- * false`. We deliberately do NOT raise on parse errors — a parse failure
- * means "no evidence of a contradiction we can present to the user", which
- * is functionally the same as no contradiction.
+ * Returns null for any malformed payload, missing fields, type
+ * mismatches, or `contradiction: false`. We deliberately do NOT raise on
+ * parse errors — a parse failure means "no evidence of a contradiction
+ * we can present to the user", which is functionally the same as no
+ * contradiction.
  */
 export function parseAnalyzerResponse(raw: string): {
   conflict: string;
@@ -146,12 +154,18 @@ export function parseAnalyzerResponse(raw: string): {
   const parsed = extractJson(raw);
   if (!parsed) return null;
   if (parsed.contradiction !== true) return null;
-  if (!hasContradictionFields(parsed)) return null;
+
+  const conflict = parsed.conflict?.trim() ?? '';
+  const excerptA = parsed.excerptA?.trim() ?? '';
+  const excerptB = parsed.excerptB?.trim() ?? '';
+  if (conflict.length === 0 || excerptA.length === 0 || excerptB.length === 0) {
+    return null;
+  }
 
   return {
-    conflict: parsed.conflict.trim(),
-    excerptA: clipExcerpt(parsed.excerptA),
-    excerptB: clipExcerpt(parsed.excerptB),
+    conflict,
+    excerptA: clipExcerpt(excerptA),
+    excerptB: clipExcerpt(excerptB),
   };
 }
 

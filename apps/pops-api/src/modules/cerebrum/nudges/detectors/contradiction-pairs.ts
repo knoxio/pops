@@ -26,9 +26,22 @@ function sharedTopLevel(a: EngramSummary, b: EngramSummary): boolean {
   return b.scopes.some((s) => aTops.has(topLevelScope(s)));
 }
 
+/**
+ * Compute the set of tags shared between two engrams.
+ *
+ * Both sides are de-duplicated before intersection so an engram with
+ * repeated tag values (e.g. `['topic:x', 'topic:x']`) does not inflate
+ * the overlap count and unfairly outrank pairs with genuinely broader
+ * topical overlap.
+ */
 function sharedTagList(a: EngramSummary, b: EngramSummary): string[] {
   const aSet = new Set(a.tags);
-  return b.tags.filter((t) => aSet.has(t));
+  const bSet = new Set(b.tags);
+  const shared: string[] = [];
+  for (const tag of bSet) {
+    if (aSet.has(tag)) shared.push(tag);
+  }
+  return shared;
 }
 
 /**
