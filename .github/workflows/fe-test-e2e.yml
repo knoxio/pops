@@ -92,6 +92,12 @@ jobs:
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           cd apps/pops-shell
+          # Runs both Playwright projects defined in playwright.config.ts:
+          #   - chromium-all-modules — canonical workspace registry
+          #   - chromium-finance-only — POPS_APPS=finance,core registry snapshot
+          # Each project boots its own shell webServer; the finance-only
+          # server rebuilds its snapshot before Vite starts. Issue #2595
+          # (PRD-101 US-11 follow-up).
           pnpm test:e2e
         env:
           CI: true
