@@ -105,7 +105,7 @@ describe('executeRevert (filesystem)', () => {
       expect(service.read(a.id).engram.status).toBe('active');
     });
 
-    it('reports per-id failure when one restore breaks', () => {
+    it('skips missing ids and restores existing archived engrams', () => {
       const a = service.create({ type: 'note', title: 'A', body: '# A', scopes: ['x'] });
       service.archive(a.id);
 
@@ -115,8 +115,6 @@ describe('executeRevert (filesystem)', () => {
       });
       const result = executeRevert(action, service);
 
-      // The missing id was idempotently skipped (exists() returned false), not
-      // reported as an error.
       expect(result.success).toBe(true);
       expect(result.restoredIds).toEqual([a.id]);
     });
