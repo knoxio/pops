@@ -57,6 +57,10 @@ storybook-static
 playwright-report/
 test-results/
 coverage/
+# Per-project module-registry snapshots emitted by the install-set
+# switching harness (PRD-101 US-11 follow-up). Regenerated on every
+# Playwright run; never committed.
+apps/pops-shell/.e2e/
 
 # Temporary files
 tmp/

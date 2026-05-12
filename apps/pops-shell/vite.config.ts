@@ -5,7 +5,36 @@ import react from '@vitejs/plugin-react';
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 
+/**
+ * PRD-101 US-11 follow-up (issue #2595): when `POPS_REGISTRY_SNAPSHOT`
+ * is set, alias `@pops/module-registry` to the snapshot file so the
+ * shell consumes a build-specific install set. Unset in production and
+ * default dev builds.
+ */
+const registrySnapshot = process.env.POPS_REGISTRY_SNAPSHOT;
+
+const usingSnapshot = registrySnapshot !== undefined && registrySnapshot.length > 0;
+
+const registryAlias = usingSnapshot
+  ? { '@pops/module-registry': path.resolve(registrySnapshot) }
+  : {};
+
+/**
+ * Per-variant Vite dep-bundle cache. Each `POPS_REGISTRY_SNAPSHOT`
+ * value gets its own `node_modules/.vite-<slug>` directory derived from
+ * the snapshot file's basename so concurrent shell servers built from
+ * different snapshots never share a pre-bundled `@pops/module-registry`.
+ */
+const snapshotSlug = usingSnapshot
+  ? path.basename(registrySnapshot, path.extname(registrySnapshot)).replace(/[^a-zA-Z0-9_-]+/g, '-')
+  : undefined;
+
+const cacheDir = snapshotSlug
+  ? path.resolve(__dirname, `node_modules/.vite-${snapshotSlug}`)
+  : undefined;
+
 export default defineConfig({
+  cacheDir,
   define: {
     __BUILD_VERSION__: JSON.stringify(
       process.env.BUILD_VERSION && process.env.BUILD_VERSION !== 'dev'
@@ -23,6 +52,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      ...registryAlias,
     },
   },
   server: {

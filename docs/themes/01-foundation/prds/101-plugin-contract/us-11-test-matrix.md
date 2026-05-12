@@ -1,7 +1,7 @@
 # US-11: Contract test matrix
 
 > PRD: [Plugin Contract](README.md)
-> Status: Partial — full install-set switching across separate shell builds deferred (see unchecked criterion below).
+> Status: Done
 
 ## Description
 
@@ -23,7 +23,7 @@ As a platform maintainer, I want CI to exercise the full contract under represen
   - [x] Direct navigation to an unknown URL renders the 404 page, distinct from the "module not installed" page.
   - [x] Direct navigation to a known-but-not-installed module id renders the "module not installed" page, distinct from the 404 page.
   - [x] Direct navigation to an installed module's root renders that module.
-  - [ ] Full install-set switching across two shell builds (boot one build with a restricted install set, navigate to an excluded module, expect "module not installed"; boot another build with the full install set, search the excluded module, expect results) is tracked as a follow-up — the install set is baked at registry build time, so two-suite switching needs harness changes.
+  - [x] Shell can be booted with different install sets in a single E2E run, and routes for uninstalled modules render a not-installed state distinct from 404. The same search query yields a media result against an all-modules build and zero media results against a finance-only build.
 - [x] CI fails when the published module registry source diverges from the output of the registry build (guard shipped with PRD-101 US-02).
 
 ## Notes
