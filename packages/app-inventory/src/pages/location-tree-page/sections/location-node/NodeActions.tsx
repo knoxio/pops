@@ -32,7 +32,7 @@ function ReorderButtons({
       {siblingIndex > 0 && (
         <button
           type="button"
-          className="hidden min-h-11 min-w-11 items-center justify-center p-0.5 rounded hover:bg-muted [@media(pointer:coarse)]:inline-flex"
+          className="relative hidden p-0.5 rounded hover:bg-muted [@media(pointer:coarse)]:inline-flex before:absolute before:-inset-3 before:content-['']"
           onClick={(e) => {
             e.stopPropagation();
             onReorder(node.id, 'up');
@@ -46,7 +46,7 @@ function ReorderButtons({
       {siblingIndex < siblingCount - 1 && (
         <button
           type="button"
-          className="hidden min-h-11 min-w-11 items-center justify-center p-0.5 rounded hover:bg-muted [@media(pointer:coarse)]:inline-flex"
+          className="relative hidden p-0.5 rounded hover:bg-muted [@media(pointer:coarse)]:inline-flex before:absolute before:-inset-3 before:content-['']"
           onClick={(e) => {
             e.stopPropagation();
             onReorder(node.id, 'down');
@@ -75,7 +75,7 @@ function ActionIconButton({
   return (
     <button
       type="button"
-      className="inline-flex min-h-11 min-w-11 items-center justify-center p-0.5 rounded hover:bg-muted"
+      className="relative p-0.5 rounded hover:bg-muted before:absolute before:-inset-3 before:content-['']"
       onClick={onClick}
       aria-label={ariaLabel}
       title={title}
@@ -116,7 +116,7 @@ function PrimaryActions({
       <Link
         to={`/inventory/reports/insurance?locationId=${node.id}`}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex min-h-11 min-w-11 items-center justify-center p-0.5 rounded hover:bg-muted"
+        className="relative p-0.5 rounded hover:bg-muted before:absolute before:-inset-3 before:content-['']"
         title={`Insurance report for ${node.name}`}
       >
         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
