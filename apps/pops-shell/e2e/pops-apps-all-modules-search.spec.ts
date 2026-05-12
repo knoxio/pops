@@ -20,7 +20,7 @@ import { expect, test } from '@playwright/test';
 
 import { useRealApi } from './helpers/use-real-api';
 
-const QUERY = 'Matrix';
+const query = 'Matrix';
 
 test.describe('Shell — search includes media results (all-modules build)', () => {
   test.beforeEach(async ({ page }) => {
@@ -40,7 +40,7 @@ test.describe('Shell — search includes media results (all-modules build)', () 
     const searchBox = page.getByRole('textbox', { name: 'Search POPS' });
 
     await searchBox.click();
-    await searchBox.fill(QUERY);
+    await searchBox.fill(query);
 
     const panel = page.getByTestId('search-results-panel');
     await expect(panel).toBeVisible({ timeout: 10_000 });

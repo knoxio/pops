@@ -64,10 +64,10 @@ export default defineConfig({
     {
       // Default project — runs every spec EXCEPT the finance-only suite,
       // which requires a shell built with `POPS_APPS=finance,core`.
+      // baseURL is inherited from the global `use` block above.
       name: 'chromium-all-modules',
       use: {
         ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${ALL_MODULES_PORT}`,
       },
       testIgnore: ['**/pops-apps-finance-only-*.spec.ts'],
     },

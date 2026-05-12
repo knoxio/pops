@@ -6,14 +6,10 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 /**
- * Optional override that replaces the canonical `@pops/module-registry`
- * entrypoint with a pre-built snapshot file for one Playwright project's
- * shell server (PRD-101 US-11 follow-up, issue #2595). The snapshot is
- * emitted by `scripts/build-registry-snapshot.ts` and contains the same
- * runtime surface (`KNOWN_MODULES`, `MODULES`, `findModule`, `isModuleId`)
- * computed against a project-specific `POPS_APPS` value. Production and
- * default dev builds leave the variable unset and resolve the workspace
- * package as usual.
+ * PRD-101 US-11 follow-up (issue #2595): when `POPS_REGISTRY_SNAPSHOT`
+ * is set, alias `@pops/module-registry` to the snapshot file so the
+ * shell consumes a build-specific install set. Unset in production and
+ * default dev builds.
  */
 const registrySnapshot = process.env.POPS_REGISTRY_SNAPSHOT;
 
@@ -24,15 +20,17 @@ const registryAlias = usingSnapshot
   : {};
 
 /**
- * Each install-set variant needs its own Vite dep-bundle cache so the
- * pre-bundled `@pops/module-registry` (a workspace dep, eligible for
- * `optimizeDeps`) from one server can't be reused by a sibling server
- * pointing at a different snapshot. Default Vite cacheDir is shared
- * across `pnpm test:e2e` runs, which is fine for production but
- * dangerous for two coexisting projects.
+ * Per-variant Vite dep-bundle cache. Each `POPS_REGISTRY_SNAPSHOT`
+ * value gets its own `node_modules/.vite-<slug>` directory derived from
+ * the snapshot file's basename so concurrent shell servers built from
+ * different snapshots never share a pre-bundled `@pops/module-registry`.
  */
-const cacheDir = usingSnapshot
-  ? path.resolve(__dirname, 'node_modules/.vite-finance-only')
+const snapshotSlug = usingSnapshot
+  ? path.basename(registrySnapshot, path.extname(registrySnapshot)).replace(/[^a-zA-Z0-9_-]+/g, '-')
+  : undefined;
+
+const cacheDir = snapshotSlug
+  ? path.resolve(__dirname, `node_modules/.vite-${snapshotSlug}`)
   : undefined;
 
 export default defineConfig({

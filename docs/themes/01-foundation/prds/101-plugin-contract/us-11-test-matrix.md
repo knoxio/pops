@@ -23,7 +23,7 @@ As a platform maintainer, I want CI to exercise the full contract under represen
   - [x] Direct navigation to an unknown URL renders the 404 page, distinct from the "module not installed" page.
   - [x] Direct navigation to a known-but-not-installed module id renders the "module not installed" page, distinct from the 404 page.
   - [x] Direct navigation to an installed module's root renders that module.
-  - [x] Full install-set switching across two shell builds: the Playwright config defines two projects, each with its own shell webServer — one against the canonical all-modules registry, the other against a per-run snapshot built with `POPS_APPS=finance,core` and aliased into Vite. The finance-only build asserts `/media` renders `NotInstalledPage`; the same search query against both builds yields a media result for the all-modules build and zero media results for the finance-only build.
+  - [x] Shell can be booted with different install sets in a single E2E run, and routes for uninstalled modules render a not-installed state distinct from 404. The same search query yields a media result against an all-modules build and zero media results against a finance-only build.
 - [x] CI fails when the published module registry source diverges from the output of the registry build (guard shipped with PRD-101 US-02).
 
 ## Notes
