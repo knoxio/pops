@@ -13,21 +13,12 @@ import { join } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createTestDb } from '../../../../shared/test-utils.js';
+import { createTestDb, makeClock } from '../../../../shared/test-utils.js';
 import { TemplateRegistry } from '../../templates/registry.js';
 import { seedDefaultTemplates } from '../../templates/seed.js';
 import { EngramService } from '../service.js';
 
 import type { Database } from 'better-sqlite3';
-
-function makeClock(start = new Date('2026-05-12T09:00:00Z')): () => Date {
-  let t = start.getTime();
-  return () => {
-    const d = new Date(t);
-    t += 60_000;
-    return d;
-  };
-}
 
 describe('restoreEngram idempotency', () => {
   let db: Database;

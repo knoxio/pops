@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createTestDb } from '../../../../shared/test-utils.js';
+import { createTestDb, makeClock } from '../../../../shared/test-utils.js';
 import { EngramService } from '../../engrams/service.js';
 import { TemplateRegistry } from '../../templates/registry.js';
 import { seedDefaultTemplates } from '../../templates/seed.js';
@@ -25,15 +25,6 @@ import type { GliaAction } from '../types.js';
 vi.mock('../../../../lib/logger.js', () => ({
   logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
-
-function makeClock(start = new Date('2026-05-12T09:00:00Z')): () => Date {
-  let t = start.getTime();
-  return () => {
-    const d = new Date(t);
-    t += 60_000;
-    return d;
-  };
-}
 
 function makeAction(overrides: Partial<GliaAction> = {}): GliaAction {
   return {

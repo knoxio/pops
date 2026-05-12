@@ -847,6 +847,24 @@ export function createTestDb(): Database {
 }
 
 /**
+ * Create a deterministic monotonically-increasing clock for tests.
+ *
+ * Each call returns the next `Date`, advancing by 60 seconds. Intended for
+ * services that accept a `now: () => Date` dependency so tests can assert on
+ * stable timestamps without leaning on `vi.useFakeTimers` for trivial cases.
+ *
+ * @param start - First `Date` to return; subsequent calls advance by 1 minute.
+ */
+export function makeClock(start = new Date('2026-05-12T09:00:00Z')): () => Date {
+  let t = start.getTime();
+  return () => {
+    const d = new Date(t);
+    t += 60_000;
+    return d;
+  };
+}
+
+/**
  * Seed a single entity row into the test DB.
  * Returns the id.
  */
