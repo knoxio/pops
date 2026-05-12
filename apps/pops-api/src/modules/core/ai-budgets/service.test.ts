@@ -274,4 +274,27 @@ describe('findFallbackProvider', () => {
 
     expect(service.findFallbackProvider()).toBeNull();
   });
+
+  it('skips active local providers with no pricing row and returns one that has pricing', () => {
+    const now = new Date().toISOString();
+    // First active local provider with NO pricing row — under the old LEFT JOIN
+    // implementation this row would win the ORDER BY tiebreak and return null.
+    db.prepare(
+      `INSERT INTO ai_providers (id, name, type, base_url, api_key_ref, status, created_at, updated_at)
+       VALUES (?, ?, 'local', ?, NULL, 'active', ?, ?)`
+    ).run('orphan', 'Orphan', 'http://localhost:9999', now, now);
+    // Second active local provider WITH a pricing row — this is the correct
+    // fallback candidate.
+    db.prepare(
+      `INSERT INTO ai_providers (id, name, type, base_url, api_key_ref, status, created_at, updated_at)
+       VALUES (?, ?, 'local', ?, NULL, 'active', ?, ?)`
+    ).run('ollama', 'Ollama', 'http://localhost:11434', now, now);
+    db.prepare(
+      `INSERT INTO ai_model_pricing
+         (provider_id, model_id, input_cost_per_mtok, output_cost_per_mtok, is_default, created_at, updated_at)
+       VALUES (?, ?, 0, 0, 1, ?, ?)`
+    ).run('ollama', 'llama3:8b', now, now);
+
+    expect(service.findFallbackProvider()).toEqual({ provider: 'ollama', model: 'llama3:8b' });
+  });
 });

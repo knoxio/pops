@@ -5,9 +5,9 @@
  * `core.aiBudgets`) and the inference-middleware enforcement path can each
  * stay under the project's max-lines lint budget.
  */
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
 
-import { aiBudgets, aiInferenceLog } from '@pops/db-types';
+import { aiBudgets, aiInferenceLog, aiModelPricing, aiProviders } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { getSettingOrNull, setRawSetting } from '../settings/service.js';
@@ -203,15 +203,16 @@ export function migrateLegacyBudgetSettings(): void {
  */
 export function findFallbackProvider(): { provider: string; model: string } | null {
   const db = getDrizzle();
-  const rows = db.all<{ provider_id: string; model_id: string | null }>(
-    sql`SELECT p.id AS provider_id, m.model_id AS model_id
-        FROM ai_providers p
-        LEFT JOIN ai_model_pricing m ON m.provider_id = p.id
-        WHERE p.type = 'local' AND p.status = 'active'
-        ORDER BY (m.is_default = 1) DESC, m.model_id ASC
-        LIMIT 1`
-  );
-  const row = rows[0];
-  if (!row || !row.model_id) return null;
-  return { provider: row.provider_id, model: row.model_id };
+  const row = db
+    .select({
+      providerId: aiProviders.id,
+      modelId: aiModelPricing.modelId,
+    })
+    .from(aiProviders)
+    .innerJoin(aiModelPricing, eq(aiModelPricing.providerId, aiProviders.id))
+    .where(and(eq(aiProviders.type, 'local'), eq(aiProviders.status, 'active')))
+    .orderBy(desc(aiModelPricing.isDefault), asc(aiModelPricing.modelId))
+    .get();
+  if (!row) return null;
+  return { provider: row.providerId, model: row.modelId };
 }

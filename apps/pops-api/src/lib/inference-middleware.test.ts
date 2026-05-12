@@ -7,9 +7,11 @@ import { trackInference } from './inference-middleware.js';
 import { logger } from './logger.js';
 
 import type { Database } from 'better-sqlite3';
+import type { MockInstance } from 'vitest';
 
 const ctx = setupTestContext();
 let db: Database;
+let warnSpy: MockInstance<typeof logger.warn> | null = null;
 
 interface LoggedRow {
   provider: string;
@@ -44,6 +46,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  warnSpy?.mockRestore();
+  warnSpy = null;
   ctx.teardown();
 });
 
@@ -243,9 +247,9 @@ describe('trackInference — budget enforcement', () => {
     expect(called).toBe(false);
 
     const blocked = (
-      db.prepare("SELECT * FROM ai_inference_log WHERE status = 'budget-blocked'").all() as {
-        cost_usd: number;
-      }[]
+      db
+        .prepare("SELECT * FROM ai_inference_log WHERE status = 'budget-blocked'")
+        .all() as LoggedRow[]
     )[0];
     expect(blocked).toBeDefined();
     expect(blocked?.cost_usd).toBe(0);
@@ -289,7 +293,7 @@ describe('trackInference — budget enforcement', () => {
     });
     seedAiUsage(db, { cost_usd: 0.6, created_at: new Date().toISOString() });
 
-    const warnSpy = vi.spyOn(logger, 'warn');
+    warnSpy = vi.spyOn(logger, 'warn');
     const result = await trackInference(
       { provider: 'claude', model: 'claude-haiku-4-5-20251001', operation: 'entity-match' },
       async () => ({ usage: { input_tokens: 10, output_tokens: 10 }, content: 'ok' })
@@ -298,12 +302,9 @@ describe('trackInference — budget enforcement', () => {
     expect(result).toMatchObject({ content: 'ok' });
     const messages = warnSpy.mock.calls.map(([, msg]) => msg);
     expect(messages.some((m) => typeof m === 'string' && m.includes('Budget warning'))).toBe(true);
-    warnSpy.mockRestore();
 
     const success = (
-      db.prepare("SELECT * FROM ai_inference_log WHERE status = 'success'").all() as {
-        cost_usd: number;
-      }[]
+      db.prepare("SELECT * FROM ai_inference_log WHERE status = 'success'").all() as LoggedRow[]
     )[0];
     expect(success).toBeDefined();
   });
@@ -354,9 +355,9 @@ describe('trackInference — budget enforcement', () => {
     ).rejects.toBeInstanceOf(BudgetExceededError);
 
     const blocked = (
-      db.prepare("SELECT * FROM ai_inference_log WHERE status = 'budget-blocked'").all() as {
-        cost_usd: number;
-      }[]
+      db
+        .prepare("SELECT * FROM ai_inference_log WHERE status = 'budget-blocked'")
+        .all() as LoggedRow[]
     )[0];
     expect(blocked).toBeDefined();
   });
