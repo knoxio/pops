@@ -21,11 +21,11 @@
     "@pops/navigation": "workspace:*",
     "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
-    "@tanstack/react-query": "5.100.9",
+    "@tanstack/react-query": "5.100.10",
     "@tanstack/react-table": "^8.21.3",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
-    "i18next": "^26.0.10",
+    "i18next": "^26.1.0",
     "lucide-react": "^1.14.0",
     "papaparse": "^5.5.3",
     "react": "^19.2.6",
@@ -47,9 +47,9 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.6",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   }
 }
