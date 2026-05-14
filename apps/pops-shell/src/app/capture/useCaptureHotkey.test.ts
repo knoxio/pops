@@ -1,6 +1,3 @@
-/**
- * Tests for useCaptureHotkey suppression logic (PRD-081 US-09).
- */
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { shouldSuppress } from './capture-hotkey-helpers';
