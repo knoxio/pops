@@ -1,9 +1,13 @@
 /**
  * Tests for useCaptureHotkey suppression logic (PRD-081 US-09).
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { shouldSuppress } from './capture-hotkey-helpers';
+
+afterEach(() => {
+  document.body.innerHTML = '';
+});
 
 function makeEvent(init: Partial<KeyboardEvent> & { target?: HTMLElement }): KeyboardEvent {
   const target = init.target ?? document.createElement('div');

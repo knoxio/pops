@@ -15,10 +15,14 @@ const DEFAULT_HOTKEY = 'c';
 export function CaptureHotkeyHost() {
   const [open, setOpen] = useState(false);
   const settingQuery = trpc.core.settings.get.useQuery({ key: SETTING_KEY });
-  const hotkey = (settingQuery.data?.data?.value ?? DEFAULT_HOTKEY).trim();
+  // Wait for the setting to resolve before binding — otherwise a user who
+  // configured an empty hotkey would briefly trigger on the default 'c'.
+  const hotkey = settingQuery.isSuccess
+    ? (settingQuery.data?.data?.value ?? DEFAULT_HOTKEY).trim()
+    : '';
 
   const onTrigger = useCallback(() => setOpen(true), []);
-  useCaptureHotkey({ key: hotkey, enabled: !open, onTrigger });
+  useCaptureHotkey({ key: hotkey, enabled: !open && hotkey.length > 0, onTrigger });
 
   return <CaptureModal open={open} onOpenChange={setOpen} />;
 }
