@@ -6,25 +6,25 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ReactNode } from 'react';
+
+interface ButtonMockProps {
+  children?: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  'aria-label'?: string;
+  prefix?: ReactNode;
+}
+
 vi.mock('@pops/ui', async () => {
   const React = await import('react');
   return {
-    Button: ({
-      children,
-      onClick,
-      disabled,
-      'aria-label': ariaLabel,
-      prefix,
-    }: Record<string, unknown>) =>
+    Button: ({ children, onClick, disabled, 'aria-label': ariaLabel, prefix }: ButtonMockProps) =>
       React.createElement(
         'button',
-        {
-          onClick: onClick as () => void,
-          disabled: disabled as boolean,
-          'aria-label': ariaLabel as string,
-        },
-        prefix as React.ReactNode,
-        children as React.ReactNode
+        { onClick, disabled, 'aria-label': ariaLabel },
+        prefix,
+        children
       ),
   };
 });

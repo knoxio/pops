@@ -21,7 +21,13 @@ import { engramSourceSchema } from '../engrams/schema.js';
 import { getEngramService } from '../instance.js';
 import { IngestService } from './pipeline.js';
 
-import type { ScopeSuggestion } from '../engrams/scope-reconciliation.js';
+const scopeSuggestionSchema = z.object({
+  original: z.string(),
+  canonical: z.string(),
+  confidence: z.number(),
+  reason: z.string(),
+});
+const scopeSuggestionsSchema = z.array(scopeSuggestionSchema).catch([]);
 
 function toTrpcError(err: unknown): never {
   if (err instanceof NotFoundError) {
@@ -170,7 +176,7 @@ export const ingestRouter = router({
         const enriched = enrichedHash === engram.contentHash;
         const rawSuggestions = engram.customFields['_scope_suggestions'];
         const scopeSuggestions = Array.isArray(rawSuggestions)
-          ? (rawSuggestions as ScopeSuggestion[])
+          ? scopeSuggestionsSchema.parse(rawSuggestions)
           : [];
         return {
           enriched,
