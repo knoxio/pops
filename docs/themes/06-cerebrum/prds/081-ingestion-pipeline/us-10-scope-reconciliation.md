@@ -10,7 +10,7 @@ As the Cerebrum system, I need to reconcile user-suggested scopes against the ex
 ## Acceptance Criteria
 
 - [ ] Reconciliation accepts `{ suggestedScopes: string[], knownScopes: Array<{ scope: string, count: number }> }` (the known-scopes shape returned by `cerebrum.scopes.list`) and returns `{ suggestions: Array<{ original: string, canonical: string, confidence: number, reason: string }> }`
-- [ ] Reconciliation runs deterministically on every `classifyEngram` job for engrams with non-empty `scopes` whose source is `manual` (and any other source that opts in via the engram's `customFields._reconcile_scopes: true`)
+- [ ] Reconciliation runs deterministically as part of post-ingest enrichment for engrams with non-empty `scopes` whose source is `manual`, plus any other source that opts in via the engram's `customFields._reconcile_scopes: true`
 - [ ] **Segment-set match**: when the user's scope and an existing scope share the same set of segments in any order, the existing scope (highest usage count) is returned with `confidence: 0.95`, `reason: "same segments, different order"` — e.g. `work.karbon.meetings.fedx` reconciles to `work.karbon.fedx.meetings` if the latter exists
 - [ ] **Subset match**: when the user's scope is a strict subset of an existing scope's segments and the existing scope has higher usage, the existing scope is returned with `confidence: 0.85`, `reason: "matches longer canonical scope"` — e.g. `karbon.meetings` reconciles to `work.karbon.fedx.meetings` if that exists with significant usage
 - [ ] **Prefix match where canonical is shallower**: when the user's scope is a strict superset and a shorter, more-used canonical exists, the canonical is returned with `confidence: 0.7`, `reason: "matches shorter canonical scope"` — used to prevent over-specification when the established taxonomy is broader
@@ -19,7 +19,7 @@ As the Cerebrum system, I need to reconcile user-suggested scopes against the ex
 - [ ] Suggestions are not returned when the user's scope is already an exact match against the index (no proposal needed) or when no candidate clears `confidence: 0.6`
 - [ ] Suggestions previously dismissed for the same engram (per `_scope_suggestions_dismissed` custom field, keyed by canonical segment-set) are not re-proposed
 - [ ] The reconciliation runs in the curation worker and writes results to the engram's `_scope_suggestions` custom field; the worker logs the original/canonical pair for observability
-- [ ] A `cerebrum.scopes.reconcile` tRPC query exposes the service for testing and for client-side preview before submit (input: `suggestedScopes: string[]`, output: same shape as the service)
+- [ ] A `cerebrum.scopes.reconcile` API procedure exposes reconciliation for testing and for client-side preview before submit (input: `suggestedScopes: string[]`, output: same `{ suggestions }` shape as the in-pipeline call)
 - [ ] Reconciliation is purely lexical/structural — no LLM call, no network, runs in under 50 ms for an index of 10,000 scopes
 
 ## Notes
