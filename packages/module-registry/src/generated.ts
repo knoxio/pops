@@ -245,6 +245,14 @@ export const MODULES = [
                   max: 1,
                 },
               },
+              {
+                key: 'cerebrum.captureHotkey',
+                label: 'Capture Hotkey',
+                type: 'text',
+                default: 'c',
+                description:
+                  'Single keystroke that opens the capture modal anywhere in the shell. Empty disables. (PRD-081 US-09)',
+              },
             ],
           },
           {

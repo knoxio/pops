@@ -60,6 +60,7 @@ export const SETTINGS_KEYS = {
   // Cerebrum — Ingest
   CEREBRUM_CLASSIFIER_CONFIDENCE_THRESHOLD: 'cerebrum.classifier.confidenceThreshold',
   CEREBRUM_ENTITY_EXTRACTOR_CONFIDENCE_THRESHOLD: 'cerebrum.entityExtractor.confidenceThreshold',
+  CEREBRUM_CAPTURE_HOTKEY: 'cerebrum.captureHotkey',
 
   // Cerebrum — Nudges
   CEREBRUM_NUDGE_CONSOLIDATION_SIMILARITY: 'cerebrum.nudge.consolidationSimilarity',

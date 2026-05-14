@@ -1,7 +1,7 @@
 # PRD-081: Ingestion Pipeline
 
 > Epic: [02 — Ingest](../../epics/02-ingest.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -107,18 +107,18 @@ raw input → normalize → classify type → match template → extract entitie
 
 ## User Stories
 
-| #   | Story                                                         | Summary                                                                                                              | Status      | Parallelisable    |
-| --- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------- | ----------------- |
-| 01  | [us-01-manual-input](us-01-manual-input.md)                   | Capture-first shell surface: single body input, async enrichment by default, Advanced disclosure for explicit fields | Done        | No (first)        |
-| 02  | [us-02-agent-input](us-02-agent-input.md)                     | MCP tools and API endpoint for writing engrams from Claude Code or external tools                                    | Done        | Yes               |
-| 03  | [us-03-quick-capture](us-03-quick-capture.md)                 | Minimal-friction capture for Moltbot/CLI: raw text in, classified later                                              | Done        | Yes               |
-| 04  | [us-04-classification](us-04-classification.md)               | LLM-based content classification: infer type, match template, suggest tags                                           | Done        | Yes               |
-| 05  | [us-05-entity-extraction](us-05-entity-extraction.md)         | Extract people, projects, dates, topics from body into tags and frontmatter                                          | Done        | Yes               |
-| 06  | [us-06-scope-inference](us-06-scope-inference.md)             | Rule-based + LLM-based scope assignment with user override                                                           | Done        | Yes               |
-| 07  | [us-07-post-ingest-review](us-07-post-ingest-review.md)       | After capture, surface inferred type/template/scopes/tags as editable chips; retry enrichment on failure             | Done        | Blocked by US-01  |
-| 08  | [us-08-bulk-paste](us-08-bulk-paste.md)                       | Split pasted body on `---` lines into N engrams, each via `quickCapture`                                             | Done        | Yes (after US-01) |
-| 09  | [us-09-global-capture-hotkey](us-09-global-capture-hotkey.md) | Single keyboard shortcut opens a capture modal anywhere in the shell                                                 | Not started | Yes (after US-01) |
-| 10  | [us-10-scope-reconciliation](us-10-scope-reconciliation.md)   | Reconcile user-suggested scopes against the existing vocabulary; surface canonical alternatives in the review        | Done        | Yes               |
+| #   | Story                                                         | Summary                                                                                                              | Status | Parallelisable    |
+| --- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------ | ----------------- |
+| 01  | [us-01-manual-input](us-01-manual-input.md)                   | Capture-first shell surface: single body input, async enrichment by default, Advanced disclosure for explicit fields | Done   | No (first)        |
+| 02  | [us-02-agent-input](us-02-agent-input.md)                     | MCP tools and API endpoint for writing engrams from Claude Code or external tools                                    | Done   | Yes               |
+| 03  | [us-03-quick-capture](us-03-quick-capture.md)                 | Minimal-friction capture for Moltbot/CLI: raw text in, classified later                                              | Done   | Yes               |
+| 04  | [us-04-classification](us-04-classification.md)               | LLM-based content classification: infer type, match template, suggest tags                                           | Done   | Yes               |
+| 05  | [us-05-entity-extraction](us-05-entity-extraction.md)         | Extract people, projects, dates, topics from body into tags and frontmatter                                          | Done   | Yes               |
+| 06  | [us-06-scope-inference](us-06-scope-inference.md)             | Rule-based + LLM-based scope assignment with user override                                                           | Done   | Yes               |
+| 07  | [us-07-post-ingest-review](us-07-post-ingest-review.md)       | After capture, surface inferred type/template/scopes/tags as editable chips; retry enrichment on failure             | Done   | Blocked by US-01  |
+| 08  | [us-08-bulk-paste](us-08-bulk-paste.md)                       | Split pasted body on `---` lines into N engrams, each via `quickCapture`                                             | Done   | Yes (after US-01) |
+| 09  | [us-09-global-capture-hotkey](us-09-global-capture-hotkey.md) | Single keyboard shortcut opens a capture modal anywhere in the shell                                                 | Done   | Yes (after US-01) |
+| 10  | [us-10-scope-reconciliation](us-10-scope-reconciliation.md)   | Reconcile user-suggested scopes against the existing vocabulary; surface canonical alternatives in the review        | Done   | Yes               |
 
 US-02 and US-03 define the agent and capture input channels and parallelise with US-01 (the manual shell surface). US-04, US-05, and US-06 define the pipeline processing stages and parallelise with each other and with the input channels. US-07, US-08, and US-09 extend the manual channel and depend on US-01's capture surface. US-10 is the reconciliation backbone for scope-as-suggestion semantics — US-01 surfaces it via `quickCapture`'s `scopes` argument, US-07 renders its results, and the two depend on it being implemented to deliver the canonical-scope flow end-to-end. All stories depend on PRD-077 (engram file format) and PRD-078 (scope model) being implemented.
 
