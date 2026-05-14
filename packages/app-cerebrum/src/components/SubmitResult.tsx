@@ -1,10 +1,15 @@
 /**
- * SubmitResult — success banner displayed after an engram is created.
- * Shows the engram ID, file path, and classified type.
+ * SubmitResult — success view rendered after an engram is captured.
+ * Shows id/path/type at the top, then the post-ingest review chips
+ * (PRD-081 US-07) which poll for enrichment status and surface scope
+ * reconciliation suggestions inline.
  */
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router';
 
 import { Badge, Button, Card } from '@pops/ui';
+
+import { EnrichmentChips } from './EnrichmentChips';
 
 interface SubmitResultProps {
   id: string;
@@ -15,10 +20,10 @@ interface SubmitResultProps {
 
 export function SubmitResult({ id, filePath, type, onReset }: SubmitResultProps) {
   return (
-    <Card className="p-6 space-y-4 border-success/30 bg-success/5">
+    <Card className="p-6 space-y-5 border-success/30 bg-success/5">
       <div className="flex items-center gap-3">
         <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
-        <h3 className="text-lg font-semibold">Engram Created</h3>
+        <h3 className="text-lg font-semibold">Captured</h3>
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
         <dt className="text-muted-foreground">ID</dt>
@@ -30,9 +35,19 @@ export function SubmitResult({ id, filePath, type, onReset }: SubmitResultProps)
         <dt className="text-muted-foreground">Path</dt>
         <dd className="font-mono text-xs break-all">{filePath}</dd>
       </dl>
-      <Button variant="outline" onClick={onReset}>
-        Create Another
-      </Button>
+
+      <div className="border-t border-border/50 pt-4">
+        <EnrichmentChips engramId={id} />
+      </div>
+
+      <div className="flex items-center gap-2 pt-2">
+        <Button onClick={onReset}>Capture another</Button>
+        <Link to={`/cerebrum/engrams/${id}`}>
+          <Button variant="outline" prefix={<ExternalLink className="h-4 w-4" />}>
+            Open in editor
+          </Button>
+        </Link>
+      </div>
     </Card>
   );
 }

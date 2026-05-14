@@ -19,13 +19,39 @@ vi.mock('sonner', () => ({
 
 const { toast: mockToast } = await import('sonner');
 
+vi.mock('react-router', () => ({
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => {
+    const React = require('react');
+    return React.createElement('a', { href: to }, children);
+  },
+}));
+
 vi.mock('@pops/api-client', () => ({
   trpc: {
+    useUtils: () => ({
+      cerebrum: { ingest: { enrichmentStatus: { invalidate: vi.fn() } } },
+    }),
     cerebrum: {
       templates: { list: { useQuery: (...args: unknown[]) => mockTemplatesQuery(...args) } },
       scopes: { list: { useQuery: (...args: unknown[]) => mockScopesQuery(...args) } },
       tags: { list: { useQuery: (...args: unknown[]) => mockTagsQuery(...args) } },
+      engrams: {
+        update: {
+          useMutation: () => ({ mutate: vi.fn(), isPending: false, error: null }),
+        },
+      },
       ingest: {
+        enrichmentStatus: {
+          useQuery: () => ({
+            data: undefined,
+            isLoading: false,
+            error: null,
+            refetch: vi.fn(),
+          }),
+        },
+        retryEnrichment: {
+          useMutation: () => ({ mutate: vi.fn(), isPending: false, error: null }),
+        },
         submit: {
           useMutation: (opts: { onSuccess?: (data: unknown) => void; onError?: unknown }) => {
             submitOnSuccess.current = opts.onSuccess ?? null;
