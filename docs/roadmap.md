@@ -137,12 +137,12 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Cerebrum — Phase 1 (MVP)
 
-| Epic                          | Status      | Notes                                                                                                                                           |
-| ----------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Engram Storage (format, CRUD) | Done        | PRD-077 (format, templates, index schema, CRUD, tRPC, provisioning) + PRD-078 (scope model) complete                                            |
-| Thalamus (indexing/retrieval) | Done        | PRD-079 (indexing/sync) + PRD-080 (retrieval engine: semantic, structured, hybrid, context assembly) complete                                   |
-| Ingest (input pipeline)       | In progress | PRD-081 in progress — pipeline stages (US-02–US-06) and scope reconciliation (US-10) done; capture-first manual UX (US-01, US-07–US-09) pending |
-| Emit (output production)      | Partial     | PRD-082 (Query Engine) done. Document generation and proactive nudges not started                                                               |
+| Epic                          | Status      | Notes                                                                                                                                                                                                     |
+| ----------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Engram Storage (format, CRUD) | Done        | PRD-077 (format, templates, index schema, CRUD, tRPC, provisioning) + PRD-078 (scope model) complete                                                                                                      |
+| Thalamus (indexing/retrieval) | Done        | PRD-079 (indexing/sync) + PRD-080 (retrieval engine: semantic, structured, hybrid, context assembly) complete                                                                                             |
+| Ingest (input pipeline)       | In progress | PRD-081 in progress — pipeline stages (US-02–US-06), capture-first manual surface (US-01), and scope reconciliation (US-10) done; review chips (US-07), bulk paste (US-08), global hotkey (US-09) pending |
+| Emit (output production)      | Partial     | PRD-082 (Query Engine) done. Document generation and proactive nudges not started                                                                                                                         |
 
 ### Cerebrum — Phase 2 (Curation & Interface)
 

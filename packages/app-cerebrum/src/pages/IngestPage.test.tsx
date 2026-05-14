@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,43 +7,64 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockTemplatesQuery = vi.fn();
 const mockScopesQuery = vi.fn();
 const mockTagsQuery = vi.fn();
-const mockInferScopesQuery = vi.fn();
 const mockSubmitMutate = vi.fn();
+const mockQuickCaptureMutate = vi.fn();
+
+const submitOnSuccess: { current: ((data: unknown) => void) | null } = { current: null };
+const captureOnSuccess: { current: ((data: unknown) => void) | null } = { current: null };
+
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), { error: vi.fn() }),
+}));
+
+const { toast: mockToast } = await import('sonner');
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
     cerebrum: {
-      templates: {
-        list: { useQuery: (...args: unknown[]) => mockTemplatesQuery(...args) },
-      },
-      scopes: {
-        list: { useQuery: (...args: unknown[]) => mockScopesQuery(...args) },
-      },
-      tags: {
-        list: { useQuery: (...args: unknown[]) => mockTagsQuery(...args) },
-      },
+      templates: { list: { useQuery: (...args: unknown[]) => mockTemplatesQuery(...args) } },
+      scopes: { list: { useQuery: (...args: unknown[]) => mockScopesQuery(...args) } },
+      tags: { list: { useQuery: (...args: unknown[]) => mockTagsQuery(...args) } },
       ingest: {
-        inferScopes: {
-          useQuery: (...args: unknown[]) => mockInferScopesQuery(...args),
-        },
         submit: {
-          useMutation: (opts: { onSuccess?: (data: unknown) => void }) => ({
-            mutate: (...args: unknown[]) => {
-              mockSubmitMutate(...args);
-              opts.onSuccess?.({
-                engram: {
-                  id: 'eng_20260427_1200_test-engram',
-                  filePath: '/cerebrum/engrams/test-engram.md',
-                  type: 'note',
-                },
-                classification: null,
-                entities: [],
-                scopeInference: { scopes: ['test.scope'], source: 'explicit', confidence: 1 },
-              });
-            },
-            isPending: false,
-            error: null,
-          }),
+          useMutation: (opts: { onSuccess?: (data: unknown) => void; onError?: unknown }) => {
+            submitOnSuccess.current = opts.onSuccess ?? null;
+            return {
+              mutate: (...args: unknown[]) => {
+                mockSubmitMutate(...args);
+                submitOnSuccess.current?.({
+                  engram: {
+                    id: 'eng_20260514_1700_advanced',
+                    filePath: '/cerebrum/engrams/advanced.md',
+                    type: 'note',
+                  },
+                  classification: null,
+                  entities: [],
+                  scopeInference: { scopes: [], source: 'fallback', confidence: 0 },
+                });
+              },
+              isPending: false,
+              error: null,
+            };
+          },
+        },
+        quickCapture: {
+          useMutation: (opts: { onSuccess?: (data: unknown) => void; onError?: unknown }) => {
+            captureOnSuccess.current = opts.onSuccess ?? null;
+            return {
+              mutate: (...args: unknown[]) => {
+                mockQuickCaptureMutate(...args);
+                captureOnSuccess.current?.({
+                  id: 'eng_20260514_1700_capture',
+                  path: 'capture/eng_20260514_1700_capture.md',
+                  type: 'capture',
+                  scopes: ['personal.captures'],
+                });
+              },
+              isPending: false,
+              error: null,
+            };
+          },
         },
       },
     },
@@ -87,11 +108,7 @@ vi.mock('@pops/ui', async () => {
         label && React.createElement('label', null, label),
         React.createElement(
           'select',
-          {
-            value,
-            onChange,
-            'aria-label': placeholder ?? label ?? 'select',
-          },
+          { value, onChange, 'aria-label': placeholder ?? label ?? 'select' },
           placeholder && React.createElement('option', { value: '', disabled: true }, placeholder),
           options.map((opt) =>
             React.createElement('option', { key: opt.value, value: opt.value }, opt.label)
@@ -109,111 +126,47 @@ vi.mock('@pops/ui', async () => {
           onChange: onChange as () => void,
           placeholder: placeholder as string,
           'aria-label': (rest['aria-label'] as string) ?? (label as string),
-          ...rest,
         })
       ),
     Textarea: ({
       value,
       onChange,
+      onKeyDown,
       placeholder,
       rows,
-      className,
       ...rest
     }: Record<string, unknown>) =>
       React.createElement('textarea', {
         value: value as string,
         onChange: onChange as () => void,
+        onKeyDown: onKeyDown as () => void,
         placeholder: placeholder as string,
         rows: rows as number,
-        className: className as string,
         'aria-label': rest['aria-label'] as string,
       }),
-    Button: ({ children, onClick, disabled, prefix, ...rest }: Record<string, unknown>) =>
+    Button: ({ children, onClick, disabled, prefix }: Record<string, unknown>) =>
       React.createElement(
         'button',
-        {
-          onClick: onClick as () => void,
-          disabled: disabled as boolean,
-          ...rest,
-        },
+        { onClick: onClick as () => void, disabled: disabled as boolean },
         prefix as React.ReactNode,
         children as React.ReactNode
       ),
-    Badge: ({ children, variant }: { children: React.ReactNode; variant?: string }) =>
-      React.createElement('span', { 'data-testid': 'badge', 'data-variant': variant }, children),
     Card: ({ children, className }: { children: React.ReactNode; className?: string }) =>
       React.createElement('div', { className }, children),
-    Chip: ({
-      children,
-      removable,
-      onRemove,
-    }: {
-      children: React.ReactNode;
-      size?: string;
-      removable?: boolean;
-      onRemove?: () => void;
-    }) =>
+    Badge: ({ children }: { children: React.ReactNode }) =>
+      React.createElement('span', null, children),
+    Chip: ({ children, removable, onRemove }: Record<string, unknown>) =>
       React.createElement(
         'span',
         { 'data-testid': 'chip' },
-        children,
-        removable &&
+        children as React.ReactNode,
+        (removable as boolean) &&
           React.createElement(
             'button',
-            { onClick: onRemove, 'aria-label': `Remove ${String(children)}` },
+            { onClick: onRemove as () => void, 'aria-label': `Remove ${String(children)}` },
             '×'
           )
       ),
-    ChipInput: ({
-      value,
-      onChange,
-      placeholder,
-    }: {
-      value?: string[];
-      onChange?: (next: string[]) => void;
-      placeholder?: string;
-    }) =>
-      React.createElement('input', {
-        'data-testid': 'chip-input',
-        placeholder,
-        value: (value ?? []).join(','),
-        onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-          onChange?.(e.target.value ? e.target.value.split(',') : []),
-      }),
-    Dialog: ({
-      children,
-      open,
-      onOpenChange,
-    }: {
-      children: React.ReactNode;
-      open: boolean;
-      onOpenChange: (v: boolean) => void;
-    }) =>
-      open
-        ? React.createElement(
-            'div',
-            {
-              role: 'dialog',
-              'aria-modal': 'true',
-              onClick: (e: React.MouseEvent) => {
-                if (e.target === e.currentTarget) onOpenChange(false);
-              },
-            },
-            children
-          )
-        : null,
-    DialogContent: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('div', { 'data-testid': 'dialog-content' }, children),
-    DialogHeader: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('div', null, children),
-    DialogTitle: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('h3', null, children),
-    DialogDescription: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('p', null, children),
-    DialogFooter: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('div', null, children),
-    Skeleton: ({ className }: { className?: string }) =>
-      React.createElement('div', { className: `animate-pulse ${className ?? ''}` }),
   };
 });
 
@@ -225,294 +178,166 @@ const mockTemplates = [
   {
     name: 'decision',
     description: 'A decision made with rationale',
-    required_fields: ['decision', 'alternatives'],
-    custom_fields: {
-      decision: { type: 'string', description: 'The decision that was made' },
-      alternatives: { type: 'string[]', description: 'Options considered' },
-      confidence: { type: 'string', description: 'low | medium | high' },
-    },
-  },
-  {
-    name: 'journal',
-    description: 'A journal entry',
-    custom_fields: {
-      mood: { type: 'string', description: 'Mood word or phrase' },
-    },
+    custom_fields: { decision: { type: 'string', description: 'The decision' } },
   },
 ];
 
 const mockScopes = [
-  { scope: 'work.projects', count: 10 },
+  { scope: 'work.karbon.fedx.meetings', count: 12 },
   { scope: 'personal.journal', count: 5 },
 ];
 
 function setupDefaultMocks() {
-  mockTemplatesQuery.mockReturnValue({
-    data: { templates: mockTemplates },
-    isLoading: false,
-  });
-  mockScopesQuery.mockReturnValue({
-    data: { scopes: mockScopes },
-    isLoading: false,
-  });
-  mockTagsQuery.mockReturnValue({
-    data: { tags: [] },
-    isLoading: false,
-  });
-  mockInferScopesQuery.mockReturnValue({
-    data: undefined,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn().mockResolvedValue({
-      data: { scopes: ['inferred.scope'], source: 'llm', confidence: 0.8 },
-    }),
-  });
+  mockTemplatesQuery.mockReturnValue({ data: { templates: mockTemplates }, isLoading: false });
+  mockScopesQuery.mockReturnValue({ data: { scopes: mockScopes }, isLoading: false });
+  mockTagsQuery.mockReturnValue({ data: { tags: [] }, isLoading: false });
 }
-
-function renderPage() {
-  return render(<IngestPage />);
-}
-
-// ── Tests ────────────────────────────────────────────────────────────
 
 beforeEach(() => {
   vi.clearAllMocks();
+  submitOnSuccess.current = null;
+  captureOnSuccess.current = null;
   setupDefaultMocks();
 });
 
-describe('IngestPage', () => {
-  it('renders page header', () => {
-    renderPage();
-    expect(screen.getByText('Ingest')).toBeInTheDocument();
-    expect(
-      screen.getByText('Create a new engram through the ingestion pipeline')
-    ).toBeInTheDocument();
+// ── Tests ────────────────────────────────────────────────────────────
+
+describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
+  it('renders page header with capture-first description', () => {
+    render(<IngestPage />);
+    expect(screen.getByRole('heading', { name: 'Capture' })).toBeInTheDocument();
   });
 
-  it('renders type selector with template options', () => {
-    renderPage();
-    const select = screen.getByRole('combobox', { name: /select type/i });
-    expect(select).toBeInTheDocument();
-    // Verify options include capture + templates
-    const options = within(select).getAllByRole('option');
-    const values = options.map((o) => o.textContent);
-    // Type labels are Title-Cased per ENGRAM_TYPE_LABELS — see ingest-page/types.ts
-    expect(values).toContain('Capture');
-    expect(values).toContain('Decision');
-    expect(values).toContain('Journal');
-  });
-
-  it('renders title and body inputs', () => {
-    renderPage();
+  it('shows body, title, and scope inputs as primary affordances', () => {
+    render(<IngestPage />);
+    expect(screen.getByLabelText('Body')).toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toBeInTheDocument();
-    expect(screen.getByLabelText('Body')).toBeInTheDocument();
-  });
-
-  it('renders scope and tag inputs', () => {
-    renderPage();
     expect(screen.getByLabelText('Scope input')).toBeInTheDocument();
-    expect(screen.getByLabelText('Tag input')).toBeInTheDocument();
   });
 
-  it('shows template-specific fields when a template type is selected', async () => {
+  it('hides type selector behind the Advanced disclosure', () => {
+    render(<IngestPage />);
+    // The Advanced summary is visible as a clickable element
+    expect(screen.getByText('Advanced')).toBeInTheDocument();
+    // The type selector exists in the DOM (inside <details>) but won't be
+    // 'visible' to the user until expanded — assert it's there as a sanity
+    // check on wiring rather than asserting on visibility.
+    expect(screen.getByRole('combobox', { name: /select type/i })).toBeInTheDocument();
+  });
+
+  it('disables the capture button when body is empty', () => {
+    render(<IngestPage />);
+    const button = screen.getByRole('button', { name: /capture/i });
+    expect(button).toBeDisabled();
+  });
+
+  it('calls quickCapture (not submit) when the user only fills body and scope', async () => {
     const user = userEvent.setup();
-    renderPage();
-    const select = screen.getByRole('combobox', { name: /select type/i });
-    await user.selectOptions(select, 'decision');
-    expect(screen.getByText('Template Fields')).toBeInTheDocument();
-    // Decision template should show its custom fields
-    expect(screen.getByLabelText('decision')).toBeInTheDocument();
-    expect(screen.getByLabelText('confidence')).toBeInTheDocument();
-  });
-
-  it('does not show template fields for capture type', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    const select = screen.getByRole('combobox', { name: /select type/i });
-    await user.selectOptions(select, 'capture');
-    expect(screen.queryByText('Template Fields')).not.toBeInTheDocument();
-  });
-
-  it('submit button is disabled when body is empty', () => {
-    renderPage();
-    const submit = screen.getByRole('button', { name: /submit/i });
-    expect(submit).toBeDisabled();
-  });
-
-  it('submit button is enabled when body has content', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    const body = screen.getByLabelText('Body');
-    await user.type(body, 'Some content here');
-    const submit = screen.getByRole('button', { name: /submit/i });
-    expect(submit).not.toBeDisabled();
-  });
-
-  it('calls submit mutation with form data', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    // Fill in the form
-    const titleInput = screen.getByLabelText('Title');
-    await user.type(titleInput, 'Test Engram');
+    render(<IngestPage />);
 
     const body = screen.getByLabelText('Body');
-    await user.type(body, 'Test body content');
+    await user.type(body, 'A quick thought');
 
-    // Add a scope manually via the input
     const scopeInput = screen.getByLabelText('Scope input');
-    await user.type(scopeInput, 'test.scope{Enter}');
+    await user.type(scopeInput, 'work.karbon{Enter}');
 
-    // Submit
-    const submit = screen.getByRole('button', { name: /submit/i });
+    const button = screen.getByRole('button', { name: /capture/i });
+    await user.click(button);
+
+    expect(mockQuickCaptureMutate).toHaveBeenCalledWith({
+      text: 'A quick thought',
+      source: 'manual',
+      scopes: ['work.karbon'],
+    });
+    expect(mockSubmitMutate).not.toHaveBeenCalled();
+  });
+
+  it('omits scopes from quickCapture when none are provided', async () => {
+    const user = userEvent.setup();
+    render(<IngestPage />);
+
+    await user.type(screen.getByLabelText('Body'), 'Bare thought');
+    await user.click(screen.getByRole('button', { name: /capture/i }));
+
+    expect(mockQuickCaptureMutate).toHaveBeenCalledWith({
+      text: 'Bare thought',
+      source: 'manual',
+      scopes: undefined,
+    });
+  });
+
+  it('routes through submit when an Advanced field is touched', async () => {
+    const user = userEvent.setup();
+    render(<IngestPage />);
+
+    await user.type(screen.getByLabelText('Body'), 'A decision I made');
+
+    // Touch an Advanced field (type)
+    await user.selectOptions(screen.getByRole('combobox', { name: /select type/i }), 'decision');
+
+    // Button label flips to "Submit Engram" when Advanced is touched
+    const submit = screen.getByRole('button', { name: /submit engram/i });
     await user.click(submit);
 
     expect(mockSubmitMutate).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: 'Test body content',
-        title: 'Test Engram',
+        body: 'A decision I made',
+        type: 'decision',
         source: 'manual',
-        scopes: ['test.scope'],
       })
     );
+    expect(mockQuickCaptureMutate).not.toHaveBeenCalled();
   });
 
-  it('shows result after successful submission', async () => {
+  it('Cmd+Enter from the body editor submits', async () => {
     const user = userEvent.setup();
-    renderPage();
+    render(<IngestPage />);
 
     const body = screen.getByLabelText('Body');
-    await user.type(body, 'Some content');
+    await user.type(body, 'Quick note');
+    await user.type(body, '{Meta>}{Enter}{/Meta}');
 
-    const scopeInput = screen.getByLabelText('Scope input');
-    await user.type(scopeInput, 'my.scope{Enter}');
-
-    const submit = screen.getByRole('button', { name: /submit/i });
-    await user.click(submit);
-
-    // Result banner should appear
-    expect(screen.getByText('Engram Created')).toBeInTheDocument();
-    expect(screen.getByText('eng_20260427_1200_test-engram')).toBeInTheDocument();
-    expect(screen.getByText('/cerebrum/engrams/test-engram.md')).toBeInTheDocument();
+    expect(mockQuickCaptureMutate).toHaveBeenCalled();
   });
 
-  it('shows create another button after submission', async () => {
+  it('Esc from a non-empty body clears it', async () => {
     const user = userEvent.setup();
-    renderPage();
+    render(<IngestPage />);
 
-    const body = screen.getByLabelText('Body');
-    await user.type(body, 'Some content');
+    const body = screen.getByLabelText('Body') as HTMLTextAreaElement;
+    await user.type(body, 'Drafted then discarded');
+    await user.type(body, '{Escape}');
 
-    const scopeInput = screen.getByLabelText('Scope input');
-    await user.type(scopeInput, 'x.y{Enter}');
-
-    const submit = screen.getByRole('button', { name: /submit/i });
-    await user.click(submit);
-
-    const createAnother = screen.getByRole('button', { name: /create another/i });
-    expect(createAnother).toBeInTheDocument();
-
-    // Clicking resets the form
-    await user.click(createAnother);
-    expect(screen.queryByText('Engram Created')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Body')).toBeInTheDocument();
+    expect(body.value).toBe('');
   });
 
-  it('shows loading state for templates', () => {
-    mockTemplatesQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    });
-    renderPage();
-    expect(screen.getByText('Loading templates…')).toBeInTheDocument();
-  });
-
-  it('triggers scope inference when submitting without scopes', async () => {
-    const refetchFn = vi.fn().mockResolvedValue({
-      data: { scopes: ['inferred.scope'], source: 'llm', confidence: 0.8 },
-    });
-    mockInferScopesQuery.mockReturnValue({
-      data: undefined,
-      isFetching: false,
-      error: null,
-      refetch: refetchFn,
-    });
-
+  it('Esc shows an Undo toast that restores the cleared body', async () => {
     const user = userEvent.setup();
-    renderPage();
+    render(<IngestPage />);
 
-    const body = screen.getByLabelText('Body');
-    await user.type(body, 'Some text without scopes');
+    const body = screen.getByLabelText('Body') as HTMLTextAreaElement;
+    await user.type(body, 'Worth saving after all');
+    await user.type(body, '{Escape}');
 
-    const submit = screen.getByRole('button', { name: /submit/i });
-    await user.click(submit);
-
-    // Scope inference should be triggered
-    expect(refetchFn).toHaveBeenCalled();
+    expect(body.value).toBe('');
+    const calls = (mockToast as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const lastCall = calls.at(-1);
+    if (!lastCall) throw new Error('expected toast to have been called');
+    expect(lastCall[0]).toBe('Body cleared');
+    const action = (lastCall[1] as { action: { label: string; onClick: () => void } }).action;
+    expect(action.label).toBe('Undo');
+    // Firing the undo callback restores the original text once React flushes.
+    act(() => action.onClick());
+    await waitFor(() => expect(body.value).toBe('Worth saving after all'));
   });
 
-  it('shows inferred scopes in dialog after submit with no scopes', async () => {
-    const refetchFn = vi.fn().mockResolvedValue({
-      data: { scopes: ['personal.captures'], source: 'llm', confidence: 0.8 },
-    });
-    mockInferScopesQuery.mockReturnValue({
-      data: undefined,
-      isFetching: false,
-      error: null,
-      refetch: refetchFn,
-    });
-
+  it('shows the result view after a successful capture', async () => {
     const user = userEvent.setup();
-    renderPage();
+    render(<IngestPage />);
 
-    const body = screen.getByLabelText('Body');
-    await user.type(body, 'A note without scopes');
+    await user.type(screen.getByLabelText('Body'), 'Captured');
+    await user.click(screen.getByRole('button', { name: /capture/i }));
 
-    const submit = screen.getByRole('button', { name: /submit/i });
-    await user.click(submit);
-
-    // Dialog opens with inferred scope badge
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('personal.captures')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /accept/i })).toBeInTheDocument();
-  });
-
-  it('Accept & Submit fires the submit mutation with inferred scopes', async () => {
-    const refetchFn = vi.fn().mockResolvedValue({
-      data: { scopes: ['personal.captures'], source: 'llm', confidence: 0.8 },
-    });
-    mockInferScopesQuery.mockReturnValue({
-      data: undefined,
-      isFetching: false,
-      error: null,
-      refetch: refetchFn,
-    });
-
-    const user = userEvent.setup();
-    renderPage();
-
-    const titleInput = screen.getByLabelText('Title');
-    await user.type(titleInput, 'Test');
-
-    const body = screen.getByLabelText('Body');
-    await user.type(body, 'Test body');
-
-    // Submit without scopes — triggers inference dialog
-    const submit = screen.getByRole('button', { name: /submit/i });
-    await user.click(submit);
-
-    // Click "Accept & Submit" in the dialog
-    const acceptBtn = screen.getByRole('button', { name: /accept/i });
-    await user.click(acceptBtn);
-
-    // Submit mutation should be called with the inferred scope
-    expect(mockSubmitMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        body: 'Test body',
-        title: 'Test',
-        source: 'manual',
-        scopes: ['personal.captures'],
-      })
-    );
+    expect(screen.getByText('eng_20260514_1700_capture')).toBeInTheDocument();
   });
 });

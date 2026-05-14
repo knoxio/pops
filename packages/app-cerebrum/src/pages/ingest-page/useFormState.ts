@@ -5,6 +5,23 @@ import { INITIAL_FORM } from './types';
 
 import type { IngestFormValues, TemplateSummary } from './types';
 
+const DEFAULT_TYPE = INITIAL_FORM.type;
+
+/**
+ * The Advanced disclosure is considered "touched" when any of its fields
+ * has a non-default value. The capture surface routes through `quickCapture`
+ * unless `advancedTouched` is true (in which case `submit` is used so explicit
+ * fields bypass classification per PRD-081 business rules).
+ */
+function isAdvancedTouched(form: IngestFormValues): boolean {
+  return (
+    form.type !== DEFAULT_TYPE ||
+    form.template.length > 0 ||
+    form.tags.length > 0 ||
+    Object.keys(form.customFields).length > 0
+  );
+}
+
 export function useFormState(templates: TemplateSummary[]) {
   const [form, setForm] = useState<IngestFormValues>(INITIAL_FORM);
 
@@ -36,7 +53,6 @@ export function useFormState(templates: TemplateSummary[]) {
           type: value,
           template: tpl ? tpl.name : '',
           customFields: {},
-          scopes: tpl?.default_scopes?.length ? tpl.default_scopes : prev.scopes,
         };
       });
     },
@@ -45,6 +61,7 @@ export function useFormState(templates: TemplateSummary[]) {
 
   const resetForm = useCallback(() => setForm(INITIAL_FORM), []);
   const isValid = form.body.trim().length > 0;
+  const advancedTouched = isAdvancedTouched(form);
 
   return {
     form,
@@ -54,5 +71,6 @@ export function useFormState(templates: TemplateSummary[]) {
     handleTypeChange,
     resetForm,
     isValid,
+    advancedTouched,
   };
 }

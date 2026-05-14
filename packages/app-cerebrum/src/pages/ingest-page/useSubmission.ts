@@ -1,4 +1,14 @@
-/** Sub-hook: submit mutation and orchestration with scope inference. */
+/**
+ * Sub-hook: routes the capture surface to the appropriate API path.
+ *
+ * - When no Advanced fields have been touched, calls `cerebrum.ingest.quickCapture`
+ *   (US-01 capture-first path) — the body is written immediately, the server
+ *   enqueues async enrichment, and the user's typed scopes (if any) flow
+ *   through as suggestions for reconciliation by US-10.
+ * - When Advanced has been touched (type/template/tags/customFields), calls
+ *   `cerebrum.ingest.submit` so the explicit fields bypass classification per
+ *   PRD-081 business rules.
+ */
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -6,18 +16,16 @@ import { trpc } from '@pops/api-client';
 
 import type { SubmitResult } from './types';
 import type { useFormState } from './useFormState';
-import type { useScopeInference } from './useScopeInference';
 
 type FormState = ReturnType<typeof useFormState>;
-type Inference = ReturnType<typeof useScopeInference>;
 type FormValues = FormState['form'];
 
-function buildSubmitPayload(form: FormValues, scopes: string[]) {
+function buildSubmitPayload(form: FormValues) {
   return {
     body: form.body,
     title: form.title || undefined,
     type: form.type || undefined,
-    scopes: scopes.length > 0 ? scopes : undefined,
+    scopes: form.scopes.length > 0 ? form.scopes : undefined,
     tags: form.tags.length > 0 ? form.tags : undefined,
     template: form.template || undefined,
     source: 'manual' as const,
@@ -25,12 +33,24 @@ function buildSubmitPayload(form: FormValues, scopes: string[]) {
   };
 }
 
-export function useSubmission(formState: FormState, inference: Inference) {
+function buildQuickCapturePayload(form: FormValues) {
+  return {
+    text: form.body,
+    source: 'manual' as const,
+    scopes: form.scopes.length > 0 ? form.scopes : undefined,
+  };
+}
+
+export function useSubmission(formState: FormState) {
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
+
+  const onSuccess = useCallback((result: { id: string; filePath: string; type: string }) => {
+    setSubmitResult({ id: result.id, filePath: result.filePath, type: result.type });
+  }, []);
 
   const submitMutation = trpc.cerebrum.ingest.submit.useMutation({
     onSuccess: (result) => {
-      setSubmitResult({
+      onSuccess({
         id: result.engram.id,
         filePath: result.engram.filePath,
         type: result.engram.type,
@@ -41,33 +61,36 @@ export function useSubmission(formState: FormState, inference: Inference) {
     },
   });
 
-  const confirmInferredScopes = useCallback(() => {
-    inference.confirm((scopes) => {
-      const mergedScopes = [...new Set([...formState.form.scopes, ...scopes])];
-      formState.updateField('scopes', mergedScopes);
-      submitMutation.mutate(buildSubmitPayload(formState.form, mergedScopes));
-    });
-  }, [inference, formState, submitMutation]);
+  const quickCaptureMutation = trpc.cerebrum.ingest.quickCapture.useMutation({
+    onSuccess: (result) => {
+      onSuccess({ id: result.id, filePath: result.path, type: result.type });
+    },
+    onError: (error) => {
+      toast.error('Capture failed', { description: error.message });
+    },
+  });
 
-  const handleSubmit = useCallback(async () => {
-    const { form } = formState;
-    if (form.scopes.length === 0 && !inference.showScopeConfirm) {
-      await inference.run();
-      return;
+  const handleSubmit = useCallback(() => {
+    const { form, advancedTouched } = formState;
+    if (advancedTouched) {
+      submitMutation.mutate(buildSubmitPayload(form));
+    } else {
+      quickCaptureMutation.mutate(buildQuickCapturePayload(form));
     }
-    submitMutation.mutate(buildSubmitPayload(form, form.scopes));
-  }, [formState, inference, submitMutation]);
+  }, [formState, submitMutation, quickCaptureMutation]);
 
   const resetForm = useCallback(() => {
     formState.resetForm();
     setSubmitResult(null);
   }, [formState]);
 
+  const isSubmitting = submitMutation.isPending || quickCaptureMutation.isPending;
+  const submitError = submitMutation.error?.message ?? quickCaptureMutation.error?.message ?? null;
+
   return {
-    confirmInferredScopes,
     handleSubmit,
-    isSubmitting: submitMutation.isPending,
-    submitError: submitMutation.error?.message ?? null,
+    isSubmitting,
+    submitError,
     submitResult,
     resetForm,
   };

@@ -109,7 +109,7 @@ raw input → normalize → classify type → match template → extract entitie
 
 | #   | Story                                                         | Summary                                                                                                              | Status      | Parallelisable    |
 | --- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------- | ----------------- |
-| 01  | [us-01-manual-input](us-01-manual-input.md)                   | Capture-first shell surface: single body input, async enrichment by default, Advanced disclosure for explicit fields | In progress | No (first)        |
+| 01  | [us-01-manual-input](us-01-manual-input.md)                   | Capture-first shell surface: single body input, async enrichment by default, Advanced disclosure for explicit fields | Done        | No (first)        |
 | 02  | [us-02-agent-input](us-02-agent-input.md)                     | MCP tools and API endpoint for writing engrams from Claude Code or external tools                                    | Done        | Yes               |
 | 03  | [us-03-quick-capture](us-03-quick-capture.md)                 | Minimal-friction capture for Moltbot/CLI: raw text in, classified later                                              | Done        | Yes               |
 | 04  | [us-04-classification](us-04-classification.md)               | LLM-based content classification: infer type, match template, suggest tags                                           | Done        | Yes               |

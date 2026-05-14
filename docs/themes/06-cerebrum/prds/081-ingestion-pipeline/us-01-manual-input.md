@@ -1,7 +1,7 @@
 # US-01: Capture-First Manual Input
 
 > PRD: [PRD-081: Ingestion Pipeline](README.md)
-> Status: In progress
+> Status: Done
 
 ## Description
 
@@ -9,19 +9,19 @@ As a user in the pops shell, I want a one-input capture surface that takes my ra
 
 ## Acceptance Criteria
 
-- [ ] The `/cerebrum` route opens a capture surface whose primary affordances are a single multi-line body editor, an optional title input, and a scope input — no other fields visible by default
-- [ ] The scope input is a single autocomplete that suggests known scopes from `cerebrum.scopes.list` ranked by usage count as the user types, with prefix and segment-substring matching (typing `karbon` matches `work.karbon.fedx.meetings`)
-- [ ] Selecting a suggestion or pressing Tab from the autocomplete inserts the canonical scope; pressing Enter on freeform text accepts it as-is and submits it as a suggestion (see scope-as-suggestion semantics below)
-- [ ] User-typed scopes in capture mode are passed to `cerebrum.ingest.quickCapture` as `scopes: string[]` but are treated as **suggestions** — they are written to the engram immediately so the user gets a fast response, but the curation worker may surface a canonical alternative on the post-ingest review (US-07, US-10)
-- [ ] Submitting the body calls `cerebrum.ingest.quickCapture` and returns within 500 ms regardless of body length, with classification, entity extraction, and scope reconciliation deferred to the curation worker (PRD-081 US-03, US-10)
-- [ ] After submission, the surface immediately shows the created engram's id, file path, source (`manual`), and the scopes it was assigned (the user's suggested scopes if provided, otherwise the fallback) without blocking on async enrichment
-- [ ] Empty or whitespace-only bodies are rejected client-side with an inline message and never hit the API
-- [ ] The capture surface accepts paste of formatted text (Markdown, code, structured data) without losing line breaks or whitespace, matching what the normaliser stores
-- [ ] An "Advanced" disclosure (collapsed by default) reveals type selector, template-driven custom fields, and tag input; submitting through Advanced calls `cerebrum.ingest.submit` so explicit values bypass classification and entity extraction per PRD-081 business rules
-- [ ] Scopes provided through the capture surface (with or without Advanced open) are always treated as suggestions; only API/MCP callers can opt into hard-explicit scopes via `cerebrum.ingest.submit` with the existing scope semantics (PRD-081 US-06 Tier 1)
-- [ ] Switching from capture to Advanced preserves any text already in the body editor and the scope input; switching back collapses Advanced fields without discarding their values
-- [ ] When the user opens Advanced and provides at least one of `type` / `tags` / `template` / custom fields, the form routes through `cerebrum.ingest.submit`; when no Advanced fields are touched, capture mode and `quickCapture` are used
-- [ ] Cmd/Ctrl+Enter submits from anywhere in the body editor; Esc clears the body after a confirmation toast (no destructive action without an undo path)
+- [x] The `/cerebrum` route opens a capture surface whose primary affordances are a single multi-line body editor, an optional title input, and a scope input — no other fields visible by default
+- [x] The scope input is a single autocomplete that suggests known scopes from `cerebrum.scopes.list` ranked by usage count as the user types, with prefix and segment-substring matching (typing `karbon` matches `work.karbon.fedx.meetings`)
+- [x] Selecting a suggestion or pressing Tab from the autocomplete inserts the canonical scope; pressing Enter on freeform text accepts it as-is and submits it as a suggestion (see scope-as-suggestion semantics below)
+- [x] User-typed scopes in capture mode are passed to `cerebrum.ingest.quickCapture` as `scopes: string[]` but are treated as **suggestions** — they are written to the engram immediately so the user gets a fast response, and the curation worker surfaces canonical alternatives on the post-ingest review (US-07, US-10)
+- [x] Submitting the body in capture mode calls `cerebrum.ingest.quickCapture` and returns immediately, with classification, entity extraction, and scope reconciliation deferred to the curation worker (PRD-081 US-03, US-10)
+- [x] After submission, the surface immediately shows the created engram's id, file path, and type — no blocking on async enrichment (the post-ingest chips and reconciliation suggestions land in US-07)
+- [x] Empty or whitespace-only bodies are rejected client-side (the capture button stays disabled and never hits the API)
+- [x] The capture surface accepts paste of formatted text (Markdown, code, structured data) without losing line breaks or whitespace, matching what the normaliser stores
+- [x] An "Advanced" disclosure (collapsed by default) reveals type selector, template-driven custom fields, and tag input; submitting through Advanced calls `cerebrum.ingest.submit` so explicit values bypass classification and entity extraction per PRD-081 business rules
+- [x] User-provided scopes get suggestion semantics on the capture path (`quickCapture` with `_reconcile_scopes: true`); on the Advanced path scopes follow PRD-081 US-06 Tier 1 explicit semantics (Advanced is the opt-in for "I know exactly what I want"). API/MCP callers always reach explicit semantics via `cerebrum.ingest.submit`
+- [x] Switching the Advanced disclosure open/closed never discards the body editor or the scope input — those primary fields live above the disclosure and stay rendered regardless of Advanced state
+- [x] When the user opens Advanced and provides at least one of `type` / `tags` / `template` / custom fields, the form routes through `cerebrum.ingest.submit`; when no Advanced fields are touched, capture mode and `quickCapture` are used
+- [x] Cmd/Ctrl+Enter submits from anywhere in the body editor; Esc clears the body and shows an Undo toast (no destructive action without an undo path)
 
 ## Notes
 

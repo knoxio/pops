@@ -1,18 +1,23 @@
 /**
- * IngestForm — interactive form for creating engrams through the ingestion
- * pipeline. Driven entirely by the view model hook; this component is
- * purely presentational.
+ * IngestForm — capture-first ingest surface (PRD-081 US-01).
+ *
+ * Primary affordance is a single body editor with optional title and a
+ * scope autocomplete. Type/template/tags/customFields are tucked behind an
+ * Advanced disclosure. Submitting routes to `quickCapture` unless any
+ * Advanced field has been touched, in which case it routes to `submit`.
  */
 import { Loader2 } from 'lucide-react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
-import { Button, Select, Textarea, TextInput } from '@pops/ui';
+import { Button, Textarea, TextInput } from '@pops/ui';
 
-import { ScopeConfirmDialog } from './ScopeConfirmDialog';
 import { ScopePicker } from './ScopePicker';
 import { SubmitResult } from './SubmitResult';
 import { TagPicker } from './TagPicker';
 import { TemplateFields } from './TemplateFields';
+import { TypeSelector } from './TypeSelector';
 
 import type { useIngestPageModel } from '../pages/ingest-page/useIngestPageModel';
 
@@ -22,40 +27,15 @@ interface IngestFormProps {
   model: Model;
 }
 
-function TypeSelector({
+function BodyEditor({
   value,
-  options,
-  loading,
   onChange,
+  onKeyDown,
 }: {
   value: string;
-  options: { value: string; label: string; description: string }[];
-  loading: boolean;
   onChange: (v: string) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }) {
-  const { t } = useTranslation('cerebrum');
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 text-muted-foreground text-sm h-11">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t('ingest.loadingTemplates')}
-      </div>
-    );
-  }
-
-  return (
-    <Select
-      label={t('ingest.type')}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      options={options.map((o) => ({ value: o.value, label: o.label }))}
-      placeholder={t('ingest.selectType')}
-      aria-label={t('ingest.typeLabel')}
-    />
-  );
-}
-
-function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { t } = useTranslation('cerebrum');
   return (
     <div className="flex flex-col gap-1.5 w-full">
@@ -65,69 +45,95 @@ function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) 
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         placeholder={t('ingest.bodyPlaceholder')}
         rows={8}
-        className="min-h-[160px] font-mono text-sm"
+        className="min-h-[200px] font-mono text-sm"
         aria-label={t('ingest.body')}
       />
     </div>
   );
 }
 
-function getSubmitLabel(
-  isInferring: boolean,
+function getActionLabel(
+  t: (key: string) => string,
   isSubmitting: boolean,
-  t: (key: string) => string
+  advancedTouched: boolean
 ): string {
-  if (isInferring) return t('ingest.submitting');
   if (isSubmitting) return t('ingest.submitting');
-  return t('ingest.submit');
+  if (advancedTouched) return t('ingest.submit');
+  return t('ingest.capture');
 }
 
 function FormActions({
   isValid,
   isSubmitting,
-  isInferring,
+  advancedTouched,
   onSubmit,
 }: {
   isValid: boolean;
   isSubmitting: boolean;
-  isInferring: boolean;
+  advancedTouched: boolean;
   onSubmit: () => void;
 }) {
   const { t } = useTranslation('cerebrum');
-  const busy = isSubmitting || isInferring;
+  const label = getActionLabel(t, isSubmitting, advancedTouched);
   return (
-    <div className="flex justify-end pt-4">
+    <div className="flex justify-between items-center pt-4">
+      <p className="text-xs text-muted-foreground">
+        {advancedTouched ? t('ingest.advancedHint') : t('ingest.captureHint')}
+      </p>
       <Button
         onClick={onSubmit}
-        disabled={!isValid || busy}
-        prefix={busy ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
+        disabled={!isValid || isSubmitting}
+        prefix={isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
       >
-        {getSubmitLabel(isInferring, isSubmitting, t)}
+        {label}
       </Button>
     </div>
   );
 }
 
-function IngestFormFields({ model }: IngestFormProps) {
+function AdvancedSection({ model }: IngestFormProps) {
+  const { t } = useTranslation('cerebrum');
+  return (
+    <details className="border border-border rounded-md">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-foreground hover:bg-accent/50 rounded-md">
+        {t('ingest.advanced')}
+      </summary>
+      <div className="border-t border-border p-4 space-y-6">
+        <TypeSelector
+          value={model.form.type}
+          options={model.typeOptions}
+          loading={model.templatesLoading}
+          onChange={model.handleTypeChange}
+        />
+        {model.selectedTemplate?.custom_fields && (
+          <TemplateFields
+            fields={model.selectedTemplate.custom_fields}
+            values={model.form.customFields}
+            onChange={model.updateCustomField}
+            requiredFields={model.selectedTemplate.required_fields}
+          />
+        )}
+        <TagPicker
+          value={model.form.tags}
+          suggestions={model.tagSuggestions}
+          loading={model.tagsLoading}
+          onChange={(v) => model.updateField('tags', v)}
+        />
+      </div>
+    </details>
+  );
+}
+
+function IngestFormFields({
+  model,
+  onBodyKeyDown,
+}: IngestFormProps & { onBodyKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void }) {
   const { t } = useTranslation('cerebrum');
   return (
     <div className="space-y-6">
-      <TypeSelector
-        value={model.form.type}
-        options={model.typeOptions}
-        loading={model.templatesLoading}
-        onChange={model.handleTypeChange}
-      />
-      {model.selectedTemplate?.custom_fields && (
-        <TemplateFields
-          fields={model.selectedTemplate.custom_fields}
-          values={model.form.customFields}
-          onChange={model.updateCustomField}
-          requiredFields={model.selectedTemplate.required_fields}
-        />
-      )}
       <TextInput
         label={t('ingest.title.label')}
         value={model.form.title}
@@ -135,19 +141,18 @@ function IngestFormFields({ model }: IngestFormProps) {
         placeholder={t('ingest.titlePlaceholder')}
         aria-label={t('ingest.title.label')}
       />
-      <BodyEditor value={model.form.body} onChange={(v) => model.updateField('body', v)} />
+      <BodyEditor
+        value={model.form.body}
+        onChange={(v) => model.updateField('body', v)}
+        onKeyDown={onBodyKeyDown}
+      />
       <ScopePicker
         value={model.form.scopes}
         suggestions={model.scopeSuggestions}
         loading={model.scopesLoading}
         onChange={(v) => model.updateField('scopes', v)}
       />
-      <TagPicker
-        value={model.form.tags}
-        suggestions={model.tagSuggestions}
-        loading={model.tagsLoading}
-        onChange={(v) => model.updateField('tags', v)}
-      />
+      <AdvancedSection model={model} />
       {model.submitError && (
         <div className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">
           {model.submitError}
@@ -156,14 +161,44 @@ function IngestFormFields({ model }: IngestFormProps) {
       <FormActions
         isValid={model.isValid}
         isSubmitting={model.isSubmitting}
-        isInferring={model.isInferring}
+        advancedTouched={model.advancedTouched}
         onSubmit={model.handleSubmit}
       />
     </div>
   );
 }
 
+function isModifierEnter(e: React.KeyboardEvent<HTMLTextAreaElement>): boolean {
+  return e.key === 'Enter' && (e.metaKey || e.ctrlKey);
+}
+
 export function IngestForm({ model }: IngestFormProps) {
+  const { t } = useTranslation('cerebrum');
+
+  const handleBodyKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (isModifierEnter(e) && model.isValid && !model.isSubmitting) {
+        e.preventDefault();
+        model.handleSubmit();
+        return;
+      }
+      if (e.key === 'Escape' && model.form.body.length > 0) {
+        e.preventDefault();
+        // Capture the value BEFORE clearing — otherwise the Undo callback
+        // closes over the now-empty form state.
+        const cleared = model.form.body;
+        model.updateField('body', '');
+        toast(t('ingest.cleared'), {
+          action: {
+            label: t('ingest.undo'),
+            onClick: () => model.updateField('body', cleared),
+          },
+        });
+      }
+    },
+    [model, t]
+  );
+
   if (model.submitResult) {
     return (
       <SubmitResult
@@ -175,15 +210,5 @@ export function IngestForm({ model }: IngestFormProps) {
     );
   }
 
-  return (
-    <>
-      <IngestFormFields model={model} />
-      <ScopeConfirmDialog
-        open={model.showScopeConfirm}
-        scopes={model.inferredScopes ?? []}
-        onConfirm={model.confirmInferredScopes}
-        onDismiss={model.dismissInferredScopes}
-      />
-    </>
-  );
+  return <IngestFormFields model={model} onBodyKeyDown={handleBodyKeyDown} />;
 }

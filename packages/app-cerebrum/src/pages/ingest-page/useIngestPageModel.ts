@@ -1,11 +1,11 @@
 /**
  * View model hook for the IngestPage.
  *
- * Composed from focused sub-hooks (data, form, inference, submission)
- * to keep each function under the line limit and stabilise dependencies.
+ * Composed from focused sub-hooks (data, form, submission). The capture-first
+ * surface (PRD-081 US-01) is the default; Advanced fields live behind a
+ * disclosure and only route through `submit` when explicitly touched.
  */
 import { useFormState } from './useFormState';
-import { useScopeInference } from './useScopeInference';
 import { useSubmission } from './useSubmission';
 import { useTemplateAndScopeData } from './useTemplateAndScopeData';
 
@@ -14,8 +14,7 @@ export type { IngestFormValues, SubmitResult } from './types';
 export function useIngestPageModel() {
   const data = useTemplateAndScopeData();
   const formState = useFormState(data.templates);
-  const inference = useScopeInference(formState.form, data.knownScopes);
-  const submission = useSubmission(formState, inference);
+  const submission = useSubmission(formState);
 
   return {
     form: formState.form,
@@ -23,6 +22,7 @@ export function useIngestPageModel() {
     updateCustomField: formState.updateCustomField,
     handleTypeChange: formState.handleTypeChange,
     isValid: formState.isValid,
+    advancedTouched: formState.advancedTouched,
     typeOptions: data.typeOptions,
     selectedTemplate: formState.selectedTemplate,
     scopeSuggestions: data.scopeSuggestions,
@@ -30,11 +30,6 @@ export function useIngestPageModel() {
     templatesLoading: data.templatesLoading,
     scopesLoading: data.scopesLoading,
     tagsLoading: data.tagsLoading,
-    inferredScopes: inference.inferredScopes,
-    showScopeConfirm: inference.showScopeConfirm,
-    isInferring: inference.isInferring,
-    confirmInferredScopes: submission.confirmInferredScopes,
-    dismissInferredScopes: inference.dismiss,
     handleSubmit: submission.handleSubmit,
     isSubmitting: submission.isSubmitting,
     submitError: submission.submitError,

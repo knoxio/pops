@@ -157,31 +157,50 @@ export class IngestService {
   }
 
   /**
-   * Quick capture — minimal friction path (US-03).
+   * Quick capture — minimal friction path (US-03, US-01).
    * Stores raw content immediately as type=capture, then enqueues an async
    * BullMQ job to classify, extract entities, and update scopes.
+   *
+   * When `suggestedScopes` is provided (US-01), the engram is written with
+   * those scopes as-is and `_reconcile_scopes: true` is set in customFields
+   * so the curation worker preserves them and runs reconciliation against
+   * the existing vocabulary (PRD-081 US-10) instead of inferring scopes
+   * from scratch.
    */
   async quickCapture(
     text: string,
-    source: EngramSource = QUICK_CAPTURE_SOURCE
+    source: EngramSource = QUICK_CAPTURE_SOURCE,
+    suggestedScopes?: string[]
   ): Promise<QuickCaptureResult> {
     const body = normaliseBody(text);
 
-    const scopeRuleEngine = getScopeRuleEngine();
-    const fallbackScopes = scopeRuleEngine.inferScopes({
-      source,
-      type: QUICK_CAPTURE_TYPE,
-      tags: [],
-      explicitScopes: [],
-    });
+    const trimmedSuggestions =
+      suggestedScopes?.map((s) => s.trim()).filter((s) => s.length > 0) ?? [];
+    const hasSuggestions = trimmedSuggestions.length > 0;
+
+    let scopes: string[];
+    if (hasSuggestions) {
+      scopes = trimmedSuggestions;
+    } else {
+      const scopeRuleEngine = getScopeRuleEngine();
+      scopes = scopeRuleEngine.inferScopes({
+        source,
+        type: QUICK_CAPTURE_TYPE,
+        tags: [],
+        explicitScopes: [],
+      });
+    }
+
+    const customFields = hasSuggestions ? { _reconcile_scopes: true } : undefined;
 
     const engramService = getEngramService();
     const engram = engramService.create({
       type: QUICK_CAPTURE_TYPE,
       title: deriveTitle(body),
       body,
-      scopes: fallbackScopes,
+      scopes,
       source,
+      customFields,
     });
 
     // Enqueue async enrichment job (fire-and-forget)

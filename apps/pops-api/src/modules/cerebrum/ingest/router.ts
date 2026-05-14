@@ -80,6 +80,13 @@ const inferScopesSchema = z.object({
 const quickCaptureSchema = z.object({
   text: z.string().min(1),
   source: engramSourceSchema.optional(),
+  /**
+   * User-suggested scopes (PRD-081 US-01). When provided they are written
+   * to the engram immediately and the curation worker runs scope
+   * reconciliation against the existing vocabulary (US-10) instead of
+   * inferring from scratch.
+   */
+  scopes: z.array(z.string().min(1)).optional(),
 });
 
 export const ingestRouter = router({
@@ -134,7 +141,7 @@ export const ingestRouter = router({
 
   quickCapture: protectedProcedure.input(quickCaptureSchema).mutation(async ({ input }) => {
     try {
-      return await getService().quickCapture(input.text, input.source);
+      return await getService().quickCapture(input.text, input.source, input.scopes);
     } catch (err) {
       toTrpcError(err);
     }
