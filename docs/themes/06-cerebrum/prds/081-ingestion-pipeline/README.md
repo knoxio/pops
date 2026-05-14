@@ -116,7 +116,7 @@ raw input → normalize → classify type → match template → extract entitie
 | 05  | [us-05-entity-extraction](us-05-entity-extraction.md)         | Extract people, projects, dates, topics from body into tags and frontmatter                                          | Done        | Yes               |
 | 06  | [us-06-scope-inference](us-06-scope-inference.md)             | Rule-based + LLM-based scope assignment with user override                                                           | Done        | Yes               |
 | 07  | [us-07-post-ingest-review](us-07-post-ingest-review.md)       | After capture, surface inferred type/template/scopes/tags as editable chips; retry enrichment on failure             | Done        | Blocked by US-01  |
-| 08  | [us-08-bulk-paste](us-08-bulk-paste.md)                       | Split pasted body on `---` lines into N engrams, each via `quickCapture`                                             | Not started | Yes (after US-01) |
+| 08  | [us-08-bulk-paste](us-08-bulk-paste.md)                       | Split pasted body on `---` lines into N engrams, each via `quickCapture`                                             | Done        | Yes (after US-01) |
 | 09  | [us-09-global-capture-hotkey](us-09-global-capture-hotkey.md) | Single keyboard shortcut opens a capture modal anywhere in the shell                                                 | Not started | Yes (after US-01) |
 | 10  | [us-10-scope-reconciliation](us-10-scope-reconciliation.md)   | Reconcile user-suggested scopes against the existing vocabulary; surface canonical alternatives in the review        | Done        | Yes               |
 

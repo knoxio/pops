@@ -1,7 +1,7 @@
 # US-08: Bulk Paste Capture
 
 > PRD: [PRD-081: Ingestion Pipeline](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,15 +9,15 @@ As a user migrating content from another system (Notion, Apple Notes, a text dum
 
 ## Acceptance Criteria
 
-- [ ] The capture surface (US-01) recognises a line containing only `---` (three hyphens, optional surrounding whitespace) as an engram boundary
-- [ ] Pasting content with one or more `---` separators and submitting creates N engrams (one per non-empty segment) through `cerebrum.ingest.quickCapture`, each enqueueing its own enrichment job
-- [ ] Empty segments (only whitespace between two separators) are skipped silently — they do not create engrams and do not appear in the result list
-- [ ] The submit button label reflects the segment count when the body contains separators (e.g. "Capture 7 entries" instead of "Capture")
-- [ ] A small inline preview above the submit button shows the detected segment count and the first 60 characters of each segment so the user can sanity-check before submitting
-- [ ] Submission processes segments in order and returns when all engrams have been written; the result view shows a list of created engrams with id, fallback scope, and a per-row enrichment status that updates in place per US-07
-- [ ] If a single segment fails (validation error, write failure), the remaining segments still process; the failed segment is shown in the result list with the error message and a "retry" action that re-submits just that segment
-- [ ] The first 30 characters of each segment, or its first H1 heading if present, becomes the derived title — using the pipeline's existing title-derivation rules (PRD-081 business rules: H1 then first line, truncated)
-- [ ] A keyboard shortcut (e.g. Cmd/Ctrl+Shift+Enter) explicitly forces split-on-`---` even if the user did not see the separator preview, for muscle-memory-driven bulk submits
+- [x] The capture surface (US-01) recognises a line containing only `---` (three hyphens, optional surrounding whitespace) as an engram boundary
+- [x] Pasting content with one or more `---` separators and submitting creates N engrams (one per non-empty segment) through `cerebrum.ingest.quickCapture`, each enqueueing its own enrichment job
+- [x] Empty segments (only whitespace between two separators) are skipped silently — they do not create engrams and do not appear in the result list
+- [x] The submit button label reflects the segment count when the body contains separators (e.g. "Capture 7 entries" instead of "Capture")
+- [x] A small inline preview above the submit button shows the detected segment count and the first 60 characters of each segment so the user can sanity-check before submitting
+- [x] Submission processes segments in order and returns when all engrams have been written; the result view shows a list of created engrams with id, fallback scope, and a per-row enrichment status that updates in place per US-07
+- [x] If a single segment fails (validation error, write failure), the remaining segments still process; the failed segment is shown in the result list with the error message and a "retry" action that re-submits just that segment
+- [x] The first 30 characters of each segment, or its first H1 heading if present, becomes the derived title — using the pipeline's existing title-derivation rules (PRD-081 business rules: H1 then first line, truncated)
+- [x] A keyboard shortcut (e.g. Cmd/Ctrl+Shift+Enter) explicitly forces split-on-`---` even if the user did not see the separator preview, for muscle-memory-driven bulk submits
 
 ## Notes
 
