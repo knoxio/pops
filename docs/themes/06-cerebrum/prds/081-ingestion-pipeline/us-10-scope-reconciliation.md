@@ -9,8 +9,8 @@ As the Cerebrum system, I need to reconcile user-suggested scopes against the ex
 
 ## Acceptance Criteria
 
-- [ ] A `ScopeReconciliationService` accepts `{ suggestedScopes: string[], knownScopes: ScopeInfo[] }` (where `ScopeInfo` is `{ scope: string, count: number }` from `cerebrum.scopes.list`) and returns `{ suggestions: Array<{ original: string, canonical: string, confidence: number, reason: string }> }`
-- [ ] The service runs deterministically on every `classifyEngram` job for engrams with non-empty `scopes` whose source is `manual` (and any other source that opts in via the engram's `customFields._reconcile_scopes: true`)
+- [ ] Reconciliation accepts `{ suggestedScopes: string[], knownScopes: Array<{ scope: string, count: number }> }` (the known-scopes shape returned by `cerebrum.scopes.list`) and returns `{ suggestions: Array<{ original: string, canonical: string, confidence: number, reason: string }> }`
+- [ ] Reconciliation runs deterministically on every `classifyEngram` job for engrams with non-empty `scopes` whose source is `manual` (and any other source that opts in via the engram's `customFields._reconcile_scopes: true`)
 - [ ] **Segment-set match**: when the user's scope and an existing scope share the same set of segments in any order, the existing scope (highest usage count) is returned with `confidence: 0.95`, `reason: "same segments, different order"` — e.g. `work.karbon.meetings.fedx` reconciles to `work.karbon.fedx.meetings` if the latter exists
 - [ ] **Subset match**: when the user's scope is a strict subset of an existing scope's segments and the existing scope has higher usage, the existing scope is returned with `confidence: 0.85`, `reason: "matches longer canonical scope"` — e.g. `karbon.meetings` reconciles to `work.karbon.fedx.meetings` if that exists with significant usage
 - [ ] **Prefix match where canonical is shallower**: when the user's scope is a strict superset and a shorter, more-used canonical exists, the canonical is returned with `confidence: 0.7`, `reason: "matches shorter canonical scope"` — used to prevent over-specification when the established taxonomy is broader
