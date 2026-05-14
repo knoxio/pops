@@ -42,14 +42,15 @@ raw input → normalize → classify type → match template → extract entitie
 
 ## API Surface
 
-| Procedure                         | Input                                                        | Output                           | Notes                                                                     |
-| --------------------------------- | ------------------------------------------------------------ | -------------------------------- | ------------------------------------------------------------------------- |
-| `cerebrum.ingest.submit`          | IngestionRequest                                             | `{ engram: Engram }`             | Full pipeline — normalise, classify, extract, scope, write                |
-| `cerebrum.ingest.preview`         | IngestionRequest                                             | `{ preview: IngestionPreview }`  | Dry run — returns classification, scopes, entities without writing        |
-| `cerebrum.ingest.classify`        | body: string, type?: string                                  | `{ type, confidence, template }` | Classification only — Cortex type inference                               |
-| `cerebrum.ingest.extractEntities` | body: string                                                 | `{ entities: Entity[] }`         | Entity extraction only — people, projects, dates, topics                  |
-| `cerebrum.ingest.inferScopes`     | body: string, source: string, tags?: string[], type?: string | `{ scopes: ScopeInference[] }`   | Scope inference only — rules first, LLM second                            |
-| `cerebrum.ingest.quickCapture`    | text: string, source?: string                                | `{ engram: Engram }`             | Minimal-friction shortcut — assigns `type: capture`, skips classification |
+| Procedure                         | Input                                                        | Output                               | Notes                                                                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cerebrum.ingest.submit`          | IngestionRequest                                             | `{ engram: Engram }`                 | Full pipeline — normalise, classify, extract, scope, write                                                                                                   |
+| `cerebrum.ingest.preview`         | IngestionRequest                                             | `{ preview: IngestionPreview }`      | Dry run — returns classification, scopes, entities without writing                                                                                           |
+| `cerebrum.ingest.classify`        | body: string, type?: string                                  | `{ type, confidence, template }`     | Classification only — Cortex type inference                                                                                                                  |
+| `cerebrum.ingest.extractEntities` | body: string                                                 | `{ entities: Entity[] }`             | Entity extraction only — people, projects, dates, topics                                                                                                     |
+| `cerebrum.ingest.inferScopes`     | body: string, source: string, tags?: string[], type?: string | `{ scopes: ScopeInference[] }`       | Scope inference only — rules first, LLM second                                                                                                               |
+| `cerebrum.ingest.quickCapture`    | text: string, source?: string, scopes?: string[]             | `{ engram: Engram }`                 | Minimal-friction shortcut — assigns `type: capture`, skips classification. `scopes` are treated as suggestions and reconciled by the curation worker (US-10) |
+| `cerebrum.scopes.reconcile`       | suggestedScopes: string[]                                    | `{ suggestions: ScopeSuggestion[] }` | Pure lexical/structural reconciliation of suggested scopes against the index — no LLM, no write (US-10)                                                      |
 
 ### MCP Tools
 
@@ -70,7 +71,9 @@ raw input → normalize → classify type → match template → extract entitie
 - Scope inference follows the three-tier priority from ADR-020: (1) explicit user scopes always win, (2) `scope-rules.toml` pattern matching, (3) LLM-based classification as fallback. If all three produce no scopes, the fallback scope from `scope-rules.toml` is assigned
 - Deduplication checks the content hash (SHA-256 of normalised body) against the `engram_index.content_hash` column. If a duplicate is found, the pipeline rejects the submission and returns the existing engram ID
 - After all stages complete, the pipeline calls `cerebrum.engrams.create` to write the file and index entry
-- Quick capture bypasses classification, entity extraction, and scope inference — it assigns `type: capture`, `source: moltbot` (or provided source), and the fallback scope. Cortex reclassifies it asynchronously later
+- Quick capture bypasses classification, entity extraction, and scope inference — it assigns `type: capture`, `source: moltbot` (or provided source), and either the user-suggested scopes (when provided) or the fallback scope. Cortex reclassifies it asynchronously later
+- User-suggested scopes via `quickCapture` are written to the engram immediately as the active scopes (so retrieval works straight away) and the curation worker runs scope reconciliation (US-10) against the existing scope index. Reconciliation results are written to `_scope_suggestions` for the post-ingest review (US-07) to surface — they do not auto-rewrite the engram's scopes
+- Hard-explicit scope semantics (PRD-081 US-06 Tier 1, never reconciled) remain available only via `cerebrum.ingest.submit`. The manual capture surface always uses suggestion semantics, regardless of whether Advanced is open
 - The `preview` endpoint runs the full pipeline but stops before writing — useful for UI confirmation dialogs
 - Manual capture from the shell defaults to `quickCapture` regardless of body length — async enrichment is the path of least friction. The full `submit` pipeline runs only when the user opens the Advanced disclosure and provides at least one explicit field (type, scopes, tags, template, or custom fields)
 - Bulk paste with `---` (a line containing only three hyphens) splits the body into N segments client-side and submits each segment as its own `quickCapture` mutation, in order. Empty segments are skipped silently
@@ -78,25 +81,29 @@ raw input → normalize → classify type → match template → extract entitie
 
 ## Edge Cases
 
-| Case                                                       | Behaviour                                                                                                                                            |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Body is empty string                                       | Rejected — body is required and must contain at least one non-whitespace character                                                                   |
-| Body contains only whitespace                              | Rejected — same as empty body after normalisation                                                                                                    |
-| Body is valid JSON (structured data)                       | Normalised to Markdown: JSON rendered as a fenced code block with metadata extracted into frontmatter fields                                         |
-| Title exceeds 200 characters                               | Truncated to 200 characters at the nearest word boundary                                                                                             |
-| Explicit type does not match any template                  | Engram created with the explicit type but no template scaffolding — warning logged                                                                   |
-| Classification returns multiple candidate types            | Highest-confidence type is selected; if tied, `capture` is used                                                                                      |
-| Entity extraction returns zero entities                    | No tags added from extraction — explicit tags are preserved                                                                                          |
-| Scope rules and LLM both produce empty scopes              | Fallback scope from `scope-rules.toml` is assigned                                                                                                   |
-| Duplicate content hash detected                            | Submission rejected with `{ duplicate: true, existingId: string }` — no new file written                                                             |
-| MCP tool called with invalid parameters                    | Returns structured error with field-level validation messages                                                                                        |
-| Ingestion during Thalamus downtime                         | File is written to disk, index sync deferred until Thalamus recovers                                                                                 |
-| Body contains frontmatter-like `---` fences                | Content body is preserved as-is — only the engram's own frontmatter is generated by the pipeline                                                     |
-| Source is `plexus:{name}` with unknown name                | Accepted — source is a freeform string, plexus adapter validation is Plexus's responsibility                                                         |
-| Bulk paste contains `---` inside a fenced code block       | Splitter operates on raw lines; a `---` inside ```fences still splits. Users wrap with HTML comments or escape if literal`---` is needed in body     |
-| Capture-mode submit happens while Redis is down            | Engram is written, enrichment job enqueue logs a warning, type stays `capture`; user can re-enqueue from the result view (US-07) once Redis recovers |
-| Global capture hotkey (US-09) fires while a dialog is open | Hotkey is suppressed — focus is inside the dialog's input or the dialog is itself a modal layer; hotkey resumes once the dialog closes               |
-| Bulk paste segment fails one-of-N                          | Remaining segments still process; failed segment shows in the result list with error and a per-segment retry action                                  |
+| Case                                                                   | Behaviour                                                                                                                                            |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Body is empty string                                                   | Rejected — body is required and must contain at least one non-whitespace character                                                                   |
+| Body contains only whitespace                                          | Rejected — same as empty body after normalisation                                                                                                    |
+| Body is valid JSON (structured data)                                   | Normalised to Markdown: JSON rendered as a fenced code block with metadata extracted into frontmatter fields                                         |
+| Title exceeds 200 characters                                           | Truncated to 200 characters at the nearest word boundary                                                                                             |
+| Explicit type does not match any template                              | Engram created with the explicit type but no template scaffolding — warning logged                                                                   |
+| Classification returns multiple candidate types                        | Highest-confidence type is selected; if tied, `capture` is used                                                                                      |
+| Entity extraction returns zero entities                                | No tags added from extraction — explicit tags are preserved                                                                                          |
+| Scope rules and LLM both produce empty scopes                          | Fallback scope from `scope-rules.toml` is assigned                                                                                                   |
+| Duplicate content hash detected                                        | Submission rejected with `{ duplicate: true, existingId: string }` — no new file written                                                             |
+| MCP tool called with invalid parameters                                | Returns structured error with field-level validation messages                                                                                        |
+| Ingestion during Thalamus downtime                                     | File is written to disk, index sync deferred until Thalamus recovers                                                                                 |
+| Body contains frontmatter-like `---` fences                            | Content body is preserved as-is — only the engram's own frontmatter is generated by the pipeline                                                     |
+| Source is `plexus:{name}` with unknown name                            | Accepted — source is a freeform string, plexus adapter validation is Plexus's responsibility                                                         |
+| Bulk paste contains `---` inside a fenced code block                   | Splitter operates on raw lines; a `---` inside ```fences still splits. Users wrap with HTML comments or escape if literal`---` is needed in body     |
+| Capture-mode submit happens while Redis is down                        | Engram is written, enrichment job enqueue logs a warning, type stays `capture`; user can re-enqueue from the result view (US-07) once Redis recovers |
+| Global capture hotkey (US-09) fires while a dialog is open             | Hotkey is suppressed — focus is inside the dialog's input or the dialog is itself a modal layer; hotkey resumes once the dialog closes               |
+| Bulk paste segment fails one-of-N                                      | Remaining segments still process; failed segment shows in the result list with error and a per-segment retry action                                  |
+| User suggests a scope that already exactly matches an indexed scope    | No reconciliation suggestion is produced; the user's scope stays as-is                                                                               |
+| User suggests a scope no candidate matches above 0.6 confidence        | No reconciliation suggestion is produced; vocabulary grows naturally                                                                                 |
+| Same canonical reconciliation was previously dismissed for this engram | Suggestion is suppressed for that engram (tracked via `_scope_suggestions_dismissed` segment-set keys)                                               |
+| User suggests N scopes, M are reconciled                               | Each scope is reconciled independently; M suggestions surface in US-07, N − M chips show no "Did you mean" affordance                                |
 
 ## User Stories
 
@@ -111,13 +118,16 @@ raw input → normalize → classify type → match template → extract entitie
 | 07  | [us-07-post-ingest-review](us-07-post-ingest-review.md)       | After capture, surface inferred type/template/scopes/tags as editable chips; retry enrichment on failure             | Not started | Blocked by US-01  |
 | 08  | [us-08-bulk-paste](us-08-bulk-paste.md)                       | Split pasted body on `---` lines into N engrams, each via `quickCapture`                                             | Not started | Yes (after US-01) |
 | 09  | [us-09-global-capture-hotkey](us-09-global-capture-hotkey.md) | Single keyboard shortcut opens a capture modal anywhere in the shell                                                 | Not started | Yes (after US-01) |
+| 10  | [us-10-scope-reconciliation](us-10-scope-reconciliation.md)   | Reconcile user-suggested scopes against the existing vocabulary; surface canonical alternatives in the review        | Not started | Yes               |
 
-US-02 and US-03 define the agent and capture input channels and parallelise with US-01 (the manual shell surface). US-04, US-05, and US-06 define the pipeline processing stages and parallelise with each other and with the input channels. US-07, US-08, and US-09 extend the manual channel and depend on US-01's capture surface. All stories depend on PRD-077 (engram file format) and PRD-078 (scope model) being implemented.
+US-02 and US-03 define the agent and capture input channels and parallelise with US-01 (the manual shell surface). US-04, US-05, and US-06 define the pipeline processing stages and parallelise with each other and with the input channels. US-07, US-08, and US-09 extend the manual channel and depend on US-01's capture surface. US-10 is the reconciliation backbone for scope-as-suggestion semantics — US-01 surfaces it via `quickCapture`'s `scopes` argument, US-07 renders its results, and the two depend on it being implemented to deliver the canonical-scope flow end-to-end. All stories depend on PRD-077 (engram file format) and PRD-078 (scope model) being implemented.
 
 ## Verification
 
 - A capture-mode submission with body only (no type, scopes, tags, or template) creates a `type: capture` engram in under 500 ms and enqueues a `classifyEngram` job
-- An Advanced submission with explicit type and scopes runs the full `submit` pipeline and bypasses classification and scope inference for the explicit fields
+- An Advanced submission with explicit type runs the full `submit` pipeline and bypasses classification for that field; scopes from the manual surface always go through reconciliation regardless of the Advanced state
+- A capture-mode submission of `karbon.meetings` when the index contains `work.karbon.fedx.meetings` (used 12+ times) writes `karbon.meetings` to the engram immediately, then the curation worker writes `_scope_suggestions: [{ original: "karbon.meetings", canonical: "work.karbon.fedx.meetings", confidence: 0.85, reason: "matches longer canonical scope" }]`, and US-07 renders the suggestion as a one-click chip update
+- An API caller using `cerebrum.ingest.submit` with `scopes: ["my.fresh.scope"]` (no `_reconcile_scopes: true`) writes the scope as-is and no reconciliation runs — explicit-scope semantics from US-06 Tier 1 are preserved
 - An MCP `cerebrum_ingest` call from a Claude Code session creates an engram with inferred classification and extracted entities
 - A quick capture via Moltbot creates a `type: capture` engram in the `captures/` directory with the fallback scope
 - A bulk paste of three segments separated by `---` produces three engrams, each with its own enrichment job, in submission order

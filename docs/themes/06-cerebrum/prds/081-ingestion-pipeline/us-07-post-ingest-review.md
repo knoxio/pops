@@ -9,13 +9,16 @@ As a user who just captured an engram in capture mode (US-01) or via the global 
 
 ## Acceptance Criteria
 
-- [ ] Immediately after `cerebrum.ingest.quickCapture` succeeds, the result view shows the engram id, file path, source, and the fallback scope assigned at write time
+- [ ] Immediately after `cerebrum.ingest.quickCapture` succeeds, the result view shows the engram id, file path, source, and the scopes assigned at write time (the user's suggestions if any, otherwise the fallback)
 - [ ] The result view subscribes to enrichment status for the engram id and updates in place when the curation worker finishes — without a manual refresh
 - [ ] When enrichment completes, the inferred `type`, `template`, `scopes`, and `tags` appear as editable chips/fields on the same card; the body of the engram is not re-displayed (the user just typed it)
-- [ ] Each chip is editable in place — clicking a chip opens a popover with the same picker semantics as the Advanced form (type selector, scope autocomplete from `cerebrum.scopes.list`, tag autocomplete from `cerebrum.tags.list`)
+- [ ] Each chip is editable in place — clicking a chip opens a popover with the same picker semantics as the capture surface (type selector, scope autocomplete from `cerebrum.scopes.list`, tag autocomplete from `cerebrum.tags.list`)
+- [ ] When the scope reconciliation service (US-10) returns a canonical alternative for any user-suggested scope, the alternative is shown next to that scope chip as a "Did you mean: `<canonical>`?" affordance with a one-click accept that replaces the original chip
+- [ ] Accepting a canonical suggestion calls `cerebrum.engrams.update` to replace the user's scope with the canonical one and clears the suggestion from the engram's `_scope_suggestions` custom field
+- [ ] Dismissing a canonical suggestion clears it without changing the scope; the next time the same engram is enriched the dismissed suggestion is not re-proposed (tracked via `_scope_suggestions_dismissed` custom field, segment-set keyed)
 - [ ] Edits call `cerebrum.engrams.update` with the changed field only and reflect the new value on success without a full re-fetch
 - [ ] An "Open in editor" link navigates to the engram detail page (PRD-077) for full body editing, version history, and deletion
-- [ ] If enrichment is still pending when the user navigates away, the next visit to the engram detail page shows the same inferred values as soon as they're available (no state lost)
+- [ ] If enrichment is still pending when the user navigates away, the next visit to the engram detail page shows the same inferred values and pending suggestions as soon as they're available (no state lost)
 - [ ] If enrichment fails (LLM error, queue failure), the result view shows a "retry enrichment" action that re-enqueues the `classifyEngram` job for the same engram id
 - [ ] A "Capture another" action resets the surface to an empty body editor without leaving the page, preserving keyboard focus on the body input
 
@@ -23,6 +26,7 @@ As a user who just captured an engram in capture mode (US-01) or via the global 
 
 - The async enrichment job is `classifyEngram` on the `pops-curation` BullMQ queue, handled by `apps/pops-api/src/jobs/handlers/curation.ts`. The handler is idempotent via the `_enrichedHash` custom field — re-running it on unchanged content is a no-op.
 - For enrichment status updates, prefer SSE or polling against a new `cerebrum.ingest.enrichmentStatus` query (input: `engramId`) over adding websockets just for this view. Polling at 1 s for the first 10 s, then 5 s for the next 30 s, then stop and require manual refresh is acceptable.
-- The chip edit popovers should reuse the existing `ScopePicker` and `TagPicker` components rather than re-implementing autocomplete.
+- The chip edit popovers should reuse the same scope autocomplete component built for the capture surface (US-01) rather than re-implementing.
+- Scope-suggestion data lives on the engram itself in custom fields `_scope_suggestions: Array<{ original: string, canonical: string, confidence: number }>` and `_scope_suggestions_dismissed: string[]` (segment-set keys, e.g. `karbon|meetings|fedx|work`). Reconciliation is implemented in US-10.
 - The "retry enrichment" action requires exposing a small mutation that enqueues `{ type: 'classifyEngram', engramId }` on the curation queue — this can sit on the existing `cerebrum.ingest` router.
 - This US assumes the engram already exists; there is no creation path here. Creation is US-01 (capture mode) or US-02 (agent input).
