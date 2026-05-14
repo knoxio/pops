@@ -32,7 +32,7 @@ export function TypeSelector({ value, options, loading, onChange }: TypeSelector
       label={t('ingest.type')}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      options={options.map((o) => ({ value: o.value, label: o.label }))}
+      options={options}
       placeholder={t('ingest.selectType')}
       aria-label={t('ingest.typeLabel')}
     />

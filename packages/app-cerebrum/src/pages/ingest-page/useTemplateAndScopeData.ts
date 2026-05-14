@@ -10,6 +10,11 @@ import { ENGRAM_TYPE_LABELS, ENGRAM_TYPES } from './types';
 
 import type { ScopeEntry, TagEntry, TemplateSummary } from './types';
 
+const TYPE_OPTIONS = ENGRAM_TYPES.map((typeName) => ({
+  value: typeName,
+  label: ENGRAM_TYPE_LABELS[typeName],
+}));
+
 export function useTemplateAndScopeData() {
   const templatesQuery = trpc.cerebrum.templates.list.useQuery();
   const scopesQuery = trpc.cerebrum.scopes.list.useQuery();
@@ -30,13 +35,6 @@ export function useTemplateAndScopeData() {
   if (rawTags) tagsRef.current = rawTags;
   const knownTags = tagsRef.current;
 
-  const typeOptions = useMemo(() => {
-    return ENGRAM_TYPES.map((typeName) => ({
-      value: typeName,
-      label: ENGRAM_TYPE_LABELS[typeName],
-    }));
-  }, []);
-
   const scopeSuggestions = useMemo(
     () =>
       knownScopes.map((s) => ({
@@ -51,7 +49,7 @@ export function useTemplateAndScopeData() {
     templates,
     knownScopes,
     knownTags,
-    typeOptions,
+    typeOptions: TYPE_OPTIONS,
     scopeSuggestions,
     tagSuggestions: knownTags,
     templatesLoading: templatesQuery.isLoading,
