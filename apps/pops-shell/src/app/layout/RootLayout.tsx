@@ -17,6 +17,7 @@ import { Outlet, useLocation } from 'react-router';
 import { AppContextProvider } from '@pops/navigation';
 import { cn, ErrorBoundary } from '@pops/ui';
 
+import { CaptureHotkeyHost } from '../capture/CaptureHotkeyHost';
 import { OverlayHost } from '../overlays/OverlayHost';
 import { useOverlayShortcuts } from '../overlays/useOverlayShortcuts';
 import { ChatFab } from './ChatFab';
@@ -67,6 +68,8 @@ export function RootLayout() {
         </div>
 
         {EGO_OVERLAY_INSTALLED && <ChatFab />}
+
+        <CaptureHotkeyHost />
 
         {/*
          * One host per known chrome slot (PRD-101 US-07). Each host mounts
