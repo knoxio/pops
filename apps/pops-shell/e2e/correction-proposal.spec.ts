@@ -1,16 +1,9 @@
 /**
  * E2E tests for the Correction Proposal dialog.
  *
- * Covers the full loop:
- *   1. Review step shows an uncertain transaction group
- *   2. User picks "Choose existing..." → selects an entity
- *   3. The Correction Proposal dialog opens with an AI-proposed rule
- *   4. User edits the rule (e.g. changes Transaction type)
- *   5. The preview auto-reruns WITHOUT the user clicking the ↺ button
- *   6. Apply ChangeSet re-enables after the auto-rerun
- *   7. Clicking Apply closes the dialog and moves the transaction to Matched
- *
- * All API calls are mocked — no real backend or Claude API needed.
+ * Verifies that editing a rule field auto-reruns the preview so Apply stays
+ * reachable without forcing the user to manually click ↺. All API calls are
+ * mocked — no real backend or Claude API needed.
  */
 import { test, expect, type Page } from '@playwright/test';
 
@@ -288,7 +281,7 @@ test.describe('Correction Proposal Dialog', () => {
     await expect(page.getByText(/Preview stale/i)).not.toBeVisible();
   });
 
-  test('Apply ChangeSet closes the dialog and moves transaction to Matched', async ({ page }) => {
+  test('Apply ChangeSet closes the dialog', async ({ page }) => {
     await setupMocks(page);
     await navigateToReview(page, TEST_CSV);
 
@@ -303,7 +296,6 @@ test.describe('Correction Proposal Dialog', () => {
     await expect(applyBtn).toBeEnabled({ timeout: 10000 });
     await applyBtn.click();
 
-    // Dialog should close
     await expect(page.getByText('Correction proposal')).not.toBeVisible({ timeout: 5000 });
   });
 });

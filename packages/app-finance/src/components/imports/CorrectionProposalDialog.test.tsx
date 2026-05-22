@@ -562,7 +562,7 @@ describe('CorrectionProposalDialog', () => {
     await waitFor(() => expect(applyBtn).not.toBeDisabled());
 
     const callsBefore = mockPreviewMutateAsync.mock.calls.length;
-    // Find the Transaction type select — it's the only one with 'Expense' as an option
+    // Select by option value rather than label — avoids brittle text matching
     const txnSelect = screen
       .getAllByRole('combobox')
       .find(
@@ -572,6 +572,9 @@ describe('CorrectionProposalDialog', () => {
       ) as HTMLSelectElement;
     expect(txnSelect).toBeDefined();
     fireEvent.change(txnSelect, { target: { value: 'purchase' } });
+
+    // Immediately after the edit the preview is stale and Apply is blocked
+    expect(applyBtn).toBeDisabled();
 
     await waitFor(() => {
       expect(mockPreviewMutateAsync.mock.calls.length).toBeGreaterThan(callsBefore);
