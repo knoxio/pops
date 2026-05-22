@@ -77,9 +77,7 @@ export function GroupHeader(props: GroupHeaderProps) {
               aria-hidden="true"
             />
             <div className="flex items-center gap-2 min-w-0">
-              {group.aiSuggestion && (
-                <Sparkles className="w-5 h-5 shrink-0 text-purple-600 dark:text-purple-400" />
-              )}
+              {group.aiSuggestion && <Sparkles className="w-5 h-5 shrink-0 text-app-accent" />}
               <h3 className="font-semibold text-lg truncate">{group.entityName}</h3>
             </div>
           </CollapsibleTrigger>
