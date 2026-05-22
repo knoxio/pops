@@ -64,7 +64,7 @@ export function WorkflowDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'w-(--size-dialog-xl) max-w-(--size-dialog-max-vw) max-h-(--size-dialog-max-vh)',
+          'w-(--size-dialog-xl) max-w-(--size-dialog-max-vw) md:max-w-(--size-dialog-max-vw) max-h-(--size-dialog-max-vh)',
           'flex flex-col gap-0 overflow-hidden p-0',
           className
         )}
