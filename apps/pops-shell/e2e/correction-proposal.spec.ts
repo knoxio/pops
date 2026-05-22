@@ -195,8 +195,9 @@ test.describe('Correction Proposal Dialog', () => {
 
     const callsAfterOpen = getPreviewCallCount();
 
-    // Change Transaction type — this is the bug scenario the fix addresses
-    const txnTypeSelect = page
+    // Change Transaction type — scope to the dialog so we don't accidentally match other selects
+    const dialog = page.getByRole('dialog', { name: /Correction proposal/i });
+    const txnTypeSelect = dialog
       .locator('select')
       .filter({ has: page.locator('option[value="purchase"]') });
     await txnTypeSelect.selectOption('purchase');
