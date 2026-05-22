@@ -5,9 +5,20 @@
  * reachable without forcing the user to manually click ↺. All API calls are
  * mocked — no real backend or Claude API needed.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { type Route, test, expect, type Page } from '@playwright/test';
 
 import { createMockData } from './fixtures/import-test-data';
+
+async function mockTRPCRoute(route: Route, data: unknown): Promise<void> {
+  const url = new URL(route.request().url());
+  const isBatch = url.searchParams.has('batch');
+  const responseData = { result: { data } };
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(isBatch ? [responseData] : responseData),
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -51,50 +62,23 @@ async function setupMocks(page: Page): Promise<{ getPreviewCallCount: () => numb
     ],
   };
 
-  // processImport: return one uncertain transaction
-  await page.route(/\/trpc\/imports\.processImport/, async (route) => {
-    const url = new URL(route.request().url());
-    const isBatch = url.searchParams.has('batch');
-    const responseData = { result: { data: { sessionId: 'test-session', ...mockData } } };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(isBatch ? [responseData] : responseData),
-    });
-  });
+  await page.route(/\/trpc\/imports\.processImport/, (route) =>
+    mockTRPCRoute(route, { sessionId: 'test-session', ...mockData })
+  );
 
-  // getImportProgress: instantly complete for the process phase
-  await page.route(/\/trpc\/imports\.getImportProgress/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        result: { data: { status: 'completed', result: mockData } },
-      }),
-    });
-  });
+  await page.route(/\/trpc\/imports\.getImportProgress/, (route) =>
+    mockTRPCRoute(route, { status: 'completed', result: mockData })
+  );
 
-  // entities.list: expose American Express so the picker has an option
-  await page.route(/\/trpc\/.*entities\.list/, async (route) => {
-    const url = new URL(route.request().url());
-    const isBatch = url.searchParams.has('batch');
-    const data = {
+  await page.route(/\/trpc\/.*entities\.list/, (route) =>
+    mockTRPCRoute(route, {
       entities: [{ id: ENTITY_ID, name: ENTITY_NAME, aliases: [], category: null }],
       total: 1,
-    };
-    const responseData = { result: { data } };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(isBatch ? [responseData] : responseData),
-    });
-  });
+    })
+  );
 
-  // proposeChangeSet: return one "add rule" op
-  await page.route(/corrections\.proposeChangeSet/, async (route) => {
-    const url = new URL(route.request().url());
-    const isBatch = url.searchParams.has('batch');
-    const data = {
+  await page.route(/corrections\.proposeChangeSet/, (route) =>
+    mockTRPCRoute(route, {
       changeSet: {
         ops: [
           {
@@ -114,21 +98,12 @@ async function setupMocks(page: Page): Promise<{ getPreviewCallCount: () => numb
       },
       rationale: 'Rule for MEMBERSHIP FEE',
       targetRules: {},
-    };
-    const responseData = { result: { data } };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(isBatch ? [responseData] : responseData),
-    });
-  });
+    })
+  );
 
-  // previewChangeSet: count calls, return a minimal preview result
   await page.route(/corrections\.previewChangeSet/, async (route) => {
     previewCallCount++;
-    const url = new URL(route.request().url());
-    const isBatch = url.searchParams.has('batch');
-    const data = {
+    await mockTRPCRoute(route, {
       diffs: [
         {
           description: UNCERTAIN_DESCRIPTION,
@@ -140,38 +115,16 @@ async function setupMocks(page: Page): Promise<{ getPreviewCallCount: () => numb
         },
       ],
       summary: { newMatches: 1, removedMatches: 0, statusChanges: 0 },
-    };
-    const responseData = { result: { data } };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(isBatch ? [responseData] : responseData),
     });
   });
 
-  // applyChangeSet: succeed
-  await page.route(/corrections\.applyChangeSet/, async (route) => {
-    const url = new URL(route.request().url());
-    const isBatch = url.searchParams.has('batch');
-    const responseData = { result: { data: { success: true } } };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(isBatch ? [responseData] : responseData),
-    });
-  });
+  await page.route(/corrections\.applyChangeSet/, (route) =>
+    mockTRPCRoute(route, { success: true })
+  );
 
-  // Silence background calls that aren't relevant to these tests
-  await page.route(/\/trpc\/corrections\.list/, async (route) => {
-    const url = new URL(route.request().url());
-    const isBatch = url.searchParams.has('batch');
-    const responseData = { result: { data: { rules: [], total: 0 } } };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(isBatch ? [responseData] : responseData),
-    });
-  });
+  await page.route(/\/trpc\/corrections\.list/, (route) =>
+    mockTRPCRoute(route, { rules: [], total: 0 })
+  );
 
   return { getPreviewCallCount: () => previewCallCount };
 }
