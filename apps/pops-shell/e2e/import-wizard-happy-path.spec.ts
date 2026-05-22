@@ -301,3 +301,197 @@ test.describe('Finance — import wizard happy path (mocked)', () => {
     await expect(page.getByRole('button', { name: /view transactions/i })).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Correction Proposal Dialog tests
+// ---------------------------------------------------------------------------
+// Verifies that editing a rule field (e.g. Transaction type) auto-reruns the
+// combined preview so Apply ChangeSet stays reachable without the user clicking
+// the ↺ refresh button.
+//
+// Uses the same batch-aware tRPC mock infrastructure as the happy-path tests
+// above — a single /trpc/** route splits batched procedures and returns one
+// envelope per procedure.
+
+test.describe('Correction Proposal Dialog (mocked)', () => {
+  const UNCERTAIN_ENTITY_ID = 'entity-woolworths';
+  const UNCERTAIN_ENTITY_NAME = 'Woolworths';
+  const UNCERTAIN_CHECKSUM = 'chk-unknown-001';
+
+  const uncertainTransaction = {
+    date: '2026-02-14',
+    description: 'UNKNOWN MERCHANT',
+    amount: -50.0,
+    account: 'Amex',
+    rawRow: '{}',
+    checksum: UNCERTAIN_CHECKSUM,
+    entity: null,
+    status: 'uncertain' as const,
+  };
+
+  const processedWithUncertain = {
+    matched: [],
+    uncertain: [uncertainTransaction],
+    failed: [],
+    skipped: [],
+    warnings: [],
+  };
+
+  const correctionPayloadProviders: Record<string, PayloadProvider> = {
+    'finance.imports.processImport': () => ({ sessionId: PROCESS_SESSION_ID }),
+    'finance.imports.getImportProgress': () => ({
+      sessionId: PROCESS_SESSION_ID,
+      status: 'completed',
+      result: processedWithUncertain,
+    }),
+    'core.entities.list': () => ({
+      data: [{ id: UNCERTAIN_ENTITY_ID, name: UNCERTAIN_ENTITY_NAME, type: 'company' }],
+      pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+    }),
+    'core.corrections.list': () => ({
+      data: [],
+      pagination: { total: 0, limit: 50, offset: 0, hasMore: false },
+    }),
+    'core.corrections.proposeChangeSet': () => ({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            id: 'op-1',
+            data: {
+              descriptionPattern: 'UNKNOWN MERCHANT',
+              matchType: 'exact',
+              entityName: UNCERTAIN_ENTITY_NAME,
+              entityId: UNCERTAIN_ENTITY_ID,
+              transactionType: null,
+              location: null,
+              tags: [],
+            },
+          },
+        ],
+      },
+      rationale: 'Rule for UNKNOWN MERCHANT',
+      targetRules: {},
+    }),
+    'core.corrections.previewChangeSet': () => ({
+      diffs: [
+        {
+          description: 'UNKNOWN MERCHANT',
+          checksum: UNCERTAIN_CHECKSUM,
+          before: { entityName: null, transactionType: null, location: null },
+          after: { entityName: UNCERTAIN_ENTITY_NAME, transactionType: null, location: null },
+          matchedRule: null,
+          status: 'matched',
+        },
+      ],
+      summary: { newMatches: 1, removedMatches: 0, statusChanges: 0 },
+    }),
+    'core.corrections.applyChangeSet': () => ({ success: true }),
+    'finance.transactions.availableTags': () => [],
+    'core.settings.get': () => ({ data: null }),
+    'cerebrum.nudges.list': () => ({ items: [] }),
+  };
+
+  async function setupCorrectionMocks(page: Page): Promise<void> {
+    await page.route('**/trpc/**', async (route) => {
+      const url = new URL(route.request().url());
+      const pathSegment = url.pathname.replace(/^.*\/trpc\//, '');
+      const procedures = pathSegment.split(',').filter(Boolean);
+      const isBatch = url.searchParams.has('batch');
+      const inputs = parseBatchInputs(url.searchParams.get('input'));
+
+      const envelopes = procedures.map((procedure, index) => {
+        const provider = correctionPayloadProviders[procedure];
+        if (!provider) {
+          return {
+            error: {
+              json: {
+                message: `Unmocked procedure: ${procedure}`,
+                code: -32603,
+                data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500, path: procedure },
+              },
+            },
+          };
+        }
+        return envelope(provider(inputAt(inputs, index)));
+      });
+
+      const body = isBatch ? envelopes : envelopes[0];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+  }
+
+  async function navigateToCorrectionProposal(page: Page): Promise<void> {
+    const correctionCsv = `Date,Description,Amount\n14/02/2026,UNKNOWN MERCHANT,50.00`;
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'test.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(correctionCsv),
+    });
+    await page.getByRole('button', { name: /^next$/i }).click();
+    await expect(page.getByRole('heading', { name: 'Map Columns' })).toBeVisible();
+    await page.getByRole('button', { name: /^next$/i }).click();
+    await expect(page.getByRole('heading', { name: 'Review', exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Switch to Grouped view and open the entity picker on the uncertain group
+    await page.getByRole('button', { name: /grouped/i }).click();
+    const group = page.getByTestId('transaction-group').first();
+    await group.getByRole('button', { name: /choose existing/i }).click();
+    await group.locator('select').selectOption(UNCERTAIN_ENTITY_ID);
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await setupCorrectionMocks(page);
+    await page.goto('/finance/import');
+    await expect(page.getByRole('heading', { name: 'Upload CSV' })).toBeVisible();
+  });
+
+  test('dialog opens when an entity is chosen for an uncertain transaction', async ({ page }) => {
+    await navigateToCorrectionProposal(page);
+    await expect(page.getByText('Correction proposal')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('Apply ChangeSet is enabled after initial preview runs', async ({ page }) => {
+    await navigateToCorrectionProposal(page);
+    await expect(page.getByText('Correction proposal')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('button', { name: /Apply ChangeSet/i })).toBeEnabled({
+      timeout: 10000,
+    });
+  });
+
+  test('changing Transaction type auto-reruns preview and re-enables Apply', async ({ page }) => {
+    await navigateToCorrectionProposal(page);
+    await expect(page.getByText('Correction proposal')).toBeVisible({ timeout: 8000 });
+    const applyBtn = page.getByRole('button', { name: /Apply ChangeSet/i });
+    await expect(applyBtn).toBeEnabled({ timeout: 10000 });
+
+    // Change Transaction type — this is the bug scenario the fix addresses.
+    // Before the fix: Apply would stay disabled (dirty flag never cleared).
+    // After the fix: the combined-preview effect detects the sig change and
+    // auto-reruns, clearing dirty and re-enabling Apply.
+    const dialog = page.getByRole('dialog', { name: /Correction proposal/i });
+    await dialog
+      .locator('select')
+      .filter({ has: page.locator('option[value="purchase"]') })
+      .selectOption('purchase');
+
+    // Apply must re-enable WITHOUT the user manually clicking ↺
+    await expect(applyBtn).toBeEnabled({ timeout: 10000 });
+    await expect(page.getByText(/Preview stale/i)).not.toBeVisible();
+  });
+
+  test('Apply ChangeSet closes the dialog', async ({ page }) => {
+    await navigateToCorrectionProposal(page);
+    await expect(page.getByText('Correction proposal')).toBeVisible({ timeout: 8000 });
+    const applyBtn = page.getByRole('button', { name: /Apply ChangeSet/i });
+    await expect(applyBtn).toBeEnabled({ timeout: 10000 });
+    await applyBtn.click();
+    await expect(page.getByText('Correction proposal')).not.toBeVisible({ timeout: 5000 });
+  });
+});

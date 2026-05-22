@@ -551,6 +551,38 @@ describe('CorrectionProposalDialog', () => {
     expect(screen.queryByText(/Preview stale/i)).not.toBeInTheDocument();
   });
 
+  it('changing transaction type select auto-reruns preview and re-enables Apply', async () => {
+    seedTwoAddOps();
+    renderDialog();
+
+    await waitFor(() => expect(screen.getByText(/Operations \(2\)/)).toBeInTheDocument());
+    await waitFor(() => expect(mockPreviewMutateAsync).toHaveBeenCalled());
+
+    const applyBtn = screen.getByRole('button', { name: /Apply ChangeSet/i });
+    await waitFor(() => expect(applyBtn).not.toBeDisabled());
+
+    const callsBefore = mockPreviewMutateAsync.mock.calls.length;
+    // Select by option value rather than label — avoids brittle text matching
+    const txnSelect = screen
+      .getAllByRole('combobox')
+      .find(
+        (el) =>
+          el.querySelector?.('option[value="purchase"]') ??
+          Array.from((el as HTMLSelectElement).options ?? []).some((o) => o.value === 'purchase')
+      ) as HTMLSelectElement;
+    expect(txnSelect).toBeDefined();
+    fireEvent.change(txnSelect, { target: { value: 'purchase' } });
+
+    // Immediately after the edit the preview is stale and Apply is blocked
+    expect(applyBtn).toBeDisabled();
+
+    await waitFor(() => {
+      expect(mockPreviewMutateAsync.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+    await waitFor(() => expect(applyBtn).not.toBeDisabled());
+    expect(screen.queryByText(/Preview stale/i)).not.toBeInTheDocument();
+  });
+
   it("adds a new 'add' op via the Add operation menu", async () => {
     seedTwoAddOps();
     renderDialog();

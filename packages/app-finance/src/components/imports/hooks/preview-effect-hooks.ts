@@ -78,6 +78,12 @@ export function useCombinedEffect(args: CombinedEffectArgs): void {
     lastSigRef,
     lastTokenRef,
   } = args;
+  // Destructure stable React dispatch functions out of the slot object so
+  // the effect depends on them individually (never change) rather than on
+  // the `combined` object reference (new object every render). Including
+  // `combined` directly would cancel in-flight previews via the cleanup
+  // each time setTruncated fires synchronously inside runPreview.
+  const { setPreview, setDbPreview, setError: setCombinedError, setTruncated } = combined;
   useEffect(() => {
     if (!open) {
       lastSigRef.current = null;
@@ -95,10 +101,10 @@ export function useCombinedEffect(args: CombinedEffectArgs): void {
       minConfidence,
       pendingChangeSets,
       previewMutateAsync,
-      setSession: (p) => combined.setPreview(p),
-      setDb: (p) => combined.setDbPreview(p),
-      setError: (e) => combined.setError(e),
-      setTruncated: (t) => combined.setTruncated(t),
+      setSession: setPreview,
+      setDb: setDbPreview,
+      setError: setCombinedError,
+      setTruncated,
       onSuccess: () =>
         setLocalOps((prev) => prev.map((o) => (o.dirty ? { ...o, dirty: false } : o))),
     });
@@ -113,7 +119,10 @@ export function useCombinedEffect(args: CombinedEffectArgs): void {
     previewMutateAsync,
     pendingChangeSets,
     setLocalOps,
-    combined,
+    setPreview,
+    setDbPreview,
+    setCombinedError,
+    setTruncated,
     lastSigRef,
     lastTokenRef,
   ]);
