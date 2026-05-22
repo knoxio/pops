@@ -524,14 +524,13 @@ describe('CorrectionProposalDialog', () => {
     expect(screen.getByText(/COLES → Coles/)).toBeInTheDocument();
   });
 
-  it('editing a rule field marks the ChangeSet stale and disables Apply', async () => {
+  it('editing a rule field auto-reruns preview and re-enables Apply', async () => {
     seedTwoAddOps();
     renderDialog();
 
     await waitFor(() => {
       expect(screen.getByText(/Operations \(2\)/)).toBeInTheDocument();
     });
-    // Wait for the auto-preview to complete so Apply would otherwise be enabled.
     await waitFor(() => {
       expect(mockPreviewMutateAsync).toHaveBeenCalled();
     });
@@ -539,11 +538,17 @@ describe('CorrectionProposalDialog', () => {
     const applyBtn = screen.getByRole('button', { name: /Apply ChangeSet/i });
     await waitFor(() => expect(applyBtn).not.toBeDisabled());
 
+    const callsBefore = mockPreviewMutateAsync.mock.calls.length;
     const patternInput = screen.getByDisplayValue('WOOLWORTHS') as HTMLInputElement;
     fireEvent.change(patternInput, { target: { value: 'WOOLWORTHS METRO' } });
 
-    expect(screen.getByText(/Preview stale/i)).toBeInTheDocument();
-    expect(applyBtn).toBeDisabled();
+    // Preview should auto-rerun with the new content sig.
+    await waitFor(() => {
+      expect(mockPreviewMutateAsync.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+    // After rerun completes, dirty flag clears and Apply re-enables.
+    await waitFor(() => expect(applyBtn).not.toBeDisabled());
+    expect(screen.queryByText(/Preview stale/i)).not.toBeInTheDocument();
   });
 
   it("adds a new 'add' op via the Add operation menu", async () => {

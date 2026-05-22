@@ -41,6 +41,18 @@ export interface CombinedEffectArgs extends BaseEffectShared {
   lastTokenRef: React.MutableRefObject<number>;
 }
 
+function opContentSig(o: LocalOp): string {
+  if (o.kind === 'add') {
+    const d = o.data;
+    return `${o.clientId}:${d.descriptionPattern}:${d.matchType}:${d.entityName ?? ''}:${d.transactionType ?? ''}:${d.location ?? ''}`;
+  }
+  if (o.kind === 'edit') {
+    const d = o.data;
+    return `${o.clientId}:${d.descriptionPattern ?? ''}:${d.matchType ?? ''}:${d.entityName ?? ''}:${d.transactionType ?? ''}:${d.location ?? ''}`;
+  }
+  return `${o.clientId}:${o.rationale}`;
+}
+
 export function useCombinedEffect(args: CombinedEffectArgs): void {
   const { open, localOps, minConfidence, previewTransactions, pendingChangeSets } = args;
   const {
@@ -58,7 +70,7 @@ export function useCombinedEffect(args: CombinedEffectArgs): void {
       return;
     }
     if (localOps.length === 0) return;
-    const sig = localOps.map((o) => o.clientId).join('|');
+    const sig = localOps.map(opContentSig).join('|');
     if (lastSigRef.current === sig && lastTokenRef.current === rerunToken) return;
     lastSigRef.current = sig;
     lastTokenRef.current = rerunToken;
