@@ -48,7 +48,10 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
 
   const { values, setValues, loadedKeys } = useSettingsValues({ data, manifest });
   const trpcLoaders = useTrpcOptionsLoaders(manifest);
-  const mergedLoaders = optionsLoaders ? { ...trpcLoaders, ...optionsLoaders } : trpcLoaders;
+  const mergedLoaders = useMemo(
+    () => (optionsLoaders ? { ...trpcLoaders, ...optionsLoaders } : trpcLoaders),
+    [trpcLoaders, optionsLoaders]
+  );
   const { dynamicOptions, loadingOptionKeys } = useDynamicOptions(
     Object.keys(mergedLoaders).length > 0 ? mergedLoaders : undefined
   );

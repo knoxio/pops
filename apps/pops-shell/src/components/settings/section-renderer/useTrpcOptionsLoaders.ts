@@ -1,5 +1,5 @@
 import { trpc } from '@/lib/trpc';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
 import type { SettingsManifest } from '@pops/types';
 
@@ -24,6 +24,11 @@ function traverseClient(client: unknown, procedure: string): Record<string, unkn
 
 export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
   const utils = trpc.useUtils();
+  // Keep a ref so loader closures always see the latest utils without causing
+  // the memo to invalidate on every render (utils identity is not stable in tests
+  // and can vary across render cycles in production too).
+  const utilsRef = useRef(utils);
+  utilsRef.current = utils;
 
   return useMemo(() => {
     const loaders: Loaders = {};
@@ -33,7 +38,7 @@ export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
         const { procedure, valueKey, labelKey } = field.optionsLoader;
         const key = field.key;
         loaders[key] = async () => {
-          const node = traverseClient(utils.client, procedure);
+          const node = traverseClient(utilsRef.current.client, procedure);
           let raw: unknown;
           if (typeof node.query === 'function') {
             raw = await (node.query as () => Promise<unknown>)();
@@ -50,5 +55,5 @@ export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
       }
     }
     return loaders;
-  }, [manifest, utils]);
+  }, [manifest]); // manifest only — utils accessed via ref to avoid reference churn
 }
