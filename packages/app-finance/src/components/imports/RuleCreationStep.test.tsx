@@ -87,7 +87,6 @@ describe('RuleCreationStep', () => {
     ];
     render(<RuleCreationStep />);
     const checkboxes = screen.getAllByRole('checkbox');
-    // Uncheck first proposal
     fireEvent.click(checkboxes[0]!);
     fireEvent.click(screen.getByRole('button', { name: /Create.*rule/i }));
     expect(mockAddPendingTagRuleChangeSet).toHaveBeenCalledOnce();
@@ -116,7 +115,6 @@ describe('RuleCreationStep', () => {
       makeTxn({ tags: ['Groceries'], checksum: 'x3' }),
     ];
     render(<RuleCreationStep />);
-    // Groceries appears on all 3 (≥50%), Organic only on 1 (<50% of 3)
     expect(screen.getByText('Groceries')).toBeInTheDocument();
     expect(screen.queryByText('Organic')).not.toBeInTheDocument();
   });

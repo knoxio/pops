@@ -116,7 +116,7 @@ US-02, US-03, US-04 can parallelise after US-01.
 - Named environments skip AI entirely
 - All match types correctly identified in output
 - AI returns `tags: string[]`; tags not in vocabulary marked `isNew: true` in suggestions
-- `transaction_tag_rules` applied in `tag-suggester.ts` after corrections, before AI and entity defaults
+- `transaction_tag_rules` applied during every import after corrections, before AI and entity defaults
 
 ## Out of Scope
 

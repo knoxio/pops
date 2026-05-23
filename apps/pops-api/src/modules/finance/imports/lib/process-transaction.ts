@@ -63,7 +63,7 @@ async function tryAiCategorization(
     return {
       entityName: result.entityName,
       aiTags: result.tags ?? [],
-      aiCategory: result.tags ? null : (result.category ?? null),
+      aiCategory: result.tags?.length ? null : (result.category ?? null),
     };
   } catch (error) {
     if (error instanceof AiCategorizationError) {

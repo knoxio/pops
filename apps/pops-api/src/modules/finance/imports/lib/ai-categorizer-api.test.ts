@@ -166,4 +166,12 @@ describe('buildEntryFromText — integration', () => {
     const entry = buildEntryFromText(text, 'FOO BAR');
     expect(entry.tags).toEqual(['Valid', 'Also Valid']);
   });
+
+  it('falls back to legacy category when tags array is empty', () => {
+    const text = '{"entityName": "Woolworths", "tags": [], "category": "Groceries"}';
+    const entry = buildEntryFromText(text, 'WOOLWORTHS 1234');
+    expect(entry.entityName).toBe('Woolworths');
+    expect(entry.tags).toEqual([]);
+    expect(entry.category).toBe('Groceries');
+  });
 });

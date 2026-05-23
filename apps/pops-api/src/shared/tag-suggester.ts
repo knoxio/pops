@@ -108,7 +108,7 @@ function findMatchingTagRules(description: string, entityId: string | null): Tag
 
   const regex = regexCandidates.filter((r) => {
     try {
-      return new RegExp(r.descriptionPattern, 'i').test(norm);
+      return new RegExp(r.descriptionPattern, 'i').test(description);
     } catch {
       return false;
     }

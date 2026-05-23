@@ -121,10 +121,10 @@ The UI must support accepting/rejecting suggestions at either scope:
 
 ## Verification
 
-- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. _`TagRuleProposalDialog` is wired into `TagReviewStep` at both scopes: group-scope via "Save tag rule…" per entity group and transaction-scope via "Save rule…" per individual row._
+- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. The Tag Review step supports group-scope and transaction-scope rule proposals; users can accept or reject with feedback.
 - Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification.
-- Committed `transaction_tag_rules` are applied by `tag-suggester.ts` during all future imports via `findMatchingTagRules`, with entity-scoped and global pattern matching (exact/contains/regex).
-- Step 6 of the import wizard (`RuleCreationStep`) detects tag patterns from the current import batch (grouping by entity, threshold ≥50% occurrence) and allows the user to save selected rules in one click before committing.
+- Committed tag rules are applied during all future imports, with entity-scoped and global pattern matching (exact/contains/regex).
+- Step 6 of the import wizard detects tag patterns from the current import batch (grouping by entity, threshold ≥50% occurrence) and allows the user to save selected rules in one click before committing.
 - AI returns `tags: string[]` instead of a single category string. Tags not in the known vocabulary are flagged `isNew: true` and surfaced in Tag Review for explicit acceptance.
 
 ## Drift Check

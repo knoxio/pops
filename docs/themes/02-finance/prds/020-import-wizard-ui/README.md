@@ -116,7 +116,7 @@ Edits to a rule-matched transaction must generate a new Correction Proposal Chan
 ### Step 7: Final Review & Commit
 
 - Displays all pending changes in a read-only summary: new entities, rule changes (grouped by ChangeSet with add/edit/disable/remove badges), transaction count, tag assignment count
-- "Approve & Commit All" button triggers `finance.imports.commitImport` (PRD-031 US-03), which atomically writes entities, rules, transactions, and runs retroactive reclassification (PRD-031 US-04)
+- "Approve & Commit All" button triggers the commit procedure (PRD-031 US-03), which atomically writes entities, rules, transactions, and runs retroactive reclassification (PRD-031 US-04)
 - Progress indicator during commit
 - On completion: displays entity/rule/transaction/reclassification counts, then advances to Summary
 - Editing goes back to the relevant earlier step
@@ -244,7 +244,7 @@ US-03 and US-04 can parallelise. US-11, US-12, US-13, US-14, US-15 can paralleli
 
 ## Verification
 
-- Full import flow works end-to-end: CSV → review → tags → rules → Final Review → `commitImport` → database
+- Full import flow works end-to-end: CSV → review → tags → rules → Final Review → commit → database
 - Duplicate CSVs are detected and skipped
 - Entity matching results categorise correctly (matched vs uncertain)
 - Tags from corrections, tag rules, AI, and entity defaults all appear with correct source badges

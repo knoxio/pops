@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { Badge, Button, Checkbox, Chip, hashToColor, Label } from '@pops/ui';
+import { Badge, Button, Checkbox, Label } from '@pops/ui';
 
 import { useImportStore } from '../../store/importStore';
 import { buildChangeSet, computeProposals, type RuleProposal } from './rule-creation/utils';
@@ -43,9 +43,9 @@ function ProposalCard({
           </p>
           <div className="flex flex-wrap gap-1.5">
             {proposal.tags.map((tag) => (
-              <Chip key={tag} style={hashToColor(tag)} className="text-xs">
+              <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
-              </Chip>
+              </Badge>
             ))}
           </div>
         </div>
@@ -97,6 +97,10 @@ export function RuleCreationStep() {
   const nextStep = useImportStore((s) => s.nextStep);
   const proposals = useMemo(() => computeProposals(confirmedTransactions), [confirmedTransactions]);
   const [checked, setChecked] = useState<Set<string>>(() => new Set(proposals.map((p) => p.id)));
+
+  useEffect(() => {
+    setChecked(new Set(proposals.map((p) => p.id)));
+  }, [proposals]);
 
   function toggle(id: string) {
     setChecked((prev) => {

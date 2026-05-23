@@ -44,12 +44,13 @@ export function computeProposals(confirmedTransactions: ConfirmedTransaction[]):
   let seq = 0;
   for (const [, group] of groupByEntity(confirmedTransactions)) {
     const tags = commonTagsForGroup(group);
-    if (!tags.length) continue;
+    const pattern = group.entityName.toLowerCase().trim();
+    if (!tags.length || !pattern) continue;
     proposals.push({
       id: `proposal-${seq++}`,
       entityId: group.entityId,
       entityName: group.entityName,
-      pattern: group.entityName.toLowerCase(),
+      pattern,
       tags,
       affectsCount: group.txns.length,
     });
