@@ -176,7 +176,7 @@ function EmptyState() {
 }
 
 /**
- * Step 7: Import summary — reads CommitResult from store (PRD-031 US-06).
+ * Step 7: Import summary (PRD-031 US-06).
  * Guards against direct navigation without a commit.
  */
 export function SummaryStep() {

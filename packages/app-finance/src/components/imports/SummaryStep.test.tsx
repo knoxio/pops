@@ -170,12 +170,12 @@ describe('SummaryStep', () => {
     render(<SummaryStep />);
     fireEvent.click(screen.getByText('New Import'));
     expect(mockReset).toHaveBeenCalledOnce();
-    expect(mockNavigate).toHaveBeenCalledWith('/import');
+    expect(mockNavigate).toHaveBeenCalledWith('/finance/import');
   });
 
   it('navigates to transactions on View Transactions click', () => {
     render(<SummaryStep />);
     fireEvent.click(screen.getByText('View Transactions'));
-    expect(mockNavigate).toHaveBeenCalledWith('/transactions');
+    expect(mockNavigate).toHaveBeenCalledWith('/finance/transactions');
   });
 });
