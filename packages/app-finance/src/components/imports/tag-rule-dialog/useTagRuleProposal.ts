@@ -85,12 +85,14 @@ function buildProposeInput(args: ProposeInputArgs) {
   if (!descriptionPattern) return null;
   return {
     signal: { descriptionPattern, matchType, entityId: signal.entityId, tags },
-    transactions: previewTransactions.map((t) => ({
+    // Cap at 50 transactions — the server limits preview results via maxPreviewItems
+    // anyway, and sending more inflates the GET URL past tRPC's dispatch limit.
+    transactions: previewTransactions.slice(0, 50).map((t) => ({
       transactionId: t.checksum,
       description: t.description,
       entityId: t.entityId ?? null,
     })),
-    maxPreviewItems: 200,
+    maxPreviewItems: 50,
   };
 }
 

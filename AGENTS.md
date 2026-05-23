@@ -448,6 +448,26 @@ See `CONVENTIONS.md` for coding conventions (styling, API patterns, component ru
 - Aim for small, well named and well structured code.
 - REuse reuse reuse. DRY principles!
 
+### UI Component Rule: Search Before You Build
+
+**Before writing any new UI element, search `packages/ui/src/` for an existing component.**
+
+The `@pops/ui` library has: `Chip` (removable/colored tags), `Badge` (display-only labels), `Button`, `ButtonPrimitive`, `Select`, `Input`, `Dialog`, `WorkflowDialog`, `ChipInput`, and many more.
+
+Reinventing these components causes:
+
+- Inconsistent sizing/spacing (e.g. oversized × buttons from bespoke implementations)
+- Divergence from the design system
+- More code to maintain
+
+**Correct usage:**
+
+- Removable tag chips → `<Chip removable onRemove={...} style={hashToColor(tag)}>text</Chip>`
+- Display-only labels → `<Badge variant="...">text</Badge>`
+- Never roll your own rounded-pill with an inline × button
+
+If `@pops/ui` is missing a component you need, add it there — do not add it inline in the consuming package.
+
 ## Design Context
 
 Full design context lives in `.impeccable.md`. Key principles for all UI work:

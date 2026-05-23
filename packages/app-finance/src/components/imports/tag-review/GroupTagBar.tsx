@@ -1,7 +1,6 @@
-import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { ButtonPrimitive } from '@pops/ui';
+import { ButtonPrimitive, Chip, hashToColor } from '@pops/ui';
 
 import { cn } from '../../../lib/utils';
 
@@ -46,18 +45,9 @@ function useClickOutside(
 
 function StagedTagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-background border border-border rounded-full">
+    <Chip removable onRemove={onRemove} style={hashToColor(tag)} className="border">
       {tag}
-      <ButtonPrimitive
-        variant="ghost"
-        size="icon-xs"
-        onClick={onRemove}
-        className="text-muted-foreground hover:text-foreground ml-0.5"
-        aria-label={`Remove ${tag}`}
-      >
-        <X className="w-3 h-3" />
-      </ButtonPrimitive>
-    </span>
+    </Chip>
   );
 }
 

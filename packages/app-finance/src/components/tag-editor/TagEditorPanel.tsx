@@ -23,7 +23,6 @@ function CurrentTags({ tags, onRemove }: { tags: string[]; onRemove: (tag: strin
       {tags.map((tag) => (
         <Chip
           key={tag}
-          size="sm"
           removable
           onRemove={() => onRemove(tag)}
           style={hashToColor(tag)}
@@ -52,7 +51,7 @@ function Suggestions({
           variant="outline"
           size="sm"
           onClick={() => onAddTag(tag)}
-          className="text-xs px-3 py-2 rounded-full h-auto hover:brightness-110"
+          className="rounded-full text-xs h-7 px-3 hover:brightness-110"
           style={hashToColor(tag)}
         >
           + {tag}
