@@ -1,26 +1,11 @@
 import { trpc } from '@/lib/trpc';
+import { traverseTrpcPath } from '@/lib/trpc-traverse';
 import { useMemo, useRef } from 'react';
 
 import type { SettingsManifest } from '@pops/types';
 
 type Options = { value: string; label: string }[];
 type Loaders = Record<string, () => Promise<Options>>;
-
-function traverseClient(client: unknown, procedure: string): Record<string, unknown> {
-  const parts = procedure.split('.');
-  let current: unknown = client;
-  for (const part of parts) {
-    if (current == null || (typeof current !== 'object' && typeof current !== 'function')) {
-      throw new Error(`Unknown procedure: ${procedure}`);
-    }
-    current = (current as Record<string, unknown>)[part];
-    if (current == null) throw new Error(`Unknown procedure: ${procedure}`);
-  }
-  if (current == null || (typeof current !== 'object' && typeof current !== 'function')) {
-    throw new Error(`Cannot call procedure: ${procedure}`);
-  }
-  return current as Record<string, unknown>;
-}
 
 export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
   const utils = trpc.useUtils();
@@ -38,7 +23,7 @@ export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
         const { procedure, valueKey, labelKey } = field.optionsLoader;
         const key = field.key;
         loaders[key] = async () => {
-          const node = traverseClient(utilsRef.current.client, procedure);
+          const node = traverseTrpcPath(utilsRef.current.client, procedure);
           let raw: unknown;
           if (typeof node.query === 'function') {
             raw = await (node.query as () => Promise<unknown>)();
