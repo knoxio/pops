@@ -25,6 +25,7 @@ vi.mock('@/lib/trpc', () => ({
         },
       },
     },
+    useUtils: () => ({ client: {} }),
   },
 }));
 
