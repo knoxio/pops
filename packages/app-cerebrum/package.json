@@ -16,13 +16,13 @@
     "@pops/overlay-ego": "workspace:*",
     "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
-    "@tanstack/react-query": "5.100.9",
-    "lucide-react": "^1.14.0",
+    "@tanstack/react-query": "5.100.11",
+    "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-i18next": "^17.0.7",
+    "react-i18next": "^17.0.8",
     "react-markdown": "^10.1.0",
-    "react-router": "^7.15.0",
+    "react-router": "^7.15.1",
     "sonner": "^2.0.7",
     "zod": "^4.4.3"
   },
@@ -30,12 +30,12 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.0.0",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^19.0.0",
-    "@vitest/coverage-v8": "^4.1.5",
-    "i18next": "^26.0.10",
+    "@vitest/coverage-v8": "^4.1.6",
+    "i18next": "^26.2.0",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   }
 }

@@ -67,6 +67,8 @@ function createMockFileHandle(
     write: vi.fn(),
     writeFile: vi.fn(),
     writev: vi.fn(),
+    pull: vi.fn(),
+    writer: vi.fn(),
     [Symbol.asyncDispose]: vi.fn(),
   } as Awaited<ReturnType<(typeof import('node:fs/promises'))['open']>>;
 

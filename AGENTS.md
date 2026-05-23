@@ -393,7 +393,16 @@ cd apps/pops-shell && pnpm format --check && pnpm lint && pnpm typecheck
 
 ### PRD-First Rule (mandatory, no exceptions)
 
-**Every change must be checked against the PRDs and USs first.** Before writing code — whether you're shipping a feature, fixing a bug, or tweaking existing behavior — locate the relevant PRD and user story and confirm:
+**Every change must be checked against the PRDs and USs first.** Before writing code — whether you're shipping a feature, fixing a bug, or tweaking existing behavior — locate the relevant PRD and user story:
+
+```bash
+# Find the PRD covering what you're about to touch
+find docs/themes -name 'README.md' | xargs grep -li '<feature-keyword>'
+# Or browse by theme
+ls docs/themes/
+```
+
+Then confirm:
 
 1. **The PRD exists and is current.** If the area you're touching has no PRD, stop and write one before coding. If the PRD is stale (behavior described there no longer matches the goal spec), update the PRD before coding.
 2. **The user story covers what you're about to do.** If it doesn't, add or update the US. If you're changing behavior, update the acceptance criteria to reflect the new goal spec.
@@ -448,11 +457,18 @@ See `CONVENTIONS.md` for coding conventions (styling, API patterns, component ru
 - Aim for small, well named and well structured code.
 - REuse reuse reuse. DRY principles!
 
-### UI Component Rule: Search Before You Build
+### UI Component Rule: Search Before You Build (mandatory, no exceptions)
 
-**Before writing any new UI element, search `packages/ui/src/` for an existing component.**
+**Before writing any new UI element, run this search first:**
 
-The `@pops/ui` library has: `Chip` (removable/colored tags), `Badge` (display-only labels), `Button`, `ButtonPrimitive`, `Select`, `Input`, `Dialog`, `WorkflowDialog`, `ChipInput`, and many more.
+```bash
+find packages/ui/src -name '*.tsx' | xargs grep -l '<keyword>'
+ls packages/ui/src/components/
+```
+
+If a suitable component exists, use or extend it. Do not create a new one.
+
+The `@pops/ui` library has: `Chip` (removable/colored tags), `Badge` (display-only labels), `Button`, `ButtonPrimitive`, `Select`, `Input`, `Dialog`, `WorkflowDialog`, `ChipInput`, and many more. Browse `packages/ui/src/components/` and Storybook before assuming something doesn't exist.
 
 Reinventing these components causes:
 
@@ -466,7 +482,21 @@ Reinventing these components causes:
 - Display-only labels → `<Badge variant="...">text</Badge>`
 - Never roll your own rounded-pill with an inline × button
 
-If `@pops/ui` is missing a component you need, add it there — do not add it inline in the consuming package.
+If `@pops/ui` is missing a component you need, add it there with a `.stories.tsx` file — do not add it inline in the consuming package.
+
+### Test Mandate (mandatory, no exceptions)
+
+**Every non-trivial piece of code must ship with tests. This is not optional.**
+
+"Non-trivial" means anything with logic: conditionals, derived state, data transformation, API calls, event handling. Pure pass-through presentational components are the only exception.
+
+**What to write:**
+
+- **Backend route/service/util** → Vitest unit test against real in-memory SQLite. Mock nothing that can be real.
+- **Frontend hook or stateful component** → Vitest + React Testing Library unit test.
+- **User-facing feature (new page, modal, workflow)** → Playwright E2E test covering the happy path. Add it to `apps/pops-shell/e2e/`.
+
+**The bar for "done":** if you cannot click through the feature yourself and show it working, it is not done. Tests are the documented proof that it works. Saying "I implemented it" without tests means you built something you cannot verify.
 
 ## Design Context
 
