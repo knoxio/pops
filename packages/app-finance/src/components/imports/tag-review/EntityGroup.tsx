@@ -45,12 +45,16 @@ function useEntityGroupState(props: EntityGroupProps) {
     if (suggestedUnion.length === 0) return;
     let applied = 0;
     for (const tx of group.transactions) {
+      const currentTags = localTags[tx.checksum] ?? [];
       const suggestions = (suggestedTagMeta[tx.checksum] ?? []).map((s) => s.tag);
       if (suggestions.length === 0) continue;
-      onUpdateTag(
-        tx.checksum,
-        Array.from(new Set([...(localTags[tx.checksum] ?? []), ...suggestions]))
-      );
+      const mergedTags = Array.from(new Set([...currentTags, ...suggestions]));
+      if (
+        mergedTags.length === currentTags.length &&
+        mergedTags.every((t, i) => t === currentTags[i])
+      )
+        continue;
+      onUpdateTag(tx.checksum, mergedTags);
       applied++;
     }
     if (applied > 0) toast.success(`Suggestions applied to ${pluralizeTransactions(applied)}`);

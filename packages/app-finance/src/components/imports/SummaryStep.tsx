@@ -197,7 +197,7 @@ export function SummaryStep() {
           reset();
           void navigate('/finance/import');
         }}
-        onView={() => navigate('/finance/transactions')}
+        onView={() => void navigate('/finance/transactions')}
       />
     </div>
   );
