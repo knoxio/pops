@@ -49,15 +49,16 @@ function useEntityGroupState(props: EntityGroupProps) {
       const suggestions = (suggestedTagMeta[tx.checksum] ?? []).map((s) => s.tag);
       if (suggestions.length === 0) continue;
       const mergedTags = Array.from(new Set([...currentTags, ...suggestions]));
-      const changed =
-        mergedTags.length !== currentTags.length || mergedTags.some((t, i) => t !== currentTags[i]);
-      if (!changed) continue;
+      if (
+        mergedTags.length === currentTags.length &&
+        mergedTags.every((t, i) => t === currentTags[i])
+      )
+        continue;
       onUpdateTag(tx.checksum, mergedTags);
       applied++;
     }
     if (applied > 0) toast.success(`Suggestions applied to ${pluralizeTransactions(applied)}`);
   }, [group.transactions, suggestedUnion, suggestedTagMeta, localTags, onUpdateTag]);
-
   const handleApplyStagedToGroup = useCallback(() => {
     if (groupStagedTags.length === 0) return;
     onApplyGroupTags(group, groupStagedTags);
@@ -86,7 +87,6 @@ function useEntityGroupState(props: EntityGroupProps) {
     removeGroupStagedTag,
   };
 }
-
 interface HeaderProps {
   group: ConfirmedGroup;
   expanded: boolean;
