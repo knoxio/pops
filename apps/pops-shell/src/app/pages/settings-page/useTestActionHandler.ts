@@ -13,13 +13,7 @@ function assertConnected(result: unknown): void {
   }
 }
 
-/**
- * Resolves a dot-delimited tRPC procedure name (e.g. "media.plex.testConnection")
- * to a callable query/mutate on the tRPC client and invokes it.
- *
- * Dynamic property traversal is unavoidable here because the procedure path
- * comes from settings manifest data at runtime.
- */
+/** Dynamic traversal is unavoidable — procedure paths come from manifest data at runtime. */
 export function useTestActionHandler() {
   const utils = trpc.useUtils();
 

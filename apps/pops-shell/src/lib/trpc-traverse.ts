@@ -1,11 +1,4 @@
-/**
- * Traverse a dot-delimited tRPC procedure path on a proxy client, returning
- * the leaf node so callers can invoke `.query()` or `.mutate()`.
- *
- * Throws `Error("Unknown procedure: <path>")` if any segment is missing.
- * Throws `Error("Cannot call procedure: <path>")` if the final node is not
- * an object or function.
- */
+/** tRPC proxy nodes are functions, not objects — allow both types when traversing. */
 export function traverseTrpcPath(client: unknown, procedure: string): Record<string, unknown> {
   const parts = procedure.split('.');
   let current: unknown = client;
