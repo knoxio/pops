@@ -117,7 +117,7 @@ describe('importStore — parsed/processed fingerprint', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Step range — currentStep supports 1..7 (PRD-031 adds step 7)
+// Step range — currentStep supports 1..8 (PRD-031 adds step 7; rule creation adds step 6)
 // ---------------------------------------------------------------------------
 
 describe('importStore — step range', () => {
@@ -125,12 +125,12 @@ describe('importStore — step range', () => {
     useImportStore.getState().reset();
   });
 
-  it('nextStep caps at 7', () => {
-    useImportStore.getState().goToStep(6);
+  it('nextStep caps at 8', () => {
+    useImportStore.getState().goToStep(7);
     useImportStore.getState().nextStep();
-    expect(useImportStore.getState().currentStep).toBe(7);
+    expect(useImportStore.getState().currentStep).toBe(8);
     useImportStore.getState().nextStep();
-    expect(useImportStore.getState().currentStep).toBe(7);
+    expect(useImportStore.getState().currentStep).toBe(8);
   });
 
   it('prevStep floors at 1', () => {
