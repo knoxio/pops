@@ -452,7 +452,7 @@ See `CONVENTIONS.md` for coding conventions (styling, API patterns, component ru
 
 **Before writing any new UI element, search `packages/ui/src/` for an existing component.**
 
-The `@pops/ui` library has: `Chip` (removable/colored tags), `Badge` (display-only labels), `Button`, `ButtonPrimitive`, `Select`, `Input`, `Dialog`, `WorkflowDialog`, `Chip`, `ChipInput`, and many more.
+The `@pops/ui` library has: `Chip` (removable/colored tags), `Badge` (display-only labels), `Button`, `ButtonPrimitive`, `Select`, `Input`, `Dialog`, `WorkflowDialog`, `ChipInput`, and many more.
 
 Reinventing these components causes:
 
