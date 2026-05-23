@@ -74,6 +74,16 @@ reviews:
         - Flag duplicated logic across files (DRY violations).
         - Flag comments that explain *what* the code does — only WHY-comments are kept.
         - Flag broad try/catch that swallows errors silently.
+        - If the PR title or description references a PRD-NNN or US-NN identifier, locate the referenced acceptance criteria and verify the diff satisfies them. Flag any acceptance criterion that appears unaddressed.
+        - Flag any new non-trivial function, hook, or React component that has no corresponding test file or no new test cases added in an existing test file. "Trivial" means a pure presentational component with zero logic (no conditionals, no derived state, no event handlers beyond pass-through). Everything else requires tests.
+        - Flag any user-facing feature (new page, new modal, new workflow) that adds no Playwright test covering at minimum the happy path.
+    - path: 'packages/app-*/src/**/*.{ts,tsx}'
+      instructions: |
+        - Flag any new React component defined here that could instead live in packages/ui/src (i.e., it has no hard dependency on app-specific data or routing). Shared UI components belong in the shared package.
+        - Flag any new component that duplicates the shape or purpose of an existing component visible in packages/ui/src/components/.
+    - path: 'packages/ui/src/**/*.{ts,tsx}'
+      instructions: |
+        - Every new component added to packages/ui/src must have a corresponding *.stories.tsx file. Flag if it's missing.
     - path: 'apps/pops-api/src/db/drizzle-migrations/*.sql'
       instructions: |
         - Verify the migration is idempotent and reversible where SQLite allows.
