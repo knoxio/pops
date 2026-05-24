@@ -44,11 +44,10 @@ export function nullNum(args: Record<string, unknown>, key: string): number | nu
   return typeof v === 'number' ? v : undefined;
 }
 
-// Patch builders for update handlers — copy a field into `out` iff the source
-// arg is present and well-typed. The three-state nullable variants (`copyNullStr`,
-// `copyNullNum`) pass an explicit `null` through to clear backend columns; the
-// `copy*` (non-nullable) variants drop nulls so callers can't accidentally try
-// to NULL a NOT-NULL column.
+// Pick the right helper to match the column's nullability: copyNullStr /
+// copyNullNum forward an explicit `null` so callers can CLEAR a nullable
+// backend column; copyOptStr / copyOptBool drop nulls so callers cannot
+// accidentally NULL a NOT-NULL column.
 type Patch = Record<string, unknown>;
 
 export function copyOptStr(out: Patch, args: Record<string, unknown>, key: string): void {
