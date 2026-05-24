@@ -43,3 +43,29 @@ export function nullNum(args: Record<string, unknown>, key: string): number | nu
   if (v === null) return null;
   return typeof v === 'number' ? v : undefined;
 }
+
+// Pick the right helper to match the column's nullability: copyNullStr /
+// copyNullNum forward an explicit `null` so callers can CLEAR a nullable
+// backend column; copyOptStr / copyOptBool drop nulls so callers cannot
+// accidentally NULL a NOT-NULL column.
+type Patch = Record<string, unknown>;
+
+export function copyOptStr(out: Patch, args: Record<string, unknown>, key: string): void {
+  const v = optStr(args, key);
+  if (v !== undefined) out[key] = v;
+}
+
+export function copyOptBool(out: Patch, args: Record<string, unknown>, key: string): void {
+  const v = optBool(args, key);
+  if (v !== undefined) out[key] = v;
+}
+
+export function copyNullStr(out: Patch, args: Record<string, unknown>, key: string): void {
+  const v = nullStr(args, key);
+  if (v !== undefined) out[key] = v;
+}
+
+export function copyNullNum(out: Patch, args: Record<string, unknown>, key: string): void {
+  const v = nullNum(args, key);
+  if (v !== undefined) out[key] = v;
+}

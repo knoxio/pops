@@ -40,9 +40,9 @@ const fixturesGet: ToolDef = {
   },
   handler: async (args) => {
     const id = reqStr(args, 'id');
-    if (!id) return toolError('Invalid "id"');
+    if (!id) return toolError('Missing required field: id');
     const result = await getClient().inventory.fixtures.get.query({ id });
-    return ok(result.data);
+    return ok(result);
   },
 };
 
@@ -60,7 +60,7 @@ const fixturesListForItem: ToolDef = {
   },
   handler: async (args) => {
     const itemId = reqStr(args, 'itemId');
-    if (!itemId) return toolError('Invalid "itemId"');
+    if (!itemId) return toolError('Missing required field: itemId');
     const result = await getClient().inventory.fixtures.listForItem.query({
       itemId,
       limit: optNum(args, 'limit'),

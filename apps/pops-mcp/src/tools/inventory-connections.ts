@@ -1,5 +1,5 @@
 import { getClient } from '../client.js';
-import { ok, reqStr, toolError } from './utils.js';
+import { ok, optNum, reqStr, toolError } from './utils.js';
 
 import type { ToolDef } from './index.js';
 
@@ -21,8 +21,8 @@ const connectionsList: ToolDef = {
     if (!itemId) return toolError('Missing required field: itemId');
     const result = await getClient().inventory.connections.listForItem.query({
       itemId,
-      limit: typeof args['limit'] === 'number' ? args['limit'] : undefined,
-      offset: typeof args['offset'] === 'number' ? args['offset'] : undefined,
+      limit: optNum(args, 'limit'),
+      offset: optNum(args, 'offset'),
     });
     return ok(result);
   },
@@ -45,9 +45,9 @@ const connectionsGraph: ToolDef = {
     if (!itemId) return toolError('Missing required field: itemId');
     const result = await getClient().inventory.connections.graph.query({
       itemId,
-      maxDepth: typeof args['maxDepth'] === 'number' ? args['maxDepth'] : undefined,
+      maxDepth: optNum(args, 'maxDepth'),
     });
-    return ok(result.data);
+    return ok(result);
   },
 };
 
@@ -65,11 +65,11 @@ const connectionsConnect: ToolDef = {
   },
   handler: async (args) => {
     const itemAId = reqStr(args, 'itemAId');
-    const itemBId = reqStr(args, 'itemBId');
     if (!itemAId) return toolError('Missing required field: itemAId');
+    const itemBId = reqStr(args, 'itemBId');
     if (!itemBId) return toolError('Missing required field: itemBId');
     const result = await getClient().inventory.connections.connect.mutate({ itemAId, itemBId });
-    return ok(result.data);
+    return ok(result);
   },
 };
 
@@ -87,8 +87,8 @@ const connectionsDisconnect: ToolDef = {
   },
   handler: async (args) => {
     const itemAId = reqStr(args, 'itemAId');
-    const itemBId = reqStr(args, 'itemBId');
     if (!itemAId) return toolError('Missing required field: itemAId');
+    const itemBId = reqStr(args, 'itemBId');
     if (!itemBId) return toolError('Missing required field: itemBId');
     const result = await getClient().inventory.connections.disconnect.mutate({ itemAId, itemBId });
     return ok(result);

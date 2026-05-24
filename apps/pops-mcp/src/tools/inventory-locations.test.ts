@@ -17,11 +17,11 @@ beforeEach(() => {
 });
 
 describe('inventory.locations.tree', () => {
-  it('calls tree.query and returns data', async () => {
+  it('calls tree.query and returns the data envelope', async () => {
     const result = await tool('inventory.locations.tree').handler({});
     expect(mockClient.inventory.locations.tree.query).toHaveBeenCalled();
-    const parsed = parseResult(result) as { id: string }[];
-    expect(parsed[0]).toMatchObject({ id: 'loc_1' });
+    const parsed = parseResult(result) as { data: { id: string }[] };
+    expect(parsed.data[0]).toMatchObject({ id: 'loc_1' });
     expect(result.isError).toBeUndefined();
   });
 });
@@ -41,8 +41,9 @@ describe('inventory.locations.create', () => {
       expect.objectContaining({ name: 'Office' })
     );
     expect(result.isError).toBeUndefined();
-    const parsed = parseResult(result) as { name: string };
-    expect(parsed.name).toBe('Office');
+    const parsed = parseResult(result) as { data: { name: string }; message: string };
+    expect(parsed.data.name).toBe('Office');
+    expect(parsed.message).toBe('Location created');
   });
 
   it('passes parentId string', async () => {
@@ -140,6 +141,7 @@ describe('inventory.locations.delete', () => {
     });
     expect(result.isError).toBeUndefined();
     const parsed = parseResult(result) as { message: string };
+    // delete already returned the unwrapped envelope (no `data` field).
     expect(parsed.message).toBe('Location deleted');
   });
 

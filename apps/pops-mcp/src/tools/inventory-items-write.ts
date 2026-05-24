@@ -1,25 +1,54 @@
 import { getClient } from '../client.js';
-import { nullNum, nullStr, ok, optBool, reqStr, toolError } from './utils.js';
+import {
+  copyNullNum,
+  copyNullStr,
+  copyOptBool,
+  copyOptStr,
+  nullNum,
+  nullStr,
+  ok,
+  optBool,
+  reqStr,
+  toolError,
+} from './utils.js';
 
 import type { ToolDef } from './index.js';
 
-const STR_FIELDS = [
-  'itemName',
-  'brand',
-  'model',
-  'itemId',
-  'room',
-  'type',
-  'condition',
-  'assetId',
-  'notes',
-  'purchaseDate',
-  'warrantyExpires',
-  'purchasedFromName',
-  'locationId',
-] as const;
+// Hoist the patch type from the tRPC mutation signature so it tracks the
+// backend schema automatically — no manual interface duplication, no escape
+// `as` cast at the call site.
+type ItemPatch = Parameters<
+  ReturnType<typeof getClient>['inventory']['items']['update']['mutate']
+>[0]['data'];
 
-const NUM_FIELDS = ['replacementValue', 'resaleValue', 'purchasePrice'] as const;
+function buildItemPatch(args: Record<string, unknown>): ItemPatch {
+  const patch: ItemPatch = {};
+  // itemName is NOT NULL in the backend schema, so use copyOptStr (drops nulls).
+  copyOptStr(patch, args, 'itemName');
+  for (const k of [
+    'brand',
+    'model',
+    'itemId',
+    'room',
+    'type',
+    'condition',
+    'locationId',
+    'assetId',
+    'notes',
+    'purchaseDate',
+    'warrantyExpires',
+    'purchasedFromName',
+  ]) {
+    copyNullStr(patch, args, k);
+  }
+  for (const k of ['replacementValue', 'resaleValue', 'purchasePrice']) {
+    copyNullNum(patch, args, k);
+  }
+  for (const k of ['inUse', 'deductible']) {
+    copyOptBool(patch, args, k);
+  }
+  return patch;
+}
 
 const itemsCreate: ToolDef = {
   name: 'inventory.items.create',
@@ -72,7 +101,7 @@ const itemsCreate: ToolDef = {
       purchasePrice: nullNum(args, 'purchasePrice'),
       purchasedFromName: nullStr(args, 'purchasedFromName'),
     });
-    return ok(result.data);
+    return ok(result);
   },
 };
 
@@ -117,27 +146,9 @@ const itemsUpdate: ToolDef = {
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
-
-    const data: Record<string, unknown> = {};
-    for (const f of STR_FIELDS) {
-      const v = nullStr(args, f);
-      if (v !== undefined) data[f] = v;
-    }
-    for (const f of NUM_FIELDS) {
-      const v = nullNum(args, f);
-      if (v !== undefined) data[f] = v;
-    }
-    if ('inUse' in args && typeof args['inUse'] === 'boolean') data['inUse'] = args['inUse'];
-    if ('deductible' in args && typeof args['deductible'] === 'boolean')
-      data['deductible'] = args['deductible'];
-
-    const result = await getClient().inventory.items.update.mutate({
-      id,
-      data: data as Parameters<
-        ReturnType<typeof getClient>['inventory']['items']['update']['mutate']
-      >[0]['data'],
-    });
-    return ok(result.data);
+    const data = buildItemPatch(args);
+    const result = await getClient().inventory.items.update.mutate({ id, data });
+    return ok(result);
   },
 };
 

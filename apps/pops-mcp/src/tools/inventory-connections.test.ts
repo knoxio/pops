@@ -66,12 +66,12 @@ describe('inventory.connections.graph', () => {
     expect(call['maxDepth']).toBeUndefined();
   });
 
-  it('returns graph data with nodes and edges', async () => {
+  it('returns graph data wrapped in the data envelope', async () => {
     const result = await tool('inventory.connections.graph').handler({ itemId: 'item_1' });
     expect(result.isError).toBeUndefined();
-    const parsed = parseResult(result) as { nodes: unknown[]; edges: unknown[] };
-    expect(parsed.nodes).toHaveLength(2);
-    expect(parsed.edges).toHaveLength(1);
+    const parsed = parseResult(result) as { data: { nodes: unknown[]; edges: unknown[] } };
+    expect(parsed.data.nodes).toHaveLength(2);
+    expect(parsed.data.edges).toHaveLength(1);
   });
 
   it('returns isError when itemId is missing', async () => {
@@ -100,9 +100,9 @@ describe('inventory.connections.connect', () => {
       itemBId: 'item_2',
     });
     expect(result.isError).toBeUndefined();
-    const parsed = parseResult(result) as { itemAId: string; itemBId: string };
-    expect(parsed.itemAId).toBe('item_1');
-    expect(parsed.itemBId).toBe('item_2');
+    const parsed = parseResult(result) as { data: { itemAId: string; itemBId: string } };
+    expect(parsed.data.itemAId).toBe('item_1');
+    expect(parsed.data.itemBId).toBe('item_2');
   });
 
   it('returns isError when itemAId is missing', async () => {

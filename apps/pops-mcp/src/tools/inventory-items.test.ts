@@ -52,11 +52,11 @@ describe('inventory.items.list', () => {
 });
 
 describe('inventory.items.get', () => {
-  it('passes id to tRPC and returns item', async () => {
+  it('passes id to tRPC and returns the data envelope', async () => {
     const result = await tool('inventory.items.get').handler({ id: 'item_1' });
     expect(mockClient.inventory.items.get.query).toHaveBeenCalledWith({ id: 'item_1' });
-    const parsed = parseResult(result) as { itemName: string };
-    expect(parsed.itemName).toBe('MacBook');
+    const parsed = parseResult(result) as { data: { itemName: string } };
+    expect(parsed.data.itemName).toBe('MacBook');
   });
 
   it('returns isError for missing id', async () => {
@@ -79,7 +79,9 @@ describe('inventory.items.create', () => {
       expect.objectContaining({ itemName: 'Sony TV' })
     );
     expect(result.isError).toBeUndefined();
-    expect((parseResult(result) as { id: string }).id).toBe('item_1');
+    const parsed = parseResult(result) as { data: { id: string }; message: string };
+    expect(parsed.data.id).toBe('item_1');
+    expect(parsed.message).toBe('Inventory item created');
   });
 
   it('passes all string fields', async () => {
