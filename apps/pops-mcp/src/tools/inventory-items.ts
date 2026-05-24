@@ -49,7 +49,7 @@ const itemGet: ToolDef = {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
     const result = await getClient().inventory.items.get.query({ id });
-    return ok(result.data);
+    return ok(result);
   },
 };
 

@@ -1,7 +1,20 @@
 import { getClient } from '../client.js';
-import { nullStr, ok, optStr, reqStr, toolError } from './utils.js';
+import { copyNullStr, copyOptStr, ok, optStr, reqStr, toolError } from './utils.js';
 
 import type { ToolDef } from './index.js';
+
+type FixturePatch = Parameters<
+  ReturnType<typeof getClient>['inventory']['fixtures']['update']['mutate']
+>[0]['data'];
+
+function buildFixturePatch(args: Record<string, unknown>): FixturePatch {
+  const patch: FixturePatch = {};
+  copyOptStr(patch, args, 'name');
+  copyOptStr(patch, args, 'type');
+  copyNullStr(patch, args, 'locationId');
+  copyNullStr(patch, args, 'notes');
+  return patch;
+}
 
 const fixturesCreate: ToolDef = {
   name: 'inventory.fixtures.create',
@@ -22,9 +35,9 @@ const fixturesCreate: ToolDef = {
   },
   handler: async (args) => {
     const name = reqStr(args, 'name');
+    if (!name) return toolError('Missing required field: name');
     const type = reqStr(args, 'type');
-    if (!name) return toolError('Invalid "name"');
-    if (!type) return toolError('Invalid "type"');
+    if (!type) return toolError('Missing required field: type');
     const result = await getClient().inventory.fixtures.create.mutate({
       name,
       type,
@@ -50,19 +63,13 @@ const fixturesUpdate: ToolDef = {
     },
     required: ['id'],
   },
+  // Note: empty-patch rejection happens at the tRPC layer via
+  // UpdateFixtureSchema.refine, so we don't duplicate the guard here. The
+  // backend returns BAD_REQUEST which propagates through the tRPC client.
   handler: async (args) => {
     const id = reqStr(args, 'id');
-    if (!id) return toolError('Invalid "id"');
-    const data: Record<string, unknown> = {};
-    const name = optStr(args, 'name');
-    if (name !== undefined) data['name'] = name;
-    const type = optStr(args, 'type');
-    if (type !== undefined) data['type'] = type;
-    const locationId = nullStr(args, 'locationId');
-    if (locationId !== undefined) data['locationId'] = locationId;
-    const notes = nullStr(args, 'notes');
-    if (notes !== undefined) data['notes'] = notes;
-    if (Object.keys(data).length === 0) return toolError('No fields to update');
+    if (!id) return toolError('Missing required field: id');
+    const data = buildFixturePatch(args);
     const result = await getClient().inventory.fixtures.update.mutate({ id, data });
     return ok(result);
   },
@@ -78,7 +85,7 @@ const fixturesDelete: ToolDef = {
   },
   handler: async (args) => {
     const id = reqStr(args, 'id');
-    if (!id) return toolError('Invalid "id"');
+    if (!id) return toolError('Missing required field: id');
     const result = await getClient().inventory.fixtures.delete.mutate({ id });
     return ok(result);
   },
@@ -97,9 +104,9 @@ const fixturesConnect: ToolDef = {
   },
   handler: async (args) => {
     const itemId = reqStr(args, 'itemId');
+    if (!itemId) return toolError('Missing required field: itemId');
     const fixtureId = reqStr(args, 'fixtureId');
-    if (!itemId) return toolError('Invalid "itemId"');
-    if (!fixtureId) return toolError('Invalid "fixtureId"');
+    if (!fixtureId) return toolError('Missing required field: fixtureId');
     const result = await getClient().inventory.fixtures.connect.mutate({ itemId, fixtureId });
     return ok(result);
   },
@@ -118,9 +125,9 @@ const fixturesDisconnect: ToolDef = {
   },
   handler: async (args) => {
     const itemId = reqStr(args, 'itemId');
+    if (!itemId) return toolError('Missing required field: itemId');
     const fixtureId = reqStr(args, 'fixtureId');
-    if (!itemId) return toolError('Invalid "itemId"');
-    if (!fixtureId) return toolError('Invalid "fixtureId"');
+    if (!fixtureId) return toolError('Missing required field: fixtureId');
     const result = await getClient().inventory.fixtures.disconnect.mutate({ itemId, fixtureId });
     return ok(result);
   },

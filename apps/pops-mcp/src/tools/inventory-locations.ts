@@ -1,7 +1,24 @@
 import { getClient } from '../client.js';
-import { nullStr, ok, optBool, optStr, reqStr, toolError } from './utils.js';
+import { copyOptStr, nullStr, ok, optBool, optNum, reqStr, toolError } from './utils.js';
 
 import type { ToolDef } from './index.js';
+
+type LocationPatch = Parameters<
+  ReturnType<typeof getClient>['inventory']['locations']['update']['mutate']
+>[0]['data'];
+
+function buildLocationPatch(args: Record<string, unknown>): LocationPatch {
+  const patch: LocationPatch = {};
+  copyOptStr(patch, args, 'name');
+  // parentId is three-state (null clears to root); custom-handled.
+  if ('parentId' in args) {
+    const parentId = nullStr(args, 'parentId');
+    if (parentId !== undefined) patch.parentId = parentId;
+  }
+  const sortOrder = optNum(args, 'sortOrder');
+  if (sortOrder !== undefined) patch.sortOrder = sortOrder;
+  return patch;
+}
 
 const locationTree: ToolDef = {
   name: 'inventory.locations.tree',
@@ -10,7 +27,7 @@ const locationTree: ToolDef = {
   inputSchema: { type: 'object', properties: {} },
   handler: async () => {
     const result = await getClient().inventory.locations.tree.query();
-    return ok(result.data);
+    return ok(result);
   },
 };
 
@@ -46,9 +63,9 @@ const locationsCreate: ToolDef = {
     const result = await getClient().inventory.locations.create.mutate({
       name,
       parentId: nullStr(args, 'parentId'),
-      sortOrder: typeof args['sortOrder'] === 'number' ? args['sortOrder'] : undefined,
+      sortOrder: optNum(args, 'sortOrder'),
     });
-    return ok(result.data);
+    return ok(result);
   },
 };
 
@@ -72,15 +89,9 @@ const locationsUpdate: ToolDef = {
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
-
-    const data: { name?: string; parentId?: string | null; sortOrder?: number } = {};
-    const name = optStr(args, 'name');
-    if (name !== undefined) data.name = name;
-    if ('parentId' in args) data.parentId = nullStr(args, 'parentId');
-    if (typeof args['sortOrder'] === 'number') data.sortOrder = args['sortOrder'];
-
+    const data = buildLocationPatch(args);
     const result = await getClient().inventory.locations.update.mutate({ id, data });
-    return ok(result.data);
+    return ok(result);
   },
 };
 
@@ -106,7 +117,6 @@ const locationsDelete: ToolDef = {
       id,
       force: optBool(args, 'force') ?? false,
     });
-    // Two possible shapes: { requiresConfirmation: true, stats } when items exist, { message } on success
     return ok(result);
   },
 };

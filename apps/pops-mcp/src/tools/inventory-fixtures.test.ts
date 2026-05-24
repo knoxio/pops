@@ -83,10 +83,10 @@ describe('inventory.fixtures.list', () => {
 describe('inventory.fixtures.get', () => {
   const tool = getTool('inventory.fixtures.get');
 
-  it('returns fixture by id', async () => {
+  it('returns fixture by id wrapped in the data envelope', async () => {
     const result = await tool.handler({ id: 'fixture_1' });
     expect(mockClient.inventory.fixtures.get.query).toHaveBeenCalledWith({ id: 'fixture_1' });
-    expect(parseResult(result)).toMatchObject({ id: 'fixture_1' });
+    expect(parseResult(result)).toMatchObject({ data: { id: 'fixture_1' } });
   });
 
   it('returns toolError for missing id', async () => {
@@ -185,10 +185,19 @@ describe('inventory.fixtures.update', () => {
     expect(mockClient.inventory.fixtures.update.mutate).not.toHaveBeenCalled();
   });
 
-  it('returns toolError when no patch fields provided', async () => {
-    const result = await tool.handler({ id: 'fixture_1' });
-    expect(result.isError).toBe(true);
-    expect(mockClient.inventory.fixtures.update.mutate).not.toHaveBeenCalled();
+  // Empty-patch rejection happens at the tRPC layer (UpdateFixtureSchema.refine).
+  // The MCP adapter forwards the call; the tRPC client surfaces a BAD_REQUEST
+  // which `handler` rethrows. Assert the rethrow rather than re-implementing
+  // a parallel guard at the MCP layer.
+  it('forwards an empty patch and lets the backend reject it', async () => {
+    mockClient.inventory.fixtures.update.mutate.mockRejectedValueOnce(
+      Object.assign(new Error('At least one field required'), { code: 'BAD_REQUEST' })
+    );
+    await expect(tool.handler({ id: 'fixture_1' })).rejects.toThrow(/At least one field required/);
+    expect(mockClient.inventory.fixtures.update.mutate).toHaveBeenCalledWith({
+      id: 'fixture_1',
+      data: {},
+    });
   });
 });
 
