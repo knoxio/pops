@@ -34,12 +34,13 @@ Live status of every theme and epic. Updated as work completes.
 
 > Application-side platform: CI/CD, image packaging + GHCR contract, database operations, cortex runtime. Host-side concerns (ansible, vault, networking, backups, monitoring, Watchtower) are the deployer's responsibility; the knoxio home lab implements them in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra).
 
-| Epic                                   | Status      | Notes                                                                                                   |
-| -------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
-| CI/CD workflows (PRD-016)              | Done        | Per-area quality + docker-build + publish-images.yml; no deploy step in this repo                       |
-| Application packaging & GHCR (PRD-096) | In progress | Public compose contract + Watchtower hook; release versioning (US-05) outstanding                       |
-| Database Operations (PRD-060)          | Done        | Drizzle on startup, production guards, pre-migration backups                                            |
-| MCP Interface (PRD-102)                | In progress | HTTP MCP server, 14 tools across 4 domains, Docker compose profile, CI image publish; tests in progress |
+| Epic                                   | Status      | Notes                                                                                                                                  |
+| -------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| CI/CD workflows (PRD-016)              | Done        | Per-area quality + docker-build + publish-images.yml; no deploy step in this repo                                                      |
+| Application packaging & GHCR (PRD-096) | In progress | Public compose contract + Watchtower hook; release versioning (US-05) outstanding                                                      |
+| Database Operations (PRD-060)          | Done        | Drizzle on startup, production guards, pre-migration backups                                                                           |
+| MCP Interface (PRD-102, 103, 105)      | In progress | HTTP MCP server + full inventory CRUD write tools (PRD-103) + fixture MCP tools (PRD-105); 22 tools shipped; PRD-102 tests outstanding |
+| Fixtures Data Model (PRD-104)          | Done        | `fixtures` + `item_fixture_connections` tables, migration 0057, full tRPC CRUD API                                                     |
 
 #### Cortex Infrastructure
 

@@ -1,5 +1,22 @@
 import { vi } from 'vitest';
 
+export const MOCK_FIXTURE = {
+  id: 'fixture_1',
+  name: 'Living Room Outlet A',
+  type: 'outlet',
+  locationId: 'loc_1',
+  notes: null,
+  createdAt: '2024-01-01T00:00:00.000Z',
+  lastEditedTime: '2024-01-01T00:00:00.000Z',
+};
+
+export const MOCK_FIXTURE_CONN = {
+  id: 1,
+  itemId: 'item_1',
+  fixtureId: 'fixture_1',
+  createdAt: '2024-01-01T00:00:00.000Z',
+};
+
 export const mockClient = {
   inventory: {
     locations: {
@@ -21,6 +38,31 @@ export const mockClient = {
           .mockResolvedValue({ data: [], pagination: { total: 0, limit: 50, offset: 0 } }),
       },
       graph: { query: vi.fn().mockResolvedValue({ data: { nodes: [], edges: [] } }) },
+    },
+    fixtures: {
+      list: { query: vi.fn().mockResolvedValue({ data: [MOCK_FIXTURE], total: 1 }) },
+      get: { query: vi.fn().mockResolvedValue({ data: MOCK_FIXTURE }) },
+      create: {
+        mutate: vi.fn().mockResolvedValue({ data: MOCK_FIXTURE, message: 'Fixture created' }),
+      },
+      update: {
+        mutate: vi.fn().mockResolvedValue({ data: MOCK_FIXTURE, message: 'Fixture updated' }),
+      },
+      delete: { mutate: vi.fn().mockResolvedValue({ message: 'Fixture deleted' }) },
+      connect: {
+        mutate: vi
+          .fn()
+          .mockResolvedValue({ data: MOCK_FIXTURE_CONN, message: 'Item connected to fixture' }),
+      },
+      disconnect: {
+        mutate: vi.fn().mockResolvedValue({ message: 'Item disconnected from fixture' }),
+      },
+      listForItem: {
+        query: vi.fn().mockResolvedValue({
+          data: [MOCK_FIXTURE_CONN],
+          pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+        }),
+      },
     },
   },
   finance: {

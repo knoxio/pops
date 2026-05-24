@@ -19,15 +19,16 @@ A standalone HTTP service (`pops-mcp`) that exposes POPS data through the Model 
 
 **Out of scope:**
 
-- Write access via MCP (read-only)
 - Authentication of MCP clients (callers on the local network are trusted)
 - Cloudflare Tunnel exposure (manual add-on if needed)
 
 ## PRDs
 
-| PRD                                         | Summary                                             | Status      |
-| ------------------------------------------- | --------------------------------------------------- | ----------- |
-| [PRD-102](../prds/102-mcp-server/README.md) | HTTP MCP server, all domain tools, Docker packaging | In progress |
+| PRD                                                  | Summary                                                          | Status      |
+| ---------------------------------------------------- | ---------------------------------------------------------------- | ----------- |
+| [PRD-102](../prds/102-mcp-server/README.md)          | HTTP MCP server, read-only domain tools, Docker packaging        | In progress |
+| [PRD-103](../prds/103-inventory-mcp-write/README.md) | Inventory MCP write tools (locations, items, connections — CRUD) | Done        |
+| [PRD-105](../prds/105-fixture-mcp-tools/README.md)   | Fixture MCP tools (fixture CRUD + item-fixture connections)      | Done        |
 
 **Dependencies:** PRD-102 requires pops-api to be running and a service-account API key provisioned (shared with moltbot). No other PRDs depend on this epic.
 
