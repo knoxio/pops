@@ -41,8 +41,6 @@ export function createMcpServer(): Server {
         isError: true,
       };
     }
-    // CallToolRequestParams.arguments is `{ [key: string]: unknown } | undefined`
-    // already — assigning into Record<string, unknown> needs no cast.
     const args: Record<string, unknown> = rawArgs ?? {};
     try {
       return await tool.handler(args);

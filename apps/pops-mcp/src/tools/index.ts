@@ -6,9 +6,6 @@ import { mediaTools } from './media.js';
 
 import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js';
 
-// Use the SDK's own `Tool['inputSchema']` shape rather than a stringly-typed
-// `Record<string, unknown>` so the compiler enforces `type: 'object'` and a
-// well-formed `properties` map at the definition site.
 export interface ToolDef {
   name: string;
   description: string;
