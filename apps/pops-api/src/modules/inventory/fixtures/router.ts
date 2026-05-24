@@ -21,7 +21,6 @@ const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const fixturesRouter = router({
-  /** List fixtures with optional filters and pagination. */
   list: protectedProcedure
     .input(FixtureQuerySchema)
     .output(z.object({ data: z.array(FixtureSchema), total: z.number() }))
@@ -37,7 +36,6 @@ export const fixturesRouter = router({
       return { data: rows.map(toFixture), total };
     }),
 
-  /** Get a single fixture by ID. */
   get: protectedProcedure
     .input(z.object({ id: z.string().min(1) }))
     .output(z.object({ data: FixtureSchema }))
@@ -52,13 +50,11 @@ export const fixturesRouter = router({
       }
     }),
 
-  /** Create a new fixture. */
   create: protectedProcedure.input(CreateFixtureSchema).mutation(({ input }) => {
     const row = service.createFixture(input);
     return { data: toFixture(row), message: 'Fixture created' };
   }),
 
-  /** Update an existing fixture (partial patch). */
   update: protectedProcedure
     .input(z.object({ id: z.string().min(1), data: UpdateFixtureSchema }))
     .mutation(({ input }) => {
@@ -73,7 +69,6 @@ export const fixturesRouter = router({
       }
     }),
 
-  /** Delete a fixture (cascades to item_fixture_connections). */
   delete: protectedProcedure.input(z.object({ id: z.string().min(1) })).mutation(({ input }) => {
     try {
       service.deleteFixture(input.id);
@@ -86,7 +81,6 @@ export const fixturesRouter = router({
     }
   }),
 
-  /** Connect an inventory item to a fixture. */
   connect: protectedProcedure.input(ConnectFixtureSchema).mutation(({ input }) => {
     try {
       const row = service.connectItemToFixture(input.itemId, input.fixtureId);
@@ -102,7 +96,6 @@ export const fixturesRouter = router({
     }
   }),
 
-  /** Disconnect an inventory item from a fixture. */
   disconnect: protectedProcedure.input(ConnectFixtureSchema).mutation(({ input }) => {
     try {
       service.disconnectItemFromFixture(input.itemId, input.fixtureId);
@@ -115,7 +108,6 @@ export const fixturesRouter = router({
     }
   }),
 
-  /** List fixture connections for an item (which fixtures is this item plugged into). */
   listForItem: protectedProcedure
     .input(FixtureConnectionQuerySchema)
     .output(

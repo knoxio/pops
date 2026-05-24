@@ -24,10 +24,6 @@ afterEach(() => {
   ctx.teardown();
 });
 
-// ---------------------------------------------------------------------------
-// list
-// ---------------------------------------------------------------------------
-
 describe('inventory.fixtures.list', () => {
   it('returns empty list when no fixtures exist', async () => {
     const result = await caller.inventory.fixtures.list({});
@@ -77,10 +73,6 @@ describe('inventory.fixtures.list', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// get
-// ---------------------------------------------------------------------------
-
 describe('inventory.fixtures.get', () => {
   it('returns a fixture by id', async () => {
     const id = seedFixture(db, {
@@ -107,10 +99,6 @@ describe('inventory.fixtures.get', () => {
     }
   });
 });
-
-// ---------------------------------------------------------------------------
-// create
-// ---------------------------------------------------------------------------
 
 describe('inventory.fixtures.create', () => {
   it('creates a fixture with required fields', async () => {
@@ -147,10 +135,6 @@ describe('inventory.fixtures.create', () => {
     expect(row!.name).toBe('Outlet A');
   });
 });
-
-// ---------------------------------------------------------------------------
-// update
-// ---------------------------------------------------------------------------
 
 describe('inventory.fixtures.update', () => {
   it('updates fixture name', async () => {
@@ -192,10 +176,6 @@ describe('inventory.fixtures.update', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// delete
-// ---------------------------------------------------------------------------
-
 describe('inventory.fixtures.delete', () => {
   it('deletes a fixture', async () => {
     const id = seedFixture(db, { name: 'Outlet', type: 'power_outlet' });
@@ -227,10 +207,6 @@ describe('inventory.fixtures.delete', () => {
     }
   });
 });
-
-// ---------------------------------------------------------------------------
-// connect
-// ---------------------------------------------------------------------------
 
 describe('inventory.fixtures.connect', () => {
   it('connects an item to a fixture', async () => {
@@ -306,10 +282,6 @@ describe('inventory.fixtures.connect', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// disconnect
-// ---------------------------------------------------------------------------
-
 describe('inventory.fixtures.disconnect', () => {
   it('disconnects an item from a fixture', async () => {
     const itemId = seedInventoryItem(db, { item_name: 'Laptop' });
@@ -354,10 +326,6 @@ describe('inventory.fixtures.disconnect', () => {
     }
   });
 });
-
-// ---------------------------------------------------------------------------
-// listForItem
-// ---------------------------------------------------------------------------
 
 describe('inventory.fixtures.listForItem', () => {
   it('returns empty list when item has no fixture connections', async () => {
@@ -410,27 +378,25 @@ describe('inventory.fixtures.listForItem', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// auth
-// ---------------------------------------------------------------------------
-
 describe('inventory.fixtures auth', () => {
   it('throws UNAUTHORIZED without auth on list', async () => {
     const unauth = createCaller(false);
-    await expect(unauth.inventory.fixtures.list({})).rejects.toThrow(TRPCError);
+    await expect(unauth.inventory.fixtures.list({})).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    });
   });
 
   it('throws UNAUTHORIZED without auth on create', async () => {
     const unauth = createCaller(false);
     await expect(
       unauth.inventory.fixtures.create({ name: 'Outlet', type: 'power_outlet' })
-    ).rejects.toThrow(TRPCError);
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
   it('throws UNAUTHORIZED without auth on connect', async () => {
     const unauth = createCaller(false);
     await expect(
       unauth.inventory.fixtures.connect({ itemId: 'a', fixtureId: 'b' })
-    ).rejects.toThrow(TRPCError);
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 });

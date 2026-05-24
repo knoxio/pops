@@ -4,7 +4,6 @@ import type { FixtureRow, ItemFixtureConnectionRow } from '@pops/db-types';
 
 export type { FixtureRow, ItemFixtureConnectionRow };
 
-/** API response shape for a fixture. */
 export interface Fixture {
   id: string;
   name: string;
@@ -15,7 +14,6 @@ export interface Fixture {
   lastEditedTime: string;
 }
 
-/** Map a SQLite row to the API response shape. */
 export function toFixture(row: FixtureRow): Fixture {
   return {
     id: row.id,
@@ -28,7 +26,6 @@ export function toFixture(row: FixtureRow): Fixture {
   };
 }
 
-/** API response shape for an item-fixture connection. */
 export interface ItemFixtureConnection {
   id: number;
   itemId: string;
@@ -36,7 +33,6 @@ export interface ItemFixtureConnection {
   createdAt: string;
 }
 
-/** Map a SQLite row to the API response shape. */
 export function toItemFixtureConnection(row: ItemFixtureConnectionRow): ItemFixtureConnection {
   return {
     id: row.id,

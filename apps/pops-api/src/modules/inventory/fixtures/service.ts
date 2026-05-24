@@ -1,4 +1,4 @@
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, asc, count, eq, sql } from 'drizzle-orm';
 
 import { fixtures, homeInventory, itemFixtureConnections } from '@pops/db-types';
 
@@ -36,7 +36,14 @@ export function listFixtures(opts: {
   if (opts.type) conditions.push(eq(fixtures.type, opts.type));
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const rows = db.select().from(fixtures).where(where).limit(opts.limit).offset(opts.offset).all();
+  const rows = db
+    .select()
+    .from(fixtures)
+    .where(where)
+    .orderBy(asc(fixtures.createdAt))
+    .limit(opts.limit)
+    .offset(opts.offset)
+    .all();
   const [countResult] = db.select({ total: count() }).from(fixtures).where(where).all();
   return { rows, total: countResult?.total ?? 0 };
 }
@@ -108,20 +115,14 @@ export function connectItemToFixture(itemId: string, fixtureId: string): ItemFix
     .all();
   if (!fixture) throw new NotFoundError('Fixture', fixtureId);
 
-  const [existing] = db
-    .select({ id: itemFixtureConnections.id })
-    .from(itemFixtureConnections)
-    .where(
-      and(
-        eq(itemFixtureConnections.itemId, itemId),
-        eq(itemFixtureConnections.fixtureId, fixtureId)
-      )
-    )
-    .all();
-  if (existing)
-    throw new ConflictError(`Item '${itemId}' is already connected to fixture '${fixtureId}'`);
-
-  db.insert(itemFixtureConnections).values({ itemId, fixtureId }).run();
+  try {
+    db.insert(itemFixtureConnections).values({ itemId, fixtureId }).run();
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
+      throw new ConflictError(`Item '${itemId}' is already connected to fixture '${fixtureId}'`);
+    }
+    throw err;
+  }
 
   const [created] = db
     .select()
@@ -164,6 +165,7 @@ export function listFixturesForItem(
     .select()
     .from(itemFixtureConnections)
     .where(condition)
+    .orderBy(asc(itemFixtureConnections.createdAt))
     .limit(limit)
     .offset(offset)
     .all();
