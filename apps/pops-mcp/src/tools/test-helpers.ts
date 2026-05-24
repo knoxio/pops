@@ -1,5 +1,35 @@
 import { vi } from 'vitest';
 
+const MOCK_LOCATION = { id: 'loc_1', name: 'Living Room', parentId: null, sortOrder: 0 };
+const MOCK_LOCATION_2 = { id: 'loc_2', name: 'Office', parentId: null, sortOrder: 1 };
+const MOCK_ITEM = {
+  id: 'item_1',
+  itemName: 'MacBook',
+  brand: 'Apple',
+  model: 'MacBook Pro 14"',
+  type: 'electronics',
+  condition: 'good',
+  locationId: 'loc_1',
+  inUse: true,
+  deductible: false,
+  assetId: 'MBP01',
+  notes: null,
+  purchaseDate: null,
+  warrantyExpires: null,
+  replacementValue: 3000,
+  resaleValue: 1500,
+  purchasePrice: 3200,
+  purchasedFromName: 'Apple Store',
+  lastEditedTime: '2025-01-01T00:00:00.000Z',
+};
+const MOCK_ITEM_2 = { ...MOCK_ITEM, id: 'item_2', itemName: 'Dell Monitor', assetId: 'MON01' };
+const MOCK_CONNECTION = {
+  id: 1,
+  itemAId: 'item_1',
+  itemBId: 'item_2',
+  createdAt: '2025-01-01T00:00:00.000Z',
+};
+
 export const MOCK_FIXTURE = {
   id: 'fixture_1',
   name: 'Living Room Outlet A',
@@ -20,24 +50,55 @@ export const MOCK_FIXTURE_CONN = {
 export const mockClient = {
   inventory: {
     locations: {
-      tree: { query: vi.fn().mockResolvedValue({ data: [{ id: 'loc_1', name: 'Living Room' }] }) },
-      list: { query: vi.fn().mockResolvedValue({ data: [], total: 0 }) },
+      tree: { query: vi.fn().mockResolvedValue({ data: [{ ...MOCK_LOCATION, children: [] }] }) },
+      list: { query: vi.fn().mockResolvedValue({ data: [MOCK_LOCATION], total: 1 }) },
+      create: {
+        mutate: vi.fn().mockResolvedValue({ data: MOCK_LOCATION_2, message: 'Location created' }),
+      },
+      update: {
+        mutate: vi.fn().mockResolvedValue({ data: MOCK_LOCATION, message: 'Location updated' }),
+      },
+      delete: { mutate: vi.fn().mockResolvedValue({ message: 'Location deleted' }) },
     },
     items: {
       list: {
         query: vi
           .fn()
-          .mockResolvedValue({ data: [], pagination: { total: 0, limit: 50, offset: 0 } }),
+          .mockResolvedValue({
+            data: [MOCK_ITEM],
+            pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+          }),
       },
-      get: { query: vi.fn().mockResolvedValue({ data: { id: 'item_1', name: 'MacBook' } }) },
+      get: { query: vi.fn().mockResolvedValue({ data: MOCK_ITEM }) },
+      create: {
+        mutate: vi.fn().mockResolvedValue({ data: MOCK_ITEM, message: 'Inventory item created' }),
+      },
+      update: {
+        mutate: vi.fn().mockResolvedValue({ data: MOCK_ITEM, message: 'Inventory item updated' }),
+      },
+      delete: { mutate: vi.fn().mockResolvedValue({ message: 'Inventory item deleted' }) },
     },
     connections: {
       listForItem: {
         query: vi
           .fn()
-          .mockResolvedValue({ data: [], pagination: { total: 0, limit: 50, offset: 0 } }),
+          .mockResolvedValue({
+            data: [MOCK_CONNECTION],
+            pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+          }),
       },
-      graph: { query: vi.fn().mockResolvedValue({ data: { nodes: [], edges: [] } }) },
+      graph: {
+        query: vi.fn().mockResolvedValue({
+          data: {
+            nodes: [MOCK_ITEM, MOCK_ITEM_2],
+            edges: [{ source: 'item_1', target: 'item_2' }],
+          },
+        }),
+      },
+      connect: {
+        mutate: vi.fn().mockResolvedValue({ data: MOCK_CONNECTION, message: 'Items connected' }),
+      },
+      disconnect: { mutate: vi.fn().mockResolvedValue({ message: 'Items disconnected' }) },
     },
     fixtures: {
       list: { query: vi.fn().mockResolvedValue({ data: [MOCK_FIXTURE], total: 1 }) },
@@ -69,9 +130,7 @@ export const mockClient = {
     transactions: {
       list: { query: vi.fn().mockResolvedValue({ data: [], pagination: { total: 0 } }) },
     },
-    budgets: {
-      list: { query: vi.fn().mockResolvedValue({ data: [], pagination: { total: 0 } }) },
-    },
+    budgets: { list: { query: vi.fn().mockResolvedValue({ data: [], pagination: { total: 0 } }) } },
   },
   core: {
     entities: {
@@ -79,9 +138,7 @@ export const mockClient = {
     },
   },
   media: {
-    library: {
-      list: { query: vi.fn().mockResolvedValue({ items: [], total: 0 }) },
-    },
+    library: { list: { query: vi.fn().mockResolvedValue({ items: [], total: 0 }) } },
     watchlist: {
       list: { query: vi.fn().mockResolvedValue({ data: [], pagination: { total: 0 } }) },
     },
@@ -91,9 +148,7 @@ export const mockClient = {
       list: { query: vi.fn().mockResolvedValue({ engrams: [], total: 0 }) },
       get: { query: vi.fn().mockResolvedValue({ id: 'eng_1', title: 'Test', body: 'content' }) },
     },
-    retrieval: {
-      search: { query: vi.fn().mockResolvedValue({ results: [] }) },
-    },
+    retrieval: { search: { query: vi.fn().mockResolvedValue({ results: [] }) } },
   },
 };
 

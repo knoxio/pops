@@ -35,3 +35,11 @@ export function nullStr(args: Record<string, unknown>, key: string): string | nu
   if (v === null) return null;
   return typeof v === 'string' ? v : undefined;
 }
+
+// Three-state: absent → undefined (no-op), null → null (clear), number → number (set)
+export function nullNum(args: Record<string, unknown>, key: string): number | null | undefined {
+  if (!(key in args)) return undefined;
+  const v = args[key];
+  if (v === null) return null;
+  return typeof v === 'number' ? v : undefined;
+}
