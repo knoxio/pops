@@ -7,8 +7,8 @@ vi.mock('../client.js', () => ({ getClient: () => mockClient }));
 const { allTools } = await import('./index.js');
 
 describe('allTools', () => {
-  it('exports exactly 14 tools', () => {
-    expect(allTools).toHaveLength(14);
+  it('exports exactly 22 tools', () => {
+    expect(allTools).toHaveLength(22);
   });
 
   it('all tool names are unique', () => {
