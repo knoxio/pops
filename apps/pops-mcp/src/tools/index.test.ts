@@ -11,6 +11,22 @@ describe('allTools', () => {
     expect(allTools).toHaveLength(22);
   });
 
+  it('includes all PRD-103 inventory write tools', () => {
+    const names = new Set(allTools.map((t) => t.name));
+    for (const required of [
+      'inventory.locations.create',
+      'inventory.locations.update',
+      'inventory.locations.delete',
+      'inventory.items.create',
+      'inventory.items.update',
+      'inventory.items.delete',
+      'inventory.connections.connect',
+      'inventory.connections.disconnect',
+    ]) {
+      expect(names.has(required), `missing tool: ${required}`).toBe(true);
+    }
+  });
+
   it('all tool names are unique', () => {
     const names = allTools.map((t) => t.name);
     expect(new Set(names).size).toBe(names.length);

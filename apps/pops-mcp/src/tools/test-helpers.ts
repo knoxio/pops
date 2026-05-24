@@ -62,12 +62,10 @@ export const mockClient = {
     },
     items: {
       list: {
-        query: vi
-          .fn()
-          .mockResolvedValue({
-            data: [MOCK_ITEM],
-            pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
-          }),
+        query: vi.fn().mockResolvedValue({
+          data: [MOCK_ITEM],
+          pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+        }),
       },
       get: { query: vi.fn().mockResolvedValue({ data: MOCK_ITEM }) },
       create: {
@@ -80,12 +78,10 @@ export const mockClient = {
     },
     connections: {
       listForItem: {
-        query: vi
-          .fn()
-          .mockResolvedValue({
-            data: [MOCK_CONNECTION],
-            pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
-          }),
+        query: vi.fn().mockResolvedValue({
+          data: [MOCK_CONNECTION],
+          pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+        }),
       },
       graph: {
         query: vi.fn().mockResolvedValue({

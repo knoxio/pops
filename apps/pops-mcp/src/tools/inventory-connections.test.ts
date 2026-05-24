@@ -182,4 +182,14 @@ describe('inventory.connections.disconnect', () => {
         .isError
     ).toBe(true);
   });
+
+  it('propagates tRPC errors (handled by MCP framework)', async () => {
+    const err = Object.assign(new Error('Connection not found'), {
+      data: { code: 'NOT_FOUND' },
+    });
+    mockClient.inventory.connections.disconnect.mutate.mockRejectedValueOnce(err);
+    await expect(
+      tool('inventory.connections.disconnect').handler({ itemAId: 'item_1', itemBId: 'item_2' })
+    ).rejects.toThrow('Connection not found');
+  });
 });

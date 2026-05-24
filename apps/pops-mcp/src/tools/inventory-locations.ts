@@ -106,8 +106,7 @@ const locationsDelete: ToolDef = {
       id,
       force: optBool(args, 'force') ?? false,
     });
-    // May be { requiresConfirmation: true, stats } or { message }
-    // Both are valid — Claude decides whether to ask the user
+    // Two possible shapes: { requiresConfirmation: true, stats } when items exist, { message } on success
     return ok(result);
   },
 };

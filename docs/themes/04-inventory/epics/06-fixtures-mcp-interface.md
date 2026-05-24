@@ -10,11 +10,11 @@ Done means: a user can walk through their house, dictate locations, items, item-
 
 ## PRDs
 
-| #   | PRD                                                                    | Summary                                                           | Status      |
-| --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
-| 103 | [Inventory MCP Write Tools](../prds/103-inventory-mcp-write/README.md) | MCP mutations for locations, items, and item-item connections     | Not started |
-| 104 | [Fixtures Data Model](../prds/104-fixtures-data-model/README.md)       | `fixtures` table, `item_fixture_connections` table, tRPC router   | Not started |
-| 105 | [Fixture MCP Tools](../prds/105-fixture-mcp/README.md)                 | MCP tools for fixture CRUD and item-fixture connection management | Not started |
+| #   | PRD                                                                    | Summary                                                           | Status |
+| --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
+| 103 | [Inventory MCP Write Tools](../prds/103-inventory-mcp-write/README.md) | MCP mutations for locations, items, and item-item connections     | Done   |
+| 104 | [Fixtures Data Model](../prds/104-fixtures-data-model/README.md)       | `fixtures` table, `item_fixture_connections` table, tRPC router   | Done   |
+| 105 | [Fixture MCP Tools](../prds/105-fixture-mcp/README.md)                 | MCP tools for fixture CRUD and item-fixture connection management | Done   |
 
 PRD-103 is independent and can start immediately. PRD-104 is independent of 103 but blocks PRD-105. PRDs 103 and 104 can be built in parallel.
 
