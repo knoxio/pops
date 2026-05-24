@@ -75,3 +75,29 @@ jobs:
           labels: ${{ steps.meta-shell.outputs.labels }}
           build-args: |
             BUILD_VERSION=${{ github.sha }}
+
+      - name: Generate metadata for pops-mcp
+        id: meta-mcp
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/knoxio/pops-mcp
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=semver,pattern=v{{major}}
+
+      - name: Build and push pops-mcp
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/pops-mcp/Dockerfile
+          push: true
+          tags: ${{ steps.meta-mcp.outputs.tags }}
+          labels: ${{ steps.meta-mcp.outputs.labels }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}

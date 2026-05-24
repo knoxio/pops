@@ -17,11 +17,12 @@ Pops is **deployable by anyone with any hardware**. The contract is the public `
 
 ## Epics
 
-| #   | Epic                                                       | Summary                                                                                  | Status |
-| --- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------ |
-| 00  | [CI/CD Pipelines](epics/00-cicd-pipelines.md)              | GitHub Actions workflows for quality gates + image publishing to GHCR                    | Done   |
-| 01  | [Database Operations](epics/01-database-operations.md)     | Drizzle migrations on startup, production guards, pre-migration backups, go-live runbook | Done   |
-| 02  | [Cortex Infrastructure](epics/02-cortex-infrastructure.md) | Redis + BullMQ job queue, OpenAPI secondary contract, sqlite-vec vector storage          | Done   |
+| #   | Epic                                                       | Summary                                                                                  | Status      |
+| --- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------- |
+| 00  | [CI/CD Pipelines](epics/00-cicd-pipelines.md)              | GitHub Actions workflows for quality gates + image publishing to GHCR                    | Done        |
+| 01  | [Database Operations](epics/01-database-operations.md)     | Drizzle migrations on startup, production guards, pre-migration backups, go-live runbook | Done        |
+| 02  | [Cortex Infrastructure](epics/02-cortex-infrastructure.md) | Redis + BullMQ job queue, OpenAPI secondary contract, sqlite-vec vector storage          | Done        |
+| 03  | [MCP Interface](epics/03-mcp-interface.md)                 | Standalone HTTP MCP server exposing POPS data to AI agents over the local network        | In progress |
 
 ## Key Decisions
 

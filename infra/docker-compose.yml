@@ -214,6 +214,45 @@ services:
       moltbot-validator:
         condition: service_completed_successfully
 
+  # ── MCP HTTP SERVER ──────────────────────────────────────────────
+  # Exposes pops data as an MCP server over HTTP (port 3002).
+  # Accessible on the local network and optionally via Cloudflare Tunnel.
+  # Requires a service-account API key provisioned in pops-api.
+  # Enable with:  docker compose --profile mcp up -d
+  pops-mcp:
+    image: ghcr.io/knoxio/pops-mcp:${POPS_IMAGE_TAG:-main}
+    container_name: pops-mcp
+    restart: unless-stopped
+    profiles:
+      - mcp
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
+    networks:
+      - backend
+    secrets:
+      - pops_api_key
+    environment:
+      NODE_ENV: production
+      POPS_API_URL: http://pops-api:3000
+      POPS_API_KEY_FILE: /run/secrets/pops_api_key
+      MCP_PORT: '3002'
+    ports:
+      - '${MCP_BIND_ADDR:-0.0.0.0}:3002:3002'
+    depends_on:
+      pops-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3002/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   # ── AUTO-UPDATE ──────────────────────────────────────────────────
   # Polls GHCR for new digests of pops-api / pops-worker / pops-shell
   # (any container with com.centurylinklabs.watchtower.enable=true) and

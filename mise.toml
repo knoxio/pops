@@ -43,6 +43,14 @@ description = "Build the pops CLI to apps/pops-cli/dist"
 dir = "apps/pops-cli"
 run = "pnpm build"
 
+[tasks."dev:mcp"]
+description = "Run pops-mcp HTTP MCP server in dev mode (requires pops-api running)"
+dir = "apps/pops-mcp"
+run = """
+pnpm install
+pnpm dev
+"""
+
 [tasks."dev:storybook"]
 description = "Run unified Storybook for all packages and apps"
 dir = "apps/pops-storybook"
