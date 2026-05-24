@@ -29,8 +29,9 @@ Build a home inventory app that tracks every physical item — from a $5,000 Mac
 | 3   | [Connections & Graph](epics/03-connections-graph.md)                | Bidirectional links, connection chain tracing, graph visualisation                     | Done   |
 | 4   | [Paperless-ngx Integration](epics/04-paperless-integration.md)      | Document search, linking receipts/warranties/manuals, thumbnail display                | Done   |
 | 5   | [Warranty, Value & Reporting](epics/05-warranty-value-reporting.md) | Warranty alerts, asset value dashboard, room-level reports, insurance exports          | Done   |
+| 6   | [Fixtures](epics/06-fixtures.md)                                    | Infrastructure fixtures (outlets, panels) that items connect to; schema + tRPC API     | Done   |
 
-Epic 0 prerequisite to everything. Epic 1 after 0. Epics 2-5 parallel after 1.
+Epic 0 prerequisite to everything. Epic 1 after 0. Epics 2-5 parallel after 1. Epic 6 parallel after 0.
 
 ## Key Decisions
 
