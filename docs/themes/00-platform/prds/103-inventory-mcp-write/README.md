@@ -6,7 +6,7 @@
 
 ## Overview
 
-Extends the pops-mcp server with write (create/update/delete) tools for the inventory domain — locations, items, and item-item connections. All tools are pure MCP adapters: they forward input directly to existing pops-api tRPC mutations, with no business logic in the MCP layer.
+Write-capable MCP adapters for the inventory domain — locations, items, and item-item connections. Each tool forwards input directly to pops-api tRPC mutations with no business logic in the MCP layer.
 
 ## Motivation
 
