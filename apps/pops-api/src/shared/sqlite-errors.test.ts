@@ -19,29 +19,32 @@ function freshDb(): BetterSqlite3.Database {
   return db;
 }
 
+function captureThrow(fn: () => void): unknown {
+  try {
+    fn();
+  } catch (err) {
+    return err;
+  }
+  throw new Error('expected the call to throw, but it returned normally');
+}
+
 describe('isUniqueConstraintError', () => {
   it('returns true for a real UNIQUE constraint violation', () => {
     const db = freshDb();
     db.exec(`INSERT INTO parent (id) VALUES ('p1')`);
     db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c1', 'p1', 'unique-tag')`);
 
-    let caught: unknown;
-    try {
-      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c2', 'p1', 'unique-tag')`);
-    } catch (err) {
-      caught = err;
-    }
-    expect(isUniqueConstraintError(caught)).toBe(true);
+    const err = captureThrow(() =>
+      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c2', 'p1', 'unique-tag')`)
+    );
+    expect(isUniqueConstraintError(err)).toBe(true);
   });
 
   it('returns false for FK violations and non-DB errors', () => {
     const db = freshDb();
-    let fk: unknown;
-    try {
-      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c1', 'missing', 't')`);
-    } catch (err) {
-      fk = err;
-    }
+    const fk = captureThrow(() =>
+      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c1', 'missing', 't')`)
+    );
     expect(isUniqueConstraintError(fk)).toBe(false);
     expect(isUniqueConstraintError(new Error('plain error'))).toBe(false);
     expect(isUniqueConstraintError(null)).toBe(false);
@@ -53,25 +56,19 @@ describe('isUniqueConstraintError', () => {
 describe('isForeignKeyConstraintError', () => {
   it('returns true for a real FK violation', () => {
     const db = freshDb();
-    let caught: unknown;
-    try {
-      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c1', 'missing', 't')`);
-    } catch (err) {
-      caught = err;
-    }
-    expect(isForeignKeyConstraintError(caught)).toBe(true);
+    const err = captureThrow(() =>
+      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c1', 'missing', 't')`)
+    );
+    expect(isForeignKeyConstraintError(err)).toBe(true);
   });
 
   it('returns false for UNIQUE violations and non-DB errors', () => {
     const db = freshDb();
     db.exec(`INSERT INTO parent (id) VALUES ('p1')`);
     db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c1', 'p1', 'unique-tag')`);
-    let uniq: unknown;
-    try {
-      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c2', 'p1', 'unique-tag')`);
-    } catch (err) {
-      uniq = err;
-    }
+    const uniq = captureThrow(() =>
+      db.exec(`INSERT INTO child (id, parent_id, tag) VALUES ('c2', 'p1', 'unique-tag')`)
+    );
     expect(isForeignKeyConstraintError(uniq)).toBe(false);
     expect(isForeignKeyConstraintError(undefined)).toBe(false);
   });

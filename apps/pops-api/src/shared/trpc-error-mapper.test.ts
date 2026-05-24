@@ -4,52 +4,62 @@ import { describe, expect, it } from 'vitest';
 import { BudgetExceededError, ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { mapDomainErrors, mapDomainErrorsAsync } from './trpc-error-mapper.js';
 
+function captureThrow(fn: () => unknown): unknown {
+  try {
+    fn();
+  } catch (err) {
+    return err;
+  }
+  throw new Error('expected the call to throw, but it returned normally');
+}
+
+async function captureReject(fn: () => Promise<unknown>): Promise<unknown> {
+  try {
+    await fn();
+  } catch (err) {
+    return err;
+  }
+  throw new Error('expected the call to reject, but it resolved');
+}
+
 describe('mapDomainErrors', () => {
   it('returns the inner value when no throw', () => {
     expect(mapDomainErrors(() => 42)).toBe(42);
   });
 
   it('maps NotFoundError → NOT_FOUND', () => {
-    let caught: unknown;
-    try {
+    const caught = captureThrow(() =>
       mapDomainErrors(() => {
         throw new NotFoundError('Fixture', 'x');
-      });
-    } catch (err) {
-      caught = err;
-    }
+      })
+    );
     expect(caught).toBeInstanceOf(TRPCError);
     expect((caught as TRPCError).code).toBe('NOT_FOUND');
     expect((caught as TRPCError).message).toBe("Fixture 'x' not found");
   });
 
   it('maps ConflictError → CONFLICT', () => {
-    expect(() =>
+    const caught = captureThrow(() =>
       mapDomainErrors(() => {
         throw new ConflictError('dup');
       })
-    ).toThrow(TRPCError);
-    try {
-      mapDomainErrors(() => {
-        throw new ConflictError('dup');
-      });
-    } catch (err) {
-      expect((err as TRPCError).code).toBe('CONFLICT');
-    }
+    );
+    expect(caught).toBeInstanceOf(TRPCError);
+    expect((caught as TRPCError).code).toBe('CONFLICT');
   });
 
   it('maps ValidationError → BAD_REQUEST', () => {
-    try {
+    const caught = captureThrow(() =>
       mapDomainErrors(() => {
         throw new ValidationError({ field: 'name' });
-      });
-    } catch (err) {
-      expect((err as TRPCError).code).toBe('BAD_REQUEST');
-    }
+      })
+    );
+    expect(caught).toBeInstanceOf(TRPCError);
+    expect((caught as TRPCError).code).toBe('BAD_REQUEST');
   });
 
   it('maps BudgetExceededError → PAYMENT_REQUIRED', () => {
-    try {
+    const caught = captureThrow(() =>
       mapDomainErrors(() => {
         throw new BudgetExceededError({
           budgetId: 'b',
@@ -57,10 +67,10 @@ describe('mapDomainErrors', () => {
           currentUsage: 10,
           limit: 5,
         });
-      });
-    } catch (err) {
-      expect((err as TRPCError).code).toBe('PAYMENT_REQUIRED');
-    }
+      })
+    );
+    expect(caught).toBeInstanceOf(TRPCError);
+    expect((caught as TRPCError).code).toBe('PAYMENT_REQUIRED');
   });
 
   it('rethrows non-HttpError unchanged', () => {
@@ -79,11 +89,13 @@ describe('mapDomainErrorsAsync', () => {
   });
 
   it('maps an async-thrown NotFoundError', async () => {
-    await expect(
+    const caught = await captureReject(() =>
       mapDomainErrorsAsync(async () => {
         throw new NotFoundError('Fixture', 'x');
       })
-    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    );
+    expect(caught).toBeInstanceOf(TRPCError);
+    expect((caught as TRPCError).code).toBe('NOT_FOUND');
   });
 
   it('rethrows a non-HttpError unchanged', async () => {
