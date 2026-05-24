@@ -40,7 +40,7 @@ export function listFixtures(opts: {
     .select()
     .from(fixtures)
     .where(where)
-    .orderBy(asc(fixtures.createdAt))
+    .orderBy(asc(fixtures.createdAt), asc(fixtures.id))
     .limit(opts.limit)
     .offset(opts.offset)
     .all();
@@ -84,8 +84,9 @@ export function updateFixture(id: string, input: UpdateFixtureInput): FixtureRow
   const patch: Record<string, unknown> = { lastEditedTime: NOW() };
   if ('name' in input && input.name !== undefined) patch['name'] = input.name;
   if ('type' in input && input.type !== undefined) patch['type'] = input.type;
-  if ('locationId' in input) patch['locationId'] = input.locationId ?? null;
-  if ('notes' in input) patch['notes'] = input.notes ?? null;
+  if ('locationId' in input && input.locationId !== undefined)
+    patch['locationId'] = input.locationId;
+  if ('notes' in input && input.notes !== undefined) patch['notes'] = input.notes;
 
   db.update(fixtures).set(patch).where(eq(fixtures.id, existing.id)).run();
 
@@ -165,7 +166,7 @@ export function listFixturesForItem(
     .select()
     .from(itemFixtureConnections)
     .where(condition)
-    .orderBy(asc(itemFixtureConnections.createdAt))
+    .orderBy(asc(itemFixtureConnections.createdAt), asc(itemFixtureConnections.id))
     .limit(limit)
     .offset(offset)
     .all();
