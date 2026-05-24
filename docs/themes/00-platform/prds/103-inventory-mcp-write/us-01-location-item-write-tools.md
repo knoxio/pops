@@ -5,13 +5,12 @@
 
 ## Goal
 
-Implement MCP create/update/delete tools for locations and items, alongside their existing read tools, in split domain files that stay under the 200-line oxlint limit.
+Implement MCP create/update/delete tools for locations and items.
 
 ## Acceptance Criteria
 
-- [x] `apps/pops-mcp/src/tools/inventory-locations.ts` — 6 tools: `tree`, `list`, `create`, `update`, `delete` (with `requiresConfirmation` handling); each under 200 lines total
-- [x] `apps/pops-mcp/src/tools/inventory-items.ts` — 6 tools: `list`, `get`, `create`, `update`, `delete`
-- [x] `nullStr` / `nullNum` helpers in `utils.ts` used for nullable update fields
-- [x] `inventory-locations.test.ts` — unit tests for all 6 location tools including `requiresConfirmation` flow
-- [x] `inventory-items.test.ts` — unit tests for all 6 item tools
-- [x] Pre-commit lint + typecheck pass
+- [x] Location tools expose tree, list, create, update, and delete behaviors; delete returns a confirmation shape when non-empty
+- [x] Item tools expose list, get, create, update, and delete behaviors
+- [x] Update operations support nullable field semantics (null clears, absent is no-op)
+- [x] Unit tests cover all location and item tool behaviors including the confirmation flow
+- [x] Lint, format, and typecheck pass

@@ -10,7 +10,7 @@ Extends the pops-mcp server with write (create/update/delete) tools for the inve
 
 ## Motivation
 
-MCP was initially read-only. To support AI-assisted home inventory setup (walking through a house and describing items, locations, and connections), write access is required. The entire set can be added without touching pops-api because the tRPC mutations already exist.
+Add write (create/update/delete) MCP adapters for inventory domain entities — locations, items, and item-item connections — that forward input to existing pops-api tRPC mutations with no business logic in the MCP layer.
 
 ## Tool Surface (8 tools)
 
@@ -27,21 +27,14 @@ MCP was initially read-only. To support AI-assisted home inventory setup (walkin
 
 ## Architecture
 
-Tools live in domain files under `apps/pops-mcp/src/tools/`:
-
-- `inventory-locations.ts` — location read + write tools (6 total)
-- `inventory-items.ts` — item read + write tools (6 total)
-- `inventory-connections.ts` — connection read + write tools (4 total)
-- `inventory.ts` — thin barrel, spreads all three arrays
-
-The 200-line oxlint limit per file required splitting the originally monolithic `inventory.ts` into domain files.
+Tools are organized into domain-specific modules for locations, items, and connections, with a thin aggregator that composes them. Each module owns both its read and write tools.
 
 ## Business Rules
 
-- All tools call `protectedProcedure` endpoints; the MCP service-account key provides auth.
-- `locations.delete` returns `{ requiresConfirmation: true, stats }` (not an error) when location has children/items and `force` is not set. The tool returns this as a successful JSON response.
-- `items.update` and `locations.update` use nullable field semantics: passing `null` clears the field; omitting the key is a no-op. The `nullStr`/`nullNum` helpers in `utils.ts` handle this distinction.
-- Error propagation: tRPC errors (NOT_FOUND, CONFLICT, etc.) propagate naturally through the MCP SDK's tool handler error path.
+- All endpoints require the MCP service-account key for authentication.
+- `locations.delete` returns `{ requiresConfirmation: true, stats }` (not an error) when the location has children or items and `force` is not set.
+- `items.update` and `locations.update` use nullable field semantics: passing `null` clears the field; omitting the key is a no-op.
+- tRPC errors (NOT_FOUND, CONFLICT, etc.) propagate through the MCP SDK's tool handler error path.
 
 ## User Stories
 
