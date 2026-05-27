@@ -18,8 +18,8 @@
     "@pops/navigation": "workspace:*",
     "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
-    "@tanstack/react-query": "5.100.11",
-    "i18next": "^26.2.0",
+    "@tanstack/react-query": "5.100.14",
+    "i18next": "^26.3.0",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -34,9 +34,9 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.0.0",
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.7",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.7"
   }
 }
