@@ -24,11 +24,12 @@ export function useBrowseRules({ open, localOps, browseSearch, setLocalOps }: Us
     () => pendingChangeSets.map((pcs) => ({ changeSet: pcs.changeSet })),
     [pendingChangeSets]
   );
-  // Server-side merge — folds the full DB rule set with pending ChangeSets so
-  // the client never sees `NotFoundError` for an op targeting a rule outside
-  // a paginated window.
+  // Server-side merge — folds the full DB rule set with pending ChangeSets
+  // BEFORE slicing, so the client never sees `NotFoundError` for an op
+  // targeting a rule outside the page window. The render surface is capped
+  // at 500 to keep DnD-driven priority reorders responsive.
   const browseListQuery = trpc.core.corrections.listMerged.useQuery(
-    { pendingChangeSets: pendingInput },
+    { pendingChangeSets: pendingInput, limit: 500, offset: 0 },
     { enabled: open, staleTime: 30_000 }
   );
   const browseMergedRules: CorrectionRule[] = useMemo(

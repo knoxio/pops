@@ -290,6 +290,43 @@ describe('corrections', () => {
         })
       ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
+
+    it('paginates after merging — limit/offset slice the merged result, leaving off-page pending edits resolvable', async () => {
+      // Create three rules so we can verify slicing.
+      const rules = await Promise.all(
+        ['ALPHA', 'BETA', 'GAMMA'].map((p) =>
+          caller.core.corrections.createOrUpdate({
+            descriptionPattern: p,
+            matchType: 'contains',
+            tags: [],
+          })
+        )
+      );
+      // Edit a rule that would be on page 2 if we paginated, ensuring the merge
+      // happens BEFORE the slice (otherwise this op would throw NotFoundError).
+      const target = rules[2];
+      if (!target) throw new Error('expected three rules');
+
+      const page1 = await caller.core.corrections.listMerged({
+        limit: 1,
+        offset: 0,
+        pendingChangeSets: [
+          {
+            changeSet: {
+              ops: [
+                {
+                  op: 'edit',
+                  id: target.data.id,
+                  data: { entityName: 'Renamed' },
+                },
+              ],
+            },
+          },
+        ],
+      });
+      expect(page1.data).toHaveLength(1);
+      expect(page1.pagination.total).toBe(3);
+    });
   });
 
   describe('previewChangeSet', () => {

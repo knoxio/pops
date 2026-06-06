@@ -42,7 +42,7 @@ function useReevalOnChangeSets(
   useEffect(() => {
     if (prevChangeSetsRef.current === pendingChangeSets) return;
     prevChangeSetsRef.current = pendingChangeSets;
-    if (!sessionId || pendingChangeSets.length === 0) return;
+    if (!sessionId) return;
 
     reevaluateMutation.mutate(
       {

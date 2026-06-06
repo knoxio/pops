@@ -45,10 +45,11 @@ export const crudRouter = router({
     }),
 
   /**
-   * Return all rules folded with pending ChangeSets. Used by the import
-   * wizard's browse-mode rule manager so the client never has to fold
-   * pending ops against a paginated rule list — folding paginated rules
-   * client-side throws when an op targets a row outside the page window.
+   * Return rules folded with pending ChangeSets. Loads up to
+   * PREVIEW_RULES_FETCH_LIMIT DB rows, applies the pending ops, then
+   * paginates the merged result. Merging the full set BEFORE slicing is
+   * important — folding a paginated slice client-side throws when a pending
+   * op targets a row outside the window.
    */
   listMerged: protectedProcedure
     .input(
@@ -57,6 +58,8 @@ export const crudRouter = router({
           .array(z.object({ changeSet: ChangeSetSchema }))
           .max(200)
           .optional(),
+        limit: z.coerce.number().positive().max(PREVIEW_RULES_FETCH_LIMIT).optional(),
+        offset: z.coerce.number().nonnegative().optional(),
       })
     )
     .query(({ input }) => {
@@ -69,7 +72,14 @@ export const crudRouter = router({
                 dbRules
               )
             : dbRules;
-        return { data: merged.map(toCorrection) };
+        const offset = input.offset ?? 0;
+        const limit = input.limit;
+        const sliced =
+          limit === undefined ? merged.slice(offset) : merged.slice(offset, offset + limit);
+        return {
+          data: sliced.map(toCorrection),
+          pagination: paginationMeta(merged.length, limit ?? merged.length, offset),
+        };
       } catch (err) {
         if (err instanceof NotFoundError) {
           throw new TRPCError({ code: 'NOT_FOUND', message: err.message });

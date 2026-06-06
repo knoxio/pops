@@ -1220,4 +1220,29 @@ describe('imports.reevaluateWithPendingRules', () => {
     // Should succeed since the session is complete
     expect(res.result).toBeDefined();
   });
+
+  it('accepts an empty pendingChangeSets array and re-evaluates against DB rules only', async () => {
+    mockConfig.alwaysReturnNull = true;
+    const { sessionId } = await caller.finance.imports.processImport({
+      transactions: [
+        {
+          date: '2026-02-13',
+          description: 'EMPTY PENDING',
+          amount: -10,
+          account: 'Amex',
+          rawRow: '{}',
+          checksum: 'reeval-empty',
+        },
+      ],
+      account: 'Amex',
+    });
+    await waitForCompletion<ProcessImportOutput>(sessionId);
+
+    const res = await caller.finance.imports.reevaluateWithPendingRules({
+      sessionId,
+      minConfidence: 0.7,
+      pendingChangeSets: [],
+    });
+    expect(res.result).toBeDefined();
+  });
 });
