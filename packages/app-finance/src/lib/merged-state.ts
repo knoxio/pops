@@ -64,7 +64,9 @@ let _cachedEntitiesOutput: Entity[] | null = null;
  * Adapt pending entities to the `Entity` interface and merge them with DB
  * entities. When a pending entity's name matches a DB entity's name
  * (case-insensitive), the pending version replaces the DB entry.
- * DB entities appear first, followed by non-colliding pending entities.
+ * The merged list is sorted alphabetically by name (case-insensitive) so
+ * newly-added pending entities appear in their natural position rather than
+ * appended at the end.
  * Memoized by reference equality on both input arrays.
  */
 export function computeMergedEntities(
@@ -82,10 +84,14 @@ export function computeMergedEntities(
   }
 
   if (pendingEntities.length === 0) {
+    // DB list is already sorted server-side; nothing to merge in.
     _cachedEntitiesInput = { dbEntities, pending: pendingEntities };
     _cachedEntitiesOutput = dbEntities;
     return dbEntities;
   }
+
+  const byName = (a: Entity, b: Entity) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
   // Build a set of pending entity names (lowercased) for collision detection
   const pendingNameSet = new Set(pendingEntities.map((pe) => pe.name.toLowerCase()));
@@ -106,9 +112,9 @@ export function computeMergedEntities(
   // Filter out DB entities that collide with pending entities
   const filteredDb = dbEntities.filter((e) => !pendingNameSet.has(e.name.toLowerCase()));
 
-  // DB entities first, then non-colliding pending (all pending are non-colliding
-  // with each other since addPendingEntity enforces uniqueness)
-  const result = [...filteredDb, ...adaptedPending];
+  // Merge then sort alphabetically by name so pending entities slot in by name
+  // instead of being appended at the end.
+  const result = [...filteredDb, ...adaptedPending].toSorted(byName);
 
   _cachedEntitiesInput = { dbEntities, pending: pendingEntities };
   _cachedEntitiesOutput = result;
