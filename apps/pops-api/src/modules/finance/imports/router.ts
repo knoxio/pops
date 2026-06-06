@@ -194,7 +194,7 @@ export const importsRouter = router({
       z.object({
         sessionId: z.string().uuid(),
         minConfidence: z.number().min(0).max(1).default(0.7),
-        pendingChangeSets: z.array(z.object({ changeSet: ChangeSetSchema })).min(1),
+        pendingChangeSets: z.array(z.object({ changeSet: ChangeSetSchema })),
       })
     )
     .mutation(({ input }) => {

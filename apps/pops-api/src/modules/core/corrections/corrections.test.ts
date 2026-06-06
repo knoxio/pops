@@ -228,6 +228,107 @@ describe('corrections', () => {
     });
   });
 
+  describe('listMerged', () => {
+    it('returns DB rules unchanged when no pendingChangeSets are passed', async () => {
+      await caller.core.corrections.createOrUpdate({
+        descriptionPattern: 'COLES',
+        matchType: 'contains',
+        tags: ['Groceries'],
+      });
+
+      const result = await caller.core.corrections.listMerged({});
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.descriptionPattern).toBe('COLES');
+    });
+
+    it('folds pending edit ops against the full DB rule set — even when the targeted rule would fall outside a paginated client window', async () => {
+      // Create a rule the client would never see through a 50-row paginated
+      // `list` query. Browser-side folding used to throw NotFoundError here.
+      const created = await caller.core.corrections.createOrUpdate({
+        descriptionPattern: 'IMPERIAL HOTEL',
+        matchType: 'contains',
+        entityName: 'Imperial Hotel',
+        tags: [],
+      });
+
+      const result = await caller.core.corrections.listMerged({
+        pendingChangeSets: [
+          {
+            changeSet: {
+              ops: [
+                {
+                  op: 'edit',
+                  id: created.data.id,
+                  data: { entityName: 'Imperial Hotel Erskineville' },
+                },
+              ],
+            },
+          },
+        ],
+      });
+
+      const target = result.data.find((r) => r.id === created.data.id);
+      expect(target?.entityName).toBe('Imperial Hotel Erskineville');
+    });
+
+    it('returns NOT_FOUND when a pending op targets a rule id that does not exist in DB', async () => {
+      await expect(
+        caller.core.corrections.listMerged({
+          pendingChangeSets: [
+            {
+              changeSet: {
+                ops: [
+                  {
+                    op: 'edit',
+                    id: 'does-not-exist',
+                    data: { entityName: 'Whatever' },
+                  },
+                ],
+              },
+            },
+          ],
+        })
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    it('paginates after merging — limit/offset slice the merged result, leaving off-page pending edits resolvable', async () => {
+      // Create three rules so we can verify slicing.
+      const rules = await Promise.all(
+        ['ALPHA', 'BETA', 'GAMMA'].map((p) =>
+          caller.core.corrections.createOrUpdate({
+            descriptionPattern: p,
+            matchType: 'contains',
+            tags: [],
+          })
+        )
+      );
+      // Edit a rule that would be on page 2 if we paginated, ensuring the merge
+      // happens BEFORE the slice (otherwise this op would throw NotFoundError).
+      const target = rules[2];
+      if (!target) throw new Error('expected three rules');
+
+      const page1 = await caller.core.corrections.listMerged({
+        limit: 1,
+        offset: 0,
+        pendingChangeSets: [
+          {
+            changeSet: {
+              ops: [
+                {
+                  op: 'edit',
+                  id: target.data.id,
+                  data: { entityName: 'Renamed' },
+                },
+              ],
+            },
+          },
+        ],
+      });
+      expect(page1.data).toHaveLength(1);
+      expect(page1.pagination.total).toBe(3);
+    });
+  });
+
   describe('previewChangeSet', () => {
     it('previews added rule impact deterministically', async () => {
       const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});

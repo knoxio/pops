@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
 
-import { reevaluateTransactions } from '../../../lib/local-re-evaluation';
-import { computeMergedRules } from '../../../lib/merged-state';
 import { groupTransactionsByEntity } from '../../../lib/transaction-utils';
 import { useImportStore } from '../../../store/importStore';
 
@@ -26,39 +25,40 @@ function useTabWithScrollMemory(initialTab: string) {
   return { activeTab, handleTabChange };
 }
 
+/**
+ * When pendingChangeSets changes, ask the API to re-evaluate the session
+ * against (DB rules + pending). Server-side merge avoids the case where a
+ * pending edit targets a rule outside the client's paginated list.
+ */
 function useReevalOnChangeSets(
-  localTransactions: ReturnType<typeof useImportStore.getState>['processedTransactions'],
   setLocalTransactions: React.Dispatch<
     React.SetStateAction<ReturnType<typeof useImportStore.getState>['processedTransactions']>
   >,
-  pendingChangeSets: ReturnType<typeof useImportStore.getState>['pendingChangeSets']
+  pendingChangeSets: ReturnType<typeof useImportStore.getState>['pendingChangeSets'],
+  sessionId: string | null
 ) {
-  const { data: dbRulesData } = trpc.core.corrections.list.useQuery({});
   const prevChangeSetsRef = useRef(pendingChangeSets);
-  const localTxRef = useRef(localTransactions);
-  localTxRef.current = localTransactions;
+  const reevaluateMutation = trpc.finance.imports.reevaluateWithPendingRules.useMutation();
   useEffect(() => {
     if (prevChangeSetsRef.current === pendingChangeSets) return;
     prevChangeSetsRef.current = pendingChangeSets;
-    if (!dbRulesData?.data) return;
-    const freshRules = computeMergedRules(dbRulesData.data, pendingChangeSets);
-    const current = localTxRef.current;
-    const rulePromoted = current.matched.filter((t) => t.ruleProvenance);
-    const manuallyMatched = current.matched.filter((t) => !t.ruleProvenance);
-    const reeval = reevaluateTransactions(
-      [...current.uncertain, ...rulePromoted],
-      current.failed,
-      freshRules
+    if (!sessionId) return;
+
+    reevaluateMutation.mutate(
+      {
+        sessionId,
+        minConfidence: 0.7,
+        pendingChangeSets: pendingChangeSets.map((pcs) => ({ changeSet: pcs.changeSet })),
+      },
+      {
+        onSuccess: ({ result }) => {
+          setLocalTransactions(result);
+          useImportStore.getState().setProcessedTransactions(result);
+        },
+        onError: () => toast.error('Failed to re-evaluate transactions against updated rules'),
+      }
     );
-    const updated = {
-      ...current,
-      matched: [...manuallyMatched, ...reeval.matched],
-      uncertain: reeval.uncertain,
-      failed: reeval.failed,
-    };
-    setLocalTransactions(updated);
-    useImportStore.getState().setProcessedTransactions(updated);
-  }, [pendingChangeSets, dbRulesData?.data, setLocalTransactions]);
+  }, [pendingChangeSets, sessionId, setLocalTransactions, reevaluateMutation]);
 }
 
 /**
@@ -68,12 +68,13 @@ function useReevalOnChangeSets(
 export function useTransactionReview() {
   const processedTransactions = useImportStore((s) => s.processedTransactions);
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
+  const processSessionId = useImportStore((s) => s.processSessionId);
   const [localTransactions, setLocalTransactions] = useState(processedTransactions);
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const initialTab = localTransactions.uncertain.length > 0 ? 'uncertain' : 'matched';
   const { activeTab, handleTabChange } = useTabWithScrollMemory(initialTab);
 
-  useReevalOnChangeSets(localTransactions, setLocalTransactions, pendingChangeSets);
+  useReevalOnChangeSets(setLocalTransactions, pendingChangeSets, processSessionId);
 
   const unresolvedCount = useMemo(
     () => localTransactions.uncertain.length + localTransactions.failed.length,

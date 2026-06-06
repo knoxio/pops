@@ -6,8 +6,10 @@ import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { previewMatches } from './handlers/preview-matches.js';
 import { analyzeCorrection, generateRules } from './lib/rule-generator.js';
+import { PREVIEW_RULES_FETCH_LIMIT } from './router-changeset-schemas.js';
 import * as service from './service.js';
 import {
+  ChangeSetSchema,
   CreateCorrectionSchema,
   FindCorrectionSchema,
   toCorrection,
@@ -40,6 +42,50 @@ export const crudRouter = router({
         data: rows.map(toCorrection),
         pagination: paginationMeta(total, limit, offset),
       };
+    }),
+
+  /**
+   * Return rules folded with pending ChangeSets. Loads up to
+   * PREVIEW_RULES_FETCH_LIMIT DB rows, applies the pending ops, then
+   * paginates the merged result. Merging the full set BEFORE slicing is
+   * important — folding a paginated slice client-side throws when a pending
+   * op targets a row outside the window.
+   */
+  listMerged: protectedProcedure
+    .input(
+      z.object({
+        pendingChangeSets: z
+          .array(z.object({ changeSet: ChangeSetSchema }))
+          .max(200)
+          .optional(),
+        limit: z.coerce.number().positive().max(PREVIEW_RULES_FETCH_LIMIT).optional(),
+        offset: z.coerce.number().nonnegative().optional(),
+      })
+    )
+    .query(({ input }) => {
+      try {
+        const dbRules = service.listCorrections(undefined, PREVIEW_RULES_FETCH_LIMIT, 0).rows;
+        const merged =
+          input.pendingChangeSets && input.pendingChangeSets.length > 0
+            ? input.pendingChangeSets.reduce(
+                (acc, pcs) => service.applyChangeSetToRules(acc, pcs.changeSet),
+                dbRules
+              )
+            : dbRules;
+        const offset = input.offset ?? 0;
+        const limit = input.limit;
+        const sliced =
+          limit === undefined ? merged.slice(offset) : merged.slice(offset, offset + limit);
+        return {
+          data: sliced.map(toCorrection),
+          pagination: paginationMeta(merged.length, limit ?? merged.length, offset),
+        };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+        }
+        throw err;
+      }
     }),
 
   get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
