@@ -6,7 +6,6 @@ import {
   applyBrowsePriorityReorder,
   sortRulesForBrowseDisplay,
 } from '../../../../lib/correction-browse-reorder';
-import { computeMergedRules } from '../../../../lib/merged-state';
 import { useImportStore } from '../../../../store/importStore';
 
 import type { LocalOp } from '../../correction-proposal-shared';
@@ -21,15 +20,21 @@ interface UseBrowseRulesArgs {
 
 export function useBrowseRules({ open, localOps, browseSearch, setLocalOps }: UseBrowseRulesArgs) {
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
-  const browseListQuery = trpc.core.corrections.list.useQuery(
-    { limit: 500, offset: 0 },
+  const pendingInput = useMemo(
+    () => pendingChangeSets.map((pcs) => ({ changeSet: pcs.changeSet })),
+    [pendingChangeSets]
+  );
+  // Server-side merge — folds the full DB rule set with pending ChangeSets so
+  // the client never sees `NotFoundError` for an op targeting a rule outside
+  // a paginated window.
+  const browseListQuery = trpc.core.corrections.listMerged.useQuery(
+    { pendingChangeSets: pendingInput },
     { enabled: open, staleTime: 30_000 }
   );
-  const browseMergedRules: CorrectionRule[] = useMemo(() => {
-    const browseDbRules = browseListQuery.data?.data ?? [];
-    if (pendingChangeSets.length === 0) return browseDbRules;
-    return computeMergedRules(browseDbRules, pendingChangeSets);
-  }, [browseListQuery.data?.data, pendingChangeSets]);
+  const browseMergedRules: CorrectionRule[] = useMemo(
+    () => browseListQuery.data?.data ?? [],
+    [browseListQuery.data?.data]
+  );
 
   const browseOrderedMerged = useMemo(
     () => sortRulesForBrowseDisplay(browseMergedRules, localOps),

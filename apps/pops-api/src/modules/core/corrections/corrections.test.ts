@@ -228,6 +228,70 @@ describe('corrections', () => {
     });
   });
 
+  describe('listMerged', () => {
+    it('returns DB rules unchanged when no pendingChangeSets are passed', async () => {
+      await caller.core.corrections.createOrUpdate({
+        descriptionPattern: 'COLES',
+        matchType: 'contains',
+        tags: ['Groceries'],
+      });
+
+      const result = await caller.core.corrections.listMerged({});
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.descriptionPattern).toBe('COLES');
+    });
+
+    it('folds pending edit ops against the full DB rule set — even when the targeted rule would fall outside a paginated client window', async () => {
+      // Create a rule the client would never see through a 50-row paginated
+      // `list` query. Browser-side folding used to throw NotFoundError here.
+      const created = await caller.core.corrections.createOrUpdate({
+        descriptionPattern: 'IMPERIAL HOTEL',
+        matchType: 'contains',
+        entityName: 'Imperial Hotel',
+        tags: [],
+      });
+
+      const result = await caller.core.corrections.listMerged({
+        pendingChangeSets: [
+          {
+            changeSet: {
+              ops: [
+                {
+                  op: 'edit',
+                  id: created.data.id,
+                  data: { entityName: 'Imperial Hotel Erskineville' },
+                },
+              ],
+            },
+          },
+        ],
+      });
+
+      const target = result.data.find((r) => r.id === created.data.id);
+      expect(target?.entityName).toBe('Imperial Hotel Erskineville');
+    });
+
+    it('returns NOT_FOUND when a pending op targets a rule id that does not exist in DB', async () => {
+      await expect(
+        caller.core.corrections.listMerged({
+          pendingChangeSets: [
+            {
+              changeSet: {
+                ops: [
+                  {
+                    op: 'edit',
+                    id: 'does-not-exist',
+                    data: { entityName: 'Whatever' },
+                  },
+                ],
+              },
+            },
+          ],
+        })
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+  });
+
   describe('previewChangeSet', () => {
     it('previews added rule impact deterministically', async () => {
       const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});

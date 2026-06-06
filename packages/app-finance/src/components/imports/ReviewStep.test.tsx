@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockAnalyzeCorrectionMutateAsync = vi.fn();
 const mockEntitiesQuery = vi.fn();
+const mockReevaluateMutate = vi.fn();
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
@@ -57,7 +58,13 @@ vi.mock('@pops/api-client', () => ({
       imports: {
         reevaluateWithPendingRules: {
           useMutation: () => ({
-            mutate: vi.fn(),
+            mutate: (
+              _input: unknown,
+              opts?: {
+                onSuccess?: (data: { result: unknown; affectedCount: number }) => void;
+                onError?: (err: Error) => void;
+              }
+            ) => mockReevaluateMutate(_input, opts),
             mutateAsync: vi.fn(),
             isPending: false,
           }),
@@ -548,13 +555,25 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       skipped: [],
     };
 
-    // Configure local re-evaluation to move the uncertain tx to matched
-    mockReevaluateTransactions.mockReturnValue({
-      matched: [{ ...tx, status: 'matched' }],
-      uncertain: [],
-      failed: [],
-      affectedCount: 1,
-    });
+    // Server-side re-eval fires onSuccess with the new bucket layout.
+    mockReevaluateMutate.mockImplementation(
+      (
+        _input: unknown,
+        opts?: {
+          onSuccess?: (data: { result: unknown; affectedCount: number }) => void;
+        }
+      ) => {
+        opts?.onSuccess?.({
+          result: {
+            matched: [{ ...tx, status: 'matched' }],
+            uncertain: [],
+            failed: [],
+            skipped: [],
+          },
+          affectedCount: 1,
+        });
+      }
+    );
 
     const { rerender } = render(<ReviewStep />);
 
@@ -578,7 +597,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
       expect(screen.getByText(/Uncertain \(0\)/)).toBeInTheDocument();
     });
 
-    expect(mockReevaluateTransactions).toHaveBeenCalled();
+    expect(mockReevaluateMutate).toHaveBeenCalled();
     expect(mockToastSuccess).toHaveBeenCalledWith('Rules saved locally');
   });
 

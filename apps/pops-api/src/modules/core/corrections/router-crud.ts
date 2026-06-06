@@ -6,8 +6,10 @@ import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { previewMatches } from './handlers/preview-matches.js';
 import { analyzeCorrection, generateRules } from './lib/rule-generator.js';
+import { PREVIEW_RULES_FETCH_LIMIT } from './router-changeset-schemas.js';
 import * as service from './service.js';
 import {
+  ChangeSetSchema,
   CreateCorrectionSchema,
   FindCorrectionSchema,
   toCorrection,
@@ -40,6 +42,40 @@ export const crudRouter = router({
         data: rows.map(toCorrection),
         pagination: paginationMeta(total, limit, offset),
       };
+    }),
+
+  /**
+   * Return all rules folded with pending ChangeSets. Used by the import
+   * wizard's browse-mode rule manager so the client never has to fold
+   * pending ops against a paginated rule list — folding paginated rules
+   * client-side throws when an op targets a row outside the page window.
+   */
+  listMerged: protectedProcedure
+    .input(
+      z.object({
+        pendingChangeSets: z
+          .array(z.object({ changeSet: ChangeSetSchema }))
+          .max(200)
+          .optional(),
+      })
+    )
+    .query(({ input }) => {
+      try {
+        const dbRules = service.listCorrections(undefined, PREVIEW_RULES_FETCH_LIMIT, 0).rows;
+        const merged =
+          input.pendingChangeSets && input.pendingChangeSets.length > 0
+            ? input.pendingChangeSets.reduce(
+                (acc, pcs) => service.applyChangeSetToRules(acc, pcs.changeSet),
+                dbRules
+              )
+            : dbRules;
+        return { data: merged.map(toCorrection) };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+        }
+        throw err;
+      }
     }),
 
   get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {

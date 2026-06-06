@@ -64,6 +64,9 @@ vi.mock('@pops/api-client', () => ({
         list: {
           useQuery: (...args: unknown[]) => mockListQuery(...args),
         },
+        listMerged: {
+          useQuery: (...args: unknown[]) => mockListQuery(...args),
+        },
         rejectChangeSet: {
           useMutation: (opts: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
             rejectOnSuccess = opts.onSuccess;
