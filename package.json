@@ -35,7 +35,8 @@
       "sharp"
     ],
     "overrides": {
-      "cssstyle": "6.0.2"
+      "cssstyle": "6.0.2",
+      "ioredis": "5.11.0"
     }
   }
 }
