@@ -252,15 +252,15 @@ describe('computeMergedEntities', () => {
     expect(result).toBe(dbEntities);
   });
 
-  it('adds pending entities after DB entities when no collision', () => {
+  it('merges pending entities alphabetically with DB entities', () => {
     const dbEntities = [makeEntity({ id: 'e1', name: 'Woolworths' })];
     const pending = [makePendingEntity({ name: 'Coles' })];
 
     const result = computeMergedEntities(dbEntities, pending);
     expect(result).toHaveLength(2);
-    expect(result[0].name).toBe('Woolworths');
-    expect(result[1].name).toBe('Coles');
-    expect(result[1].id).toMatch(/^temp:entity:/);
+    expect(result[0].name).toBe('Coles');
+    expect(result[0].id).toMatch(/^temp:entity:/);
+    expect(result[1].name).toBe('Woolworths');
   });
 
   it('replaces DB entity when pending entity has same name', () => {
@@ -286,11 +286,12 @@ describe('computeMergedEntities', () => {
 
     const result = computeMergedEntities(dbEntities, pending);
     expect(result).toHaveLength(3);
-    // Aldi (non-colliding DB) comes first
+    // Sorted alphabetically: Aldi (non-colliding DB), Coles (pending), Woolworths (pending)
     expect(result[0].name).toBe('Aldi');
     expect(result[0].id).toBe('e3');
-    // Then pending entities
+    expect(result[1].name).toBe('Coles');
     expect(result[1].type).toBe('updated');
+    expect(result[2].name).toBe('Woolworths');
     expect(result[2].type).toBe('updated');
   });
 
@@ -312,8 +313,9 @@ describe('computeMergedEntities', () => {
 
     const result = computeMergedEntities([], pending);
     expect(result).toHaveLength(2);
-    expect(result[0].name).toBe('New Corp');
-    expect(result[1].name).toBe('Another Corp');
+    // Sorted alphabetically
+    expect(result[0].name).toBe('Another Corp');
+    expect(result[1].name).toBe('New Corp');
     expect(result[0].aliases).toEqual([]);
     expect(result[0].abn).toBeNull();
     expect(result[0].defaultTransactionType).toBeNull();

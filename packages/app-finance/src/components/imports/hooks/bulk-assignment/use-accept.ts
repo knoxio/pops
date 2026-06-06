@@ -31,46 +31,57 @@ interface AcceptAllArgs {
   addPendingEntity: ReturnType<typeof useEntities>['addPendingEntity'];
   dbEntitiesData: ReturnType<typeof useEntities>['dbEntitiesData'];
   setLocalTransactions: Dispatch<SetStateAction<LocalTxState>>;
+  generateProposal: UseBulkAssignmentArgs['generateProposal'];
+}
+
+function resolveEntityId(
+  entityName: string,
+  entities: AcceptAllArgs['entities'],
+  addPendingEntity: AcceptAllArgs['addPendingEntity'],
+  dbEntitiesData: AcceptAllArgs['dbEntitiesData']
+): string {
+  const existing = entities?.find((e) => e.name.toLowerCase() === entityName.toLowerCase())?.id;
+  if (existing) return existing;
+  const pending = addPendingEntity({ name: entityName, type: 'company' }, dbEntitiesData?.data);
+  return pending.tempId;
 }
 
 /**
- * Bulk-accept assigns the AI-suggested entity directly without opening the
- * Correction Proposal dialog. Users who want to edit the proposed rule before
- * applying use the per-row Accept path (`useAcceptAiSuggestion`), which still
- * routes through the dialog.
+ * Bulk-accept assigns the AI-suggested entity to every transaction in the
+ * group and then opens the Correction Proposal dialog seeded from the first
+ * transaction. Approving the proposal persists a rule, so future imports
+ * match the same descriptor automatically instead of re-prompting.
  */
 export function useAcceptAll(args: AcceptAllArgs) {
-  const { entities, addPendingEntity, dbEntitiesData, setLocalTransactions } = args;
+  const { entities, addPendingEntity, dbEntitiesData, setLocalTransactions, generateProposal } =
+    args;
   return useCallback(
     async (transactions: ProcessedTransaction[]) => {
       if (transactions.length === 0) return;
       const firstTx = transactions[0];
       const entityName = firstTx?.entity?.entityName;
-      if (!entityName) {
+      if (!firstTx || !entityName) {
         toast.error('No entity name found');
         return;
       }
       try {
-        let entityId = entities?.find((e) => e.name.toLowerCase() === entityName.toLowerCase())?.id;
-        if (!entityId) {
-          const pending = addPendingEntity(
-            { name: entityName, type: 'company' },
-            dbEntitiesData?.data
-          );
-          entityId = pending.tempId;
-        }
-        const resolvedEntityId = entityId;
-        setLocalTransactions((prev) =>
-          moveToMatched(prev, transactions, { entityId: resolvedEntityId, entityName })
-        );
+        const entityId = resolveEntityId(entityName, entities, addPendingEntity, dbEntitiesData);
+        setLocalTransactions((prev) => moveToMatched(prev, transactions, { entityId, entityName }));
         toast.success(`Accepted ${pluralize(transactions.length)} as "${entityName}"`);
+        void generateProposal({
+          triggeringTransaction: firstTx,
+          entityId,
+          entityName,
+          location: firstTx.location ?? null,
+          transactionType: firstTx.transactionType ?? null,
+        });
       } catch (error) {
         toast.error(
           `Failed to accept: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
       }
     },
-    [entities, addPendingEntity, dbEntitiesData?.data, setLocalTransactions]
+    [entities, addPendingEntity, dbEntitiesData, setLocalTransactions, generateProposal]
   );
 }
 
