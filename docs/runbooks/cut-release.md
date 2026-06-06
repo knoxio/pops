@@ -7,10 +7,9 @@
 ## TL;DR
 
 1. Land changes on `main` using [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `feat!:` for breaking).
-2. Wait for the `Release Please` workflow to open (or update) a release PR with the version bump + CHANGELOG.
-3. Review the release PR. Merge it.
-4. release-please pushes the `vX.Y.Z` git tag, which triggers `Publish Images` to publish `ghcr.io/knoxio/pops-{api,shell}:vX.Y.Z` (plus `X.Y`, `X`, and unprefixed forms).
-5. Update any deployer that pins `POPS_IMAGE_TAG` (knoxio lab tracks `main` via Watchtower, so no action needed there).
+2. The `Release` workflow runs on push to main, bumps the version, prepends a section to `CHANGELOG.md`, commits, tags `vX.Y.Z`, and creates the GitHub Release in one shot — no PR ceremony.
+3. The new `vX.Y.Z` tag triggers `Publish Images` to publish `ghcr.io/knoxio/pops-{api,shell}:vX.Y.Z` (plus `X.Y`, `X`, and unprefixed forms).
+4. Update any deployer that pins `POPS_IMAGE_TAG` (knoxio lab tracks `main` via Watchtower, so no action needed there).
 
 ## When to cut
 
@@ -35,24 +34,24 @@ Semver on git tag: `vMAJOR.MINOR.PATCH` (e.g. `v0.1.0`, `v1.2.3`).
 | MINOR | Backwards-compatible additions (new optional env var, new container, new secret with empty default) |
 | PATCH | Bug fixes, doc-only changes, internal app changes published in lockstep                             |
 
-We're pre-1.0, so MINOR currently doubles as "potentially breaking" per release-please defaults. Once we hit `v1.0.0`, MAJOR is reserved for breakage.
+We're pre-1.0, so the release script collapses `major` bumps into `minor` (breaking changes don't promote to `v1.0.0` until the bump is explicit). Once we tag `v1.0.0`, MAJOR is reserved for breakage.
 
 ## Conventional Commits cheat sheet
 
-release-please reads commit messages on `main` to draft the next version + CHANGELOG.
+[`.github/scripts/release.sh`](../../.github/scripts/release.sh) reads commit subjects on `main` since the last `v*` tag to compute the next version + CHANGELOG section.
 
-| Commit prefix                               | Bump  | Goes in CHANGELOG section |
-| ------------------------------------------- | ----- | ------------------------- |
-| `feat: …`                                   | minor | Features                  |
-| `fix: …`                                    | patch | Bug Fixes                 |
-| `perf: …`                                   | patch | Performance               |
-| `feat!: …`                                  | major | Features (! marks break)  |
-| `BREAKING CHANGE:`                          | major | Footnoted in release      |
-| `docs: …`                                   | patch | Documentation             |
-| `ci: …` / `build: …`                        | patch | CI/CD / Build             |
-| `chore:` / `refactor:` / `test:` / `style:` | none  | Hidden by default         |
+| Commit prefix                               | Bump                    | Goes in CHANGELOG section |
+| ------------------------------------------- | ----------------------- | ------------------------- |
+| `feat: …`                                   | minor                   | Features                  |
+| `fix: …`                                    | patch                   | Bug Fixes                 |
+| `perf: …`                                   | patch                   | Performance               |
+| `feat!: …` / `BREAKING CHANGE:` footer      | major (→ minor pre-1.0) | Features                  |
+| `docs: …`                                   | none                    | Documentation             |
+| `ci: …` / `build: …`                        | none                    | CI/CD / Build             |
+| `revert: …`                                 | none                    | Reverts                   |
+| `chore:` / `refactor:` / `test:` / `style:` | none                    | Hidden                    |
 
-Scopes (`feat(api): …`) are preserved verbatim in the changelog.
+`docs`, `ci`, `build`, `revert` appear in the changelog but don't drive a version bump on their own — they only show up if at least one `feat` / `fix` / `perf` / breaking commit triggers a release.
 
 ## How a release happens
 
@@ -60,18 +59,20 @@ Scopes (`feat(api): …`) are preserved verbatim in the changelog.
 commits land on main (Conventional Commits)
         │
         ▼
-release-please workflow runs on each push to main
+release.yml runs on push to main
         │
         ▼
-opens / updates a "release PR" with:
-  - version.txt bump
-  - CHANGELOG.md regenerated
+.github/scripts/release.sh:
+  - reads commits since the last v* tag
+  - computes bump from conventional commit types
+  - prepends section to CHANGELOG.md
+  - updates version.txt
         │
         ▼
-human reviews + merges the release PR
+job commits the changelog + tags vX.Y.Z + pushes
         │
         ▼
-release-please pushes a vX.Y.Z git tag + GitHub Release
+gh release create publishes the GitHub Release
         │
         ▼
 publish-images.yml triggers on tag push, builds + tags:
@@ -81,7 +82,7 @@ publish-images.yml triggers on tag push, builds + tags:
 
 ## Manual escape hatch
 
-If release-please is unavailable or the PR is wrong, cut the tag by hand from `main`:
+If the release workflow is broken or the bump is wrong, cut the tag by hand from `main`:
 
 ```bash
 git checkout main
@@ -109,8 +110,7 @@ docker compose -f infra/docker-compose.yml up -d
 
 ## First-time setup checklist (one-off)
 
-- [x] `release-please-config.json` and `.release-please-manifest.json` at the repo root
-- [x] `version.txt` at the repo root (release-type `simple`)
-- [x] `.github/workflows/release-please.yml`
+- [x] `version.txt` at the repo root (source of truth for the current version)
+- [x] `.github/workflows/release.yml` + `.github/scripts/release.sh`
 - [x] `.github/workflows/publish-images.yml` includes `type=semver` patterns for the `v*` tag trigger
 - [ ] First `vX.Y.Z` tag cut to exercise the pipeline end-to-end

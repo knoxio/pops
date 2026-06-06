@@ -14,6 +14,10 @@
 
 set -euo pipefail
 
+TMPDIR_RELEASE="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR_RELEASE"' EXIT
+mktemp() { command mktemp "$TMPDIR_RELEASE/XXXXXX"; }
+
 LAST_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1 || true)"
 if [ -n "$LAST_TAG" ]; then
   RANGE="${LAST_TAG}..HEAD"
@@ -29,7 +33,8 @@ git log --pretty='format:%s' "$RANGE" > "$SUBJECTS"
 git log --pretty='format:%B%x1e'   "$RANGE" > "$BODIES"
 
 BUMP=""
-if grep -qE 'BREAKING CHANGE'                "$BODIES"   ||
+# Conventional Commits allows both "BREAKING CHANGE:" and "BREAKING-CHANGE:" footers.
+if grep -qE 'BREAKING[ -]CHANGE'             "$BODIES"   ||
    grep -qE '^[a-z]+(\([^)]+\))?!:'          "$SUBJECTS"; then
   BUMP="major"
 elif grep -qE '^feat(\(|:)'                  "$SUBJECTS"; then

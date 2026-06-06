@@ -28,7 +28,7 @@ Then `docker compose -f infra/docker-compose.yml pull && up -d` produces a runni
 
 `pops-worker` shares the `pops-api` image with a different `command:`.
 
-Publishing is automatic on every push to `main` (see [`publish-images.yml`](../../../../.github/workflows/publish-images.yml)). Pushing a semver git tag (`vX.Y.Z`) triggers the same workflow and publishes the matching version-tagged images. Versioning + changelog generation is automated via [release-please](../../../../.github/workflows/release-please.yml); see [`docs/runbooks/cut-release.md`](../../../../docs/runbooks/cut-release.md) for the release flow.
+Publishing is automatic on every push to `main` (see [`publish-images.yml`](../../../../.github/workflows/publish-images.yml)). Pushing a semver git tag (`vX.Y.Z`) triggers the same workflow and publishes the matching version-tagged images. Versioning + changelog generation is automated via [`release.yml`](../../../../.github/workflows/release.yml), which runs `.github/scripts/release.sh` on push to main; see [`docs/runbooks/cut-release.md`](../../../../docs/runbooks/cut-release.md) for the release flow.
 
 ## The compose file as the contract
 
@@ -109,6 +109,6 @@ Watchtower will not roll forward as long as the resolved digest doesn't move.
 - Publish workflow: [`.github/workflows/publish-images.yml`](../../../../.github/workflows/publish-images.yml)
 - Production compose: [`infra/docker-compose.yml`](../../../../infra/docker-compose.yml)
 - Compose validation in CI: [`.github/workflows/docker-build.yml`](../../../../.github/workflows/docker-build.yml)
-- Release automation: [`.github/workflows/release-please.yml`](../../../../.github/workflows/release-please.yml), [`release-please-config.json`](../../../../release-please-config.json)
+- Release automation: [`.github/workflows/release.yml`](../../../../.github/workflows/release.yml), [`.github/scripts/release.sh`](../../../../.github/scripts/release.sh)
 - Release runbook: [`docs/runbooks/cut-release.md`](../../../../docs/runbooks/cut-release.md)
 - Server-side rollout (Watchtower config + GHCR auth): [PRD-095 in homelab-infra](https://github.com/knoxio/homelab-infra/blob/main/docs/themes/06-pops/prds/095-pops-rollout/README.md)
