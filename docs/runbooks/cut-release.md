@@ -7,9 +7,11 @@
 ## TL;DR
 
 1. Land changes on `main` using [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `feat!:` for breaking).
-2. The `Release` workflow runs on push to main, bumps the version, prepends a section to `CHANGELOG.md`, commits, tags `vX.Y.Z`, and creates the GitHub Release in one shot — no PR ceremony.
+2. The `Release` workflow runs on push to main, bumps the version, tags `vX.Y.Z` at the current HEAD, and creates a GitHub Release with the grouped changelog — no commit on main, no PR ceremony.
 3. The new `vX.Y.Z` tag triggers `Publish Images` to publish `ghcr.io/knoxio/pops-{api,shell}:vX.Y.Z` (plus `X.Y`, `X`, and unprefixed forms).
 4. Update any deployer that pins `POPS_IMAGE_TAG` (knoxio lab tracks `main` via Watchtower, so no action needed there).
+
+The full changelog history lives in [GitHub Releases](https://github.com/knoxio/pops/releases) — there's no in-repo `CHANGELOG.md`. The repo ruleset requires all changes to main to go through a PR, so the workflow is tag-only by design.
 
 ## When to cut
 
@@ -63,16 +65,15 @@ release.yml runs on push to main
         │
         ▼
 .github/scripts/release.sh:
-  - reads commits since the last v* tag
+  - reads commits since the last vX.Y.Z tag
   - computes bump from conventional commit types
-  - prepends section to CHANGELOG.md
-  - updates version.txt
+  - writes release-notes.md (grouped changelog)
         │
         ▼
-job commits the changelog + tags vX.Y.Z + pushes
+job creates annotated tag vX.Y.Z at HEAD + pushes the tag
         │
         ▼
-gh release create publishes the GitHub Release
+gh release create publishes the GitHub Release with the notes
         │
         ▼
 publish-images.yml triggers on tag push, builds + tags:
@@ -110,7 +111,6 @@ docker compose -f infra/docker-compose.yml up -d
 
 ## First-time setup checklist (one-off)
 
-- [x] `version.txt` at the repo root (source of truth for the current version)
 - [x] `.github/workflows/release.yml` + `.github/scripts/release.sh`
 - [x] `.github/workflows/publish-images.yml` includes `type=semver` patterns for the `v*` tag trigger
 - [ ] First `vX.Y.Z` tag cut to exercise the pipeline end-to-end
