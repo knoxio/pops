@@ -10,7 +10,7 @@ Theme 07 (Food) needs a canonical storage format for recipe instructions that:
 
 1. Is human-readable as plain text (the cookbook-feel principle from the theme).
 2. Encodes structural references — which step uses which ingredient — without ambiguity, so a "cooking mode" UI can highlight ingredients per step and run per-step timers.
-3. Is LLM-friendly for ingest (PRDs 115–118): a model parsing an Instagram caption or screenshot can emit the format directly, or emit structured JSON that we translate to the format.
+3. Is LLM-friendly for ingest (PRDs 114–117 cover parse → resolve → materialise → cycle-check; Epic 02 PRDs cover the actual LLM extraction calls): a model parsing an Instagram caption or screenshot can emit the format directly, or emit structured JSON that we translate to the format.
 4. Is editable in the pops shell without forcing the user to type complex markup, while still being a flat text file under the hood.
 5. Resolves canonical ingredient references (the chuck → patty → burger model from [ADR-022](./adr-022-unified-recipe-ingredient-model.md)) — a recipe line should bind to a specific `ingredient_id` or `variant_id`, not a free-text string that might mean different things in different recipes.
 

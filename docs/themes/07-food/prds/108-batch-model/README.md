@@ -27,6 +27,7 @@ Both nullable. Null = "unknown / shelf-stable". Cook events use these to default
 CREATE TABLE batches (
   id              INTEGER PRIMARY KEY,
   variant_id      INTEGER NOT NULL REFERENCES ingredient_variants(id),
+  prep_state_id   INTEGER REFERENCES prep_states(id),    -- nullable; orthogonal modifier per PRD-106
   qty_remaining   REAL NOT NULL CHECK (qty_remaining >= 0),
   unit            TEXT NOT NULL CHECK (unit IN ('g','ml','count')),
   source_type     TEXT NOT NULL CHECK (source_type IN ('purchase','recipe_run','gift','other')),
@@ -37,12 +38,14 @@ CREATE TABLE batches (
   notes           TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_batches_variant         ON batches(variant_id);
+CREATE INDEX idx_batches_variant_prep    ON batches(variant_id, prep_state_id);
 CREATE INDEX idx_batches_location_expiry ON batches(location, expires_at);
-CREATE INDEX idx_batches_remaining       ON batches(variant_id) WHERE qty_remaining > 0;
+CREATE INDEX idx_batches_remaining       ON batches(variant_id, prep_state_id) WHERE qty_remaining > 0;
 ```
 
 One row per "thing in the fridge / pantry / freezer". A 5-pack of canned tomatoes you bought today is one batch with `qty_remaining=5, unit='count'` (or 5 separate batches if each can has its own expiry — convention: one batch per _purchase event_, not per can). A Sunday-cooked pot of patties is one batch with `qty_remaining=12, unit='count'`.
+
+`prep_state_id` carries through from the cook event's yield (PRD-107's `recipe_versions.yield_prep_state_id`) or from manual entry at purchase/transfer time. Two batches of the same variant but different prep states (e.g. `chicken:breast:shredded` vs `chicken:breast:sliced`) are distinct fridge slots that FIFO-consume independently. Null `prep_state_id` means "default/whole" — a batch of canned tomatoes has no meaningful prep state.
 
 `source_id` is polymorphic by `source_type`:
 
@@ -60,7 +63,6 @@ No FK constraint declared on `source_id` because of polymorphism; integrity is e
 CREATE TABLE recipe_runs (
   id                 INTEGER PRIMARY KEY,
   recipe_version_id  INTEGER NOT NULL REFERENCES recipe_versions(id),
-  planned_for        TEXT,                       -- ISO date if planned in advance
   started_at         TEXT,
   completed_at       TEXT,
   scale_factor       REAL NOT NULL DEFAULT 1.0 CHECK (scale_factor > 0),
@@ -70,11 +72,12 @@ CREATE TABLE recipe_runs (
   created_at         TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_recipe_runs_version  ON recipe_runs(recipe_version_id);
-CREATE INDEX idx_recipe_runs_planned  ON recipe_runs(planned_for) WHERE planned_for IS NOT NULL;
 CREATE INDEX idx_recipe_runs_complete ON recipe_runs(completed_at) WHERE completed_at IS NOT NULL;
 ```
 
 One row per cook event. `recipe_version_id` pins which version was cooked — so a "too salty" note attached three weeks later still refers to the version actually used.
+
+**No `planned_for` column.** The plan→cook link lives on the other side: `plan_entries.recipe_run_id` FKs here from PRD-111. A run that originated from a plan entry has the planned date available via that JOIN (`plan_entries.date`). Ad-hoc cooks (no plan entry) have no planned date — just `started_at` and `completed_at`. Single source of truth for "when was this planned" lives on `plan_entries`.
 
 `scale_factor`: 1.0 means "make the standard recipe". 2.0 = double batch. `yielded_batch_id` set iff the recipe has `yield_qty > 0` AND `completed_at IS NOT NULL` AND the cook actually produced output (the latter is a UI-level distinction — a failed cook can mark `completed_at` without `yielded_batch_id`).
 
@@ -111,6 +114,7 @@ export function consumeForRun(
 
 export type ConsumptionNeed = {
   variantId: number;
+  prepStateId: number | null; // matches batches.prep_state_id; null = default/whole
   qty: number; // in canonical metric (from recipe_lines)
   canonicalUnit: 'g' | 'ml' | 'count';
 };
@@ -129,12 +133,14 @@ export type Shortfall = {
 
 Algorithm (per `need`):
 
-1. SELECT batches WHERE `variant_id = need.variantId AND qty_remaining > 0` ORDER BY `expires_at NULLS LAST, produced_at ASC` (FIFO by expiry, then by age).
+1. SELECT batches WHERE `variant_id = need.variantId AND prep_state_id IS need.prepStateId AND qty_remaining > 0` ORDER BY `expires_at NULLS LAST, produced_at ASC` (FIFO by expiry, then by age). Note: SQLite's `IS` operator handles `NULL = NULL` correctly when `prepStateId` is null — both sides must be null to match.
 2. Walk the list, decrementing `need.qty` from each batch's `qty_remaining` in turn, recording a `batch_consumptions` row per touch.
 3. If `need.qty` reaches 0 before exhausting batches → success.
-4. If batches exhausted with `need.qty > 0` remaining → `Shortfall` for that variant.
+4. If batches exhausted with `need.qty > 0` remaining → `Shortfall` for that variant + prep_state combination.
 
 All updates run in one transaction. Any shortfall rolls back all changes (atomic — either the entire run consumes, or nothing does).
+
+A recipe line with prep_state `diced` does NOT consume from batches with prep_state `whole` automatically — they're separate buckets. Substitution-aware consumption (e.g. "I have whole onions; allow consuming them for a diced line and assume the cook will dice as needed") is an Epic 06 concern, not handled here. v1 is strict.
 
 ## Business Rules
 

@@ -20,8 +20,18 @@ export type ResolveContext = {
 };
 
 export type ResolveResult =
-  | { ok: true; resolved: ResolvedRecipeAst; proposedSlugs: ProposedSlug[] }
-  | { ok: false; errors: ResolveError[]; proposedSlugs: ProposedSlug[] };
+  | {
+      ok: true;
+      resolved: ResolvedRecipeAst;
+      creations: ResolverCreation[];
+      proposedSlugs: ProposedSlug[];
+    }
+  | {
+      ok: false;
+      errors: ResolveError[];
+      creations: ResolverCreation[];
+      proposedSlugs: ProposedSlug[];
+    };
 
 export type ResolvedRecipeAst = {
   header: ResolvedHeader;
@@ -33,9 +43,24 @@ export type ResolvedHeader = RecipeHeader; // identical shape; no resolution nee
 
 export type ResolvedYield = {
   yieldIngredientId: number; // FK -> ingredients.id
+  yieldVariantId: number | null; // FK -> ingredient_variants.id (null = canonical, no variant)
+  yieldPrepStateId: number | null; // FK -> prep_states.id
   yieldQty: number;
   yieldUnit: string;
 };
+
+// Auto-create instructions: the resolver detected an unknown ingredient or variant slug
+// and is asking the compiler (PRD-116) to create it before materialising.
+// prep_state slugs are NOT auto-created (curated enum); unknown prep slugs are errors.
+export type ResolverCreation =
+  | { kind: 'ingredient'; slug: string; defaultUnit: 'g' | 'ml' | 'count'; fromLoc: SourceSpan }
+  | {
+      kind: 'variant';
+      parentIngredientSlug: string;
+      slug: string;
+      defaultUnit: 'g' | 'ml' | 'count';
+      fromLoc: SourceSpan;
+    };
 
 export type ResolvedBlock =
   | {
@@ -88,17 +113,18 @@ export type ResolveError = {
 };
 
 export type ResolveErrorCode =
-  | 'UnresolvedIngredientSlug'
-  | 'UnresolvedRecipeSlug'
-  | 'UnresolvedPrepStateSlug'
-  | 'UnresolvedVariantSlug'
-  | 'UnresolvedYieldIngredient'
-  | 'YieldCannotBeRecipe'
-  | 'UnresolvedStepRefIndex'
-  | 'UnresolvedStepRefSlug'
-  | 'WrongKindForContext'
-  | 'AmbiguousSlug';
+  | 'UnresolvedPrepStateSlug' // prep states are curated; unknown = error
+  | 'UnresolvedYieldIngredient' // @yield slug doesn't resolve and can't be auto-created (e.g. it's an unpromoted recipe)
+  | 'YieldCannotBeRecipe' // @yield references a recipe whose own yield is null
+  | 'UnresolvedStepRefIndex' // @N in step body with no matching @ingredient(N, ...)
+  | 'UnresolvedStepRefSlug' // @slug in step body that doesn't resolve to any known slug
+  | 'WrongKindForContext' // e.g. prep_state slug used where ingredient expected
+  | 'SelfReferenceRecipe' // current recipe references itself (was 'UnresolvedRecipeSlug')
+  | 'VariantOnRecipeRef' // @ingredient(N, recipe-slug:something, ...) — variants meaningless on recipe refs
+  | 'AmbiguousSlug'; // defensive — slug_registry returned multiple rows
 ```
+
+**Auto-creation replaces several previously-erroring codes.** Unknown ingredient slugs and unknown variant slugs no longer produce errors; the resolver emits a `ResolverCreation` instead. The compiler (PRD-116) processes creations atomically before materialising. `UnresolvedIngredientSlug`, `UnresolvedVariantSlug`, and the old `UnresolvedRecipeSlug` (which was misnamed — only used for self-references) are removed.
 
 ## Resolution Algorithm
 
@@ -106,62 +132,87 @@ For each AST node that references a slug:
 
 1. **`@ingredient(N, slug:variant:prep, qty:unit, ...)`**
    - Look up `slug` in `slug_registry`.
-   - If not found → emit `ProposedSlug { slug, suggestedKind: 'ingredient' }` and `UnresolvedIngredientSlug` error.
+   - **If not found** → emit `ResolverCreation { kind: 'ingredient', slug, defaultUnit: deriveFromQty(qty.unit) }` and treat as resolved for downstream processing. The compiler (PRD-116) will create the row before materialising; ingredientId is assigned post-creation.
    - If found with `kind='ingredient'` → `ingredientId = target_id`, `isRecipeRef = false`.
    - If found with `kind='recipe'` → resolve the recipe's `current_version_id`'s `yield_ingredient_id`. `ingredientId = (yield)`, `isRecipeRef = true`, `recipeRef = target_id`. If the recipe has no `current_version_id` yet (only drafts), emit `WrongKindForContext` — you can't compose with an unpromoted recipe.
    - If found with `kind='prep_state'` → emit `WrongKindForContext` (a prep state is not an ingredient).
-   - Resolve `variant`: look up `(ingredient_id, variant_slug)` in `ingredient_variants`. If absent, emit `UnresolvedVariantSlug`. Variants resolve under the **ingredient** that the descriptor points to (not under a recipe yield's ingredient — recipe references skip variant scoping; if variant is non-empty on a recipe ref, emit `WrongKindForContext`).
-   - Resolve `prep`: look up `prep_state_slug` in `slug_registry` with `kind='prep_state'`. If absent → `ProposedSlug` + `UnresolvedPrepStateSlug`. If found with wrong kind → `WrongKindForContext`.
+   - Resolve `variant`: look up `(ingredient_id, variant_slug)` in `ingredient_variants`.
+     - **If absent** → emit `ResolverCreation { kind: 'variant', parentIngredientSlug: slug, slug: variant_slug, defaultUnit }`. Treat as resolved; variantId assigned post-creation.
+     - If `variant` is non-empty on a recipe ref → emit `VariantOnRecipeRef`. Variants only meaningful on ingredient refs.
+   - Resolve `prep`: look up `prep_state_slug` in `slug_registry` with `kind='prep_state'`. **prep_states are curated** — if absent → `ProposedSlug` + `UnresolvedPrepStateSlug` error (no auto-create). If found with wrong kind → `WrongKindForContext`.
    - `_` segments are treated as null (skipped). `banana:_:mashed` resolves to ingredient `banana`, variant null (use ingredient's default), prep `mashed`.
 
-2. **`@yield(slug, qty:unit)`**
-   - Look up `slug`. Must resolve to `kind='ingredient'` or `kind='recipe'`. If recipe → resolve to the recipe's yield (you can declare your yield as another recipe's yield, though this is unusual).
-   - **`YieldCannotBeRecipe`** if the slug is a recipe AND that recipe's yield is null (cycle precursor; PRD-117 handles full cycle detection).
-   - Variant on yield is not supported in v1 (`@yield(banana:raw, ...)` is parsed but emits `UnresolvedVariantSlug` — yield is the canonical ingredient only).
+2. **`@yield(slug:variant:prep, qty:unit)`**
+   - Look up `slug`. If not found → emit `ResolverCreation { kind: 'ingredient', slug, ... }` (yield ingredients auto-create just like input ingredients). `yieldIngredientId` assigned post-creation.
+   - If found with `kind='ingredient'` → `yieldIngredientId = target_id`.
+   - If found with `kind='recipe'` → resolve to the recipe's yield ingredient. **`YieldCannotBeRecipe`** if that recipe's yield is null (cycle precursor; PRD-117 handles full cycle detection).
+   - Resolve `variant` segment (if present): same as `@ingredient` — auto-create variant under the resolved ingredient if missing. Sets `yieldVariantId`.
+   - Resolve `prep` segment (if present): same as `@ingredient` — `kind='prep_state'` required, no auto-create. Sets `yieldPrepStateId`.
 
 3. **Step body refs (`@N` / `@slug` inside step strings)**
    - `@N`: look up the block with `kind='ingredient'` and `index === N` in the current AST. If absent → `UnresolvedStepRefIndex`. Resolved part carries `ingredientId`, `variantId`, `prepStateId` from that ingredient block.
-   - `@slug`: look up `slug` in `slug_registry` with `kind='ingredient'` or `kind='recipe'`. If a recipe, resolve to its yield ingredient. If not found OR wrong kind → `ProposedSlug` + `UnresolvedStepRefSlug`. Resolved part carries `ingredientId` (variantId/prepStateId null unless the matching `@ingredient` block declared them — in v1 we **only** copy from the matching ingredient block when one exists for the same slug; otherwise variant/prep stay null).
+   - `@slug`: look up `slug` in `slug_registry` with `kind='ingredient'` or `kind='recipe'`. If a recipe, resolve to its yield ingredient. If not found OR wrong kind → `ProposedSlug` + `UnresolvedStepRefSlug` (step body refs do NOT auto-create — they're informational pointers, not declarations). Resolved part carries `ingredientId` (variantId/prepStateId null unless the matching `@ingredient` block declared them — in v1 we **only** copy from the matching ingredient block when one exists for the same slug; otherwise variant/prep stay null).
 
 4. **`@time(qty:unit)` / `@temperature(qty:unit)`**
    - No resolution needed; the unit is a free string. Validation of the unit string is out of scope here (PRD-116 may add a known-units check during materialisation).
 
-### `proposedSlugs` semantics
+### `deriveFromQty(unit)` for auto-creation
 
-Unknown slugs are tracked in `proposedSlugs[]` separately from errors so that PRD-116 can persist them on the `recipe_versions` row even when compile fails. Epic 03's review queue reads `proposedSlugs` to drive the "create these ingredients?" prompt during draft approval.
+When the resolver auto-creates an ingredient or variant, it must pick a `default_unit`:
 
-If `proposedSlugs.length > 0`, the resolver still returns `ok: false` (errors include the unresolved-slug errors). The materialiser (PRD-116) sees both arrays and decides whether to surface as a fixable error or block compile.
+| qty unit                                 | default_unit                            |
+| ---------------------------------------- | --------------------------------------- |
+| `g`, `kg`, `oz`, `lb`                    | `g`                                     |
+| `ml`, `l`, `cup`, `tbsp`, `tsp`, `fl-oz` | `ml`                                    |
+| `count`, `each`, `whole`                 | `count`                                 |
+| anything else                            | `count` (fallback; user can edit later) |
+
+The fallback exists so an author writing `@ingredient(1, novelty-thing, 1:packet)` doesn't crash the compile. The novel `packet` unit is unknown; default_unit becomes `count` and the user can refine in the ingredient management UI.
+
+### `proposedSlugs` vs `creations`
+
+Two distinct outputs from the resolver, with different downstream handling:
+
+- **`creations`** — fully-determined "create this before materialising" instructions for new ingredients and variants. The compiler executes them in the same transaction; no user prompt needed. Unknown ingredient/variant slugs always flow here.
+- **`proposedSlugs`** — informational pointers for the review queue (Epic 03) when an LLM-driven ingest produces a recipe with refs the system can't auto-resolve (e.g. an unknown prep_state slug, or a step body `@slug` that doesn't match anything). The review queue surfaces these as "did you mean...?" prompts.
+
+If `creations.length > 0` AND no other errors, the resolver returns `ok: true` — the compiler will handle the creations. If unresolved errors exist (prep_states, step refs, etc), `ok: false` is returned but `creations` is still populated so the compiler can choose to create what it can and fail on the rest.
 
 ### Self-reference handling
 
-If `ctx.currentRecipeId` is set and a step ref or `@ingredient` slug resolves to that recipe, the resolver emits `UnresolvedRecipeSlug` with a clear "self-reference" message rather than letting it through and relying on PRD-117 to catch the cycle. This is a UX optimisation — a recipe referencing itself is an author error, not a graph issue.
+If `ctx.currentRecipeId` is set and a step ref or `@ingredient` slug resolves to that recipe, the resolver emits `SelfReferenceRecipe` with a clear message rather than letting it through and relying on PRD-117 to catch the cycle. This is a UX optimisation — a recipe referencing itself is an author error, not a graph issue.
 
 ## Business Rules
 
-- Resolver is **read-only** against the DB. No writes, no side effects.
+- Resolver is **read-only** against the DB. No writes, no side effects. (Auto-creation happens in PRD-116's compiler, driven by the `creations` output of this resolver.)
 - Resolver is deterministic for a given `(ast, slug_registry snapshot)` pair.
-- Errors and `proposedSlugs` are accumulated; resolution does not short-circuit on the first unresolved slug.
-- Resolver does NOT perform recipe-graph cycle detection beyond the trivial self-reference case. Full graph cycle detection lives in PRD-117 and runs at materialisation time, with access to the resolved recipe_lines from PRD-116.
-- Resolver does NOT validate `qty:unit` pairs (PRD-116 may add a unit-known check). `@ingredient(1, banana, 250:foo)` resolves successfully with `unit='foo'`.
+- Errors, `creations`, and `proposedSlugs` are accumulated; resolution does not short-circuit on the first unresolved slug.
+- Resolver does NOT perform recipe-graph cycle detection beyond the trivial self-reference case. Full graph cycle detection lives in PRD-117 and runs at materialisation time.
+- Resolver does NOT validate `qty:unit` pairs beyond using the unit to derive a `default_unit` for auto-created ingredients. Unknown units carry through to recipe_lines as literal strings.
+- Auto-create instructions are batched into `creations`; the compiler is responsible for ordering them (ingredients before variants of those ingredients) and applying them atomically.
 
 ## Edge Cases
 
-| Case                                                                                                           | Behaviour                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `@ingredient(1, made-up-thing, 250:g)`                                                                         | `UnresolvedIngredientSlug` + `proposedSlugs.push({ slug: 'made-up-thing', suggestedKind: 'ingredient' })`                             |
-| `@ingredient(1, banana:made-up-variant, 250:g)` when `banana` exists                                           | `UnresolvedVariantSlug` (ingredient resolves; variant doesn't). NOT added to proposedSlugs — variants are not in the global registry. |
-| `@ingredient(1, smash-patty, 4:count)` where `smash-patty` is an unpromoted draft recipe                       | `WrongKindForContext` — promote the recipe first or change reference                                                                  |
-| `@ingredient(1, smash-patty:something, 4:count)` (variant on recipe ref)                                       | `WrongKindForContext` — variants are not meaningful on recipe references                                                              |
-| `@ingredient(1, banana:_:mashed, 250:g)`                                                                       | Resolves to ingredient `banana`, variant null, prep `mashed`                                                                          |
-| `@step("Add the @1 ...")` where `@ingredient(1, ...)` doesn't exist                                            | `UnresolvedStepRefIndex` on the `@1`                                                                                                  |
-| `@step("Add the @banana ...")` with no matching `@ingredient(N, banana, ...)` and banana is a known ingredient | Resolves OK; ingredientId from registry; variantId/prepStateId null                                                                   |
-| `@step("Add the @banana ...")` and banana is unknown                                                           | `UnresolvedStepRefSlug` + `proposedSlugs` entry                                                                                       |
-| `@yield(banana, 1:count)` where `banana` is an ingredient                                                      | Resolves cleanly                                                                                                                      |
-| `@yield(smash-patty, 4:count)` where `smash-patty` is a recipe                                                 | Resolves to the recipe's yield ingredient; carries through as own yield                                                               |
-| `@yield(smash-patty, 4:count)` where `smash-patty` is an unpromoted recipe                                     | `YieldCannotBeRecipe`                                                                                                                 |
-| Self-reference: `currentRecipeId=42` and `@ingredient(1, recipe-slug-42, ...)`                                 | `UnresolvedRecipeSlug` with self-reference message; no graph walk needed                                                              |
-| `@ingredient(1, banana, 250:g)` and `@ingredient(2, banana, 100:g)`                                            | Both resolve to the same `ingredientId`; allowed (two separate uses of banana in one recipe)                                          |
-| `slug_registry` returns two rows with the same slug (impossible by PK)                                         | If it ever happened: `AmbiguousSlug`. Defensive — flags data corruption.                                                              |
+| Case                                                                                                           | Behaviour                                                                                                                            |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `@ingredient(1, made-up-thing, 250:g)`                                                                         | Emits `creations.push({ kind: 'ingredient', slug: 'made-up-thing', defaultUnit: 'g' })`. Resolves OK; compiler creates row.          |
+| `@ingredient(1, banana:made-up-variant, 250:g)` when `banana` exists                                           | Emits `creations.push({ kind: 'variant', parentIngredientSlug: 'banana', slug: 'made-up-variant', defaultUnit: 'g' })`. Resolves OK. |
+| `@ingredient(1, smash-patty, 4:count)` where `smash-patty` is an unpromoted draft recipe                       | `WrongKindForContext` — promote the recipe first or change reference                                                                 |
+| `@ingredient(1, smash-patty:something, 4:count)` (variant on recipe ref)                                       | `VariantOnRecipeRef` — variants are not meaningful on recipe references                                                              |
+| `@ingredient(1, banana:_:mashed, 250:g)`                                                                       | Resolves to ingredient `banana`, variant null, prep `mashed`                                                                         |
+| `@ingredient(1, banana:_:never-heard-of-this-prep, 250:g)`                                                     | `UnresolvedPrepStateSlug` + `proposedSlugs.push({ slug, suggestedKind: 'prep_state' })`. prep_states are curated, not auto-created.  |
+| `@step("Add the @1 ...")` where `@ingredient(1, ...)` doesn't exist                                            | `UnresolvedStepRefIndex` on the `@1`                                                                                                 |
+| `@step("Add the @banana ...")` with no matching `@ingredient(N, banana, ...)` and banana is a known ingredient | Resolves OK; ingredientId from registry; variantId/prepStateId null                                                                  |
+| `@step("Add the @banana ...")` and banana is unknown                                                           | `UnresolvedStepRefSlug` + `proposedSlugs` entry. Step refs do NOT auto-create — only `@ingredient` and `@yield` blocks do.           |
+| `@yield(banana, 1:count)` where `banana` is an ingredient                                                      | Resolves cleanly                                                                                                                     |
+| `@yield(new-output-thing, 4:count)` where slug is unknown                                                      | Emits `creations.push({ kind: 'ingredient', ... })`. Yield auto-creates just like input ingredients.                                 |
+| `@yield(flank:braised:shredded, 500:g)` with all three slugs known                                             | Resolves with `yieldIngredientId=flank, yieldVariantId=braised, yieldPrepStateId=shredded`                                           |
+| `@yield(flank:never-braised:shredded, 500:g)` with unknown variant                                             | Emits `creations` for the variant; resolves OK.                                                                                      |
+| `@yield(smash-patty, 4:count)` where `smash-patty` is a recipe                                                 | Resolves to the recipe's yield ingredient; carries through as own yield                                                              |
+| `@yield(smash-patty, 4:count)` where `smash-patty` is an unpromoted recipe                                     | `YieldCannotBeRecipe`                                                                                                                |
+| Self-reference: `currentRecipeId=42` and `@ingredient(1, recipe-slug-42, ...)`                                 | `SelfReferenceRecipe` with current recipe slug in message; no graph walk needed                                                      |
+| `@ingredient(1, banana, 250:g)` and `@ingredient(2, banana, 100:g)`                                            | Both resolve to the same `ingredientId`; allowed (two separate uses of banana in one recipe)                                         |
+| `slug_registry` returns two rows with the same slug (impossible by PK)                                         | If it ever happened: `AmbiguousSlug`. Defensive — flags data corruption.                                                             |
 
 ## Acceptance Criteria
 

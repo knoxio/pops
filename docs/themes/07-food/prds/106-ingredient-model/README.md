@@ -181,7 +181,7 @@ Inline per theme protocol — see the `Doc protocol` row in [theme key decisions
 
 ### Documentation
 
-- [ ] PRD-107 cross-link landed in this PRD's "Out of Scope" section (recipe-line FK target).
+- [ ] PRD-107 and PRD-116 cross-links landed in this PRD's "Out of Scope" section (recipe header refs ingredients in 107; recipe_lines FK target is in 116).
 - [ ] No backward-compat shims for older shapes — this is a greenfield table set.
 
 ## Out of Scope

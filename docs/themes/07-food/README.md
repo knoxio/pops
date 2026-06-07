@@ -58,7 +58,7 @@ Epic 00 blocks 01–07. Epics 01 and 02 can proceed in parallel once schema land
 - **Claude vision cost drift** — Per-ingest cost could climb. Mitigation: hard caps (≤5 keyframes, ≤1 vision call per ingest); usage logged to existing `ai_inference_log`; monthly budget alert via AI ops.
 - **Unit conversion accuracy** — "1 medium onion = 150 g" is approximate. Mitigation: original text always stored alongside metric; per-ingredient density overrides; conversion is best-effort, not authoritative.
 - **Tag taxonomy drift** — LLM-proposed tags fragment ("vegan" vs "plant-based"). Mitigation: tag-merge UI (deferred PRD), canonical aliasing same as ingredient aliases.
-- **Cycle introduction via unified model** — Recipe A can in principle take Recipe A's output as input. Mitigation: enforced cycle detection on `recipe_lines` insert (PRD-107 invariant).
+- **Cycle introduction via unified model** — Recipe A can in principle take Recipe A's output as input. Mitigation: cycle detection at compile time per PRD-117 (iterative DFS), invoked between resolver (PRD-115) and materialiser (PRD-116). Self-reference caught earlier in PRD-115's resolver.
 - **Single-point STT dependency** — `faster-whisper` Python service must be alive in the worker. Mitigation: degraded mode = caption-only ingest; worker reports STT health to admin UI.
 
 ## Out of Scope

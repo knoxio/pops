@@ -65,7 +65,7 @@ So "caramelised onions" is a recipe (heat applied; output stored in jars). "Dice
 
 ### Negative
 
-- **Cycles are possible by construction.** Recipe A could in principle reference Recipe A's output as input. Mitigation: enforced cycle detection on `recipe_lines` insert (PRD-107 invariant — recursive CTE walk).
+- **Cycles are possible by construction.** Recipe A could in principle reference Recipe A's output as input. Mitigation: cycle detection at compile time via PRD-117 (iterative DFS over the recipe ↔ yield ↔ recipe graph), invoked between resolve (PRD-115) and materialise (PRD-116). Self-reference is caught earlier in the resolver with a clearer error.
 - **Prep_state vs recipe boundary is fuzzy.** The convention above is judgement-dependent. Acceptable because misclassification is cheap to fix and rare in practice.
 - **Soft enum `recipe_type` carries UX semantics with no structural enforcement.** A buggy UI could let a plate be referenced as a component input. Trade-off accepted; the alternative — splitting tables — produces worse problems.
 

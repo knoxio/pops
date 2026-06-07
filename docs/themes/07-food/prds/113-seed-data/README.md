@@ -39,6 +39,8 @@ Selected to cover the matrix of (default_unit, has_density, has_shelf_life, has_
 
 Roughly 60 variants across these 20 ingredients.
 
+**Shelf-life mapping.** Per PRD-108, `default_shelf_life_days_fridge` and `default_shelf_life_days_freezer` are columns on `ingredient_variants`, not `ingredients`. The "Notes" column above shows the typical per-ingredient values; the seed script applies them to **every variant** of that ingredient unless a variant-specific override is needed (e.g. for `corn` the per-variant overrides are explicit: `fresh-cob` = fridge 5d, `canned-brine` = fridge 365d / pantry indefinite, `frozen-kernels` = freezer 365d). For ingredients with no variant-specific differences (e.g. `butter` is the same shelf life across `unsalted`/`salted`/`cultured`), the seed writes the same fridge/freezer values to all variants. Pantry-storable items have null fridge/freezer shelf-life and are assumed indefinite for v1.
+
 ### Hierarchy
 
 A small parent-child set to exercise PRD-106's hierarchy and depth cap:
@@ -77,13 +79,13 @@ Common alternatives to exercise resolver lookups:
 
 A mix of global and one recipe-scoped (used by the smash-burger sample recipe):
 
-| From         | To                | Ratio | Context tags          |
-| ------------ | ----------------- | ----- | --------------------- |
-| butter       | olive-oil         | 0.75  | `["savory","frying"]` |
-| olive-oil    | butter            | 1.33  | `["savory","frying"]` |
-| onion:yellow | onion:red         | 1.0   | `["savory"]`          |
-| egg          | flax-egg (custom) | 1.0   | `["baking","vegan"]`  |
-| (~6 more)    |                   |       |                       |
+| From         | To        | Ratio | Context tags          |
+| ------------ | --------- | ----- | --------------------- |
+| butter       | olive-oil | 0.75  | `["savory","frying"]` |
+| olive-oil    | butter    | 1.33  | `["savory","frying"]` |
+| onion:yellow | onion:red | 1.0   | `["savory"]`          |
+| egg          | olive-oil | 0.5   | `["baking"]`          |
+| (~6 more)    |           |       |                       |
 
 Plus one recipe-scoped: in `smash-burger` recipe, substitute `cheese:colby-block` with `cheese:cheddar-shredded` at ratio 1.0.
 
@@ -113,7 +115,7 @@ Each in `body_dsl` form, all to be compiled via PRD-116 during seed.
 ## Steps
 @step("Heat the @2 and @3 in a wide pan over medium heat until the @2 melts.")
 @step("Add the @1 and a pinch of @4. Stir to coat.")
-@step("Cook over low heat for @time(35:min), stirring every few minutes until deep golden brown.")
+@step("Cook over low heat for @time(40:min), stirring every few minutes until deep golden brown.")
 ```
 
 Exercises: component recipe, mixed compact/positional descriptors, multiple ingredient refs in steps, inline `@time`.
@@ -258,15 +260,17 @@ Update `apps/pops-api/src/db/seeder.ts` to also call into food's seeder when the
 
 ## Edge Cases
 
-| Case                                                                                                    | Behaviour                                                                                                                                                                                                                                                       |
-| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Running `db:seed:food` against a DB without the food schema                                             | Aborts with clear error: "food schema not present; run migrations first".                                                                                                                                                                                       |
-| Running `db:seed:food` when `slug_registry` has user-added rows that collide with seed slugs            | Service throws `SlugAlreadyRegisteredError`; seed surfaces it; operator must clean up.                                                                                                                                                                          |
-| Running `db:seed:food` twice in a row                                                                   | Second run clears and re-inserts; final state identical to first run.                                                                                                                                                                                           |
-| Sample recipe `caramelised-cheese-toastie` references `caramelised-onions` whose compile hasn't run yet | Seed inserts recipes in dependency order: components first (caramelised-onions, smash-patty), then plates that reference them. Required because PRD-115 resolves recipe-as-ingredient refs against `recipes.current_version_id`, which is null until promotion. |
-| Compile failure on a sample recipe                                                                      | Seed exits with error including the `CompileResult` JSON and a pointer to the recipe slug. Test fixtures need updating, not the seeder.                                                                                                                         |
-| `db:seed` invoked without food installed                                                                | Food block is skipped silently; rest of seed proceeds normally.                                                                                                                                                                                                 |
-| Re-seeding with `plan_slots` rows that the user customised                                              | Only `is_default=1` rows are cleared and reinserted; user-added slots survive.                                                                                                                                                                                  |
+| Case                                                                                                                                       | Behaviour                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Running `db:seed:food` against a DB without the food schema                                                                                | Aborts with clear error: "food schema not present; run migrations first".                                                                                                                                                                                       |
+| Running `db:seed:food` when `slug_registry` has user-added rows that collide with seed slugs                                               | Service throws `SlugAlreadyRegisteredError`; seed surfaces it; operator must clean up.                                                                                                                                                                          |
+| Running `db:seed:food` twice in a row                                                                                                      | Second run clears and re-inserts; final state identical to first run.                                                                                                                                                                                           |
+| Sample recipe `caramelised-cheese-toastie` references `caramelised-onions` whose compile hasn't run yet                                    | Seed inserts recipes in dependency order: components first (caramelised-onions, smash-patty), then plates that reference them. Required because PRD-115 resolves recipe-as-ingredient refs against `recipes.current_version_id`, which is null until promotion. |
+| Sample recipes' `@yield(...)` slugs (e.g. `caramelised-onion`, `toastie`, `smash-burger`, `omelette`) aren't in the seeded ingredient list | Auto-create per PRD-115: compile creates the yield ingredient row and its slug_registry entry before materialising. Seed task does NOT need to pre-insert these — they fall out of the normal compile pipeline.                                                 |
+| Sample recipe uses a prep_state slug not in the curated seed list                                                                          | Compile fails with `UnresolvedPrepStateSlug`. All prep_state slugs referenced by sample recipes MUST appear in the 15 listed in `§ prep_states`. If a future sample recipe needs a new prep_state, add it to the seed list.                                     |
+| Compile failure on a sample recipe                                                                                                         | Seed exits with error including the `CompileResult` JSON and a pointer to the recipe slug. Test fixtures need updating, not the seeder.                                                                                                                         |
+| `db:seed` invoked without food installed                                                                                                   | Food block is skipped silently; rest of seed proceeds normally.                                                                                                                                                                                                 |
+| Re-seeding with `plan_slots` rows that the user customised                                                                                 | Only `is_default=1` rows are cleared and reinserted; user-added slots survive.                                                                                                                                                                                  |
 
 ## Acceptance Criteria
 

@@ -40,26 +40,28 @@ Stable identity. `slug` participates in the global `slug_registry` (PRD-106) —
 
 ```sql
 CREATE TABLE recipe_versions (
-  id                 INTEGER PRIMARY KEY,
-  recipe_id          INTEGER NOT NULL REFERENCES recipes(id),
-  version_no         INTEGER NOT NULL,
-  status             TEXT NOT NULL DEFAULT 'draft'
-                       CHECK (status IN ('draft','current','archived')),
-  title              TEXT NOT NULL,
-  summary            TEXT,
-  body_dsl           TEXT NOT NULL,
-  yield_ingredient_id INTEGER REFERENCES ingredients(id),
-  yield_qty          REAL,
-  yield_unit         TEXT,
-  servings           INTEGER,
-  prep_minutes       INTEGER,
-  cook_minutes       INTEGER,
-  source_id          INTEGER REFERENCES ingest_sources(id),
-  compile_status     TEXT NOT NULL DEFAULT 'uncompiled'
-                       CHECK (compile_status IN ('uncompiled','compiled','failed')),
-  compile_error      TEXT,
-  compiled_at        TEXT,
-  created_at         TEXT NOT NULL DEFAULT (datetime('now'))
+  id                   INTEGER PRIMARY KEY,
+  recipe_id            INTEGER NOT NULL REFERENCES recipes(id),
+  version_no           INTEGER NOT NULL,
+  status               TEXT NOT NULL DEFAULT 'draft'
+                         CHECK (status IN ('draft','current','archived')),
+  title                TEXT NOT NULL,
+  summary              TEXT,
+  body_dsl             TEXT NOT NULL,
+  yield_ingredient_id  INTEGER REFERENCES ingredients(id),
+  yield_variant_id     INTEGER REFERENCES ingredient_variants(id),
+  yield_prep_state_id  INTEGER REFERENCES prep_states(id),
+  yield_qty            REAL,
+  yield_unit           TEXT,
+  servings             INTEGER,
+  prep_minutes         INTEGER,
+  cook_minutes         INTEGER,
+  source_id            INTEGER REFERENCES ingest_sources(id),
+  compile_status       TEXT NOT NULL DEFAULT 'uncompiled'
+                         CHECK (compile_status IN ('uncompiled','compiled','failed')),
+  compile_error        TEXT,
+  compiled_at          TEXT,
+  created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE UNIQUE INDEX uq_recipe_versions_recipe_no ON recipe_versions(recipe_id, version_no);
 CREATE INDEX idx_recipe_versions_recipe        ON recipe_versions(recipe_id);
@@ -71,7 +73,11 @@ A snapshot of recipe content. New edit → new row with `version_no = max(versio
 
 **`body_dsl` is the canonical content.** Everything else on this row is either header metadata or derived from the DSL during compile (PRDs 115–116). `title`, `servings`, and times are duplicated from the `@recipe(...)` header in the DSL for fast list queries that don't want to re-parse. Drift between header columns and the DSL header is reconciled at compile time: the columns are overwritten from the parsed `@recipe` call. The DSL wins.
 
-`yield_*` columns are populated from the `@yield(...)` call at compile. Until compile succeeds they are NULL. `yield_ingredient_id` FKs into `ingredients` (PRD-106), the same table the recipe could itself produce a row in via Epic 01 promotion flow.
+`yield_*` columns are populated from the `@yield(...)` call at compile. Until compile succeeds they are NULL. `yield_ingredient_id` FKs into `ingredients` (PRD-106). Yields can carry a variant and a prep_state (e.g. `@yield(flank:braised:shredded, 500:g)`) — `yield_variant_id` and `yield_prep_state_id` capture them so different cooks of "flank" can produce structurally distinct batches (braised-shredded vs raw-cubed). Both nullable: a recipe yielding raw canonical "flank" leaves both null.
+
+**Multiple recipes can yield the same ingredient.** No UNIQUE constraint on `yield_ingredient_id` — three different `pao-de-queijo` recipes can all `@yield(pao-de-queijo, 12:count)`. Pantry queries group batches by `(variant_id, prep_state_id)` regardless of which recipe produced them; cook-history queries follow `batches.source_id → recipe_runs.recipe_version_id` to see which recipe made each specific batch.
+
+**Auto-creation of yield ingredients.** If `@yield(new-slug, ...)` references a slug not in `slug_registry`, PRD-115's resolver flags it as a creation; PRD-116's compile creates the ingredient (via PRD-106's `createIngredient` service) before materialising. Same for new variants under existing ingredients. Authoring a recipe never requires pre-seeding its outputs.
 
 `source_id` FKs into `ingest_sources` (PRD-110); null for manually-authored recipes.
 
@@ -135,7 +141,7 @@ Disallowed: anything else. Specifically:
 
 ### Header / DSL reconciliation
 
-When PRD-116's compile runs, it parses `@recipe(...)` from `body_dsl` and overwrites the `title`, `summary`, `servings`, `prep_minutes`, `cook_minutes`, `recipe_type` (if present in the `@recipe` call) columns. Direct UI edits to these columns are NOT supported — edit the DSL, save, recompile. PRD-107 columns are an index; PRD-114 grammar is the source of truth.
+When PRD-116's compile runs, it parses `@recipe(...)` from `body_dsl` and overwrites the `title`, `summary`, `servings`, `prep_minutes`, `cook_minutes`, `recipe_type` (if present in the `@recipe` call) columns; it also writes `yield_ingredient_id`, `yield_variant_id`, `yield_prep_state_id`, `yield_qty`, `yield_unit` from the `@yield(...)` call. Direct UI edits to these columns are NOT supported — edit the DSL, save, recompile. PRD-107 columns are an index; PRD-114 grammar is the source of truth.
 
 ## Edge Cases
 
@@ -156,7 +162,7 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Drizzle schema extends `packages/app-food/src/db/schema.ts` with `recipes`, `recipe_versions`, `recipe_tags` matching the SQL above.
+- [ ] Drizzle schema extends `packages/app-food/src/db/schema.ts` with `recipes`, `recipe_versions` (including `yield_variant_id` and `yield_prep_state_id`), `recipe_tags` matching the SQL above.
 - [ ] Migration generated under `apps/pops-api/drizzle/` and applies cleanly to a DB that already has PRD-106 applied.
 - [ ] `packages/db-types` regenerated; types exported.
 - [ ] Indexes (including the partial UNIQUE on `status='current'`) exist after migration (verify via `PRAGMA index_list` + introspection).

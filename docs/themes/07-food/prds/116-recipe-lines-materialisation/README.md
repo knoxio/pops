@@ -79,7 +79,7 @@ CREATE INDEX idx_proposed_slugs_slug    ON recipe_version_proposed_slugs(slug);
 
 Holds the `ProposedSlug[]` from PRD-115's resolver when compile produces unresolved-slug results. Persisted so Epic 03's review queue can drive a "create these ingredients?" prompt during draft approval without re-parsing.
 
-Rows are owned by the version: when a version recompiles, the materialiser deletes all rows for that `recipe_version_id` and inserts the new set. When the version is deleted, FK cascade clears them (via app-layer service, same pattern as PRD-106's slug_registry).
+Rows are owned by the version: when a version recompiles, the materialiser deletes all rows for that `recipe_version_id` and inserts the new set. When the version is deleted, a service-managed cascade clears them in the same transaction (no SQL `ON DELETE CASCADE` — same pattern as PRD-106's slug_registry).
 
 ## Compile Function
 
@@ -88,7 +88,7 @@ Rows are owned by the version: when a version recompiles, the materialiser delet
 export async function compileRecipeVersion(versionId: number, db: SqliteDb): Promise<CompileResult>;
 
 export type CompileResult =
-  | { ok: true; lineCount: number; stepCount: number }
+  | { ok: true; lineCount: number; stepCount: number; creationCount: number }
   | { ok: false; phase: 'parse' | 'resolve' | 'cycle' | 'materialise'; errors: CompileError[] };
 
 export type CompileError = ParseError | ResolveError | CycleError | MaterialiseError;
@@ -105,19 +105,25 @@ In one Drizzle transaction:
    - DELETE existing `recipe_lines`, `recipe_steps`, `recipe_version_proposed_slugs` rows for this `versionId` (a failed compile clears prior state — the version becomes unusable).
    - Return `{ ok: false, phase: 'parse', errors }`.
 4. Call `resolveRecipeAst(ast, { db, currentRecipeId })` (PRD-115).
-5. DELETE existing `recipe_version_proposed_slugs` for `versionId`. INSERT new rows from `resolved.proposedSlugs` (always — proposedSlugs is informational even when resolve ultimately fails).
-6. If resolve fails:
+5. **Process `resolved.creations`** (ingredient/variant auto-creation):
+   - Order: ingredients first, then variants (variants reference parent ingredients by slug).
+   - For each `creation` of `kind='ingredient'`: call `createIngredient({ slug, name: slug, default_unit })` via PRD-106's service. Slug registry row is inserted in the same call.
+   - For each `creation` of `kind='variant'`: look up the parent ingredient (just-created or pre-existing), call `createVariant({ ingredient_id, slug, name: slug, default_unit })`.
+   - Slug-registry collisions during creation (e.g. the slug was created by another transaction since resolution): retry resolution once; if still failing → `phase: 'materialise'` error.
+   - Re-resolve any AST nodes whose creations succeeded so they now carry the new IDs. (Resolver exposes a helper `applyCreations(ast, creations, db): ResolvedRecipeAst` that does the re-lookup; cheap because all new IDs are now in `slug_registry`.)
+6. DELETE existing `recipe_version_proposed_slugs` for `versionId`. INSERT new rows from `resolved.proposedSlugs` (always — proposedSlugs is informational even when resolve ultimately fails).
+7. If resolve still has errors after creations (e.g. unresolved prep_states, step refs):
    - UPDATE `recipe_versions` SET `compile_status='failed'`, `compile_error = JSON of errors + proposedSlugs summary`.
    - DELETE existing `recipe_lines`, `recipe_steps` rows for `versionId`.
    - Return `{ ok: false, phase: 'resolve', errors }`.
-7. Call `detectRecipeCycle(resolved, { db, currentRecipeId })` (PRD-117). If cycle: same failure pattern with `phase: 'cycle'`.
-8. Normalise quantities: for each ingredient block, compute `qty_g | qty_ml | qty_count` and `canonical_unit` using the conversion rules from a future Epic 01 PRD (Conversion Table). For v1 the conversion is identity-or-null: if `original_unit ∈ {'g','ml','count'}` → carry over; otherwise leave normalised fields null and `canonical_unit` defaults to the ingredient's `default_unit`. The Conversion Table PRD upgrades this.
-9. DELETE existing `recipe_lines` and `recipe_steps` for `versionId`. INSERT new rows from `resolved.blocks`. Compute `body_md` for each step by rewriting `@N` and `@slug` refs to markdown links.
-10. UPDATE `recipe_versions` SET `title`, `summary`, `servings`, `prep_minutes`, `cook_minutes`, `yield_ingredient_id`, `yield_qty`, `yield_unit`, `compile_status='compiled'`, `compile_error=NULL`, `compiled_at=now()` from the resolved header and yield.
-11. Commit transaction.
-12. Return `{ ok: true, lineCount, stepCount }`.
+8. Call `detectRecipeCycle(resolved, { db, currentRecipeId })` (PRD-117). If cycle: same failure pattern with `phase: 'cycle'`.
+9. Normalise quantities: for each ingredient block, compute `qty_g | qty_ml | qty_count` and `canonical_unit` using the conversion rules from a future Epic 01 PRD (Conversion Table). For v1 the conversion is identity-or-null: if `original_unit ∈ {'g','ml','count'}` → carry over; otherwise leave normalised fields null and `canonical_unit` defaults to the ingredient's `default_unit`. The Conversion Table PRD upgrades this.
+10. DELETE existing `recipe_lines` and `recipe_steps` for `versionId`. INSERT new rows from `resolved.blocks`. Compute `body_md` for each step by rewriting `@N` and `@slug` refs to markdown links.
+11. UPDATE `recipe_versions` SET `title`, `summary`, `servings`, `prep_minutes`, `cook_minutes`, `recipe_type` (if present in `@recipe`), `yield_ingredient_id`, `yield_variant_id`, `yield_prep_state_id`, `yield_qty`, `yield_unit`, `compile_status='compiled'`, `compile_error=NULL`, `compiled_at=now()` from the resolved header and yield.
+12. Commit transaction.
+13. Return `{ ok: true, lineCount, stepCount, creationCount }`.
 
-If any DB call inside the transaction fails (e.g. FK violation that the resolver didn't catch), the transaction rolls back and the caller sees a `MaterialiseError`.
+If any DB call inside the transaction fails (e.g. FK violation that the resolver didn't catch, or a slug-registry collision on creation), the transaction rolls back and the caller sees a `MaterialiseError`. Auto-created rows are rolled back atomically with everything else — no partial state.
 
 ### `compile_error` JSON shape
 
@@ -126,8 +132,8 @@ If any DB call inside the transaction fails (e.g. FK violation that the resolver
   "phase": "resolve",
   "errors": [
     {
-      "code": "UnresolvedIngredientSlug",
-      "message": "ingredient slug 'made-up-thing' not found",
+      "code": "UnresolvedPrepStateSlug",
+      "message": "prep_state slug 'never-heard-of-this' not found (prep_states are curated; create via the prep_state management UI)",
       "loc": { "startLine": 8, "startCol": 17, "endLine": 8, "endCol": 31 },
       "slug": "made-up-thing"
     }
