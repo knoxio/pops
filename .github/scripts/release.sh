@@ -23,9 +23,11 @@ TMPDIR_RELEASE="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR_RELEASE"' EXIT
 mktemp() { command mktemp "$TMPDIR_RELEASE/XXXXXX"; }
 
-# Filter to strict semver (vMAJOR.MINOR.PATCH) so legacy rolling tags like
-# v1, v2, v3, v4 don't get picked up as the previous release.
-LAST_TAG="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -1 || true)"
+# Filter to strict vMAJOR.MINOR.PATCH so legacy rolling tags (v1, v2, …) and
+# pre-release / 4-segment variants (v1.2.3-rc.1, v1.2.3.4) don't get picked
+# up as the previous release. `git tag -l` uses globs which can't express
+# "anchored regex" — pipe through grep -E instead.
+LAST_TAG="$(git tag -l --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)"
 if [ -n "$LAST_TAG" ]; then
   RANGE="${LAST_TAG}..HEAD"
   CURRENT="${LAST_TAG#v}"
