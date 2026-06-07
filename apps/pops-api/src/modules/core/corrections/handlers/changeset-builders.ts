@@ -1,5 +1,13 @@
 import type { ChangeSet, CorrectionRow, CorrectionSignal } from '../types.js';
 
+/**
+ * Confidence assigned to rules created or refreshed via a user-approved
+ * proposal. Must stay above the matcher's default minConfidence (0.7) so the
+ * rule actually fires; equal to the value `buildAddChangeSet` uses for new
+ * rules, so edit and add proposals produce equivalently trustworthy rules.
+ */
+export const PROPOSAL_APPROVED_CONFIDENCE = 0.95;
+
 interface BuildArgs {
   effectiveSignal: CorrectionSignal;
   normalizedPattern: string;
@@ -22,6 +30,11 @@ function changeSetSource(hasFeedback: boolean): string {
 }
 
 export function buildEditChangeSet(existing: CorrectionRow, args: BuildArgs): ChangeSet {
+  // A proposal edit means the user is confirming this pattern → entity again.
+  // Promote confidence and reactivate the rule so it actually fires during
+  // re-evaluation; otherwise low-confidence or disabled legacy rows silently
+  // swallow the user's choice and the txn stays in Uncertain.
+  const promotedConfidence = Math.max(existing.confidence, PROPOSAL_APPROVED_CONFIDENCE);
   return {
     source: changeSetSource(args.hasFeedback),
     reason: describeReason('update', args),
@@ -35,6 +48,8 @@ export function buildEditChangeSet(existing: CorrectionRow, args: BuildArgs): Ch
           location: args.effectiveSignal.location,
           tags: args.effectiveSignal.tags,
           transactionType: args.effectiveSignal.transactionType,
+          confidence: promotedConfidence,
+          isActive: true,
         },
       },
     ],
@@ -56,7 +71,7 @@ export function buildAddChangeSet(args: BuildArgs): ChangeSet {
           location: args.effectiveSignal.location ?? null,
           tags: args.effectiveSignal.tags ?? [],
           transactionType: args.effectiveSignal.transactionType ?? null,
-          confidence: 0.95,
+          confidence: PROPOSAL_APPROVED_CONFIDENCE,
           isActive: true,
         },
       },
