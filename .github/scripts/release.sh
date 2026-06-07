@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-# Compute next release from conventional commits since the last v* tag.
+# Compute next release from conventional commits since the last vX.Y.Z tag.
 #
-# Writes three things on success:
-#   - prepends a section to CHANGELOG.md
+# Writes two things on success (the workflow handles tagging + GitHub Release):
 #   - writes release-notes.md (used by `gh release create --notes-file`)
 #   - emits version / previous / release outputs on $GITHUB_OUTPUT
 #
-# Bump rules (pre-1.0 follows release-please's "bump-minor-pre-major" preset):
-#   - any  BREAKING CHANGE / `type!:` →  major  ; in 0.x, becomes minor
-#   - any  feat                       →  minor
-#   - any  fix | perf                 →  patch
-#   - everything else                 →  no release
+# Deliberately does NOT mutate CHANGELOG.md or version.txt in the working tree:
+# the repo ruleset requires changes to main to go through a PR, so the workflow
+# can't push a release commit directly. The GitHub Release is the source of
+# truth for changelog history.
+#
+# Bump rules (pre-1.0 collapses major into minor, like release-please's
+# "bump-minor-pre-major" preset):
+#   - any  BREAKING CHANGE / BREAKING-CHANGE / `type!:` →  major  ; in 0.x, becomes minor
+#   - any  feat                                         →  minor
+#   - any  fix | perf                                   →  patch
+#   - everything else                                   →  no release
 
 set -euo pipefail
 
@@ -18,7 +23,9 @@ TMPDIR_RELEASE="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR_RELEASE"' EXIT
 mktemp() { command mktemp "$TMPDIR_RELEASE/XXXXXX"; }
 
-LAST_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1 || true)"
+# Filter to strict semver (vMAJOR.MINOR.PATCH) so legacy rolling tags like
+# v1, v2, v3, v4 don't get picked up as the previous release.
+LAST_TAG="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -1 || true)"
 if [ -n "$LAST_TAG" ]; then
   RANGE="${LAST_TAG}..HEAD"
   CURRENT="${LAST_TAG#v}"
@@ -102,19 +109,6 @@ emit_section revert "Reverts"
 emit_section docs   "Documentation"
 emit_section build  "Build"
 emit_section ci     "CI/CD"
-
-if [ ! -f CHANGELOG.md ]; then
-  printf '# Changelog\n\n' > CHANGELOG.md
-fi
-{
-  head -1 CHANGELOG.md
-  echo
-  cat "$NOTES"
-  tail -n +3 CHANGELOG.md
-} > CHANGELOG.md.new
-mv CHANGELOG.md.new CHANGELOG.md
-
-echo "$NEW" > version.txt
 
 cp "$NOTES" release-notes.md
 {

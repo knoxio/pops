@@ -20,8 +20,8 @@ Establish a release process: cut semver `vX.Y.Z` tags on the pops repo when the 
 
 - Versioning scheme: **semver on git tag** (`v0.1.0`, `v0.2.0`, `v1.0.0`). Single product version covers both `pops-api` and `pops-shell` since they ship together.
 - Tagging in CI: `.github/workflows/publish-images.yml` already triggers on `tags: ['v*']`. The `docker/metadata-action` config now emits the version-tagged variants alongside `main` / `sha-<short>`.
-- Changelog & version bumps: `.github/workflows/release.yml` runs `.github/scripts/release.sh` on every push to `main`. The script reads commits since the last `v*` tag, computes the bump, prepends a section to `CHANGELOG.md`, updates `version.txt`, commits, tags `vX.Y.Z`, pushes, and creates the GitHub Release — no PR ceremony.
-- Recursion guard: the job skips itself when the head commit starts with `chore(release):`, and `GITHUB_TOKEN`-driven pushes don't re-trigger `push:` workflows.
+- Changelog & version bumps: `.github/workflows/release.yml` runs `.github/scripts/release.sh` on every push to `main`. The script reads commits since the last `vX.Y.Z` tag, computes the bump, and writes release-notes.md. The job then creates an annotated `vX.Y.Z` tag at HEAD, pushes the tag, and runs `gh release create` — no commit on main, no PR ceremony. The GitHub Release is the canonical changelog.
+- Tag-only by design: the repo ruleset forbids direct pushes to main, so the workflow only pushes tags. Legacy rolling tags (`v1`, `v2`, …) are ignored by the script's strict `vX.Y.Z` filter.
 - Runbook: `docs/runbooks/cut-release.md` documents when to cut, the Conventional Commits cheat sheet, the manual escape hatch, and how a deployer pins a version.
 
 ## Notes
