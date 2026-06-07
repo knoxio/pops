@@ -105,18 +105,24 @@ docs/
 
 ## The Ticket Rule
 
-**No ticket, no work.** Every piece of implementation must trace back to a user story with acceptance criteria. No exceptions — not for tooling, not for "quick fixes", not for "obvious" changes.
+**No ticket, no work.** Every piece of implementation must trace back to testable acceptance criteria. No exceptions — not for tooling, not for "quick fixes", not for "obvious" changes.
 
 The chain is non-negotiable:
 
 ```
-Epic → PRD → User Story (with acceptance criteria) → Implementation
+Epic → PRD → testable acceptance criteria → Implementation
 ```
 
+Acceptance criteria can live in one of two places:
+
+1. **User Story files (`us-NN-slug.md`)** — the original pattern. Suitable when a PRD contains multiple independently-buildable units that benefit from being parallelisable across agents/developers.
+2. **Inline in the PRD under `## Acceptance Criteria`** — suitable when the PRD is narrow enough to be a single buildable unit, and the maintainer prefers more granular PRDs over the PRD/US split.
+
+A theme chooses one pattern and applies it consistently. The choice is recorded in the theme's `## Key Decisions` table as a "Doc protocol" entry.
+
 - Every epic must have at least one PRD
-- Every PRD must have at least one user story
-- Every user story must have testable acceptance criteria
-- If work doesn't have a US, create one before starting
+- Every PRD must have testable acceptance criteria (in a US file OR inline)
+- If work doesn't have acceptance criteria, write them before starting
 
 ## Writing Rules
 
@@ -157,13 +163,13 @@ Use these consistently across all doc types:
 
 When implementation work completes (a US is built, a PRD is finished, an epic wraps up), update all places that track status. There are exactly four:
 
-### 1. User Story — acceptance criteria checkboxes
+### 1. Acceptance criteria checkboxes
 
-Mark each `- [ ]` criterion as `- [x]` when it passes. When all criteria are checked, the US is done.
+Mark each `- [ ]` criterion as `- [x]` when it passes. When all criteria are checked, the unit (a US, or a PRD that carries its criteria inline) is done.
 
-### 2. PRD — user story table
+### 2. PRD — user story table or status
 
-Update the story's status in the PRD's `## User Stories` table from `Not started` → `In progress` → `Done`.
+If the PRD uses the US pattern, update each story's status in `## User Stories` from `Not started` → `In progress` → `Done`. If the PRD carries inline acceptance criteria, the PRD's own status moves from `In progress` → `Done` when every checkbox is ticked.
 
 ### 3. Epic — PRD table
 
