@@ -112,7 +112,25 @@ emit_section docs   "Documentation"
 emit_section build  "Build"
 emit_section ci     "CI/CD"
 
-cp "$NOTES" release-notes.md
+# GitHub Releases caps the body at 125,000 characters. Truncate with a clear
+# tail note so the call succeeds even on first-time releases that roll up
+# every conventional commit since the initial commit.
+#
+# `head -c` slices by raw bytes, which can split a UTF-8 codepoint mid-sequence
+# and yield invalid UTF-8 (commit messages can contain emoji, non-ASCII text,
+# etc.). Run the cut through `iconv -c` to silently drop any trailing partial
+# byte sequence, so the file stays valid UTF-8.
+MAX_BYTES=120000
+if (( $(wc -c < "$NOTES") > MAX_BYTES )); then
+  # iconv writes valid UTF-8 to stdout, then exits 1 with a warning if the
+  # last codepoint was incomplete (which is exactly the case we're handling).
+  # The truncated file is already on disk by then, so swallow the exit code.
+  head -c "$MAX_BYTES" "$NOTES" | iconv -c -f UTF-8 -t UTF-8 > release-notes.md 2>/dev/null || true
+  printf '\n\n_…notes truncated; see `git log %s..v%s` for the full range._\n' \
+    "${LAST_TAG:-$PREV_REF}" "$NEW" >> release-notes.md
+else
+  cp "$NOTES" release-notes.md
+fi
 {
   echo "version=$NEW"
   echo "previous=${LAST_TAG:-v0.0.0}"
