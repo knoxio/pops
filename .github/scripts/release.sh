@@ -112,7 +112,17 @@ emit_section docs   "Documentation"
 emit_section build  "Build"
 emit_section ci     "CI/CD"
 
-cp "$NOTES" release-notes.md
+# GitHub Releases caps the body at 125,000 characters. Truncate with a clear
+# tail note so the call succeeds even on first-time releases that roll up
+# every conventional commit since the initial commit.
+MAX_BYTES=120000
+if [ "$(wc -c < "$NOTES")" -gt "$MAX_BYTES" ]; then
+  head -c "$MAX_BYTES" "$NOTES" > release-notes.md
+  printf '\n\n_…notes truncated; see `git log %s..v%s` for the full range._\n' \
+    "${LAST_TAG:-$PREV_REF}" "$NEW" >> release-notes.md
+else
+  cp "$NOTES" release-notes.md
+fi
 {
   echo "version=$NEW"
   echo "previous=${LAST_TAG:-v0.0.0}"
