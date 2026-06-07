@@ -113,9 +113,23 @@ export const ingredientsRouter = {
 };
 
 export const variantsRouter = {
-  create: mutation({ input: { ingredientId: number, slug: string, name: string, defaultUnit, packageSizeG?: number, fridgeDays?: number, freezerDays?: number, notes?: string }, output: { id: number } }),
-  update: mutation({ /* ... */ }),
-  delete: mutation({ /* ... */ }),
+  // Field names match the underlying `ingredient_variants` columns from PRD-106 + PRD-108.
+  // Shelf-life columns are added by PRD-108's migration; this router depends on PRD-108 being applied.
+  create: mutation({
+    input: {
+      ingredientId: number,
+      slug: string,
+      name: string,
+      defaultUnit: 'g' | 'ml' | 'count',
+      packageSizeG?: number,
+      defaultShelfLifeDaysFridge?: number,
+      defaultShelfLifeDaysFreezer?: number,
+      notes?: string,
+    },
+    output: { id: number },
+  }),
+  update: mutation({ /* same fields as create, all optional except id */ }),
+  delete: mutation({ input: { id: number }, output: { ok: true } | { ok: false, blockers: BlockerSummary } }),
 };
 
 export const aliasesRouter = {

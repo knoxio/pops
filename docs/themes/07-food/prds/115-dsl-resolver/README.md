@@ -230,7 +230,7 @@ Inline per theme protocol.
 - [ ] Vitest suite at `packages/app-food/src/dsl/__tests__/resolver.test.ts` covers each `ResolveErrorCode` with a reliable producing case.
 - [ ] Happy path: a 10-ingredient recipe with known ingredients, two variants, one recipe-as-ingredient ref, and three step body refs resolves to a fully-populated `ResolvedRecipeAst` with no errors and no proposed slugs.
 - [ ] Mixed path: same recipe with 2 deliberately unknown slugs → resolves with `errors.length === 2` and `proposedSlugs.length === 2`, AST still produced (partial resolution where possible — known slugs are filled in).
-- [ ] Self-reference: `currentRecipeId=42` with an `@ingredient` pointing at the recipe-with-id-42's slug returns `UnresolvedRecipeSlug` with `"self-reference"` in the message.
+- [ ] Self-reference: `currentRecipeId=42` with an `@ingredient` pointing at the recipe-with-id-42's slug returns `SelfReferenceRecipe` with `"self-reference"` in the message.
 - [ ] Recipe-as-ingredient: a recipe with `current_version_id` set resolves cleanly through; without `current_version_id` → `WrongKindForContext`.
 - [ ] Variant scoping: ingredient `banana` with variant `raw`, and ingredient `apple` with variant `raw` — `@ingredient(1, banana:raw, ...)` and `@ingredient(2, apple:raw, ...)` resolve to distinct `variantId`s.
 - [ ] `_` skip: `banana:_:mashed` resolves to `{ ingredientId: banana, variantId: null, prepStateId: mashed }`.

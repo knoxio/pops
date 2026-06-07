@@ -32,7 +32,7 @@ Slug-based URLs (not numeric IDs) because slugs are stable identifiers (PRD-106)
   - `recipe_type`: plate / component / technique / sauce / dressing / drink / condiment (multi-select).
   - Tag picker (multi-select from `recipe_tags`).
   - "Show archived" toggle (default off).
-- Each list row: PRD-121's `RecipeRenderer variant='compact'` with the recipe's `current_version_id` data. Rows missing a current version (only drafts exist) show a special "Draft only — no published version" state with an "Open drafts" link.
+- Each list row: a lightweight `RecipeListCard` component (NOT PRD-121's renderer — the renderer requires `compile_status='compiled'` and joins are expensive at list scale). The card shows: hero thumbnail (`hero-card.webp`), title, prep + cook time, servings, recipe_type chip, tag chips. Rows for recipes without `current_version_id` show a "Draft only — no published version" state with an "Open drafts" link. Card data comes from `food.recipes.list` (see API).
 - Empty state: encouraging "+ Create your first recipe" CTA.
 - Sort dropdown: created date (default desc), title (alphabetical), recently cooked (uses `recipe_runs.completed_at` JOIN, future-proof for Epic 05).
 - Pagination via cursor (React Query infinite scroll); 20 per page.
@@ -65,7 +65,7 @@ Slug-based URLs (not numeric IDs) because slugs are stable identifiers (PRD-106)
 - PRD-120's `DslEditor` mounted with the draft's `body_dsl`.
 - Save button: compile + save in one transaction. Errors surface inline.
 - Promote button: enabled iff `compile_status='compiled'`. Calls `food.recipes.promote({ slug, versionId })`. On success, redirects to `/food/recipes/:slug`.
-- Discard button: deletes the draft (PRD-107's `archiveVersion` with reject path).
+- Discard button: archives the draft (PRD-107's `archiveVersion` with the reject path — `status='draft' → 'archived'`). Row disappears from the drafts list (which filters `status='draft'`).
 
 ### `/food/recipes/:slug/v/:versionNo` — Specific version
 
@@ -89,9 +89,10 @@ Slug-based URLs (not numeric IDs) because slugs are stable identifiers (PRD-106)
 ```ts
 // apps/pops-api/src/modules/food/router.ts (introduced when Epic 00 services land; extended here)
 export const recipesRouter = {
-  list: query({                                          // list page
-    input: { search?: string, recipeTypes?: string[], tags?: string[], includeArchived?: boolean, cursor?: string, limit?: number },
+  list: query({                                          // list page; returns lightweight rows (NOT renderer input)
+    input: { search?: string, recipeTypes?: string[], tags?: string[], includeArchived?: boolean, includeDraftOnly?: boolean, cursor?: string, limit?: number },
     output: { items: RecipeListItem[], nextCursor?: string },
+    // RecipeListItem = { slug, title, recipeType, heroCardPath?, prepMinutes?, cookMinutes?, servings?, tags[], hasCurrentVersion: boolean, archivedAt?: string }
   }),
   getForRendering: query({                               // detail page
     input: { slug: string, versionNo?: number },         // versionNo omitted → current_version_id
@@ -129,6 +130,11 @@ export const recipesRouter = {
     input: { sourceVersionId: number },
     output: { newVersionId: number, newVersionNo: number },
   }),
+  listProposedSlugs: query({                             // fed to PRD-120's editor as severity='info' issues
+    input: { versionId: number },
+    output: { items: ProposedSlugRow[] },
+    // ProposedSlugRow = { slug, suggestedKind, fromLoc: SourceSpan, createdAt }
+  }),
 };
 ```
 
@@ -156,7 +162,7 @@ All mutations are transactional. `create`, `createNewDraft`, `saveDraft`, `promo
 - "Edit" on a published recipe always creates a new draft (PRD-107's rule that published versions are immutable). Re-clicking "Edit" before saving the new draft re-uses it (no proliferation).
 - Promote is **one-way** in the UI: there's no "demote" button. To revert to a previous version, use "Restore as new draft" from the historic version page.
 - Search results respect tag CHECK COLLATE NOCASE (PRD-107's `idx_recipe_tags_tag`) — searching for "Vegan" matches `vegan`.
-- The list page does NOT show recipes whose only versions are drafts unless "Show archived" is on OR the user navigates explicitly to drafts. Reduces noise; published is the default surface.
+- The list page has TWO independent visibility toggles: "Show archived" (default off; controls `recipes.archived_at IS NOT NULL`) and "Show draft-only" (default off; controls recipes whose `current_version_id IS NULL`). The defaults reduce noise; published-and-active is the default surface. Combine with the type/tag filters.
 
 ## Edge Cases
 
@@ -199,7 +205,7 @@ Inline per theme protocol.
 
 - [ ] **New recipe end-to-end**: open `/food/recipes/new`, paste a valid sample DSL, save → land on `/food/recipes/<slug>/edit` → promote → `/food/recipes/<slug>` shows the rendered recipe.
 - [ ] **Edit a current recipe**: open detail of a current recipe, click Edit → new draft created → editor shows the body → save → compile errors (if any) appear inline → promote → detail page shows the new content.
-- [ ] **Discard a draft**: drafts page → click Delete on a draft → confirm → row disappears.
+- [ ] **Discard a draft**: drafts page → click Discard on a draft → confirm → `archiveVersion` runs → row disappears from the drafts list.
 - [ ] **Restore historic version**: open `/food/recipes/:slug/v/2` → "Restore as new draft" → land on `/food/recipes/:slug/edit` with that version's DSL → save → promote.
 
 ### Auto-create surfacing

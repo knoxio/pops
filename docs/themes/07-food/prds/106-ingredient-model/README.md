@@ -61,7 +61,7 @@ CREATE TABLE prep_states (
 );
 ```
 
-A small enumeration of trivial knife/process modifiers applied at the recipe-line level (PRD-107): `whole`, `diced`, `sliced`, `chopped`, `shredded`, `minced`, `julienned`, `grated`, `crushed`, `zested`, `juiced`, `melted`, `softened`. Anything substantive (caramelised onions, roasted chicken, demi-glace) is a _recipe_ with its own yield ingredient — not a prep_state. The line: it's a recipe if the output is ever stored as a batch, OR heat/fermentation is applied, OR >1 input is involved. Otherwise it's a prep_state.
+A small enumeration of trivial knife/process modifiers applied at the recipe-line level (PRD-107): `whole`, `diced`, `sliced`, `chopped`, `shredded`, `minced`, `julienned`, `grated`, `crushed`, `zested`, `juiced`, `melted`, `softened`, `mashed`, `roughly-chopped` (15 total — matches PRD-113's seed). Anything substantive (caramelised onions, roasted chicken, demi-glace) is a _recipe_ with its own yield ingredient — not a prep_state. The line: it's a recipe if the output is ever stored as a batch, OR heat/fermentation is applied, OR >1 input is involved. Otherwise it's a prep_state.
 
 ### `ingredient_aliases`
 
@@ -152,7 +152,7 @@ Inline per theme protocol — see the `Doc protocol` row in [theme key decisions
 
 ### Service layer (slug registry)
 
-- [ ] `packages/app-food/src/db/services/ingredients.ts` exposes typed methods `createIngredient`, `deleteIngredient`, `renameIngredientSlug`, `createPrepState`, `deletePrepState` that maintain the slug_registry in the same transaction as the parent row.
+- [ ] `packages/app-food/src/db/services/ingredients.ts` exposes typed methods `createIngredient`, `updateIngredient`, `deleteIngredient`, `renameIngredientSlug`, `changeIngredientParent`, `createVariant`, `updateVariant`, `deleteVariant`, `createPrepState`, `deletePrepState` that maintain the slug_registry in the same transaction as the parent row where applicable. Variants are scoped under their parent ingredient and do NOT participate in slug_registry; their service methods only manage `ingredient_variants` rows.
 - [ ] Direct INSERTs into `ingredients` or `prep_states` that bypass the service are caught by a Vitest case asserting the registry is empty after such an INSERT — proves the test guards exist; the production code path always uses the service.
 
 ### Invariants (each verified by a Vitest case)

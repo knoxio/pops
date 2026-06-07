@@ -84,22 +84,17 @@ export const manifest: ModuleManifest<unknown, typeof routes, typeof navConfig> 
     routes,
     navConfig,
   },
-  backend: {
-    // Per-module migration ownership tag (PRD-101).
-    // Epic 00 migrations get tagged so they only run when food is installed.
-    migrations: [
-      'food-schema',
-      'food-batches',
-      'food-substitutions',
-      'food-ingest-sources',
-      'food-plan-entries',
-      'food-recipe-lines',
-    ],
-  },
+  // When Epic 00 backend services land, this manifest extends with:
+  //   backend: {
+  //     router: foodRouter,                    // per PRD-098
+  //   },
+  //   migrations: foodMigrationDescriptors,    // per PRD-101 (MigrationDescriptor[])
+  // PRD-118's scope is the frontend-only manifest; backend + migrations slots are
+  // populated by Epic 00 implementation work, not this PRD.
 };
 ```
 
-Migration tags split by schema concern so each Epic 00 migration files itself under a meaningful tag. Exact tag list finalised during implementation; the manifest is the source of truth at install time.
+Per PRD-098, the manifest base shape exposes `backend?: { router: TRouter }`. Per PRD-101 US-09, the manifest is extended with a top-level `migrations: MigrationDescriptor[]?` slot that the per-module migration runner reads. PRD-118 ships the frontend-only manifest; the backend slot and migrations slot are populated when Epic 00 implementation creates `apps/pops-api/src/modules/food/` and the migration files. The Epic 00 migration descriptors are split by schema concern (ingredient model, recipe model, batches, substitutions, ingest sources, plan entries, lists) so each PRD-101-gated migration file is skipped when `food` is not installed.
 
 ## Routes & Nav Config
 
@@ -120,7 +115,7 @@ export const navConfig = {
     label: 'Food',
     icon: 'utensils',           // lucide-react icon name
     path: '/food',
-    order: 50,                  // between Inventory (40) and AI (60); exact value confirmed at impl
+    order: 50,                  // between Inventory and Cerebrum; exact integer confirmed at impl
   },
   secondary: [
     // Sub-nav populated as Epic 01 PRDs land:
@@ -157,13 +152,13 @@ Epic 00's services (`packages/app-food/src/db/services/*.ts`) are NOT introduced
 
 ## Edge Cases
 
-| Case                                                                              | Behaviour                                                                                                              |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Operator installs `food` in `POPS_APPS` but didn't run food migrations            | Per-module migration runner (PRD-101 onwards) runs them on next boot. Routes mount; pages may error until DB is ready. |
-| Operator removes `food` from `POPS_APPS`                                          | Routes disappear from the shell. Migrations stay applied (no destructive uninstall). Tables persist with data.         |
-| Two packages declare the same `manifest.id`                                       | Module registry detects collision at startup; refuses to load. Standard registry behaviour, not new for this PRD.      |
-| Direct nav to `/food/recipes` before PRD-119 lands                                | 404 from shell router (route not registered). Acceptable for the in-progress state.                                    |
-| `manifest.backend.migrations` lists a tag that doesn't exist in the migration dir | Per-module migration runner logs a warning and continues (orphan-tag handling per PRD-101). Operator updates manifest. |
+| Case                                                                             | Behaviour                                                                                                              |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Operator installs `food` in `POPS_APPS` but didn't run food migrations           | Per-module migration runner (PRD-101 onwards) runs them on next boot. Routes mount; pages may error until DB is ready. |
+| Operator removes `food` from `POPS_APPS`                                         | Routes disappear from the shell. Migrations stay applied (no destructive uninstall). Tables persist with data.         |
+| Two packages declare the same `manifest.id`                                      | Module registry detects collision at startup; refuses to load. Standard registry behaviour, not new for this PRD.      |
+| Direct nav to `/food/recipes` before PRD-119 lands                               | 404 from shell router (route not registered). Acceptable for the in-progress state.                                    |
+| `manifest.migrations` lists a descriptor that doesn't exist in the migration dir | Per-module migration runner logs a warning and continues (orphan handling per PRD-101). Operator updates manifest.     |
 
 ## Acceptance Criteria
 
@@ -212,4 +207,4 @@ Inline per theme protocol.
 - Hero image upload — **PRD-124**.
 - API tRPC procedures — defined in their consuming PRDs (recipe CRUD endpoints in PRD-119, hero upload in PRD-124, etc).
 - Service code for recipe management (createRecipe, etc.) — already specified by PRD-107; implementation lives in this package's `src/db/services/` but is introduced by Epic 00 implementation, not by this PRD.
-- Backend module registration in `apps/pops-api/src/modules/food/` — declared via the manifest's `backend.migrations` tags here; the actual backend module folder is created when Epic 00's services land.
+- Backend module registration in `apps/pops-api/src/modules/food/` — Epic 00 implementation populates the `backend.router` slot and `migrations` slot per PRD-098/101 contracts. PRD-118's manifest ships the frontend-only shape.

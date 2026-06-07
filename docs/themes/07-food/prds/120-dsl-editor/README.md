@@ -15,18 +15,30 @@ The editor is **input only** — it produces a `body_dsl` string. Compilation, e
 export type DslEditorProps = {
   initialValue: string; // current body_dsl
   onChange: (value: string) => void; // fires on every keystroke (debounced)
-  errors?: ParseError[] | ResolveError[]; // from PRD-114/115; rendered as squiggles
-  proposedSlugs?: ProposedSlug[]; // from PRD-115; rendered as info markers
+  issues?: CompileEditorIssue[]; // unified list: errors + proposed slugs, each with severity + SourceSpan
   readOnly?: boolean; // true for `current` versions (PRD-107 forbids edit)
   className?: string;
+};
+
+// The editor consumes a single flat list. The parent (PRD-119) assembles this list from:
+//   - errors returned by `food.recipes.saveDraft`'s CompileResult (parse / resolve / cycle errors)
+//   - rows from `recipe_version_proposed_slugs` (PRD-116) for the current versionId, fetched via
+//     `food.recipes.listProposedSlugs(versionId)` (defined in PRD-119)
+// Each issue carries `severity` so the editor colours errors red and proposed slugs blue.
+export type CompileEditorIssue = {
+  severity: 'error' | 'info';
+  code: string; // ParseErrorCode | ResolveErrorCode | 'ProposedSlug'
+  message: string;
+  loc: SourceSpan;
+  slug?: string;
 };
 
 export function DslEditor(props: DslEditorProps): JSX.Element;
 ```
 
-`onChange` fires on every change, debounced internally to 250ms to keep autocomplete responsive without thrashing parent state. The page is responsible for storing the value, calling save, and feeding back errors from the most recent compile.
+`onChange` fires on every change, debounced internally to 250ms to keep autocomplete responsive without thrashing parent state. The page is responsible for storing the value, calling save, and feeding back issues from the most recent compile.
 
-`errors` and `proposedSlugs` use the SourceSpan from PRD-114 to position the squiggle / marker. The editor doesn't run the parser itself — it consumes whatever the parent supplies.
+`issues` uses the SourceSpan from PRD-114 to position the squiggle / marker. The editor doesn't run the parser itself — it consumes whatever the parent supplies.
 
 ## Lezer Grammar
 
@@ -165,9 +177,9 @@ Inline per theme protocol.
 
 ### Error squiggles
 
-- [ ] Passing `errors=[{ code: 'UnresolvedPrepStateSlug', loc: { startLine: 5, startCol: 12, endLine: 5, endCol: 18 }, message: 'Unknown prep state', slug: 'foobar' }]` renders an underline at exactly that location.
+- [ ] Passing `issues=[{ severity: 'error', code: 'UnresolvedPrepStateSlug', loc: { startLine: 5, startCol: 12, endLine: 5, endCol: 18 }, message: 'Unknown prep state', slug: 'foobar' }]` renders an underline at exactly that location.
 - [ ] Hover on the underline shows the error message.
-- [ ] `proposedSlugs` render as info markers (blue) distinct from errors (red).
+- [ ] `issues` with `severity='info'` render as blue info markers; `severity='error'` render as red squiggles.
 
 ### Chips
 

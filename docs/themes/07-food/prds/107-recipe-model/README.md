@@ -30,7 +30,7 @@ Stable identity. `slug` participates in the global `slug_registry` (PRD-106) —
 
 `current_version_id` is nullable. It points at the version users see by default; null while the recipe has only `draft` versions and has never been promoted.
 
-`hero_image_path` is one image per recipe regardless of version — image churn doesn't justify a new version. Path is relative to `storage/food/recipes/` (filesystem layout defined in an Epic 01 PRD; this PRD just declares the column).
+`hero_image_path` is one image per recipe regardless of version — image churn doesn't justify a new version. Path is relative to `${FOOD_RECIPES_DIR}` (default `./data/food/recipes/`; filesystem layout and upload pipeline defined in PRD-124; this PRD just declares the column).
 
 `archived_at` is a soft delete on the recipe as a whole; the rows persist for cook-history continuity.
 

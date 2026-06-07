@@ -28,7 +28,7 @@ slug         := [a-z][a-z0-9-]*
 
 qty_unit     := number ":" unit_slug | "0:none"
 number       := -?[0-9]+ ( "." [0-9]+ )?
-unit_slug    := [a-z][a-z0-9]*
+unit_slug    := [a-z][a-z0-9-]*       -- hyphens allowed (e.g. `fl-oz`)
 
 named_args   := named_arg ( "," named_arg )*
 named_arg    := identifier "=" value
