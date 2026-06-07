@@ -4,7 +4,7 @@
 
 ## Overview
 
-Define the canonical ingredient hierarchy, the variant catalogue (presentations of an ingredient: fresh vs canned vs frozen), the prep_state catalogue (orthogonal cut/process modifiers), and the alias table that lets the ingest pipeline resolve "spring onion" to canonical "scallion". Every other food schema PRD references these tables; nothing else in the theme can ship until this lands.
+Define the canonical ingredient hierarchy, the variant catalogue (presentations of an ingredient: fresh vs canned vs frozen), the prep_state catalogue (orthogonal cut/process modifiers), the alias table that lets the ingest pipeline resolve "spring onion" to canonical "scallion", and the **slug registry** that enforces a single global namespace for entities referenceable from the recipe DSL ([ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md)). Every other food schema PRD references these tables; nothing else in the theme can ship until this lands.
 
 This PRD is schema-only. No tRPC procedures, no UI — those live in Epic 01 PRDs. Direct Drizzle queries from server code are the contract for now.
 
@@ -38,17 +38,18 @@ CREATE TABLE ingredient_variants (
   id              INTEGER PRIMARY KEY,
   ingredient_id   INTEGER NOT NULL REFERENCES ingredients(id),
   name            TEXT NOT NULL,
-  slug            TEXT NOT NULL UNIQUE,
+  slug            TEXT NOT NULL,
   default_unit    TEXT NOT NULL CHECK (default_unit IN ('g','ml','count')),
   package_size_g  REAL,
   notes           TEXT,
-  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (ingredient_id, slug)
 );
 CREATE INDEX idx_variants_ingredient ON ingredient_variants(ingredient_id);
 CREATE INDEX idx_variants_name       ON ingredient_variants(name COLLATE NOCASE);
 ```
 
-A _variant_ is a presentation of an ingredient: `fresh-cob-corn`, `canned-corn-in-brine`, `frozen-corn-kernels`. Recipe lines may reference either an ingredient (any variant acceptable) or a specific variant. `package_size_g` is informational for shopping list rounding (deferred to Epic 04+).
+A _variant_ is a presentation of an ingredient: under `corn` you might have `fresh-cob`, `canned-brine`, `frozen-kernels`. Variant slugs are **scoped under their parent ingredient** — `raw` is a valid variant slug under both `banana` and `apple` because the resolver always knows the parent. Variants do NOT participate in the global slug registry; the DSL references them via the compact descriptor `ingredient-slug:variant-slug:prep-slug` (see [ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md)). `package_size_g` is informational for shopping list rounding (deferred to Epic 04+).
 
 ### `prep_states`
 
@@ -80,6 +81,33 @@ CREATE INDEX idx_aliases_alias ON ingredient_aliases(alias COLLATE NOCASE);
 
 The source-cardinality CHECK enforces "exactly one of ingredient_id / variant_id". `source` records origin: `user` (manually confirmed), `llm` (auto-proposed during ingest, awaiting promotion), `ingest` (parsed from JSON-LD or structured site data).
 
+### `slug_registry`
+
+```sql
+CREATE TABLE slug_registry (
+  slug        TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL CHECK (kind IN ('ingredient','recipe','prep_state')),
+  target_id   INTEGER NOT NULL,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_slug_registry_kind_target ON slug_registry(kind, target_id);
+```
+
+A single global namespace for every entity that can be referenced by slug from the recipe DSL ([ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md)): ingredients, recipes (PRD-107), and prep_states. The `slug` column is the primary key — uniqueness across all three kinds is enforced by SQLite at the storage level. The DSL resolver looks up `@banana` or `@smash-patty` in this single table and disambiguates via the `kind` column.
+
+Variants are deliberately **excluded** from the registry — they're scoped under their parent ingredient and referenced via the compact descriptor `ingredient:variant:prep`. Tags are also excluded (free-form, high-churn).
+
+The registry is populated by the application layer on insert/delete of the parent rows:
+
+- INSERT into `ingredients` → INSERT into `slug_registry(slug, kind='ingredient', target_id=ingredients.id)`.
+- INSERT into `prep_states` → INSERT into `slug_registry(slug, kind='prep_state', target_id=prep_states.id)`.
+- INSERT into `recipes` (PRD-107) → INSERT into `slug_registry(slug, kind='recipe', target_id=recipes.id)`.
+- DELETE on any of the above → cascading DELETE from `slug_registry` for that row.
+
+Implemented at the app layer (not SQL triggers) because: (a) it's testable with the existing Vitest setup; (b) it integrates with Drizzle's typed transactions; (c) the rename path (changing a slug) needs a coordinated update across two tables and is much cleaner as an explicit service method than a trigger.
+
+A slug collision across kinds (e.g. trying to create a recipe with slug `banana` when an ingredient `banana` exists) fails with a typed `SlugAlreadyRegisteredError`, surfacing the existing kind in the error.
+
 ## API Surface
 
 Out of scope for this PRD. Consumers use Drizzle queries directly. tRPC procedures will be defined in Epic 01.
@@ -96,17 +124,20 @@ Out of scope for this PRD. Consumers use Drizzle queries directly. tRPC procedur
 
 ## Edge Cases
 
-| Case                                                                              | Behaviour                                                                                                       |
-| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Two ingredients with the same name (e.g. cooking salt vs bath salt)               | Slugs differ (`salt-cooking`, `salt-bath`). Lookups by name return both; UI disambiguates.                      |
-| Variant name collides with another variant of a different ingredient              | Allowed. Slugs are globally unique; names are not.                                                              |
-| Alias collides with another ingredient's canonical name (e.g. `rocket` ↔ verb)    | Allowed. Lookup returns all matches; UI resolves during the ingest review flow (Epic 03).                       |
-| Insert with `parent_id` pointing to a non-existent ingredient                     | FK rejection.                                                                                                   |
-| Insert with `variant.ingredient_id` referring to a deleted ingredient             | FK rejection. Variants must be deleted before their parent ingredient.                                          |
-| Alias with `source='ingest'` survives after ingest rollback                       | Alias persists. Orphan-alias cleanup is a separate concern (deferred to Epic 03).                               |
-| Adding a 4th hierarchy level (e.g. nightshade → tomato → roma → san-marzano-roma) | Reject with `IngredientHierarchyDepthExceeded`. Workaround: make `san-marzano-roma` a variant of `roma-tomato`. |
-| Empty `parent_id` chain                                                           | Treated as a root node (depth = 1).                                                                             |
-| Density column for a count-default ingredient (e.g. `egg`)                        | Allowed but typically null. Conversion code must handle null gracefully and fall through to `qty_count`.        |
+| Case                                                                              | Behaviour                                                                                                                                                         |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Two ingredients with the same name (e.g. cooking salt vs bath salt)               | Slugs differ (`salt-cooking`, `salt-bath`). Lookups by name return both; UI disambiguates.                                                                        |
+| Variant name collides with another variant of a different ingredient              | Allowed. Variant slugs are scoped per-ingredient; names are not unique either.                                                                                    |
+| Variant slug collides with another variant slug under the same ingredient         | UNIQUE (ingredient_id, slug) rejects.                                                                                                                             |
+| Recipe slug collides with an existing ingredient slug                             | `SlugAlreadyRegisteredError` from the slug_registry, surfacing the existing kind.                                                                                 |
+| Renaming an ingredient slug                                                       | Service method updates `ingredients.slug` AND `slug_registry.slug` in one transaction. Aliases may need to be rebuilt; the rename method handles this explicitly. |
+| Alias collides with another ingredient's canonical name (e.g. `rocket` ↔ verb)    | Allowed. Lookup returns all matches; UI resolves during the ingest review flow (Epic 03).                                                                         |
+| Insert with `parent_id` pointing to a non-existent ingredient                     | FK rejection.                                                                                                                                                     |
+| Insert with `variant.ingredient_id` referring to a deleted ingredient             | FK rejection. Variants must be deleted before their parent ingredient.                                                                                            |
+| Alias with `source='ingest'` survives after ingest rollback                       | Alias persists. Orphan-alias cleanup is a separate concern (deferred to Epic 03).                                                                                 |
+| Adding a 4th hierarchy level (e.g. nightshade → tomato → roma → san-marzano-roma) | Reject with `IngredientHierarchyDepthExceeded`. Workaround: make `san-marzano-roma` a variant of `roma-tomato`.                                                   |
+| Empty `parent_id` chain                                                           | Treated as a root node (depth = 1).                                                                                                                               |
+| Density column for a count-default ingredient (e.g. `egg`)                        | Allowed but typically null. Conversion code must handle null gracefully and fall through to `qty_count`.                                                          |
 
 ## Acceptance Criteria
 
@@ -114,10 +145,15 @@ Inline per theme protocol — see the `Doc protocol` row in [theme key decisions
 
 ### Schema
 
-- [ ] Drizzle schema in `packages/app-food/src/db/schema.ts` defines `ingredients`, `ingredient_variants`, `prep_states`, `ingredient_aliases` with the columns, types, defaults, and constraints above.
+- [ ] Drizzle schema in `packages/app-food/src/db/schema.ts` defines `ingredients`, `ingredient_variants`, `prep_states`, `ingredient_aliases`, `slug_registry` with the columns, types, defaults, and constraints above.
 - [ ] Migration generated under `apps/pops-api/drizzle/` and applied cleanly to a fresh DB.
-- [ ] `packages/db-types` regenerated; exports types for all four tables.
+- [ ] `packages/db-types` regenerated; exports types for all five tables.
 - [ ] Indexes from the SQL above exist after migration (verify via `PRAGMA index_list`).
+
+### Service layer (slug registry)
+
+- [ ] `packages/app-food/src/db/services/ingredients.ts` exposes typed methods `createIngredient`, `deleteIngredient`, `renameIngredientSlug`, `createPrepState`, `deletePrepState` that maintain the slug_registry in the same transaction as the parent row.
+- [ ] Direct INSERTs into `ingredients` or `prep_states` that bypass the service are caught by a Vitest case asserting the registry is empty after such an INSERT — proves the test guards exist; the production code path always uses the service.
 
 ### Invariants (each verified by a Vitest case)
 
@@ -130,6 +166,12 @@ Inline per theme protocol — see the `Doc protocol` row in [theme key decisions
 - [ ] Deleting an ingredient with extant aliases fails with an FK violation.
 - [ ] Inserting an ingredient with a non-kebab-case slug throws `InvalidSlugError`.
 - [ ] Inserting a variant whose `ingredient_id` does not exist fails with an FK violation.
+- [ ] Inserting two variants with the same slug under the same ingredient fails with a UNIQUE (ingredient_id, slug) violation.
+- [ ] Inserting two variants with the same slug under DIFFERENT ingredients succeeds.
+- [ ] `createIngredient(slug="banana")` then `createIngredient(slug="banana")` throws `SlugAlreadyRegisteredError` with `kind="ingredient"` in the error.
+- [ ] `createIngredient(slug="banana")` then `createPrepState(slug="banana")` throws `SlugAlreadyRegisteredError` with `kind="ingredient"` in the error.
+- [ ] `renameIngredientSlug("banana", "musa")` updates both `ingredients.slug` and `slug_registry.slug` atomically; rollback on either failure leaves both tables consistent.
+- [ ] `deleteIngredient(id)` removes the row from `slug_registry` in the same transaction.
 
 ### Tests
 
@@ -145,6 +187,8 @@ Inline per theme protocol — see the `Doc protocol` row in [theme key decisions
 ## Out of Scope
 
 - Recipe lines referencing these tables — defined in **PRD-107**.
+- Recipe slug registration into `slug_registry` — handled in **PRD-107** (recipes table service inserts into the shared registry).
+- DSL parser and resolver — defined in **PRD-107** per [ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md).
 - Substitution edges between ingredients/variants — defined in **PRD-109**.
 - Unit conversion table (cup→ml, "1 medium onion = 150 g") — deferred to an Epic 01 PRD once the recipe-line editor consumes it.
 - Tag taxonomy for ingredients (`store-section:produce`, `aisle:dairy`) — deferred to Epic 07 (pantry-aware shopping).
