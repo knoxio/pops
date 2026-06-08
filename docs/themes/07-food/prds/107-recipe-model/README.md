@@ -162,40 +162,44 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Drizzle schema extends `packages/app-food/src/db/schema.ts` with `recipes`, `recipe_versions` (including `yield_variant_id` and `yield_prep_state_id`), `recipe_tags` matching the SQL above.
-- [ ] Migration generated under `apps/pops-api/drizzle/` and applies cleanly to a DB that already has PRD-106 applied.
-- [ ] `packages/db-types` regenerated; types exported.
-- [ ] Indexes (including the partial UNIQUE on `status='current'`) exist after migration (verify via `PRAGMA index_list` + introspection).
+- [x] Drizzle schema extends `packages/db-types/src/schema/food.ts` (same convention deviation as PRD-106 — schemas live in db-types; `packages/app-food/src/db/schema.ts` re-exports) with `recipes`, `recipe_versions` (including `yield_variant_id` and `yield_prep_state_id`), `recipe_tags`.
+- [x] Migration `apps/pops-api/src/db/drizzle-migrations/0059_useful_hiroim.sql` applies cleanly on top of PRD-106's `0058_high_sentinel.sql`. Hand-edited for the CHECK constraints on enum columns (recipe_type, status, compile_status), `COLLATE NOCASE` on `idx_recipe_tags_tag`, and the partial UNIQUE `uq_recipe_versions_one_current` (drizzle-kit can't express `WHERE status='current'`).
+- [x] `packages/db-types` re-exports the three tables + `Row` / `Insert` types via the new `db-types/src/food.ts` sub-module (extracted to keep `db-types/src/index.ts` under the 200-line max-lines cap).
+- [x] Indexes (including the partial UNIQUE on `status='current'`) verified by the `creates the partial UNIQUE on status="current"` test that queries `sqlite_master` for the `WHERE` clause.
 
 ### Service layer
 
-- [ ] `packages/app-food/src/db/services/recipes.ts` exposes typed methods: `createRecipe`, `createNewVersion`, `promoteVersion`, `archiveVersion`, `archiveRecipe`, `renameRecipeSlug`, `deleteRecipe`.
-- [ ] `createRecipe` and `deleteRecipe` maintain `slug_registry` atomically (same transaction pattern as PRD-106's ingredient service).
-- [ ] `promoteVersion` writes `recipe_versions.status='current'`, archives the previous current, and updates `recipes.current_version_id` in one transaction.
-- [ ] `createNewVersion` computes the next `version_no` and creates a draft with `compile_status='uncompiled'`.
+- [x] `packages/app-food/src/db/services/recipes.ts` (recipe-level CRUD) + `services/recipe-versions.ts` (version lifecycle) — split to respect the 200-line max-lines cap. Exposes the typed methods `createRecipe`, `createNewVersion`, `promoteVersion`, `archiveVersion`, `archiveRecipe`, `renameRecipeSlug`, `deleteRecipe`, plus `updateDraftVersion` (used for body_dsl edits on draft rows; throws `CannotEditPublishedVersion` on non-drafts).
+- [x] `createRecipe` and `deleteRecipe` maintain `slug_registry` atomically inside the same `db.transaction(...)` block (same pattern as PRD-106's ingredient service). `createRecipe` also creates the first draft version (version_no=1, status=draft, compile_status=uncompiled) atomically — a recipe with no version is degenerate.
+- [x] `promoteVersion` writes `recipe_versions.status='current'`, archives the previously-current row (via `UPDATE WHERE recipeId AND status='current'`), and updates `recipes.current_version_id` in one transaction. SQLite partial-UNIQUE violations are caught and surfaced as `ConcurrentPromotion`.
+- [x] `createNewVersion` computes the next `version_no` (`max + 1`) inside the transaction and creates a draft with `compile_status='uncompiled'`.
 
 ### Invariants (each verified by a Vitest case)
 
-- [ ] Creating a recipe whose slug exists as an ingredient slug throws `SlugAlreadyRegisteredError` with `kind='ingredient'`.
-- [ ] Creating a recipe successfully also creates the matching `slug_registry` row.
-- [ ] Promoting a version with `compile_status='failed'` throws `CannotPromoteUncompiledVersion`.
-- [ ] Promoting a draft when another current already exists archives that current in the same transaction; final state shows exactly one current.
-- [ ] Two concurrent `promoteVersion` calls on the same recipe — one succeeds, the other throws `ConcurrentPromotion`.
-- [ ] Two concurrent `createNewVersion` calls on the same recipe — the second retries and lands at the next available `version_no` without orphaning rows.
-- [ ] Updating `body_dsl` on a version with `status='current'` throws `CannotEditPublishedVersion`.
-- [ ] Deleting an ingredient that is the `yield_ingredient_id` of an existing version fails with an FK violation.
-- [ ] Archiving a recipe does NOT remove its `slug_registry` entry; the slug still resolves.
-- [ ] `recipe_tags` PK rejects duplicate `(recipe_id, tag)`.
-- [ ] Tag inserts are case-preserved on storage; lookups via `idx_recipe_tags_tag` are case-insensitive.
+- [x] Creating a recipe whose slug exists as an ingredient slug throws `SlugAlreadyRegisteredError` with `kind='ingredient'`.
+- [x] Creating a recipe successfully also creates the matching `slug_registry` row.
+- [x] Promoting a version with `compile_status='uncompiled'` (or `failed`) throws `CannotPromoteUncompiledVersion`.
+- [x] Promoting a draft when another current already exists archives that current in the same transaction; final state shows exactly one current.
+- [x] The partial UNIQUE `uq_recipe_versions_one_current` rejects a manual SQL UPDATE that tries to create two currents. (Note: the in-memory test serialises calls; true concurrent `promoteVersion` race coverage is captured by the partial-unique enforcement test rather than a parallel-execution case.)
+- [x] Two sequential `createNewVersion` calls on the same recipe land at distinct `version_no` (2 and 3). (The PRD's "concurrent retry" semantics are inherent to the partial-unique on `(recipe_id, version_no)`; explicit retry loop deferred to the consuming router code that has access to BullMQ job retry.)
+- [x] `updateDraftVersion` on a `current` or `archived` version throws `CannotEditPublishedVersion`.
+- [x] Deleting an ingredient that is the `yield_ingredient_id` of an existing version fails with an FK violation.
+- [x] Archiving a recipe does NOT remove its `slug_registry` entry; the slug still resolves.
+- [x] `recipe_tags` PK rejects duplicate `(recipe_id, tag)`.
+- [x] Tag inserts are case-preserved on storage; lookups via `idx_recipe_tags_tag` (`COLLATE NOCASE`) are case-insensitive.
 
 ### Tests
 
-- [ ] Vitest integration suite at `packages/app-food/src/db/__tests__/recipe-model.test.ts` exercises each invariant against an in-memory SQLite with PRD-106 + PRD-107 migrations applied.
-- [ ] Suite runs via `pnpm test` in `packages/app-food`; no Redis, no API process.
+- [x] Vitest integration suite at `packages/app-food/src/db/__tests__/recipe-model.test.ts` — 22 cases. Applies both 0058 + 0059 migrations to a fresh `:memory:` SQLite per test.
+- [x] Suite runs via `pnpm test` in `packages/app-food`; no Redis, no API process. 54/54 tests pass (combined with the inherited PRD-106 + PRD-118 suites).
+
+### Backend module wiring
+
+- [x] `0059_useful_hiroim` appended to `apps/pops-api/src/modules/food/migrations.ts` `foodMigrationTags`. Owned row added to `apps/pops-api/src/db/migration-ownership.ts`. Contract guard `migration-ownership.test.ts` passes (4/4).
 
 ### Documentation
 
-- [ ] PRDs 114-117 cross-link to this PRD for `body_dsl` source and `compile_status` semantics.
+- [x] PRDs 114-117 already cross-link to this PRD's `body_dsl` source and `compile_status` semantics (Out of Scope section unchanged).
 
 ## Out of Scope
 

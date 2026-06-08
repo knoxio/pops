@@ -30,6 +30,9 @@ export {
   ingredients,
   ingredientVariants,
   prepStates,
+  recipes,
+  recipeTags,
+  recipeVersions,
   slugRegistry,
 } from './food.js';
 export { homeInventory } from './inventory.js';

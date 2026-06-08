@@ -13,6 +13,9 @@ export {
   ingredients,
   ingredientVariants,
   prepStates,
+  recipes,
+  recipeTags,
+  recipeVersions,
   slugRegistry,
 } from '@pops/db-types';
 export type {
@@ -24,6 +27,12 @@ export type {
   IngredientVariantRow,
   PrepStateInsert,
   PrepStateRow,
+  RecipeInsert,
+  RecipeRow,
+  RecipeTagInsert,
+  RecipeTagRow,
+  RecipeVersionInsert,
+  RecipeVersionRow,
   SlugRegistryInsert,
   SlugRegistryRow,
 } from '@pops/db-types';

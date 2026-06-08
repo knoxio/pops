@@ -1,18 +1,22 @@
 /**
- * Food domain — PRD-106 schema.
+ * Food domain — PRD-106 + PRD-107 schemas.
  *
- * Five tables form the foundation for every other food schema:
- *   slug_registry         — global namespace shared by ingredients, recipes, prep_states
- *   ingredients           — canonical hierarchy (max depth 3, app-enforced)
- *   ingredient_variants   — presentations of an ingredient, slug-scoped per parent
- *   prep_states           — small enum of trivial knife/process modifiers
- *   ingredient_aliases    — case-insensitive lookup pointing at ingredient OR variant
+ * Eight tables form the foundation:
+ *   slug_registry         — global namespace shared by ingredients, recipes, prep_states (PRD-106)
+ *   ingredients           — canonical hierarchy (max depth 3, app-enforced) (PRD-106)
+ *   ingredient_variants   — presentations of an ingredient, slug-scoped per parent (PRD-106)
+ *   prep_states           — small enum of trivial knife/process modifiers (PRD-106)
+ *   ingredient_aliases    — case-insensitive lookup pointing at ingredient OR variant (PRD-106)
+ *   recipes               — stable recipe identity (slug, type, hero, archived) (PRD-107)
+ *   recipe_versions       — content snapshots: body_dsl, yield, compile_status (PRD-107)
+ *   recipe_tags           — free-form tags per recipe (PRD-107)
  *
- * See `docs/themes/07-food/prds/106-ingredient-model/README.md`.
+ * See `docs/themes/07-food/prds/106-ingredient-model/` and `107-recipe-model/`.
  *
  * The slug_registry is the cross-table uniqueness surface for entities
  * referenceable from the recipe DSL ([ADR-023]). Variants are deliberately
- * NOT in the registry — they're scoped under their parent ingredient.
+ * NOT in the registry — they're scoped under their parent ingredient. Tags
+ * are also excluded (high-churn, not slug-referenced).
  */
 import { sql } from 'drizzle-orm';
 import {
@@ -20,6 +24,7 @@ import {
   check,
   index,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
@@ -114,5 +119,91 @@ export const ingredientAliases = sqliteTable(
     unique('uq_aliases_alias_target').on(t.alias, t.ingredientId, t.variantId),
     // Case-insensitive alias index — migration hand-edited for COLLATE NOCASE.
     index('idx_aliases_alias').on(t.alias),
+  ]
+);
+
+// ── PRD-107 — Recipe & Version schema ────────────────────────────────────
+
+export const recipes = sqliteTable(
+  'recipes',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    slug: text('slug').notNull().unique(),
+    recipeType: text('recipe_type', {
+      enum: ['plate', 'component', 'technique', 'sauce', 'dressing', 'drink', 'condiment'],
+    })
+      .notNull()
+      .default('plate'),
+    // Self-referential FK via the AnySQLiteColumn trick; recipe_versions is
+    // declared below.
+    currentVersionId: integer('current_version_id').references(
+      (): AnySQLiteColumn => recipeVersions.id
+    ),
+    heroImagePath: text('hero_image_path'),
+    archivedAt: text('archived_at'),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => [index('idx_recipes_type').on(t.recipeType)]
+);
+
+export const recipeVersions = sqliteTable(
+  'recipe_versions',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    recipeId: integer('recipe_id')
+      .notNull()
+      .references(() => recipes.id),
+    versionNo: integer('version_no').notNull(),
+    status: text('status', { enum: ['draft', 'current', 'archived'] })
+      .notNull()
+      .default('draft'),
+    title: text('title').notNull(),
+    summary: text('summary'),
+    bodyDsl: text('body_dsl').notNull(),
+    yieldIngredientId: integer('yield_ingredient_id').references(() => ingredients.id),
+    yieldVariantId: integer('yield_variant_id').references(() => ingredientVariants.id),
+    yieldPrepStateId: integer('yield_prep_state_id').references(() => prepStates.id),
+    yieldQty: real('yield_qty'),
+    yieldUnit: text('yield_unit'),
+    servings: integer('servings'),
+    prepMinutes: integer('prep_minutes'),
+    cookMinutes: integer('cook_minutes'),
+    // source_id will reference ingest_sources(id) once PRD-110 lands; column
+    // declared as plain integer for now to avoid a forward FK to a missing
+    // table (drizzle would emit a malformed FK clause).
+    sourceId: integer('source_id'),
+    compileStatus: text('compile_status', { enum: ['uncompiled', 'compiled', 'failed'] })
+      .notNull()
+      .default('uncompiled'),
+    compileError: text('compile_error'),
+    compiledAt: text('compiled_at'),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => [
+    unique('uq_recipe_versions_recipe_no').on(t.recipeId, t.versionNo),
+    index('idx_recipe_versions_recipe').on(t.recipeId),
+    index('idx_recipe_versions_status').on(t.status),
+    index('idx_recipe_versions_compile').on(t.compileStatus),
+    // The "at most one current per recipe" partial UNIQUE lives in the
+    // migration — drizzle-kit can't express `WHERE status = 'current'`.
+  ]
+);
+
+export const recipeTags = sqliteTable(
+  'recipe_tags',
+  {
+    recipeId: integer('recipe_id')
+      .notNull()
+      .references(() => recipes.id),
+    tag: text('tag').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.recipeId, t.tag] }),
+    // Case-insensitive tag index — migration hand-edited for COLLATE NOCASE.
+    index('idx_recipe_tags_tag').on(t.tag),
   ]
 );
