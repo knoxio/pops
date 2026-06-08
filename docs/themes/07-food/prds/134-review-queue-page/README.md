@@ -220,6 +220,7 @@ Inline per theme protocol.
 - [ ] Hovering the band pill shows the top 3 signals from PRD-137.
 - [ ] Clicking the kind chip opens the source per the per-kind rules above (NOT the inspector).
 - [ ] Clicking elsewhere on the row navigates to `/food/inbox/:sourceId`.
+- [ ] Clicking the kind chip for `text` or `screenshot` rows opens PRD-138's `ViewSourceDialog` inline (no navigation); for `url-*` rows the chip opens the URL in a new tab.
 - [ ] React Query `refetchInterval: 60_000` while the page is visible.
 
 ### Filters
@@ -261,7 +262,7 @@ Inline per theme protocol.
 
 - **PRD-107** — `recipe_versions` columns (`source_id`, `status`, `compile_status`).
 - **PRD-110** — `ingest_sources.reviewed_at` (extension by PRD-136) and `extracted_json`.
-- **PRD-115** — `proposed_slugs` table for the proposed-slug count on the row sub-line.
+- **PRD-116** — `recipe_version_proposed_slugs` table for the proposed-slug count on the row sub-line.
 - **PRD-118** — `app-food` manifest route registration.
 - **PRD-125** — `PartialReason` enum.
 - **PRD-136** — `food.inbox` router file (this PRD adds queries to it) and `reviewed_at` semantics.

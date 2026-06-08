@@ -31,11 +31,11 @@ export type QualityInputs = {
 
   /* Compile state (PRD-107 / PRD-116) */
   compileStatus: 'uncompiled' | 'compiled' | 'failed';
-  compileErrorCount: number; // PRD-115's ResolveError count + PRD-116's compile errors
+  compileErrorCount: number; // parsed from `recipe_versions.compile_error` JSON (PRD-116's structured shape: `errors[].length`)
 
-  /* Resolver state (PRD-115) */
-  proposedSlugCount: number; // unresolved slugs needing user attention
-  creationCount: number; // auto-created ingredients/variants — informational, not a problem
+  /* Resolver state */
+  proposedSlugCount: number; // PRD-116's `recipe_version_proposed_slugs` row count for this versionId
+  creationCount: number; // auto-created ingredients/variants from PRD-115's `creations` flow — see "creationCount sourcing" below
 
   /* DSL surface stats (cheap reads on recipe_versions + recipe_lines / recipe_steps) */
   ingredientLineCount: number;
@@ -89,12 +89,14 @@ export function scoreDraft(inputs: QualityInputs): QualityResult;
 
 Start at score **100**. Apply each signal that fires. Clamp final to `[0, 100]`. Band thresholds:
 
-| Score range | Band        | Meaning                                                       |
-| ----------- | ----------- | ------------------------------------------------------------- |
-| 80-100      | `clean`     | No structural problems; sails through review                  |
-| 50-79       | `minor`     | A few small issues (1-3 proposed slugs, mild partial)         |
-| 20-49       | `attention` | Multiple flags; needs eyes                                    |
-| 0-19        | `blocked`   | Cannot approve as-is (compile failed, empty extraction, etc.) |
+| Score range        | Band        | Meaning                                                       |
+| ------------------ | ----------- | ------------------------------------------------------------- |
+| `80 ≤ score ≤ 100` | `clean`     | No structural problems; sails through review                  |
+| `50 ≤ score < 80`  | `minor`     | A few small issues (1-3 proposed slugs, mild partial)         |
+| `20 ≤ score < 50`  | `attention` | Multiple flags; needs eyes                                    |
+| `0  ≤ score < 20`  | `blocked`   | Cannot approve as-is (compile failed, empty extraction, etc.) |
+
+Ranges are half-open at the upper bound except `clean` which is fully closed at 100. A score of exactly 50 is `minor`; exactly 80 is `clean`.
 
 ### Signal weights (the rubric)
 
@@ -145,7 +147,18 @@ The function is pure (no I/O); the **inputs** are gathered by query helpers on t
 async function gatherQualityInputs(versionId: number, db: SqliteDb): Promise<QualityInputs>;
 ```
 
-This helper does the JOINs (recipe_versions → ingest_sources → recipe_lines count → recipe_steps count → proposed_slugs count). PRD-134 reuses it in batch (with a single multi-row variant) to avoid N+1 queries.
+This helper does the JOINs (recipe_versions → ingest_sources → `recipe_lines` count → `recipe_steps` count → `recipe_version_proposed_slugs` count) and reads `creationCount` per the sourcing rule below. PRD-134 reuses it in batch (with a single multi-row variant) to avoid N+1 queries.
+
+### creationCount sourcing
+
+PRD-115's `creations` are emitted in-memory by the resolver and consumed by PRD-116's materialiser, which calls into PRD-106's `createIngredient` / `createVariant` services to mint the rows. They are NOT separately persisted today — there's no `recipe_version_creations` table. PRD-137 needs the count for the `CREATIONS_HIGH` signal.
+
+Two paths are acceptable:
+
+1. **(preferred)** Amend PRD-116 to expose a `listCreationsForVersion(versionId, db)` helper that returns the list of ingredient + variant slugs newly registered as part of this version's compile (queryable by joining `slug_registry.created_at` against the compile's `compiled_at`, or by writing a small audit table — PRD-116 picks). PRD-135's inspector already requires this helper for the auto-create banner, so the amendment serves both PRDs.
+2. **(fallback)** Add a denormalised `creation_count INTEGER NOT NULL DEFAULT 0` column on `recipe_versions` (PRD-107 amendment) written by PRD-116's compile.
+
+PRD-137 doesn't dictate which; the amendment lives on PRD-116 (or PRD-107 for the fallback). `gatherQualityInputs` calls whichever is provided.
 
 ## Business Rules
 
@@ -169,7 +182,7 @@ This helper does the JOINs (recipe_versions → ingest_sources → recipe_lines 
 | Text ingest, clean compile, 0 proposed slugs, 0 creations, 1h old                                | Score = 100 + 5 + 2 = 107 → clamped to 100 → `clean`.                                                                                                                             |
 | Same draft 30 days later (no other changes)                                                      | `AGE_FRESH` no longer fires; `AGE_STALE` fires (-2). Score: 100 - 2 = 98 → still `clean`. Age is a nudge, not a demoter.                                                          |
 | `creationCount = 6` and otherwise clean                                                          | Score = 100 - 5 = 95 → `clean`. The signal exists in the breakdown so the inspector can show "6 new entities were auto-created — refine at /food/data".                           |
-| Score lands exactly on a band boundary (e.g. 50)                                                 | Bands are half-open intervals `[low, high]`; 50 is in `minor` (the lower end). Documented in tests.                                                                               |
+| Score lands exactly on a band boundary (e.g. 50)                                                 | Half-open at upper bound; `clean` is closed at 100. 50 → `minor`, 80 → `clean`, 20 → `attention`. Documented in tests.                                                            |
 | Function called with `ingestKind` and `partialReason` that contradict (e.g. text + caption-only) | Type system makes `partialReason` optional and string-typed; if a contradictory pair shows up, the score is still computed. Pipeline correctness is PRD-125/130's responsibility. |
 | Multiple compile signals stack (e.g. failed + no yield)                                          | They all fire and all subtract; rubric is additive by design. Tests pin a multi-signal scenario.                                                                                  |
 
@@ -218,6 +231,6 @@ Inline per theme protocol.
 
 - **PRD-107** — `recipe_versions.compile_status` enum (`'uncompiled' | 'compiled' | 'failed'`).
 - **PRD-110** — `ingest_sources.ingested_at` for `AGE_*` signals.
-- **PRD-115** — `proposed_slugs` table (count) and the resolver's `creations` flow (count via `recipe_versions` derived count or audit table).
-- **PRD-116** — compile error count surfaced via the materialised lines/steps tables and `recipe_versions.compile_error`.
+- **PRD-115** — semantics of `ResolverCreation` and `ProposedSlug` (count consumed here).
+- **PRD-116** — `recipe_version_proposed_slugs` table (count); structured `compile_error` JSON for `compileErrorCount`. Amendment required: `listCreationsForVersion(versionId, db)` helper (or denormalised `creation_count` column — see "creationCount sourcing"). Same amendment also required by PRD-135.
 - **PRD-125** — `PartialReason` enum and `IngestStatus.state`.

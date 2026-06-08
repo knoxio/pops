@@ -6,7 +6,7 @@
 
 Own the server-side contract for what happens when a user clicks Approve or Reject in the inbox. Three new tRPC mutations under a new `food.inbox.*` router (`approve`, `reject`, `unreject`), one new table (`recipe_version_rejections`) that stores the structured rejection reason, and the FK-consistent transitions across `recipe_versions.status`, `recipes.current_version_id`, and `ingest_sources` that each mutation runs in a single transaction.
 
-This PRD owns the boundary between the inbox UI (PRDs 134/135/138) and the existing recipe domain services (PRD-107 / PRD-119). The UI never calls `food.recipes.promote` directly for ingest-originated drafts — it always goes through `food.inbox.approve`, which wraps `promote` and adds the inbox-specific side-effects (timestamping the source, capturing approval metadata). Likewise for reject vs `archiveVersion`.
+This PRD owns the boundary between the inbox UI (PRDs 134/135/138) and the existing recipe domain. **The inbox calls into PRD-107's services (`promoteVersion`, `archiveVersion`) directly**, NOT through PRD-119's tRPC procedures, so the whole approve/reject lives inside a single transaction. The UI never calls `food.recipes.promote` directly for ingest-originated drafts — it always goes through `food.inbox.approve`, which composes PRD-107's `promoteVersion` with the inbox-specific side-effects (timestamping the source, capturing approval metadata). Likewise for reject vs PRD-107's `archiveVersion` plus a row in the new `recipe_version_rejections` table.
 
 The schema-only piece (the rejections table) lands before PRDs 134/135/138 reference it; the mutations are consumed by PRDs 134 (list filters) and 135 (the approve/reject buttons).
 
@@ -24,13 +24,15 @@ PRD-119 already exposes `food.recipes.promote({ versionId })` and `food.recipes.
 
 ```sql
 CREATE TABLE recipe_version_rejections (
-  version_id    INTEGER PRIMARY KEY REFERENCES recipe_versions(id),
+  version_id    INTEGER PRIMARY KEY REFERENCES recipe_versions(id) ON DELETE CASCADE,
   reason        TEXT NOT NULL
                   CHECK (reason IN ('wrong-recipe','low-quality-extraction','duplicate','not-a-recipe','other')),
   note          TEXT,
   rejected_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 ```
+
+`ON DELETE CASCADE` mirrors PRD-116's pattern for `recipe_version_proposed_slugs` — if PRD-107's `deleteRecipe` service ever wipes a recipe (rare), the rejection rows go with the versions.
 
 PK is `version_id` (one rejection per version; un-rejecting deletes the row). Presence-of-row = "this archived version was rejected via the inbox" (distinguishes from PRD-119's "Discard a draft" which also archives but writes no rejections row).
 
@@ -89,10 +91,11 @@ export type ApproveRejectError =
   | 'NotADraft'                     // approve/reject require status='draft'
   | 'NotArchived'                   // unreject requires status='archived'
   | 'NoRejectionRecord'             // unreject called on a version that was archived by PRD-119's discard
-  | 'NotCompiled'                   // approve requires compile_status='compiled' (matches PRD-119's promote rule)
+  | 'NotCompiled'                   // approve requires compile_status='compiled' (matches PRD-107's promote rule)
   | 'AlreadyReviewed'               // ingest_sources.reviewed_at is already set (approve called twice)
   | 'RecipeArchived'                // parent recipe was archived since the inspector loaded
-  | 'PromoteRaceLost'               // another tab promoted a different version of the same recipe between read and write
+  | 'ConcurrentPromotion'           // PRD-107's existing typed error — another tab promoted a different version of the same recipe between read and write
+  | 'NoteRequired'                  // reject with reason='other' requires a non-empty note
   | 'NoteTooLong';
 ```
 
@@ -106,8 +109,8 @@ export type ApproveRejectError =
    - `compile_status = 'compiled'` (`NotCompiled`).
    - Parent recipe is not archived (`RecipeArchived`).
    - `ingest_sources.reviewed_at IS NULL` for the source (`AlreadyReviewed`).
-3. Call PRD-119's `promoteVersion(versionId, db)` service (NOT the `food.recipes.promote` tRPC procedure — direct service call inside the same transaction). This archives any prior `current` version and flips the new one to `current` per PRD-107's transition rules.
-   - If the prior-current archive fails because someone else promoted concurrently, the service surfaces `PromoteRaceLost` (PRD-119 amends to surface this distinct error code; see "PRD-119 amendment" below).
+3. Call PRD-107's `promoteVersion(versionId, db)` service (NOT the `food.recipes.promote` tRPC procedure — direct service call inside the same transaction). This archives any prior `current` version and flips the new one to `current` per PRD-107's transition rules.
+   - PRD-107 already documents `ConcurrentPromotion` as the typed error returned when the partial-UNIQUE index rejects the second promote in a race. PRD-136 propagates that error to the inbox response. See "PRD-107 amendment" below for the small service-signature change required.
 4. UPDATE `ingest_sources` SET `reviewed_at = datetime('now')` WHERE `id = <source_id>`.
 5. Commit. Return the promoted version's `version_no` and the recipe slug.
 
@@ -116,7 +119,7 @@ export type ApproveRejectError =
 1. Open Drizzle transaction.
 2. Validate (same as approve except no `compile_status` requirement — a failed-compile draft can still be rejected, it just can't be approved).
 3. INSERT into `recipe_version_rejections` (`version_id`, `reason`, `note`, default `rejected_at`). PK conflict ⇒ already rejected; surface `AlreadyReviewed` (covers re-reject).
-4. Call PRD-119's `archiveVersionService(versionId, db)` to flip `status` to `archived`.
+4. Call PRD-107's `archiveVersion(versionId, db)` service to flip `status` to `archived`.
 5. Commit. Return `{ ok: true }`.
 
 ### Unreject flow (server)
@@ -132,16 +135,14 @@ export type ApproveRejectError =
 
 Unreject does NOT touch `ingest_sources.reviewed_at` — it was never set on the reject path, so nothing to undo.
 
-## PRD-119 amendment
+## PRD-107 amendment
 
-PRD-119's `promoteVersion` (the underlying service, not the public mutation) currently archives the prior current version inside its own transaction. This PRD requires that the service:
+PRD-107 owns the recipe services (`packages/app-food/src/db/services/recipes.ts`) — `promoteVersion`, `archiveVersion`, etc. — and already documents `ConcurrentPromotion` as the typed error for racing promotes (PRD-107 AC line 183). This PRD requires two small, additive changes:
 
-1. Be callable from another transaction (accept a `db` argument that is the transactional client — PRD-116's compile already follows this pattern).
-2. Return a structured error code (`PromoteRaceLost`) instead of throwing when the prior-current is no longer the row it was when the function started. Public `food.recipes.promote` continues to throw / return its existing error shape; only the underlying service signature gains the structured-result variant.
+1. `promoteVersion(versionId, db)` and `archiveVersion(versionId, db)` accept a `db` argument that is the transactional client. PRD-116's compile already follows this pattern. The public `food.recipes.promote` / `food.recipes.archiveVersion` tRPC procedures (PRD-119) still wrap their own transaction when called directly; the inbox passes its own.
+2. `promoteVersion` returns `{ ok: false, reason: 'ConcurrentPromotion' }` (structured result) instead of throwing when the partial-UNIQUE index rejects. PRD-107's existing AC keeps the throwing behaviour for direct callers if they prefer try/catch; the structured-result variant is offered alongside (or replaces it — implementation choice). The new error code itself is already named in PRD-107.
 
-This amendment is additive; PRD-119's acceptance criteria don't change. Document the new error code in PRD-119's edge-case table when this PRD is implemented.
-
-`food.recipes.archiveVersion`'s service equivalent (let's call it `archiveVersionService`) similarly accepts a transactional `db` and is called by `food.inbox.reject`.
+PRD-119's tRPC surface is unchanged. The amendment lives entirely in PRD-107's services file.
 
 ## Business Rules
 
@@ -155,20 +156,20 @@ This amendment is additive; PRD-119's acceptance criteria don't change. Document
 
 ## Edge Cases
 
-| Case                                                                                                                                       | Behaviour                                                                                                                                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| User clicks Approve on a draft, then someone else's tab approves a different draft of the same recipe before the first transaction commits | `promoteVersion` detects that the prior-current changed; returns `PromoteRaceLost`. Inbox UI reloads the source and shows the new state.                                                                                     |
-| User clicks Approve twice in quick succession (double-click on the button)                                                                 | First call sets `reviewed_at`. Second call hits `AlreadyReviewed`. UI debounces but server defends.                                                                                                                          |
-| User clicks Reject with `reason='other'` and an empty note                                                                                 | Server validates; returns `NoteTooLong` (re-using the same error code with an "empty for `other`" message — or PRD-136 may introduce a dedicated `NoteRequired` code; v1 uses the latter for clarity). UI requires the note. |
-| User rejects a draft that PRD-119 already discarded                                                                                        | `archiveVersionService` sees `status='archived'` and is a no-op. The rejections row is still inserted (the draft was archived; the inbox is now recording why). Acceptable.                                                  |
-| User un-rejects a version whose recipe has since been archived                                                                             | Unreject transaction succeeds — version status returns to `draft`. UI surfaces a banner on next load: "Parent recipe is archived; un-archive recipe first to publish."                                                       |
-| User un-rejects a version that was discarded via PRD-119 (no rejections row)                                                               | Returns `NoRejectionRecord`. UI hides the Unreject button for these (filter at query time on the rejections-row JOIN).                                                                                                       |
-| Approve called against a failed-compile draft                                                                                              | Returns `NotCompiled`. Matches PRD-119's promote rule.                                                                                                                                                                       |
-| Approve called against a draft whose source row was deleted                                                                                | FK on `recipe_versions.source_id` is `REFERENCES ingest_sources(id)` — no ON DELETE specified means RESTRICT (SQLite default). Source can't be deleted while a version FKs to it. Edge can't arise in v1.                    |
-| Reject `note` exceeds 2000 chars                                                                                                           | Returns `NoteTooLong`. UI enforces with `maxlength`; server defends.                                                                                                                                                         |
-| User approves a draft, then immediately un-rejects another archived version of the same recipe                                             | First approve sets `current_version_id` to the approved version. Unreject flips the archived version back to draft. Now the recipe has one current + one draft. Normal state.                                                |
-| ingest_sources row's `reviewed_at` is set but the draft itself was discarded via PRD-119 afterwards                                        | Source shows as "reviewed" from the inbox; recipe has no current version. PRD-134's query filter handles this: `reviewed_at IS NULL OR recipes.current_version_id IS NOT NULL`.                                              |
-| Approve transaction rolls back mid-way (e.g. DB write error after `promoteVersion` succeeded but before `reviewed_at` UPDATE)              | SQLite transaction rollback restores both. Source stays unreviewed; version stays `draft`. User retries.                                                                                                                     |
+| Case                                                                                                                                       | Behaviour                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User clicks Approve on a draft, then someone else's tab approves a different draft of the same recipe before the first transaction commits | `promoteVersion` detects that the prior-current changed; returns `ConcurrentPromotion`. Inbox UI reloads the source and shows the new state.                                                                                |
+| User clicks Approve twice in quick succession (double-click on the button)                                                                 | First call sets `reviewed_at`. Second call hits `AlreadyReviewed`. UI debounces but server defends.                                                                                                                         |
+| User clicks Reject with `reason='other'` and an empty note                                                                                 | Server validates; returns `NoteRequired`. UI also requires the note (disabled Reject button) so the server defense rarely fires.                                                                                            |
+| User rejects a draft that PRD-119 already discarded                                                                                        | Inbox validation sees `status='archived'`, returns `NotADraft` — the inbox refuses to record a rejection against an already-archived version. The Drafts tab wouldn't show such a row anyway; race only arises across tabs. |
+| User un-rejects a version whose recipe has since been archived                                                                             | Unreject transaction succeeds — version status returns to `draft`. UI surfaces a banner on next load: "Parent recipe is archived; un-archive recipe first to publish."                                                      |
+| User un-rejects a version that was discarded via PRD-119 (no rejections row)                                                               | Returns `NoRejectionRecord`. UI hides the Unreject button for these (filter at query time on the rejections-row JOIN).                                                                                                      |
+| Approve called against a failed-compile draft                                                                                              | Returns `NotCompiled`. Matches PRD-119's promote rule.                                                                                                                                                                      |
+| Approve called against a draft whose source row was deleted                                                                                | FK on `recipe_versions.source_id` is `REFERENCES ingest_sources(id)` — no ON DELETE specified means RESTRICT (SQLite default). Source can't be deleted while a version FKs to it. Edge can't arise in v1.                   |
+| Reject `note` exceeds 2000 chars                                                                                                           | Returns `NoteTooLong`. UI enforces with `maxlength`; server defends.                                                                                                                                                        |
+| User approves a draft, then immediately un-rejects another archived version of the same recipe                                             | First approve sets `current_version_id` to the approved version. Unreject flips the archived version back to draft. Now the recipe has one current + one draft. Normal state.                                               |
+| ingest_sources row's `reviewed_at` is set but the draft itself was discarded via PRD-119 afterwards                                        | Source shows as "reviewed" from the inbox; recipe has no current version. PRD-134's query filter handles this: `reviewed_at IS NULL OR recipes.current_version_id IS NOT NULL`.                                             |
+| Approve transaction rolls back mid-way (e.g. DB write error after `promoteVersion` succeeded but before `reviewed_at` UPDATE)              | SQLite transaction rollback restores both. Source stays unreviewed; version stays `draft`. User retries.                                                                                                                    |
 
 ## Acceptance Criteria
 
@@ -185,28 +186,27 @@ Inline per theme protocol.
 - [ ] `food.inbox.approve` lives at `apps/pops-api/src/modules/food/inbox-router.ts` and is mounted under the `food` module's tRPC root.
 - [ ] All three mutations validate the preconditions above and return the documented error shape (no thrown errors for expected business-rule violations).
 - [ ] Each mutation runs in a single Drizzle transaction.
-- [ ] Approve calls PRD-119's `promoteVersion` service (transactional db variant); rejects with `PromoteRaceLost` when the underlying promote sees a changed prior-current.
+- [ ] Approve calls PRD-107's `promoteVersion` service (transactional db variant); inbox response surfaces `ConcurrentPromotion` when the underlying promote rejects.
 
-### PRD-119 amendment
+### PRD-107 amendment
 
-- [ ] `promoteVersion(versionId, db)` accepts a transactional db argument.
-- [ ] `promoteVersion` returns `{ ok: false, reason: 'PromoteRaceLost' }` instead of throwing when the prior-current row mutated between read and write.
-- [ ] Public `food.recipes.promote` adapts the new service signature without surface change.
-- [ ] PRD-119's edge-case table gains a row documenting `PromoteRaceLost`.
+- [ ] `promoteVersion(versionId, db)` and `archiveVersion(versionId, db)` accept a transactional db argument.
+- [ ] `promoteVersion` returns `{ ok: false, reason: 'ConcurrentPromotion' }` (structured result) instead of throwing when the partial-UNIQUE index rejects.
+- [ ] PRD-119's tRPC procedures (`food.recipes.promote`, `food.recipes.archiveVersion`) wrap their own transaction; inbox callers pass their own.
 
 ### Tests
 
 - [ ] Vitest integration tests at `apps/pops-api/src/modules/food/__tests__/inbox-router.test.ts`:
   - Approve happy path (compiled draft → current; `reviewed_at` set; rejection row absent).
   - Approve denies `NotIngestOriginated`, `NotADraft`, `NotCompiled`, `AlreadyReviewed`, `RecipeArchived`.
-  - Approve race: simulate two concurrent approves on different versions of the same recipe; one succeeds, one returns `PromoteRaceLost`.
+  - Approve race: simulate two concurrent approves on different versions of the same recipe; one succeeds, one returns `ConcurrentPromotion`.
   - Reject happy path with each of the five reason values; rejections row written.
   - Reject `other` without note → `NoteRequired`.
   - Reject `note` > 2000 chars → `NoteTooLong`.
   - Unreject happy path: archived + rejected → draft; rejections row deleted.
   - Unreject denies `NoRejectionRecord` for PRD-119-discarded drafts.
   - Approve → unreject would mean approving then trying to un-reject; covered by `NotArchived`.
-- [ ] PRD-119's existing test suite still passes after the service-signature change.
+- [ ] PRD-107's existing test suite still passes after the service-signature change.
 - [ ] A migration-up + migration-down test asserts both new schema objects round-trip cleanly.
 
 ## Out of Scope
@@ -225,6 +225,7 @@ Inline per theme protocol.
 
 - **PRD-107** — `recipe_versions` schema (especially `status` enum and `source_id` FK).
 - **PRD-110** — `ingest_sources` table (extended here with `reviewed_at`).
-- **PRD-119** — `promoteVersion` and `archiveVersion` services; one amendment required (see above).
+- **PRD-107** — `promoteVersion` and `archiveVersion` services (this PRD owns the service file); amendment described above adds a `db` argument and a structured-result variant for `promoteVersion`.
+- **PRD-119** — `food.recipes.promote` / `food.recipes.archiveVersion` tRPC procedures (manually-authored draft path; unchanged by this PRD).
 - **PRD-125** — `IngestStatus` / `PartialReason` shapes for downstream tab filters (no contract on this PRD, but the inbox routers read source rows that PRD-125 writes).
 - **PRD-116** — `compile_status` semantics; approve gates on `compiled`.
