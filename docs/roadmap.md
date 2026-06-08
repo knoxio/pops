@@ -19,7 +19,7 @@ Sequenced by daily value, effort, and dependencies:
 | 5   | Documents Vault                | Low effort, high connectivity — unlocks receipt/warranty linking for inventory, finance, travel |
 | 6   | Travel Planner                 | Benefits from finance (budgets), documents (bookings), and AI (planning) already being in place |
 | 7   | Books / Reading                | Same pattern as media tracker, low effort once that template exists                             |
-| 8   | Recipe Book                    | Long-term feature, lower daily urgency                                                          |
+| 8   | Food (Recipes & Meal Prep)     | Promoted from "long-term" — meal-prep is a daily-life pain point. Theme 07, in progress         |
 | 9   | Maintenance & Chores           | Natural extension of inventory, reminder-driven                                                 |
 | 10  | Contacts / CRM-lite            | Lowest urgency — gift tracking, events                                                          |
 | 11  | Home Automation                | Biggest unknown, explore only if HomeAssistant leaves a clear gap                               |
@@ -176,11 +176,11 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Phase 4 — Expansion Apps
 
-| Epic            | Status      | Notes |
-| --------------- | ----------- | ----- |
-| Travel planner  | Not started |       |
-| Books / Reading | Not started |       |
-| Recipe book     | Not started |       |
+| Theme           | Status      | Notes                                                                           |
+| --------------- | ----------- | ------------------------------------------------------------------------------- |
+| Travel planner  | Not started |                                                                                 |
+| Books / Reading | Not started |                                                                                 |
+| Food (theme 07) | In progress | Epic 00 (schema) underway. See [docs/themes/07-food/](themes/07-food/README.md) |
 
 ### Phase 5 — Mobile & Hardware
 
@@ -274,7 +274,7 @@ Live status of every theme and epic. Updated as work completes.
 
 - **Travel Planner** — Trip planning, organising, tracking. Links to finance, documents, recipes
 - **Books / Reading** — Same architecture as media tracker. Reading list, reviews, recommendations
-- **Recipe Book** — Ingredients, recipes, meal planning. Links to finance (grocery spend), inventory (kitchen gear)
+- **[Food](themes/07-food/README.md)** — Recipes, ingredients, meal prep, multimodal ingestion (web URLs, Instagram reels, screenshots, text). Links to finance (grocery spend), inventory (kitchen gear). Promoted into active work; foundational schema epic in progress
 
 **Depends on:** Phase 2 (architecture proven), Phase 3 (AI reduces input friction).
 
