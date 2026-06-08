@@ -12,7 +12,7 @@ After this epic, a user can author recipes manually, see them rendered as a cook
 
 | #   | PRD                                                                          | Summary                                                                                                           | Status      |
 | --- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------- |
-| 118 | [app-food Scaffold & Manifest](../prds/118-app-food-scaffold/README.md)      | `packages/app-food` package; module manifest; shell route mounting at `/food`; landing page                       | Not started |
+| 118 | [app-food Scaffold & Manifest](../prds/118-app-food-scaffold/README.md)      | `packages/app-food` package; module manifest; shell route mounting at `/food`; landing page                       | Done        |
 | 119 | [Recipe CRUD Pages](../prds/119-recipe-crud-pages/README.md)                 | `/food/recipes` list, `/food/recipes/:id` detail, `/food/recipes/new`, `/food/recipes/:id/edit`, promote, archive | Not started |
 | 120 | [DSL CodeMirror Editor](../prds/120-dsl-editor/README.md)                    | CodeMirror 6 + Lezer grammar; autocomplete from slug_registry; compile-error squiggles; chip render for `@N`      | Not started |
 | 121 | [DSL Renderer](../prds/121-dsl-renderer/README.md)                           | Cookbook view: chips for ingredient refs, clickable `@time` timers, `@temperature` widgets, markdown body         | Not started |

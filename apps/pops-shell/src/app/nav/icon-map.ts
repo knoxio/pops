@@ -33,6 +33,7 @@ import {
   Shuffle,
   Star,
   Trophy,
+  Utensils,
   Zap,
 } from 'lucide-react';
 
@@ -87,5 +88,6 @@ export const iconMap = {
   Shuffle,
   Star,
   Trophy,
+  Utensils,
   Zap,
 } satisfies Record<IconName, LucideIcon>;

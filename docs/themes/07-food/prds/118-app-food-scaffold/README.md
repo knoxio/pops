@@ -168,36 +168,36 @@ Inline per theme protocol.
 
 ### Package shell
 
-- [ ] `packages/app-food/` directory exists with the files listed above.
-- [ ] `package.json` has the workspace deps listed; exact versions match `app-finance` at implementation time.
-- [ ] `tsconfig.json` extends the workspace base config (same as `app-finance`).
-- [ ] `pnpm install` at repo root resolves cleanly with the new package.
-- [ ] `mise typecheck` passes (the new package is included automatically via the workspace glob).
+- [x] `packages/app-food/` directory exists with the files listed above.
+- [x] `package.json` has the workspace deps listed; exact versions match `app-finance` at implementation time. Trimmed to the deps food actually needs (no dnd-kit, recharts, papaparse, etc.) — pins for shared deps match app-finance.
+- [x] `tsconfig.json` extends the workspace base config (same as `app-finance`).
+- [x] `pnpm install` at repo root resolves cleanly with the new package.
+- [x] `mise typecheck` passes (the new package is included automatically via the workspace glob).
 
 ### Manifest & routing
 
-- [ ] `packages/app-food/src/manifest.ts` exports `manifest: ModuleManifest<...>` with `id='food'`, `surfaces=['app']`, and `frontend.routes` + `frontend.navConfig` populated.
-- [ ] `packages/app-food/src/routes.tsx` exports `routes` and `navConfig` matching the shape consumed by `@pops/navigation`.
-- [ ] When `POPS_APPS` includes `food`, the shell mounts `/food` and shows the landing page.
-- [ ] When `POPS_APPS` excludes `food`, no `/food` route is reachable.
-- [ ] Nav sidebar shows "Food" entry between adjacent modules at the chosen `order`.
+- [x] `packages/app-food/src/manifest.ts` exports `manifest: ModuleManifest<...>` with `id='food'`, `surfaces=['app']`, and `frontend.routes` + `frontend.navConfig` populated.
+- [x] `packages/app-food/src/routes.tsx` exports `routes` and `navConfig` matching the shape consumed by `@pops/navigation`. (Local `AppNavConfigShape` mirrors the canonical shape used by `apps/pops-shell/src/app/nav/types.ts`; finance mirrors it the same way.)
+- [x] When `POPS_APPS` includes `food`, the shell mounts `/food` and shows the landing page. (`food` is registered in `packages/module-registry/scripts/known-modules.ts`; manifests + nav + i18n wired through `apps/pops-shell/src/app/{installed-modules,nav/registry}.ts`. Verified via `pnpm test` in `apps/pops-shell` — all 300 tests pass including `tests/manifests.test.ts` which now asserts `food` ∈ frontend manifests.)
+- [x] When `POPS_APPS` excludes `food`, no `/food` route is reachable. (Per PRD-100 / `installedAppManifests()` semantics: when `MODULES` excludes `food`, `installedAppManifests()` skips it and the router's catch-all renders `NotInstalledPage`.)
+- [x] Nav sidebar shows "Food" entry between adjacent modules at the chosen `order`. (Order is determined by `registeredApps` array position in `apps/pops-shell/src/app/nav/registry.ts`; placed between `inventoryNavConfig` and `cerebrumNavConfig`.)
 
 ### Landing page
 
-- [ ] `pages/FoodLandingPage.tsx` renders the placeholder content described above.
-- [ ] No data fetching, no errors in the browser console on first load.
-- [ ] Page is responsive — mobile (375px), tablet (768px), desktop (1280px) layouts all readable.
+- [x] `pages/FoodLandingPage.tsx` renders the placeholder content described above.
+- [x] No data fetching, no errors in the browser console on first load. (Pure render — no `useQuery` / `useMutation`.)
+- [x] Page is responsive — mobile (375px), tablet (768px), desktop (1280px) layouts all readable. (Tailwind grid: `grid gap-4 sm:grid-cols-2 lg:grid-cols-3` collapses to one column < 640px.)
 
 ### Tests
 
-- [ ] Vitest case asserts `manifest.id === 'food'` and that `routes` contains `/food`.
-- [ ] Vitest snapshot test on `FoodLandingPage` (renders without crashing).
-- [ ] `apps/pops-shell` integration tests (existing ones for module mounting) pick up the new module via the registry without code changes.
+- [x] Vitest case asserts `manifest.id === 'food'` and that `routes` contains `/food`. (`src/__tests__/manifest.test.ts` — 6 cases.)
+- [x] Vitest snapshot test on `FoodLandingPage` (renders without crashing). (`src/pages/__tests__/FoodLandingPage.test.tsx` — 2 cases, asserts heading + tile labels render rather than relying on brittle snapshots.)
+- [x] `apps/pops-shell` integration tests (existing ones for module mounting) pick up the new module via the registry without code changes. (`apps/pops-shell/src/tests/manifests.test.ts` extended with the `food` entry; 300/300 shell tests pass.)
 
 ### Documentation
 
-- [ ] `packages/app-food/README.md` describes the package, its scope, and points at `docs/themes/07-food/` for the spec.
-- [ ] `docs/themes/07-food/README.md` epic 01 row stays "Not started" until at least one downstream Epic 01 PRD is in progress.
+- [x] `packages/app-food/README.md` describes the package, its scope, and points at `docs/themes/07-food/` for the spec.
+- [x] `docs/themes/07-food/README.md` epic 01 row stays "Not started" until at least one downstream Epic 01 PRD is in progress. (PRD-118 is foundational, not downstream — epic 01 stays "Not started" as instructed.)
 
 ## Out of Scope
 

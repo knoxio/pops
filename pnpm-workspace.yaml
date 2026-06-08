@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/app-finance'
+  - 'packages/app-food'
   - 'packages/app-media'
   - 'packages/app-inventory'
   - 'packages/app-ai'

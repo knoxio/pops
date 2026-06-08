@@ -16,6 +16,7 @@ export const KNOWN_MODULES = [
   'core',
   'ego',
   'finance',
+  'food',
   'inventory',
   'media',
 ] as const;
@@ -1008,6 +1009,15 @@ export const MODULES = [
     ] satisfies readonly SettingsManifest[],
   },
   {
+    id: 'food',
+    name: 'Food',
+    version: '0.1.0',
+    surfaces: ['app'] as const,
+    description: 'Recipes, ingredients, meal planning, and multimodal ingestion.',
+    hasBackend: false,
+    hasFrontend: false,
+  },
+  {
     id: 'inventory',
     name: 'Inventory',
     version: '0.1.0',
@@ -1680,5 +1690,6 @@ export type GeneratedModuleId =
   | 'core'
   | 'ego'
   | 'finance'
+  | 'food'
   | 'inventory'
   | 'media';
