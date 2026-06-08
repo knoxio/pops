@@ -23,9 +23,10 @@ export async function runScreenshotIngest(
   });
   if (!parsed) return { ok: false, errorCode: 'VisionExtractFailed', ... };
 
-  // 3. Build DSL + create draft
+  // 3. Build DSL and hand off to worker shell
   const dsl = buildDsl(parsed, { source: 'screenshot' });
-  return await createDraft(dsl, data.sourceId);
+  const partialReason = (parsed.ingredients.length === 0 || parsed.steps.length === 0) ? 'empty-extraction' : undefined;
+  return { ok: true, dsl, meta, partialReason };
 }
 ```
 

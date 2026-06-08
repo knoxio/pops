@@ -80,7 +80,7 @@ The mapping is deterministic; no LLM involved:
 | `cookTime`                   | `@recipe(cook_time=N:min)`                                                     |
 | `recipeIngredient[i]`        | `@ingredient(i+1, <best-effort-descriptor>, <best-effort-qty:unit>)`           |
 | `recipeInstructions[i].text` | `@step("...")`                                                                 |
-| `image` (first URL)          | Stored in `extracted_json.image_url`; PRD-119 review queue may suggest as hero |
+| `image` (first URL)          | Stored in `extracted_json.image_url`; Epic 03 review queue may suggest as hero |
 | `recipeCategory`             | Added as a tag                                                                 |
 | `recipeCuisine`              | Added as a tag                                                                 |
 
@@ -97,7 +97,9 @@ JSON-LD doesn't declare a yield ingredient. Default heuristic: yield slug = reci
 
 ### Step 4: Build draft
 
-Construct the DSL string from the mapped fields, then call `food.recipes.create({ dsl })` via the internal API (PRD-125's `workerComplete` wraps this). Compile runs as part of `create` (PRD-119); auto-creations populate; draft lands in the review queue.
+Construct the DSL string from the mapped fields and return `{ ok: true, dsl, meta }` from the handler. The worker shell then calls `food.ingest.workerComplete` (PRD-125) which atomically creates the recipe (via PRD-119's `food.recipes.create`) and updates `ingest_sources`. Compile runs as part of `create` (PRD-116); auto-creations populate; draft lands in the review queue.
+
+The recipe **slug is derived inside `buildDsl`**: slugify the JSON-LD `name` field to kebab-case ASCII. If the slug collides with an existing entry in `slug_registry`, append a numeric suffix (`-2`, `-3`, ...) until unique. The DSL `@recipe(slug=...)` is always populated; PRD-119's `create` requires it.
 
 ## Meta JSON additions
 
@@ -128,6 +130,7 @@ No LLM stages; no AI usage logged for this path.
 - Sites that gate behind login (require cookies for the recipe content): fetch returns the login page HTML; no Recipe JSON-LD found; fall to PRD-128 which will also fail. User sees "couldn't parse" in review queue.
 - Sites that 4xx/5xx: `errorCode='FetchFailed'`, no draft created, BullMQ retries per policy.
 - Per spec, sites MAY use multiple `recipeInstructions` types (`HowToStep`, `HowToSection`). v1 flattens both into steps; section headers are dropped. Future enhancement: preserve sections.
+- Hero image `image` URL captured into `extracted_json.image_url` — the Epic 03 review queue may suggest it as a hero candidate during user approval (NOT PRD-119's recipe CRUD pages).
 
 ## Edge Cases
 

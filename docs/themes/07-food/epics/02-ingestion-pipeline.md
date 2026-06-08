@@ -28,8 +28,10 @@ This epic is pipeline-only. The review queue UI that promotes drafts to canonica
 
 ```
 125 ──► 126 ──► (127, 128, 129→130, 131, 132 in parallel)
-                                  │
-133 ───────────────────────────────┘ (consumed by 127-132 for logging)
+                              ▲
+133 ──────────────────────────┘  (133 provides the callClaudeWithLogging wrapper
+                                  that 128, 130, 131, 132 consume; can be built first
+                                  or in parallel with the handlers)
 ```
 
 - **125** first (the queue contract is the integration point everything else publishes to).

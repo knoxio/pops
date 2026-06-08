@@ -61,30 +61,79 @@ export async function runInstagramIngest(
 
   // 6. Decide degradation
   if (!parsed) {
-    // Fall back to caption-only via text LLM
+    // Fall back to caption-only via text LLM (reuses PRD-128's prompt + helper)
     if (acq.caption && acq.caption.length > 30) {
-      parsed = await extractWithClaudeText({ caption: acq.caption, url: data.url });
+      parsed = await extractWithClaudeText({ body: acq.caption, source: 'ig-text-fallback' });
     }
   }
 
   if (!parsed) {
-    return { ok: false, errorCode: 'AllExtractionPathsFailed', meta: ... };
+    return { ok: false, errorCode: 'AllExtractionPathsFailed', errorMessage: 'No extraction path produced a result', meta: assembleMeta(...) };
   }
 
-  // 7. Build DSL + create draft
+  // 7. Build DSL and hand off
   const dsl = buildDsl(parsed, { source: 'url-instagram', url: data.url });
-  const draftResult = await createDraft(dsl, data.sourceId);
-
-  // 8. Determine final state
   const partialReason = derivePartialReason({ captionStructured, transcriptOk, visionOk, keyframesOk });
-  return {
-    ok: true,
-    draftRecipeId: draftResult.draftRecipeId,
-    partialReason,
-    meta: assembleMeta({ acq, captionStructured, transcript, keyframes, parsed, ... }),
-  };
+  return { ok: true, dsl, meta: assembleMeta({ acq, captionStructured, transcript, keyframes, parsed, ... }), partialReason };
 }
 ```
+
+The worker shell then calls `food.ingest.workerComplete` (PRD-125) with this result; the mutation creates the recipe atomically and updates `ingest_sources`. Handler NEVER calls `food.recipes.create` directly.
+
+### Recipe slug
+
+Same convention as PRD-127 / 128: `buildDsl` slugifies `parsed.title` to kebab-case ASCII; conflict resolution via numeric suffix against `slug_registry`.
+
+### `convertAcquisitionFailure`
+
+Maps PRD-129's four failure variants onto `IngestJobResult`:
+
+```ts
+function convertAcquisitionFailure(
+  acq: AcquisitionResult & { ok: false },
+  sourceId: number
+): IngestJobResult {
+  const meta = {
+    extractor_version: PIPELINE_VERSION,
+    stages: { acquisition: { ok: false, kind: acq.kind } },
+  };
+  switch (acq.kind) {
+    case 'auth-dead':
+      // Surface to review queue as partial; cookies need refresh per runbook. NOT retried (BullMQ attempts wasted).
+      return {
+        ok: true,
+        dsl: buildAuthDeadPlaceholderDsl(sourceId),
+        meta,
+        partialReason: 'auth-dead',
+      };
+    case 'rate-limited':
+      // Hard failure with retryAfter set so BullMQ delays the next attempt.
+      return {
+        ok: false,
+        errorCode: 'InstagramRateLimited',
+        errorMessage: 'IG rate-limited; will retry',
+        meta,
+        retryAfterSec: acq.retryAfter,
+      };
+    case 'generic-failure':
+      return {
+        ok: false,
+        errorCode: 'InstagramAcquisitionFailed',
+        errorMessage: `yt-dlp exit ${acq.exitCode}: ${acq.stderr.slice(0, 200)}`,
+        meta,
+      };
+    case 'missing-artifacts':
+      return {
+        ok: false,
+        errorCode: 'InstagramArtifactsMissing',
+        errorMessage: 'yt-dlp succeeded but expected files not present',
+        meta,
+      };
+  }
+}
+```
+
+`auth-dead` is the only acquisition failure that surfaces as `ok: true, partialReason: 'auth-dead'` — because we DO want it in the review queue (Epic 03) so the user sees the cookie-refresh prompt. The placeholder DSL is minimal: `@recipe(slug="ig-pending-<sourceId>", title="Instagram ingest pending — cookies need refresh")` + `@yield(ig-pending-<sourceId>, 1:count)`. No ingredients, no steps. Review queue dismisses or reruns after cookie refresh.
 
 ## Caption Heuristic
 
@@ -248,7 +297,7 @@ Prompt as TS constant in `apps/pops-worker-food/src/prompts/ig-vision.ts`. Read-
 - Acquisition failure (PRD-129) is **terminal for the success path** — no degradation can recover from auth-dead / rate-limited / missing-artifacts. PRD-130 just converts these to the right `IngestJobResult` shape.
 - STT failure is recoverable — caption + vision can still produce a useful draft. Marked partial.
 - Vision failure with no caption is **terminal** — no useful path forward. Failed.
-- Vision failure WITH caption falls through to text-LLM extraction (same prompt as PRD-128).
+- Vision failure WITH caption falls through to text-LLM extraction. The fallback reuses PRD-128's `PROMPT_WEB_LLM` via the shared `extractWithClaudeText` helper from PRD-132. AI usage logs the call as `operation='recipe-extract-ig-text-fallback'` (distinct from `recipe-extract-web-llm`) but the prompt version recorded is `web-llm-vN` (the shared prompt's version).
 - Empty caption + STT skipped (heuristic false-positive) — STT runs anyway because the empty caption can't be structured. The heuristic's `caption.length < 100` check covers this.
 - Concurrent invocations: each runs in its own `${FOOD_INGEST_DIR}/<sourceId>/` workdir; no shared state. Memory pressure from concurrent faster-whisper handled by `FOOD_WORKER_CONCURRENCY` (default 2).
 - Cancellation checked between stages: after acquisition, after STT, after keyframes, before vision call. Mid-vision-call cancellation NOT supported.
@@ -309,8 +358,8 @@ Inline per theme protocol.
 
 ### Text-LLM fallback
 
-- [ ] When vision fails AND caption is non-trivial (>30 chars), invoke text-LLM (same prompt as PRD-128).
-- [ ] Distinct `prompt_version` recorded so reviewer can see which path produced the draft.
+- [ ] When vision fails AND caption is non-trivial (>30 chars), invoke text-LLM via `extractWithClaudeText` — the shared helper exported by PRD-132. The fallback **reuses PRD-128's `PROMPT_WEB_LLM`** template (same extraction schema, applies cleanly to caption text).
+- [ ] `ai_inference_log` row uses `operation='recipe-extract-ig-text-fallback'` (distinct operation enum value per PRD-133) but `metadata.prompt_version='web-llm-vN'` (same prompt version that PRD-128 uses) — the operation distinguishes the _call context_ in observability; the prompt template is shared.
 
 ### Meta & logging
 

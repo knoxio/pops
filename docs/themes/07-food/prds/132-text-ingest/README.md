@@ -24,9 +24,10 @@ export async function runTextIngest(
   const parsed = await extractWithClaudeText({ body: data.body });
   if (!parsed) return { ok: false, errorCode: 'LlmExtractFailed', ... };
 
-  // 3. Build DSL + create draft
+  // 3. Build DSL and hand off to worker shell
   const dsl = buildDsl(parsed, { source: 'text' });
-  return await createDraft(dsl, data.sourceId);
+  const partialReason = (parsed.ingredients.length === 0 || parsed.steps.length === 0) ? 'empty-extraction' : undefined;
+  return { ok: true, dsl, meta, partialReason };
 }
 ```
 
@@ -115,7 +116,8 @@ Inline per theme protocol.
 - [ ] `runTextIngest(data)` exported from `apps/pops-worker-food/src/handlers/text.ts`.
 - [ ] Validates body length (≥10 chars; truncates >20K).
 - [ ] Single Claude API call per ingest.
-- [ ] Reuses `extractWithClaudeText` helper (also used by PRD-130's vision-fallback path).
+- [ ] Exports `extractWithClaudeText(input: { body: string; source?: 'text' | 'ig-text-fallback' }): Promise<ExtractedRecipe | null>` from `apps/pops-worker-food/src/handlers/text.ts`. The `source` field changes only the `ai_inference_log.operation` value written by `callClaudeWithLogging`; the prompt template + JSON output schema are identical regardless of caller.
+- [ ] PRD-130's vision-fallback path calls `extractWithClaudeText({ body: acq.caption, source: 'ig-text-fallback' })` — same signature.
 
 ### Prompt
 

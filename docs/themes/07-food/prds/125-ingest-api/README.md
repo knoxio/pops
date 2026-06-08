@@ -51,11 +51,19 @@ export type IngestStatus = {
   startedAt: string | null;
   completedAt: string | null;
   draftRecipeId: number | null;               // set when ingest produces a draft (success or partial)
-  partialReason?: 'auth-dead' | 'stt-failed' | 'vision-failed' | 'caption-only-fallback';
+  partialReason?: PartialReason;
   errorCode?: string;
   errorMessage?: string;
   meta?: IngestMeta;                          // see "Meta JSON shape" below
 };
+
+export type PartialReason =
+  | 'auth-dead'              // PRD-129: IG cookies expired
+  | 'rate-limited'           // PRD-129: yt-dlp rate-limited; delayed retry
+  | 'stt-failed'             // PRD-130: faster-whisper failed; caption + vision used instead
+  | 'vision-failed'          // PRD-130: vision call failed; text-LLM fallback used
+  | 'caption-only-fallback'  // PRD-130: STT + vision both failed; caption-only extraction
+  | 'empty-extraction';      // PRD-128 / 130 / 131 / 132: LLM produced 0 ingredients or 0 steps
 ```
 
 ### Flow
@@ -63,9 +71,21 @@ export type IngestStatus = {
 `start` mutation:
 
 1. Validate input by kind (URL well-formed; text non-empty; base64 size ≤ 8 MB matching PRD-124 cap).
-2. Create `ingest_sources` row (PRD-110): `kind`, `url`/`caption` populated as appropriate, `extractor_version` set to the current pipeline version string, `ingested_at = now()`, `draft_recipe_id = NULL`.
-3. Enqueue a BullMQ job on `food.ingest` queue with the job data shape below.
-4. Return `sourceId` (the `ingest_sources` row ID) and `jobId` (BullMQ).
+2. Create `ingest_sources` row (PRD-110) with the field mapping below.
+3. For `kind='screenshot'`: decode the base64 to disk at `${FOOD_INGEST_DIR}/<sourceId>/screenshot.<ext>` BEFORE enqueue.
+4. Enqueue a BullMQ job on `food.ingest` queue with the job data shape below.
+5. Return `sourceId` (the `ingest_sources` row ID) and `jobId` (BullMQ).
+
+#### Input → `ingest_sources` column mapping
+
+| Input kind      | `kind`            | `url`       | `caption`                               | Other                                         |
+| --------------- | ----------------- | ----------- | --------------------------------------- | --------------------------------------------- |
+| `url-web`       | `'url-web'`       | `input.url` | NULL                                    | —                                             |
+| `url-instagram` | `'url-instagram'` | `input.url` | NULL (populated by worker after yt-dlp) | —                                             |
+| `text`          | `'text'`          | NULL        | `input.body`                            | Body also carried inline in BullMQ job        |
+| `screenshot`    | `'screenshot'`    | NULL        | NULL                                    | Decoded file at `<sourceId>/screenshot.<ext>` |
+
+`extractor_version` is set to the current pipeline version string. `ingested_at=now()`. `draft_recipe_id=NULL` until the worker completes.
 
 `status` query: server fetches the BullMQ job state (or returns `state='completed'`/`'failed'` from the DB if the job has aged out of BullMQ's TTL). Used by the shell to poll progress.
 
@@ -83,12 +103,25 @@ export type IngestJobData =
   | { kind: 'text'; sourceId: number; body: string }
   | { kind: 'screenshot'; sourceId: number; mimeType: string; contentPath: string };
 
+// Per-kind handlers produce the DSL + meta; they do NOT create the draft directly.
+// The worker then calls `food.ingest.workerComplete` (below) which atomically:
+//   (a) creates the recipe + version via PRD-119's `food.recipes.create` if `ok: true`,
+//   (b) updates `ingest_sources.draft_recipe_id` + `extracted_json` with the meta rollup.
+// This keeps DB writes server-side and gives the worker a single round-trip per ingest.
 export type IngestJobResult =
-  | { ok: true; draftRecipeId: number; partialReason?: PartialReason; meta: IngestMeta }
-  | { ok: false; errorCode: string; errorMessage: string; meta: IngestMeta };
+  | { ok: true; dsl: string; meta: IngestMeta; partialReason?: PartialReason }
+  | {
+      ok: false;
+      errorCode: string;
+      errorMessage: string;
+      meta: IngestMeta;
+      retryAfterSec?: number;
+    };
 
 export const FOOD_INGEST_QUEUE_NAME = 'food.ingest';
 ```
+
+`retryAfterSec` (optional) on a failure result tells BullMQ to delay the next attempt by this many seconds — used by PRD-129's rate-limited path which surfaces Instagram's `Retry-After` header.
 
 For `screenshot` kind: the base64 payload from the API is decoded and written to a temp file under `${FOOD_INGEST_DIR}/<sourceId>/screenshot.<ext>` BEFORE enqueue, so the BullMQ job carries only a path (no large binary in Redis). The worker reads the file and processes it.
 
@@ -116,14 +149,17 @@ Rate limit (per Anthropic API key): use BullMQ's worker-side `limiter: { max: 30
 
 ## Meta JSON Shape
 
-Stored on `ingest_sources.extracted_json` (existing column from PRD-110) alongside the LLM output. Captures pipeline observability per ingest:
+Persisted as a JSON-encoded string in `ingest_sources.extracted_json` (existing column from PRD-110) — note: PRD-110 reserves that column for "the LLM's structured output that became the draft"; this PRD widens the column's meaning to hold the whole observability rollup (which embeds the LLM raw output as a nested field). The rollup captures pipeline observability per ingest:
 
 ```json
 {
   "extractor_version": "pipeline-v1.0;yt-dlp-2026.01.15;faster-whisper-distil-large-v3;claude-haiku-4-5-20251001",
   "stages": {
+    /* per-stage records keyed by stage name; ILLUSTRATIVE shape only.
+       Each handler PRD (127-132) defines exactly which stages it writes.
+       Stage names below are example values; consult per-PRD §"Meta JSON additions". */
     "fetch": { "ok": true, "duration_ms": 1240 },
-    "caption_parse": { "ok": true, "duration_ms": 5, "structured": true },
+    "caption_heuristic": { "structured": true },
     "stt": { "ok": false, "skipped": true, "reason": "caption-was-structured" },
     "keyframes": { "ok": true, "duration_ms": 850, "count": 8 },
     "vision": {
@@ -134,18 +170,61 @@ Stored on `ingest_sources.extracted_json` (existing column from PRD-110) alongsi
       "output_tokens": 380,
       "cost_usd": 0.0021
     },
-    "dsl_extract": { "ok": true, "duration_ms": 110 },
+    "dsl_build": { "ok": true, "duration_ms": 110 },
     "compile": { "ok": true, "duration_ms": 90, "creations": 3, "proposedSlugs": 0 }
   },
   "total_duration_ms": 6415,
   "total_cost_usd": 0.0021,
-  "extracted_json": {
-    /* the LLM's raw JSON output before draft insertion */
+  "llm_raw_output": {
+    /* the LLM's raw JSON output before draft insertion (when an LLM was used) */
   }
 }
 ```
 
 Each ingest kind populates the stages it ran. Skipped stages have `skipped: true` and a `reason`. PRD-133 logs each LLM call to `ai_inference_log` separately; the meta JSON is a per-source rollup for observability and review.
+
+**Stage names are owned by the per-kind PRDs.** PRD-125 lists illustrative values; the canonical set used in tests / UI grouping is the union of what PRDs 127-132 actually emit. See each handler PRD's §"Meta JSON additions" for its stage names.
+
+## `food.ingest.workerComplete` (internal)
+
+Called by `pops-worker-food` (PRD-126) at the end of every job, success or failure. Auth'd via `POPS_API_INTERNAL_TOKEN` header (same mechanism as PRD-133's `food.ai.logInference`); NOT exposed via OpenAPI to user-facing clients.
+
+```ts
+food.ingest.workerComplete: mutation({
+  input:
+    | { sourceId: number; ok: true;  dsl: string; meta: IngestMeta; partialReason?: PartialReason }
+    | { sourceId: number; ok: false; errorCode: string; errorMessage: string; meta: IngestMeta },
+  output:
+    | { ok: true;  draftRecipeId: number; compileStatus: 'compiled' | 'failed' | 'uncompiled' }
+    | { ok: false; reason: string },
+});
+```
+
+### Server-side execution
+
+On `ok: true`:
+
+1. In one Drizzle transaction:
+   - Call `food.recipes.create({ dsl, sourceId })` (PRD-119) — creates the recipe + draft version + slug_registry rows; runs PRD-116's compile.
+   - UPDATE `ingest_sources` SET `extracted_json = <meta as JSON>`, `draft_recipe_id = <new recipe id>`.
+2. Return the resulting `draftRecipeId` and the compile result's `compile_status`.
+
+On `ok: false`:
+
+1. UPDATE `ingest_sources` SET `extracted_json = <meta as JSON>` (no draft created).
+2. Return `{ ok: false, reason: errorCode }`.
+
+This server-side ordering ensures `ingest_sources.draft_recipe_id` is FK-consistent with `recipes.id` (the recipe is created in the same transaction). Handlers never call `food.recipes.create` directly — only `workerComplete`.
+
+## Requires (cross-epic dependencies)
+
+- **PRD-107** (`recipe_versions` schema) — the draft this pipeline ultimately produces.
+- **PRD-110** (`ingest_sources` table + `FOOD_INGEST_DIR` filesystem layout) — provenance.
+- **PRD-115** (DSL resolver `creations` flow) — invoked during compile when ingest produces unknown ingredient/variant slugs.
+- **PRD-116** (compile function) — invoked by `food.recipes.create` during workerComplete.
+- **PRD-119** (`food.recipes.create` mutation) — the creation path used by `workerComplete`.
+- **PRD-133** (AI usage logging) — every LLM call from handlers routes through `callClaudeWithLogging`.
+- Existing Redis + BullMQ infrastructure (theme 01 / 02).
 
 ## Business Rules
 
@@ -154,7 +233,7 @@ Each ingest kind populates the stages it ran. Skipped stages have `skipped: true
 - The shell shows the `sourceId` to the user immediately ("Ingest queued — sourceId 42"); polls `status` until terminal state.
 - `cancel` is best-effort: a job in mid-flight may complete before the worker checks the cancellation flag. Surface "cancellation requested" until the worker confirms.
 - `retry` re-enqueues with the same input but a fresh `extractor_version` snapshot. Old `extracted_json` is overwritten on success.
-- Worker writes back to `ingest_sources` via a server-side tRPC call (`food.ingest.workerComplete(sourceId, result)`) that's mutually-auth'd via an internal token. The mutation is NOT exposed to user-facing API surfaces.
+- Worker writes back to `ingest_sources` via the `food.ingest.workerComplete` mutation defined above. The mutation handles both DB writes (recipe creation via PRD-119 and ingest_sources update) in one transaction. Worker never touches the DB directly.
 - `state='partial'` is a success variant: a draft was produced but with caveats (e.g. caption-only fallback after STT failure). Review queue surfaces these prominently.
 
 ## Edge Cases

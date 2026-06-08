@@ -135,9 +135,9 @@ Patterns above are best-effort. Implementation should accept that yt-dlp's error
 
 ## Rate-limit detection
 
-`isRateLimited(stderr)` checks for HTTP 429 or yt-dlp's "Too Many Requests" string. Returns the recommended retry delay if Instagram included a `Retry-After` header (yt-dlp surfaces it). BullMQ schedules a delayed retry; the job exits with `kind='rate-limited'` and re-enqueues itself with the delay (BullMQ supports per-job delay).
+`isRateLimited(stderr)` checks for HTTP 429 or yt-dlp's "Too Many Requests" string. Returns the recommended retry delay in seconds if Instagram included a `Retry-After` header (yt-dlp surfaces it). PRD-130's `convertAcquisitionFailure` translates the result into an `IngestJobResult` with `retryAfterSec: acq.retryAfter` (PRD-125's contract); the worker shell passes that to BullMQ via `job.changeDelay(retryAfterSec * 1000)` before throwing, so the next attempt fires after the delay.
 
-If no `Retry-After` header: default delay 5 minutes. Conservative — Instagram rate limits are global per IP, retrying soon would just burn another attempt.
+If no `Retry-After` header: default delay 300 seconds (5 minutes). Conservative — Instagram rate limits are global per IP; retrying soon would just burn another attempt.
 
 ## Cookies
 

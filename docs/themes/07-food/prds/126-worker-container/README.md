@@ -79,9 +79,21 @@ worker-food:
     POPS_API_URL: http://api:3000
     POPS_API_INTERNAL_TOKEN: ${POPS_API_INTERNAL_TOKEN}
     ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    # Worker pool & rate limiting (PRD-125)
     FOOD_WORKER_CONCURRENCY: ${FOOD_WORKER_CONCURRENCY:-2}
     FOOD_INGEST_TIMEOUT_SEC: ${FOOD_INGEST_TIMEOUT_SEC:-300}
+    FOOD_INGEST_RATE_PER_MIN: ${FOOD_INGEST_RATE_PER_MIN:-30}
+    # Storage (PRD-110)
+    FOOD_INGEST_DIR: ${FOOD_INGEST_DIR:-/data/food/ingest}
+    # Cookie path (PRD-129)
     INSTAGRAM_COOKIES_PATH: /secrets/instagram-cookies.txt
+    # Per-handler model overrides (PRDs 128, 130, 131, 132)
+    FOOD_WEB_LLM_MODEL: ${FOOD_WEB_LLM_MODEL:-claude-haiku-4-5-20251001}
+    FOOD_IG_VISION_MODEL: ${FOOD_IG_VISION_MODEL:-claude-haiku-4-5-20251001}
+    FOOD_SCREENSHOT_VISION_MODEL: ${FOOD_SCREENSHOT_VISION_MODEL:-claude-haiku-4-5-20251001}
+    FOOD_TEXT_LLM_MODEL: ${FOOD_TEXT_LLM_MODEL:-claude-haiku-4-5-20251001}
+    # Cost observation (PRD-133's callClaudeWithLogging warns when exceeded)
+    FOOD_INGEST_COST_CAP_PER_JOB_USD: ${FOOD_INGEST_COST_CAP_PER_JOB_USD:-0.05}
   healthcheck:
     test: ['CMD', 'curl', '-f', 'http://localhost:9090/healthz']
     interval: 30s
@@ -99,46 +111,59 @@ The entry point (compiled to `dist/worker.js`) does:
 
 ```ts
 async function main() {
-  const queue = new Worker(
+  const ratePerMin = Number(process.env.FOOD_INGEST_RATE_PER_MIN ?? 30);
+
+  const worker = new Worker(
     FOOD_INGEST_QUEUE_NAME,
     async (job) => {
-      return runIngestJob(job.data);
+      // Pass the whole job so handlers can inspect cancellation via `job.isToBeRemoved()`.
+      return runIngestJob(job);
     },
     {
       connection: redisConnection,
       concurrency: Number(process.env.FOOD_WORKER_CONCURRENCY ?? 2),
-      limiter: { max: 30, duration: 60_000 }, // matches PRD-125 default
+      limiter: { max: ratePerMin, duration: 60_000 }, // PRD-125 contract; env-driven
     }
   );
 
   // Health server
-  startHealthServer(9090, () => queue.isRunning());
+  startHealthServer(9090, () => worker.isRunning());
 
   // Graceful shutdown
   process.on('SIGTERM', async () => {
-    await queue.close();
+    await worker.close();
     await closeRedis();
     process.exit(0);
   });
 }
 ```
 
-`runIngestJob(data)` dispatches to the per-kind module:
+`runIngestJob(job)` dispatches to the per-kind module, passing the BullMQ `Job` so handlers can check `job.isToBeRemoved()` between pipeline stages for cooperative cancellation:
 
 ```ts
-async function runIngestJob(data: IngestJobData): Promise<IngestJobResult> {
+async function runIngestJob(job: Job<IngestJobData>): Promise<IngestJobResult> {
+  const data = job.data;
+  const ctx: HandlerContext = { isCancelled: () => job.isToBeRemoved() };
   switch (data.kind) {
     case 'url-web':
-      return runWebUrlIngest(data); // PRD-127 / 128
+      return runWebUrlIngest(data, ctx); // PRD-127 / 128
     case 'url-instagram':
-      return runInstagramIngest(data); // PRD-129 + 130
+      return runInstagramIngest(data, ctx); // PRD-129 + 130
     case 'screenshot':
-      return runScreenshotIngest(data); // PRD-131
+      return runScreenshotIngest(data, ctx); // PRD-131
     case 'text':
-      return runTextIngest(data); // PRD-132
+      return runTextIngest(data, ctx); // PRD-132
   }
 }
+
+export type HandlerContext = {
+  isCancelled: () => boolean | Promise<boolean>;
+};
 ```
+
+Each handler accepts `(data, ctx)` and is responsible for calling `await ctx.isCancelled()` between pipeline stages. If true, the handler returns early with `{ ok: false, errorCode: 'Cancelled', ... }`.
+
+After `runIngestJob` returns, the worker shell calls `food.ingest.workerComplete(sourceId, result)` (per PRD-125) — the worker is NEVER responsible for creating the recipe directly; that's done server-side by the mutation.
 
 Each per-kind handler returns `IngestJobResult`. The worker then calls back to pops-api via the internal `food.ingest.workerComplete` mutation (PRD-125) with the result.
 

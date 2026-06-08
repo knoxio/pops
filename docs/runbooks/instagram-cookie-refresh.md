@@ -4,7 +4,7 @@ When the food ingest pipeline reports "Instagram cookies need refresh", this run
 
 ## Symptoms
 
-- Review queue (`/food/review`, Epic 03) shows pending Instagram ingests with the banner: **"Instagram cookies need refresh"**.
+- Review queue (Epic 03; exact route to be defined when that epic ships) shows pending Instagram ingests with a banner indicating the cookies need refresh.
 - `pops-worker-food` logs include yt-dlp errors matching `login required` / `cookies invalid` / `Please log in`.
 - `food.ingest.list({ state: 'partial' })` returns ingests with `partialReason='auth-dead'`.
 - New Instagram ingests created via `/food/ingest` complete quickly with `state='partial'` instead of processing fully.
@@ -38,7 +38,7 @@ When the food ingest pipeline reports "Instagram cookies need refresh", this run
    docker compose -f infra/docker-compose.yml restart worker-food
    ```
 
-5. **Retry failed ingests.** Open the review queue (`/food/review`). For each ingest with the "cookies need refresh" banner, click **"Mark as resolved"** — this calls `food.ingest.retry` and the job re-enqueues with fresh cookies.
+5. **Retry failed ingests.** Open the review queue (Epic 03 surface). For each ingest with the "cookies need refresh" banner, trigger the retry action — this calls `food.ingest.retry` (PRD-125) and the job re-enqueues with fresh cookies. (Exact UI affordance is defined when Epic 03 ships; until then, `food.ingest.retry` can be called directly from the API client or pops-cli.)
 
 6. **Verify a fresh ingest.** Submit one new Instagram URL via `/food/ingest`. Confirm it completes with `state='completed'` (not `'partial'`).
 

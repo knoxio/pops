@@ -31,9 +31,9 @@ export async function processWithLlm(
   });
   if (!result.ok) return { ok: false, errorCode: 'LlmExtractFailed', ... };
 
-  // 3. Build DSL + create draft
+  // 3. Build DSL
   const dsl = buildDsl(result.parsed, { source: 'url-web', url: finalUrl });
-  return await createDraft(dsl, data.sourceId);
+  return { ok: true, dsl, meta, partialReason: deriveEmptyExtractionFlag(result.parsed) };
 }
 ```
 
@@ -117,9 +117,11 @@ The mapper takes the parsed JSON and emits a DSL string. Same approach as PRD-12
 
 Step bodies that contain `@<slug>` references are passed through verbatim — the DSL grammar supports them (PRD-114), and the resolver handles unknowns by emitting `proposedSlug` entries.
 
-### Step 4: Create draft
+### Step 4: Hand off to worker shell
 
-Call `food.recipes.create({ dsl })` via internal API. Draft lands in review queue.
+Handler returns `{ ok: true, dsl, meta }` (with `partialReason='empty-extraction'` if the LLM produced 0 ingredients or 0 steps). The worker shell then calls `food.ingest.workerComplete` (PRD-125) which atomically creates the recipe and updates `ingest_sources`. Handler NEVER calls `food.recipes.create` directly.
+
+The recipe **slug is derived inside `buildDsl`**: slugify `parsed.title` to kebab-case ASCII. If the slug collides with an existing entry in `slug_registry`, append a numeric suffix (`-2`, `-3`, ...) until unique. The DSL `@recipe(slug=...)` is always populated; PRD-119's `create` requires it.
 
 ## Prompt Versioning
 
@@ -161,7 +163,7 @@ PRD-133 also logs the call to `ai_inference_log` with `domain='food'`, `operatio
 - Single LLM call per ingest. No retry-with-different-prompt; if the call fails or returns invalid JSON, the ingest fails with `LlmExtractFailed`.
 - Response parsing is strict JSON.parse (no markdown fences allowed). If the model wraps in fences, treat as malformed and fail. The prompt explicitly says "Output ONLY the JSON".
 - Output validated against the JSON schema via zod (or similar) before mapping. Any schema violation → fail with details in error message.
-- Cost cap: if `meta.json.stages.llm_extract.cost_usd > FOOD_INGEST_COST_CAP_PER_JOB_USD` (default 0.05), log a warning. v1 does NOT abort on cost overrun — just observes. Future PRD may add a hard cap.
+- Cost cap: enforced by PRD-133's `callClaudeWithLogging` wrapper — when a single Claude call exceeds `FOOD_INGEST_COST_CAP_PER_JOB_USD` (default 0.05 USD), a warning is logged to `ai_inference_log.metadata.over_cost_cap`. v1 does NOT abort on overrun — observation only.
 - The prompt instructs the model to use whatever slug the source uses ("rocket" not "arugula"). Alias reconciliation happens in the review queue (Epic 03) where the user can mark "rocket" as an alias for the canonical "arugula".
 - If the LLM returns 0 ingredients OR 0 steps, the ingest succeeds but with `state='partial'` and `partialReason='empty-extraction'`. Review queue surfaces these for the user to either fix or reject.
 - Cancellation: checked between fetch + LLM + build steps. Mid-LLM-call cancellation is not supported (HTTP request runs to completion).

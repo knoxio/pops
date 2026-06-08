@@ -89,7 +89,13 @@ Each ingest handler (PRDs 127-132) uses this wrapper instead of calling the Anth
 
 ### Cost computation
 
-Looks up `ai_model_pricing` row for the `(provider, model)` pair. If absent → log cost as 0 and add a warning to metadata; surface in monthly AI ops review.
+Looks up `ai_model_pricing` row for the `(provider, model)` pair. If absent → log cost as 0 and add `cost_missing: true` to metadata; surface in monthly AI ops review.
+
+### Cost-cap observation
+
+If a single Claude call exceeds the per-job cost cap (`FOOD_INGEST_COST_CAP_PER_JOB_USD`, default `0.05` USD; env var exposed in PRD-126's compose), the wrapper sets `metadata.over_cost_cap=true` on the `ai_inference_log` row and emits a console warning. v1 does NOT abort the call. Future enhancement: hard abort with `CostCapExceeded`.
+
+Per-job (sum-across-calls) cap is NOT implemented in v1 — most ingests make a single LLM call, so per-call ≈ per-job. PRD-130's vision + text-fallback path is the only multi-call case; it would log two rows each with their own `over_cost_cap` evaluation.
 
 ## Prompt Viewer
 
