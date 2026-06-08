@@ -252,6 +252,9 @@ importers:
       '@pops/app-finance':
         specifier: workspace:*
         version: link:../../packages/app-finance
+      '@pops/app-food':
+        specifier: workspace:*
+        version: link:../../packages/app-food
       '@pops/app-inventory':
         specifier: workspace:*
         version: link:../../packages/app-inventory
@@ -669,6 +672,79 @@ importers:
       '@types/papaparse':
         specifier: ^5.5.2
         version: 5.5.2
+      '@types/react':
+        specifier: ^19.2.16
+        version: 19.2.16
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.16)
+      '@vitest/coverage-v8':
+        specifier: ^4.1.8
+        version: 4.1.8(vitest@4.1.8)
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1(@noble/hashes@1.8.0)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.1)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.1)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
+  packages/app-food:
+    dependencies:
+      '@pops/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@pops/db-types':
+        specifier: workspace:*
+        version: link:../db-types
+      '@pops/navigation':
+        specifier: workspace:*
+        version: link:../navigation
+      '@pops/types':
+        specifier: workspace:*
+        version: link:../types
+      '@pops/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@tanstack/react-query':
+        specifier: 5.101.0
+        version: 5.101.0(react@19.2.7)
+      date-fns:
+        specifier: ^4.4.0
+        version: 4.4.0
+      i18next:
+        specifier: ^26.3.1
+        version: 26.3.1(typescript@6.0.3)
+      lucide-react:
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.7)
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+      react-hook-form:
+        specifier: ^7.77.0
+        version: 7.77.0(react@19.2.7)
+      react-i18next:
+        specifier: ^17.0.8
+        version: 17.0.8(i18next@26.3.1(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+      react-router:
+        specifier: ^7.16.0
+        version: 7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@testing-library/user-event':
+        specifier: ^14.6.1
+        version: 14.6.1(@testing-library/dom@10.4.1)
       '@types/react':
         specifier: ^19.2.16
         version: 19.2.16

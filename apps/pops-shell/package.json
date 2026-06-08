@@ -20,6 +20,7 @@
     "@pops/app-ai": "workspace:*",
     "@pops/app-cerebrum": "workspace:*",
     "@pops/app-finance": "workspace:*",
+    "@pops/app-food": "workspace:*",
     "@pops/app-inventory": "workspace:*",
     "@pops/app-media": "workspace:*",
     "@pops/module-registry": "workspace:*",

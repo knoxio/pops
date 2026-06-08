@@ -6,7 +6,7 @@
  */
 
 /** Known app identifiers. */
-export type AppName = 'finance' | 'media' | 'inventory' | 'ai' | 'cerebrum';
+export type AppName = 'finance' | 'food' | 'media' | 'inventory' | 'ai' | 'cerebrum';
 
 /**
  * Union of all valid Lucide icon names used across the POPS app rail and
@@ -50,6 +50,7 @@ export type IconName =
   | 'Shuffle'
   | 'Star'
   | 'Trophy'
+  | 'Utensils'
   | 'Zap';
 
 /** An entity the user is currently viewing (e.g. a specific movie or transaction). */

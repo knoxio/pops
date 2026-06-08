@@ -1,0 +1,10 @@
+{
+  "title": "Food",
+  "intro": "Recipes, ingredients, meal planning. Ingest from URLs, Instagram, screenshots, or paste.",
+  "comingSoon.heading": "Coming soon",
+  "recipes.title": "Recipes",
+  "recipes.description": "Browse, edit, and cook from your saved recipes.",
+  "data.title": "Manage data",
+  "data.description": "Ingredients, aliases, prep states, substitutions, and conversions.",
+  "status.comingSoon": "Coming soon"
+}

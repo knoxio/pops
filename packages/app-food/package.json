@@ -1,0 +1,40 @@
+{
+  "name": "@pops/app-food",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@pops/api-client": "workspace:*",
+    "@pops/db-types": "workspace:*",
+    "@pops/navigation": "workspace:*",
+    "@pops/types": "workspace:*",
+    "@pops/ui": "workspace:*",
+    "@tanstack/react-query": "5.101.0",
+    "date-fns": "^4.4.0",
+    "i18next": "^26.3.1",
+    "lucide-react": "^1.17.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-hook-form": "^7.77.0",
+    "react-i18next": "^17.0.8",
+    "react-router": "^7.16.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.0.0",
+    "@vitest/coverage-v8": "^4.1.8",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

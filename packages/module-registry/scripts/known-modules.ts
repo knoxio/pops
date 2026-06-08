@@ -65,6 +65,13 @@ export const MANIFEST_SOURCES: readonly ModuleManifest[] = [
     settings: [financeManifest],
   },
   {
+    id: 'food',
+    name: 'Food',
+    version: '0.1.0',
+    surfaces: ['app'],
+    description: 'Recipes, ingredients, meal planning, and multimodal ingestion.',
+  },
+  {
     id: 'media',
     name: 'Media',
     version: '0.1.0',
