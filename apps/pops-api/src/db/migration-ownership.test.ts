@@ -17,6 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { manifest as cerebrumManifest } from '../modules/cerebrum/index.js';
 import { manifest as coreManifest } from '../modules/core/index.js';
 import { manifest as financeManifest } from '../modules/finance/index.js';
+import { manifest as foodManifest } from '../modules/food/index.js';
 import { manifest as inventoryManifest } from '../modules/inventory/index.js';
 import { manifest as mediaManifest } from '../modules/media/index.js';
 import { MIGRATION_OWNERS } from './migration-ownership.js';
@@ -60,6 +61,7 @@ describe('migration ownership contract', () => {
     for (const m of [
       coreManifest,
       financeManifest,
+      foodManifest,
       mediaManifest,
       inventoryManifest,
       cerebrumManifest,

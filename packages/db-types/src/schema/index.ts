@@ -25,6 +25,13 @@ export { gliaActions, gliaTrustState } from './glia.js';
 export { environments } from './environments.js';
 export { episodes } from './episodes.js';
 export { fixtures } from './fixtures.js';
+export {
+  ingredientAliases,
+  ingredients,
+  ingredientVariants,
+  prepStates,
+  slugRegistry,
+} from './food.js';
 export { homeInventory } from './inventory.js';
 export { itemConnections } from './item-connections.js';
 export { itemFixtureConnections } from './item-fixture-connections.js';

@@ -1,0 +1,67 @@
+/**
+ * Ingredient variant services — PRD-106.
+ *
+ * Variants are scoped under their parent ingredient; the `(ingredient_id,
+ * slug)` UNIQUE is enforced at the DB level. Variants do NOT participate
+ * in `slug_registry`.
+ */
+import { eq } from 'drizzle-orm';
+
+import { ingredientVariants, type IngredientVariantRow } from '../schema';
+import { assertValidSlug } from '../slug';
+import { expectRow, type FoodDb } from './internal';
+
+export interface CreateVariantInput {
+  ingredientId: number;
+  name: string;
+  slug: string;
+  defaultUnit: 'g' | 'ml' | 'count';
+  packageSizeG?: number | null;
+  notes?: string | null;
+}
+
+export function createVariant(db: FoodDb, input: CreateVariantInput): IngredientVariantRow {
+  assertValidSlug(input.slug);
+  const rows = db
+    .insert(ingredientVariants)
+    .values({
+      ingredientId: input.ingredientId,
+      name: input.name,
+      slug: input.slug,
+      defaultUnit: input.defaultUnit,
+      packageSizeG: input.packageSizeG ?? null,
+      notes: input.notes ?? null,
+    })
+    .returning()
+    .all();
+  return expectRow(rows, 'createVariant');
+}
+
+export interface UpdateVariantInput {
+  name?: string;
+  slug?: string;
+  defaultUnit?: 'g' | 'ml' | 'count';
+  packageSizeG?: number | null;
+  notes?: string | null;
+}
+
+export function updateVariant(
+  db: FoodDb,
+  id: number,
+  input: UpdateVariantInput
+): IngredientVariantRow {
+  if (input.slug !== undefined) {
+    assertValidSlug(input.slug);
+  }
+  const rows = db
+    .update(ingredientVariants)
+    .set(input)
+    .where(eq(ingredientVariants.id, id))
+    .returning()
+    .all();
+  return expectRow(rows, `updateVariant(${id})`);
+}
+
+export function deleteVariant(db: FoodDb, id: number): void {
+  db.delete(ingredientVariants).where(eq(ingredientVariants.id, id)).run();
+}

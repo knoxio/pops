@@ -76,6 +76,8 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0055_ai_alert_rules': 'core',
   '0056_ai_observability_repair': 'core',
   '0057_slimy_phalanx': 'inventory',
+  // PRD-106 — food slug_registry + ingredients + variants + prep_states + aliases.
+  '0058_high_sentinel': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

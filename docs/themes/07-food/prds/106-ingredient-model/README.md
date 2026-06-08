@@ -145,44 +145,50 @@ Inline per theme protocol — see the `Doc protocol` row in [theme key decisions
 
 ### Schema
 
-- [ ] Drizzle schema in `packages/app-food/src/db/schema.ts` defines `ingredients`, `ingredient_variants`, `prep_states`, `ingredient_aliases`, `slug_registry` with the columns, types, defaults, and constraints above.
-- [ ] Migration generated under `apps/pops-api/drizzle/` and applied cleanly to a fresh DB.
-- [ ] `packages/db-types` regenerated; exports types for all five tables.
-- [ ] Indexes from the SQL above exist after migration (verify via `PRAGMA index_list`).
+- [x] Drizzle schema defines `ingredients`, `ingredient_variants`, `prep_states`, `ingredient_aliases`, `slug_registry` with the columns, types, defaults, and constraints above. Lives in `packages/db-types/src/schema/food.ts` (existing repo convention — `drizzle.config.ts` globs `packages/db-types/src/schema/*`); `packages/app-food/src/db/schema.ts` re-exports for service-side imports.
+- [x] Migration generated as `apps/pops-api/src/db/drizzle-migrations/0058_high_sentinel.sql` and applied cleanly to a fresh SQLite (verified via the Vitest invariant suite). Hand-edited to add the enum `CHECK` constraints, `COLLATE NOCASE` on the name/alias indexes, and the partial-unique indexes (drizzle-kit's generator can't express either; see migration comments).
+- [x] `packages/db-types` re-exports the five tables + `InferSelectModel` / `InferInsertModel` types (`IngredientRow`, `IngredientInsert`, `IngredientVariantRow`, etc.).
+- [x] Indexes from the SQL above exist after migration (verified via the `creates the indexes from the PRD` test, which queries `sqlite_master`).
 
 ### Service layer (slug registry)
 
-- [ ] `packages/app-food/src/db/services/ingredients.ts` exposes typed methods `createIngredient`, `updateIngredient`, `deleteIngredient`, `renameIngredientSlug`, `changeIngredientParent`, `createVariant`, `updateVariant`, `deleteVariant`, `createPrepState`, `deletePrepState` that maintain the slug_registry in the same transaction as the parent row where applicable. Variants are scoped under their parent ingredient and do NOT participate in slug_registry; their service methods only manage `ingredient_variants` rows.
-- [ ] Direct INSERTs into `ingredients` or `prep_states` that bypass the service are caught by a Vitest case asserting the registry is empty after such an INSERT — proves the test guards exist; the production code path always uses the service.
+- [x] Service layer split across `packages/app-food/src/db/services/{ingredients,variants,prep-states,internal}.ts` (split to stay under the 200-line max-lines lint cap). Exposes the typed methods `createIngredient`, `updateIngredient`, `deleteIngredient`, `renameIngredientSlug`, `changeIngredientParent`, `createVariant`, `updateVariant`, `deleteVariant`, `createPrepState`, `deletePrepState`. Each service that touches `slug_registry` does so inside the same `db.transaction(...)` block as the parent row. Variants only manage `ingredient_variants` rows.
+- [x] The `service guard — direct INSERT bypasses registry` describe-block asserts the registry stays empty after a raw INSERT into `ingredients` / `prep_states` — proves the test guards exist; the production path always uses the service.
 
 ### Invariants (each verified by a Vitest case)
 
-- [ ] Inserting an ingredient with `parent_id` forming a cycle throws `IngredientCycleError`.
-- [ ] Inserting at depth 4 throws `IngredientHierarchyDepthExceeded`.
-- [ ] Inserting an alias with both `ingredient_id` and `variant_id` set fails with a CHECK violation.
-- [ ] Inserting an alias with neither set fails with a CHECK violation.
-- [ ] Inserting an alias that duplicates `(alias, ingredient_id, variant_id)` fails with a UNIQUE violation.
-- [ ] Deleting an ingredient with extant variants fails with an FK violation.
-- [ ] Deleting an ingredient with extant aliases fails with an FK violation.
-- [ ] Inserting an ingredient with a non-kebab-case slug throws `InvalidSlugError`.
-- [ ] Inserting a variant whose `ingredient_id` does not exist fails with an FK violation.
-- [ ] Inserting two variants with the same slug under the same ingredient fails with a UNIQUE (ingredient_id, slug) violation.
-- [ ] Inserting two variants with the same slug under DIFFERENT ingredients succeeds.
-- [ ] `createIngredient(slug="banana")` then `createIngredient(slug="banana")` throws `SlugAlreadyRegisteredError` with `kind="ingredient"` in the error.
-- [ ] `createIngredient(slug="banana")` then `createPrepState(slug="banana")` throws `SlugAlreadyRegisteredError` with `kind="ingredient"` in the error.
-- [ ] `renameIngredientSlug("banana", "musa")` updates both `ingredients.slug` and `slug_registry.slug` atomically; rollback on either failure leaves both tables consistent.
-- [ ] `deleteIngredient(id)` removes the row from `slug_registry` in the same transaction.
+- [x] Inserting an ingredient with `parent_id` forming a cycle throws `IngredientCycleError` (self-parent + transitive 3-node cycle covered).
+- [x] Inserting at depth 4 throws `IngredientHierarchyDepthExceeded`.
+- [x] Inserting an alias with both `ingredient_id` and `variant_id` set fails the `ck_aliases_xor_target` CHECK.
+- [x] Inserting an alias with neither set fails the same CHECK.
+- [x] Inserting a duplicate `(alias, ingredient_id)` under the same ingredient fails the `uq_aliases_alias_ingredient` partial-unique.
+- [x] Deleting an ingredient with extant variants fails with an FK violation.
+- [x] Deleting an ingredient with extant aliases fails with an FK violation.
+- [x] Inserting an ingredient with a non-kebab-case slug throws `InvalidSlugError` (uppercase + leading hyphen + empty string covered).
+- [x] Inserting a variant whose `ingredient_id` does not exist fails with an FK violation.
+- [x] Inserting two variants with the same slug under the same ingredient fails the `uq_variants_ingredient_slug` UNIQUE.
+- [x] Inserting two variants with the same slug under DIFFERENT ingredients succeeds.
+- [x] `createIngredient(slug="banana")` twice throws `SlugAlreadyRegisteredError` with `kind="ingredient"`.
+- [x] `createIngredient(slug="banana")` then `createPrepState(slug="banana")` throws `SlugAlreadyRegisteredError` with `kind="ingredient"`.
+- [x] `renameIngredientSlug("banana", "musa")` updates both `ingredients.slug` and `slug_registry.slug` atomically; rollback on collision leaves the old row intact.
+- [x] `deleteIngredient(id)` removes the row from `slug_registry` in the same transaction.
 
 ### Tests
 
-- [ ] Vitest integration suite at `packages/app-food/src/db/__tests__/ingredient-model.test.ts` exercises each invariant against an in-memory SQLite seeded by the migration.
-- [ ] Suite runs via `pnpm test` in `packages/app-food`; does not require Redis, the API process, or any external service.
-- [ ] Tests included in the default `mise test` target.
+- [x] Vitest integration suite at `packages/app-food/src/db/__tests__/ingredient-model.test.ts` exercises each invariant against an in-memory SQLite seeded by the migration. 24 cases.
+- [x] Suite runs via `pnpm test` in `packages/app-food`; does not require Redis, the API process, or any external service.
+- [x] Tests included in the default `mise test` target via the package's `pnpm test` script.
+
+### Backend module wiring (added during impl)
+
+- [x] `apps/pops-api/src/modules/food/` created with `index.ts` (stub `foodRouter = router({})` + `manifest: ModuleManifest<typeof foodRouter>` with `backend: { router: foodRouter, migrations: foodMigrations }`) and `migrations.ts` (`foodMigrationTags = ['0058_high_sentinel']`, `foodMigrations = drizzleMigrations(foodMigrationTags)`).
+- [x] Food backend manifest registered in `apps/pops-api/src/modules/installed-modules.ts`; router mounted in `apps/pops-api/src/router.ts`'s `KNOWN_ROUTERS`.
+- [x] Migration ownership registered in `apps/pops-api/src/db/migration-ownership.ts` (`'0058_high_sentinel': 'food'`); contract guard `migration-ownership.test.ts` extended to include the food manifest.
 
 ### Documentation
 
-- [ ] PRD-107 and PRD-116 cross-links landed in this PRD's "Out of Scope" section (recipe header refs ingredients in 107; recipe_lines FK target is in 116).
-- [ ] No backward-compat shims for older shapes — this is a greenfield table set.
+- [x] PRD-107 and PRD-116 cross-links remain in this PRD's Out of Scope section (recipe header refs ingredients in 107; recipe_lines FK target is in 116) — unchanged.
+- [x] No backward-compat shims for older shapes — this is a greenfield table set.
 
 ## Out of Scope
 
