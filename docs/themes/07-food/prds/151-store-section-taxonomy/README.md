@@ -35,30 +35,31 @@ PRD-106 already considered options. A JSON column on `ingredients` would force a
 ### Tag value rules
 
 - `tag` is stored verbatim — trimmed + lowercased at service-layer insert.
-- Maximum length 64 chars (cosmetic; not enforced at schema layer).
-- Allowed character set: `[a-z0-9:_-]`. Service-layer regex rejects anything else with `BadTagFormat`. The `:` is reserved as the namespace separator.
+- Maximum length 64 chars (enforced in service, not in schema).
+- Allowed character set: `[a-z0-9:_-]`. The `:` character acts as a segment separator: a tag is one or more segments joined by `:` (e.g. `produce`, `store-section:produce`, `diet:strict-vegan`). Multi-segment tags are explicitly allowed.
+- The canonical regex: `^[a-z0-9_-]+(:[a-z0-9_-]+)*$`. Service-layer rejects anything else with `BadTagFormat`.
 - Empty / whitespace-only tags rejected with `BadTagFormat`.
-- The namespace (substring before the first `:`) is informational — there's no NS-level validation. Convention is the contract.
+- The "namespace" is the segment before the first `:` (or the whole tag if no `:`). Informational only — no namespace-level validation.
 
 ## v1 Tag Vocabulary
 
-PRD-113's seed inserts the following `store-section:*` tags against the existing seed ingredients (extends PRD-113's seed manifest):
+PRD-113's seed extension inserts `store-section:*` tags against the 20 seeded ingredients. The vocabulary table below is **suggested, not enforced** — users can introduce custom sections (`store-section:farmers-market`, `store-section:butcher`) without a migration. Example-ingredient columns are illustrative; the actual seed tagging is restricted to ingredients already in PRD-113's seed list.
 
-| Section         | Tag value                  | Example ingredients          |
-| --------------- | -------------------------- | ---------------------------- |
-| Produce         | `store-section:produce`    | tomato, onion, banana, kale  |
-| Dairy           | `store-section:dairy`      | milk, butter, yogurt, eggs   |
-| Meat            | `store-section:meat`       | chicken, beef, fish          |
-| Pantry          | `store-section:pantry`     | flour, sugar, salt, rice     |
-| Frozen          | `store-section:frozen`     | frozen-peas, ice-cream       |
-| Bakery          | `store-section:bakery`     | bread, baguette, pita        |
-| Condiments      | `store-section:condiments` | ketchup, mustard, sriracha   |
-| Beverages       | `store-section:beverages`  | juice, soda, sparkling-water |
-| Other (default) | (no tag)                   | anything uncategorised       |
+| Section         | Tag value                  | Illustrative example ingredients |
+| --------------- | -------------------------- | -------------------------------- |
+| Produce         | `store-section:produce`    | onion, garlic, tomato            |
+| Dairy           | `store-section:dairy`      | butter, milk, egg                |
+| Meat            | `store-section:meat`       | chicken                          |
+| Pantry          | `store-section:pantry`     | flour, salt, olive-oil           |
+| Frozen          | `store-section:frozen`     | (user-tagged after install)      |
+| Bakery          | `store-section:bakery`     | (user-tagged after install)      |
+| Condiments      | `store-section:condiments` | (user-tagged after install)      |
+| Beverages       | `store-section:beverages`  | (user-tagged after install)      |
+| Other (default) | (no tag)                   | anything uncategorised           |
 
-The vocabulary is **suggested, not enforced**. Users can introduce custom sections (`store-section:farmers-market`, `store-section:butcher`) without a migration. The autocomplete picker (see CRUD below) lists every existing `store-section:*` value in the database so users discover what's already in use.
+The autocomplete picker (see CRUD below) lists every existing `store-section:*` value in the database so users discover what's already in use. Sections without seeded ingredients (`frozen`, `bakery`, etc.) populate as the user tags their library.
 
-`eggs` in the Dairy column — yes, dairy isn't the right botanical home, but supermarket layouts typically pair them. Convention follows aisle layout, not biology.
+`egg` in the Dairy section — supermarket layouts pair them despite the taxonomic mismatch. Convention follows aisle layout, not taxonomy.
 
 ## Service layer
 
@@ -163,14 +164,9 @@ PRD-122's ingredient detail view (when the user expands a row) gains a **Tags** 
   - Service rejects malformed tags with an inline error.
 - A `Save` button commits changes via `food.ingredients.tags.set` (transactional replacement).
 
-### Bulk tag editor — Ingredients tab list
+### Bulk tag editor — deferred
 
-A new bulk-action affordance in PRD-122's ingredient list:
-
-- Select multiple ingredients via the existing checkbox column.
-- Bulk action menu gains "Add tag…" / "Remove tag…" options.
-- "Add tag" prompts for a tag (with autocomplete); applies to all selected ingredients.
-- "Remove tag" lists tags present on any selected ingredient; applies removal to those that have it.
+PRD-122's Ingredients tab is a tree-view + detail panel (no multi-select column today). A bulk tag editor would require a separate PRD-122 amendment to introduce multi-select. **Deferred to a future PRD.** v1 ships only the per-ingredient chip editor on the detail panel; users tag ingredients one at a time. The autocomplete makes this acceptably fast.
 
 ### New `/food/data/tags` sub-route
 
@@ -185,7 +181,7 @@ The Tags vocabulary tab is read-only in v1. Renaming / merging tags is deferred 
 ## Business Rules
 
 - Tags are stored lowercased + trimmed; service normalises on insert.
-- Tag values must match `^[a-z0-9_-]+(:[a-z0-9_-]+)*$` (allows multiple `:` separators for nested namespaces like `diet:strict-vegan`).
+- Tag values must match `^[a-z0-9_-]+(:[a-z0-9_-]+)*$` (the canonical regex; allows multi-segment tags like `diet:strict-vegan`). `setTagsForIngredient` runs DELETE old + INSERT new in one transaction.
 - An ingredient can carry any number of tags from any namespaces.
 - PRD-152's generator reads only `store-section:*` tags from this table; other namespaces are no-ops for the shopping flow but live alongside.
 - Deleting an ingredient cascades to drop its tags (FK ON DELETE CASCADE).
@@ -209,7 +205,7 @@ The Tags vocabulary tab is read-only in v1. Renaming / merging tags is deferred 
 | Tag value `store-section` (no colon, no value)                   | Allowed by the regex (`[a-z0-9_-]+` matches "store-section"). Convention violation; UI may warn but won't reject.                     |
 | Multiple `store-section:*` tags on one ingredient                | All stored. PRD-152's grouping picks one alphabetically (documented in PRD-152).                                                      |
 | Concurrent edits to the same ingredient's tags from two browsers | Last write wins. Single-user; rare.                                                                                                   |
-| User adds `store-section:produce` to an archived ingredient      | PRD-106 doesn't archive ingredients ([2026-06-08 decisions log]). N/A.                                                                |
+| User adds `store-section:produce` to an archived ingredient      | PRD-106 doesn't archive ingredients (per the theme's decisions log entry of 2026-06-08: "No archive on ingredients/variants"). N/A.   |
 
 ## Acceptance Criteria
 
@@ -238,13 +234,13 @@ Inline per theme protocol.
 
 - [ ] Ingredient detail view shows a Tags section with chip list + "+ Add tag" autocomplete.
 - [ ] Autocomplete suggestions come from `food.ingredients.tags.distinct` sorted by usage.
-- [ ] Bulk tag operations available from the Ingredients list (Add / Remove tag).
+- [ ] Bulk tag operations are NOT included in v1 (deferred — requires multi-select on PRD-122's Ingredients tab).
 - [ ] New `/food/data/tags` sub-route renders the Tags vocabulary tab (read-only).
 
 ### PRD-113 seed extension
 
-- [ ] PRD-113's `db:seed:food` mise task is extended to apply the v1 vocabulary table's tags to the 5 sample recipes' ingredients.
-- [ ] After seed, `food.ingredients.tags.distinct({ namespacePrefix: 'store-section' })` returns at least 6 distinct values.
+- [ ] PRD-113's `db:seed:food` mise task is extended (this PRD's amendment to PRD-113) to apply `store-section:*` tags to the seeded ingredients per the "Illustrative example ingredients" column. Sections without seeded ingredients are NOT seeded — they appear after the user tags their own library.
+- [ ] After seed, `food.ingredients.tags.distinct({ namespacePrefix: 'store-section' })` returns at least 4 distinct values (produce, dairy, meat, pantry).
 
 ### Tests
 

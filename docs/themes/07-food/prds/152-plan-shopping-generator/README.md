@@ -32,13 +32,13 @@ The `/food/plan` header (PRD-143) gains a "Make shopping list" button (PRD-143 a
 ├──────────────────────────────────────────────────────────────────────┤
 │  Preview — 18 items to buy across 4 sections                         │
 │                                                                       │
+│  ▾ Pantry (4)                                                         │
+│    flour            500 g   · need 500 g, have 0                    │
+│    ...                                                                │
+│                                                                       │
 │  ▾ Produce (5)                                                        │
 │    onion           1.6 kg  · need 2 kg, have 400 g                  │
 │    tomato          800 g   · need 800 g, have 0                     │
-│    ...                                                                │
-│                                                                       │
-│  ▾ Pantry (4)                                                         │
-│    flour            500 g   · need 500 g, have 0                    │
 │    ...                                                                │
 │                                                                       │
 │  ▾ Other / Uncategorised (3)                                          │
@@ -114,8 +114,8 @@ export type GeneratorItem = {
   needQty: number;                                 // sum across plan entries, in canonical unit, AT scaled servings
   pantryQty: number;                               // sum of non-deleted, non-empty batches matching (variant_id, unit)
   buyQty: number;                                  // max(needQty - pantryQty, 0)
-  canonicalUnit: 'g' | 'ml' | 'count' | null;      // null only for unconverted items
-  isUnconverted: boolean;                          // true when canonical_unit could not be resolved at compile time
+  canonicalUnit: 'g' | 'ml' | 'count';              // always set per PRD-116's NOT NULL CHECK (defaults to ingredient.default_unit when unit is unconverted)
+  isUnconverted: boolean;                          // true when the source recipe_lines row has all three canonical qty fields null — i.e. PRD-116 couldn't compute a canonical qty even though it set canonical_unit to the ingredient's default
   originalQty: number | null;                      // for unconverted: the original qty
   originalUnit: string | null;                     // for unconverted: the original unit
   sourceLineIds: number[];                         // recipe_lines.id contributing to this row
@@ -125,7 +125,7 @@ export type GenerateError =
   | 'BadDateRange'                                 // end < start, or > 90 days
   | 'NoPlanEntries'                                // range empty
   | 'ListNameEmpty'
-  | 'PartialFailure';                              // see below
+  | 'BulkAddFailed';                              // underlying lists.items.bulkAdd raised — full transaction rolled back; no list row left behind
 ```
 
 ### `previewFromPlan` server-side flow
@@ -134,12 +134,12 @@ export type GenerateError =
 2. SELECT `plan_entries` WHERE `date BETWEEN :start AND :end` AND `recipe_run_id IS NULL`. (Already-cooked entries are excluded — their stock is already in the fridge.)
 3. For each plan entry: resolve `recipe_version_id = COALESCE(pe.recipe_version_id, recipes.current_version_id)`. Skip entries whose recipe has no current version (uncookable).
 4. For each resolved version: SELECT `recipe_lines` WHERE `optional = 0` (optional lines never block / never enter shopping).
-5. Compute each line's scaled qty: `line_qty × (planned_servings / recipe_versions.servings)`. If `recipe_versions.servings IS NULL`, scale = 1.0. Per PRD-142's rule.
-6. Group resulting needs by `(variant_id, canonical_unit)`. Sum qty per group.
+5. Compute each line's scaled qty: `line_qty × (planned_servings / recipe_versions.servings)`. If `recipe_versions.servings IS NULL` (or zero), fall back to scale = 1.0. (PRD-152-specific rule; PRD-142's send-action uses a different scale source — the renderer's `scaleFactor` prop, not the plan's `planned_servings` ratio.)
+6. Group resulting needs by `(ingredient_id, variant_id, canonical_unit)`, mirroring PRD-142's aggregation key verbatim. `prep_state` is dropped from the grouping key (same as PRD-142). Sum qty per group.
 7. Subtract pantry: for each group, SUM `batches.qty_remaining` where `variant_id = :variant_id AND unit = :canonical_unit AND qty_remaining > 0 AND deleted_at IS NULL`. Subtract from need; clamp to 0.
 8. Lines with `canonical_unit IS NULL` (PRD-116's unresolved-unit fallback) skip aggregation entirely and become "Unconverted" items, one per line (no merging; matches PRD-142).
-9. Resolve each ingredient's `store-section:*` tag via `food.ingredients.tags.list`. If multiple, pick alphabetically first. If none, group under "Other".
-10. Build the `GeneratorSection[]` ordered alphabetically by sectionTag; "Other" last among regular sections; "Unconverted" last-of-all.
+9. Resolve each ingredient's `store-section:*` tag via `food.ingredients.tags.list`. If multiple, pick alphabetically first by the full tag string (restricted to tags matching `store-section:*`). If none, group under "Other".
+10. Build the `GeneratorSection[]` ordered alphabetically by `sectionLabel` (the human-readable name, e.g. `Bakery` < `Beverages` < `Condiments` < `Dairy` < `Frozen` < `Meat` < `Pantry` < `Produce`); "Other" last among regular sections; "Unconverted" last-of-all.
 11. Return the preview.
 
 One round-trip. Recompute on date-range change client-side.
@@ -164,7 +164,7 @@ One round-trip. Recompute on date-range change client-side.
 
 The generator computes `position` sequentially across the entire item set:
 
-1. Section order: alphabetical by full `sectionTag` string (so `store-section:bakery` < `store-section:beverages` < ... < `store-section:produce`). "Other" (uncategorised) gets `position` after all sections. "Unconverted" items get `position` after Other.
+1. Section order: alphabetical by `sectionLabel` (e.g. `Bakery` < `Beverages` < `Condiments` < `Dairy` < `Frozen` < `Meat` < `Pantry` < `Produce`). "Other" (uncategorised) gets `position` after all sections. "Unconverted" items get `position` after Other.
 2. Within a section: alphabetical by ingredient name.
 
 The list_items rows are inserted with these explicit `position` values so PRD-140 / PRD-141's flat-list render shows them in section-then-name order without needing schema changes.
@@ -173,9 +173,25 @@ The list_items rows are inserted with these explicit `position` values so PRD-14
 
 ## PRD-143 amendment
 
-PRD-143's `/food/plan` header gains a "Make shopping list" button between the Settings menu (gear icon) and the rightmost edge. Click navigates to `/food/shopping/from-plan?start=<weekMonday>&end=<weekSunday>` for the currently-viewed week.
+PRD-143's `/food/plan` header gains a "Make shopping list" button, placed to the right of the Settings (gear) menu. Click navigates to `/food/shopping/from-plan?start=<weekMonday>&end=<weekSunday>` for the currently-viewed week. This is a formal PRD-143 amendment driven by this PRD; the AC sits in this PRD's "PRD-143 amendment" sub-section (below) so the implementer reads it in one place.
 
-Acceptance criterion for this lives in PRD-143's spec via implementation-phase amendment notes.
+## PRD-140 amendment
+
+PRD-140's `lists.items.bulkAdd` mutation takes `ItemAddInput[]` per its existing spec. PRD-152 requires that shape to accept an explicit `position` value so the generator can write items in section-then-name order without a follow-up `lists.items.reorder` call. The amendment adds an optional field:
+
+```ts
+export type ItemAddInput = {
+  label: string;
+  qty?: number;
+  unit?: string;
+  refKind?: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
+  refId?: number;
+  notes?: string;
+  position?: number; // NEW — when provided, sets list_items.position directly. When omitted, PRD-140's default (MAX(position)+1) applies.
+};
+```
+
+Backwards-compatible: existing callers that omit `position` keep their current behaviour. PRD-152 supplies sequential `position` values for the entire item set in one transactional bulkAdd call.
 
 ## Business Rules
 
@@ -201,7 +217,7 @@ Acceptance criterion for this lives in PRD-143's spec via implementation-phase a
 | Range with 0 plan entries                                                                 | Preview shows "0 planned entries in range. Nothing to shop for." Generate button disabled.                                                                                                    |
 | Plan entry pinned to an archived recipe version                                           | Resolves via `COALESCE(pe.recipe_version_id, recipes.current_version_id)`; uses the pinned version even if archived. Matches PRD-111.                                                         |
 | Plan entry for a recipe with no current version AND no pin                                | Skipped — uncookable. Preview surfaces a small caption "<N entries skipped — recipe has no current version>".                                                                                 |
-| Recipe with `compile_status='failed'`                                                     | Lines are still in `recipe_lines` (PRD-116 deletes them on failed compile actually — verify) … if no lines, no contribution.                                                                  |
+| Recipe with `compile_status='failed'`                                                     | PRD-116 DELETEs `recipe_lines` on any compile failure (parse / resolve / cycle / materialise). So failed-compile recipes contribute zero lines and produce no shopping items.                 |
 | Multiple plan entries for the same recipe in the range                                    | All contribute. Needs sum normally.                                                                                                                                                           |
 | Ingredient with multiple `store-section:*` tags                                           | Alphabetically first wins. UI surfaces in row sub-line: "Tagged in: produce, condiments — using produce".                                                                                     |
 | Ingredient with one `store-section:produce` and one `diet:vegan` tag                      | Only `store-section:*` matters here. `diet:*` is informational.                                                                                                                               |
