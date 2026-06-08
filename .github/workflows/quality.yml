@@ -53,4 +53,4 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - run: npx jscpd --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts" --reporters "console" --exitCode 0 .
+      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts" --reporters "console" --exitCode 0 .
