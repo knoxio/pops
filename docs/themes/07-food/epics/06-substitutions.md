@@ -26,7 +26,7 @@ This epic is **strictly read-only against the substitution graph** — CRUD live
 150 ──► (depends on a substitution-query service introduced here)
 ```
 
-PRDs 148/149/150 are largely independent at the contract layer. PRD-150 introduces a `food.substitutions.resolveForLine` service that PRD-149 also uses; if both are built in parallel, the service lands in whichever PRD ships first (mark it a PRD-150 service since the solver's algorithm is the more demanding consumer). PRD-148 is purely a visualisation layer over PRD-109 + PRD-122's existing CRUD.
+PRDs 148/149/150 are largely independent at the contract layer. PRD-150 owns the shared substitution-resolution service at `apps/pops-api/src/modules/food/services/substitutions-resolve.ts`; PRD-149's public `food.substitutions.resolveForLine` tRPC procedure imports and wraps it. PRD-148 is purely a visualisation layer over PRD-109 + PRD-122's existing CRUD.
 
 ## Dependencies
 

@@ -56,8 +56,8 @@ Two layouts, picked by URL:
 - Edges: every substitution row matching the current Scope + Context filters.
 - Node colour: ingredient = grey, variant = blue. Hover shows the slug + name.
 - Edge style: solid arrow for `scope='global'`; dashed for `scope='recipe'` (rendered only when the recipe scope is selected). Edge thickness scales with ratio (1.0 = standard; 0.5 or 2.0 = thicker → user-visible "non-trivial" sub).
-- Layout: force-directed via `react-force-graph` (or equivalent). Initial layout computed once; user can drag nodes.
-- Library: `react-force-graph-2d` is the v1 pick — small, no WebGL needed for the expected graph size (<500 nodes).
+- Layout: force-directed via `react-force-graph-2d`. Initial layout computed once; user can drag nodes.
+- Library: `react-force-graph-2d` is the v1 pick — small, no WebGL needed for the expected graph size (<500 nodes). Dependency declaration (not currently in any package.json): added to `packages/app-food/package.json` during this PRD's implementation; AC includes the install step.
 
 #### Radial node-focused view (`?node=<slug>`)
 
@@ -131,7 +131,9 @@ export type GraphEdge = {
 
 The query returns `nodes` and `edges` in one round-trip. Nodes are computed server-side from the set of `from`/`to` entities present in the filtered edges; the response is the minimum spanning subgraph for the current filters.
 
-`contextTag` filter: an edge matches if its `context_tags` JSON array contains the requested tag OR if the array is empty (which PRD-109 treats as wildcard).
+`contextTag` filter: an edge matches if its `context_tags` JSON array contains the requested tag OR if the array is empty (which PRD-109 treats as wildcard). Implementation uses `json_each(context_tags)` per PRD-122's existing pattern for the same column.
+
+**Scope filter performance note**: PRD-109's `idx_subs_scope_recipe` is partial on `scope='recipe'` only — there is no covering index for `scope='global'`. Global-view queries therefore full-scan the `substitutions` table. Acceptable at the expected scale (<500 edges); revisit if scale grows.
 
 ## Components
 
@@ -187,7 +189,8 @@ Inline per theme protocol.
 
 ### Graph rendering
 
-- [ ] Force-directed layout renders <500-node graphs cleanly.
+- [ ] `react-force-graph-2d` added to `packages/app-food/package.json` (or sub-package's deps where the explorer lives) at install time.
+- [ ] Force-directed layout renders 500-node graphs in <2 seconds initial layout (matching the edge-case timing claim).
 - [ ] Node colour distinguishes ingredient vs variant.
 - [ ] Edge style distinguishes global (solid) vs recipe-scoped (dashed).
 - [ ] Edge thickness scales by ratio in `[0.5, 2.0]` range; outside that range clamps to max.

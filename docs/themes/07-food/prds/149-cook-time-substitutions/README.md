@@ -129,12 +129,12 @@ export type SubCandidateBatch = {
 1. SELECT the `recipe_lines` row for `(recipeVersionId, lineIndex)`. Reject if not found.
 2. Read recipe context tags: SELECT `recipe_tags` for `recipes.id` of this version's recipe.
 3. SELECT substitution edges matching: `(from_ingredient_id = lineVariant.ingredient_id OR from_variant_id = lineVariantId)` AND `(scope='global' OR (scope='recipe' AND recipe_id = recipe.id))`.
-4. Apply context-tag filter: PRD-109 rule — empty `context_tags` is wildcard; otherwise require at least one overlapping tag with the recipe's tags. If the recipe has no tags, all wildcards + tagged subs pass.
-5. Resolve per-recipe overrides over global (PRD-109 rule): for each `from`, if a recipe-scoped edge exists, drop the global edge for the same `(from, to)` pair.
+4. Apply context-tag filter: PRD-109's `json_each` query passes an OR set of context tags via parameter `:C` (PRD-109 line 71-74). This PRD pins `:C` = the recipe's `recipe_tags` list. Per PRD-109's rule, a sub with empty `context_tags` is a wildcard (matches any `:C`); a sub with non-empty tags matches iff at least one tag overlaps `:C`. If the recipe has no `recipe_tags`, only wildcard subs surface (since the OR set is empty).
+5. Resolve per-recipe overrides over global. **PRD-109 amendment**: PRD-109 line 77 documents override-by-`from` (a recipe-scoped row from `butter` shadows ALL global rows from `butter`). Epic 06 finds that rule too aggressive — a per-recipe "butter → coconut-oil with ratio 0.5" should NOT shadow the global "butter → olive-oil 0.75" for that recipe. This PRD refines: override is by `(from_*, to_*)` pair — only the matching global edge is shadowed. Other global edges from the same `from` still apply. PRD-148 and PRD-150 follow the same refined rule.
 6. For each remaining edge: SELECT batches where `variant_id = edge.to_variant_id` (or any variant of `edge.to_ingredient_id` when the `to` side is ingredient-level), `qty_remaining > 0`, `deleted_at IS NULL`. Sort each candidate's batches by FIFO.
 7. Return `SubResolution` with the candidates list. Empty candidates = no valid subs.
 
-One round-trip. Cached client-side per `(recipeVersionId, lineIndex)` for the modal session.
+One round-trip. Cached client-side per `(recipeVersionId, lineIndex)` for the modal session. The returned `lineQty` is canonical at scale=1; the picker multiplies by the current `scaleFactor` (from `useRecipeScale()` per PRD-119's amendment) when computing the displayed and submitted `consumeQty`. PRD-146's "scale change resets the resolution map" rule still applies — switching scales invalidates the picker's selection.
 
 ### `ConsumptionOverride` extension (PRD-146 amendment)
 
@@ -203,21 +203,21 @@ packages/app-food/src/components/cook/
 
 ## Edge Cases
 
-| Case                                                                              | Behaviour                                                                                                                                                      |
-| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Recipe line variant has 5 substitutions defined, but 0 of them have batches       | Substitutions section renders the edges with "(no batches)" beneath each. Cannot be selected. User picks `external` instead.                                   |
-| Recipe has 3 tags; substitution has 2 tags, 1 overlapping                         | Substitution surfaces (≥1 overlap).                                                                                                                            |
-| Recipe has 0 tags                                                                 | All substitutions surface (wildcard rule + no-tag-side defaults).                                                                                              |
-| User picks a sub, then changes scale factor                                       | PRD-146 already resets the resolution map on scale change. The sub pick is lost; user re-picks at the new scale.                                               |
-| Recipe-scoped sub exists for the active recipe AND a global sub for the same pair | Only the recipe-scoped row surfaces (global is hidden per PRD-109's override rule).                                                                            |
-| Substitution edge is `from_ingredient_id` (ingredient-level)                      | Server resolves to the canonical variant. The substitute side may be ingredient-level too; UI labels accordingly.                                              |
-| Sub's `to` is ingredient-level; batches exist under multiple variants of it       | Each variant's batches surface as separate candidate rows under the same `substitutionEdgeId`.                                                                 |
-| Two sub-edges resolve to the same target batch (cross-product)                    | Two separate rows render. Distinct `substitutionEdgeId` values; the user picks which framing makes sense.                                                      |
-| Mid-flight: sub graph edited while picker is open                                 | Picker uses cached data for the session. Refreshing the picker re-fetches. No race correctness issue (cook mutation server-side re-validates the chosen edge). |
-| User picks a sub that no longer exists at submit time                             | `food.cook.markCooked` returns `ShortfallUnresolved` (the edge is gone; the override doesn't cover the need anymore).                                          |
-| Network drops between picker open and selection                                   | Picker shows the cached data; selection works against it; mutation fails server-side if the edge is gone.                                                      |
-| Sub edge with `notes`                                                             | Notes render inline in the picker row (truncated to 80 chars, full on tooltip).                                                                                |
-| Sub batch's `unit` differs from the recipe line's `unit`                          | Same as PRD-146 — filtered out of the candidate list (unit conversion is not applied at the cook layer).                                                       |
+| Case                                                                              | Behaviour                                                                                                                                                                           |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recipe line variant has 5 substitutions defined, but 0 of them have batches       | Substitutions section renders the edges with "(no batches)" beneath each. Cannot be selected. User picks `external` instead.                                                        |
+| Recipe has 3 tags; substitution has 2 tags, 1 overlapping                         | Substitution surfaces (≥1 overlap).                                                                                                                                                 |
+| Recipe has 0 tags                                                                 | All substitutions surface (wildcard rule + no-tag-side defaults).                                                                                                                   |
+| User picks a sub, then changes scale factor                                       | PRD-146 already resets the resolution map on scale change. The sub pick is lost; user re-picks at the new scale.                                                                    |
+| Recipe-scoped sub exists for the active recipe AND a global sub for the same pair | Only the recipe-scoped row surfaces (global is hidden per PRD-109's override rule).                                                                                                 |
+| Substitution edge is `from_ingredient_id` (ingredient-level)                      | Server resolves to the canonical variant. The substitute side may be ingredient-level too; UI labels accordingly.                                                                   |
+| Sub's `to` is ingredient-level; batches exist under multiple variants of it       | Each variant's batches surface as separate candidate rows under the same `substitutionEdgeId`.                                                                                      |
+| Two sub-edges resolve to the same target batch (cross-product)                    | Two separate rows render. Distinct `substitutionEdgeId` values; the user picks which framing makes sense.                                                                           |
+| Mid-flight: sub graph edited while picker is open                                 | Picker uses cached data for the session. Refreshing the picker re-fetches. No race correctness issue (cook mutation server-side re-validates the chosen edge).                      |
+| User picks a sub that no longer exists at submit time                             | `food.cook.markCooked` returns `SubstitutionEdgeInvalid` when the edge is gone. (If the edge still exists but the sub's batch was depleted, returns `ShortfallUnresolved` instead.) |
+| Network drops between picker open and selection                                   | Picker shows the cached data; selection works against it; mutation fails server-side if the edge is gone.                                                                           |
+| Sub edge with `notes`                                                             | Notes render inline in the picker row (truncated to 80 chars, full on tooltip).                                                                                                     |
+| Sub batch's `unit` differs from the recipe line's `unit`                          | Same as PRD-146 — filtered out of the candidate list (unit conversion is not applied at the cook layer).                                                                            |
 
 ## Acceptance Criteria
 
@@ -291,4 +291,4 @@ Inline per theme protocol.
 - **PRD-144** — Amendment: `MarkCookedError` enum gains `SubstitutionEdgeInvalid`; server flow gains substitution-detection branch that writes audit notes.
 - **PRD-145** — `food.batches.*` services (read-side reuse).
 - **PRD-146** — Amendment: `ConsumptionOverride` types gain optional `substitutionEdgeId` field; `BatchOverridePicker` extended.
-- **PRD-150** — Same `food.substitutions.resolveForLine` query is consumed by the solver (PRD-150's algorithm walks subs per line). The service lives in one place; if PRD-150 ships first, the service moves there.
+- **PRD-150** — Owns the shared substitution-resolution service at `apps/pops-api/src/modules/food/services/substitutions-resolve.ts`. This PRD's `food.substitutions.resolveForLine` tRPC procedure imports and wraps that service. PRD-150's solver calls it directly per-line.
