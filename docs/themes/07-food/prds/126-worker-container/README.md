@@ -165,8 +165,6 @@ Each handler accepts `(data, ctx)` and is responsible for calling `await ctx.isC
 
 After `runIngestJob` returns, the worker shell calls `food.ingest.workerComplete(sourceId, result)` (per PRD-125) — the worker is NEVER responsible for creating the recipe directly; that's done server-side by the mutation.
 
-Each per-kind handler returns `IngestJobResult`. The worker then calls back to pops-api via the internal `food.ingest.workerComplete` mutation (PRD-125) with the result.
-
 ### Cancellation
 
 The worker checks `job.isToBeRemoved()` (BullMQ) between pipeline stages. If true, current stage finishes, no further stages run, and the job exits with `errorCode='Cancelled'`. Per-kind handlers must accept a cancellation token and respect it at stage boundaries — documented in PRDs 127-132.
