@@ -14,15 +14,27 @@ Schema impact is small: one additive `batches.deleted_at` column for soft-delete
 
 ```sql
 ALTER TABLE batches ADD COLUMN deleted_at TEXT;
+-- Service-enforced invariant: deleted_at IS NOT NULL → qty_remaining = 0.
+-- A CHECK constraint is not added because ALTER TABLE ADD CHECK requires a
+-- table rebuild in SQLite; instead the invariant is held by:
+--   (a) deleteBatch() always sets both columns in one statement
+--   (b) editBatch / adjustBatchQty / createBatchManual / createBatchFromRun
+--       reject writes when deleted_at IS NOT NULL (BatchDeleted)
+-- See acceptance criteria for a Vitest case pinning this invariant.
 ```
 
 Nullable. Set non-null only via `deleteBatch` (soft-delete). Cook-history JOINs through `batch_consumptions` still resolve because the row persists. PRD-147 filters `deleted_at IS NULL` from default views; a "Show deleted" toggle reveals them.
 
-PRD-108 documented "qty_remaining=0 batches persist for cook history"; soft-delete is the same idea for the "I never want to see this again" case. The two states are distinct: empty (qty_remaining=0, deleted_at null) vs explicitly hidden (deleted_at set).
+PRD-108 documented "qty_remaining=0 batches persist for cook history"; soft-delete is the same idea for the "I never want to see this again" case. The two states are distinct: empty (qty_remaining=0, deleted_at null) vs explicitly hidden (deleted_at set, qty_remaining always 0).
 
 ### Backwards compatibility
 
-The schema change is additive. PRD-108's `consumeForRun` FIFO query naturally skips `deleted_at IS NOT NULL` rows because they have `qty_remaining = 0` already (delete via this PRD's service does both in one transaction). PRD-108's index `idx_batches_remaining` (partial on `qty_remaining > 0`) is unchanged.
+The schema change is additive. PRD-108's `consumeForRun` FIFO query naturally skips `deleted_at IS NOT NULL` rows because of the service-enforced invariant above — every deleted batch has `qty_remaining = 0`, which is the partial-index predicate PRD-108's `idx_batches_remaining` already filters by. The index DDL is unchanged.
+
+**PRD-108 amendments noted by this PRD:**
+
+1. `markRunComplete(runId, opts)` accepts `opts: { yield?: YieldArgs }` and is called from `createBatchFromRun(runId, yieldArgs, db)`. When `yield` is present and the recipe yields, it INSERTs a batch row + UPDATEs `recipe_runs.completed_at` + `recipe_runs.yielded_batch_id`. When `yield` is absent (yieldless recipe), it just sets `completed_at`. PRD-108's acceptance criterion line 190 lists `markRunComplete` but doesn't document the `opts` shape — this PRD fills that in.
+2. `markRunComplete` is now expected to be called via PRD-145's `createBatchFromRun` wrapper, not directly by PRD-144. The direct PRD-108 service still exists for unit-test use.
 
 ## Services
 
@@ -95,7 +107,9 @@ export type BatchError =
   | 'BatchNotFound'
   | 'BatchDeleted'
   | 'NegativeQty' // adjust would push qty below 0
-  | 'CannotEditFromRun'; // certain patches forbidden on cook-yielded batches (see below)
+  | 'CannotEditFromRun' // certain patches forbidden on cook-yielded batches (see below)
+  | 'BadExpiry' // expiresAt earlier than producedAt
+  | 'BadAdjustment'; // delta sign vs reason mismatch (spoiled/wasted require delta < 0)
 ```
 
 ### `createBatchFromRun` (PRD-144 caller)
@@ -121,7 +135,7 @@ Rejected with `BatchDeleted` if `deleted_at IS NOT NULL`.
 
 ### `editBatch`
 
-UPDATEs `expires_at`, `notes`, and/or `prep_state_id`. Cannot edit `variant_id` (use delete + recreate). Cannot edit `qty_remaining` directly (use `adjustBatchQty`).
+UPDATEs `expires_at`, `notes`, and/or `prep_state_id`. The patch type (`BatchEditPatch`) omits `variant_id` by design — to change a batch's variant, soft-delete the existing batch and create a new one. `qty_remaining` is similarly omitted (use `adjustBatchQty` so the audit-trail rules apply).
 
 `CannotEditFromRun`: if `batches.source_type='recipe_run'`, the `prep_state_id` is forbidden from edit (it's pinned to the recipe's yield). Other fields are editable.
 
@@ -243,23 +257,25 @@ When the user changes location via `relocateBatch`, the same function recomputes
 
 ## Edge Cases
 
-| Case                                                                          | Behaviour                                                                                                                            |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Manual batch with `producedAt` in the future                                  | Allowed (pre-recording an incoming delivery). Expires defaults to `producedAt + shelf-life-days`.                                    |
-| Manual batch with `expiresAt` before `producedAt`                             | Rejected (`BadExpiry`). UI also blocks.                                                                                              |
-| Adjust qty by -1000 on a 200g batch                                           | `NegativeQty` (would land at -800). UI clamps the negative input to the current qty.                                                 |
-| Adjust qty by +0                                                              | No-op; service returns `ok: true, newQty: <unchanged>`.                                                                              |
-| Delete a non-empty batch                                                      | Service succeeds (sets qty_remaining=0 + deleted_at); UI confirms before submitting.                                                 |
-| Delete a batch with extant `batch_consumptions` rows                          | Allowed; soft-delete preserves the consumption rows' FK target.                                                                      |
-| Relocate from fridge to freezer for a batch with user-overridden expiresAt    | `expiresAt` is preserved (user override detection sees mismatch with the auto-default).                                              |
-| Relocate from fridge to freezer for a batch with auto-default expiresAt       | `expiresAt` is recomputed for freezer's default shelf life.                                                                          |
-| Variant has both `default_shelf_life_days_fridge=NULL` and `..._freezer=NULL` | Auto-default returns NULL (shelf-stable). User can manually set expiresAt.                                                           |
-| `editBatch` with `prepStateId` on a `source_type='recipe_run'` batch          | `CannotEditFromRun`. The prep state is pinned to the recipe's yield.                                                                 |
-| Concurrent edits on the same batch                                            | Last write wins. Single-user; rare.                                                                                                  |
-| Adjust qty on a soft-deleted batch                                            | Rejected with `BatchDeleted`. UI hides Adjust for deleted batches.                                                                   |
-| `createBatchManual` with `variantId` of a deleted ingredient_variant          | FK rejection (ingredient_variants is rarely deleted; PRD-106 documents the constraint). UI fetches non-deleted only.                 |
-| `createBatchManual` with `unit` not matching variant's `default_unit`         | Allowed at the schema layer; PRD-147's UI defaults to `default_unit` but lets the user override (e.g. record "12 oranges" as count). |
-| Notes append pushes over 500 chars                                            | Front-truncate with `…` prefix.                                                                                                      |
+| Case                                                                                                   | Behaviour                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Manual batch with `producedAt` in the future                                                           | Allowed (pre-recording an incoming delivery). Expires defaults to `producedAt + shelf-life-days`.                                                                                                                                                 |
+| Manual batch with `expiresAt` before `producedAt`                                                      | Rejected (`BadExpiry`). UI also blocks.                                                                                                                                                                                                           |
+| Adjust qty by -1000 on a 200g batch                                                                    | `NegativeQty` (would land at -800). UI clamps the negative input to the current qty.                                                                                                                                                              |
+| Adjust qty by +0                                                                                       | No-op; service returns `ok: true, newQty: <unchanged>`.                                                                                                                                                                                           |
+| Delete a non-empty batch                                                                               | Service succeeds (sets qty_remaining=0 + deleted_at); UI confirms before submitting.                                                                                                                                                              |
+| Delete a batch with extant `batch_consumptions` rows                                                   | Allowed; soft-delete preserves the consumption rows' FK target.                                                                                                                                                                                   |
+| Relocate from fridge to freezer for a batch with user-overridden expiresAt                             | `expiresAt` is preserved (user override detection sees mismatch with the auto-default).                                                                                                                                                           |
+| Relocate from fridge to freezer for a batch with auto-default expiresAt                                | `expiresAt` is recomputed for freezer's default shelf life.                                                                                                                                                                                       |
+| Variant has both `default_shelf_life_days_fridge=NULL` and `..._freezer=NULL`                          | Auto-default returns NULL (shelf-stable). User can manually set expiresAt.                                                                                                                                                                        |
+| `editBatch` with `prepStateId` on a `source_type='recipe_run'` batch                                   | `CannotEditFromRun`. The prep state is pinned to the recipe's yield.                                                                                                                                                                              |
+| Concurrent edits on the same batch                                                                     | Last write wins. Single-user; rare.                                                                                                                                                                                                               |
+| Adjust qty on a soft-deleted batch                                                                     | Rejected with `BatchDeleted`. UI hides Adjust for deleted batches.                                                                                                                                                                                |
+| `createBatchManual` with `variantId` of a deleted ingredient_variant                                   | FK rejection (ingredient_variants is rarely deleted; PRD-106 documents the constraint). UI fetches non-deleted only.                                                                                                                              |
+| `createBatchManual` with `unit` not matching variant's `default_unit`                                  | Allowed at the schema layer; PRD-147's UI defaults to `default_unit` but lets the user override (e.g. record "12 oranges" as count).                                                                                                              |
+| Notes append pushes over 500 chars                                                                     | Front-truncate with `…` prefix.                                                                                                                                                                                                                   |
+| User-set `expires_at` happens to equal the auto-default for the previous location                      | `relocateBatch` cannot distinguish — recomputes expiry as if it were auto-default. False-positive accepted in v1; an `expires_at_is_auto` column is out of scope. UI may warn ("Expiry was auto-recomputed; was it user-set? Adjust if needed."). |
+| User edits notes via `editBatch`, then later `relocateBatch` or `adjustBatchQty` appends an audit line | Append always lands on the current notes string. If the user's edit wiped the prior audit trail, subsequent appends start fresh — by design. Notes is a free-form field; a structured `batch_events` audit table is out of scope.                 |
 
 ## Acceptance Criteria
 
@@ -287,10 +303,13 @@ Inline per theme protocol.
 - [ ] `food.batches.get` returns the full `BatchDetail` including resolved variant / ingredient / prep-state / recipe slug names.
 - [ ] All error codes returned on their respective conditions.
 
-### Backward compat
+### Backward compat & invariant
 
 - [ ] PRD-108's FIFO consumption (`consumeForRun`) NEVER picks a `deleted_at IS NOT NULL` batch (verified by an integration test).
 - [ ] PRD-108's existing `recipe_runs.yielded_batch_id` is set by `createBatchFromRun` exactly the way `markRunComplete` did before (no behavioural change; just centralisation).
+- [ ] **Invariant**: every row with `deleted_at IS NOT NULL` also has `qty_remaining = 0`. Verified by a Vitest assertion that scans the table after the full service test suite runs (`SELECT COUNT(*) WHERE deleted_at IS NOT NULL AND qty_remaining > 0` must be 0).
+- [ ] `BadExpiry` returned when `editBatch` patch's `expiresAt < producedAt`.
+- [ ] `BadAdjustment` returned when `adjustBatchQty` is called with `reason='spoiled'|'wasted'` and `delta >= 0`.
 
 ### Tests
 

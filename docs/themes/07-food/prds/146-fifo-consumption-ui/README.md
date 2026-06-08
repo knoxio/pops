@@ -87,7 +87,9 @@ packages/app-food/src/components/cook/
 
 `BatchOverridePicker` queries `food.batches.searchForConsume({ variantId?, ingredientId?, qtyGreaterThan? })` — a new query that returns batches with qty_remaining > 0, optionally filtered. Defaults to showing batches of the same ingredient (any variant) sorted by `expires_at ASC, produced_at ASC`.
 
-## tRPC additions
+## tRPC additions (PRD-145 amendment)
+
+This PRD adds one query to PRD-145's `food.batches.*` router. PRD-145's spec enumerates create/relocate/edit/adjust/delete/get/searchForConsume — implementation imports `searchForConsume` from this PRD.
 
 ```ts
 // apps/pops-api/src/modules/food/router.ts (extends; food module)
@@ -145,15 +147,25 @@ export type ConsumptionOverride =
     };
 ```
 
-`lineIndex` matches `recipe_lines.position` (PRD-116's column). The server reconciles overrides against PRD-108's FIFO defaults:
+`lineIndex` matches `recipe_lines.position` (PRD-116's column; 1-based per PRD-116 line 18-19, unique per `recipe_version_id` via `uq_recipe_lines_version_position`). PRD-108's `ConsumptionNeed` carries `(variantId, prepStateId, qty, canonicalUnit)` with no line-index field — so PRD-144's server flow does the per-line bookkeeping itself, then passes resolved needs (which may differ from the raw recipe_lines aggregation) to PRD-108's helper.
 
-- For each recipe_lines row at the current scale:
-  - If an override exists for `lineIndex`: apply it (write a `batch_consumptions` row to the specified batch + qty if `batchId` is set; append to `recipe_runs.notes` for the external part if any).
-  - Else: pass through to PRD-108's `consumeForRun` for FIFO default.
+### Server flow inside PRD-144's `markCooked` mutation
 
-After applying all overrides:
+PRD-144 step 5 ("Compute consume needs from `recipe_lines` × scale; merge with `consumptionOverrides`") expands as:
 
-- Any remaining un-resolved shortfall (no FIFO coverage AND no override) returns `ShortfallUnresolved` (PRD-144's error code) and rolls back the whole transaction.
+1. SELECT `recipe_lines` for the version, ORDER BY `position`.
+2. Build a map `linesByPosition: Map<number, RecipeLine>`. Reject overrides with unknown `lineIndex`.
+3. For each line:
+   - If `optional=true`: **skip silently per PRD-108's contract.** Do not generate a need. Do not generate a `batch_consumptions` row. Do not write to `recipe_runs.notes`. The PRD-146 UI never surfaces optional lines in its shortfall list (filter at preview time).
+   - Else if an override exists for `lineIndex`: apply per override kind:
+     - `kind='batch-override'`: write a `batch_consumptions` row directly to `(runId, override.batchId, override.consumeQty, override.unit)`; decrement `batches.qty_remaining` accordingly. Do NOT add this line to the `needs` list passed to `consumeForRun`.
+     - `kind='external'`: append a single line to `recipe_runs.notes` (`"Line <N>: <ingredient> (<qty><unit>) consumed externally"`). Do NOT add to `needs`. No `batch_consumptions` row.
+     - `kind='partial'`: write a `batch_consumptions` row for the covered portion (as in `batch-override`) AND append the external portion to `recipe_runs.notes`. Do NOT add to `needs`.
+   - Else (no override): scale the line's `qty_g | qty_ml | qty_count` by `scaleFactor` and append `{ variantId, prepStateId, qty, canonicalUnit }` to `needs`.
+4. Call `consumeForRun(runId, needs, db)` with the override-stripped needs list. Any `Shortfall` returned by PRD-108 means a non-overridden line couldn't be FIFO-covered — that's a real shortfall and must trigger `ShortfallUnresolved`.
+5. ROLLBACK on any shortfall; return `{ ok: false, reason: 'ShortfallUnresolved', shortfalls }`.
+
+This keeps PRD-108's `ConsumptionNeed` shape unchanged. The line-index → batch mapping lives in PRD-144's server code; PRD-108's helper sees only the variant/prep/qty needs.
 
 ## Business Rules
 
@@ -168,21 +180,21 @@ After applying all overrides:
 
 ## Edge Cases
 
-| Case                                                                                             | Behaviour                                                                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Recipe has 0 ingredient lines                                                                    | Both panels hide entirely. Mark-cooked is always enabled (the gating logic short-circuits when `unresolvedShortfallCount=0`).                                                                         |
-| Recipe has 30 lines, all FIFO-covered                                                            | Consume preview collapsed by default ("30 lines covered"); shortfalls panel hidden. Mark-cooked enabled.                                                                                              |
-| User switches a line from `fifo` to `external` voluntarily                                       | Allowed. PRD-146 doesn't restrict — the user knows their own kitchen. The mutation reflects.                                                                                                          |
-| Batch override picker returns 0 batches (no matches)                                             | "No matching batches. Mark consumed externally instead." UI offers the external radio.                                                                                                                |
-| User picks an override batch whose `prep_state_id` mismatches the recipe line                    | Allowed. Cook history reflects (the `batch_consumptions` row points to the actual batch). Future PRD (Epic 06) may surface this as a "substitution audit".                                            |
-| User clicks "Mark cooked" with an unresolved shortfall                                           | Button is disabled; tooltip lists count. Defensive server-side check returns `ShortfallUnresolved`.                                                                                                   |
-| Recipe line `optional=true` shows up as a shortfall                                              | PRD-108 documents optional lines skip silently in `consumeForRun`. UI follows: optional + shortfall = automatically resolved as `external` (silently). The user doesn't see it in the shortfall list. |
-| User picks a batch override, then scale changes, then re-picks                                   | Resolution map reset on scale change; user picks fresh. No partial-state retention.                                                                                                                   |
-| Override batch is deleted between selection and submit                                           | Server returns `ShortfallUnresolved` (the override's batch can't be touched). Modal re-fetches and re-prompts.                                                                                        |
-| External-mark with `externalQty=0`                                                               | Allowed; equivalent to "no consumption needed for this line" (e.g. line was optional and user explicitly marked it). Recipe_runs.notes appends "Line N: <ingredient> (0g) noted as none required".    |
-| Override batch's `unit` differs from the recipe line's `unit` (e.g. recipe wants ml, batch is g) | Disallowed in v1. Picker filters out unit-incompatible batches. PRD-123's conversion isn't applied at the cook layer.                                                                                 |
-| Recipe has 50+ lines with mixed shortfalls                                                       | Shortfall list paginates with "Show all" expander after 10 items. Performance acceptable for typical recipes.                                                                                         |
-| User collapses the shortfall panel then tries to submit                                          | Mark-cooked still disabled (state is independent of panel visibility). Disabled tooltip prompts to expand.                                                                                            |
+| Case                                                                                             | Behaviour                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recipe has 0 ingredient lines                                                                    | Both panels hide entirely. Mark-cooked is always enabled (the gating logic short-circuits when `unresolvedShortfallCount=0`).                                                                                                                                         |
+| Recipe has 30 lines, all FIFO-covered                                                            | Consume preview collapsed by default ("30 lines covered"); shortfalls panel hidden. Mark-cooked enabled.                                                                                                                                                              |
+| User switches a line from `fifo` to `external` voluntarily                                       | Allowed. PRD-146 doesn't restrict — the user knows their own kitchen. The mutation reflects.                                                                                                                                                                          |
+| Batch override picker returns 0 batches (no matches)                                             | "No matching batches. Mark consumed externally instead." UI offers the external radio.                                                                                                                                                                                |
+| User picks an override batch whose `prep_state_id` mismatches the recipe line                    | Allowed. Cook history reflects (the `batch_consumptions` row points to the actual batch). Future PRD (Epic 06) may surface this as a "substitution audit".                                                                                                            |
+| User clicks "Mark cooked" with an unresolved shortfall                                           | Button is disabled; tooltip lists count. Defensive server-side check returns `ShortfallUnresolved`.                                                                                                                                                                   |
+| Recipe line `optional=true` would-be shortfall                                                   | PRD-108's `consumeForRun` already skips optional lines silently. PRD-146's UI filters them out of the consume-preview and shortfall list (they never appear). No `batch_consumptions` row, no `recipe_runs.notes` append. Pure no-op aligned with PRD-108's contract. |
+| User picks a batch override, then scale changes, then re-picks                                   | Resolution map reset on scale change; user picks fresh. No partial-state retention.                                                                                                                                                                                   |
+| Override batch is deleted between selection and submit                                           | Server returns `ShortfallUnresolved` (the override's batch can't be touched). Modal re-fetches and re-prompts.                                                                                                                                                        |
+| External-mark with `externalQty=0`                                                               | Allowed; equivalent to "no consumption needed for this line" (e.g. line was optional and user explicitly marked it). Recipe_runs.notes appends "Line N: <ingredient> (0g) noted as none required".                                                                    |
+| Override batch's `unit` differs from the recipe line's `unit` (e.g. recipe wants ml, batch is g) | Disallowed in v1. Picker filters out unit-incompatible batches. PRD-123's conversion isn't applied at the cook layer.                                                                                                                                                 |
+| Recipe has 50+ lines with mixed shortfalls                                                       | Shortfall list paginates with "Show all" expander after 10 items. Performance acceptable for typical recipes.                                                                                                                                                         |
+| User collapses the shortfall panel then tries to submit                                          | Mark-cooked still disabled (state is independent of panel visibility). Disabled tooltip prompts to expand.                                                                                                                                                            |
 
 ## Acceptance Criteria
 
@@ -232,7 +244,7 @@ Inline per theme protocol.
   - Cook with `kind='batch-override'` writes a `batch_consumptions` row to the specified batch.
   - Cook with `kind='external'` writes no `batch_consumptions` row; notes append correctly.
   - Cook with `kind='partial'` writes one `batch_consumptions` row + notes append.
-  - Optional-line shortfalls auto-resolve to `external` without UI involvement.
+  - Optional lines silently skip per PRD-108: no `batch_consumptions` row written, no `recipe_runs.notes` append, no UI surfacing.
   - Override batch depleted between read and write → `ShortfallUnresolved`.
 
 ## Out of Scope

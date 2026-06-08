@@ -6,7 +6,7 @@
 
 The "Mark cooked" / "Cook now" flow. A single modal opened from two entry points: (a) PRD-143's plan-entry edit sheet ("Mark cooked" button) and (b) PRD-119's recipe-detail action menu ("Cook now"). The modal captures actual scale factor, yielded qty, batch location, rating, and notes; the consume-preview and shortfall-override panels are owned by PRD-146; the yielded-batch creation services are owned by PRD-145. PRD-144 is the modal shell + the transactional `food.cook.markCooked` mutation that orchestrates them all.
 
-After this PRD, the user clicks Mark cooked → fills the modal in 10-30 seconds → the cook is recorded as one transaction (recipe_run + batch_consumptions via PRD-108's FIFO helper + yielded batch via PRD-108's markRunComplete + plan_entries.recipe_run_id linkage when applicable).
+After this PRD, the user clicks Mark cooked → fills the modal in 10-30 seconds → the cook is recorded as one transaction (recipe_run + batch_consumptions via PRD-108's FIFO helper + yielded batch via PRD-145's `createBatchFromRun` wrapper around PRD-108's `markRunComplete` + plan_entries.recipe_run_id linkage when applicable).
 
 This is the central UI of Epic 05.
 
@@ -126,6 +126,8 @@ export type MarkCookedError =
   | 'YieldForbidden'                              // yield supplied but recipe doesn't yield
   | 'BadScaleFactor'                              // ≤ 0
   | 'BadYieldQty'                                 // < 0
+  | 'BadRating'                                   // not in [1, 5]
+  | 'BadExpiry'                                   // yield.expiresAt earlier than produced_at
   | 'ShortfallUnresolved';                        // PRD-146's overrides don't cover every shortfall — shortfalls[] returned alongside
 ```
 
@@ -139,7 +141,7 @@ Open Drizzle transaction:
 4. INSERT `recipe_runs` with `recipe_version_id`, `scale_factor`, `started_at = datetime('now')`, `completed_at = NULL` (set in step 7), `rating`, `notes`.
 5. Compute consume needs from `recipe_lines` × scale; merge with `consumptionOverrides` (PRD-146 controls which batches override which lines, or marks lines as "consumed externally").
 6. Call PRD-108's `consumeForRun(runId, needs, db)` with the resolved needs. If shortfalls remain (i.e. a need has no override and FIFO can't cover it), ROLLBACK and return `ShortfallUnresolved` with the shortfalls list.
-7. Call PRD-108's `markRunComplete(runId, { yield: yieldArgs })` — creates the yielded batch when `yieldsBatch=true`, sets `recipe_runs.completed_at` and `recipe_runs.yielded_batch_id`. The `expires_at` falls back to `produced_at + default_shelf_life_days_<location>` if `yield.expiresAt` is omitted.
+7. Call PRD-145's `createBatchFromRun(runId, yieldArgs, db)` (which wraps PRD-108's `markRunComplete` — PRD-145 is the single owner of the create-batch-during-cook contract). This creates the yielded batch when `yieldsBatch=true`, sets `recipe_runs.completed_at` and `recipe_runs.yielded_batch_id`. The `expires_at` falls back to `produced_at + default_shelf_life_days_<location>` if `yield.expiresAt` is omitted. For yieldless recipes, skip this step entirely and instead UPDATE `recipe_runs.completed_at = datetime('now')` directly (this is one of the PRD-108 amendments documented in PRD-145).
 8. If `planEntryId`: UPDATE `plan_entries SET recipe_run_id = <newRunId>`.
 9. Commit. Return `{ ok: true, recipeRunId, yieldedBatchId }`.
 
@@ -164,7 +166,7 @@ This query is called once when the modal opens; the consume-preview panel re-run
 - A recipe with `yield_ingredient_id IS NULL` cooks without producing a batch: no `yielded_batch_id` on the run row; modal hides the yield + location + expires fields.
 - Recipe must have `compile_status='compiled'` to cook. PRD-108 already documents this rule at the schema layer (`CannotCookUncompiledRecipe`); PRD-144 surfaces it as `RecipeNotCompiled` from the modal.
 - A plan entry can transition `recipe_run_id` from NULL → non-null exactly once. Subsequent cooks against the same plan entry are ad-hoc (no `planEntryId` passed).
-- `started_at` is `datetime('now')` at INSERT; `completed_at` is set in the same transaction by `markRunComplete`. Both record the moment the user clicked "Mark cooked" — the modal does NOT track time-on-modal as cook duration.
+- `started_at` is `datetime('now')` at INSERT; `completed_at` is set in the same transaction by PRD-145's `createBatchFromRun` (for yielding recipes) or by direct UPDATE (for yieldless recipes). Both record the moment the user clicked "Mark cooked" — the modal does NOT track time-on-modal as cook duration.
 - `recipe_runs.scale_factor` is the `scaleFactor` the user actually submitted (may differ from the plan's planned servings).
 - Rating is OPTIONAL. Notes is OPTIONAL. Both can be edited later from `/food/recipes/:slug/runs/:id` (deferred — out of scope for this PRD; PRD-145 may surface batch-edit which is adjacent).
 - The cook mutation NEVER deletes plan entries. They persist post-cook with `recipe_run_id` set.
@@ -208,7 +210,7 @@ Inline per theme protocol.
 ### tRPC
 
 - [ ] `food.cook.prepareCook` returns `CookPreparation` matching the schema; one round-trip.
-- [ ] `food.cook.markCooked` runs as a single Drizzle transaction wrapping PRD-108's `consumeForRun` + `markRunComplete`.
+- [ ] `food.cook.markCooked` runs as a single Drizzle transaction wrapping PRD-108's `consumeForRun` + PRD-145's `createBatchFromRun` (yieldless recipes skip the latter and UPDATE `completed_at` directly).
 - [ ] Returns each error code on its respective condition.
 - [ ] On `ShortfallUnresolved`, the shortfalls array is populated for PRD-146 to render.
 - [ ] Plan entry's `recipe_run_id` is set in the same transaction when `planEntryId` provided.
@@ -222,7 +224,7 @@ Inline per theme protocol.
 
 ### PRD-119 amendment (carried forward)
 
-- [ ] `RecipeDetailPage` action menu gains a "Cook now" entry between Drafts and "Send to shopping list..." (the prior PRD-142 amendment). When clicked, opens this PRD's modal.
+- [ ] `RecipeDetailPage` action menu gains a "Cook now" entry. Final canonical menu order after PRD-119 + PRD-142 + PRD-144 amendments: **Edit / Drafts / Cook now... / Send to shopping list... / Archive** (Edit + Drafts + Archive are PRD-119; Send is PRD-142; Cook now is this PRD). When Cook now is clicked, opens this PRD's modal.
 
 ### Tests
 
@@ -242,7 +244,7 @@ Inline per theme protocol.
 ## Out of Scope
 
 - Consume preview + shortfall override UX — **PRD-146**.
-- Batch creation service internals — **PRD-145** (this PRD calls PRD-108's `markRunComplete`, which PRD-145 specialises via a higher-level service wrapper).
+- Batch creation service internals — **PRD-145** (this PRD calls PRD-145's `createBatchFromRun`, which wraps PRD-108's `markRunComplete` and is the single owner of the create-batch-during-cook contract).
 - Manual / standalone batch creation outside a cook event — **PRD-145**.
 - `/food/recipes/:slug/runs/:id` cook detail page — deferred (out of scope for this epic; the success toast links to /food/fridge instead).
 - Editing a completed recipe_run (rating / notes after the fact) — out of scope; the row is immutable in v1.

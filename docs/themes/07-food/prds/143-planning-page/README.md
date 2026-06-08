@@ -184,7 +184,7 @@ export type PlanEntryRow = {
   recipeSlug: string;
   recipeTitle: string;
   recipeType: string | null;                         // PRD-107's recipe_type for chip rendering
-  heroCardPath: string | null;                       // PRD-124's hero thumbnail (optional)
+  heroImagePath: string | null;                      // PRD-124's `recipes.hero_image_path`; client constructs the card-thumbnail URL
   plannedServings: number;
   recipeVersionId: number | null;
   recipeRunId: number | null;
@@ -210,7 +210,7 @@ export type PlanEntryError =
 
 ### `weekView` server-side flow
 
-1. Parse `weekStart`; normalise to ISO Monday (PostgreSQL/SQLite `date(weekStart, 'weekday 0', '-6 days')` or in code via `date-fns startOfISOWeek`).
+1. Parse `weekStart`; normalise to ISO Monday in code via `date-fns startOfISOWeek` (POPS is SQLite — no native ISO-week date function).
 2. Compute `weekEnd = weekStart + 6 days`.
 3. SELECT `plan_slots` ORDER BY `display_order, slug`.
 4. SELECT `plan_entries` JOIN `recipes` JOIN `recipe_versions` (via `COALESCE(plan_entries.recipe_version_id, recipes.current_version_id)`) WHERE `plan_entries.date BETWEEN weekStart AND weekEnd`. Include `recipe_runs.completed_at` via LEFT JOIN.
@@ -344,8 +344,10 @@ Inline per theme protocol.
 
 - **PRD-107** — `recipe_versions.title`, `recipes.slug`, `recipes.archived_at`, `recipes.current_version_id`.
 - **PRD-108** — `recipe_runs.completed_at` for the "cooked" chip.
-- **PRD-111** — `plan_entries` + `plan_slots` schema; `addPlanEntry` / `removePlanEntry` / `reorderSlot` / `addCustomSlot` services. This PRD wraps them in a tRPC router.
+- **PRD-111** — `plan_entries` + `plan_slots` schema; `addPlanEntry` / `removePlanEntry` / `reorderSlot` / `addCustomSlot` services. This PRD wraps them in a tRPC router. **Amendments required:**
+  - **(a)** PRD-111's `plan.ts` service gains `updateSlot(slug, { name?, displayOrder? })` and `deleteSlot(slug)` (rejects `is_default=1` with `CannotDeleteDefault`; rejects `SlotInUse` when any `plan_entries` row references the slug).
+  - **(b)** PRD-111's `addCustomSlot(slug, name)` is renamed `addSlot` for consistency with the other two; the old name remains as an alias for backward-compat at the impl phase.
 - **PRD-118** — `app-food` manifest; new route + sidebar entry added.
 - **PRD-119** — `recipes` query side (recipe picker fetches via `food.recipes.list`).
-- **PRD-124** — `recipes.hero_image_path` (PRD-124's column) used in PlanEntryRow for cell hero thumbnails (optional rendering).
+- **PRD-124** — `recipes.hero_image_path` column read into `PlanEntryRow.heroImagePath`. Client composes the card-thumbnail URL using PRD-124's derived-thumbnail naming (e.g. `hero-card.webp`).
 - **PRD-144** — consumer of "Mark cooked" button. Cook modal is owned there.

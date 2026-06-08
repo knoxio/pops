@@ -127,10 +127,10 @@ The row menu's "Cook now" entry opens a small picker:
 
 - "What can you cook with this batch?"
 - Lists recipes whose `recipe_lines` reference this batch's `variant_id` (any prep state). Sorted by cook history desc (recently cooked first), tied by title.
-- Each row: recipe title + a one-line preview of how this batch fits ("Needs 250g; you have 1200g").
+- Each row: recipe title + a one-line preview of how this batch fits ("Needs ~250g; you have 1200g") — `~` prefix is intentional because the match is variant-only, not prep-aware. The picker may surface a recipe needing diced onion when the batch is sliced; PRD-108's strict-FIFO would shortfall on prep mismatch and the user resolves via PRD-146's batch-override at cook time.
 - Click a recipe → navigates to `/food/recipes/:slug` (the cook flow takes over there).
 
-This is a light-touch affordance — Epic 06 will add a real "what can I cook" solver. v1 just filters recipes by ingredient.
+This is a light-touch affordance — Epic 06 will add a real "what can I cook" solver that's prep-state aware. v1 filters recipes by `variant_id` only; the variant-only join is documented as imprecise.
 
 ## tRPC API
 
@@ -197,7 +197,7 @@ export type RecipeForCookRow = {
   title: string;
   recipeType: string | null;
   lineCount: number;                              // # of recipe_lines that match this batch's variant
-  recipeNeedsQty: number | null;                  // sum across matching lines, in batch's unit
+  recipeNeedsQty: number | null;                  // sum across matching lines whose canonical_unit matches batch's unit; null when no matching-unit line exists
   lastCookedAt: string | null;
 };
 ```
@@ -223,7 +223,7 @@ One round-trip per page load + 60s polling refresh.
 2. LEFT JOIN `recipe_runs` for `lastCookedAt` (MAX of completed_at).
 3. ORDER BY `last_cooked_at DESC NULLS LAST, recipes.slug ASC`.
 4. LIMIT 20 by default.
-5. Compute `recipeNeedsQty` as `SUM(recipe_lines.qty_g | qty_ml | qty_count)` matching the batch's `unit`.
+5. Compute `recipeNeedsQty` as `SUM(recipe_lines.qty_g | qty_ml | qty_count)` over lines whose `canonical_unit` matches the batch's `unit`. Lines with null canonical qty (PRD-116 didn't normalise — see PRD-123) are silently excluded from the sum. If no matching-unit lines exist, `recipeNeedsQty IS NULL`; the UI then renders "Needs ~?" instead of "Needs ~Xg".
 
 ## Sidebar integration
 
