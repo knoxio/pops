@@ -53,18 +53,20 @@ Mirror `packages/app-finance/`'s structure exactly. Adopt the same `pnpm` script
     "@tanstack/react-query": "5.101.0",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.17.0",
-    "react": "^18.3.1",
-    "react-hook-form": "^7.x"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-hook-form": "^7.77.0"
   },
   "devDependencies": {
     "vitest": "^x",
     "typescript": "^x",
-    "@types/react": "^18"
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.0.0"
   }
 }
 ```
 
-Exact versions match what `app-finance`'s `package.json` declares at the time of implementation — do NOT introduce new major versions of shared deps. CodeMirror, Lezer, and any heavy editor deps are declared in PRD-120 when that package's needs are concrete.
+Exact versions match what `app-finance`'s `package.json` declares at the time of implementation (React 19, pinned `react-hook-form`) — do NOT introduce new major versions of shared deps. CodeMirror, Lezer, and any heavy editor deps are declared in PRD-120 when that package's needs are concrete.
 
 ## Module Manifest
 

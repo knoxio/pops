@@ -161,7 +161,7 @@ Use these consistently across all doc types:
 
 ## Keeping Docs in Sync With Implementation
 
-When implementation work completes (a US is built, a PRD is finished, an epic wraps up), update all places that track status. There are exactly four:
+When implementation work completes (a US is built, a PRD is finished, an epic wraps up), update all places that track status. There are six:
 
 ### 1. Acceptance criteria checkboxes
 

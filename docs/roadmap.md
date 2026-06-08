@@ -176,7 +176,7 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Phase 4 — Expansion Apps
 
-| Epic            | Status      | Notes                                                                           |
+| Theme           | Status      | Notes                                                                           |
 | --------------- | ----------- | ------------------------------------------------------------------------------- |
 | Travel planner  | Not started |                                                                                 |
 | Books / Reading | Not started |                                                                                 |

@@ -43,7 +43,7 @@ A "View as graph" button in PRD-122's Substitutions tab links here. A "View as t
 ### Header controls
 
 - **Scope toggle**: Global (default) shows only `scope='global'` edges. Recipe shows recipe-scoped edges; the dropdown picks which recipe.
-- **Context tag filter**: dropdown with every distinct tag observed in the data + "All". Filters edges by `context_tags LIKE %tag%` (via `json_each`).
+- **Context tag filter**: dropdown with every distinct tag observed in the data + "All". Filters edges by `EXISTS (SELECT 1 FROM json_each(context_tags) WHERE value = :tag)` — matches PRD-109's JSON-array semantics. (A naive `LIKE %tag%` would false-positive: `"savory"` would match `"unsavory"`.)
 - **Search**: filters nodes by ingredient / variant slug.
 
 ### Graph body
