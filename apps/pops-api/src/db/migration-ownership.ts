@@ -78,6 +78,8 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0057_slimy_phalanx': 'inventory',
   // PRD-106 — food slug_registry + ingredients + variants + prep_states + aliases.
   '0058_high_sentinel': 'food',
+  // PRD-107 — food recipes + recipe_versions + recipe_tags.
+  '0059_useful_hiroim': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

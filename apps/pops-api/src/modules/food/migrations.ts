@@ -14,6 +14,8 @@ import type { MigrationDescriptor } from '@pops/types';
 export const foodMigrationTags: readonly string[] = [
   // PRD-106 — slug_registry + ingredients + variants + prep_states + aliases.
   '0058_high_sentinel',
+  // PRD-107 — recipes + recipe_versions + recipe_tags.
+  '0059_useful_hiroim',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

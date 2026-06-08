@@ -414,6 +414,13 @@
       "when": 1780921852351,
       "tag": "0058_high_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1780923871609,
+      "tag": "0059_useful_hiroim",
+      "breakpoints": true
     }
   ]
 }

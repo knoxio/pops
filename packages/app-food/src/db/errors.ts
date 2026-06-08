@@ -46,6 +46,44 @@ export class IngredientCycleError extends Error {
   }
 }
 
+// ── PRD-107 errors ──────────────────────────────────────────────────────
+
+export class CannotPromoteUncompiledVersion extends Error {
+  readonly versionId: number;
+  readonly compileStatus: 'uncompiled' | 'failed';
+
+  constructor(versionId: number, compileStatus: 'uncompiled' | 'failed') {
+    super(
+      `Cannot promote recipe_version #${versionId} — compile_status="${compileStatus}". Fix the DSL and recompile first.`
+    );
+    this.name = 'CannotPromoteUncompiledVersion';
+    this.versionId = versionId;
+    this.compileStatus = compileStatus;
+  }
+}
+
+export class CannotEditPublishedVersion extends Error {
+  readonly versionId: number;
+
+  constructor(versionId: number) {
+    super(
+      `Cannot edit recipe_version #${versionId} — its status is "current" or "archived". Create a new draft version instead.`
+    );
+    this.name = 'CannotEditPublishedVersion';
+    this.versionId = versionId;
+  }
+}
+
+export class ConcurrentPromotion extends Error {
+  readonly recipeId: number;
+
+  constructor(recipeId: number) {
+    super(`Concurrent promotion on recipe #${recipeId} — another version was promoted first.`);
+    this.name = 'ConcurrentPromotion';
+    this.recipeId = recipeId;
+  }
+}
+
 export class IngredientHierarchyDepthExceeded extends Error {
   readonly parentId: number;
   readonly depth: number;
