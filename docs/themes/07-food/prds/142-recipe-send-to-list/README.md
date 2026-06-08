@@ -4,7 +4,7 @@
 
 ## Overview
 
-The food-side button that turns a recipe's ingredient list into shopping-list items. Lives in PRD-121's renderer action menu on the recipe detail page. Opens a picker modal (existing shopping list or new), respects the renderer's current scale factor, aggregates lines by `(ingredient_id, variant_id)` summing canonical quantities, drops `prep_state` from the grouping key, and either merges into existing list items or appends fresh ones via PRD-140's `lists.items.bulkAdd`.
+The food-side button that turns a recipe's ingredient list into shopping-list items. Lives in PRD-119's `RecipeDetailPage` action menu on the recipe detail page (the menu that already hosts Edit / Drafts / Archive). Opens a picker modal (existing shopping list or new), respects the page's current scale factor, aggregates lines by `(ingredient_id, variant_id, canonical_unit)` summing canonical quantities, drops `prep_state` from the grouping key, and either merges into existing list items or appends fresh ones via PRD-140's `lists.items.bulkAdd`.
 
 After this PRD, a user viewing "Chicken Tikka Masala (×4)" on `/food/recipes/chicken-tikka-masala` clicks "Send to shopping list" → picks "This week's groceries" → sees a confirmation toast → opens `/lists/<id>` on their phone and the ingredients are there with `4×` quantities, deduplicated against what's already on the list.
 
@@ -14,7 +14,7 @@ This is a food-domain PRD that consumes the `app-lists` API via `@pops/api-clien
 
 ### Send button
 
-Lives in PRD-121's renderer action menu (`RecipeRenderer variant='detail'` top-right menu — same menu that has Edit / Drafts / Archive per PRD-119). Adds a new entry:
+Lives in PRD-119's `RecipeDetailPage` top-right action menu (the menu PRD-119 already declares with Edit / Drafts / Archive). PRD-121's `RecipeRenderer` is pure presentation (props only) and does NOT host an action menu — this is a PRD-119 amendment, not a PRD-121 change. Adds a new entry:
 
 ```
 [ ⋮ ] menu:
@@ -77,11 +77,18 @@ Behaviour:
 - **Send button** label dynamically shows the count (`Send 12 items`). Disabled while the picker modal is still loading initial data.
 - **Sending state**: button shows a spinner; on success closes the modal and shows a global toast `"Sent 12 items to <list name>. View list."` (the "View list" link navigates to `/lists/<id>`). On error: inline error in the modal; modal stays open so the user can retry.
 
-### Renderer scale-factor read
+### Scale-factor read
 
-The modal reads `scaleFactor` from the renderer's current state (PRD-121). When `scaleFactor=4`, the preview multiplies; the actual `bulkAdd` call sends the scaled qty.
+The modal reads `scaleFactor` from the page's current state. When `scaleFactor=4`, the preview multiplies; the actual `bulkAdd` call sends the scaled qty.
 
-PRD-121's renderer already exposes the scale factor via React state. PRD-142 hoists access by exporting it through a `useRecipeScale()` hook in `@pops/app-food` that the renderer + the send modal both consume. The hook is a thin wrapper around React context.
+PRD-121's renderer accepts `scaleFactor` as a prop (pure presentation, no state). The scale state actually lives on PRD-119's `RecipeDetailPage` (the page owns the scale-factor UI controls and passes the value down to `RecipeRenderer`). This PRD requires a **PRD-119 amendment**:
+
+- Introduce a `RecipeScaleProvider` React context on `RecipeDetailPage` that holds the current `scaleFactor` and a setter.
+- Export a `useRecipeScale(): { scaleFactor: number; setScaleFactor: (n: number) => void }` hook from `@pops/app-food` for consumers under the provider.
+- `RecipeRenderer` continues to receive `scaleFactor` as a prop; `RecipeDetailPage` pulls it from the hook to feed the renderer.
+- The send modal mounts under the same provider and reads `scaleFactor` via the same hook.
+
+This keeps PRD-121's pure-presentation contract intact while letting sibling components (the action-menu modal) read the same scale value the renderer is using.
 
 ## tRPC API
 
@@ -200,7 +207,7 @@ PRD-116 already wrote canonical `qty_g | qty_ml | qty_count` to each `recipe_lin
 | Optional lines in the recipe                                                                                   | Sent like any other line. User can manually remove from the list afterwards.                                                                                                                                                                          |
 | Recipe yields the same `ingredient_id` from two different lines (e.g. "200g flour" + "200g flour for dusting") | Aggregation merges them into one `400 g flour` item; prep-state distinguishes if PRD-116 captured one as "for dusting" via prep_state — but prep is dropped from the grouping key, so they merge anyway. notes collects both prep states. Acceptable. |
 | `notes` would exceed 500 chars after merge                                                                     | Truncate from the front of the existing notes (oldest entries lost); prepend `…` so the user knows truncation happened.                                                                                                                               |
-| Recipe's title contains characters that break LIKE matching                                                    | The "already sent" heuristic uses parameterised LIKE with the title as a literal (escape `%` and `_` server-side); false-positive rate is acceptable in v1.                                                                                           |
+| Recipe's title contains `%` or `_` characters                                                                  | Server-side escapes them before the parameterised LIKE. Default SQLite LIKE remains case-insensitive for ASCII; the warning is informational and false-positives are acceptable in v1.                                                                |
 | User clicks Send twice rapidly                                                                                 | UI debounces the button (disabled during pending mutation). Server-side dedup is not needed because each call is a fresh INSERT/UPDATE pair.                                                                                                          |
 
 ## Acceptance Criteria
@@ -209,7 +216,7 @@ Inline per theme protocol.
 
 ### Button
 
-- [ ] PRD-121's renderer action menu (`variant='detail'`) gains a "Send to shopping list..." entry between Drafts and Archive.
+- [ ] PRD-119's `RecipeDetailPage` action menu gains a "Send to shopping list..." entry between Drafts and Archive (PRD-119 amendment).
 - [ ] Entry is disabled with explicit tooltips when (a) `recipe_lines` count is 0 OR (b) `lists` module not installed OR (c) `compile_status !== 'compiled'`.
 
 ### Modal
@@ -225,7 +232,7 @@ Inline per theme protocol.
 
 - [ ] `food.recipes.prepareSendToList` aggregates per the spec: group by `(ingredient_id, variant_id, canonical_unit)`, drop `prep_state` from key, multiply by `scaleFactor`.
 - [ ] Unconverted lines are returned in `unconvertedItems` array, one per line, with original qty/unit.
-- [ ] `alreadySentToListIds` populated via case-sensitive LIKE on `notes`.
+- [ ] `alreadySentToListIds` populated via SQLite default LIKE on `notes` (case-insensitive for ASCII). `%` and `_` in the recipe title are escaped server-side before the query.
 - [ ] `food.recipes.sendToList` runs all inserts and updates in one Drizzle transaction.
 - [ ] `target.kind='new'` creates the list via `lists.list.create({ name, kind: 'shopping', ownerApp: 'food' })`.
 - [ ] Merge logic: match on `(ref_kind, ref_id)`; UPDATE qty + notes + regenerate label.
@@ -234,7 +241,7 @@ Inline per theme protocol.
 
 ### Behaviour
 
-- [ ] Scale factor is read from PRD-121's renderer state via `useRecipeScale()` hook and passed to both `prepareSendToList` and `sendToList`.
+- [ ] Scale factor is read from PRD-119's `RecipeScaleProvider` context via the `useRecipeScale()` hook (PRD-119 amendment) and passed to both `prepareSendToList` and `sendToList`.
 - [ ] On success, toast shows "Sent N items to <list name>. View list." with a link to `/lists/<id>`.
 - [ ] On error, modal stays open with inline error display.
 - [ ] Closing the modal mid-flight does NOT cancel the mutation.
@@ -276,10 +283,13 @@ Inline per theme protocol.
 
 - **PRD-106** — `ingredients.name`, `ingredient_variants.name`, `prep_states.slug` for label generation.
 - **PRD-107** — `recipe_versions` (title, compile_status), `recipes` (slug).
-- **PRD-112** — `list_items.label` / `qty` / `unit` / `ref_kind` / `ref_id` / `notes` / `position`.
-- **PRD-116** — `recipe_lines.qty_g` / `qty_ml` / `qty_count` / `canonical_unit` (read-only consumption).
-- **PRD-119** — `food.recipes.*` router file where this PRD adds its procedures.
-- **PRD-121** — `RecipeRenderer` action menu; `scaleFactor` state. This PRD adds the `useRecipeScale()` hook on top.
+- **PRD-112** — `list_items.label` / `qty` / `unit` / `ref_kind` / `ref_id` / `notes` / `position`; `idx_list_items_ref` partial index on `(ref_kind, ref_id) WHERE ref_id IS NOT NULL` makes the merge-match query indexable.
+- **PRD-116** — `recipe_lines.qty_g` / `qty_ml` / `qty_count` / `canonical_unit` / `optional` (read-only consumption).
+- **PRD-119** — Two amendments required (this PRD's only direct surface change on existing PRDs):
+  - **(a)** `recipesRouter` is extended with `prepareSendToList` (query) and `sendToList` (mutation). PRD-119's existing list of router procedures (create / saveDraft / promote / archiveVersion / listProposedSlugs / etc.) gains these two.
+  - **(b)** `RecipeDetailPage`'s top-right action menu is extended with a "Send to shopping list..." entry between Drafts and Archive. PRD-119's current spec lists only Edit / Drafts / Archive.
+  - **(c)** `RecipeDetailPage` introduces a `RecipeScaleProvider` React context wrapping the page + the renderer + the send modal. PRD-119 exports `useRecipeScale()` for consumers.
+- **PRD-121** — `RecipeRenderer` continues to accept `scaleFactor` as a prop (no change to PRD-121's API). PRD-119's provider is the source of the value passed to the renderer.
 - **PRD-123** — Indirectly: `recipe_lines` canonical qty values are only meaningful after PRD-123's services have run during compile.
-- **PRD-139** — module manifest; runtime detection of `lists` installation.
-- **PRD-140** — `lists.list.list` / `lists.list.create` / `lists.items.bulkAdd`; the target-list APIs.
+- **PRD-139** — module manifest; runtime detection of `lists` installation. The "lists module not installed" UI degradation path is owned by PRD-139's edge-case table.
+- **PRD-140** — `lists.list.list` / `lists.list.create` / `lists.items.bulkAdd`; the target-list APIs. Router method names (e.g. `lists.items.bulkAdd`) wrap PRD-112's service methods (e.g. `bulkAdd`) one-to-one — see PRD-140 for the router/service mapping.

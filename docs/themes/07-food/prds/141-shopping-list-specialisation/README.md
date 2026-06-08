@@ -135,27 +135,27 @@ These mutations are kind-agnostic at the API level — they work on any list. Th
 - Specialisation activates strictly on `list.kind === 'shopping'`. If the kind changes (PRD-140's edit modal), the specialised header/rows swap in/out without losing data (items keep their state).
 - Sort settings are session-local — not stored on the list, not in URL. A fresh page load defaults to Manual.
 - Sort order does NOT modify `position` values. Drag-to-reorder always writes new `position` ints; sort is a render-time transform.
-- Drag-to-reorder is enabled regardless of sort mode. Reordering while in a sorted view re-applies the sort after the reorder commits — the user sees their drag's visual effect, then the sort re-asserts.
+- Drag-to-reorder is **disabled** when sort mode is non-Manual (the drag handle is greyed out with a tooltip "Switch to Manual sort to reorder"). Reordering in a non-Manual view would have no visible effect because the sort would immediately re-assert; we forbid the gesture so the user isn't surprised. Switching back to Manual exposes the new `position` values written by past drags.
 - `Uncheck all` and `Clear checked` always operate on the WHOLE list, never on a filtered subset (no filters in v1).
 - Optimistic updates for `uncheckAll` and `removeChecked`: UI updates immediately; rollback on server error.
 - Tapping a checked item's checkbox unchecks it (idempotent toggle); standard PRD-140 behaviour.
 
 ## Edge Cases
 
-| Case                                                                            | Behaviour                                                                                                                                      |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| User clicks Uncheck all on a list with 0 checked items                          | Button is disabled with a tooltip ("No items to uncheck").                                                                                     |
-| User clicks Clear checked on a list with 0 checked items                        | Button is disabled.                                                                                                                            |
-| User sorts "by unchecked first" then drags a row                                | Drag commits new `position`; sort re-applies; row may jump to a new visual location. UI shows a transient highlight so the user sees the move. |
-| User changes kind from `shopping` to `todo` while header is visible             | PRD-140's kind change cascades; on next render, the header swaps to generic. Selection / sort state is lost.                                   |
-| User swipes a row partially then taps elsewhere                                 | Swipe state cancels; row snaps back. No mutation.                                                                                              |
-| Network drops during Uncheck all                                                | Optimistic UI rolls back after timeout; toast: "Couldn't uncheck items — try again."                                                           |
-| Two users (single-user-mode, but two browser tabs) Clear checked simultaneously | Both DELETE statements run; the second is a no-op (zero matching rows). Both UIs converge.                                                     |
-| List has 200 unchecked items                                                    | Sort "by unchecked first" still renders them all; PRD-140 doesn't paginate within a list (lists stay small in v1).                             |
-| Mobile swipe-to-delete on a checked item                                        | Works the same; deletes the item.                                                                                                              |
-| User starts a drag, then swipes (touch conflict)                                | Long-press detection wins (drag); swipe is suppressed during a drag.                                                                           |
-| Sort dropdown opens off-screen on mobile                                        | Dropdown opens upward when near the viewport bottom (CSS-only behaviour; no JS positioning).                                                   |
-| User checks an item, sort is "by unchecked first" → item jumps to the bottom    | Expected. UI applies a 200ms fade animation so the move is visible.                                                                            |
+| Case                                                                            | Behaviour                                                                                                                     |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| User clicks Uncheck all on a list with 0 checked items                          | Button is disabled with a tooltip ("No items to uncheck").                                                                    |
+| User clicks Clear checked on a list with 0 checked items                        | Button is disabled.                                                                                                           |
+| User sorts "by unchecked first" and tries to drag a row                         | Drag is disabled (handle greyed). Tooltip: "Switch to Manual sort to reorder." User toggles back to Manual then drags freely. |
+| User changes kind from `shopping` to `todo` while header is visible             | PRD-140's kind change cascades; on next render, the header swaps to generic. Selection / sort state is lost.                  |
+| User swipes a row partially then taps elsewhere                                 | Swipe state cancels; row snaps back. No mutation.                                                                             |
+| Network drops during Uncheck all                                                | Optimistic UI rolls back after timeout; toast: "Couldn't uncheck items — try again."                                          |
+| Two users (single-user-mode, but two browser tabs) Clear checked simultaneously | Both DELETE statements run; the second is a no-op (zero matching rows). Both UIs converge.                                    |
+| List has 200 unchecked items                                                    | Sort "by unchecked first" still renders them all; PRD-140 doesn't paginate within a list (lists stay small in v1).            |
+| Mobile swipe-to-delete on a checked item                                        | Works the same; deletes the item.                                                                                             |
+| User starts a drag, then swipes (touch conflict)                                | Long-press detection wins (drag); swipe is suppressed during a drag.                                                          |
+| Sort dropdown opens off-screen on mobile                                        | Dropdown opens upward when near the viewport bottom (CSS-only behaviour; no JS positioning).                                  |
+| User checks an item, sort is "by unchecked first" → item jumps to the bottom    | Expected. UI applies a 200ms fade animation so the move is visible.                                                           |
 
 ## Acceptance Criteria
 
@@ -227,6 +227,7 @@ Inline per theme protocol.
 ## Requires (cross-PRD dependencies)
 
 - **PRD-112** — `list_items.checked`, `list_items.checked_at` columns; `position` column for drag-reorder.
-- **PRD-139** — module manifest; this PRD's components live in the package PRD-139 wires up.
-- **PRD-140** — `listsRouter` and the generic `ListDetailPage` that dispatches to specialised components; `lists.items.reorder` for drag.
-- Existing `@pops/ui` components for dropdowns, dialogs, swipe primitives (or `react-swipeable` if not already in use — declared in this PRD's component package only).
+- **PRD-139** — module manifest; this PRD's components live in the package PRD-139 wires up. If swipe gestures require `react-swipeable` (or equivalent), PRD-139's `package.json` is amended at implementation time to include it.
+- **PRD-140** — Two amendments required:
+  - **(a)** `listsRouter.items` gains `uncheckAll` and `removeChecked` mutations (see "tRPC API Additions"). PRD-140's spec enumerates `add`/`bulkAdd`/`update`/`check`/`uncheck`/`remove`/`reorder` and is silent on these two — implementation imports them from this PRD.
+  - **(b)** `ListDetailPage` dispatches by `list.kind === 'shopping'` to swap in this PRD's specialised header, item row, and add form. PRD-140's spec already anticipates this dispatch in its "Item Row" section; this PRD owns the actual replacement components.

@@ -12,14 +12,12 @@ This is the biggest UI PRD in Epic 04 — it stands up the whole list-handling e
 
 ## Routes
 
-| Path              | Page             | Purpose                                                                |
-| ----------------- | ---------------- | ---------------------------------------------------------------------- |
-| `/lists`          | `ListsIndexPage` | List of all lists; filter + new                                        |
-| `/lists/new`      | `ListNewPage`    | Create a new list (modal or inline form; spec calls modal — see below) |
-| `/lists/:id`      | `ListDetailPage` | Render the list's items; add / reorder / check / remove                |
-| `/lists/:id/edit` | `ListEditPage`   | Rename, change kind, archive (or just modal — see below)               |
+| Path         | Page             | Purpose                                                 |
+| ------------ | ---------------- | ------------------------------------------------------- |
+| `/lists`     | `ListsIndexPage` | List of all lists; filter + new                         |
+| `/lists/:id` | `ListDetailPage` | Render the list's items; add / reorder / check / remove |
 
-`/lists/new` and `/lists/:id/edit` are **modals**, not full pages, so they overlay the index / detail view. URL params are `?new=1` and `?edit=1` respectively on top of the base path — keeps deep-linkable but stays in-context. Implementation choice: react-router-v6 nested routes with the modal as the `Outlet`.
+The "New list" and "Edit list" surfaces are **modals**, not separate routes. They overlay the index / detail view via URL query params `?new=1` and `?edit=1` respectively on top of the base path — keeps the modals deep-linkable but stays in-context. Implementation: react-router-v6 nested routes with the modal as the `Outlet`. There is NO `/lists/new` or `/lists/:id/edit` standalone page.
 
 Numeric ID URLs (no slugs) — lists don't need a stable global identifier; the ID is the URL. Page titles use the list's `name` so the URL ID doesn't leak into UX.
 
@@ -36,7 +34,7 @@ Numeric ID URLs (no slugs) — lists don't need a stable global identifier; the 
 - Sort dropdown: `updated_at DESC` (default), `name ASC`, `created_at DESC`.
 - No pagination — lists are user-managed; volume stays in the dozens. If volume exceeds 100, add cursor pagination then.
 
-`last-updated` derives from `MAX(list_items.created_at, lists.created_at)` for each list — picks up "I added an item yesterday" without a separate `lists.updated_at` column. Computed server-side in `lists.list.list`.
+`last-updated` derives from the greater of (a) `MAX(list_items.created_at)` for the list's items and (b) `lists.created_at` — picks up "I added an item yesterday" without a separate `lists.updated_at` column. `itemCount`, `uncheckedCount`, and `lastUpdatedAt` are all computed by the router itself via a single aggregate SQL query (left join `lists` to `list_items`, GROUP BY list id). This **bypasses PRD-112's `listLists` service** (which only returns `lists` rows) — the router owns the aggregate query directly. No PRD-112 amendment required.
 
 ### `/lists/new` — Create modal
 
@@ -159,6 +157,29 @@ export const listsRouter = {
 ```
 
 All mutations are transactional. `reorder` runs a single `UPDATE list_items SET position = ?` per row inside one transaction.
+
+### Router-to-service mapping
+
+The tRPC router methods above wrap PRD-112's service methods one-to-one. The router uses verb-only names (`add`, `update`); PRD-112's service file uses `Item` / `List`-suffixed names. Mapping:
+
+| Router (this PRD)      | Service (PRD-112)                                                                                                                                       | File                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `lists.list.list`      | (router-owned aggregate query)                                                                                                                          | `apps/pops-api/src/modules/lists/router.ts` (no service wrapper) |
+| `lists.list.get`       | `getList`                                                                                                                                               | `packages/app-lists/src/db/services/lists.ts`                    |
+| `lists.list.create`    | `createList`                                                                                                                                            | same                                                             |
+| `lists.list.update`    | (router-owned update; PRD-112 has no `updateList` — service exposes archive/unarchive/delete only — add `updateList` to PRD-112's services during impl) | same                                                             |
+| `lists.list.archive`   | `archiveList`                                                                                                                                           | same                                                             |
+| `lists.list.unarchive` | `unarchiveList`                                                                                                                                         | same                                                             |
+| `lists.list.delete`    | `deleteList`                                                                                                                                            | same                                                             |
+| `lists.items.add`      | `addItem`                                                                                                                                               | `packages/app-lists/src/db/services/list-items.ts`               |
+| `lists.items.bulkAdd`  | `bulkAdd`                                                                                                                                               | same                                                             |
+| `lists.items.update`   | `updateItem`                                                                                                                                            | same                                                             |
+| `lists.items.check`    | `checkItem`                                                                                                                                             | same                                                             |
+| `lists.items.uncheck`  | `uncheckItem`                                                                                                                                           | same                                                             |
+| `lists.items.remove`   | `removeItem`                                                                                                                                            | same                                                             |
+| `lists.items.reorder`  | `reorderItems`                                                                                                                                          | same                                                             |
+
+The router is a thin pass-through; business logic lives in the service. `lists.list.update` requires adding `updateList(id, { name?, kind? })` to PRD-112's `lists.ts` service — small additive amendment.
 
 `bulkAdd` wraps PRD-112's `bulkAdd` service in a transaction. PRD-142 is the primary caller.
 
@@ -291,6 +312,7 @@ Inline per theme protocol.
 - Voice input.
 - Item due-date UI even for `kind='todo'` (the schema has `due_at` but the v1 UI ignores it; future PRD adds the todo-specific affordances).
 - `kind='packing'` / `kind='generic'` specialisations beyond what the generic path covers.
+- `lists.items.uncheckAll` and `lists.items.removeChecked` mutations — added by **PRD-141** (this PRD's router shape is open-ended; PRD-141 extends `listsRouter.items` with these two).
 
 ## Requires (cross-PRD dependencies)
 

@@ -223,3 +223,10 @@ Inline per theme protocol.
 - Pre-population of seed lists (e.g. a default "Shopping list") — not in v1.
 - Lists module's own ingestion / external sync — none, ever.
 - Cross-cutting list types beyond `shopping` in v1 — PRD-141 specialises only `shopping`. Other kinds render via PRD-140's generic path.
+
+## Requires (cross-PRD dependencies)
+
+- **PRD-098** — `ModuleManifest` shape (`backend?: { router }` slot).
+- **PRD-101** — per-module migration runner; `migrations` slot on the manifest.
+- **PRD-112** — the package this PRD extends; the `lists` / `list_items` schema; the existing `src/db/` directory.
+- **PRD-118** — the precedent pattern this PRD mirrors verbatim (manifest declaration, package.json shape, routes/navConfig pattern, landing-page conventions). Implementation copies the pattern from `app-food`.
