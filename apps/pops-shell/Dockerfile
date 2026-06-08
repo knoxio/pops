@@ -10,6 +10,7 @@ COPY apps/pops-api/package.json ./apps/pops-api/
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/app-finance/package.json ./packages/app-finance/
+COPY packages/app-food/package.json ./packages/app-food/
 COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
@@ -42,6 +43,7 @@ RUN pnpm build
 WORKDIR /app
 COPY packages/ui/ ./packages/ui/
 COPY packages/app-finance/ ./packages/app-finance/
+COPY packages/app-food/ ./packages/app-food/
 COPY packages/app-media/ ./packages/app-media/
 COPY packages/app-inventory/ ./packages/app-inventory/
 COPY packages/app-ai/ ./packages/app-ai/
