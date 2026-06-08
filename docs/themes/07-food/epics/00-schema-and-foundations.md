@@ -12,7 +12,7 @@ This epic is schema-and-data + the DSL parsing/resolving/compiling pipeline. No 
 
 | #   | PRD                                                                                        | Summary                                                                                                            | Status      |
 | --- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----------- |
-| 106 | [Ingredient & Variant Model](../prds/106-ingredient-model/README.md)                       | Canonical ingredients with hierarchy, variants, prep_states, aliases, `slug_registry` (global namespace)           | Not started |
+| 106 | [Ingredient & Variant Model](../prds/106-ingredient-model/README.md)                       | Canonical ingredients with hierarchy, variants, prep_states, aliases, `slug_registry` (global namespace)           | Done        |
 | 107 | [Recipe & Version Schema](../prds/107-recipe-model/README.md)                              | `recipes`, `recipe_versions`, `recipe_tags`; status enum; hero image; slug registration; compile-state columns     | Not started |
 | 114 | [DSL Grammar & Parser](../prds/114-dsl-parser/README.md)                                   | Formal grammar per [ADR-023](../../../architecture/adr-023-recipe-markdown-dsl.md); text → AST; typed parse errors | Not started |
 | 115 | [DSL Resolver](../prds/115-dsl-resolver/README.md)                                         | AST → ResolvedRecipeAst via `slug_registry`; variant scoping; proposed-slug tracking for unknown refs              | Not started |

@@ -30,6 +30,13 @@ import type { entities } from './schema/entities.js';
 import type { environments } from './schema/environments.js';
 import type { episodes } from './schema/episodes.js';
 import type { fixtures } from './schema/fixtures.js';
+import type {
+  ingredientAliases,
+  ingredients,
+  ingredientVariants,
+  prepStates,
+  slugRegistry,
+} from './schema/food.js';
 import type { homeInventory } from './schema/inventory.js';
 import type { itemConnections } from './schema/item-connections.js';
 import type { itemDocuments } from './schema/item-documents.js';
@@ -89,6 +96,11 @@ export {
   episodes,
   fixtures,
   homeInventory,
+  ingredientAliases,
+  ingredients,
+  ingredientVariants,
+  prepStates,
+  slugRegistry,
   itemConnections,
   itemFixtureConnections,
   itemDocuments,
@@ -157,6 +169,16 @@ export type MediaScoreRow = InferSelectModel<typeof mediaScores>;
 export type LocationRow = InferSelectModel<typeof locations>;
 export type FixtureRow = InferSelectModel<typeof fixtures>;
 export type FixtureInsert = InferInsertModel<typeof fixtures>;
+export type SlugRegistryRow = InferSelectModel<typeof slugRegistry>;
+export type SlugRegistryInsert = InferInsertModel<typeof slugRegistry>;
+export type IngredientRow = InferSelectModel<typeof ingredients>;
+export type IngredientInsert = InferInsertModel<typeof ingredients>;
+export type IngredientVariantRow = InferSelectModel<typeof ingredientVariants>;
+export type IngredientVariantInsert = InferInsertModel<typeof ingredientVariants>;
+export type PrepStateRow = InferSelectModel<typeof prepStates>;
+export type PrepStateInsert = InferInsertModel<typeof prepStates>;
+export type IngredientAliasRow = InferSelectModel<typeof ingredientAliases>;
+export type IngredientAliasInsert = InferInsertModel<typeof ingredientAliases>;
 export type ItemConnectionRow = InferSelectModel<typeof itemConnections>;
 export type ItemFixtureConnectionRow = InferSelectModel<typeof itemFixtureConnections>;
 export type ItemPhotoRow = InferSelectModel<typeof itemPhotos>;

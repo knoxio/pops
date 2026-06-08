@@ -23,6 +23,7 @@ import { manifest as egoManifest } from './cerebrum/ego/index.js';
 import { manifest as cerebrumManifest } from './cerebrum/index.js';
 import { manifest as coreManifest } from './core/index.js';
 import { manifest as financeManifest } from './finance/index.js';
+import { manifest as foodManifest } from './food/index.js';
 import { manifest as inventoryManifest } from './inventory/index.js';
 import { manifest as mediaManifest } from './media/index.js';
 
@@ -44,6 +45,7 @@ function liveManifests(): readonly ModuleManifest[] {
   return [
     coreManifest,
     financeManifest,
+    foodManifest,
     mediaManifest,
     inventoryManifest,
     cerebrumManifest,

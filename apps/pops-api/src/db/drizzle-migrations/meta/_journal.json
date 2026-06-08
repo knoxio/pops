@@ -407,6 +407,13 @@
       "when": 1779607821357,
       "tag": "0057_slimy_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1780921852351,
+      "tag": "0058_high_sentinel",
+      "breakpoints": true
     }
   ]
 }
