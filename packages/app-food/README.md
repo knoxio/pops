@@ -26,7 +26,10 @@ src/
 
 Backend services (`src/db/schema.ts`, `src/db/services/*.ts`, `src/dsl/*.ts`) are
 populated by Epic 00 implementation (PRDs 106–117). Until then, the manifest exposes
-a frontend-only shape; the `backend.router` slot is filled when PRD-119 lands.
+a frontend-only shape; the `backend.router` slot is filled when PRD-106 lands (the
+first Epic 00 PRD — it ships a stub router alongside the slug-registry migration,
+because `ModuleBackendManifest.router` is required when `backend` is set). PRD-119
+later extends that router with the recipe-CRUD procedures.
 
 ## Install gate
 
