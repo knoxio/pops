@@ -295,6 +295,7 @@ Inline per theme protocol.
 - Cost estimation per item — out of scope (cross-domain with finance).
 - LLM-assisted "you forgot to add X to your plan" suggestions — out of scope.
 - Recurring shopping list templates — out of scope.
+- "Use up expiring" tab on the generator (matches PRD-150's hint at a future expiry-aware solver tab) — deferred to a future PRD; v1 generator does strict pantry subtraction with no expiry boost on either generator or solver surfaces.
 - Explicit section header dividers in the generated list — deferred (would require `list_items.section_label` schema). Section-sorted ordering does the job in v1.
 - Receipt scanning post-shopping to mark items checked — out of scope.
 

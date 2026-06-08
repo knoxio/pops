@@ -237,3 +237,11 @@ Inline per theme protocol.
 - Recipe sharing / public links — single-user.
 - Comment threads / review notes per version — out of scope.
 - Recipe rating / favourites — out of scope.
+
+## Subsequent amendments
+
+Pointers — not a spec change; the items below are downstream PRDs that extend this PRD's surface. Implementation reads them as a unit.
+
+- **PRD-142** (Recipe → shopping list): action menu gains "Send to shopping list..."; introduces a `RecipeScaleProvider` React context on `RecipeDetailPage` + a `useRecipeScale()` hook exported from `@pops/app-food`; adds `food.recipes.prepareSendToList` + `food.recipes.sendToList` procedures.
+- **PRD-144** (Cook event recording): action menu gains "Cook now..."; the cook modal mounts under the same `RecipeScaleProvider`.
+- **Canonical final action-menu order**: Edit / Drafts / Cook now... / Send to shopping list... / Archive.

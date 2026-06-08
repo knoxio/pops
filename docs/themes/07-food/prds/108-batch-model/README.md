@@ -210,3 +210,10 @@ Inline per theme protocol.
 - `purchases` table (for `source_type='purchase'` FK) — deferred; v1 uses notes free-form. Likely a cross-domain table shared with finance (theme 02).
 - Unit conversion at consumption time — assumes `recipe_lines.qty_g/ml/count` is already canonical; the helper takes those values directly.
 - Batch transfer between locations (pantry → fridge) — Epic 05 UI; schema doesn't need anything special (UPDATE on `location`).
+
+## Subsequent amendments
+
+Pointers — not a spec change; the items below are downstream PRDs that extend this PRD's surface. Implementation reads them as a unit.
+
+- **PRD-145** adds an additive `batches.deleted_at` column (soft-delete) with a service-enforced invariant `deleted_at IS NOT NULL → qty_remaining = 0`. Defines the `opts` shape of `markRunComplete(runId, opts)` — `opts: { yield?: YieldArgs }`; sets `completed_at` + `yielded_batch_id` when `yield` is present, sets only `completed_at` when absent (yieldless recipes). Centralises the cook-batch contract on `createBatchFromRun` which wraps `markRunComplete`.
+- **PRD-144** is the primary caller of `createBatchFromRun` via the cook modal's transactional `food.cook.markCooked` mutation.

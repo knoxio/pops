@@ -264,3 +264,9 @@ Inline per theme protocol.
 - **PRD-116** — `recipe_lines.position` for `lineIndex` reference; `recipe_lines.optional` for the auto-resolve rule.
 - **PRD-144** — owns the cook modal that embeds PRD-146's panels; the `ConsumptionOverride[]` input on the cook mutation is consumed here.
 - **PRD-145** — `food.batches.*` services (this PRD adds `searchForConsume` to the same router).
+
+## Subsequent amendments
+
+Pointers — not a spec change.
+
+- **PRD-149** (Cook-time substitutions): `BatchOverridePicker` extended with a Substitutions section; `ConsumptionOverride` gains optional `substitutionEdgeId` on the `batch-override` and `partial` kinds. Server-side override-resolution in PRD-144's `markCooked` mutation gains a substitution-detection branch that writes audit notes to `recipe_runs.notes`.

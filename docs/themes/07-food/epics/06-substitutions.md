@@ -21,12 +21,11 @@ This epic is **strictly read-only against the substitution graph** — CRUD live
 ### Build order
 
 ```
-148 ──► (independent)
-149 ──► (PRD-146 amendment)
-150 ──► (depends on a substitution-query service introduced here)
+148 ──► (independent — visualisation only)
+150 ──► 149  (PRD-150 owns the shared service file; PRD-149 imports it)
 ```
 
-PRDs 148/149/150 are largely independent at the contract layer. PRD-150 owns the shared substitution-resolution service at `apps/pops-api/src/modules/food/services/substitutions-resolve.ts`; PRD-149's public `food.substitutions.resolveForLine` tRPC procedure imports and wraps it. PRD-148 is purely a visualisation layer over PRD-109 + PRD-122's existing CRUD.
+PRD-148 is independent — pure visualisation over PRD-109 + PRD-122's existing CRUD. PRD-150 must land before PRD-149 because PRD-150 owns the shared substitution-resolution service file at `apps/pops-api/src/modules/food/services/substitutions-resolve.ts`; PRD-149's public `food.substitutions.resolveForLine` tRPC procedure imports and wraps it. (The contract is independent, but the file-ownership chain is sequential.)
 
 ## Dependencies
 

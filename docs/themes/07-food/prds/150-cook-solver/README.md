@@ -143,6 +143,11 @@ For each non-archived recipe with `current_version_id IS NOT NULL` AND `compile_
 
 This consolidates the substitution-resolution logic (PRD-109's precedence + context-tag rules) into one place. PRD-149 retains the public tRPC endpoint; PRD-150's solver calls the service directly per-line during `canICook`.
 
+**PRD-109 amendments carried in this service** (PRD-149 introduced them; PRD-150 inherits):
+
+- Recipe-scoped override semantics refined to `(from_*, to_*)` pair rather than `from`-only. A recipe-scoped sub for `(butter, coconut-oil)` shadows only the global `(butter, coconut-oil)` edge — other global edges from `butter` (e.g. `butter → olive-oil`) still apply.
+- Context-tag matching uses an OR-overlap with the recipe's `recipe_tags` as the `:C` parameter. Wildcard subs (`context_tags = '[]'`) match any context.
+
 ## Sidebar integration
 
 PRD-118's `app-food` manifest gains a new sub-nav entry: "Solve" → `/food/solve`. Positioned after Fridge (PRD-147) in the food sub-nav; exact integer chosen at implementation time to avoid colliding with other modules' renumbering, matching the convention established by PRD-118.

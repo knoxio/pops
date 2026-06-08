@@ -141,7 +141,7 @@ Open Drizzle transaction:
 4. INSERT `recipe_runs` with `recipe_version_id`, `scale_factor`, `started_at = datetime('now')`, `completed_at = NULL` (set in step 7), `rating`, `notes`.
 5. Compute consume needs from `recipe_lines` × scale; merge with `consumptionOverrides` (PRD-146 controls which batches override which lines, or marks lines as "consumed externally").
 6. Call PRD-108's `consumeForRun(runId, needs, db)` with the resolved needs. If shortfalls remain (i.e. a need has no override and FIFO can't cover it), ROLLBACK and return `ShortfallUnresolved` with the shortfalls list.
-7. Call PRD-145's `createBatchFromRun(runId, yieldArgs, db)` (which wraps PRD-108's `markRunComplete` — PRD-145 is the single owner of the create-batch-during-cook contract). This creates the yielded batch when `yieldsBatch=true`, sets `recipe_runs.completed_at` and `recipe_runs.yielded_batch_id`. The `expires_at` falls back to `produced_at + default_shelf_life_days_<location>` if `yield.expiresAt` is omitted. For yieldless recipes, skip this step entirely and instead UPDATE `recipe_runs.completed_at = datetime('now')` directly (this is one of the PRD-108 amendments documented in PRD-145).
+7. Call PRD-145's `createBatchFromRun(runId, yieldArgs, db)` (which wraps PRD-108's `markRunComplete` — PRD-145 is the single owner of the create-batch-during-cook contract). For yielding recipes, this INSERTs the batch + sets `recipe_runs.completed_at` + `recipe_runs.yielded_batch_id`; the `expires_at` falls back to `produced_at + default_shelf_life_days_<location>` if `yield.expiresAt` is omitted. **For yieldless recipes, the same call still runs** — PRD-145's wrapper / PRD-108's `markRunComplete` internal branch handles `yield`-absent by skipping the batch INSERT and just setting `completed_at`. PRD-144's transaction therefore always invokes `createBatchFromRun` once, regardless of yield, keeping the cook-finalisation contract single-owner.
 8. If `planEntryId`: UPDATE `plan_entries SET recipe_run_id = <newRunId>`.
 9. Commit. Return `{ ok: true, recipeRunId, yieldedBatchId }`.
 
@@ -166,7 +166,7 @@ This query is called once when the modal opens; the consume-preview panel re-run
 - A recipe with `yield_ingredient_id IS NULL` cooks without producing a batch: no `yielded_batch_id` on the run row; modal hides the yield + location + expires fields.
 - Recipe must have `compile_status='compiled'` to cook. PRD-108 already documents this rule at the schema layer (`CannotCookUncompiledRecipe`); PRD-144 surfaces it as `RecipeNotCompiled` from the modal.
 - A plan entry can transition `recipe_run_id` from NULL → non-null exactly once. Subsequent cooks against the same plan entry are ad-hoc (no `planEntryId` passed).
-- `started_at` is `datetime('now')` at INSERT; `completed_at` is set in the same transaction by PRD-145's `createBatchFromRun` (for yielding recipes) or by direct UPDATE (for yieldless recipes). Both record the moment the user clicked "Mark cooked" — the modal does NOT track time-on-modal as cook duration.
+- `started_at` is `datetime('now')` at INSERT; `completed_at` is set in the same transaction by PRD-145's `createBatchFromRun` (which invokes PRD-108's `markRunComplete`; the latter sets `completed_at` for both yielding and yieldless recipes per PRD-145's amendment notes). Both timestamps record the moment the user clicked "Mark cooked" — the modal does NOT track time-on-modal as cook duration.
 - `recipe_runs.scale_factor` is the `scaleFactor` the user actually submitted (may differ from the plan's planned servings).
 - Rating is OPTIONAL. Notes is OPTIONAL. Both can be edited later from `/food/recipes/:slug/runs/:id` (deferred — out of scope for this PRD; PRD-145 may surface batch-edit which is adjacent).
 - The cook mutation NEVER deletes plan entries. They persist post-cook with `recipe_run_id` set.
@@ -210,7 +210,7 @@ Inline per theme protocol.
 ### tRPC
 
 - [ ] `food.cook.prepareCook` returns `CookPreparation` matching the schema; one round-trip.
-- [ ] `food.cook.markCooked` runs as a single Drizzle transaction wrapping PRD-108's `consumeForRun` + PRD-145's `createBatchFromRun` (yieldless recipes skip the latter and UPDATE `completed_at` directly).
+- [ ] `food.cook.markCooked` runs as a single Drizzle transaction wrapping PRD-108's `consumeForRun` + PRD-145's `createBatchFromRun`. The latter is invoked for every cook (yielding or yieldless); the wrapper handles the yield-absent branch internally per PRD-145's amendment notes on PRD-108.
 - [ ] Returns each error code on its respective condition.
 - [ ] On `ShortfallUnresolved`, the shortfalls array is populated for PRD-146 to render.
 - [ ] Plan entry's `recipe_run_id` is set in the same transaction when `planEntryId` provided.
@@ -264,3 +264,11 @@ Inline per theme protocol.
 - **PRD-143** — "Mark cooked" button in plan-entry edit sheet is the primary entry point.
 - **PRD-145** — Specialises the batch creation step (this PRD invokes PRD-108's `markRunComplete`; PRD-145 may wrap that call with extra UI-facing services like "create with default expiry override").
 - **PRD-146** — Owns the consume-preview + shortfall-override panels embedded in the modal.
+
+## Subsequent amendments
+
+Pointers — not a spec change.
+
+- **PRD-145** adds `BadExpiry` and `BadAdjustment` to the **batch** error enum (not `MarkCookedError`). `createBatchFromRun` is the canonical wrapper around `markRunComplete`; PRD-144 invokes it once per cook for both yielding and yieldless recipes.
+- **PRD-149** (Cook-time substitutions): adds `SubstitutionEdgeInvalid` to `MarkCookedError`. Server-side override-resolution gains a substitution-detection branch that writes audit lines to `recipe_runs.notes`.
+- **Canonical final `MarkCookedError`**: `RecipeVersionNotFound | RecipeNotCompiled | PlanEntryNotFound | PlanEntryAlreadyCooked | YieldRequired | YieldForbidden | BadScaleFactor | BadYieldQty | BadRating | BadExpiry | ShortfallUnresolved | SubstitutionEdgeInvalid`.
