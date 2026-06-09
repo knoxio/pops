@@ -1,37 +1,38 @@
 /**
  * PRD-133 — drift catcher for the prompt registry.
  *
- * Asserts that every `PROMPT_VERSION_*` constant exported from
- * `packages/app-food/src/prompts/` is referenced by an entry in
- * `FOOD_PROMPTS`. If a new prompt template ships without a registry
- * entry, this test fails — the viewer would otherwise silently omit
- * it.
+ * Discovers every module under `packages/app-food/src/prompts/` at
+ * runtime via `import.meta.glob` so adding a new prompt file forces
+ * the author to register it in `FOOD_PROMPTS` — no editing this test.
  */
 import { describe, expect, it } from 'vitest';
 
-import * as igVision from '../../prompts/ig-vision.js';
-import * as screenshot from '../../prompts/screenshot.js';
-import * as text from '../../prompts/text.js';
-import * as webLlm from '../../prompts/web-llm.js';
 import { FOOD_PROMPTS } from '../prompt-registry.js';
 
-function collectVersionExports(mod: Record<string, unknown>): string[] {
-  return Object.entries(mod)
-    .filter(([k, v]) => k.startsWith('PROMPT_VERSION_') && typeof v === 'string')
-    .map(([, v]) => v as string);
+const promptModules = import.meta.glob<Record<string, unknown>>('../../prompts/*.ts', {
+  eager: true,
+});
+
+function collectVersionExports(): string[] {
+  const versions: string[] = [];
+  for (const mod of Object.values(promptModules)) {
+    for (const [key, value] of Object.entries(mod)) {
+      if (key.startsWith('PROMPT_VERSION_') && typeof value === 'string') {
+        versions.push(value);
+      }
+    }
+  }
+  return versions;
 }
 
 describe('PRD-133 — FOOD_PROMPTS registry', () => {
-  it('includes every PROMPT_VERSION_* constant from packages/app-food/src/prompts/', () => {
-    const allVersions = [
-      ...collectVersionExports(webLlm),
-      ...collectVersionExports(igVision),
-      ...collectVersionExports(screenshot),
-      ...collectVersionExports(text),
-    ].toSorted();
+  it('discovers at least one prompt module under src/prompts/', () => {
+    expect(Object.keys(promptModules).length).toBeGreaterThan(0);
+  });
 
+  it('includes every PROMPT_VERSION_* constant exported from src/prompts/', () => {
+    const allVersions = collectVersionExports().toSorted();
     const registered = FOOD_PROMPTS.map((p) => p.version).toSorted();
-
     expect(registered).toEqual(allVersions);
   });
 

@@ -57,9 +57,12 @@ export const aiRouter = router({
     .input(LogFoodInferenceInput)
     .output(LogFoodInferenceOutput)
     .mutation(({ input }) => {
+      // Server-authored fields (prompt_version) win over caller-supplied
+      // metadata so the prompt-viewer correlation can't be spoofed by a
+      // worker passing a stale version in `metadata.prompt_version`.
       const merged: Record<string, unknown> = {
-        prompt_version: input.promptVersion,
         ...input.metadata,
+        prompt_version: input.promptVersion,
       };
 
       try {

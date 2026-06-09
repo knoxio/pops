@@ -42,12 +42,10 @@ Inputs:
 - Caption: {caption}
 - Transcript (faster-whisper): {transcript}
 
-Return a single POPS recipe DSL document per ADR-023. If the inputs do not describe a coherent recipe, return:
+Return a single POPS recipe DSL document per ADR-023. If the inputs do not describe a coherent recipe, return exactly this single line and nothing else:
 
-\`\`\`
 @recipe("partial-draft", "Partial draft")
-\`\`\`
 
-with no further content; the operator will triage it.
+The operator will triage the partial-draft case.
 
-Return ONLY the DSL document.`;
+Return ONLY the DSL document. Do not wrap it in markdown fences.`;
