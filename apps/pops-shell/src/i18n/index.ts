@@ -2,7 +2,7 @@
  * i18next initialization for the POPS shell.
  *
  * Supported locales: en-AU (default), pt-BR.
- * Namespaces: common, shell, navigation, errors, inventory, cerebrum, finance, food, lists, ai, media, ui.
+ * Namespaces: common, shell, navigation, inventory, cerebrum, finance, food, lists, ai, media, ui.
  *
  * Language preference is persisted to localStorage under the key `pops-locale`.
  */

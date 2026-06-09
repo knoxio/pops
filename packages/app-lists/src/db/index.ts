@@ -6,8 +6,8 @@
  * better-sqlite3 / drizzle into the shell. Consumers running on Node (API,
  * food seed) import from here.
  *
- * Mirrors the split convention used by `@pops/app-food` (root frontend +
- * `./server` backend).
+ * Mirrors the split convention used by `@pops/app-food` (frontend) +
+ * `@pops/app-food-db` (server-only sibling package).
  */
 export * from './schema.js';
 export * from './errors.js';

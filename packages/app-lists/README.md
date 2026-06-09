@@ -51,8 +51,10 @@ src/
 | `@pops/app-lists`    | Frontend — manifest, navConfig, routes. Browser-safe.                               |
 | `@pops/app-lists/db` | Server — schema, services, typed errors, `ListsDb`. Pulls drizzle + better-sqlite3. |
 
-The split keeps the shell bundle free of server-only deps. Mirrors the
-`@pops/app-food` + `@pops/app-food/server` convention.
+The split keeps the shell bundle free of server-only deps. Same
+frontend-vs-server separation `@pops/app-food` + `@pops/app-food-db`
+achieve as two sibling packages — collapsed into one package + subpath
+export for app-lists because the server surface is smaller.
 
 Migrations live with the canonical schema at `apps/pops-api/src/db/drizzle-migrations/`
 and are owned by the `lists` module per `apps/pops-api/src/db/migration-ownership.ts`.
