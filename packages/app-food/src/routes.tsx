@@ -90,6 +90,12 @@ const RecipeVersionDetailPage = lazy(() =>
     default: m.RecipeVersionDetailPage,
   }))
 );
+const RecipeNewPage = lazy(() =>
+  import('./pages/recipes/RecipeNewPage').then((m) => ({ default: m.RecipeNewPage }))
+);
+const RecipeEditPage = lazy(() =>
+  import('./pages/recipes/RecipeEditPage').then((m) => ({ default: m.RecipeEditPage }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -141,10 +147,10 @@ export const routes: RouteObject[] = [
   // historic versions). Wiring the routes up-front keeps internal links
   // from breaking during the staged rollout.
   { path: 'recipes', element: <RecipeListPage /> },
-  { path: 'recipes/new', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/new', element: <RecipeNewPage /> },
   { path: 'recipes/:slug', element: <RecipeDetailPage /> },
   { path: 'recipes/:slug/v/:versionNo', element: <RecipeVersionDetailPage /> },
-  { path: 'recipes/:slug/edit', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/:slug/edit', element: <RecipeEditPage /> },
   { path: 'recipes/:slug/drafts', element: <RecipePagePlaceholder /> },
   { path: 'recipes/:slug/drafts/:draftNo', element: <RecipePagePlaceholder /> },
   { path: 'prompts', element: <PromptViewerPage /> },
