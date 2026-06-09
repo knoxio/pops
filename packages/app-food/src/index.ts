@@ -7,3 +7,18 @@
  */
 export { navConfig, routes } from './routes';
 export { manifest } from './manifest';
+
+// PRD-121 — DSL Renderer.
+export { RecipeRenderer } from './components/RecipeRenderer';
+export type {
+  RecipeLineWithResolved,
+  RecipeRendererProps,
+  RecipeRendererVariant,
+  RecipeVersionWithCompiledData,
+} from './components/RecipeRenderer';
+export { IngredientChip } from './components/IngredientChip';
+export type { IngredientChipProps } from './components/IngredientChip';
+export { TimerButton } from './components/TimerButton';
+export type { TimerButtonProps } from './components/TimerButton';
+export { TempBadge } from './components/TempBadge';
+export type { TempBadgeProps } from './components/TempBadge';
