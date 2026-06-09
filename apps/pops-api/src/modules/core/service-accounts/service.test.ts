@@ -54,26 +54,30 @@ describe('admin tRPC procedures', () => {
     expect(revoked.revokedAt).not.toBeNull();
   });
 
-  it('rejects duplicate names via the HttpError translation in router.ts', async () => {
+  it('rejects duplicate names with a BAD_REQUEST tRPC error', async () => {
     const admin = createCaller(true);
     await admin.core.serviceAccounts.create({ name: 'dup', scopes: ['core.shell'] });
     await expect(
       admin.core.serviceAccounts.create({ name: 'dup', scopes: ['core.shell'] })
     ).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'BAD_REQUEST',
       cause: expect.objectContaining({ name: 'ValidationError' }),
     });
   });
 
-  it('rejects unknown revoke targets via the NotFoundError translation', async () => {
+  it('rejects unknown revoke targets with a NOT_FOUND tRPC error', async () => {
     const admin = createCaller(true);
     await expect(
       admin.core.serviceAccounts.revoke({ id: 'sa_does-not-exist' })
     ).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'NOT_FOUND',
       cause: expect.objectContaining({ name: 'NotFoundError' }),
     });
   });
 
-  it('rejects a second revoke via the HttpError 409 translation', async () => {
+  it('rejects a second revoke with a CONFLICT tRPC error', async () => {
     const admin = createCaller(true);
     const created = await admin.core.serviceAccounts.create({
       name: 'double-revoke',
@@ -81,6 +85,8 @@ describe('admin tRPC procedures', () => {
     });
     await admin.core.serviceAccounts.revoke({ id: created.id });
     await expect(admin.core.serviceAccounts.revoke({ id: created.id })).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'CONFLICT',
       cause: expect.objectContaining({ statusCode: 409 }),
     });
   });
