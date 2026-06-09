@@ -1,0 +1,10 @@
+{
+  "title": "Lists",
+  "intro": "Shopping, packing, and todo lists. Other modules can send items here — for example, food sends a recipe to a shopping list.",
+  "comingSoon.heading": "Coming soon",
+  "browse.title": "Browse lists",
+  "browse.description": "Open an existing list to add, check off, or reorder items.",
+  "newList.title": "New list",
+  "newList.description": "Start a shopping, packing, or generic list from scratch.",
+  "status.comingSoon": "Coming soon"
+}

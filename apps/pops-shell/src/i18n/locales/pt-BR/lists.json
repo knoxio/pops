@@ -1,0 +1,10 @@
+{
+  "title": "Listas",
+  "intro": "Listas de compras, de viagem e de tarefas. Outros módulos podem enviar itens para cá — por exemplo, comida envia uma receita para uma lista de compras.",
+  "comingSoon.heading": "Em breve",
+  "browse.title": "Explorar listas",
+  "browse.description": "Abra uma lista existente para adicionar, marcar ou reordenar itens.",
+  "newList.title": "Nova lista",
+  "newList.description": "Comece uma lista de compras, viagem ou genérica do zero.",
+  "status.comingSoon": "Em breve"
+}

@@ -12,6 +12,7 @@ const APP_BASE_PATHS: Array<{ basePath: string; app: AppName }> = [
   { basePath: '/media', app: 'media' },
   { basePath: '/inventory', app: 'inventory' },
   { basePath: '/ai', app: 'ai' },
+  { basePath: '/lists', app: 'lists' },
 ];
 
 /**

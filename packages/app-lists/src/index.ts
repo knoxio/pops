@@ -1,12 +1,11 @@
 /**
- * @pops/app-lists — Generic lists schema + service layer (PRD-112).
+ * @pops/app-lists — frontend entrypoint.
  *
- * Public surface: the Drizzle table objects, typed errors, and pure service
- * functions over `ListsDb`. Frontend bits (manifest, routes, pages) are added
- * by Epic 04 PRDs in a separate package layer.
+ * Exposes the module manifest, navConfig, and route table consumed by the
+ * shell. Server-only surface (schema + service layer from PRD-112) lives at
+ * `@pops/app-lists/db` so the browser bundle stays free of better-sqlite3 /
+ * drizzle. Mirrors `@pops/app-food` (frontend) + `@pops/app-food-db`
+ * (server-only sibling) — single-package equivalent using a subpath export.
  */
-export * from './db/schema.js';
-export * from './db/errors.js';
-export * from './db/services/lists.js';
-export * from './db/services/list-items.js';
-export type { ListsDb } from './db/services/internal.js';
+export { manifest } from './manifest';
+export { navConfig, routes } from './routes';

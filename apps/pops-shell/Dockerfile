@@ -50,6 +50,7 @@ WORKDIR /app
 COPY packages/ui/ ./packages/ui/
 COPY packages/app-finance/ ./packages/app-finance/
 COPY packages/app-food/ ./packages/app-food/
+COPY packages/app-lists/ ./packages/app-lists/
 COPY packages/app-media/ ./packages/app-media/
 COPY packages/app-inventory/ ./packages/app-inventory/
 COPY packages/app-ai/ ./packages/app-ai/

@@ -8,7 +8,7 @@
  * fixtures. The cross-PRD smoke (DSL parse → resolve → cycle → materialise)
  * still lands in phase 2 on top of PRD-116.
  */
-import type { ListsDb } from '@pops/app-lists';
+import type { ListsDb } from '@pops/app-lists/db';
 
 import type { FoodDb } from '../services/internal.js';
 

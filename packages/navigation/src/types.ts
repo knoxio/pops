@@ -6,7 +6,7 @@
  */
 
 /** Known app identifiers. */
-export type AppName = 'finance' | 'food' | 'media' | 'inventory' | 'ai' | 'cerebrum';
+export type AppName = 'finance' | 'food' | 'lists' | 'media' | 'inventory' | 'ai' | 'cerebrum';
 
 /**
  * Union of all valid Lucide icon names used across the POPS app rail and
@@ -38,6 +38,7 @@ export type IconName =
   | 'Layers'
   | 'LayoutDashboard'
   | 'Library'
+  | 'ListChecks'
   | 'MapPin'
   | 'MessageSquare'
   | 'Network'

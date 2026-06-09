@@ -12,6 +12,7 @@ import { navConfig as cerebrumNavConfig } from '@pops/app-cerebrum';
 import { navConfig as financeNavConfig } from '@pops/app-finance';
 import { navConfig as foodNavConfig } from '@pops/app-food';
 import { navConfig as inventoryNavConfig } from '@pops/app-inventory';
+import { navConfig as listsNavConfig } from '@pops/app-lists';
 import { navConfig as mediaNavConfig } from '@pops/app-media';
 
 import type { AppNavConfig } from './types';
@@ -22,6 +23,7 @@ export const registeredApps: AppNavConfig[] = [
   mediaNavConfig,
   inventoryNavConfig,
   foodNavConfig,
+  listsNavConfig,
   cerebrumNavConfig,
   aiNavConfig,
 ];
