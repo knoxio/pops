@@ -252,6 +252,78 @@ services:
       moltbot-validator:
         condition: service_completed_successfully
 
+  # ── PILLAR TEMPLATE (ADR-026) ─────────────────────────────────────
+  # Copy this block per pillar (food, finance, media, inventory,
+  # cerebrum, core, ai). Each pillar gets its OWN service entry — no
+  # shared image, no shared SQLite. See infra/docker/pillar.Dockerfile
+  # for the generic build, and `.claude/pillar-migration-roadmap.md`
+  # for the rollout DAG. The block below is commented because no
+  # pillar packages exist yet; uncomment + rename once the first
+  # pillar (core) lands.
+  #
+  # <pillar>-api:
+  #   build:
+  #     context: ..
+  #     dockerfile: infra/docker/pillar.Dockerfile
+  #     args:
+  #       PILLAR_PACKAGE: '@pops/<pillar>-api'
+  #       PILLAR_PORT: '30XX'           # pick a unique port per pillar
+  #       BUILD_VERSION: ${BUILD_VERSION:-dev}
+  #   container_name: pops-<pillar>-api
+  #   restart: unless-stopped
+  #   networks:
+  #     - frontend
+  #     - backend
+  #   volumes:
+  #     - <pillar>-sqlite-data:/data/sqlite
+  #   secrets: []                        # add only the secrets this pillar needs
+  #   environment:
+  #     NODE_ENV: production
+  #     PORT: '30XX'
+  #     <PILLAR>_SQLITE_PATH: /data/sqlite/<pillar>.db
+  #     # core-api hosts the pillar registry; every other pillar resolves
+  #     # cross-pillar URIs against POPS_PILLARS or via the registry.
+  #     POPS_PILLARS: ${POPS_PILLARS:-}
+  #   expose:
+  #     - '30XX'
+  #   depends_on:
+  #     core-api:                        # every pillar except core itself
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test:
+  #       [
+  #         'CMD',
+  #         'node',
+  #         '-e',
+  #         "fetch('http://localhost:30XX/health').then(r=>{if(!r.ok)process.exit(1)})",
+  #       ]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #
+  # Optional worker variant — same image, different entrypoint:
+  # <pillar>-worker:
+  #   build:
+  #     context: ..
+  #     dockerfile: infra/docker/pillar.Dockerfile
+  #     args:
+  #       PILLAR_PACKAGE: '@pops/<pillar>-api'
+  #       PILLAR_ENTRYPOINT: worker.js
+  #       BUILD_VERSION: ${BUILD_VERSION:-dev}
+  #   container_name: pops-<pillar>-worker
+  #   restart: unless-stopped
+  #   networks: [backend]
+  #   volumes:
+  #     - <pillar>-sqlite-data:/data/sqlite
+  #   environment:
+  #     NODE_ENV: production
+  #     <PILLAR>_SQLITE_PATH: /data/sqlite/<pillar>.db
+  #     REDIS_HOST: pops-redis
+  #     REDIS_PORT: '6379'
+  #   depends_on:
+  #     pops-redis:
+  #       condition: service_healthy
+
 networks:
   frontend:
     name: pops-frontend
