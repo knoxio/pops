@@ -118,13 +118,13 @@ Inline per theme protocol.
 ### Package scaffold
 
 - [x] `packages/app-lists/` created with `package.json` (name `@pops/app-lists`), `tsconfig.json`, and the `src/` skeleton described above.
-- [x] Package added to `pnpm-workspace.yaml` (already present via wildcard).
+- [x] Package added to `pnpm-workspace.yaml` (workspace lists packages explicitly; new entry required).
 - [x] `mise typecheck` includes the new package.
 
 ### Schema
 
 - [x] Migration adds `lists` and `list_items` per the SQL above.
-- [x] Migrations file naming follows the existing pattern in `apps/pops-api/src/db/migrations/`.
+- [x] Migration file generated under `apps/pops-api/src/db/drizzle-migrations/` per the drizzle-kit flow (see `MIGRATIONS_FROZEN.md`); the legacy hand-written `src/db/migrations/` directory is no longer used.
 - [x] Per-module ownership tag (PRD-101) declared so Lists migrations are gated on the lists module being installed (the food package will declare a dependency).
 - [x] `packages/db-types` regenerated to export the new tables.
 

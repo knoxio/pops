@@ -10,7 +10,7 @@
  * but `ref_id IS NULL`, the v1 behaviour per the PRD's Edge Cases table is
  * to treat it as `'free'` (the column accepts it; the service normalises).
  */
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, max as sqlMax } from 'drizzle-orm';
 
 import { ListItemNotFoundError } from '../errors';
 import { listItems, type ListItemRefKind, type ListItemRow } from '../schema';
@@ -59,18 +59,14 @@ function normalise(input: AddItemInput, fallbackPosition: number): NormalisedIte
 }
 
 function nextPosition(db: ListsDb, listId: number): number {
+  // Single MAX aggregate — O(rows) row-scan in SQLite, no client-side sort.
   const rows = db
-    .select({ position: listItems.position })
+    .select({ max: sqlMax(listItems.position) })
     .from(listItems)
     .where(eq(listItems.listId, listId))
-    .orderBy(asc(listItems.position))
     .all();
-  if (rows.length === 0) return 0;
-  let max = 0;
-  for (const row of rows) {
-    if (row.position > max) max = row.position;
-  }
-  return max + 1;
+  const max = rows[0]?.max ?? null;
+  return max === null ? 0 : max + 1;
 }
 
 export function addItem(db: ListsDb, input: AddItemInput): ListItemRow {
@@ -83,9 +79,11 @@ export function addItem(db: ListsDb, input: AddItemInput): ListItemRow {
 }
 
 /**
- * Insert N items in a single transaction. One round-trip; service-layer
- * sequential `INSERT` statements (no DRIVER-side parameter expansion) so
- * the returned ids stay in input order.
+ * Insert N items in a single transaction. Sequential `INSERT ... RETURNING`
+ * statements (one per item) under the same `db.transaction(...)` — keeps the
+ * returned rows in input order and lets us re-use `normalise()` per item.
+ * better-sqlite3 is in-process / synchronous, so the loop is local-only
+ * (no per-statement network cost).
  */
 export function bulkAdd(
   db: ListsDb,
