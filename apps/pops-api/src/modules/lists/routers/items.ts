@@ -114,15 +114,22 @@ export const itemsRouter = router({
   }),
 
   /**
-   * Reorder validates count parity AND id-set parity against the current
-   * items. PRD-140 §AC explicitly calls out the count check; the id-set
-   * check is a tighter version of the same defence (catches "5 items but
-   * one of them is from a different list").
+   * Reorder enforces that `orderedIds` is a true permutation of the current
+   * item IDs: same length, every id belongs to the list, AND no duplicates.
+   * The duplicate check matters — without it `[a, a, b]` would pass the
+   * length + membership checks and silently update item `a`'s position
+   * twice while leaving the third item stranded at its old position.
+   * PRD-140 §AC calls out the count check; the id-set + uniqueness checks
+   * are tighter versions of the same defence.
    */
   reorder: protectedProcedure.input(ReorderInputSchema).mutation(({ input }) => {
     const db = getDrizzle();
     const current = currentItemIds(db, input.listId);
     if (current.length !== input.orderedIds.length) {
+      return { ok: false as const, reason: 'BadIds' as const };
+    }
+    const orderedSet = new Set(input.orderedIds);
+    if (orderedSet.size !== input.orderedIds.length) {
       return { ok: false as const, reason: 'BadIds' as const };
     }
     const currentSet = new Set(current);

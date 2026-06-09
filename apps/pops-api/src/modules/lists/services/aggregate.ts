@@ -50,7 +50,10 @@ interface RawRow {
   owner_app: string;
   archived_at: string | null;
   item_count: number;
-  unchecked_count: number;
+  // SQLite's SUM(...) returns NULL when no rows match (the LEFT JOIN leaves
+  // a single row with all-null `li.*` columns). The mapping below normalises
+  // it to 0, but the wire-shape type must reflect the raw query result.
+  unchecked_count: number | null;
   last_updated_at: string;
 }
 

@@ -379,6 +379,29 @@ describe('PRD-140 lists router', () => {
       expect(result).toEqual({ ok: false, reason: 'BadIds' });
     });
 
+    it('rejects when orderedIds contains a duplicate', async () => {
+      const caller = createCaller();
+      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
+      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
+      const { id: b } = await caller.lists.items.add({ listId, label: 'b' });
+      // Duplicate id — `[a, a, b]` is the wrong length here (length 3 vs
+      // current 2), so use a same-length duplicate `[a, a]`.
+      const result = await caller.lists.items.reorder({
+        listId,
+        orderedIds: [a, a],
+      });
+      expect(result).toEqual({ ok: false, reason: 'BadIds' });
+      // Underlying positions must be untouched — defensive check on the
+      // service-layer guard.
+      const rows = raw
+        .prepare(`SELECT id, position FROM list_items WHERE list_id = ? ORDER BY id`)
+        .all(listId) as { id: number; position: number }[];
+      expect(rows).toEqual([
+        { id: a, position: 0 },
+        { id: b, position: 1 },
+      ]);
+    });
+
     it('rejects when an id belongs to a different list', async () => {
       const caller = createCaller();
       const { id: listA } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });

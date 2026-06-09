@@ -15,6 +15,7 @@ import {
   deleteList,
   getList,
   listItemsForList,
+  ListNotFoundError,
   unarchiveList,
   updateList,
 } from '@pops/app-lists-db';
@@ -98,7 +99,7 @@ export const listRouter = router({
       updateList(getDrizzle(), input.id, { name: input.name, kind: input.kind });
       return { ok: true as const };
     } catch (err) {
-      if (err instanceof Error && err.name === 'ListNotFoundError') {
+      if (err instanceof ListNotFoundError) {
         return { ok: false as const, reason: 'NotFound' as const };
       }
       throw err;
