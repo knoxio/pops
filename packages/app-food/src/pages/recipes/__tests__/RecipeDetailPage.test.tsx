@@ -17,29 +17,48 @@ let mockArchivePending = false;
 let mockArchiveOnSuccess: (() => void) | undefined;
 let mockArchiveOnError: ((err: Error) => void) | undefined;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: { recipes: { list: { invalidate: vi.fn() } } },
-    }),
-    food: {
-      recipes: {
-        getForRendering: { useQuery: (input: unknown) => mockGet(input) },
-        listDrafts: { useQuery: (input: unknown) => mockDrafts(input) },
-        archiveRecipe: {
-          useMutation: (opts: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-            mockArchiveOnSuccess = opts.onSuccess;
-            mockArchiveOnError = opts.onError;
-            return {
-              mutate: mockArchiveMutate,
-              isPending: mockArchivePending,
-            };
+vi.mock('@pops/api-client', () => {
+  const idleQuery = () => ({
+    isLoading: false as const,
+    data: undefined,
+    error: null,
+    refetch: vi.fn(),
+  });
+  return {
+    trpc: {
+      useUtils: () => ({
+        food: { recipes: { list: { invalidate: vi.fn() } } },
+      }),
+      food: {
+        recipes: {
+          getForRendering: { useQuery: (input: unknown) => mockGet(input) },
+          listDrafts: { useQuery: (input: unknown) => mockDrafts(input) },
+          // PRD-142 — query is gated by `enabled: open` from the modal hook
+          // but the React-Query mock still gets mounted so we stub it idle.
+          prepareSendToList: { useQuery: idleQuery },
+          sendToList: {
+            useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+          },
+          archiveRecipe: {
+            useMutation: (opts: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
+              mockArchiveOnSuccess = opts.onSuccess;
+              mockArchiveOnError = opts.onError;
+              return {
+                mutate: mockArchiveMutate,
+                isPending: mockArchivePending,
+              };
+            },
           },
         },
       },
+      lists: {
+        list: {
+          list: { useQuery: idleQuery },
+        },
+      },
     },
-  },
-}));
+  };
+});
 
 vi.mock('../../../components/RecipeRenderer.js', () => ({
   RecipeRenderer: (props: { recipeVersion: RecipeVersionWithCompiledData }) => (
