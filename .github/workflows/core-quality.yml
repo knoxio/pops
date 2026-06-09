@@ -6,7 +6,6 @@ on:
     paths:
       - "packages/core-db/**"
       - "packages/db-types/**"
-      - "apps/pops-api/src/db/drizzle-migrations/0054_service_accounts.sql"
       - ".github/workflows/core-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
@@ -27,7 +26,6 @@ jobs:
             relevant:
               - 'packages/core-db/**'
               - 'packages/db-types/**'
-              - 'apps/pops-api/src/db/drizzle-migrations/0054_service_accounts.sql'
               - '.github/workflows/core-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 

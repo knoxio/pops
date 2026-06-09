@@ -32,10 +32,7 @@ import {
 
 import type { CoreDb } from '../services/internal.js';
 
-const MIGRATION_PATH = join(
-  __dirname,
-  '../../../../apps/pops-api/src/db/drizzle-migrations/0054_service_accounts.sql'
-);
+const MIGRATION_PATH = join(__dirname, '../../migrations/0054_service_accounts.sql');
 
 function freshDb(): CoreDb {
   const raw = new Database(':memory:');
