@@ -138,7 +138,6 @@ describe('default handler stubs', () => {
     const kinds: IngestJobData[] = [
       { kind: 'url-instagram', sourceId: 2, url: 'https://instagram.com/r/abc' },
       { kind: 'screenshot', sourceId: 3, mimeType: 'image/png', contentPath: '/tmp/x.png' },
-      { kind: 'text', sourceId: 4, body: 'hi' },
     ];
     for (const data of kinds) {
       const result = await runIngestJob(data, ctx, defaultHandlers);

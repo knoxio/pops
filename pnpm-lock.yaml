@@ -416,6 +416,9 @@ importers:
 
   apps/pops-worker-food:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.100.1
+        version: 0.100.1(zod@4.4.3)
       '@pops/food-contracts':
         specifier: workspace:*
         version: link:../../packages/food-contracts
@@ -431,6 +434,9 @@ importers:
       pino:
         specifier: ^10.3.1
         version: 10.3.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@pops/api':
         specifier: workspace:*
