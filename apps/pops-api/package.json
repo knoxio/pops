@@ -8,6 +8,10 @@
       "types": "./src/router.ts",
       "default": "./src/router.ts"
     },
+    "./drizzle-config-builder": {
+      "types": "./src/db/drizzle-config-builder.ts",
+      "default": "./src/db/drizzle-config-builder.ts"
+    },
     "./modules/finance/imports": {
       "types": "./src/modules/finance/imports/types.ts",
       "default": "./src/modules/finance/imports/types.ts"

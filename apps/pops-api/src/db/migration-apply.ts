@@ -21,7 +21,7 @@ import { join } from 'node:path';
 
 import { logger } from '../lib/logger.js';
 import { isAlreadyAppliedError, splitStatements } from './migration-backfill.js';
-import { DRIZZLE_MIGRATIONS_DIRECTORY } from './migrations-runner.js';
+import { appliedTags, ensureAppliedTagsTable } from './migration-tag-tracking.js';
 
 import type BetterSqlite3 from 'better-sqlite3';
 
@@ -34,8 +34,44 @@ export interface ApplyCaches {
   insertTag: BetterSqlite3.Statement;
 }
 
-function readMigrationSql(tag: string): string {
-  return readFileSync(join(DRIZZLE_MIGRATIONS_DIRECTORY, `${tag}.sql`), 'utf8');
+function ensureDrizzleTable(db: BetterSqlite3.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      hash TEXT NOT NULL,
+      created_at NUMERIC
+    )
+  `);
+}
+
+function appliedHashes(db: BetterSqlite3.Database): Set<string> {
+  const rows = db.prepare('SELECT hash FROM __drizzle_migrations').all() as {
+    hash: string;
+  }[];
+  return new Set(rows.map((r) => r.hash));
+}
+
+/**
+ * Prepare {@link ApplyCaches} plus the underlying tracking tables. Shared
+ * between the per-module (shared journal) runner and the per-pillar runner
+ * so both pay the same one-time setup cost and write to the same
+ * `__drizzle_migrations` + `__pops_migration_tags` tables.
+ */
+export function prepareApplyCaches(db: BetterSqlite3.Database): ApplyCaches {
+  ensureDrizzleTable(db);
+  ensureAppliedTagsTable(db);
+  return {
+    knownHashes: appliedHashes(db),
+    knownTags: appliedTags(db),
+    insertDrizzle: db.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'),
+    insertTag: db.prepare(
+      'INSERT OR REPLACE INTO __pops_migration_tags (tag, hash, applied_at) VALUES (?, ?, ?)'
+    ),
+  };
+}
+
+function readMigrationSql(tag: string, migrationsDir: string): string {
+  return readFileSync(join(migrationsDir, `${tag}.sql`), 'utf8');
 }
 
 /**
@@ -102,9 +138,10 @@ function applyMigration({
 export function classifyOrApply(
   db: BetterSqlite3.Database,
   tag: string,
-  caches: ApplyCaches
+  caches: ApplyCaches,
+  migrationsDir: string
 ): ApplyBucket {
-  const sql = readMigrationSql(tag);
+  const sql = readMigrationSql(tag, migrationsDir);
   const hash = hashSql(sql);
 
   // Tag-based dedupe wins over hash-based dedupe (issue #2610).

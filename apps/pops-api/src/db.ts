@@ -5,6 +5,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
+import { KNOWN_PILLARS } from './db/known-pillars.js';
 import { migrationOwners } from './db/migration-ownership.js';
 import {
   getPendingMigrations,
@@ -18,6 +19,7 @@ import {
   runPerModuleMigrationsByOwner,
   warnOrphanMigrationsByOwner,
 } from './db/per-module-migrations.js';
+import { runPerPillarMigrations } from './db/per-pillar-migrations.js';
 import { initializeSchema } from './db/schema.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { isVecAvailable, tryLoadVecExtension } from './db/vec-loader.js';
@@ -109,6 +111,10 @@ function applyDrizzleMigrations(db: BetterSqlite3.Database, vecLoaded: boolean):
     }
     const installedIds = makeInstalledIds(readInstalledModules());
     runPerModuleMigrationsByOwner(db, installedIds, migrationOwners);
+    // After the shared journal: walk every pillar's own journal under
+    // `packages/<id>-db/migrations/`. Pillars whose `-db` package isn't on
+    // disk yet are no-ops — this is the migration path for ADR-026.
+    runPerPillarMigrations(db, KNOWN_PILLARS);
   } catch (err) {
     if (!vecLoaded && isVecMigrationError(err)) {
       console.error(

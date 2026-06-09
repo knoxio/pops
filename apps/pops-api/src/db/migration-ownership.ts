@@ -1,6 +1,17 @@
 /**
  * Static migration ownership declarations (PRD-101 US-09, #2543).
  *
+ * TRANSITIONAL (pillar-migration P1, ADR-026). This map drives the
+ * install-set filter for migrations still living in the shared
+ * `apps/pops-api/src/db/drizzle-migrations/` journal. It retires
+ * incrementally as each pillar's Phase 1 split moves its tags into
+ * `packages/<id>-db/migrations/_journal.json`; once a tag has moved, its
+ * entry here is removed (the per-pillar runner doesn't need ownership
+ * lookup — every entry in a pillar's own journal is owned by that pillar
+ * by construction). The file is deleted in the final pillar's deletion PR
+ * once the shared journal is empty. See
+ * `.claude/pillar-migration-roadmap.md` for the schedule.
+ *
  * Each module ALSO exposes its own list via `manifest.backend.migrations`,
  * but the migration runner needs the canonical owner map BEFORE the full
  * module graph is loaded — `db.ts` opens the database during process

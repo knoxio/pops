@@ -45,8 +45,7 @@ import { join } from 'node:path';
 
 import { z } from 'zod';
 
-import { classifyOrApply, type ApplyCaches } from './migration-apply.js';
-import { appliedTags, ensureAppliedTagsTable } from './migration-tag-tracking.js';
+import { classifyOrApply, prepareApplyCaches } from './migration-apply.js';
 import { DRIZZLE_MIGRATIONS_DIRECTORY } from './migrations-runner.js';
 
 import type BetterSqlite3 from 'better-sqlite3';
@@ -70,12 +69,16 @@ const journalSchema = z.object({
 type Journal = z.infer<typeof journalSchema>;
 
 /**
- * Read the drizzle journal. Returns an empty entry list if the file is
- * missing, so the runner is safe on a brand-new repo with no drizzle
- * artefacts yet.
+ * Read a drizzle journal from `<migrationsDir>/meta/_journal.json`. Returns
+ * an empty entry list if the file is missing, so callers don't need to
+ * stat the path themselves — both the shared journal on a brand-new repo
+ * and per-pillar journals before their `<id>-db` package exists land here
+ * as `entries: []`.
+ *
+ * Exported so the per-pillar runner can reuse it against pillar dirs.
  */
-export function readJournal(): Journal {
-  const journalPath = join(DRIZZLE_MIGRATIONS_DIRECTORY, 'meta', '_journal.json');
+export function readJournalFrom(migrationsDir: string): Journal {
+  const journalPath = join(migrationsDir, 'meta', '_journal.json');
   let raw: string;
   try {
     raw = readFileSync(journalPath, 'utf8');
@@ -90,6 +93,11 @@ export function readJournal(): Journal {
     throw new Error(`Invalid drizzle journal at ${journalPath}: ${parsed.error.message}`);
   }
   return parsed.data;
+}
+
+/** Read the shared (legacy) drizzle journal. Backwards-compatible alias. */
+export function readJournal(): Journal {
+  return readJournalFrom(DRIZZLE_MIGRATIONS_DIRECTORY);
 }
 
 /**
@@ -137,23 +145,6 @@ export function migrationOwnershipMap(
     }
   }
   return owners;
-}
-
-function ensureDrizzleTable(db: BetterSqlite3.Database): void {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      hash TEXT NOT NULL,
-      created_at NUMERIC
-    )
-  `);
-}
-
-function appliedHashes(db: BetterSqlite3.Database): Set<string> {
-  const rows = db.prepare('SELECT hash FROM __drizzle_migrations').all() as {
-    hash: string;
-  }[];
-  return new Set(rows.map((r) => r.hash));
 }
 
 /**
@@ -247,9 +238,6 @@ export function runPerModuleMigrationsByOwner(
   owners: ReadonlyMap<string, string>,
   installedTags?: ReadonlySet<string>
 ): PerModuleMigrationResult {
-  ensureDrizzleTable(db);
-  ensureAppliedTagsTable(db);
-
   const buckets: Record<Bucket, string[]> = {
     applied: [],
     backfilled: [],
@@ -257,18 +245,13 @@ export function runPerModuleMigrationsByOwner(
     unowned: [],
     alreadyApplied: [],
   };
-  const caches: ApplyCaches = {
-    knownHashes: appliedHashes(db),
-    knownTags: appliedTags(db),
-    insertDrizzle: db.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'),
-    insertTag: db.prepare(
-      'INSERT OR REPLACE INTO __pops_migration_tags (tag, hash, applied_at) VALUES (?, ?, ?)'
-    ),
-  };
+  const caches = prepareApplyCaches(db);
 
   for (const entry of readJournal().entries) {
     const early = classifyOwnership(entry.tag, installedIds, owners, installedTags);
-    buckets[early ?? classifyOrApply(db, entry.tag, caches)].push(entry.tag);
+    buckets[early ?? classifyOrApply(db, entry.tag, caches, DRIZZLE_MIGRATIONS_DIRECTORY)].push(
+      entry.tag
+    );
   }
 
   return buckets;
