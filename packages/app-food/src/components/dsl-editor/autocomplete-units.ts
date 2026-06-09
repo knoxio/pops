@@ -4,10 +4,11 @@
  * The DSL grammar (ADR-023 + PRD-114) allows any lowercase identifier
  * after `qty:`; the parser does not constrain unit names. PRD-116's
  * normaliser only knows `g`, `ml`, `count` natively, plus the alias
- * table populated by PRD-123. The suggestion list mirrors the eight
- * built-ins the editor knows about deterministically — anything else
- * the user types still parses; the suggestion list is a convenience,
- * not a gate.
+ * table populated by PRD-123. The suggestion list mirrors the built-in
+ * units the editor knows about deterministically — anything else the
+ * user types still parses; the suggestion list is a convenience, not a
+ * gate. Add a constant here when PRD-123 promotes a new alias to first-
+ * class status.
  *
  * Keep the ordering stable: canonical units first, then volume aliases,
  * then weight aliases, then time/temperature, then `none`. The dropdown
@@ -35,10 +36,10 @@ export const DSL_UNIT_SUGGESTIONS: readonly UnitSuggestion[] = [
   { slug: 'none', label: 'unitless' },
 ];
 
-/** The seven DSL function names + the `_` skip marker the user can drop
- *  inside a descriptor's variant/prep_state slot. The autocomplete after
- *  a bare `@` inserts the function name (without the trailing `(`) so the
- *  user keeps their typing momentum into the argument list. */
+/** The DSL function names the editor surfaces after a bare `@`. The
+ *  insertion text omits the trailing `(` so the user keeps their typing
+ *  momentum into the argument list. Keep the order matching PRD-120's
+ *  Autocomplete table so the smoke tests stay deterministic. */
 export interface FunctionSuggestion {
   slug: string;
   label: string;

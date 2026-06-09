@@ -29,21 +29,24 @@ export interface StepBodyContext {
 }
 
 export function findStepBodyAtOffset(text: string, pos: number): StepBodyContext | null {
-  // Find every `@step("...` start that begins before pos and whose
-  // closing quote sits at or after pos. The last such start wins
-  // because nested step calls are illegal in the grammar — there can be
-  // at most one open body at any cursor.
-  let stepIdx = text.indexOf('@step', 0);
+  // Walk the document forward respecting string boundaries; whenever
+  // we leave a string-free region we look at the immediate text for an
+  // `@step` call start. The last open body whose closing quote sits at
+  // or after pos wins — nested step calls are illegal in the grammar so
+  // there can be at most one.
   let last: StepBodyContext | null = null;
-  while (stepIdx !== -1 && stepIdx < pos) {
+  for (const stepIdx of scanStepCallStarts(text)) {
+    if (stepIdx >= pos) break;
     const candidate = tryStepBodyAt(text, stepIdx, pos);
     if (candidate !== null) last = candidate;
-    stepIdx = text.indexOf('@step', stepIdx + 5);
   }
   return last;
 }
 
 function tryStepBodyAt(text: string, stepIdx: number, pos: number): StepBodyContext | null {
+  // `stepIdx` points at the `@` of `@step` and the lexer already
+  // confirmed the next-char boundary is `(` or whitespace. Walk past
+  // `@step` and any whitespace to reach the `(`.
   const openParen = text.indexOf('(', stepIdx + 5);
   if (openParen === -1 || openParen >= pos) return null;
   const openQuote = findOpeningQuote(text, openParen + 1);
@@ -52,6 +55,48 @@ function tryStepBodyAt(text: string, stepIdx: number, pos: number): StepBodyCont
   const bodyEnd = findClosingQuote(text, bodyStart);
   if (bodyEnd < pos) return null;
   return { bodyStart, bodyEnd };
+}
+
+/** Yield the offset of every `@step` call start at the top level —
+ *  occurrences inside string literals (e.g. `@step("@step(...)")` body
+ *  text) and inside longer identifiers (`@stepper(`) are skipped. */
+function* scanStepCallStarts(text: string): IterableIterator<number> {
+  const len = text.length;
+  let inString = false;
+  for (let i = 0; i < len; i += 1) {
+    const ch = text[i] ?? '';
+    if (inString) {
+      i = stepStringForward(text, i, ch);
+      if (i >= 0 && text[i] === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (isStepCallStart(text, i)) {
+      yield i;
+      i += 4; // skip past `@step` minus the loop increment
+    }
+  }
+}
+
+/** When forward-scanning inside a string, return the index of the next
+ *  character to process. `\\` swallows the next char; everything else
+ *  is left at `i` for the caller's loop. */
+function stepStringForward(text: string, i: number, ch: string): number {
+  if (ch !== '\\') return i;
+  // Skip the escaped char; the for-loop's `i += 1` will advance past it.
+  if (i + 1 >= text.length) return i + 1;
+  return i + 1;
+}
+
+/** Check whether `i` is the start of an `@step` call (the `@`), bounded
+ *  by `(` or whitespace so `@stepper(` doesn't match. */
+function isStepCallStart(text: string, i: number): boolean {
+  if (text[i] !== '@' || !text.startsWith('@step', i)) return false;
+  const after = text[i + 5] ?? '';
+  return after === '(' || after === ' ' || after === '\t' || after === '\n' || after === '\r';
 }
 
 /** Walk forward from `from`, skipping whitespace, looking for the first
@@ -94,25 +139,59 @@ export interface IngredientIndexEntry {
 }
 
 /** Scan top-level `@ingredient(N, <descriptor>...)` calls and return
- *  the index → descriptor mapping. Stops at the first close-paren so a
- *  mid-edit half-typed call doesn't blow the scan; bad numbers and bad
- *  descriptors are silently skipped. */
+ *  the index → descriptor mapping. String-literal interiors are
+ *  skipped so an `@ingredient(...)` snippet that appears inside a
+ *  `@step("...")` body doesn't surface phantom suggestions. Stops at
+ *  the first close-paren of each match so a mid-edit half-typed call
+ *  doesn't blow the scan; bad numbers and bad descriptors are silently
+ *  skipped. */
 export function collectStepIndexes(text: string): readonly IngredientIndexEntry[] {
   const out: IngredientIndexEntry[] = [];
   const seenIndexes = new Set<string>();
   const re = /@ingredient\s*\(\s*(\d+)\s*,\s*([a-z0-9_:-]+)/g;
-  let match: RegExpExecArray | null = re.exec(text);
-  while (match !== null) {
-    const index = match[1] ?? '';
-    const slug = match[2] ?? '';
-    if (index !== '' && !seenIndexes.has(index)) {
-      seenIndexes.add(index);
-      out.push({ index, slug });
+  for (const region of scanOutsideStrings(text)) {
+    re.lastIndex = 0;
+    let match: RegExpExecArray | null = re.exec(region);
+    while (match !== null) {
+      const index = match[1] ?? '';
+      const slug = match[2] ?? '';
+      if (index !== '' && !seenIndexes.has(index)) {
+        seenIndexes.add(index);
+        out.push({ index, slug });
+      }
+      match = re.exec(region);
     }
-    match = re.exec(text);
   }
   // Sort numerically — the regex order is document order; PRD-119 may
   // renumber, so the autocomplete should always show ascending indexes
   // even if the user mid-edit has them out of order in the doc.
   return out.toSorted((a, b) => Number(a.index) - Number(b.index));
+}
+
+/** Split the document into the contiguous regions that sit outside
+ *  string literals so a regex can run against them safely. Escaped
+ *  quotes inside a string are honoured. */
+function* scanOutsideStrings(text: string): IterableIterator<string> {
+  const len = text.length;
+  let regionStart = 0;
+  let inString = false;
+  for (let i = 0; i < len; i += 1) {
+    const ch = text[i] ?? '';
+    if (inString) {
+      if (ch === '\\') {
+        i += 1;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+        regionStart = i + 1;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      if (i > regionStart) yield text.slice(regionStart, i);
+      inString = true;
+    }
+  }
+  if (!inString && regionStart < len) yield text.slice(regionStart);
 }

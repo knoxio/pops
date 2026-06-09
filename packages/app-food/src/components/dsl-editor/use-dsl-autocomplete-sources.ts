@@ -40,12 +40,20 @@ export function useDslAutocompleteSources(): DslAutocompleteSources {
 
   return useMemo<DslAutocompleteSources>(
     () => ({
+      // Every lookup swallows network / auth / server errors and resolves
+      // to an empty list — throwing inside a CodeMirror CompletionSource
+      // disables autocomplete for the session, which is the opposite of
+      // what we want when a backend round-trip is flaky mid-keystroke.
       async searchSlugs(query, kinds) {
-        const result = await utilsRef.current.food.slugs.search.fetch({
-          query,
-          kinds: kinds === undefined ? undefined : [...kinds],
-        });
-        return mapSlugs(result.items);
+        try {
+          const result = await utilsRef.current.food.slugs.search.fetch({
+            query,
+            kinds: kinds === undefined ? undefined : [...kinds],
+          });
+          return mapSlugs(result.items);
+        } catch {
+          return [];
+        }
       },
       async listVariantsForIngredient(slug) {
         try {
@@ -60,8 +68,12 @@ export function useDslAutocompleteSources(): DslAutocompleteSources {
         }
       },
       async listPrepStates() {
-        const result = await utilsRef.current.food.prepStates.list.fetch();
-        return mapPrepStates(result.items);
+        try {
+          const result = await utilsRef.current.food.prepStates.list.fetch();
+          return mapPrepStates(result.items);
+        } catch {
+          return [];
+        }
       },
     }),
     [] // utils accessed via ref; never invalidate
@@ -70,16 +82,12 @@ export function useDslAutocompleteSources(): DslAutocompleteSources {
 
 interface RawSlug {
   slug: string;
-  kind: string;
+  kind: SlugKind;
   name: string;
 }
 
 function mapSlugs(items: readonly RawSlug[]): readonly SlugSuggestion[] {
-  return items.map((item) => ({
-    slug: item.slug,
-    kind: item.kind as SlugKind,
-    name: item.name,
-  }));
+  return items.map((item) => ({ slug: item.slug, kind: item.kind, name: item.name }));
 }
 
 interface RawVariant {

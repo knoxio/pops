@@ -23,7 +23,6 @@ import { renderTooltipDom } from '../dsl-editor/issues-tooltip';
 import { DslEditor } from '../DslEditor';
 
 import type { DslAutocompleteSources } from '../dsl-editor/autocomplete-types';
-
 import type { CompileEditorIssue } from '../dsl-editor/issues-types';
 
 /** CodeMirror exposes `EditorView.findFromDOM(node)` which walks up from

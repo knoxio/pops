@@ -58,6 +58,25 @@ describe('findStepBodyAtOffset', () => {
     expect(result).not.toBeNull();
     expect(result?.bodyStart).toBeGreaterThan(text.indexOf('"second'));
   });
+
+  it('does not match `@stepper(` as a step call (identifier-boundary check)', () => {
+    const text = '@stepper(@cilantro)';
+    expect(findStepBodyAtOffset(text, 12)).toBeNull();
+  });
+
+  it('does not treat an `@step("...")` literal nested inside another step body as a step call', () => {
+    // Cursor sits inside the OUTER step body. The inner literal text
+    // `@step("inner ...")` lives inside the outer string; the scanner
+    // must skip string contents so it doesn't latch onto the inner
+    // string as a real step call.
+    const text = '@step("the user pasted @step(\\"inner @1\\") into the body |here")';
+    const cursor = text.indexOf('|');
+    const cleaned = text.replace('|', '');
+    const result = findStepBodyAtOffset(cleaned, cursor);
+    expect(result).not.toBeNull();
+    // The outer body starts right after the first `"`.
+    expect(result?.bodyStart).toBe(cleaned.indexOf('"') + 1);
+  });
 });
 
 describe('collectStepIndexes', () => {
@@ -87,5 +106,16 @@ describe('collectStepIndexes', () => {
   it('ignores malformed lines (no descriptor)', () => {
     const text = '@ingredient(1,)\n@ingredient(2, valid, 1:g)';
     expect(collectStepIndexes(text)).toEqual([{ index: '2', slug: 'valid' }]);
+  });
+
+  it('ignores `@ingredient(...)` text that appears inside a `@step("...")` body', () => {
+    // The user typed `@ingredient(9, ...)` as a recipe-prose snippet
+    // inside the step body — those should not surface as step-ref
+    // suggestions because the document only declares index 1.
+    const text = [
+      '@ingredient(1, banana, 100:g)',
+      '@step("She said: @ingredient(9, beans, 200:g)")',
+    ].join('\n');
+    expect(collectStepIndexes(text)).toEqual([{ index: '1', slug: 'banana' }]);
   });
 });

@@ -40,9 +40,9 @@ import { recipeDsl } from '../dsl/codemirror';
 import { dslAutocompletion } from './dsl-editor/autocomplete-extension';
 import { chipWidgetsExtension } from './dsl-editor/chip-widgets-extension';
 import { issuesExtension, setIssuesEffect } from './dsl-editor/issues-extension';
-import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
 import type { DslAutocompleteSources } from './dsl-editor/autocomplete-types';
+import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
 const DEBOUNCE_MS = 250;
 const MOBILE_QUERY = '(max-width: 767px)';
