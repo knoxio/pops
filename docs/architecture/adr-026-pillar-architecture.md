@@ -11,7 +11,7 @@ A workspace audit during PRD-120 part A surfaced multiple architectural smells t
 **The smells observed:**
 
 1. **Three different patterns for backend services.** Finance / media / inventory / cerebrum keep services in `apps/pops-api/src/modules/<domain>/`. Food keeps them in `packages/app-food/src/db/`. Lists keeps them in `packages/app-lists/src/db/` but has no frontend at all.
-2. **`@pops/app-lists` is mis-named.** It's a backend-only data package wearing the `app-*` namespace.
+2. **`@pops/app-lists` is misnamed.** It's a backend-only data package wearing the `app-*` namespace.
 3. **`@pops/app-food` is a frankenstein.** It mixes React frontend, backend persistence, jobs, storage helpers, the DSL pipeline, and a `server.ts` subpath as a band-aid so `pops-api` can consume the backend bits without dragging React into its dep graph.
 4. **A latent cycle through `@pops/api`.** `@pops/api-client` imports `AppRouter` from `pops-api`. Every `app-*` package depends on `api-client`. The moment `pops-api` depends on any `app-*` package — which it must for tRPC routers — the cycle closes. PRD-122-API hit it in turbo and pivoted by extracting `@pops/app-food-db`, which treats the symptom domain-by-domain but doesn't fix the layering.
 5. **`@pops/db-types` is monolithic.** 67 schema files spanning every domain. A schema change in any one rebuilds the world.
@@ -73,7 +73,7 @@ A pillar may consume another pillar's `-contract` package only — for type-narr
 
 ### Cross-pillar contracts
 
-The only cross-pillar artefacts:
+The only cross-pillar artifacts:
 
 | Artefact                               | Owner             | Consumed by                                             | Mechanism                                               |
 | -------------------------------------- | ----------------- | ------------------------------------------------------- | ------------------------------------------------------- |
@@ -154,7 +154,7 @@ The audit found **zero** cross-domain FKs in the schema today that we'd lose by 
 
 ### Migration
 
-Domain-by-domain. Pilot = food (PRD-122-API's in-flight `@pops/app-food-db` extraction folds into the wider 4-package split). Order: prepare (api-types cleanup, drizzle-zod adoption, drizzle-kit per-pillar config) → food → core → finance → media → inventory → cerebrum.
+Domain-by-domain. Pilot = food (PRD-122-API's in-flight `@pops/app-food-db` extraction folds into the wider 4-package split). Order: prepare (drizzle-zod adoption, drizzle-kit per-pillar config, pillar registry + URI dispatcher, pops-shell pillar boot, container template) → food → core → finance → media → inventory → cerebrum → lists (pairs with PRD-139 landing the lists frontend) → ai (may fold into core; decide when its turn arrives).
 
 The migration plan lives in the private `.claude/pillar-migration-roadmap.md` (gitignored, symlinked across pops\* sibling workspaces). Sibling agents check that file for status, ordering, and per-pillar coordination notes.
 

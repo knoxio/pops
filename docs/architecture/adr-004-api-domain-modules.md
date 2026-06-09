@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-026: Per-Domain Pillar Architecture](./adr-026-pillar-architecture.md) — 2026-06-09. The "one server, domain-grouped tRPC routers" pattern this ADR adopted held through early Epic 00 work but accumulated three different sub-patterns for "where backend services live" across food / finance / lists. The pillar architecture replaces it with per-domain isolation (own DB, own container, own contract package). Migration is per-domain; until each domain migrates, ADR-004's pattern continues to apply for that domain.
 
 ## Context
 
