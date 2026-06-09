@@ -90,11 +90,17 @@ export async function runEvictionTick(db: FoodDb, dir: string): Promise<Eviction
   eligible.sort((a, b) => a.mtimeMs - b.mtimeMs || a.sourceId - b.sourceId);
   const victims = eligible.slice(0, overflow);
   const evictedIds: number[] = [];
-  for (const victim of victims) {
-    await rm(victim.absolutePath, { recursive: true, force: true });
-    evictedIds.push(victim.sourceId);
+  try {
+    for (const victim of victims) {
+      await rm(victim.absolutePath, { recursive: true, force: true });
+      evictedIds.push(victim.sourceId);
+    }
+  } finally {
+    // Stamp `archived_at` for everything we actually removed even if a
+    // later `rm` throws. Otherwise a transient I/O error on victim N
+    // would leave victims 0..N-1 deleted from disk with no audit record.
+    if (evictedIds.length > 0) markArchived(db, evictedIds);
   }
-  if (evictedIds.length > 0) markArchived(db, evictedIds);
   return {
     evictedIds,
     consideredCount: entries.length,
