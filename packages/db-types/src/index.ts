@@ -97,6 +97,8 @@ export {
   ingredientAliases,
   ingredients,
   ingredientVariants,
+  planEntries,
+  planSlots,
   prepStates,
   recipeRuns,
   recipes,

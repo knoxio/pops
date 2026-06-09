@@ -21,6 +21,8 @@ export const foodMigrationTags: readonly string[] = [
   '0060_familiar_leo',
   // PRD-109 — substitutions.
   '0061_shocking_skreet',
+  // PRD-111 — plan_slots + plan_entries.
+  '0063_bumpy_wolverine',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

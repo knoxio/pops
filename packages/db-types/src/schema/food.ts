@@ -10,6 +10,7 @@
  *     because Drizzle requires the full table definition in one place.
  *   - `food-recipes.ts` — PRD-107 (recipes, recipe_versions, recipe_tags).
  *   - `food-batches.ts` — PRD-108 (batches, recipe_runs, batch_consumptions).
+ *   - `food-plan.ts` — PRD-111 (plan_slots, plan_entries).
  *
  * This barrel is the import surface every other layer (db-types/src/index.ts,
  * `@pops/app-food`, drizzle-kit's schema glob) reads from.
@@ -17,3 +18,4 @@
 export * from './food-ingredients.js';
 export * from './food-recipes.js';
 export * from './food-batches.js';
+export * from './food-plan.js';
