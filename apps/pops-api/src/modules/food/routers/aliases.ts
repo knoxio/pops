@@ -61,6 +61,25 @@ export const aliasesRouter = router({
     )
     .query(({ input }) => ({ items: aliasesService.listAliases(getDrizzle(), input ?? {}) })),
 
+  /**
+   * PRD-122-C — denormalised list used by the aliases tab. Each row is
+   * paired with the target's slug + name so the table can render without
+   * an N+1 client-side lookup. Same filter contract as `list`.
+   */
+  listWithTargets: protectedProcedure
+    .input(
+      z
+        .object({
+          search: z.string().optional(),
+          source: SOURCE_ENUM.optional(),
+          target: TARGET_SCHEMA.optional(),
+        })
+        .optional()
+    )
+    .query(({ input }) => ({
+      items: aliasesService.listAliasesWithTargets(getDrizzle(), input ?? {}),
+    })),
+
   create: protectedProcedure
     .input(
       z.object({

@@ -22,6 +22,7 @@ export { MAX_INGREDIENT_DEPTH } from './services/internal.js';
 // Service namespaces — each module's free functions are exposed as a
 // namespace so the API router code stays self-documenting at call sites.
 export * as aliasesService from './services/aliases.js';
+export * as aliasesQueries from './services/aliases-queries.js';
 export * as batchesService from './services/batches.js';
 export * as ingestSourcesService from './services/ingest-sources.js';
 export * as ingredientsService from './services/ingredients.js';
@@ -50,7 +51,11 @@ export * as conversionsQueries from './services/conversions-queries.js';
 // Named result + view types — re-exported at the barrel so the tRPC
 // router's inferred types in pops-api don't trip TS2883 ("the inferred
 // type cannot be named without a reference to a deep import path").
-export type { BulkApproveAliasesResult, MergeAliasesResult } from './services/aliases.js';
+export type {
+  AliasWithTargetRow,
+  BulkApproveAliasesResult,
+  MergeAliasesResult,
+} from './services/aliases.js';
 export type {
   DeleteBlockerSummary,
   RecipeRefRow,

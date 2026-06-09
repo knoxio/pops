@@ -1,14 +1,9 @@
-import { useTranslation } from 'react-i18next';
-
-import { TabPlaceholder } from './TabPlaceholder.js';
+/**
+ * `/food/data/aliases` route entry. Defers to the tab's content tree
+ * under `./aliases/` (PRD-122-C).
+ */
+import { AliasesTabContent } from './aliases/index.js';
 
 export function AliasesTab() {
-  const { t } = useTranslation('food');
-  return (
-    <TabPlaceholder
-      title={t('data.aliases.title')}
-      description={t('data.aliases.description')}
-      pendingLabel={t('data.pending')}
-    />
-  );
+  return <AliasesTabContent />;
 }

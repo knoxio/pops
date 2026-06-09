@@ -163,6 +163,14 @@ export function bulkApproveAliases(
 }
 
 /**
+ * Joined alias view + the helper that materialises it live in
+ * `./aliases-queries.ts` (PRD-122-C). Kept separate so this file stays
+ * under the 200-line lint cap. Re-export from the barrel for ergonomic
+ * importing.
+ */
+export { listAliasesWithTargets, type AliasWithTargetRow } from './aliases-queries.js';
+
+/**
  * Predicate used by the data page to flag "no target left" — e.g. after a
  * variant is deleted and any orphan aliases need re-homing. The XOR CHECK
  * prevents this on insert, but defensive read.
