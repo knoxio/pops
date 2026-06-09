@@ -2,13 +2,15 @@
  * Food domain — backend module.
  *
  * PRD-122 (data management page) wires six sub-routers under `food.*`:
- * ingredients, variants, aliases, prepStates, substitutions, slugs. Recipe
- * mutations come later via PRD-119. The shared `slugs.search` procedure
- * is consumed by both the data page and PRD-120's DSL editor.
+ * ingredients, variants, aliases, prepStates, substitutions, slugs. PRD-123
+ * adds `conversions`; PRD-124 adds `heroImage`. Recipe mutations come later
+ * via PRD-119. The shared `slugs.search` procedure is consumed by both the
+ * data page and PRD-120's DSL editor.
  *
  * See `docs/themes/07-food/` for the theme spec.
  */
 import { router } from '../../trpc.js';
+import { conversionsRouter } from './conversions/router.js';
 import { heroImageRouter } from './hero-image/router.js';
 import { foodMigrations } from './migrations.js';
 import { aliasesRouter } from './routers/aliases.js';
@@ -28,6 +30,7 @@ export const foodRouter = router({
   prepStates: prepStatesRouter,
   substitutions: substitutionsRouter,
   slugs: slugsRouter,
+  conversions: conversionsRouter,
 });
 
 export const manifest: ModuleManifest<typeof foodRouter> = {
