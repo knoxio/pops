@@ -8,6 +8,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
+COPY packages/app-food-db/package.json ./packages/app-food-db/
+COPY packages/app-lists/package.json ./packages/app-lists/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -21,6 +23,9 @@ COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
 COPY packages/module-registry/src ./packages/module-registry/src
 COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
+COPY packages/app-lists/src ./packages/app-lists/src
+COPY packages/app-food-db/src ./packages/app-food-db/src
+COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
@@ -30,6 +35,8 @@ RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/module-registry
+RUN pnpm build
+WORKDIR /app/packages/app-food-db
 RUN pnpm build
 
 # Build pops-api
@@ -60,6 +67,10 @@ COPY --from=builder /app/packages/types/dist ./node_modules/@pops/types/dist
 COPY --from=builder /app/packages/types/package.json ./node_modules/@pops/types/
 COPY --from=builder /app/packages/module-registry/dist ./node_modules/@pops/module-registry/dist
 COPY --from=builder /app/packages/module-registry/package.json ./node_modules/@pops/module-registry/
+COPY --from=builder /app/packages/app-food-db/dist ./node_modules/@pops/app-food-db/dist
+COPY --from=builder /app/packages/app-food-db/package.json ./node_modules/@pops/app-food-db/
+COPY --from=builder /app/packages/app-lists/src ./node_modules/@pops/app-lists/src
+COPY --from=builder /app/packages/app-lists/package.json ./node_modules/@pops/app-lists/
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src

@@ -10,13 +10,13 @@
  */
 import { createIngredient } from '../services/ingredients.js';
 import { createVariant } from '../services/variants.js';
-import { INGREDIENT_FIXTURES_PANTRY_AND_DAIRY } from './data-ingredients.js';
 import { INGREDIENT_FIXTURES_PRODUCE_AND_BREAD } from './data-ingredients-produce.js';
 import { INGREDIENT_FIXTURES_PROTEIN } from './data-ingredients-protein.js';
+import { INGREDIENT_FIXTURES_PANTRY_AND_DAIRY } from './data-ingredients.js';
 
 import type { FoodDb } from '../services/internal.js';
-import type { SeedContext } from './types.js';
 import type { IngredientFixture, VariantFixture } from './types-ingredient.js';
+import type { SeedContext } from './types.js';
 
 const ALL_INGREDIENT_GROUPS: readonly (readonly IngredientFixture[])[] = [
   INGREDIENT_FIXTURES_PANTRY_AND_DAIRY,
