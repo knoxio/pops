@@ -210,7 +210,7 @@ Inline per theme protocol.
 - [ ] Route `/food/prompts` mounted in `packages/app-food/src/routes.tsx`.
 - [ ] Page renders each entry in `FOOD_PROMPTS` with title, model, version, description, template.
 - [ ] Header explains the read-only nature and where to edit (file path).
-- [ ] Storybook story at `apps/pops-storybook/src/stories/food/PromptViewerPage.stories.tsx`.
+- [ ] Storybook story at `packages/app-food/src/pages/PromptViewerPage.stories.tsx`. Storybook discovers stories from `packages/*/src/**/*.stories.@(ts|tsx)`, so the story lives next to the page (matching `DslEditor.stories.tsx` / `RecipeRenderer.stories.tsx`).
 
 ### Tests
 
