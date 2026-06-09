@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useMenuKeyboard } from './useMenuKeyboard.js';
+
 /**
  * Three-dot menu surfaced per item row: Edit / Move up / Move down / Delete.
  * Move up/down are also accessible via drag, but the menu is the keyboard +
- * mobile-fallback path (PRD-140 line 95).
+ * mobile-fallback path (PRD-140 line 95). Keyboard model matches
+ * `useMenuKeyboard` (arrow/Home/End across enabled items, first-item focus
+ * on open).
  */
 export interface ListItemMenuProps {
   canMoveUp: boolean;
@@ -19,6 +23,7 @@ export function ListItemMenu(props: ListItemMenuProps) {
   const { t } = useTranslation('lists');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { menuRef, onMenuKeyDown } = useMenuKeyboard(open);
 
   useEffect(() => {
     if (!open) return;
@@ -56,7 +61,9 @@ export function ListItemMenu(props: ListItemMenuProps) {
       </button>
       {open ? (
         <ul
+          ref={menuRef}
           role="menu"
+          onKeyDown={onMenuKeyDown}
           className="absolute right-0 z-10 mt-1 min-w-40 rounded-md border bg-popover p-1 shadow-md"
         >
           <Item onClick={run(props.onEdit)}>{t('detail.item.menu.edit')}</Item>

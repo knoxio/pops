@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useMenuKeyboard } from './useMenuKeyboard.js';
+
 /**
  * Three-dot action menu shown in the detail header. Plain HTML + Tailwind so
  * the package stays free of `@pops/ui` (same constraint as
- * ListsLandingPage). Closes on outside click + Escape; menu items expose
- * keyboard focus order via natural tab order.
+ * ListsLandingPage). Closes on outside click + Escape; focus lands on the
+ * first item when the menu opens; ArrowUp/ArrowDown/Home/End cycle through
+ * items per the ARIA menu keyboard model (see `useMenuKeyboard`).
  */
 export interface ListDetailMenuProps {
   isArchived: boolean;
@@ -19,6 +22,7 @@ export function ListDetailMenu(props: ListDetailMenuProps) {
   const { t } = useTranslation('lists');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { menuRef, onMenuKeyDown } = useMenuKeyboard(open);
 
   useEffect(() => {
     if (!open) return;
@@ -56,7 +60,9 @@ export function ListDetailMenu(props: ListDetailMenuProps) {
       </button>
       {open ? (
         <ul
+          ref={menuRef}
           role="menu"
+          onKeyDown={onMenuKeyDown}
           className="absolute right-0 z-10 mt-1 min-w-44 rounded-md border bg-popover p-1 shadow-md"
         >
           <MenuItem onClick={run(props.onRename)}>{t('detail.menu.rename')}</MenuItem>

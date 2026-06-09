@@ -15,14 +15,15 @@ export interface ListDeleteDialogProps {
 
 export function ListDeleteDialog(props: ListDeleteDialogProps) {
   const { t } = useTranslation('lists');
+  const { onCancel } = props;
 
   useEffect(() => {
     const handle = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') props.onCancel();
+      if (e.key === 'Escape') onCancel();
     };
     document.addEventListener('keydown', handle);
     return () => document.removeEventListener('keydown', handle);
-  }, [props]);
+  }, [onCancel]);
 
   return (
     <div

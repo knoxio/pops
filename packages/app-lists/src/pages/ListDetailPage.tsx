@@ -94,21 +94,36 @@ interface DetailContentProps {
 }
 
 function useDetailHandlers({ list, detailMx, itemMx, dialogs }: DetailContentProps) {
+  // Each async handler swallows its rejection — failures already surface via
+  // the `detailMx.errorMessage` banner, so re-throwing here would only land
+  // in an unhandled promise rejection (Copilot R1).
   return {
     toggleChecked: (id: number, currentlyChecked: boolean) => {
       if (currentlyChecked) itemMx.uncheck(id);
       else itemMx.check(id);
     },
     archiveToggle: async () => {
-      if (list.archivedAt === null) await detailMx.archive(list.id);
-      else await detailMx.unarchive(list.id);
+      try {
+        if (list.archivedAt === null) await detailMx.archive(list.id);
+        else await detailMx.unarchive(list.id);
+      } catch {
+        /* surfaced via errorMessage */
+      }
     },
     saveEdit: async (patch: { name: string; kind: typeof list.kind }) => {
-      const result = await detailMx.update(list.id, patch);
-      if (result.ok) dialogs.closeEdit();
+      try {
+        const result = await detailMx.update(list.id, patch);
+        if (result.ok) dialogs.closeEdit();
+      } catch {
+        /* surfaced via errorMessage */
+      }
     },
     confirmDelete: async () => {
-      await detailMx.remove(list.id);
+      try {
+        await detailMx.remove(list.id);
+      } catch {
+        /* surfaced via errorMessage */
+      }
       dialogs.closeDelete();
     },
   };
@@ -136,7 +151,7 @@ function DetailContent(props: DetailContentProps): ReactElement {
         onDelete={itemMx.remove}
       />
       <ListItemAddForm
-        isPending={false}
+        isPending={itemMx.isAdding}
         onAdd={async (input) => (await itemMx.add(input)) !== null}
       />
       {dialogs.editOpen ? (

@@ -6,16 +6,21 @@ import type { ListItemRow } from './types.js';
 
 /**
  * Item-level mutations consumed by the detail page. Each mutation
- * invalidates the parent list's `lists.list.get` cache so the UI rehydrates
- * with server-confirmed state after the optimistic update settles.
+ * invalidates the parent list's `lists.list.get` cache on success so the UI
+ * rehydrates with server-confirmed state. No true optimistic update yet —
+ * the page waits on the refetch round-trip. `check`/`uncheck`/`remove` are
+ * fire-and-forget at the call site (no awaitable Promise) because their
+ * callers don't need to chain; `update`/`reorder` await so the caller can
+ * close the inline editor / roll back a failed drag.
  *
- * `check`/`uncheck`/`remove` are deliberately fire-and-forget at the call
- * site — the optimistic update is the source of truth until the server
- * responds. `update`/`reorder` await the response so the caller can chain
- * (close inline editor, persist the reorder).
+ * Future: lean on `utils.lists.list.get.setData` to apply the patch (and
+ * `lists.items.check`'s server-returned `checkedAt`) before the refetch
+ * lands — see `apps/pops-api/src/modules/lists/routers/items.ts:92` for the
+ * server payload that's currently ignored.
  */
 export interface ItemMutations {
   add: (input: AddInput) => Promise<{ id: number; position: number } | null>;
+  isAdding: boolean;
   check: (id: number) => void;
   uncheck: (id: number) => void;
   update: (id: number, patch: UpdatePatch) => Promise<boolean>;
@@ -97,6 +102,7 @@ export function useItemMutations(listId: number): ItemMutations {
 
   return {
     add,
+    isAdding: m.add.isPending,
     check: fireAndForget(m.check),
     uncheck: fireAndForget(m.uncheck),
     update,
