@@ -158,14 +158,14 @@ Inline per theme protocol.
 
 ### Editor component
 
-- [ ] `packages/app-food/src/components/DslEditor.tsx` exports `DslEditor` with the props shape above.
-- [ ] CodeMirror 6 and `@lezer/generator` added as dependencies in `packages/app-food/package.json`.
-- [ ] Lezer grammar file at `packages/app-food/src/dsl/dsl.grammar`; build script generates the parser into `src/dsl/dsl.grammar.ts` (gitignored or committed — choose at impl; recommend committed for build determinism).
+- [x] `packages/app-food/src/components/DslEditor.tsx` exports `DslEditor` with the props shape above. (120-A: scaffold props — `issues` defers to 120-C.)
+- [x] CodeMirror 6 and `@lezer/generator` added as dependencies in `packages/app-food/package.json`.
+- [x] Lezer grammar file at `packages/app-food/src/dsl/dsl.grammar`; build script generates the parser into `src/dsl/dsl-parser.ts` (committed for build determinism). Regenerate via `mise food:dsl:generate`. (Filename ends in `-parser.ts` rather than `.grammar.ts` so Vite's import analysis doesn't try to parse the `.grammar` source as JS.)
 
 ### Highlighting & parsing parity
 
-- [ ] Vitest test loads each of PRD-113's 5 sample recipes, parses each with both the Lezer grammar and PRD-114's parser, and asserts the function-call structure matches (round-trip test catches grammar drift).
-- [ ] Manual smoke check: opening each sample recipe in the editor shows expected highlighting (functions blue, strings green, numbers orange — exact colors per the @pops/ui theme).
+- [x] Vitest test loads each of PRD-114's 11 sample recipes (PRD-113 seed not yet merged — uses the in-package sample set), parses each with both the Lezer grammar and PRD-114's parser, and asserts the function-call structure matches (round-trip test catches grammar drift).
+- [ ] Manual smoke check: opening each sample recipe in the editor shows expected highlighting (functions blue, strings green, numbers orange — exact colors per the @pops/ui theme). _(Re-check in 120-F once Storybook stories land — there's no shell page mounting the editor yet.)_
 
 ### Autocomplete
 
@@ -196,9 +196,9 @@ Inline per theme protocol.
 
 ### Read-only mode
 
-- [ ] When `readOnly={true}`, no keystrokes modify the document.
-- [ ] Banner is shown at the top.
-- [ ] Autocomplete and the Recompile button are disabled.
+- [x] When `readOnly={true}`, no keystrokes modify the document. (Enforced by `EditorView.editable.of(false)` + `EditorState.readOnly` — verified in the RTL suite via `contentDOM.contenteditable` + `state.readOnly`.)
+- [x] Banner is shown at the top.
+- [ ] Autocomplete and the Recompile button are disabled. _(Autocomplete lands in 120-B; the Recompile button lands in 120-C.)_
 
 ### Accessibility & responsive
 

@@ -150,6 +150,18 @@ dir = "apps/pops-api"
 run = "pnpm exec drizzle-kit studio"
 
 # ============================================================================
+# Food DSL
+# ============================================================================
+
+[tasks."food:dsl:generate"]
+description = "Regenerate the Lezer parser for the recipe DSL grammar (PRD-120)"
+dir = "packages/app-food"
+run = """
+pnpm exec lezer-generator src/dsl/dsl.grammar -o src/dsl/dsl-parser.ts
+echo "Regenerated src/dsl/dsl-parser.ts — commit alongside any grammar edits."
+"""
+
+# ============================================================================
 # Docker Operations
 # ============================================================================
 
