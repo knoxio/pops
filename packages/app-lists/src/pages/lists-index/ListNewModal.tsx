@@ -91,17 +91,44 @@ interface FormProps {
   onCancel: () => void;
 }
 
-function NewListForm({ isSubmitting, onSubmit, onCancel }: FormProps): ReactElement {
-  const { t } = useTranslation('lists');
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const trimmed = form.name.trim();
-  const canSubmit = !isSubmitting && trimmed.length > 0;
+function shoppingPlaceholder(today: Date): string {
+  // PRD-140 §Create modal: placeholder is `Shopping list — <yyyy-MM-dd>`.
+  // Date is ISO calendar form, not locale-aware — the spec literal pins it.
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `Shopping list — ${yyyy}-${mm}-${dd}`;
+}
 
+function useNewListForm(): {
+  form: FormState;
+  setForm: (updater: (prev: FormState) => FormState) => void;
+  trimmed: string;
+} {
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
   // Reset the form whenever the modal is freshly mounted — the URL marker
   // is the source of truth, so unmounting on close also clears form state.
   useEffect(() => {
     setForm(EMPTY_FORM);
   }, []);
+  return { form, setForm, trimmed: form.name.trim() };
+}
+
+function NewListForm({ isSubmitting, onSubmit, onCancel }: FormProps): ReactElement {
+  const { t } = useTranslation('lists');
+  const { form, setForm, trimmed } = useNewListForm();
+  const canSubmit = !isSubmitting && trimmed.length > 0;
+  const isShopping = form.kind === 'shopping';
+  const placeholder = isShopping
+    ? shoppingPlaceholder(new Date())
+    : t('new.fields.namePlaceholder');
+
+  // PRD-140 §Create modal: "auto-fills on focus if still empty" for shopping.
+  const onNameFocus = (): void => {
+    if (isShopping && form.name === '') {
+      setForm((prev) => ({ ...prev, name: shoppingPlaceholder(new Date()) }));
+    }
+  };
 
   return (
     <form
@@ -112,21 +139,14 @@ function NewListForm({ isSubmitting, onSubmit, onCancel }: FormProps): ReactElem
         onSubmit({ name: trimmed, kind: form.kind });
       }}
     >
-      <div className="space-y-2">
-        <label htmlFor="list-new-name" className="text-sm font-medium">
-          {t('new.fields.nameLabel')}
-        </label>
-        <Input
-          id="list-new-name"
-          name="name"
-          value={form.name}
-          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-          placeholder={t('new.fields.namePlaceholder')}
-          required
-          autoFocus
-          disabled={isSubmitting}
-        />
-      </div>
+      <NameField
+        value={form.name}
+        onChange={(name) => setForm((prev) => ({ ...prev, name }))}
+        onFocus={onNameFocus}
+        placeholder={placeholder}
+        labelText={t('new.fields.nameLabel')}
+        disabled={isSubmitting}
+      />
       <div className="space-y-2">
         <span className="text-sm font-medium">{t('new.fields.kindLabel')}</span>
         <KindRadioGroup
@@ -144,5 +164,42 @@ function NewListForm({ isSubmitting, onSubmit, onCancel }: FormProps): ReactElem
         </Button>
       </DialogFooter>
     </form>
+  );
+}
+
+interface NameFieldProps {
+  value: string;
+  onChange: (next: string) => void;
+  onFocus: () => void;
+  placeholder: string;
+  labelText: string;
+  disabled: boolean;
+}
+
+function NameField({
+  value,
+  onChange,
+  onFocus,
+  placeholder,
+  labelText,
+  disabled,
+}: NameFieldProps): ReactElement {
+  return (
+    <div className="space-y-2">
+      <label htmlFor="list-new-name" className="text-sm font-medium">
+        {labelText}
+      </label>
+      <Input
+        id="list-new-name"
+        name="name"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
+        placeholder={placeholder}
+        required
+        autoFocus
+        disabled={disabled}
+      />
+    </div>
   );
 }

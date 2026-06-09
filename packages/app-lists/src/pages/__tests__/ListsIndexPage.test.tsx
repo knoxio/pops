@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
 import { useMemo, type ReactElement } from 'react';
@@ -183,19 +183,35 @@ describe('PRD-140 part B — ListsIndexPage', () => {
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  it('passes filter state into the query as the user toggles chips', async () => {
+  it('passes filter state into the query when the user toggles a chip OFF', async () => {
     mockListQuery.mockReturnValue(makeQueryResult({ items: [buildItem()] }));
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
+    // Default is "all kinds selected" — clicking Packing deselects it. The
+    // hook collapses a full set to `undefined`, but here only 3 of 4 are
+    // active so the wire-shape carries the explicit set.
     await userEvent.click(screen.getByRole('button', { name: /^Packing$/ }));
     await waitFor(() =>
       expect(mockListQuery).toHaveBeenLastCalledWith(
-        expect.objectContaining({ kinds: ['packing'] })
+        expect.objectContaining({
+          kinds: expect.arrayContaining(['shopping', 'todo', 'generic']),
+        })
       )
     );
+    expect(mockListQuery.mock.lastCall?.[0]?.kinds).not.toContain('packing');
+  });
+
+  it('collapses the "all kinds selected" default to undefined on the wire', () => {
+    mockListQuery.mockReturnValue(makeQueryResult({ items: [buildItem()] }));
+    render(
+      <Wrapper>
+        <ListsIndexPage />
+      </Wrapper>
+    );
+    expect(mockListQuery).toHaveBeenLastCalledWith(expect.objectContaining({ kinds: undefined }));
   });
 
   it('toggles the archive filter through the query', async () => {
@@ -245,9 +261,30 @@ describe('PRD-140 part B — ListsIndexPage', () => {
       </Wrapper>
     );
     const nameInput = screen.getByLabelText(/^name$/i);
+    // Shopping kind auto-fills the placeholder on focus per PRD-140; clear
+    // it so the test can drive an explicit value through `userEvent.type`.
+    await userEvent.clear(nameInput);
     await userEvent.type(nameInput, '  Camping list  ');
     await userEvent.click(screen.getByRole('button', { name: /^Create$/i }));
     expect(mockCreateMutate).toHaveBeenCalledWith({ name: 'Camping list', kind: 'shopping' });
+  });
+
+  it('auto-fills the shopping placeholder on focus when the field is empty', async () => {
+    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+    render(
+      <Wrapper initialEntries={['/lists?new=1']}>
+        <ListsIndexPage />
+      </Wrapper>
+    );
+    const nameInput = screen.getByLabelText(/^name$/i) as HTMLInputElement;
+    // Use `fireEvent.focus` rather than `el.focus()` — the native DOM call
+    // doesn't reliably dispatch through React's synthetic event system
+    // under jsdom (Radix Dialog's focus management interferes), but
+    // `fireEvent.focus` always invokes the React-bound `onFocus` handler.
+    // Per PRD-140 §Create modal, `kind='shopping'` + empty name + focus →
+    // auto-fill `Shopping list — <yyyy-MM-dd>`.
+    fireEvent.focus(nameInput);
+    await waitFor(() => expect(nameInput.value).toMatch(/^Shopping list — \d{4}-\d{2}-\d{2}$/));
   });
 
   it('invalidates the index cache on successful create', () => {

@@ -2,7 +2,11 @@ import { useMemo } from 'react';
 
 import { trpc } from '@pops/api-client';
 
-import type { ListKind, ListsIndexFilterState } from './list-index-types.js';
+import { LIST_KINDS, type ListKind, type ListsIndexFilterState } from './list-index-types.js';
+
+function isAllKinds(kinds: readonly ListKind[]): boolean {
+  return kinds.length === LIST_KINDS.length && LIST_KINDS.every((k) => kinds.includes(k));
+}
 
 export interface ListIndexItemView {
   id: number;
@@ -36,7 +40,11 @@ export interface UseListsIndexQueryResult {
 export function useListsIndexQuery(filters: ListsIndexFilterState): UseListsIndexQueryResult {
   const input = useMemo(
     () => ({
-      kinds: filters.kinds.length === 0 ? undefined : filters.kinds,
+      // "All selected" + "none selected" both mean "no filter" to the
+      // router — collapse to `undefined` in both cases so the SQL skips
+      // the WHERE-IN clause. The chip strip distinguishes the two states
+      // visually (all-on vs all-off).
+      kinds: isAllKinds(filters.kinds) || filters.kinds.length === 0 ? undefined : filters.kinds,
       includeArchived: filters.includeArchived,
       sort: filters.sort,
     }),

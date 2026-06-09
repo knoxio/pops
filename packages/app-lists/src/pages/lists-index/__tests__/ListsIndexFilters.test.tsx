@@ -56,7 +56,18 @@ describe('PRD-140 part B — ListsIndexFilters', () => {
     }
   });
 
-  it('toggles a kind chip', async () => {
+  it('starts with every kind chip active (PRD-140 §Index "default: all selected")', () => {
+    render(
+      <Wrapper>
+        <Harness />
+      </Wrapper>
+    );
+    for (const kind of ['Shopping', 'Packing', 'Todo', 'Generic']) {
+      expect(screen.getByRole('button', { name: kind })).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
+  it('toggles a kind chip off and back on', async () => {
     const user = userEvent.setup();
     render(
       <Wrapper>
@@ -64,11 +75,11 @@ describe('PRD-140 part B — ListsIndexFilters', () => {
       </Wrapper>
     );
     const chip = screen.getByRole('button', { name: 'Shopping' });
-    expect(chip).toHaveAttribute('aria-pressed', 'false');
-    await user.click(chip);
     expect(chip).toHaveAttribute('aria-pressed', 'true');
     await user.click(chip);
     expect(chip).toHaveAttribute('aria-pressed', 'false');
+    await user.click(chip);
+    expect(chip).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('toggles the show-archived checkbox', async () => {
@@ -97,7 +108,7 @@ describe('PRD-140 part B — ListsIndexFilters', () => {
     expect(select).toHaveValue('name');
   });
 
-  it('shows the clear button when filters are active, and resets them on click', async () => {
+  it('shows the clear button when filters differ from the default, and resets them on click', async () => {
     const user = userEvent.setup();
     render(
       <Wrapper>
@@ -106,15 +117,17 @@ describe('PRD-140 part B — ListsIndexFilters', () => {
     );
     const clear = screen.getByRole('button', { name: /clear filters/i });
     await user.click(clear);
+    // Reset returns to default: all kinds active, archived off, updated sort.
     expect(screen.getByRole('button', { name: 'Shopping' })).toHaveAttribute(
       'aria-pressed',
-      'false'
+      'true'
     );
+    expect(screen.getByRole('button', { name: 'Packing' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('checkbox', { name: /show archived/i })).not.toBeChecked();
     expect(screen.getByRole('combobox')).toHaveValue('updated');
   });
 
-  it('hides the clear button when no filters are active', () => {
+  it('hides the clear button when the filter state matches the default', () => {
     render(
       <Wrapper>
         <Harness />

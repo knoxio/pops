@@ -18,8 +18,14 @@ export interface ListsIndexFilterState {
   sort: SortOption;
 }
 
+/**
+ * PRD-140 §Index — kind filter "multi-select, default: all selected". The
+ * chip strip reflects that visually (every chip starts active), and the
+ * query hook collapses a fully-selected set to `undefined` so the router
+ * skips the WHERE-IN clause entirely (same wire-shape as no filter).
+ */
 export const DEFAULT_FILTERS: ListsIndexFilterState = {
-  kinds: [],
+  kinds: [...LIST_KINDS],
   includeArchived: false,
   sort: 'updated',
 };

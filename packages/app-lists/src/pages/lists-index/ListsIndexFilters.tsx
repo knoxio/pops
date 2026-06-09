@@ -11,6 +11,12 @@ import {
   type SortOption,
 } from './list-index-types.js';
 
+function isDefaultKinds(kinds: readonly ListKind[]): boolean {
+  return (
+    kinds.length === DEFAULT_FILTERS.kinds.length && LIST_KINDS.every((k) => kinds.includes(k))
+  );
+}
+
 import type { ReactElement } from 'react';
 
 interface Props {
@@ -130,5 +136,5 @@ function SortPicker({ value, onChange, label, optionLabel }: SortPickerProps): R
 }
 
 function hasActiveFilters(s: ListsIndexFilterState): boolean {
-  return s.kinds.length > 0 || s.includeArchived || s.sort !== DEFAULT_FILTERS.sort;
+  return !isDefaultKinds(s.kinds) || s.includeArchived || s.sort !== DEFAULT_FILTERS.sort;
 }
