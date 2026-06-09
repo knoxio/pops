@@ -22,7 +22,15 @@
     "@pops/app-lists-db": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/types": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "@pops/ui": "workspace:*",
+    "@tanstack/react-query": "5.101.0",
+    "drizzle-orm": "^0.45.2",
+    "i18next": "^26.3.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.8",
+    "react-router": "^7.16.0",
+    "sonner": "^2.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -33,12 +41,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.1.8",
     "better-sqlite3": "^12.10.0",
-    "i18next": "^26.3.1",
     "jsdom": "^29.1.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-i18next": "^17.0.8",
-    "react-router": "^7.16.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
   }
