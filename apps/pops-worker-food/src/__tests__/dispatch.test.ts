@@ -134,22 +134,23 @@ describe('runIngestJob', () => {
 });
 
 describe('default handler stubs', () => {
-  it('remaining stub kinds resolve to NotImplemented failures with the stub version', async () => {
-    // Real handlers ship per-kind:
-    //   - PRD-127 → `url-web`
-    //   - PRD-131 → `screenshot`
-    //   - PRD-132 → `text`
-    // PRDs 128/129/130 will pop `url-instagram` off this list when they
-    // land.
+  it('no kinds are still routed to the NotImplemented stub', async () => {
+    // PRDs 127 (`url-web`), 130 (`url-instagram`), 131 (`screenshot`), and
+    // 132 (`text`) have all replaced their stubs with real pipelines.
+    // The PRD-126 `NotImplemented` extractor-version should never surface
+    // from a default-handler dispatch anymore. The stub utility is
+    // preserved in `not-implemented.ts` so the next per-kind PRD can
+    // bootstrap a follow-up handler.
     const kinds: IngestJobData[] = [
+      { kind: 'url-web', sourceId: 1, url: 'https://example.test/recipe' },
       { kind: 'url-instagram', sourceId: 2, url: 'https://instagram.com/r/abc' },
+      { kind: 'screenshot', sourceId: 3, mimeType: 'image/png', contentPath: '/tmp/x.png' },
+      { kind: 'text', sourceId: 4, body: 'hi' },
     ];
     for (const data of kinds) {
       const result = await runIngestJob(data, ctx, defaultHandlers);
-      expect(result.ok).toBe(false);
-      if (result.ok) throw new Error('unreachable');
-      expect(result.errorCode).toBe('NotImplemented');
-      expect(result.meta.extractor_version).toBe(NOT_IMPLEMENTED_EXTRACTOR_VERSION);
+      if (result.ok) continue;
+      expect(result.meta.extractor_version).not.toBe(NOT_IMPLEMENTED_EXTRACTOR_VERSION);
     }
   });
 });
