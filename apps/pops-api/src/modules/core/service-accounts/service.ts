@@ -1,185 +1,84 @@
 /**
- * Service-account CRUD + verification.
+ * Thin wrapper around `@pops/core-db`'s service-accounts service.
  *
- * Verification path is hot — every authenticated machine call hits it once.
- * It is intentionally a single indexed read on `key_prefix`, then one scrypt
- * compare. Revoked rows return null without doing the scrypt work.
+ * Resolves the singleton `getDrizzle()` handle and forwards. Translates
+ * the package's typed errors to the HTTP-layer error variants the rest of
+ * pops-api still expects (`NotFoundError`, `ValidationError`, `HttpError`)
+ * so the global error handler keeps producing the same status codes and
+ * i18n keys it did before the core pillar Phase 1 split.
+ *
+ * This shim is deleted in Phase 1 PR 4. Existing callers (`trpc.ts`,
+ * `router.ts`, `service.test.ts`) keep importing from here unchanged; the
+ * deletion PR also flips them to the package directly and drops this file.
  */
-import { randomUUID } from 'node:crypto';
-
-import { eq, isNull, sql } from 'drizzle-orm';
-
-import { serviceAccounts } from '@pops/db-types';
+import {
+  serviceAccountsService,
+  ServiceAccountAlreadyRevokedError,
+  ServiceAccountNameAlreadyExistsError,
+  ServiceAccountNotFoundError,
+} from '@pops/core-db';
 
 import { getDrizzle } from '../../../db.js';
 import { HttpError, NotFoundError, ValidationError } from '../../../shared/errors.js';
-import { generateApiKey, verifySecret } from './key.js';
 
-import type { CreateServiceAccountInput, CreatedServiceAccount, ServiceAccount } from './types.js';
+import type {
+  AuthenticatedServiceAccount as PackageAuthenticatedServiceAccount,
+  CreateServiceAccountInput as PackageCreateServiceAccountInput,
+  CreatedServiceAccount as PackageCreatedServiceAccount,
+  ServiceAccount as PackageServiceAccount,
+} from '@pops/core-db';
 
-interface ServiceAccountRow {
-  id: string;
-  name: string;
-  keyPrefix: string;
-  keyHash: string;
-  scopes: string;
-  createdAt: string;
-  lastUsedAt: string | null;
-  revokedAt: string | null;
-  createdBy: string | null;
-}
-
-function rowToPublic(row: ServiceAccountRow): ServiceAccount {
-  let parsedScopes: string[];
-  try {
-    const parsed: unknown = JSON.parse(row.scopes);
-    parsedScopes = Array.isArray(parsed)
-      ? parsed.filter((s): s is string => typeof s === 'string')
-      : [];
-  } catch {
-    parsedScopes = [];
-  }
-  return {
-    id: row.id,
-    name: row.name,
-    keyPrefix: row.keyPrefix,
-    scopes: parsedScopes,
-    createdAt: row.createdAt,
-    lastUsedAt: row.lastUsedAt,
-    revokedAt: row.revokedAt,
-    createdBy: row.createdBy,
-  };
-}
+export type AuthenticatedServiceAccount = PackageAuthenticatedServiceAccount;
+export type ServiceAccount = PackageServiceAccount;
+export type CreatedServiceAccount = PackageCreatedServiceAccount;
 
 export async function createServiceAccount(
-  input: CreateServiceAccountInput,
+  input: PackageCreateServiceAccountInput,
   createdBy: string | null
 ): Promise<CreatedServiceAccount> {
-  const db = getDrizzle();
-  const existing = db
-    .select()
-    .from(serviceAccounts)
-    .where(eq(serviceAccounts.name, input.name))
-    .all();
-  if (existing.length > 0) {
-    throw new ValidationError({
-      message: `Service account '${input.name}' already exists`,
-    });
+  try {
+    return await serviceAccountsService.createServiceAccount(getDrizzle(), input, createdBy);
+  } catch (err) {
+    if (err instanceof ServiceAccountNameAlreadyExistsError) {
+      throw new ValidationError({ message: err.message });
+    }
+    throw err;
   }
-  const issued = await generateApiKey();
-  const id = `sa_${randomUUID()}`;
-  const now = new Date().toISOString();
-  db.insert(serviceAccounts)
-    .values({
-      id,
-      name: input.name,
-      keyPrefix: issued.prefix,
-      keyHash: issued.hash,
-      scopes: JSON.stringify(input.scopes),
-      createdAt: now,
-      createdBy,
-    })
-    .run();
-  return {
-    id,
-    name: input.name,
-    keyPrefix: issued.prefix,
-    scopes: input.scopes,
-    createdAt: now,
-    lastUsedAt: null,
-    revokedAt: null,
-    createdBy,
-    plaintextKey: issued.plaintext,
-  };
 }
 
 export function listServiceAccounts(): ServiceAccount[] {
-  const db = getDrizzle();
-  const rows = db.select().from(serviceAccounts).orderBy(serviceAccounts.createdAt).all();
-  return rows.map((r): ServiceAccount => rowToPublic(r));
+  return serviceAccountsService.listServiceAccounts(getDrizzle());
 }
 
 export function revokeServiceAccount(id: string): void {
-  const db = getDrizzle();
-  const [row] = db.select().from(serviceAccounts).where(eq(serviceAccounts.id, id)).all();
-  if (!row) throw new NotFoundError('ServiceAccount', id);
-  if (row.revokedAt !== null) {
-    throw new HttpError(409, `Service account '${id}' is already revoked`);
+  try {
+    serviceAccountsService.revokeServiceAccount(getDrizzle(), id);
+  } catch (err) {
+    if (err instanceof ServiceAccountNotFoundError) {
+      throw new NotFoundError('ServiceAccount', id);
+    }
+    if (err instanceof ServiceAccountAlreadyRevokedError) {
+      throw new HttpError(409, err.message);
+    }
+    throw err;
   }
-  db.update(serviceAccounts)
-    .set({ revokedAt: new Date().toISOString() })
-    .where(eq(serviceAccounts.id, id))
-    .run();
 }
 
-/** Result of a successful service-account authentication. */
-export interface AuthenticatedServiceAccount {
-  id: string;
-  name: string;
-  scopes: string[];
-}
-
-/**
- * Verify a presented prefix + secret against the database. Returns the
- * authenticated principal on success or null on any failure path. Updates
- * `last_used_at` opportunistically on success — failures never write.
- */
 export async function authenticateServiceAccount(
   prefix: string,
   secret: string
 ): Promise<AuthenticatedServiceAccount | null> {
-  const db = getDrizzle();
-  const [row] = db
-    .select()
-    .from(serviceAccounts)
-    .where(eq(serviceAccounts.keyPrefix, prefix))
-    .all();
-  if (!row || row.revokedAt !== null) return null;
-  const ok = await verifySecret(secret, row.keyHash);
-  if (!ok) return null;
-
-  // Touch last_used_at — best-effort, errors non-fatal.
-  try {
-    db.update(serviceAccounts)
-      .set({ lastUsedAt: sql`(datetime('now'))` })
-      .where(eq(serviceAccounts.id, row.id))
-      .run();
-  } catch (err) {
-    console.warn('[service-accounts] failed to touch last_used_at:', err);
-  }
-
-  const publicRow = rowToPublic(row);
-  return { id: publicRow.id, name: publicRow.name, scopes: publicRow.scopes };
+  return serviceAccountsService.authenticateServiceAccount(getDrizzle(), prefix, secret);
 }
 
-/**
- * Returns true if the procedure path falls under any of the granted scope
- * prefixes. Scopes use dot-prefix matching: a granted scope `cerebrum.ingest`
- * authorises `cerebrum.ingest.quickCapture` but not `cerebrum.query.ask`.
- */
 export function hasScopeFor(grantedScopes: string[], procedurePath: string): boolean {
-  for (const scope of grantedScopes) {
-    if (scope === procedurePath) return true;
-    if (procedurePath.startsWith(`${scope}.`)) return true;
-  }
-  return false;
+  return serviceAccountsService.hasScopeFor(grantedScopes, procedurePath);
 }
 
-/** Convenience for tests that need a quick lookup. */
 export function getActiveServiceAccountByPrefix(prefix: string): ServiceAccount | null {
-  const db = getDrizzle();
-  const [row] = db
-    .select()
-    .from(serviceAccounts)
-    .where(eq(serviceAccounts.keyPrefix, prefix))
-    .all();
-  if (!row || row.revokedAt !== null) return null;
-  return rowToPublic(row);
+  return serviceAccountsService.getActiveServiceAccountByPrefix(getDrizzle(), prefix);
 }
 
-/** Internal: count active accounts (used by health/admin tooling). */
 export function countActiveServiceAccounts(): number {
-  const db = getDrizzle();
-  const rows = db.select().from(serviceAccounts).where(isNull(serviceAccounts.revokedAt)).all();
-  return rows.length;
+  return serviceAccountsService.countActiveServiceAccounts(getDrizzle());
 }

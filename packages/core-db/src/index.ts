@@ -17,3 +17,14 @@ export type { CoreDb } from './services/internal.js';
 
 export * as serviceAccountsService from './services/service-accounts.js';
 export * as serviceAccountKeys from './services/service-account-keys.js';
+
+// Public types — re-exported at the package root so consumers can name
+// them without reaching into the namespaces.
+export type {
+  AuthenticatedServiceAccount,
+  CreateServiceAccountInput,
+  CreatedServiceAccount,
+  ServiceAccount,
+} from './services/service-accounts.js';
+
+export type { IssuedKey } from './services/service-account-keys.js';
