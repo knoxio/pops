@@ -196,10 +196,16 @@ function lookupUnitConversion(
   db: FoodDb,
   fromUnit: string
 ): { toUnit: CanonicalUnit; ratio: number } | null {
+  // Order by `id` so "first match" is deterministic — SQLite doesn't promise
+  // insertion order on unindexed selects, and multiple rows can exist for the
+  // same `from_unit` if a user (or PRD-113's seed) populated more than one
+  // `to_unit` for the same source unit.
   const rows = db
     .select({ toUnit: unitConversions.toUnit, ratio: unitConversions.ratio })
     .from(unitConversions)
     .where(eq(unitConversions.fromUnit, fromUnit))
+    .orderBy(unitConversions.id)
+    .limit(1)
     .all();
   if (rows[0] === undefined) return null;
   return { toUnit: rows[0].toUnit, ratio: rows[0].ratio };

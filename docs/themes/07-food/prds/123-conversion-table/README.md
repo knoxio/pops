@@ -201,7 +201,7 @@ Inline per theme protocol.
 
 ### Resolution helper
 
-- [x] `packages/app-food/src/dsl/normalisation.ts` exports `normaliseLineQty(input, db)` per the algorithm above.
+- [x] `packages/app-food/src/dsl/normalisation.ts` exports `normaliseLineQty(db, input)` per the algorithm above.
 - [x] Vitest suite at `packages/app-food/src/dsl/__tests__/normalisation.test.ts` covers:
   - Identity carry-over: input g → qty_g equals original_qty.
   - Unit conversion: input cup → qty_ml = original_qty × 240.
