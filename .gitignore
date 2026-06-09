@@ -71,3 +71,5 @@ apps/pops-api/\[REDACTED\]*
 .room-sandbox/
 .room-agent.json
 data/
+!packages/**/src/**/data/
+!packages/**/src/**/data/**
