@@ -2,11 +2,11 @@
  * Single row inside the Aliases table (PRD-122-C).
  *
  * Switches between read mode and inline edit mode. Read mode shows the
- * alias text + target label + source chip + relative created_at. Edit
- * mode swaps the alias cell for an input; submit fires
- * `onUpdateAlias(id, newText)`.
+ * alias text, target label, source chip, and the raw ISO `created_at`
+ * timestamp from the server. Edit mode swaps the alias cell for an
+ * input; submit fires `onUpdateAlias(id, newText)`.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Checkbox, Input, TableCell, TableRow } from '@pops/ui';
@@ -73,15 +73,15 @@ function AliasCell({ row, onUpdateAlias }: AliasCellProps) {
   const { t } = useTranslation('food');
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(row.alias);
-  // Track Escape so the input's `onBlur` (which fires regardless of cause)
-  // skips the commit when the user cancelled. Enter is handled by blurring
-  // the input, so `onBlur` is the single commit path and Enter no longer
-  // produces a double commit. (Copilot review on PR #2724.)
-  const [cancelled, setCancelled] = useState(false);
+  // Cancel is tracked via a ref because the onKeyDown → blur transition
+  // is synchronous and `useState` updates don't flush until the next
+  // render. A ref is read in the same tick `commitEdit` runs, so Escape
+  // reliably suppresses the commit (Copilot review round 2 on PR #2724).
+  const cancelRef = useRef(false);
 
   function commitEdit(): void {
-    if (cancelled) {
-      setCancelled(false);
+    if (cancelRef.current) {
+      cancelRef.current = false;
       setEditing(false);
       return;
     }
@@ -103,7 +103,7 @@ function AliasCell({ row, onUpdateAlias }: AliasCellProps) {
             return;
           }
           if (e.key === 'Escape') {
-            setCancelled(true);
+            cancelRef.current = true;
             (e.currentTarget as HTMLInputElement).blur();
           }
         }}
@@ -115,8 +115,8 @@ function AliasCell({ row, onUpdateAlias }: AliasCellProps) {
     <button
       type="button"
       onClick={() => {
+        cancelRef.current = false;
         setEditText(row.alias);
-        setCancelled(false);
         setEditing(true);
       }}
       className="hover:bg-muted -mx-2 rounded px-2 py-1 text-left"

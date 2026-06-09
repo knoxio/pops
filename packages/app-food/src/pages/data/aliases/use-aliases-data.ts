@@ -48,7 +48,7 @@ function toRows(items: readonly AliasRowFromServer[]): AliasRow[] {
     alias: item.alias.alias,
     source: item.alias.source,
     createdAt: item.alias.createdAt,
-    target: item.target as AliasTarget,
+    target: item.target,
   }));
 }
 
