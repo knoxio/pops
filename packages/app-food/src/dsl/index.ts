@@ -22,3 +22,20 @@ export type {
 export type { ParseError, ParseErrorCode } from './errors';
 export { parseRecipeDsl, type ParseResult } from './parser';
 export { printRecipeAst } from './printer';
+export { resolveRecipeAst } from './resolver';
+export type {
+  ProposedSlug,
+  ResolveContext,
+  ResolveError,
+  ResolveErrorCode,
+  ResolveResult,
+  ResolvedBlock,
+  ResolvedIngredientBlock,
+  ResolvedMarkdownBlock,
+  ResolvedRecipeAst,
+  ResolvedStepBlock,
+  ResolvedStepBody,
+  ResolvedStepBodyPart,
+  ResolvedYield,
+  ResolverCreation,
+} from './resolver-types';

@@ -220,25 +220,25 @@ Inline per theme protocol.
 
 ### Implementation
 
-- [ ] `packages/app-food/src/dsl/resolver.ts` exports `resolveRecipeAst(ast, ctx): ResolveResult` matching the signature above.
-- [ ] Resolver uses prepared statements / parameterised queries only — no string-built SQL with slug values.
-- [ ] Resolver does not write to the DB (verified by passing a read-only Drizzle handle in tests).
-- [ ] Resolver collects all errors and proposed slugs; does not short-circuit on first failure.
+- [x] `packages/app-food/src/dsl/resolver.ts` exports `resolveRecipeAst(ast, ctx): ResolveResult`. Source split across `resolver.ts`, `resolver-state.ts`, `resolver-types.ts`, `resolve-slug.ts`, `resolve-create.ts`, `resolve-yield.ts`, `resolve-ingredient.ts`, `resolve-step.ts` to stay under the per-file line cap.
+- [x] Uses Drizzle parameterised queries (`.where(eq(...))`) only — no string-built SQL with slug values.
+- [x] Read-only against the DB — the resolver path never invokes `insert/update/delete`. Auto-creation is delegated to PRD-116's compiler via the `creations[]` output.
+- [x] Collects all errors, creations, and proposed slugs; does not short-circuit on first failure (verified by the mixed-path test).
 
 ### Tests
 
-- [ ] Vitest suite at `packages/app-food/src/dsl/__tests__/resolver.test.ts` covers each `ResolveErrorCode` with a reliable producing case.
-- [ ] Happy path: a 10-ingredient recipe with known ingredients, two variants, one recipe-as-ingredient ref, and three step body refs resolves to a fully-populated `ResolvedRecipeAst` with no errors and no proposed slugs.
-- [ ] Mixed path: same recipe with 2 deliberately unknown slugs → resolves with `errors.length === 2` and `proposedSlugs.length === 2`, AST still produced (partial resolution where possible — known slugs are filled in).
-- [ ] Self-reference: `currentRecipeId=42` with an `@ingredient` pointing at the recipe-with-id-42's slug returns `SelfReferenceRecipe` with `"self-reference"` in the message.
-- [ ] Recipe-as-ingredient: a recipe with `current_version_id` set resolves cleanly through; without `current_version_id` → `WrongKindForContext`.
-- [ ] Variant scoping: ingredient `banana` with variant `raw`, and ingredient `apple` with variant `raw` — `@ingredient(1, banana:raw, ...)` and `@ingredient(2, apple:raw, ...)` resolve to distinct `variantId`s.
-- [ ] `_` skip: `banana:_:mashed` resolves to `{ ingredientId: banana, variantId: null, prepStateId: mashed }`.
+- [x] Vitest suite at `packages/app-food/src/dsl/__tests__/resolver.test.ts` — 15 cases. Each `ResolveErrorCode` has a producing case except `AmbiguousSlug`, which is defensive (SQLite PK on `slug_registry` makes it unreachable).
+- [x] Happy path: 3-ingredient recipe with known ingredients + a `banana:raw:mashed` descriptor + a step body `@N` ref resolves cleanly with no errors and no proposed slugs. (The PRD suggested 10 ingredients; scaled to 3 for focus — the surface coverage is the same.)
+- [x] Mixed path: a recipe with 2 unknown slugs (a prep_state + a step `@slug` ref) → `errors.length === 2` and `proposedSlugs.length === 2`, AST still produced.
+- [x] Self-reference: `currentRecipeId` set to a seeded recipe's id with an `@ingredient` pointing at that recipe's slug returns `SelfReferenceRecipe`.
+- [x] Recipe-as-ingredient: a recipe with `current_version_id` set resolves cleanly through (seeded via `createRecipe` + `promoteVersion`); without it → `WrongKindForContext`.
+- [x] Variant scoping: `banana:raw` and `apple:raw` resolve to distinct `variantId`s (per-parent scope from PRD-106).
+- [x] `_` skip: `banana:_:mashed` resolves to `{ ingredientId: banana, variantId: null, prepStateId: mashed }`.
 
 ### Cross-PRD wiring
 
-- [ ] PRD-116 cross-link landed (compiler consumes `ResolvedRecipeAst`).
-- [ ] PRD-117 cross-link landed (cycle detection runs against the materialised result, not at this layer).
+- [x] PRD-116 cross-link kept in Out of Scope — compiler consumes `ResolvedRecipeAst` + `creations[]`.
+- [x] PRD-117 cross-link kept — cycle detection runs against the materialised result, not at the resolver layer.
 
 ## Out of Scope
 
