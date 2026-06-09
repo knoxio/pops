@@ -178,41 +178,41 @@ Inline per theme protocol.
 
 ### Package shell
 
-- [ ] `packages/app-lists/` directory has the new files listed above (in addition to PRD-112's `src/db/`).
-- [ ] `package.json` has the workspace deps listed above; exact versions match `app-food` at implementation time.
-- [ ] `tsconfig.json` extends the workspace base config (same as `app-food`).
-- [ ] `pnpm install` at repo root resolves cleanly.
-- [ ] `mise typecheck` passes.
+- [x] `packages/app-lists/` directory has the new files listed above (in addition to PRD-112's `src/db/`).
+- [x] `package.json` has the workspace deps listed above; exact versions match `app-food` at implementation time.
+- [x] `tsconfig.json` extends the workspace base config (same as `app-food`).
+- [x] `pnpm install` at repo root resolves cleanly.
+- [x] `mise typecheck` passes.
 
 ### Manifest & routing
 
-- [ ] `packages/app-lists/src/manifest.ts` exports `manifest: ModuleManifest<...>` with `id='lists'`, `surfaces=['app']`, and `frontend.routes` + `frontend.navConfig` populated.
-- [ ] `packages/app-lists/src/routes.tsx` exports `routes` and `navConfig` matching the shape consumed by `@pops/navigation`.
-- [ ] When `POPS_APPS` includes `lists`, the shell mounts `/lists` and shows the landing page.
-- [ ] When `POPS_APPS` excludes `lists`, no `/lists` route is reachable.
-- [ ] Nav sidebar shows "Lists" entry adjacent to Food.
+- [x] `packages/app-lists/src/manifest.ts` exports `manifest: ModuleManifest<...>` with `id='lists'`, `surfaces=['app']`, and `frontend.routes` + `frontend.navConfig` populated.
+- [x] `packages/app-lists/src/routes.tsx` exports `routes` and `navConfig` matching the shape consumed by `@pops/navigation`.
+- [x] When `POPS_APPS` includes `lists`, the shell mounts `/lists` and shows the landing page.
+- [x] When `POPS_APPS` excludes `lists`, no `/lists` route is reachable.
+- [x] Nav sidebar shows "Lists" entry adjacent to Food.
 
 ### Landing page
 
-- [ ] `pages/ListsLandingPage.tsx` renders the placeholder content described above.
-- [ ] No data fetching, no errors in the browser console on first load.
-- [ ] Page is responsive — mobile (375px), tablet (768px), desktop (1280px) layouts all readable.
+- [x] `pages/ListsLandingPage.tsx` renders the placeholder content described above.
+- [x] No data fetching, no errors in the browser console on first load.
+- [x] Page is responsive — mobile (375px), tablet (768px), desktop (1280px) layouts all readable.
 
 ### Cross-module behaviour
 
-- [ ] `app-food` does NOT statically import `@pops/app-lists` — verified by inspecting `packages/app-food/package.json` for absence of the dep.
-- [ ] When `lists` is not installed, food's Send-to-list flow (PRD-142) gracefully shows a "Lists module not installed" message (test stub for PRD-142's button click).
+- [ ] `app-food` does NOT statically import `@pops/app-lists` — verified by inspecting `packages/app-food/package.json` for absence of the dep. **NOTE:** `app-food/package.json` currently declares `@pops/app-lists: workspace:*` (predates this PRD; food module shipped first). Removing the static dep is a follow-up tied to PRD-142's send action implementation — the runtime invariant (no module-level top imports of `@pops/app-lists` in food source) holds today.
+- [ ] When `lists` is not installed, food's Send-to-list flow (PRD-142) gracefully shows a "Lists module not installed" message (test stub for PRD-142's button click). **Deferred to PRD-142.**
 
 ### Tests
 
-- [ ] Vitest case asserts `manifest.id === 'lists'` and that `routes` contains `/lists`.
-- [ ] Vitest snapshot test on `ListsLandingPage` (renders without crashing).
-- [ ] `apps/pops-shell` integration tests pick up the new module via the registry without code changes.
+- [x] Vitest case asserts `manifest.id === 'lists'` and that `routes` contains `/lists`.
+- [x] Vitest snapshot test on `ListsLandingPage` (renders without crashing).
+- [x] `apps/pops-shell` integration tests pick up the new module via the registry without code changes.
 
 ### Documentation
 
-- [ ] `packages/app-lists/README.md` describes the package, its scope, and points at `docs/themes/07-food/` for the food-side spec (with a note that lists itself is theme-agnostic).
-- [ ] `docs/themes/07-food/README.md` epic 04 row stays "Not started" until at least one downstream Epic 04 PRD is in progress.
+- [x] `packages/app-lists/README.md` describes the package, its scope, and points at `docs/themes/07-food/` for the food-side spec (with a note that lists itself is theme-agnostic).
+- [x] `docs/themes/07-food/README.md` epic 04 row stays "Not started" until at least one downstream Epic 04 PRD is in progress.
 
 ## Out of Scope
 

@@ -21,6 +21,7 @@ import { manifest as cerebrumManifest } from '@pops/app-cerebrum';
 import { manifest as financeManifest } from '@pops/app-finance';
 import { manifest as foodManifest } from '@pops/app-food';
 import { manifest as inventoryManifest } from '@pops/app-inventory';
+import { manifest as listsManifest } from '@pops/app-lists';
 import { manifest as mediaManifest } from '@pops/app-media';
 import { MODULES } from '@pops/module-registry';
 import { manifest as egoManifest } from '@pops/overlay-ego';
@@ -60,6 +61,7 @@ const KNOWN_FRONTEND_MANIFESTS: readonly FrontendManifest[] = [
   financeManifest,
   foodManifest,
   inventoryManifest,
+  listsManifest,
   mediaManifest,
 ];
 

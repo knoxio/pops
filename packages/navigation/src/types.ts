@@ -38,6 +38,7 @@ export type IconName =
   | 'Layers'
   | 'LayoutDashboard'
   | 'Library'
+  | 'ListChecks'
   | 'MapPin'
   | 'MessageSquare'
   | 'Network'

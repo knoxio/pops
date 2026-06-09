@@ -5,6 +5,7 @@ import { manifest as cerebrumManifest } from '@pops/app-cerebrum';
 import { manifest as financeManifest } from '@pops/app-finance';
 import { manifest as foodManifest } from '@pops/app-food';
 import { manifest as inventoryManifest } from '@pops/app-inventory';
+import { manifest as listsManifest } from '@pops/app-lists';
 import { manifest as mediaManifest } from '@pops/app-media';
 import { manifest as egoManifest } from '@pops/overlay-ego';
 import { assertModuleManifest, type ModuleManifest } from '@pops/types';
@@ -15,6 +16,7 @@ const pageRoutedApps: ReadonlyArray<readonly [string, ModuleManifest]> = [
   ['finance', financeManifest],
   ['food', foodManifest],
   ['inventory', inventoryManifest],
+  ['lists', listsManifest],
   ['media', mediaManifest],
 ];
 
