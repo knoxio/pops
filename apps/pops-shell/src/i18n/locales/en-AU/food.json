@@ -130,6 +130,7 @@
   "data.aliases.columns.target": "Target",
   "data.aliases.columns.source": "Source",
   "data.aliases.columns.createdAt": "Added",
+  "data.aliases.row.selectAllAria": "Select all aliases",
   "data.aliases.row.selectAria": "Select alias {{alias}}",
   "data.aliases.row.editAria": "Edit alias {{alias}}",
   "data.aliases.row.deleteAria": "Delete alias {{alias}}",

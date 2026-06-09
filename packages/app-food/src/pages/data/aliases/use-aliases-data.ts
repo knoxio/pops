@@ -9,7 +9,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
 
-import { sortAliases } from './format';
+import { sortAliases } from './format.js';
 
 import type {
   AliasesFilter,
@@ -18,7 +18,7 @@ import type {
   AliasTarget,
   SortDirection,
   SortState,
-} from './types';
+} from './types.js';
 
 const DEFAULT_SORT: SortState = { key: 'alias', direction: 'asc' };
 
@@ -63,7 +63,7 @@ interface AliasRowFromServer {
 }
 
 export function useAliasesData(): UseAliasesData {
-  const [filter, setFilter] = useState<AliasesFilter>({ source: null, search: '' });
+  const [filter, setFilterState] = useState<AliasesFilter>({ source: null, search: '' });
   const [sort, setSortState] = useState<SortState>(DEFAULT_SORT);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set());
 
@@ -84,6 +84,15 @@ export function useAliasesData(): UseAliasesData {
 
   const setSort = useCallback((key: AliasSortKey) => {
     setSortState((prev) => ({ key, direction: nextDirection(prev, key) }));
+  }, []);
+
+  // Filter changes always clear the current selection — once the visible
+  // rows change, the selection count + has-llm-selection flags would
+  // otherwise reflect rows the user can no longer see, which makes the
+  // toolbar's enabled state misleading (Copilot review on PR #2724).
+  const setFilter = useCallback((next: AliasesFilter) => {
+    setFilterState(next);
+    setSelectedIds(new Set());
   }, []);
 
   const toggleSelection = useCallback((id: number) => {

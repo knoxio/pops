@@ -83,11 +83,15 @@ describe('PrepStatesTabContent', () => {
     expect(slugs).toEqual(['diced', 'grated', 'sliced']);
   });
 
-  it('disables every row Delete button with an explanatory tooltip', async () => {
+  it('marks every row Delete button as aria-disabled with an explanatory tooltip', async () => {
     ensure().items = [{ id: 1, slug: 'diced', name: 'Diced' }];
     render(<PrepStatesTabContent />);
     const del = (await screen.findAllByRole('button', { name: /delete disabled/i }))[0];
-    expect(del).toBeDisabled();
+    // Per the keyboard-accessibility fix: the button is focusable
+    // (`aria-disabled` instead of HTML `disabled`) so the tooltip can
+    // appear on focus. Click is no-op'd via onClick.
+    expect(del.getAttribute('aria-disabled')).toBe('true');
+    expect(del).not.toBeDisabled();
     expect(screen.getByLabelText(/delete disabled — see tooltip/i)).toBeInTheDocument();
   });
 

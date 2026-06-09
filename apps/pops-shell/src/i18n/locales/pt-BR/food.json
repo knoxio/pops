@@ -130,6 +130,7 @@
   "data.aliases.columns.target": "Alvo",
   "data.aliases.columns.source": "Origem",
   "data.aliases.columns.createdAt": "Adicionado",
+  "data.aliases.row.selectAllAria": "Selecionar todos os sinônimos",
   "data.aliases.row.selectAria": "Selecionar sinônimo {{alias}}",
   "data.aliases.row.editAria": "Editar sinônimo {{alias}}",
   "data.aliases.row.deleteAria": "Excluir sinônimo {{alias}}",

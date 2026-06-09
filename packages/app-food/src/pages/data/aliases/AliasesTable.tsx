@@ -10,9 +10,9 @@ import { useTranslation } from 'react-i18next';
 
 import { Checkbox, Table, TableBody, TableHead, TableHeader, TableRow } from '@pops/ui';
 
-import { AliasesTableRow } from './AliasesTableRow';
+import { AliasesTableRow } from './AliasesTableRow.js';
 
-import type { AliasRow, AliasSortKey, SortState } from './types';
+import type { AliasRow, AliasSortKey, SortState } from './types.js';
 
 export interface AliasesTableProps {
   readonly rows: readonly AliasRow[];
@@ -27,6 +27,7 @@ export interface AliasesTableProps {
 }
 
 export function AliasesTable(props: AliasesTableProps) {
+  const { t } = useTranslation('food');
   const { rows, sort, selectedIds, onSelectAll, onClearSelection } = props;
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
 
@@ -36,7 +37,7 @@ export function AliasesTable(props: AliasesTableProps) {
         <TableRow>
           <TableHead className="w-10">
             <Checkbox
-              aria-label="Select all aliases"
+              aria-label={t('data.aliases.row.selectAllAria')}
               checked={allSelected}
               onCheckedChange={(next) => (next === true ? onSelectAll() : onClearSelection())}
             />

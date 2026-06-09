@@ -4,23 +4,32 @@
  * Orchestrates the data hook, mutation hooks, toolbar, table, and the
  * Add/Merge dialogs. Keeps no data state of its own beyond dialog
  * open/closed — everything else lives in `useAliasesData`.
+ *
+ * Per Copilot review on PR #2724 — dialog `useState` setters are
+ * declared BEFORE `useAliasMutations`, so the mutation hook can close
+ * dialogs from its per-mutation success path. A failed create/merge
+ * leaves the dialog open so the user can retry without re-typing.
  */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { AddAliasDialog } from './AddAliasDialog';
-import { AliasesTable } from './AliasesTable';
-import { AliasesToolbar } from './AliasesToolbar';
-import { MergeAliasesDialog } from './MergeAliasesDialog';
-import { useAliasesData, type UseAliasesData } from './use-aliases-data';
-import { useAliasMutations } from './use-aliases-mutations';
+import { AddAliasDialog } from './AddAliasDialog.js';
+import { AliasesTable } from './AliasesTable.js';
+import { AliasesToolbar } from './AliasesToolbar.js';
+import { MergeAliasesDialog } from './MergeAliasesDialog.js';
+import { useAliasesData, type UseAliasesData } from './use-aliases-data.js';
+import { useAliasMutations } from './use-aliases-mutations.js';
 
 export function AliasesTabContent() {
   const { t } = useTranslation('food');
   const data = useAliasesData();
-  const mutations = useAliasMutations({ onMutationDone: data.clearSelection });
   const [addOpen, setAddOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
+  const mutations = useAliasMutations({
+    onAnySuccess: data.clearSelection,
+    onCreateSuccess: () => setAddOpen(false),
+    onMergeSuccess: () => setMergeOpen(false),
+  });
   const selectedRows = data.rows.filter((r) => data.selectedIds.has(r.id));
 
   return (
@@ -50,10 +59,7 @@ export function AliasesTabContent() {
         open={addOpen}
         onOpenChange={setAddOpen}
         isSubmitting={mutations.isCreating}
-        onSubmit={(input) => {
-          mutations.createAlias(input);
-          setAddOpen(false);
-        }}
+        onSubmit={(input) => mutations.createAlias(input)}
       />
 
       <MergeAliasesDialog
@@ -61,10 +67,9 @@ export function AliasesTabContent() {
         onOpenChange={setMergeOpen}
         selectedAliases={selectedRows}
         isSubmitting={mutations.isMerging}
-        onSubmit={(target) => {
-          mutations.mergeAliases({ aliasIds: selectedRows.map((r) => r.id), target });
-          setMergeOpen(false);
-        }}
+        onSubmit={(target) =>
+          mutations.mergeAliases({ aliasIds: selectedRows.map((r) => r.id), target })
+        }
       />
     </section>
   );

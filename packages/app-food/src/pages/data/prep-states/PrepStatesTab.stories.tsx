@@ -1,16 +1,19 @@
 /**
- * Storybook stories for the Prep states tab (PRD-122-C / Tab 3).
+ * Storybook stories for the Prep states tab's `AddPrepStateDialog`
+ * (PRD-122-C / Tab 3).
  *
- * The component consumes `trpc.food.prepStates.*` directly. For the
- * Storybook story we mock `@pops/api-client` at module load time so the
- * component renders deterministic data without a tRPC provider.
+ * The dialog is a pure-presentation component (slug + name inputs +
+ * submit/cancel) that takes all data via props, so no tRPC mocking is
+ * needed. Stories cover the open + submitting states; the full tab
+ * (`PrepStatesTabContent`) consumes `trpc.food.prepStates.*` and is
+ * exercised in the RTL suite, not Storybook.
  */
 import { createInstance, type i18n } from 'i18next';
 import { useMemo } from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
-import { AddPrepStateDialog } from './AddPrepStateDialog';
+import { AddPrepStateDialog } from './AddPrepStateDialog.js';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 

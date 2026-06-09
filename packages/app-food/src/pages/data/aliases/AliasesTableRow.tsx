@@ -11,9 +11,9 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Checkbox, Input, TableCell, TableRow } from '@pops/ui';
 
-import { formatTargetLabel, formatTargetSlug } from './format';
+import { formatTargetLabel, formatTargetSlug } from './format.js';
 
-import type { AliasRow } from './types';
+import type { AliasRow } from './types.js';
 
 export interface AliasesTableRowProps {
   readonly row: AliasRow;
@@ -73,8 +73,18 @@ function AliasCell({ row, onUpdateAlias }: AliasCellProps) {
   const { t } = useTranslation('food');
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(row.alias);
+  // Track Escape so the input's `onBlur` (which fires regardless of cause)
+  // skips the commit when the user cancelled. Enter is handled by blurring
+  // the input, so `onBlur` is the single commit path and Enter no longer
+  // produces a double commit. (Copilot review on PR #2724.)
+  const [cancelled, setCancelled] = useState(false);
 
   function commitEdit(): void {
+    if (cancelled) {
+      setCancelled(false);
+      setEditing(false);
+      return;
+    }
     const next = editText.trim();
     if (next.length > 0 && next !== row.alias) onUpdateAlias(row.id, next);
     setEditing(false);
@@ -88,8 +98,14 @@ function AliasCell({ row, onUpdateAlias }: AliasCellProps) {
         onChange={(e) => setEditText(e.target.value)}
         onBlur={commitEdit}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') commitEdit();
-          if (e.key === 'Escape') setEditing(false);
+          if (e.key === 'Enter') {
+            (e.currentTarget as HTMLInputElement).blur();
+            return;
+          }
+          if (e.key === 'Escape') {
+            setCancelled(true);
+            (e.currentTarget as HTMLInputElement).blur();
+          }
         }}
         aria-label={t('data.aliases.row.editAria', { alias: row.alias })}
       />
@@ -100,6 +116,7 @@ function AliasCell({ row, onUpdateAlias }: AliasCellProps) {
       type="button"
       onClick={() => {
         setEditText(row.alias);
+        setCancelled(false);
         setEditing(true);
       }}
       className="hover:bg-muted -mx-2 rounded px-2 py-1 text-left"

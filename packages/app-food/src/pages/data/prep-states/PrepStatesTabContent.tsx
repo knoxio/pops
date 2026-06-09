@@ -26,7 +26,7 @@ import {
   TooltipTrigger,
 } from '@pops/ui';
 
-import { AddPrepStateDialog } from './AddPrepStateDialog';
+import { AddPrepStateDialog } from './AddPrepStateDialog.js';
 
 export function PrepStatesTabContent() {
   const { t } = useTranslation('food');
@@ -104,29 +104,28 @@ function PrepStatesTable({ rows }: { rows: readonly PrepStateRowShape[] }) {
 
 function DisabledDeleteButton() {
   const { t } = useTranslation('food');
+  // Tooltip-on-focus has to work for keyboard users, so the button stays
+  // focusable but reports its disabled state via `aria-disabled` and a
+  // suppressed click handler. A `disabled` HTML button can't receive
+  // focus, which would hide the tooltip from anyone not using a pointer
+  // (Copilot review on PR #2724).
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          {/*
-           * Wrapping `<span>` keeps the tooltip trigger reachable even
-           * though the inner button is `disabled` (disabled controls
-           * don't receive focus). The span has no tabIndex per
-           * jsx-a11y/no-noninteractive-tabindex — pointer hover is the
-           * primary discovery affordance; keyboard users land here via
-           * the row's other interactive controls and read the disabled
-           * button's aria-label.
-           */}
-          <span>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled
-              aria-label={t('data.prepStates.deleteDisabledAria')}
-            >
-              {t('data.prepStates.row.delete')}
-            </Button>
-          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-disabled="true"
+            aria-label={t('data.prepStates.deleteDisabledAria')}
+            className="cursor-not-allowed opacity-50"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {t('data.prepStates.row.delete')}
+          </Button>
         </TooltipTrigger>
         <TooltipContent>{t('data.prepStates.deleteDisabledTooltip')}</TooltipContent>
       </Tooltip>

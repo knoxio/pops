@@ -91,14 +91,17 @@ export function listAliasesWithTargets(
 ): AliasWithTargetRow[] {
   const rows = listAliases(db, input);
   if (rows.length === 0) return [];
-  const ingIds: number[] = [];
-  const varIds: number[] = [];
+  // Dedupe the FK lists before the IN-lookup — many aliases can point at
+  // the same ingredient or variant, and a duplicate-laden IN-list
+  // bloats the SQL for no gain (Copilot review on PR #2724).
+  const ingIds = new Set<number>();
+  const varIds = new Set<number>();
   for (const row of rows) {
-    if (row.ingredientId !== null) ingIds.push(row.ingredientId);
-    if (row.variantId !== null) varIds.push(row.variantId);
+    if (row.ingredientId !== null) ingIds.add(row.ingredientId);
+    if (row.variantId !== null) varIds.add(row.variantId);
   }
-  const ingredientsById = loadIngredients(db, ingIds);
-  const variantsById = loadVariants(db, varIds);
+  const ingredientsById = loadIngredients(db, [...ingIds]);
+  const variantsById = loadVariants(db, [...varIds]);
   return rows.flatMap((row): AliasWithTargetRow[] => {
     if (row.ingredientId !== null) {
       const ing = ingredientsById.get(row.ingredientId);

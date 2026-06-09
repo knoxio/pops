@@ -1,78 +1,109 @@
 /**
  * Mutations used by the Aliases tab (PRD-122-C).
  *
- * One hook per mutation surface (create / updateText / delete / merge /
- * bulkApprove) so the consumer destructures only what it needs. Each
- * mutation invalidates the list query so the table refetches once the
- * server confirms.
+ * Each tRPC mutation lands its `onSuccess`/`onError` here so the consumer
+ * can wire per-mutation reactions (close a dialog, clear selection)
+ * without re-implementing toast + invalidation. The opts struct mirrors
+ * the mutation surface; callers pass only the hooks they need.
  *
- * Server errors are forwarded as toasts; the caller can still react via
- * the returned mutation handle (`isPending`, etc.).
+ * Per Copilot review on PR #2724 — dialogs must close from the success
+ * path of their mutation, not inline at submit time, otherwise a failed
+ * server call would still close the dialog and the user would lose their
+ * input.
  */
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
 
-import type { AliasSource, AliasTarget } from './types';
+import type { AliasSource, AliasTarget } from './types.js';
 
 function targetWire(target: AliasTarget): { kind: 'ingredient' | 'variant'; id: number } {
   return { kind: target.kind, id: target.id };
 }
 
-function makeMutationOpts(invalidateList: () => Promise<void>) {
+export interface UseAliasMutationsOpts {
+  /** Fired after any mutation lands + the list cache invalidates. */
+  readonly onAnySuccess?: () => void;
+  /** Fired only after `createAlias` succeeds. Typically closes the Add dialog. */
+  readonly onCreateSuccess?: () => void;
+  /** Fired only after `mergeAliases` succeeds. Typically closes the Merge dialog. */
+  readonly onMergeSuccess?: () => void;
+}
+
+function showError(err: { message: string }): void {
+  toast.error(err.message);
+}
+
+function useRawMutations(baseSuccess: (extra?: () => void) => void, opts: UseAliasMutationsOpts) {
+  const { onCreateSuccess, onMergeSuccess } = opts;
   return {
-    onSuccess: () => void invalidateList(),
-    onError: (err: { message: string }) => toast.error(err.message),
+    create: trpc.food.aliases.create.useMutation({
+      onSuccess: () => baseSuccess(onCreateSuccess),
+      onError: showError,
+    }),
+    updateText: trpc.food.aliases.updateText.useMutation({
+      onSuccess: () => baseSuccess(),
+      onError: showError,
+    }),
+    delete: trpc.food.aliases.delete.useMutation({
+      onSuccess: () => baseSuccess(),
+      onError: showError,
+    }),
+    merge: trpc.food.aliases.merge.useMutation({
+      onSuccess: () => baseSuccess(onMergeSuccess),
+      onError: showError,
+    }),
+    bulkApprove: trpc.food.aliases.bulkApprove.useMutation({
+      onSuccess: () => baseSuccess(),
+      onError: showError,
+    }),
   };
 }
 
-export function useAliasMutations(opts: { onMutationDone?: () => void } = {}) {
+export function useAliasMutations(opts: UseAliasMutationsOpts = {}) {
   const utils = trpc.useUtils();
-  const onDone = opts.onMutationDone;
+  const { onAnySuccess } = opts;
 
   const invalidateList = useCallback(async () => {
     await utils.food.aliases.listWithTargets.invalidate();
     await utils.food.aliases.list.invalidate();
-    onDone?.();
-  }, [onDone, utils.food.aliases.list, utils.food.aliases.listWithTargets]);
+  }, [utils.food.aliases.list, utils.food.aliases.listWithTargets]);
 
-  const createMutation = trpc.food.aliases.create.useMutation(makeMutationOpts(invalidateList));
-  const updateTextMutation = trpc.food.aliases.updateText.useMutation(
-    makeMutationOpts(invalidateList)
+  const baseSuccess = useCallback(
+    (extra?: () => void) => {
+      void invalidateList().then(() => {
+        extra?.();
+        onAnySuccess?.();
+      });
+    },
+    [invalidateList, onAnySuccess]
   );
-  const deleteMutation = trpc.food.aliases.delete.useMutation(makeMutationOpts(invalidateList));
-  const mergeMutation = trpc.food.aliases.merge.useMutation(makeMutationOpts(invalidateList));
-  const bulkApproveMutation = trpc.food.aliases.bulkApprove.useMutation(
-    makeMutationOpts(invalidateList)
-  );
+
+  const raw = useRawMutations(baseSuccess, opts);
 
   const createAlias = useCallback(
     (input: { alias: string; target: AliasTarget; source?: AliasSource }) =>
-      createMutation.mutate({
+      raw.create.mutate({
         alias: input.alias,
         target: targetWire(input.target),
         source: input.source,
       }),
-    [createMutation]
+    [raw.create]
   );
-
   const updateAliasText = useCallback(
-    (id: number, alias: string) => updateTextMutation.mutate({ id, alias }),
-    [updateTextMutation]
+    (id: number, alias: string) => raw.updateText.mutate({ id, alias }),
+    [raw.updateText]
   );
-
-  const deleteAlias = useCallback((id: number) => deleteMutation.mutate({ id }), [deleteMutation]);
-
+  const deleteAlias = useCallback((id: number) => raw.delete.mutate({ id }), [raw.delete]);
   const mergeAliases = useCallback(
     (input: { aliasIds: number[]; target: AliasTarget }) =>
-      mergeMutation.mutate({ aliasIds: input.aliasIds, target: targetWire(input.target) }),
-    [mergeMutation]
+      raw.merge.mutate({ aliasIds: input.aliasIds, target: targetWire(input.target) }),
+    [raw.merge]
   );
-
   const bulkApprove = useCallback(
-    (aliasIds: number[]) => bulkApproveMutation.mutate({ aliasIds }),
-    [bulkApproveMutation]
+    (aliasIds: number[]) => raw.bulkApprove.mutate({ aliasIds }),
+    [raw.bulkApprove]
   );
 
   return {
@@ -81,10 +112,10 @@ export function useAliasMutations(opts: { onMutationDone?: () => void } = {}) {
     deleteAlias,
     mergeAliases,
     bulkApprove,
-    isCreating: createMutation.isPending,
-    isUpdating: updateTextMutation.isPending,
-    isDeleting: deleteMutation.isPending,
-    isMerging: mergeMutation.isPending,
-    isBulkApproving: bulkApproveMutation.isPending,
+    isCreating: raw.create.isPending,
+    isUpdating: raw.updateText.isPending,
+    isDeleting: raw.delete.isPending,
+    isMerging: raw.merge.isPending,
+    isBulkApproving: raw.bulkApprove.isPending,
   };
 }
