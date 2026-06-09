@@ -8,7 +8,7 @@
  * module's URL renders `NotInstalledPage` via the catch-all.
  */
 import { Suspense } from 'react';
-import { createBrowserRouter, Link, Navigate, useLocation } from 'react-router';
+import { createBrowserRouter, Link, Navigate, Outlet, useLocation } from 'react-router';
 
 import { KNOWN_MODULES } from '@pops/module-registry';
 
@@ -19,6 +19,7 @@ import { FeaturesPage } from './pages/features-page/FeaturesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { NotInstalledPage } from './pages/NotInstalledPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PillarGuard, pillarIdForModule } from './pillars';
 
 import type { RouteObject } from 'react-router';
 
@@ -62,13 +63,28 @@ function withSuspense(routes: readonly RouteObject[]): RouteObject[] {
 
 /**
  * Build one router-level entry per installed app module. Each entry mounts
- * the module's routes under `/<id>/*`.
+ * the module's routes under `/<id>/*` and wraps them in `<PillarGuard>` so
+ * the subtree renders the `PillarUnavailableRoute` placeholder when the
+ * owning pillar's health is `'unavailable'` (ADR-026 P3).
+ *
+ * Today every module maps to the `core` pillar via `pillarIdForModule`;
+ * the guard is a no-op for healthy/unknown statuses. As mature pillars
+ * migrate, their module's mapping flips and routes start observing the
+ * pillar's reported health.
  */
 function appRouteEntries(): RouteObject[] {
-  return installedAppManifests().map((manifest) => ({
-    path: manifest.id,
-    children: withSuspense(manifest.frontend.routes),
-  }));
+  return installedAppManifests().map((manifest) => {
+    const pillarId = pillarIdForModule(manifest.id);
+    return {
+      path: manifest.id,
+      element: (
+        <PillarGuard pillarId={pillarId}>
+          <Outlet />
+        </PillarGuard>
+      ),
+      children: withSuspense(manifest.frontend.routes),
+    };
+  });
 }
 
 const ErrorElement = (

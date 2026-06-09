@@ -9,6 +9,12 @@ import rateLimit from 'express-rate-limit';
  * Media image routes are excluded — the library grid loads 24-96 poster
  * images per page which easily exhausts 100 req/15min. These are read-only
  * cached files behind Cloudflare Access, so rate-limiting them is unnecessary.
+ *
+ * Pillar boot endpoints (`/pillars`, `/pillars/health`) are excluded —
+ * the shell calls them once per page load and the aggregated probe fans
+ * out across every registered pillar; either signal counted against this
+ * window starves the boot path during E2E suites and on visits from
+ * machines proxied behind a single egress IP.
  */
 export const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -16,5 +22,9 @@ export const rateLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many requests, try again later' },
-  skip: (req) => req.path.startsWith('/trpc') || req.path.startsWith('/media/images'),
+  skip: (req) =>
+    req.path.startsWith('/trpc') ||
+    req.path.startsWith('/media/images') ||
+    req.path === '/pillars' ||
+    req.path.startsWith('/pillars/'),
 });

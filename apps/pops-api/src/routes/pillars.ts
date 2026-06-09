@@ -25,6 +25,7 @@
 import { type Router as ExpressRouter, Router } from 'express';
 
 import { dispatchUri, type DispatchUriOptions } from '../modules/core/pillars/dispatcher.js';
+import { probeAllPillars } from '../modules/core/pillars/health-probe.js';
 import { getPillarRegistry } from '../modules/core/pillars/registry.js';
 import { getUriRegistry } from '../modules/core/uri/registry.js';
 import { readInstalledModules } from '../modules/env-modules.js';
@@ -66,16 +67,39 @@ router.post('/uri/resolve', async (req, res) => {
 });
 
 router.get('/pillars', (_req, res) => {
-  // The /pillars view always includes a synthetic `core` self-entry so a
-  // consumer can iterate the registry without special-casing the dispatcher
-  // host. The `baseUrl` of the self-entry is intentionally empty: pillars
-  // talking to themselves use the in-process resolver, not HTTP.
+  res.json({ pillars: listPillarsWithSelf() });
+});
+
+/**
+ * Aggregated cross-pillar health probe (ADR-026 P3).
+ *
+ * Fans out `GET {baseUrl}/health` against every remote pillar in the registry
+ * and returns a map of pillar id to health. The self-pillar is short-circuited
+ * to `'healthy'` — if this handler is serving requests, core is up.
+ *
+ * The shell calls this once at boot and uses the result to gate per-pillar
+ * routes via a `PillarUnavailable` placeholder. Container-network base URLs
+ * are not reachable from the browser, which is why the probe runs server-side.
+ */
+router.get('/pillars/health', async (_req, res) => {
+  const pillars = listPillarsWithSelf();
+  const health = await probeAllPillars(pillars);
+  res.json({ health });
+});
+
+function listPillarsWithSelf(): readonly PillarRegistryEntry[] {
+  // The /pillars view always includes a `core` self-entry so a consumer can
+  // iterate the registry without special-casing the dispatcher host. The
+  // `baseUrl` of the self-entry is always empty — pillars talking to
+  // themselves use the in-process resolver, not HTTP — and a deployer's
+  // misconfigured `core:http://...` entry is normalised the same way so the
+  // contract holds regardless of how `POPS_PILLARS` is set.
   const remote = getPillarRegistry();
   const self: PillarRegistryEntry = { id: 'core', baseUrl: '' };
-  const pillars: readonly PillarRegistryEntry[] = remote.some((p) => p.id === 'core')
-    ? remote
-    : [self, ...remote];
-  res.json({ pillars });
-});
+  if (remote.some((p) => p.id === 'core')) {
+    return remote.map((p) => (p.id === 'core' ? self : p));
+  }
+  return [self, ...remote];
+}
 
 export default router;

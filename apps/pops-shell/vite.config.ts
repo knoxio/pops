@@ -77,6 +77,12 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      '/pillars': {
+        // ADR-026 P3: shell-side pillar boot calls GET /pillars and
+        // GET /pillars/health on core-api.
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
