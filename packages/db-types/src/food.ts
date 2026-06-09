@@ -14,6 +14,7 @@ import type { substitutions } from './schema/food-substitutions.js';
 import type {
   batchConsumptions,
   batches,
+  ingestSources,
   ingredientAliases,
   ingredients,
   ingredientVariants,
@@ -64,3 +65,8 @@ export type PlanSlotRow = InferSelectModel<typeof planSlots>;
 export type PlanSlotInsert = InferInsertModel<typeof planSlots>;
 export type PlanEntryRow = InferSelectModel<typeof planEntries>;
 export type PlanEntryInsert = InferInsertModel<typeof planEntries>;
+
+// PRD-110
+export type IngestSourceRow = InferSelectModel<typeof ingestSources>;
+export type IngestSourceInsert = InferInsertModel<typeof ingestSources>;
+export type IngestSourceKind = IngestSourceRow['kind'];

@@ -28,6 +28,7 @@ export { fixtures } from './fixtures.js';
 export {
   batchConsumptions,
   batches,
+  ingestSources,
   ingredientAliases,
   ingredients,
   ingredientVariants,

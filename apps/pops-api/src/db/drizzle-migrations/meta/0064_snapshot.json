@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bd2f18d4-c369-421f-b630-0ffc9fd1b4e6",
-  "prevId": "0e917358-c96e-448b-9608-dd18284c6cfd",
+  "id": "d12a75bb-49f9-4f43-8f38-66cc27e6bb4a",
+  "prevId": "0d362c2e-e75c-4a8d-94af-20a5ec43b71a",
   "tables": {
     "ai_alert_rules": {
       "name": "ai_alert_rules",
@@ -2766,6 +2766,227 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "recipe_runs": {
+      "name": "recipe_runs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "recipe_version_id": {
+          "name": "recipe_version_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "scale_factor": {
+          "name": "scale_factor",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "yielded_batch_id": {
+          "name": "yielded_batch_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "rating": {
+          "name": "rating",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {
+        "idx_recipe_runs_version": {
+          "name": "idx_recipe_runs_version",
+          "columns": ["recipe_version_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "recipe_runs_recipe_version_id_recipe_versions_id_fk": {
+          "name": "recipe_runs_recipe_version_id_recipe_versions_id_fk",
+          "tableFrom": "recipe_runs",
+          "tableTo": "recipe_versions",
+          "columnsFrom": ["recipe_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recipe_runs_yielded_batch_id_batches_id_fk": {
+          "name": "recipe_runs_yielded_batch_id_batches_id_fk",
+          "tableFrom": "recipe_runs",
+          "tableTo": "batches",
+          "columnsFrom": ["yielded_batch_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "ingest_sources": {
+      "name": "ingest_sources",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "caption": {
+          "name": "caption",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "transcript_path": {
+          "name": "transcript_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "keyframes_dir": {
+          "name": "keyframes_dir",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "video_path": {
+          "name": "video_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "extracted_json": {
+          "name": "extracted_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "extractor_version": {
+          "name": "extractor_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "draft_recipe_id": {
+          "name": "draft_recipe_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "ingested_at": {
+          "name": "ingested_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_ingest_sources_kind": {
+          "name": "idx_ingest_sources_kind",
+          "columns": ["kind"],
+          "isUnique": false
+        },
+        "idx_ingest_sources_recipe": {
+          "name": "idx_ingest_sources_recipe",
+          "columns": ["draft_recipe_id"],
+          "isUnique": false
+        },
+        "idx_ingest_sources_ingested": {
+          "name": "idx_ingest_sources_ingested",
+          "columns": ["ingested_at"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "ingest_sources_draft_recipe_id_recipes_id_fk": {
+          "name": "ingest_sources_draft_recipe_id_recipes_id_fk",
+          "tableFrom": "ingest_sources",
+          "tableTo": "recipes",
+          "columnsFrom": ["draft_recipe_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "ingredient_aliases": {
       "name": "ingredient_aliases",
       "columns": {
@@ -3096,8 +3317,53 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "recipe_runs": {
-      "name": "recipe_runs",
+    "slug_registry": {
+      "name": "slug_registry",
+      "columns": {
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {
+        "idx_slug_registry_kind_target": {
+          "name": "idx_slug_registry_kind_target",
+          "columns": ["kind", "target_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "plan_entries": {
+      "name": "plan_entries",
       "columns": {
         "id": {
           "name": "id",
@@ -3106,44 +3372,52 @@
           "notNull": true,
           "autoincrement": true
         },
-        "recipe_version_id": {
-          "name": "recipe_version_id",
+        "date": {
+          "name": "date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot": {
+          "name": "slot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "recipe_id": {
+          "name": "recipe_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "started_at": {
-          "name": "started_at",
-          "type": "text",
+        "recipe_version_id": {
+          "name": "recipe_version_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "scale_factor": {
-          "name": "scale_factor",
-          "type": "real",
+        "planned_servings": {
+          "name": "planned_servings",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": 1
         },
-        "yielded_batch_id": {
-          "name": "yielded_batch_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "rating": {
-          "name": "rating",
+        "recipe_run_id": {
+          "name": "recipe_run_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -3166,32 +3440,110 @@
         }
       },
       "indexes": {
-        "idx_recipe_runs_version": {
-          "name": "idx_recipe_runs_version",
-          "columns": ["recipe_version_id"],
+        "idx_plan_entries_date": {
+          "name": "idx_plan_entries_date",
+          "columns": ["date"],
+          "isUnique": false
+        },
+        "idx_plan_entries_date_slot": {
+          "name": "idx_plan_entries_date_slot",
+          "columns": ["date", "slot"],
+          "isUnique": false
+        },
+        "idx_plan_entries_recipe": {
+          "name": "idx_plan_entries_recipe",
+          "columns": ["recipe_id"],
+          "isUnique": false
+        },
+        "idx_plan_entries_unscheduled": {
+          "name": "idx_plan_entries_unscheduled",
+          "columns": ["recipe_id"],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "recipe_runs_recipe_version_id_recipe_versions_id_fk": {
-          "name": "recipe_runs_recipe_version_id_recipe_versions_id_fk",
-          "tableFrom": "recipe_runs",
+        "plan_entries_slot_plan_slots_slug_fk": {
+          "name": "plan_entries_slot_plan_slots_slug_fk",
+          "tableFrom": "plan_entries",
+          "tableTo": "plan_slots",
+          "columnsFrom": ["slot"],
+          "columnsTo": ["slug"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_entries_recipe_id_recipes_id_fk": {
+          "name": "plan_entries_recipe_id_recipes_id_fk",
+          "tableFrom": "plan_entries",
+          "tableTo": "recipes",
+          "columnsFrom": ["recipe_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_entries_recipe_version_id_recipe_versions_id_fk": {
+          "name": "plan_entries_recipe_version_id_recipe_versions_id_fk",
+          "tableFrom": "plan_entries",
           "tableTo": "recipe_versions",
           "columnsFrom": ["recipe_version_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "recipe_runs_yielded_batch_id_batches_id_fk": {
-          "name": "recipe_runs_yielded_batch_id_batches_id_fk",
-          "tableFrom": "recipe_runs",
-          "tableTo": "batches",
-          "columnsFrom": ["yielded_batch_id"],
+        "plan_entries_recipe_run_id_recipe_runs_id_fk": {
+          "name": "plan_entries_recipe_run_id_recipe_runs_id_fk",
+          "tableFrom": "plan_entries",
+          "tableTo": "recipe_runs",
+          "columnsFrom": ["recipe_run_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "ck_plan_entries_planned_servings": {
+          "name": "ck_plan_entries_planned_servings",
+          "value": "\"plan_entries\".\"planned_servings\" > 0"
+        }
+      }
+    },
+    "plan_slots": {
+      "name": "plan_slots",
+      "columns": {
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 100
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -3534,28 +3886,80 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "slug_registry": {
-      "name": "slug_registry",
+    "substitutions": {
+      "name": "substitutions",
       "columns": {
-        "slug": {
-          "name": "slug",
-          "type": "text",
+        "id": {
+          "name": "id",
+          "type": "integer",
           "primaryKey": true,
           "notNull": true,
+          "autoincrement": true
+        },
+        "from_ingredient_id": {
+          "name": "from_ingredient_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
-        "kind": {
-          "name": "kind",
+        "from_variant_id": {
+          "name": "from_variant_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "to_ingredient_id": {
+          "name": "to_ingredient_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "to_variant_id": {
+          "name": "to_variant_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "ratio": {
+          "name": "ratio",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "context_tags": {
+          "name": "context_tags",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "'[]'"
         },
-        "target_id": {
-          "name": "target_id",
-          "type": "integer",
+        "scope": {
+          "name": "scope",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
+          "default": "'global'"
+        },
+        "recipe_id": {
+          "name": "recipe_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "created_at": {
@@ -3568,16 +3972,88 @@
         }
       },
       "indexes": {
-        "idx_slug_registry_kind_target": {
-          "name": "idx_slug_registry_kind_target",
-          "columns": ["kind", "target_id"],
+        "idx_subs_from_ing": {
+          "name": "idx_subs_from_ing",
+          "columns": ["from_ingredient_id"],
+          "isUnique": false
+        },
+        "idx_subs_from_var": {
+          "name": "idx_subs_from_var",
+          "columns": ["from_variant_id"],
           "isUnique": false
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "substitutions_from_ingredient_id_ingredients_id_fk": {
+          "name": "substitutions_from_ingredient_id_ingredients_id_fk",
+          "tableFrom": "substitutions",
+          "tableTo": "ingredients",
+          "columnsFrom": ["from_ingredient_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "substitutions_from_variant_id_ingredient_variants_id_fk": {
+          "name": "substitutions_from_variant_id_ingredient_variants_id_fk",
+          "tableFrom": "substitutions",
+          "tableTo": "ingredient_variants",
+          "columnsFrom": ["from_variant_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "substitutions_to_ingredient_id_ingredients_id_fk": {
+          "name": "substitutions_to_ingredient_id_ingredients_id_fk",
+          "tableFrom": "substitutions",
+          "tableTo": "ingredients",
+          "columnsFrom": ["to_ingredient_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "substitutions_to_variant_id_ingredient_variants_id_fk": {
+          "name": "substitutions_to_variant_id_ingredient_variants_id_fk",
+          "tableFrom": "substitutions",
+          "tableTo": "ingredient_variants",
+          "columnsFrom": ["to_variant_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "substitutions_recipe_id_recipes_id_fk": {
+          "name": "substitutions_recipe_id_recipes_id_fk",
+          "tableFrom": "substitutions",
+          "tableTo": "recipes",
+          "columnsFrom": ["recipe_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "ck_subs_xor_from": {
+          "name": "ck_subs_xor_from",
+          "value": "(\"substitutions\".\"from_ingredient_id\" IS NOT NULL) <> (\"substitutions\".\"from_variant_id\" IS NOT NULL)"
+        },
+        "ck_subs_xor_to": {
+          "name": "ck_subs_xor_to",
+          "value": "(\"substitutions\".\"to_ingredient_id\" IS NOT NULL) <> (\"substitutions\".\"to_variant_id\" IS NOT NULL)"
+        },
+        "ck_subs_scope_recipe": {
+          "name": "ck_subs_scope_recipe",
+          "value": "(\"substitutions\".\"scope\" = 'recipe' AND \"substitutions\".\"recipe_id\" IS NOT NULL) OR (\"substitutions\".\"scope\" = 'global' AND \"substitutions\".\"recipe_id\" IS NULL)"
+        },
+        "ck_subs_scope": {
+          "name": "ck_subs_scope",
+          "value": "\"substitutions\".\"scope\" IN ('global','recipe')"
+        },
+        "ck_subs_ratio_positive": {
+          "name": "ck_subs_ratio_positive",
+          "value": "\"substitutions\".\"ratio\" > 0"
+        }
+      }
     },
     "glia_actions": {
       "name": "glia_actions",
@@ -4418,6 +4894,201 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "list_items": {
+      "name": "list_items",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "list_id": {
+          "name": "list_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "qty": {
+          "name": "qty",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "ref_kind": {
+          "name": "ref_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'free'"
+        },
+        "ref_id": {
+          "name": "ref_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "checked": {
+          "name": "checked",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {
+        "idx_list_items_list": {
+          "name": "idx_list_items_list",
+          "columns": ["list_id"],
+          "isUnique": false
+        },
+        "idx_list_items_checked": {
+          "name": "idx_list_items_checked",
+          "columns": ["list_id", "checked"],
+          "isUnique": false
+        },
+        "idx_list_items_ref": {
+          "name": "idx_list_items_ref",
+          "columns": ["ref_kind", "ref_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "list_items_list_id_lists_id_fk": {
+          "name": "list_items_list_id_lists_id_fk",
+          "tableFrom": "list_items",
+          "tableTo": "lists",
+          "columnsFrom": ["list_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "lists": {
+      "name": "lists",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_app": {
+          "name": "owner_app",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {
+        "idx_lists_kind": {
+          "name": "idx_lists_kind",
+          "columns": ["kind"],
+          "isUnique": false
+        },
+        "idx_lists_owner_app": {
+          "name": "idx_lists_owner_app",
+          "columns": ["owner_app"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
