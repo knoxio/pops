@@ -17,6 +17,8 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { seedFood } from '@pops/app-food-db/seed';
 
+import { compileRecipeVersion } from '../src/dsl/compile';
+
 if (process.env.NODE_ENV === 'production') {
   console.error("❌ Refusing to run: NODE_ENV is 'production'.");
   console.error('   This script is for development/testing only.');
@@ -66,7 +68,10 @@ try {
       db.exec(`DELETE FROM "${table}"`);
     }
     const drizzleDb = drizzle(db);
-    const summary = seedFood(drizzleDb, drizzleDb);
+    // Phase 2: drive PRD-116's compile + PRD-107's promote inline so the
+    // seed DB ends up with materialised recipe_lines / recipe_steps and
+    // every recipe's v1 promoted to `current`.
+    const summary = seedFood(drizzleDb, drizzleDb, { compileRecipeVersion });
     console.log('\n✅ Food seed complete\n');
     console.log('📊 Counts:');
     console.log(`  prep_states:       ${summary.prepStates}`);
@@ -84,6 +89,8 @@ try {
     console.log(`  lists:             ${summary.lists}`);
     console.log(`  list_items:        ${summary.listItems}`);
     console.log(`  ingest_sources:    ${summary.ingestSources}`);
+    console.log(`  unit_conversions:  ${summary.unitConversions}`);
+    console.log(`  ingredient_weights:${summary.ingredientWeights}`);
   })();
 } finally {
   db.pragma('foreign_keys = ON');
