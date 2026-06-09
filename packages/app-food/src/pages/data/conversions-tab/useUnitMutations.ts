@@ -1,7 +1,8 @@
 /**
- * tRPC mutations for unit_conversions. Centralises the success/error
- * handling so the dialogs only need to render and submit; the page-level
- * hook composes the public surface.
+ * tRPC mutations for unit_conversions. Each `submit*` returns the
+ * underlying mutation's promise so call sites can chain `onSuccess`
+ * behaviour (close dialog, etc.) without racing the synchronous-then-
+ * stale `errorMessage` state.
  */
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -61,9 +62,14 @@ export function useUnitMutations() {
 
   const clearError = useCallback(() => setErrorMessage(null), []);
 
-  const submitCreate = useCallback((input: CreateUnitInput) => create.mutate(input), [create]);
+  const submitCreate = useCallback(
+    (input: CreateUnitInput, onSuccess?: () => void) =>
+      create.mutate(input, { onSuccess: () => onSuccess?.() }),
+    [create]
+  );
   const submitUpdate = useCallback(
-    (id: number, patch: UpdateUnitInput) => update.mutate({ id, ...patch }),
+    (id: number, patch: UpdateUnitInput, onSuccess?: () => void) =>
+      update.mutate({ id, ...patch }, { onSuccess: () => onSuccess?.() }),
     [update]
   );
   const submitDelete = useCallback((id: number) => remove.mutate({ id }), [remove]);

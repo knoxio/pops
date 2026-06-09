@@ -1,6 +1,9 @@
 /**
  * tRPC mutations for ingredient_weights. Same shape as `useUnitMutations`;
- * separate hook so each section owns its own error state.
+ * separate hook so each section owns its own error state. Each `submit*`
+ * accepts an optional `onSuccess` callback the call site can use to close
+ * its dialog AFTER the server confirms (avoids the synchronous-state
+ * race where the dialog would close on every submit regardless of outcome).
  */
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -61,9 +64,14 @@ export function useWeightMutations() {
 
   const clearError = useCallback(() => setErrorMessage(null), []);
 
-  const submitCreate = useCallback((input: CreateWeightInput) => create.mutate(input), [create]);
+  const submitCreate = useCallback(
+    (input: CreateWeightInput, onSuccess?: () => void) =>
+      create.mutate(input, { onSuccess: () => onSuccess?.() }),
+    [create]
+  );
   const submitUpdate = useCallback(
-    (id: number, patch: UpdateWeightInput) => update.mutate({ id, ...patch }),
+    (id: number, patch: UpdateWeightInput, onSuccess?: () => void) =>
+      update.mutate({ id, ...patch }, { onSuccess: () => onSuccess?.() }),
     [update]
   );
   const submitDelete = useCallback((id: number) => remove.mutate({ id }), [remove]);

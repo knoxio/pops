@@ -84,9 +84,9 @@ Actions:
 
 ### Sub-section B: Ingredient weights
 
-Table view grouped by ingredient. Columns: ingredient, variant (or "any"), unit, grams, seeded?, notes.
+Table view grouped by ingredient (rows sort `(ingredient_id, unit)` server-side). Columns: ingredient, variant (or "any"), unit, grams, seeded?, notes.
 
-Filters: search by ingredient name; filter by variant.
+Filters: search by unit name; filter by ingredient; "Show seeded only" toggle.
 
 Actions:
 
@@ -221,11 +221,11 @@ Inline per theme protocol.
 
 ### Admin UI
 
-- [ ] `/food/data/conversions` route renders both sub-sections (Unit conversions, Ingredient weights).
-- [ ] Add / edit / delete actions work via tRPC and reflect immediately.
-- [ ] Seeded rows show a "seeded" badge and have the delete button disabled.
-- [ ] Search filters work.
-- [ ] Ingredient detail panel (PRD-122) has an "Add weight" button that opens the relevant form here.
+- [x] `/food/data/conversions` route renders both sub-sections (Unit conversions, Ingredient weights). (Phase C — `packages/app-food/src/pages/data/conversions-tab/`. The route slot was reserved by PRD-122-A; Phase C swapped the placeholder for the real `ConversionsTabContents`.)
+- [x] Add / edit / delete actions work via tRPC and reflect immediately. (Per-mutation `food.conversions.listUnits`/`listWeights` invalidation; create/update close their dialogs only after the server confirms via per-call `onSuccess` callbacks.)
+- [x] Seeded rows show a "seeded" badge and have the delete button disabled. (Disabled button + `title=` tooltip + `aria-label` carrying "Seeded conversion/weight; reseed to restore" — `<span tabIndex={0}>` Tooltip-wrap pattern rejected because it tripped `jsx-a11y/no-noninteractive-tabindex`.)
+- [x] Search filters work. (Units: search by `from_unit`/`to_unit`. Weights: search by `unit` + filter by ingredient. Both sub-sections also expose the "Show seeded only" toggle.)
+- [ ] Ingredient detail panel (PRD-122) has an "Add weight" button that opens the relevant form here. _Deferred — owned by whichever 122-B follow-up (122-B2 or later) lands second after PRD-123 Phase C, to avoid two simultaneous in-flight branches amending the same `IngredientDetailPanel`._
 
 ### Seed integration
 
@@ -236,7 +236,7 @@ Inline per theme protocol.
 ### Tests
 
 - [x] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/conversions-router.test.ts`. (24 cases: 4 list-units, 3 create-unit incl. UNIQUE→CONFLICT, 2 update-unit incl. unknown→NOT_FOUND, 3 delete-unit incl. idempotent-unknown + seeded short-circuit, 6 weight CRUD/listing + seededOnly toggle + UNIQUE→CONFLICT, 1 seeded-weight short-circuit, 1 unknown-weight→NOT_FOUND, and 6 resolve paths covering identity / unit-conversions / ingredient-weight wins / variant-specific wins / variant→null fallback / unresolved.)
-- [ ] Vitest + RTL suite at `packages/app-food/src/pages/data/__tests__/ConversionsPage.test.tsx`. _Phase C — Conversions tab UI._
+- [x] Vitest + RTL suite for the Conversions tab UI. (Phase C — `packages/app-food/src/pages/data/conversions-tab/__tests__/`: `UnitsSection.test.tsx` 7 cases, `WeightsSection.test.tsx` 7 cases, `useWeightRowViews.test.ts` 3 cases. 17 cases total.)
 
 ## Out of Scope
 

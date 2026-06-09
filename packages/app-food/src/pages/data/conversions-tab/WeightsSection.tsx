@@ -145,7 +145,7 @@ function useWeightData(
     seededOnly: filters.seededOnly ? true : undefined,
     ingredientId,
   });
-  const rawRows = (listQuery.data?.items ?? []) as readonly IngredientWeightRow[];
+  const rawRows = listQuery.data?.items ?? [];
   const views = useWeightRowViews(rawRows, lookup);
   return { views, isLoading: listQuery.isLoading };
 }
@@ -190,10 +190,7 @@ export function WeightsSection() {
         ingredients={ingredients}
         errorMessage={mutations.errorMessage}
         isSubmitting={mutations.isCreating}
-        onSubmit={(input) => {
-          mutations.submitCreate(input);
-          if (mutations.errorMessage === null) dialog.closeCreate();
-        }}
+        onSubmit={(input) => mutations.submitCreate(input, dialog.closeCreate)}
       />
       <EditWeightDialog
         open={dialog.editingRow !== null}
@@ -203,10 +200,7 @@ export function WeightsSection() {
         row={dialog.editingRow}
         errorMessage={mutations.errorMessage}
         isSubmitting={mutations.isUpdating}
-        onSubmit={(id, patch) => {
-          mutations.submitUpdate(id, patch);
-          if (mutations.errorMessage === null) dialog.cancelEdit();
-        }}
+        onSubmit={(id, patch) => mutations.submitUpdate(id, patch, dialog.cancelEdit)}
       />
     </section>
   );

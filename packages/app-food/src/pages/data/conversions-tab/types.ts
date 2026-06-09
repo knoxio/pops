@@ -1,32 +1,19 @@
 /**
  * Wire-shape mirrors for the `food.conversions.*` tRPC procedures
- * (PRD-123 Phase B). Frontend cannot import from `apps/pops-api/src/...`
- * so the shape is restated here. Drift is caught by Phase B's integration
- * suite asserting the router output schema, and by tsc against the
- * useQuery/useMutation generics at the call site.
+ * (PRD-123 Phase B). Derived from `AppRouter` via `inferRouterOutputs` so
+ * any schema change to the router output (`conversions/types.ts` on the
+ * server) flows through to the UI without manual updates.
  */
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type ConversionsOutputs = inferRouterOutputs<AppRouter>['food']['conversions'];
+
 export type CanonicalUnit = 'g' | 'ml' | 'count';
 
-export interface UnitConversionRow {
-  id: number;
-  fromUnit: string;
-  toUnit: CanonicalUnit;
-  ratio: number;
-  notes: string | null;
-  seeded: boolean;
-  createdAt: string;
-}
-
-export interface IngredientWeightRow {
-  id: number;
-  ingredientId: number;
-  variantId: number | null;
-  unit: string;
-  grams: number;
-  notes: string | null;
-  seeded: boolean;
-  createdAt: string;
-}
+export type UnitConversionRow = ConversionsOutputs['listUnits']['items'][number];
+export type IngredientWeightRow = ConversionsOutputs['listWeights']['items'][number];
 
 export interface CreateUnitInput {
   fromUnit: string;

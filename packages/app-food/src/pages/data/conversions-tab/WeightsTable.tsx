@@ -1,8 +1,8 @@
 /**
- * Read-only table render for the ingredient-weights section. Rows are
- * sorted by ingredient name and effectively grouped by ingredient (every
- * row carries its ingredient name in the first column — the sort makes
- * the grouping visually obvious without dedicated group headers).
+ * Read-only table render for the ingredient-weights section. Rows arrive
+ * sorted by `(ingredient_id, unit)` from the backend list query, so they
+ * are effectively grouped by ingredient even though there are no
+ * dedicated group headers — the first-column ingredient name carries it.
  */
 import { useTranslation } from 'react-i18next';
 

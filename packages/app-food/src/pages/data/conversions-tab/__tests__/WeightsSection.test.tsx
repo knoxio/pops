@@ -162,13 +162,14 @@ describe('PRD-123 Phase C — WeightsSection', () => {
     await userEvent.type(within(dialog).getByLabelText(/^unit$/i), 'medium');
     await userEvent.type(within(dialog).getByLabelText(/^grams$/i), '150');
     await userEvent.click(within(dialog).getByRole('button', { name: /save/i }));
-    expect(mockCreateMutate).toHaveBeenCalledWith({
-      ingredientId: 100,
-      variantId: null,
-      unit: 'medium',
-      grams: 150,
-      notes: undefined,
-    });
+    expect(mockCreateMutate).toHaveBeenCalledWith(
+      { ingredientId: 100, variantId: null, unit: 'medium', grams: 150, notes: undefined },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+    // Dialog stays open until the server confirms — close only on onSuccess.
+    expect(screen.queryByRole('dialog')).toBeInTheDocument();
+    act(() => mockCreateMutate.mock.lastCall?.[1]?.onSuccess?.());
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('surfaces a server-side conflict in the create dialog', async () => {

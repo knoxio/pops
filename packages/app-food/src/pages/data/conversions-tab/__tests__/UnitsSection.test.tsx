@@ -118,12 +118,26 @@ describe('PRD-123 Phase C — UnitsSection', () => {
     await userEvent.type(within(dialog).getByLabelText(/from unit/i), 'cup');
     await userEvent.type(within(dialog).getByLabelText(/^ratio$/i), '240');
     await userEvent.click(within(dialog).getByRole('button', { name: /save/i }));
-    expect(mockCreateMutate).toHaveBeenCalledWith({
-      fromUnit: 'cup',
-      toUnit: 'ml',
-      ratio: 240,
-      notes: undefined,
-    });
+    expect(mockCreateMutate).toHaveBeenCalledWith(
+      { fromUnit: 'cup', toUnit: 'ml', ratio: 240, notes: undefined },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+  });
+
+  it('keeps the create dialog open until the mutation onSuccess fires', async () => {
+    seedList([]);
+    render(<UnitsSection />);
+    await userEvent.click(screen.getByRole('button', { name: /add conversion/i }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.type(within(dialog).getByLabelText(/from unit/i), 'cup');
+    await userEvent.type(within(dialog).getByLabelText(/^ratio$/i), '240');
+    await userEvent.click(within(dialog).getByRole('button', { name: /save/i }));
+    // The mutation has not resolved yet — dialog must still be open.
+    expect(screen.queryByRole('dialog')).toBeInTheDocument();
+    // Now simulate the server confirming success.
+    const submitCall = mockCreateMutate.mock.lastCall;
+    act(() => submitCall?.[1]?.onSuccess?.());
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('surfaces a server-side error in the dialog', async () => {

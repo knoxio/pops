@@ -134,10 +134,7 @@ export function UnitsSection() {
         onOpenChange={(open) => (open ? dialog.openCreate() : dialog.closeCreate())}
         errorMessage={mutations.errorMessage}
         isSubmitting={mutations.isCreating}
-        onSubmit={(input) => {
-          mutations.submitCreate(input);
-          if (mutations.errorMessage === null) dialog.closeCreate();
-        }}
+        onSubmit={(input) => mutations.submitCreate(input, dialog.closeCreate)}
       />
       <EditUnitDialog
         open={dialog.editingRow !== null}
@@ -147,10 +144,7 @@ export function UnitsSection() {
         row={dialog.editingRow}
         errorMessage={mutations.errorMessage}
         isSubmitting={mutations.isUpdating}
-        onSubmit={(id, patch) => {
-          mutations.submitUpdate(id, patch);
-          if (mutations.errorMessage === null) dialog.cancelEdit();
-        }}
+        onSubmit={(id, patch) => mutations.submitUpdate(id, patch, dialog.cancelEdit)}
       />
     </section>
   );
