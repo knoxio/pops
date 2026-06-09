@@ -32,6 +32,7 @@ export {
   ingredientAliases,
   ingredients,
   ingredientVariants,
+  ingredientWeights,
   planEntries,
   planSlots,
   prepStates,
@@ -43,6 +44,7 @@ export {
   recipeVersionProposedSlugs,
   recipeVersions,
   slugRegistry,
+  unitConversions,
 } from './food.js';
 export { substitutions } from './food-substitutions.js';
 export { homeInventory } from './inventory.js';

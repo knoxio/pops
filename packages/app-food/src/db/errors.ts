@@ -230,3 +230,23 @@ export class IngestSourceNotFound extends Error {
     this.sourceId = sourceId;
   }
 }
+
+// ── PRD-123 errors ──────────────────────────────────────────────────────
+
+/**
+ * Thrown when a service-layer delete targets a row flagged `is_seeded=1`.
+ * Seeded rows are owned by PRD-113's seed task; deletion is disabled in the
+ * admin UI and refused server-side so re-seeding stays the single source of
+ * truth.
+ */
+export class SeededRowProtected extends Error {
+  readonly table: 'unit_conversions' | 'ingredient_weights';
+  readonly id: number;
+
+  constructor(table: 'unit_conversions' | 'ingredient_weights', id: number) {
+    super(`Row #${id} in ${table} is seeded and cannot be deleted (re-seed to restore).`);
+    this.name = 'SeededRowProtected';
+    this.table = table;
+    this.id = id;
+  }
+}

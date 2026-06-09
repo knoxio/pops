@@ -17,7 +17,7 @@ After this epic, a user can author recipes manually, see them rendered as a cook
 | 120 | [DSL CodeMirror Editor](../prds/120-dsl-editor/README.md)                    | CodeMirror 6 + Lezer grammar; autocomplete from slug_registry; compile-error squiggles; chip render for `@N`      | Not started |
 | 121 | [DSL Renderer](../prds/121-dsl-renderer/README.md)                           | Cookbook view: chips for ingredient refs, clickable `@time` timers, `@temperature` widgets, markdown body         | Not started |
 | 122 | [Unified `/food/data` Management Page](../prds/122-food-data-page/README.md) | One page, tabs for ingredients/variants/aliases/prep_states/substitutions; bulk operations; search & filter       | Not started |
-| 123 | [Conversion Table Schema & Admin](../prds/123-conversion-table/README.md)    | `unit_conversions` global + `ingredient_weights` per-ingredient; upgrades PRD-116 normalisation; admin UI         | Not started |
+| 123 | [Conversion Table Schema & Admin](../prds/123-conversion-table/README.md)    | `unit_conversions` global + `ingredient_weights` per-ingredient; upgrades PRD-116 normalisation; admin UI         | Partial     |
 | 124 | [Hero Image Upload](../prds/124-hero-image-upload/README.md)                 | `POST /api/food/recipes/:id/hero`; storage under `data/food/recipes/<id>/`; thumbnail generation                  | Not started |
 
 ### Build order

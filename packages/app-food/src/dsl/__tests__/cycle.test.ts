@@ -30,6 +30,10 @@ const MIGRATIONS = [
   '0060_familiar_leo.sql',
   // PRD-116 lands `recipe_lines` proper — no more stub.
   '0065_prd_116_recipe_compile.sql',
+  // PRD-123 — required because compile-lines now consults the conversion
+  // tables; the cycle suite drives compile-time recipe-ref persistence so
+  // the materialiser needs both schemas live.
+  '0066_prd_123_conversions.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),

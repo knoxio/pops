@@ -20,6 +20,7 @@ import {
   recipeVersionProposedSlugs,
   recipeVersions,
 } from '../../db/schema';
+import { createIngredientWeight, createUnitConversion } from '../../db/services/conversions';
 import { createIngredient } from '../../db/services/ingredients';
 import { createPrepState } from '../../db/services/prep-states';
 import { createRecipe } from '../../db/services/recipes';
@@ -33,6 +34,11 @@ const MIGRATIONS = [
   '0059_useful_hiroim.sql',
   '0060_familiar_leo.sql',
   '0065_prd_116_recipe_compile.sql',
+  // PRD-123 — compile now consults `unit_conversions` + `ingredient_weights`
+  // via `normaliseLineQty`. Tests still cover the unresolved path (no rows
+  // seeded → falls back to ingredient default_unit); see dedicated
+  // "conversion v1" test for the seeded-row happy path.
+  '0066_prd_123_conversions.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
@@ -139,6 +145,55 @@ describe('PRD-116 — compile pipeline: happy path', () => {
     expect(butter?.qtyMl).toBeNull();
     expect(butter?.qtyCount).toBeNull();
     expect(butter?.canonicalUnit).toBe('g');
+  });
+
+  it('PRD-123 conversion: cup is rewritten via unit_conversions when seeded', () => {
+    createUnitConversion(db, { fromUnit: 'cup', toUnit: 'ml', ratio: 240, isSeeded: true });
+    const versionId = makeRecipe(
+      db,
+      'cup-with-conv',
+      `@recipe(slug="cup-with-conv", title="Cup")
+@yield(banana, 1:count)
+@ingredient(1, milk, 2:cup)
+@step("Pour @1.")
+`
+    );
+    compileRecipeVersion(versionId, db);
+    const lines = db
+      .select()
+      .from(recipeLines)
+      .where(eq(recipeLines.recipeVersionId, versionId))
+      .all();
+    expect(lines[0]?.qtyMl).toBe(480);
+    expect(lines[0]?.canonicalUnit).toBe('ml');
+  });
+
+  it('PRD-123 conversion: ingredient_weights "medium" → qty_g for the right ingredient', () => {
+    const onion = createIngredient(db, { name: 'Onion', slug: 'onion', defaultUnit: 'count' });
+    createIngredientWeight(db, {
+      ingredientId: onion.id,
+      variantId: null,
+      unit: 'medium',
+      grams: 150,
+      isSeeded: true,
+    });
+    const versionId = makeRecipe(
+      db,
+      'medium-onion',
+      `@recipe(slug="medium-onion", title="Soup")
+@yield(banana, 1:count)
+@ingredient(1, onion, 2:medium)
+@step("Dice @1.")
+`
+    );
+    compileRecipeVersion(versionId, db);
+    const lines = db
+      .select()
+      .from(recipeLines)
+      .where(eq(recipeLines.recipeVersionId, versionId))
+      .all();
+    expect(lines[0]?.qtyG).toBe(300);
+    expect(lines[0]?.canonicalUnit).toBe('g');
   });
 
   it('non-canonical unit (cup) leaves qty_* null and falls back to ingredient default_unit', () => {

@@ -27,6 +27,8 @@ export const foodMigrationTags: readonly string[] = [
   '0064_peaceful_magma',
   // PRD-116 — recipe_lines + recipe_steps + recipe_version_proposed_slugs.
   '0065_prd_116_recipe_compile',
+  // PRD-123 — unit_conversions + ingredient_weights.
+  '0066_prd_123_conversions',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

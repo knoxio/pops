@@ -158,6 +158,7 @@ function insertLines(
       recipeVersionId: versionId,
       originalText: serialiseSourceDescriptor(source),
       ingredientDefaultUnit: defaultUnitLookup(block.ingredientId),
+      db: tx,
     });
     tx.insert(recipeLines).values(row).run();
     inserted += 1;

@@ -18,6 +18,7 @@ import type {
   ingredientAliases,
   ingredients,
   ingredientVariants,
+  ingredientWeights,
   planEntries,
   planSlots,
   prepStates,
@@ -29,6 +30,7 @@ import type {
   recipeVersionProposedSlugs,
   recipeVersions,
   slugRegistry,
+  unitConversions,
 } from './schema/food.js';
 
 // PRD-106
@@ -81,3 +83,10 @@ export type RecipeStepRow = InferSelectModel<typeof recipeSteps>;
 export type RecipeStepInsert = InferInsertModel<typeof recipeSteps>;
 export type RecipeVersionProposedSlugRow = InferSelectModel<typeof recipeVersionProposedSlugs>;
 export type RecipeVersionProposedSlugInsert = InferInsertModel<typeof recipeVersionProposedSlugs>;
+
+// PRD-123
+export type UnitConversionRow = InferSelectModel<typeof unitConversions>;
+export type UnitConversionInsert = InferInsertModel<typeof unitConversions>;
+export type CanonicalUnit = UnitConversionRow['toUnit'];
+export type IngredientWeightRow = InferSelectModel<typeof ingredientWeights>;
+export type IngredientWeightInsert = InferInsertModel<typeof ingredientWeights>;
