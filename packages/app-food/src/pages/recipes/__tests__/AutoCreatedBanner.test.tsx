@@ -52,13 +52,14 @@ describe('PRD-119-C — AutoCreatedBanner', () => {
   });
 
   it('hides when the dismiss button is clicked', async () => {
+    const user = userEvent.setup();
     render(
       <Wrapper>
         <AutoCreatedBanner slugs={['dragonfruit']} />
       </Wrapper>
     );
     expect(screen.getByRole('status')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /dismiss/i }));
+    await user.click(screen.getByRole('button', { name: /dismiss/i }));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

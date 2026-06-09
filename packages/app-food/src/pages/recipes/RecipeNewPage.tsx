@@ -26,13 +26,14 @@ export function RecipeNewPage(): ReactElement {
   const createMutation = trpc.food.recipes.create.useMutation({
     onSuccess: (result) => {
       const compile = result.compile;
-      if (compile.ok === false) {
+      if (compile.ok === true) {
+        toast.success(t('recipes.new.saved'));
+      } else {
         setIssues(compileErrorsToIssues(compile.errors));
         toast.error(t('recipes.new.compileError'));
-        // Still redirect — the draft exists with compile_status='failed'
-        // and the editor at /edit will show the errors inline.
       }
-      toast.success(t('recipes.new.saved'));
+      // Redirect in both paths — the draft exists either way, and the
+      // edit page surfaces compile errors inline via PRD-120-C `issues`.
       void navigate(`/food/recipes/${result.slug}/edit`);
     },
     onError: (err) => {

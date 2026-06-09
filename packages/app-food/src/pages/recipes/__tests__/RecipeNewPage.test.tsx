@@ -98,15 +98,16 @@ describe('PRD-119-C — RecipeNewPage', () => {
   });
 
   it('passes the current DSL value to the create mutation on save', async () => {
+    const user = userEvent.setup();
     render(
       <Wrapper>
         <RecipeNewPage />
       </Wrapper>
     );
     const textarea = screen.getByLabelText(/dsl editor/i);
-    await userEvent.clear(textarea);
-    await userEvent.type(textarea, '@recipe(slug=\\"pancakes\\")');
-    await userEvent.click(screen.getByRole('button', { name: /save draft/i }));
+    await user.clear(textarea);
+    await user.type(textarea, '@recipe(slug=\\"pancakes\\")');
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
     expect(mockCreateMutate).toHaveBeenCalledTimes(1);
     expect(mockCreateMutate).toHaveBeenCalledWith(
       expect.objectContaining({ dsl: expect.stringContaining('pancakes') })
