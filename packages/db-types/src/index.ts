@@ -32,6 +32,7 @@ import type { episodes } from './schema/episodes.js';
 import type { fixtures } from './schema/fixtures.js';
 import type { homeInventory } from './schema/inventory.js';
 import type { itemConnections } from './schema/item-connections.js';
+// `lists` table types are re-exported via `./lists.js` below.
 import type { itemDocuments } from './schema/item-documents.js';
 import type { itemFixtureConnections } from './schema/item-fixture-connections.js';
 import type { itemPhotos } from './schema/item-photos.js';
@@ -91,6 +92,8 @@ export {
   homeInventory,
   batchConsumptions,
   batches,
+  listItems,
+  lists,
   ingredientAliases,
   ingredients,
   ingredientVariants,
@@ -170,6 +173,7 @@ export type LocationRow = InferSelectModel<typeof locations>;
 export type FixtureRow = InferSelectModel<typeof fixtures>;
 export type FixtureInsert = InferInsertModel<typeof fixtures>;
 export * from './food.js';
+export * from './lists.js';
 export type ItemConnectionRow = InferSelectModel<typeof itemConnections>;
 export type ItemFixtureConnectionRow = InferSelectModel<typeof itemFixtureConnections>;
 export type ItemPhotoRow = InferSelectModel<typeof itemPhotos>;

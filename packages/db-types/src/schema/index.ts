@@ -40,6 +40,7 @@ export {
 } from './food.js';
 export { substitutions } from './food-substitutions.js';
 export { homeInventory } from './inventory.js';
+export { listItems, lists } from './lists.js';
 export { itemConnections } from './item-connections.js';
 export { itemFixtureConnections } from './item-fixture-connections.js';
 export { itemDocuments } from './item-documents.js';

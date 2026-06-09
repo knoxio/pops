@@ -22,6 +22,7 @@ import { financeRouter } from './modules/finance/index.js';
 import { foodRouter } from './modules/food/index.js';
 import { installedManifests } from './modules/installed-modules.js';
 import { inventoryRouter } from './modules/inventory/index.js';
+import { listsRouter } from './modules/lists/index.js';
 import { mediaRouter } from './modules/media/index.js';
 import { router } from './trpc.js';
 
@@ -45,6 +46,7 @@ const KNOWN_ROUTERS = {
   finance: financeRouter,
   food: foodRouter,
   inventory: inventoryRouter,
+  lists: listsRouter,
   media: mediaRouter,
 };
 

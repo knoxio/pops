@@ -18,6 +18,7 @@ export const KNOWN_MODULES = [
   'finance',
   'food',
   'inventory',
+  'lists',
   'media',
 ] as const;
 
@@ -1083,6 +1084,15 @@ export const MODULES = [
     ] satisfies readonly SettingsManifest[],
   },
   {
+    id: 'lists',
+    name: 'Lists',
+    version: '0.1.0',
+    surfaces: ['app'] as const,
+    description: 'Generic lists — shopping, packing, todo. Food is the first consumer.',
+    hasBackend: false,
+    hasFrontend: false,
+  },
+  {
     id: 'media',
     name: 'Media',
     version: '0.1.0',
@@ -1692,4 +1702,5 @@ export type GeneratedModuleId =
   | 'finance'
   | 'food'
   | 'inventory'
+  | 'lists'
   | 'media';

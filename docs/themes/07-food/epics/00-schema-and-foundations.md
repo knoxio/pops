@@ -22,7 +22,7 @@ This epic is schema-and-data + the DSL parsing/resolving/compiling pipeline. No 
 | 109 | [Substitution Model](../prds/109-substitution-model/README.md)                             | Substitution graph (global + per-recipe), context tags, source-cardinality CHECKs                                  | Done        |
 | 110 | [Ingest Source & Media Layout](../prds/110-ingest-sources/README.md)                       | `ingest_sources` table, `storage/food/ingest/` layout, 100-dir FIFO cap, Litestream exclusion config               | Not started |
 | 111 | [Plan Entry Model](../prds/111-plan-entry-model/README.md)                                 | `plan_entries` table; slot enum; ad-hoc vs slotted entries; date range queries                                     | Not started |
-| 112 | [Lists Schema (app-lists)](../prds/112-lists-schema/README.md)                             | `lists`, `list_items` in new `packages/app-lists`; food as first consumer                                          | Not started |
+| 112 | [Lists Schema (app-lists)](../prds/112-lists-schema/README.md)                             | `lists`, `list_items` in new `packages/app-lists`; food as first consumer                                          | Done        |
 | 113 | [Seed Data & Mise Tasks](../prds/113-seed-data/README.md)                                  | `db:seed:food` task, fixture set covering invariants, `db-types` regen, baseline conversions                       | Not started |
 
 ### Build order
