@@ -237,6 +237,34 @@ describe('DslEditor — PRD-120 part D (chip widgets)', () => {
     expect(line.text.startsWith('@ingredient(1,')).toBe(true);
   });
 
+  it('jumps cursor when a focused chip is activated with Enter', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const view = getEditorView();
+    const refChip = chipsInDom().find((el) => el.getAttribute('data-chip-kind') === 'ref-index');
+    expect(refChip).toBeDefined();
+    if (!refChip) return;
+    const jumpFrom = Number.parseInt(refChip.getAttribute('data-chip-jump-from') ?? '0', 10);
+
+    act(() => {
+      fireEvent.keyDown(refChip, { key: 'Enter' });
+    });
+    expect(view.state.selection.main.head).toBe(jumpFrom);
+  });
+
+  it('jumps cursor when a focused chip is activated with Space', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const view = getEditorView();
+    const refChip = chipsInDom().find((el) => el.getAttribute('data-chip-kind') === 'ref-index');
+    expect(refChip).toBeDefined();
+    if (!refChip) return;
+    const jumpFrom = Number.parseInt(refChip.getAttribute('data-chip-jump-from') ?? '0', 10);
+
+    act(() => {
+      fireEvent.keyDown(refChip, { key: ' ' });
+    });
+    expect(view.state.selection.main.head).toBe(jumpFrom);
+  });
+
   it('renders chips as inline labels (no widget replacement) under mobile width', () => {
     const { setMatches } = installMatchMedia(true);
     // Confirm the helper is referenced so the lint cap on unused locals

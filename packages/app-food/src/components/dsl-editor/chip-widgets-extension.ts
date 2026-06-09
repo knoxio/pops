@@ -143,33 +143,54 @@ function formatPillLabel(chip: InlineFuncChip): string {
 }
 
 /**
- * Click routing for chip widgets. Implemented as a `ViewPlugin` that
- * attaches a `click` listener directly to `view.contentDOM`. We tried
- * `EditorView.domEventHandlers({ click })` first, but its event-routing
- * pipeline doesn't fire reliably for synthetic clicks on widget DOM in
- * jsdom — attaching directly to `contentDOM` bypasses that and lets the
- * tests drive the chip via `fireEvent.click`.
+ * Click + keyboard activation routing for chip widgets. Implemented as a
+ * `ViewPlugin` that attaches listeners directly to `view.contentDOM`. We
+ * tried `EditorView.domEventHandlers({ click })` first, but its
+ * event-routing pipeline doesn't fire reliably for synthetic clicks on
+ * widget DOM in jsdom — attaching directly to `contentDOM` bypasses that
+ * and lets the tests drive the chip via `fireEvent.click`. The keydown
+ * handler covers Enter/Space so chips stay reachable via Tab → activate,
+ * which the PRD calls out as an accessibility requirement.
  */
+function jumpToFromChip(chip: HTMLElement, view: EditorView): boolean {
+  const raw = chip.getAttribute('data-chip-jump-from');
+  if (raw === null) return false;
+  const jumpTo = Number.parseInt(raw, 10);
+  if (!Number.isFinite(jumpTo)) return false;
+  view.dispatch({
+    selection: EditorSelection.cursor(Math.min(jumpTo, view.state.doc.length)),
+    scrollIntoView: true,
+  });
+  view.focus();
+  return true;
+}
+
 const clickHandler = ViewPlugin.define((view) => {
-  const handle = (event: MouseEvent): void => {
+  const onClick = (event: MouseEvent): void => {
     const target = event.target;
     if (!(target instanceof Element)) return;
     const chip = target.closest('[data-chip-jump-from]');
     if (!(chip instanceof HTMLElement)) return;
-    const raw = chip.getAttribute('data-chip-jump-from');
-    if (raw === null) return;
-    const jumpTo = Number.parseInt(raw, 10);
-    if (!Number.isFinite(jumpTo)) return;
-    view.dispatch({
-      selection: EditorSelection.cursor(Math.min(jumpTo, view.state.doc.length)),
-      scrollIntoView: true,
-    });
-    view.focus();
-    event.preventDefault();
+    if (jumpToFromChip(chip, view)) event.preventDefault();
   };
-  view.contentDOM.addEventListener('click', handle);
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const chip = target.closest('[data-chip-jump-from]');
+    if (!(chip instanceof HTMLElement)) return;
+    if (jumpToFromChip(chip, view)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+  view.contentDOM.addEventListener('click', onClick);
+  view.contentDOM.addEventListener('keydown', onKeyDown);
   return {
-    destroy: () => view.contentDOM.removeEventListener('click', handle),
+    destroy: () => {
+      view.contentDOM.removeEventListener('click', onClick);
+      view.contentDOM.removeEventListener('keydown', onKeyDown);
+    },
   };
 });
 
@@ -199,6 +220,11 @@ const theme = EditorView.baseTheme({
     borderRadius: 0,
     background: 'transparent',
     textDecoration: 'underline dotted',
+  },
+  '.cm-dsl-chip--jump': { cursor: 'pointer' },
+  '.cm-dsl-chip--jump:focus-visible': {
+    outline: '2px solid var(--cm-dsl-chip-focus, #2563eb)',
+    outlineOffset: '1px',
   },
 });
 

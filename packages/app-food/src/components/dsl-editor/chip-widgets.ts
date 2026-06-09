@@ -6,12 +6,15 @@
  * still cursor through, and copy/paste preserves the raw `@N` / `@slug` /
  * `@time(...)` / `@temperature(...)` source.
  *
- * Click handling lives outside the widget instances. The chip-widgets
- * extension installs a single `EditorView.domEventHandlers.click` that
- * walks up from the event target, reads the `data-chip-jump-from` attribute,
- * and dispatches an `EditorSelection.cursor(...)` transaction. Keeping the
- * dispatch out of the widget means the widget doesn't need to capture the
- * EditorView in its constructor (which would defeat WidgetType reuse).
+ * Click + keyboard activation live outside the widget instances. The
+ * chip-widgets extension installs a `ViewPlugin` that attaches `click` and
+ * `keydown` listeners directly to `view.contentDOM` (not via
+ * `EditorView.domEventHandlers`, whose routing doesn't fire reliably for
+ * synthetic events on widget DOM under jsdom). Each handler walks up from
+ * the event target, reads `data-chip-jump-from`, and dispatches an
+ * `EditorSelection.cursor(...)` transaction. Keeping the dispatch out of
+ * the widget means the widget doesn't need to capture the EditorView in
+ * its constructor (which would defeat WidgetType reuse).
  */
 import { WidgetType } from '@codemirror/view';
 
@@ -126,7 +129,7 @@ function buildChip(args: {
     el.setAttribute('data-chip-jump-from', String(args.jumpFrom));
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
-    el.style.cursor = 'pointer';
+    el.classList.add('cm-dsl-chip--jump');
   }
   if (args.hasError) el.setAttribute('data-chip-error', 'true');
   return el;

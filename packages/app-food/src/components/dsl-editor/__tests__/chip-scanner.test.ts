@@ -109,6 +109,16 @@ describe('scanForChips', () => {
     }
   });
 
+  it('suppresses false-positive chips inside an unterminated unknown @func( call', () => {
+    // Mid-edit case: user typed `@bad(` and the paren never closes inside
+    // the step body. The scanner must not still emit chips for `@1` or
+    // `@cilantro` that fall inside the unterminated call's text.
+    const source = '@step("Use @bad(@1 and @cilantro never closes")';
+    const result = scanForChips(source);
+    expect(result.chips.filter((c) => c.kind === 'ref-index')).toHaveLength(0);
+    expect(result.chips.filter((c) => c.kind === 'ref-slug')).toHaveLength(0);
+  });
+
   it('ignores @<func>( whose name is not in the inline-func allow-list', () => {
     const source = '@step("Skip @notafunc(1:g) but keep @time(5:min)")';
     const result = scanForChips(source);

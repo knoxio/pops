@@ -58,13 +58,16 @@ function handleSlugOrFunc(source: string, at: number, end: number, out: Chip[]):
   // Slug followed by `(` is treated as an inline function. Only `@time`
   // and `@temperature` are recognised (matches PRD-114's parser, which
   // emits `BadInline` for any other identifier). For unknown functions,
-  // skip the whole `name(...)` span without emitting any chip.
+  // skip the whole `name(...)` span without emitting any chip. When the
+  // closing `)` is missing (common mid-edit), advance past the body's
+  // end so subsequent scanning doesn't fire false-positive chips on
+  // tokens that belong to the unterminated call's argument text.
   if (!INLINE_FUNCS.has(name)) {
     const close = source.indexOf(')', afterName + 1);
-    return close === -1 || close >= end ? afterName : close + 1;
+    return close === -1 || close >= end ? end : close + 1;
   }
   const close = source.indexOf(')', afterName + 1);
-  if (close === -1 || close >= end) return afterName;
+  if (close === -1 || close >= end) return end;
   const inner = source.slice(afterName + 1, close);
   const qu = parseInlineQtyUnit(inner);
   if (qu === null) return close + 1;

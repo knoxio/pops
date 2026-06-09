@@ -36,21 +36,28 @@ function StoryHost({
 }): JSX.Element {
   const [value, setValue] = useState(initialValue);
   return (
-    <div style={{ maxWidth: 720, margin: '24px auto' }}>
-      <DslEditor
-        initialValue={value}
-        readOnly={readOnly}
-        onChange={(next) => {
-          setValue(next);
-        }}
-      />
-    </div>
+    <DslEditor
+      initialValue={value}
+      readOnly={readOnly}
+      onChange={(next) => {
+        setValue(next);
+      }}
+    />
   );
 }
 
 const meta: Meta<typeof StoryHost> = {
-  title: 'food/DslEditor',
+  title: 'Food/DslEditor',
   component: StoryHost,
+  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <div className="mx-auto my-6 w-[720px] max-w-full">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;
