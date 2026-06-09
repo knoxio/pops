@@ -88,13 +88,17 @@ function addRecipeRef(raw: Database.Database, versionId: number, refRecipeId: nu
 function makeCandidateAst(
   refs: { recipeRef: number; index: number; line: number }[]
 ): ResolvedRecipeAst {
+  // The detector reads `kind`, `isRecipeRef`, `recipeRef`, and `loc` off
+  // each block — never `ingredientId` / `yieldIngredientId`. Leave the
+  // unread fields null so the fixture doesn't depend on row-allocation
+  // order (Copilot review on #2696).
   return {
     header: {
       slug: 'candidate',
       title: 'Candidate',
     },
     yield: {
-      yieldIngredientId: 1,
+      yieldIngredientId: null,
       yieldVariantId: null,
       yieldPrepStateId: null,
       yieldQty: 1,
@@ -104,7 +108,7 @@ function makeCandidateAst(
       (r): ResolvedIngredientBlock => ({
         kind: 'ingredient',
         index: r.index,
-        ingredientId: 1,
+        ingredientId: null,
         variantId: null,
         prepStateId: null,
         qty: 1,
