@@ -1,6 +1,7 @@
 /**
  * PRD-130 — text-LLM fallback used when the vision call fails AND the
- * reel has a non-trivial caption (>30 chars). Re-implements the same
+ * reel has a non-trivial caption (≥30 chars; the boundary is inclusive,
+ * matching `MIN_CAPTION_LENGTH_FOR_FALLBACK`). Re-implements the same
  * prompt shape PRD-128 will export as `PROMPT_WEB_LLM`; once PRD-128 +
  * PRD-132 land we can dedupe via a shared `extractWithClaudeText` import.
  *

@@ -1,9 +1,11 @@
 /**
  * PRD-130 — degradation truth table.
  *
- * Maps the per-stage outcomes onto `partialReason` per the table in the
- * PRD's §Degradation section. Encapsulated here so the orchestrator
- * stays readable and the table is unit-testable in isolation.
+ * Maps per-stage outcomes onto `partialReason` per the table in the
+ * PRD's §Degradation section. The vision-vs-text-fallback distinction
+ * matters for the inbox UX: a `vision-failed` partial signals "rerun
+ * once the vision API recovers" whereas `caption-only-fallback` signals
+ * "no recoverable signal beyond the caption".
  */
 import type { PartialReason } from '@pops/food-contracts';
 
@@ -22,8 +24,11 @@ export function derivePartialReason(inputs: DegradationInputs): PartialReason | 
     if (!inputs.captionStructured && !inputs.transcriptOk) return 'stt-failed';
     return undefined;
   }
-  if (inputs.textFallbackUsed) return 'caption-only-fallback';
-  // Vision failed and no fallback used — caller treats this as failed; this
-  // branch should not appear in a success-path result.
-  return 'vision-failed';
+  // Vision failed. Two flavours of recovery: keyframes were available
+  // (so we DID try the multimodal path and it failed → `vision-failed`)
+  // vs keyframes never produced (so we never had a vision path at all
+  // → `caption-only-fallback`). Both presume `textFallbackUsed=true`;
+  // callers don't reach this branch when the fallback also failed.
+  if (!inputs.textFallbackUsed) return 'vision-failed';
+  return inputs.keyframesOk ? 'vision-failed' : 'caption-only-fallback';
 }

@@ -12,6 +12,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { runSubprocess } from './subprocess.js';
+
 const DEFAULT_TIMEOUT_MS = 60_000;
 const DEFAULT_BIN = 'ffmpeg';
 const SCENE_THRESHOLD = 0.3;
@@ -46,24 +48,53 @@ export async function extractKeyframes(opts: ExtractKeyframesOptions): Promise<K
 
   const start = Date.now();
   const sceneArgs = sceneDetectionArgs(opts.videoPath, keyframesDir);
-  const sceneExit = await spawnAndWait(spawnImpl, ffmpegBin, sceneArgs, timeoutMs);
-  if (sceneExit !== 0) {
-    throw new FfmpegError(`ffmpeg scene-detection exited with code ${sceneExit}`);
-  }
+  await runFfmpeg({ spawnImpl, ffmpegBin, args: sceneArgs, timeoutMs, stage: 'scene-detection' });
   let paths = await listKeyframes(keyframesDir, readdirImpl);
 
   let usedFallback = false;
   if (paths.length === 0) {
     const fallbackArgs = fallbackArgsAt(opts.videoPath, keyframesDir);
-    const fallbackExit = await spawnAndWait(spawnImpl, ffmpegBin, fallbackArgs, timeoutMs);
-    if (fallbackExit !== 0) {
-      throw new FfmpegError(`ffmpeg fallback frame exited with code ${fallbackExit}`);
-    }
+    await runFfmpeg({
+      spawnImpl,
+      ffmpegBin,
+      args: fallbackArgs,
+      timeoutMs,
+      stage: 'fallback frame',
+    });
     usedFallback = true;
     paths = await listKeyframes(keyframesDir, readdirImpl);
   }
 
   return { paths, durationMs: Date.now() - start, usedFallback };
+}
+
+interface RunFfmpegArgs {
+  spawnImpl: typeof spawn;
+  ffmpegBin: string;
+  args: readonly string[];
+  timeoutMs: number;
+  stage: string;
+}
+
+async function runFfmpeg(args: RunFfmpegArgs): Promise<void> {
+  const result = await runSubprocess({
+    bin: args.ffmpegBin,
+    args: args.args,
+    timeoutMs: args.timeoutMs,
+    spawnImpl: args.spawnImpl,
+  });
+  if (result.timedOut) {
+    throw new FfmpegError(`ffmpeg ${args.stage} exceeded ${args.timeoutMs}ms`);
+  }
+  if (result.exitCode !== 0) {
+    throw new FfmpegError(
+      `ffmpeg ${args.stage} exited with code ${result.exitCode}: ${truncateStderr(result.stderr)}`
+    );
+  }
+}
+
+function truncateStderr(stderr: string): string {
+  return stderr.length > 200 ? `${stderr.slice(0, 200)}…` : stderr;
 }
 
 function sceneDetectionArgs(videoPath: string, outDir: string): string[] {
@@ -105,30 +136,6 @@ async function listKeyframes(
     .filter((n) => n.endsWith('.jpg'))
     .toSorted()
     .map((n) => join(dir, n));
-}
-
-function spawnAndWait(
-  spawnImpl: typeof spawn,
-  bin: string,
-  args: readonly string[],
-  timeoutMs: number
-): Promise<number> {
-  return new Promise<number>((resolve, reject) => {
-    const child = spawnImpl(bin, [...args], { stdio: ['ignore', 'pipe', 'pipe'] });
-    let settled = false;
-    const timer = setTimeout(() => {
-      child.kill('SIGTERM');
-      finish(() => reject(new FfmpegError(`ffmpeg exceeded ${timeoutMs}ms`)));
-    }, timeoutMs);
-    function finish(fn: () => void): void {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      fn();
-    }
-    child.on('error', (err) => finish(() => reject(err)));
-    child.on('close', (code) => finish(() => resolve(code ?? -1)));
-  });
 }
 
 export class FfmpegError extends Error {

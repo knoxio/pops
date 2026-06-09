@@ -43,7 +43,19 @@ describe('derivePartialReason', () => {
     ).toBe('stt-failed');
   });
 
-  it('row 4: vision failed but text-fallback succeeded → caption-only-fallback', () => {
+  it('row 4: vision failed (keyframes had been available), text-fallback used → vision-failed', () => {
+    expect(
+      derivePartialReason({
+        captionStructured: false,
+        transcriptOk: true,
+        visionOk: false,
+        keyframesOk: true,
+        textFallbackUsed: true,
+      })
+    ).toBe('vision-failed');
+  });
+
+  it('row 5: keyframes failed (no vision path), text-fallback used → caption-only-fallback', () => {
     expect(
       derivePartialReason({
         captionStructured: false,
@@ -55,7 +67,7 @@ describe('derivePartialReason', () => {
     ).toBe('caption-only-fallback');
   });
 
-  it('row 5 (when reached): vision failed AND no fallback → vision-failed sentinel', () => {
+  it('row 6 (sentinel): vision failed AND no fallback used → vision-failed sentinel', () => {
     expect(
       derivePartialReason({
         captionStructured: false,

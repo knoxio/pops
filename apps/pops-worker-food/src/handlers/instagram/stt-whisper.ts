@@ -15,6 +15,8 @@ import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { runSubprocess } from './subprocess.js';
+
 const DEFAULT_TIMEOUT_MS = 120_000;
 const DEFAULT_MODEL = 'distil-large-v3';
 const DEFAULT_BIN = 'python3';
@@ -70,9 +72,14 @@ export async function runWhisper(opts: RunWhisperOptions): Promise<WhisperResult
   ];
 
   const start = Date.now();
-  const exitCode = await spawnAndWait(spawnImpl, pythonBin, args, timeoutMs);
-  if (exitCode !== 0) {
-    throw new WhisperError(`faster-whisper exited with code ${exitCode}`);
+  const result = await runSubprocess({ bin: pythonBin, args, timeoutMs, spawnImpl });
+  if (result.timedOut) {
+    throw new WhisperError(`faster-whisper exceeded ${timeoutMs}ms`);
+  }
+  if (result.exitCode !== 0) {
+    throw new WhisperError(
+      `faster-whisper exited with code ${result.exitCode}: ${truncateStderr(result.stderr)}`
+    );
   }
   const vttPath = join(opts.workDir, DEFAULT_OUTPUT_NAME);
   const raw = await readImpl(vttPath);
@@ -84,31 +91,8 @@ export async function runWhisper(opts: RunWhisperOptions): Promise<WhisperResult
   };
 }
 
-function spawnAndWait(
-  spawnImpl: typeof spawn,
-  bin: string,
-  args: readonly string[],
-  timeoutMs: number
-): Promise<number> {
-  return new Promise<number>((resolve, reject) => {
-    const child = spawnImpl(bin, [...args], { stdio: ['ignore', 'pipe', 'pipe'] });
-    let timer: NodeJS.Timeout | undefined;
-    let settled = false;
-    const finalise = (fn: () => void): void => {
-      if (settled) return;
-      settled = true;
-      if (timer) clearTimeout(timer);
-      fn();
-    };
-    timer = setTimeout(() => {
-      child.kill('SIGTERM');
-      finalise((): void => reject(new WhisperError(`faster-whisper exceeded ${timeoutMs}ms`)));
-    }, timeoutMs);
-    child.on('error', (err) => finalise((): void => reject(err)));
-    child.on('close', (code) => {
-      finalise((): void => resolve(code ?? -1));
-    });
-  });
+function truncateStderr(stderr: string): string {
+  return stderr.length > 200 ? `${stderr.slice(0, 200)}…` : stderr;
 }
 
 export class WhisperError extends Error {

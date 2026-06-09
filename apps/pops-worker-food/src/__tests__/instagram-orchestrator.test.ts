@@ -165,12 +165,31 @@ describe('runInstagramPipeline — degradation truth table', () => {
     expect(result.partialReason).toBe('stt-failed');
   });
 
-  it('vision fails + caption available → text fallback → partialReason=caption-only-fallback', async () => {
+  it('vision fails + keyframes available + text-fallback succeeds → partialReason=vision-failed', async () => {
     const result = await runInstagramPipeline(
       DATA,
       ctx(),
       deps({
         runAcquisitionImpl: vi.fn(async () => acqOk(NON_STRUCTURED_CAPTION)),
+        extractWithVisionImpl: vi.fn(async () => {
+          throw new Error('vision down');
+        }),
+      })
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('unreachable');
+    expect(result.partialReason).toBe('vision-failed');
+  });
+
+  it('vision fails + keyframes missing + text-fallback succeeds → partialReason=caption-only-fallback', async () => {
+    const result = await runInstagramPipeline(
+      DATA,
+      ctx(),
+      deps({
+        runAcquisitionImpl: vi.fn(async () => acqOk(NON_STRUCTURED_CAPTION)),
+        extractKeyframesImpl: vi.fn(async () => {
+          throw new Error('ffmpeg missing');
+        }),
         extractWithVisionImpl: vi.fn(async () => {
           throw new Error('vision down');
         }),
