@@ -59,6 +59,8 @@
   "recipes.detail.archive.pending": "Arquivando…",
   "recipes.detail.archive.success": "Receita arquivada.",
   "recipes.detail.archive.error": "Não foi possível arquivar: {{message}}",
+  "recipes.versionDetail.urlMissing": "Receita ou versão ausentes da URL.",
+  "recipes.versionDetail.badVersionNo": "Número de versão inválido na URL.",
   "recipes.versionDetail.viewing": "Vendo a versão {{versionNo}} ({{status}}).",
   "recipes.versionDetail.created": "Criada em {{date}}.",
   "recipes.versionDetail.notFound": "Esta versão não existe.",

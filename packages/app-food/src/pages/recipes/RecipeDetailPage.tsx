@@ -33,13 +33,47 @@ export function RecipeDetailPage(): ReactElement {
 
 function RecipeDetailBody({ slug }: { slug: string }): ReactElement {
   const { t } = useTranslation('food');
-  const navigate = useNavigate();
   const { scaleFactor } = useRecipeScale();
-  const utils = trpc.useUtils();
   const { data, draftCount, isLoading, error } = useRecipeDetailData({ slug });
+  const archive = useArchiveFlow(slug);
 
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const archiveMutation = trpc.food.recipes.archiveRecipe.useMutation({
+  if (isLoading) {
+    return <Status text={t('recipes.detail.loading')} />;
+  }
+  if (error !== null && data === undefined) {
+    return renderErrorBranch({ slug, error, draftCount, archive, t });
+  }
+  if (data === undefined) {
+    // Defensive fall-through: query resolved with no data and no error.
+    return (
+      <Shell title={slug} draftCount={draftCount} onArchive={archive.open}>
+        <MissingCurrentVersionBanner slug={slug} />
+        <ArchiveDialogPortal slug={slug} title={slug} archive={archive} />
+      </Shell>
+    );
+  }
+  return (
+    <Shell title={data.recipe.slug} draftCount={draftCount} onArchive={archive.open}>
+      <RecipeRenderer recipeVersion={data} scaleFactor={scaleFactor} variant="detail" />
+      <ArchiveDialogPortal slug={slug} title={data.version.title} archive={archive} />
+    </Shell>
+  );
+}
+
+interface ArchiveFlow {
+  open: () => void;
+  close: () => void;
+  isOpen: boolean;
+  isPending: boolean;
+  confirm: (slug: string) => void;
+}
+
+function useArchiveFlow(_slug: string): ArchiveFlow {
+  const { t } = useTranslation('food');
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
+  const [isOpen, setOpen] = useState(false);
+  const mutation = trpc.food.recipes.archiveRecipe.useMutation({
     onSuccess: () => {
       toast.success(t('recipes.detail.archive.success'));
       void utils.food.recipes.list.invalidate();
@@ -49,51 +83,42 @@ function RecipeDetailBody({ slug }: { slug: string }): ReactElement {
       toast.error(t('recipes.detail.archive.error', { message: err.message }));
     },
   });
+  return {
+    open: useCallback(() => setOpen(true), []),
+    close: useCallback(() => setOpen(false), []),
+    isOpen,
+    isPending: mutation.isPending,
+    confirm: (s: string) => {
+      mutation.mutate({ slug: s });
+    },
+  };
+}
 
-  const onArchive = useCallback(() => setArchiveOpen(true), []);
+interface ErrorBranchArgs {
+  slug: string;
+  error: Error;
+  draftCount: number;
+  archive: ArchiveFlow;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}
 
-  if (isLoading) {
-    return <Status text={t('recipes.detail.loading')} />;
-  }
-  if (error !== null && data === undefined) {
-    if (/not found/i.test(error.message)) {
-      return <NotFoundShell />;
-    }
-    return <Status text={t('recipes.detail.error', { message: error.message })} variant="error" />;
-  }
-  if (data === undefined) {
-    // The renderer requires a current version. Show the missing-banner
-    // shell so the user can navigate to drafts.
+function renderErrorBranch({ slug, error, draftCount, archive, t }: ErrorBranchArgs): ReactElement {
+  // PRD-119-API throws NOT_FOUND with three distinct message shapes; we
+  // route "has no published version" to the missing-current banner so
+  // the user isn't told "could not load recipe" when the cause is "no
+  // version published yet" (drafts may still exist).
+  if (/has no published version/i.test(error.message)) {
     return (
-      <Shell title={slug} draftCount={draftCount} onArchive={onArchive}>
+      <Shell title={slug} draftCount={draftCount} onArchive={archive.open}>
         <MissingCurrentVersionBanner slug={slug} />
-        <RecipeArchiveDialog
-          open={archiveOpen}
-          title={slug}
-          isPending={archiveMutation.isPending}
-          onCancel={() => setArchiveOpen(false)}
-          onConfirm={() => {
-            archiveMutation.mutate({ slug });
-          }}
-        />
+        <ArchiveDialogPortal slug={slug} title={slug} archive={archive} />
       </Shell>
     );
   }
-
-  return (
-    <Shell title={data.recipe.slug} draftCount={draftCount} onArchive={onArchive}>
-      <RecipeRenderer recipeVersion={data} scaleFactor={scaleFactor} variant="detail" />
-      <RecipeArchiveDialog
-        open={archiveOpen}
-        title={data.version.title}
-        isPending={archiveMutation.isPending}
-        onCancel={() => setArchiveOpen(false)}
-        onConfirm={() => {
-          archiveMutation.mutate({ slug });
-        }}
-      />
-    </Shell>
-  );
+  if (/not found/i.test(error.message)) {
+    return <NotFoundShell />;
+  }
+  return <Status text={t('recipes.detail.error', { message: error.message })} variant="error" />;
 }
 
 interface ShellProps {
@@ -114,6 +139,26 @@ function Shell({ title, draftCount, onArchive, children }: ShellProps): ReactEle
       </header>
       {children}
     </div>
+  );
+}
+
+function ArchiveDialogPortal({
+  slug,
+  title,
+  archive,
+}: {
+  slug: string;
+  title: string;
+  archive: ArchiveFlow;
+}): ReactElement {
+  return (
+    <RecipeArchiveDialog
+      open={archive.isOpen}
+      title={title}
+      isPending={archive.isPending}
+      onCancel={archive.close}
+      onConfirm={() => archive.confirm(slug)}
+    />
   );
 }
 

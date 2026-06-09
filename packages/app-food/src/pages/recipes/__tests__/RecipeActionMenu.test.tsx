@@ -1,9 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RecipeActionMenu } from '../RecipeActionMenu.js';
+const navigateMock = vi.fn();
+vi.mock('react-router', async (orig) => {
+  const actual = await orig<typeof import('react-router')>();
+  return { ...actual, useNavigate: () => navigateMock };
+});
+
+import { RecipeActionMenu, type RecipeActionMenuItem } from '../RecipeActionMenu.js';
 
 function wrap(props?: Partial<Parameters<typeof RecipeActionMenu>[0]>) {
   const onArchive = props?.onArchive ?? vi.fn();
@@ -17,19 +23,25 @@ function wrap(props?: Partial<Parameters<typeof RecipeActionMenu>[0]>) {
   };
 }
 
+beforeEach(() => {
+  navigateMock.mockReset();
+});
+
 describe('PRD-119-B — RecipeActionMenu', () => {
   it('opens the menu when the trigger is clicked', async () => {
+    const user = userEvent.setup();
     wrap();
     const trigger = screen.getByRole('button', { name: /actions/i });
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    await userEvent.click(trigger);
-    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await user.click(trigger);
     expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('renders the canonical 119-B order: Edit, Drafts, Archive (without Cook now/Send)', async () => {
+    const user = userEvent.setup();
     wrap();
-    await userEvent.click(screen.getByRole('button', { name: /actions/i }));
+    await user.click(screen.getByRole('button', { name: /actions/i }));
     const items = screen.getAllByRole('menuitem');
     expect(items).toHaveLength(3);
     expect(items[0]).toHaveTextContent(/edit/i);
@@ -38,42 +50,44 @@ describe('PRD-119-B — RecipeActionMenu', () => {
   });
 
   it('shows the draft count in the Drafts label', async () => {
+    const user = userEvent.setup();
     wrap({ draftCount: 7 });
-    await userEvent.click(screen.getByRole('button', { name: /actions/i }));
+    await user.click(screen.getByRole('button', { name: /actions/i }));
     expect(screen.getByText(/drafts.*7/i)).toBeInTheDocument();
   });
 
-  it('routes Edit + Drafts to the slug-based paths', async () => {
+  it('navigates to the slug-based edit/drafts routes when items are selected', async () => {
+    const user = userEvent.setup();
     wrap();
-    await userEvent.click(screen.getByRole('button', { name: /actions/i }));
-    expect(screen.getByRole('menuitem', { name: /edit/i })).toHaveAttribute(
-      'href',
-      '/food/recipes/pancakes/edit'
-    );
-    expect(screen.getByRole('menuitem', { name: /drafts/i })).toHaveAttribute(
-      'href',
-      '/food/recipes/pancakes/drafts'
-    );
+    await user.click(screen.getByRole('button', { name: /actions/i }));
+    await user.click(screen.getByRole('menuitem', { name: /edit/i }));
+    expect(navigateMock).toHaveBeenCalledWith('/food/recipes/pancakes/edit');
+
+    await user.click(screen.getByRole('button', { name: /actions/i }));
+    await user.click(screen.getByRole('menuitem', { name: /drafts/i }));
+    expect(navigateMock).toHaveBeenCalledWith('/food/recipes/pancakes/drafts');
   });
 
-  it('fires onArchive when the Archive button is clicked', async () => {
+  it('fires onArchive when the Archive item is selected', async () => {
+    const user = userEvent.setup();
     const { onArchive } = wrap();
-    await userEvent.click(screen.getByRole('button', { name: /actions/i }));
-    await userEvent.click(screen.getByRole('menuitem', { name: /archive/i }));
+    await user.click(screen.getByRole('button', { name: /actions/i }));
+    await user.click(screen.getByRole('menuitem', { name: /archive/i }));
     expect(onArchive).toHaveBeenCalledTimes(1);
   });
 
   it('renders extraItems between Drafts and Archive (forward-compat slot)', async () => {
-    wrap({
-      extraItems: (
-        <button type="button" role="menuitem">
-          Cook now…
-        </button>
-      ),
-    });
-    await userEvent.click(screen.getByRole('button', { name: /actions/i }));
+    const user = userEvent.setup();
+    const cookSelect = vi.fn();
+    const extraItems: RecipeActionMenuItem[] = [
+      { label: 'Cook now…', value: 'cook', onSelect: cookSelect },
+    ];
+    wrap({ extraItems });
+    await user.click(screen.getByRole('button', { name: /actions/i }));
     const items = screen.getAllByRole('menuitem');
     expect(items).toHaveLength(4);
     expect(items[2]).toHaveTextContent(/cook now/i);
+    await user.click(items[2]!);
+    expect(cookSelect).toHaveBeenCalledTimes(1);
   });
 });

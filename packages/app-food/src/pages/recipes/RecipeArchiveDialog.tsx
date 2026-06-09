@@ -12,11 +12,10 @@ interface Props {
 }
 
 /**
- * Confirm dialog for archiving a whole recipe. Renders as a simple overlay
- * — the codebase has a heavier shadcn `Dialog` primitive but using it
- * here would pull a transitive `@radix-ui/react-dialog` dep that the
- * food package doesn't already carry. PRD-119-E can swap to a shared
- * dialog when the design system upgrade lands.
+ * Type-to-confirm archive dialog. v1 uses a hand-rolled overlay rather
+ * than `@pops/ui`'s Radix `AlertDialog` to keep the focus-trap surface
+ * deliberately minimal — PRD-119-E will swap to the shared primitive
+ * when the dialog gets keyboard-shortcut + animation polish.
  */
 export function RecipeArchiveDialog({
   open,
@@ -28,7 +27,9 @@ export function RecipeArchiveDialog({
   const { t } = useTranslation('food');
   const [confirmText, setConfirmText] = useState('');
   if (!open) return null;
-  const canConfirm = confirmText.length > 0;
+  // Require an exact (case-insensitive) match of the literal word "archive"
+  // — anything weaker defeats the type-to-confirm safety check.
+  const canConfirm = confirmText.trim().toLowerCase() === 'archive';
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80"

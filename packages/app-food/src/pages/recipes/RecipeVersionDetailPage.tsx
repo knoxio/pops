@@ -16,13 +16,14 @@ import { useRecipeDetailData } from './useRecipeDetailData.js';
  * bodyDsl, then routes to the edit page.
  */
 export function RecipeVersionDetailPage(): ReactElement {
+  const { t } = useTranslation('food');
   const { slug, versionNo } = useParams<{ slug: string; versionNo: string }>();
   if (slug === undefined || versionNo === undefined) {
-    return <Status text="Recipe or version missing in URL" variant="error" />;
+    return <Status text={t('recipes.versionDetail.urlMissing')} variant="error" />;
   }
   const parsedVersion = Number(versionNo);
   if (!Number.isInteger(parsedVersion) || parsedVersion <= 0) {
-    return <Status text="Bad versionNo in URL" variant="error" />;
+    return <Status text={t('recipes.versionDetail.badVersionNo')} variant="error" />;
   }
   return (
     <RecipeScaleProvider>
@@ -40,7 +41,13 @@ function RecipeVersionDetailBody({ slug, versionNo }: BodyProps): ReactElement {
   const { t } = useTranslation('food');
   const navigate = useNavigate();
   const { scaleFactor } = useRecipeScale();
-  const { data, isLoading, error } = useRecipeDetailData({ slug, versionNo });
+  // The historic-version page never surfaces the draft count, so skip
+  // the listDrafts fetch.
+  const { data, isLoading, error } = useRecipeDetailData({
+    slug,
+    versionNo,
+    includeDrafts: false,
+  });
 
   const restoreMutation = trpc.food.recipes.restoreVersion.useMutation({
     onSuccess: () => {
@@ -59,7 +66,11 @@ function RecipeVersionDetailBody({ slug, versionNo }: BodyProps): ReactElement {
 
   if (isLoading) return <Status text={t('recipes.detail.loading')} />;
   if (error !== null) {
-    if (/not found/i.test(error.message)) {
+    // PRD-119-API throws NOT_FOUND with message "Recipe \"<slug>\" has no
+    // version <n>" for an out-of-range versionNo and "Recipe \"<slug>\"
+    // not found" for an unknown slug. Either way, the user is looking at
+    // a non-existent version, so we show the same not-found copy.
+    if (isVersionLookupNotFound(error)) {
       return <Status text={t('recipes.versionDetail.notFound')} variant="error" />;
     }
     return <Status text={t('recipes.detail.error', { message: error.message })} variant="error" />;
@@ -94,6 +105,23 @@ function RecipeVersionDetailBody({ slug, versionNo }: BodyProps): ReactElement {
       <RecipeRenderer recipeVersion={data} scaleFactor={scaleFactor} variant="detail" />
     </div>
   );
+}
+
+/**
+ * tRPC's `useQuery.error` is a `TRPCClientErrorLike` whose `.data.code`
+ * carries the structured status. Match on the code so the not-found
+ * detection doesn't depend on the human-readable message.
+ */
+function isVersionLookupNotFound(err: unknown): boolean {
+  if (err === null || typeof err !== 'object') return false;
+  const data = (err as { data?: { code?: unknown } }).data;
+  if (data && typeof data === 'object' && data.code === 'NOT_FOUND') return true;
+  // Fallback for non-tRPC errors (e.g. mocked test errors): match on the
+  // two server-side message shapes.
+  if (err instanceof Error) {
+    return /has no version|not found/i.test(err.message);
+  }
+  return false;
 }
 
 function Status({

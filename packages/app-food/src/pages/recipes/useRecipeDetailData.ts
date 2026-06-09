@@ -5,6 +5,12 @@ import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
 export interface RecipeDetailQueryArgs {
   slug: string;
   versionNo?: number;
+  /**
+   * Skip the `listDrafts` fetch when the caller doesn't need the count
+   * (e.g. the historic-version page). Defaults to true so the detail page
+   * keeps its action-menu badge.
+   */
+  includeDrafts?: boolean;
 }
 
 export interface RecipeDetailState {
@@ -19,11 +25,17 @@ export interface RecipeDetailState {
  * Combine the two reads PRD-119-B's detail page needs: the heavy compile
  * payload (via `food.recipes.getForRendering`) and the draft count (via
  * `food.recipes.listDrafts`). Drafts is keyed off the slug only so it
- * stays cached across version-no navigation.
+ * stays cached across version-no navigation, AND its fetch is gated by
+ * `includeDrafts` so the historic-version page doesn't pay for a count
+ * it never renders.
  */
-export function useRecipeDetailData({ slug, versionNo }: RecipeDetailQueryArgs): RecipeDetailState {
+export function useRecipeDetailData({
+  slug,
+  versionNo,
+  includeDrafts = true,
+}: RecipeDetailQueryArgs): RecipeDetailState {
   const rendering = trpc.food.recipes.getForRendering.useQuery({ slug, versionNo });
-  const drafts = trpc.food.recipes.listDrafts.useQuery({ slug });
+  const drafts = trpc.food.recipes.listDrafts.useQuery({ slug }, { enabled: includeDrafts });
   const error = firstError(rendering.error, drafts.error);
   return {
     data: rendering.data,
@@ -32,7 +44,7 @@ export function useRecipeDetailData({ slug, versionNo }: RecipeDetailQueryArgs):
     error,
     refetch: () => {
       void rendering.refetch();
-      void drafts.refetch();
+      if (includeDrafts) void drafts.refetch();
     },
   };
 }

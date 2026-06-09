@@ -1,15 +1,31 @@
-import { useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router';
 
-import { Button } from '@pops/ui';
+import { Button, DropdownMenu } from '@pops/ui';
+
+import type { ReactNode } from 'react';
+
+/**
+ * Item shape mirrored from `@pops/ui`'s wrapper component. We can't
+ * re-import its `DropdownMenuItem` interface name because the same
+ * identifier is also re-exported as the underlying Radix component, so
+ * a `type` import collapses to the value. PRD-119-E can replace this
+ * mirror with the direct interface once the UI barrel is detangled.
+ */
+export interface RecipeActionMenuItem {
+  label: string;
+  value: string;
+  disabled?: boolean;
+  variant?: 'default' | 'destructive';
+  onSelect?: () => void;
+}
 
 interface Props {
   slug: string;
   draftCount: number;
   onArchive: () => void;
-  /** PRD-142 + PRD-144 will inject their own menu items via this slot. */
-  extraItems?: ReactElement | null;
+  /** PRD-142 + PRD-144 inject their menu items here at the slot between Drafts and Archive. */
+  extraItems?: RecipeActionMenuItem[];
 }
 
 /**
@@ -19,62 +35,42 @@ interface Props {
  * 119-B ships only Edit / Drafts / Archive — PRD-142 and PRD-144 plug
  * into the `extraItems` slot to add their own entries between Drafts and
  * Archive when those PRDs land.
+ *
+ * Built on `@pops/ui`'s Radix-backed `DropdownMenu` so we get focus
+ * trap, roving focus, typeahead, click-outside, and Escape-to-close for
+ * free.
  */
-export function RecipeActionMenu({
-  slug,
-  draftCount,
-  onArchive,
-  extraItems = null,
-}: Props): ReactElement {
+export function RecipeActionMenu({ slug, draftCount, onArchive, extraItems }: Props): ReactNode {
   const { t } = useTranslation('food');
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const items: RecipeActionMenuItem[] = [
+    {
+      label: t('recipes.detail.actions.edit'),
+      value: 'edit',
+      onSelect: () => {
+        void navigate(`/food/recipes/${slug}/edit`);
+      },
+    },
+    {
+      label: t('recipes.detail.actions.drafts', { count: draftCount }),
+      value: 'drafts',
+      onSelect: () => {
+        void navigate(`/food/recipes/${slug}/drafts`);
+      },
+    },
+    ...(extraItems ?? []),
+    {
+      label: t('recipes.detail.actions.archive'),
+      value: 'archive',
+      variant: 'destructive',
+      onSelect: onArchive,
+    },
+  ];
   return (
-    <div className="relative">
-      <Button
-        variant="outline"
-        onClick={() => setOpen((p) => !p)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        {t('recipes.detail.actions.button')}
-      </Button>
-      {open && (
-        <div
-          role="menu"
-          tabIndex={-1}
-          className="absolute right-0 z-10 mt-1 w-56 rounded-md border bg-popover p-1 shadow-md"
-          onMouseLeave={() => setOpen(false)}
-        >
-          <MenuLink to={`/food/recipes/${slug}/edit`} label={t('recipes.detail.actions.edit')} />
-          <MenuLink
-            to={`/food/recipes/${slug}/drafts`}
-            label={t('recipes.detail.actions.drafts', { count: draftCount })}
-          />
-          {extraItems}
-          <MenuButton onClick={onArchive} label={t('recipes.detail.actions.archive')} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MenuLink({ to, label }: { to: string; label: string }): ReactElement {
-  return (
-    <Link to={to} role="menuitem" className="block rounded px-3 py-1.5 text-sm hover:bg-accent">
-      {label}
-    </Link>
-  );
-}
-
-function MenuButton({ onClick, label }: { onClick: () => void; label: string }): ReactElement {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={onClick}
-      className="block w-full rounded px-3 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10"
-    >
-      {label}
-    </button>
+    <DropdownMenu
+      align="end"
+      trigger={<Button variant="outline">{t('recipes.detail.actions.button')}</Button>}
+      items={items}
+    />
   );
 }

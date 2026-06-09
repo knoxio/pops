@@ -59,6 +59,8 @@
   "recipes.detail.archive.pending": "Archiving…",
   "recipes.detail.archive.success": "Recipe archived.",
   "recipes.detail.archive.error": "Could not archive: {{message}}",
+  "recipes.versionDetail.urlMissing": "Recipe or version missing from URL.",
+  "recipes.versionDetail.badVersionNo": "Invalid version number in URL.",
   "recipes.versionDetail.viewing": "Viewing version {{versionNo}} ({{status}}).",
   "recipes.versionDetail.created": "Created {{date}}.",
   "recipes.versionDetail.notFound": "That version does not exist.",
