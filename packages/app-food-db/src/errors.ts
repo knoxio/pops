@@ -47,7 +47,7 @@ export class IngredientCycleError extends Error {
   }
 }
 
-// ── PRD-107 errors ──────────────────────────────────────────────────────
+// ── Recipe-version errors ───────────────────────────────────────────────
 
 export class CannotPromoteUncompiledVersion extends Error {
   readonly versionId: number;
@@ -85,7 +85,7 @@ export class ConcurrentPromotion extends Error {
   }
 }
 
-// ── PRD-108 errors ──────────────────────────────────────────────────────
+// ── Batch / cook-run errors ─────────────────────────────────────────────
 
 export class CannotCookUncompiledRecipe extends Error {
   readonly recipeVersionId: number;
@@ -113,7 +113,7 @@ export class IngredientHierarchyDepthExceeded extends Error {
   }
 }
 
-// ── PRD-109 errors ──────────────────────────────────────────────────────
+// ── Substitution errors ─────────────────────────────────────────────────
 
 /**
  * Thrown when a substitution edge would point an ingredient (or variant) at

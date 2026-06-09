@@ -1,17 +1,3 @@
-/**
- * Recipe run services — PRD-108.
- *
- * A `recipe_run` is one cook event pinned to a specific `recipe_version`.
- * `markRunComplete` finalises it: sets `completed_at` and, when `yield` is
- * given, creates the produced batch and writes its FK on the run row.
- *
- * Per PRD-145's queued amendment (note in PRD-108 "Subsequent amendments"),
- * `markRunComplete` accepts `opts: { yield?: YieldArgs }` — sets only
- * `completed_at` when `yield` is absent (yieldless recipe), sets both when
- * present. The `createBatchFromRun` wrapper is the centralised contract;
- * direct callers should use it. For PRD-108's own scope, the wrapper is
- * inlined here; PRD-145 will extract it as a named export.
- */
 import { eq } from 'drizzle-orm';
 
 import { CannotCookUncompiledRecipe } from '../errors.js';
@@ -83,8 +69,7 @@ export interface MarkRunCompleteResult {
  * `recipe_runs.yielded_batch_id`. All writes happen in one transaction.
  *
  * Refuses to complete a run whose recipe_version isn't `compiled` — the
- * planner / consumption helper rely on materialised `recipe_lines` from
- * PRD-116, and an uncompiled version doesn't have them.
+ * planner / consumption helper need materialised `recipe_lines`.
  */
 export function markRunComplete(
   db: FoodDb,

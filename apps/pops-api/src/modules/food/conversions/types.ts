@@ -1,6 +1,4 @@
 /**
- * Conversion-table API types — PRD-123 Phase B.
- *
  * Wire shapes for `food.conversions.*` procedures. Boolean `seeded` is the
  * client-facing camelCase mirror of the DB's INTEGER `is_seeded` column.
  */

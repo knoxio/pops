@@ -1,7 +1,6 @@
 /**
- * Ingredients tab (PRD-122). Two-column layout: tree on the left,
- * detail panel on the right. Mobile collapses to single column (the
- * detail appears below the tree).
+ * Two-column layout: tree on the left, detail panel on the right. Mobile
+ * collapses to single column (detail appears below the tree).
  *
  * Orchestrates the detail panel's CRUD dialogs (rename / change-parent /
  * delete + variant create/edit/delete) and the `?focus=<slug>` deep-link

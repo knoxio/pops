@@ -1,9 +1,7 @@
 /**
- * Slug-registry lookup helpers — PRD-115.
- *
- * Read-only access against the food schema. Every lookup is by primary key
- * or by an indexed compound key, so resolution stays fast even on a
- * thousand-line recipe.
+ * Read-only slug-registry lookups. Every lookup is by primary key or an
+ * indexed compound key, so resolution stays fast even on a thousand-line
+ * recipe.
  */
 import { and, eq } from 'drizzle-orm';
 

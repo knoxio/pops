@@ -1,9 +1,7 @@
 /**
- * `deriveFromQty(unit)` + `ResolverCreation` builders — PRD-115.
- *
- * Per the PRD spec, the default_unit for an auto-created ingredient is
- * derived from the qty:unit it was first seen with. Unknown units fall
- * through to `count`; the user can refine in the management UI.
+ * The `default_unit` for an auto-created ingredient is derived from the
+ * `qty:unit` it was first seen with. Unknown units fall through to `count`;
+ * the user can refine in the management UI.
  */
 import type { SourceSpan } from './ast.js';
 import type { ResolverCreation } from './resolver-types.js';

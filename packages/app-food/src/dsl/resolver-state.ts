@@ -1,11 +1,3 @@
-/**
- * Resolver accumulator state — PRD-115.
- *
- * Errors, proposed slugs, creations, and resolved blocks are gathered
- * across the whole AST walk. Per-block helpers push into the same
- * accumulator; the top-level `resolveRecipeAst` decides ok/!ok based on
- * `errors.length`.
- */
 import type { IngredientBlock } from './ast.js';
 import type {
   ProposedSlug,
@@ -24,7 +16,7 @@ export interface ResolverState {
   blocks: ResolvedBlock[];
   /** Maps `@N` index → resolved ingredient block for step-body lookup. */
   ingredientIndex: Map<number, ResolvedIngredientBlock>;
-  /** Maps ingredient slug → resolved id (for step `@slug` refs). Auto-created entries map to null until PRD-116 runs. */
+  /** Maps ingredient slug → resolved id (for step `@slug` refs). Auto-created entries map to null until compile runs. */
   resolvedSlugs: Map<string, number | null>;
   /** Pending source AST ingredient blocks indexed by `index` (for `@N` lookup fallback). */
   sourceIngredients: Map<number, IngredientBlock>;

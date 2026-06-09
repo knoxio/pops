@@ -1,19 +1,13 @@
 /**
- * FIFO retention job for the food ingest media directory (PRD-110).
+ * FIFO retention for `${FOOD_INGEST_DIR}`. The pipeline writes one
+ * subdirectory per `ingest_sources.id`. This tick walks that root and,
+ * when the count exceeds `MAX_INGEST_DIRS`, deletes the oldest (by
+ * directory mtime) until the count is at the cap. For each evicted
+ * directory it stamps `ingest_sources.archived_at` so the row keeps its
+ * link to the recipe but the UI can tell the bytes are gone.
  *
- * The pipeline writes one subdirectory per `ingest_sources.id` under
- * `${FOOD_INGEST_DIR}`. This tick walks that root, and when the count
- * exceeds `MAX_INGEST_DIRS` deletes the oldest (by directory mtime) until
- * the count is at the cap. For each evicted directory it sets
- * `ingest_sources.archived_at` so the row keeps its link to the recipe
- * but the UI can tell the bytes are gone.
- *
- * The PRD's "5 GB target" is not enforced here — count-based eviction is
- * a deliberate v1 simplification (PRD-110 §Retention Policy).
- *
- * Scheduling lives in Epic 02's worker config. This module just exposes
- * `runEvictionTick(db, dir)` so the worker, a one-shot CLI, and the unit
- * tests can all invoke the same logic.
+ * Count-based eviction is a deliberate v1 simplification — there is no
+ * byte-size target.
  */
 import { type Stats } from 'node:fs';
 import { readdir, rm, stat } from 'node:fs/promises';
@@ -23,7 +17,7 @@ import { ingestSourcesService, type FoodDb } from '@pops/app-food-db';
 
 const { markArchived } = ingestSourcesService;
 
-/** Cap from PRD-110. Hard-coded; bumped centrally if the disk math changes. */
+/** Hard-coded cap; bump centrally if the disk math changes. */
 export const MAX_INGEST_DIRS = 100;
 
 /**

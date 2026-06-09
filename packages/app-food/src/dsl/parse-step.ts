@@ -2,12 +2,10 @@ import { readIdentifier, readQtyUnit, readString } from './lex.js';
 import { parseStepBody } from './parse-step-body.js';
 
 /**
- * `@step(...)` parser — PRD-114.
- *
- * Positional: one quoted string (the body). Then optional named args
- * `duration=qty:unit` and `temperature=qty:unit`. The body string is parsed
- * for inline `@N`, `@slug`, `@time(...)`, `@temperature(...)` via
- * `parseStepBody`.
+ * `@step(...)` parser. Positional: one quoted string (the body). Then
+ * optional named args `duration=qty:unit` and `temperature=qty:unit`. The
+ * body string is parsed for inline `@N`, `@slug`, `@time(...)`,
+ * `@temperature(...)` via `parseStepBody`.
  */
 import type { QtyUnit, StepBlock } from './ast.js';
 import type { Cursor } from './cursor.js';

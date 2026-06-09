@@ -1,6 +1,4 @@
 /**
- * Recipe version services — PRD-107.
- *
  * Version lifecycle:
  *   draft  ──promote──► current
  *   current ──superseded─► archived   (only when another version is promoted)
@@ -9,8 +7,7 @@
  * Promotion is an atomic three-step: write the new current, archive any
  * previously-current row, update `recipes.current_version_id`. The partial
  * UNIQUE `uq_recipe_versions_one_current` ensures the second of two
- * concurrent promotions fails — the service maps that SQLite error to a
- * typed `ConcurrentPromotion`.
+ * concurrent promotions fails — that surfaces as `ConcurrentPromotion`.
  */
 import { and, eq, max } from 'drizzle-orm';
 

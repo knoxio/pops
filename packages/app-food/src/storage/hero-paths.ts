@@ -1,8 +1,6 @@
 /**
- * Browser-safe helpers for recipe hero images (PRD-124).
- *
- * Pure constants + filename validators + URL builder. NO `node:path`, NO
- * `process.env`, NO filesystem — those live in
+ * Browser-safe hero-image helpers: constants + filename validators + URL
+ * builder. NO `node:path`, NO `process.env`, NO filesystem — those live in
  * `./hero-paths.node.ts` so this module can be imported by browser bundles
  * (e.g. `HeroImageUploader`) without breaking Vite resolution.
  *

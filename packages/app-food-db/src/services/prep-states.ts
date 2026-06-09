@@ -1,10 +1,3 @@
-/**
- * Prep state services — PRD-106.
- *
- * Prep states participate in `slug_registry` (kind='prep_state'). Each
- * mutation that touches the registry does so in the same transaction as
- * the parent row so partial-failure rollbacks leave both consistent.
- */
 import { eq } from 'drizzle-orm';
 
 import { prepStates, type PrepStateRow } from '../schema.js';

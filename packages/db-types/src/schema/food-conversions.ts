@@ -1,12 +1,9 @@
 /**
- * Food domain — PRD-123 unit conversion schema.
- *
  *   unit_conversions   — universal `from_unit → to_unit (g|ml|count) × ratio`
  *   ingredient_weights — per-ingredient "1 of this unit weighs X grams"
  *
- * Read by `normaliseLineQty` (`packages/app-food/src/dsl/normalisation.ts`),
- * which PRD-116's compile invokes for each `@ingredient` block. Written via
- * PRD-123's tRPC procedures + PRD-113's seed task.
+ * Read by `normaliseLineQty` (invoked from `compileRecipeVersion` per
+ * `@ingredient` block); written via tRPC procedures and the food seed task.
  */
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
@@ -22,7 +19,7 @@ export const unitConversions = sqliteTable(
     /** "1 from_unit = ratio to_unit". CHECK ratio > 0 enforced in migration. */
     ratio: real('ratio').notNull(),
     notes: text('notes'),
-    /** 1 for rows inserted by PRD-113's seed task; 0 for user-added rows. */
+    /** 1 for seeded rows; 0 for user-added rows. */
     isSeeded: integer('is_seeded').notNull().default(0),
     createdAt: text('created_at')
       .notNull()

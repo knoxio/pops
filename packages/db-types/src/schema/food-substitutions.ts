@@ -1,12 +1,3 @@
-/**
- * Food domain — PRD-109 substitutions schema.
- *
- * Split out of `./food.ts` so that file stays under the 200-line cap as the
- * food schema grows. Drizzle-kit globs `schema/*`, so the table is picked
- * up automatically by the migration generator.
- *
- * See `docs/themes/07-food/prds/109-substitution-model/`.
- */
 import { sql } from 'drizzle-orm';
 import { check, index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
@@ -50,8 +41,8 @@ export const substitutions = sqliteTable(
       'ck_subs_scope_recipe',
       sql`(${t.scope} = 'recipe' AND ${t.recipeId} IS NOT NULL) OR (${t.scope} = 'global' AND ${t.recipeId} IS NULL)`
     ),
-    // scope must be one of the allowed values — mirrors the enum CHECK in the
-    // migration so that a schema-derived rebuild can't accidentally drop it.
+    // Mirrors the enum CHECK in the migration so a schema-derived rebuild
+    // can't accidentally drop it.
     check('ck_subs_scope', sql`${t.scope} IN ('global','recipe')`),
     // Ratio must be strictly positive.
     check('ck_subs_ratio_positive', sql`${t.ratio} > 0`),

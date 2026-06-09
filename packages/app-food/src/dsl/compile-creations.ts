@@ -1,14 +1,11 @@
 /**
- * Apply `ResolverCreation[]` against the DB — PRD-116.
- *
- * Order: ingredients first, then variants (variants reference parent
- * ingredients by slug). All creations run inside the compile transaction,
- * so a failure rolls them back atomically with everything else.
+ * Apply `ResolverCreation[]` against the DB. Ingredients first, then variants
+ * (variants reference parent ingredients by slug). Runs inside the compile
+ * transaction.
  *
  * After creations land, the compile pipeline re-runs `resolveRecipeAst`
  * against the original AST — cleaner than rebinding ids on the existing
- * resolved blocks, since slug_registry now contains every newly-created
- * row.
+ * resolved blocks, since `slug_registry` now contains every new row.
  */
 import { eq } from 'drizzle-orm';
 

@@ -64,9 +64,8 @@ export function readString(c: Cursor): { value: string; terminated: boolean } | 
       return { value: out, terminated: true };
     }
     // Newlines inside a string terminate it as unterminated — strings are
-    // single-line in this DSL (PRD-114 recovery rule: `@step("...` with no
-    // closing quote raises UnterminatedString at the opening quote and the
-    // parser recovers at the next line).
+    // single-line. The parser raises UnterminatedString at the opening quote
+    // and recovers at the next line.
     if (ch === '\n') {
       return { value: out, terminated: false };
     }
@@ -81,7 +80,7 @@ export function readString(c: Cursor): { value: string; terminated: boolean } | 
       } else if (next === '' || next === '\n') {
         return { value: out, terminated: false };
       } else {
-        // Unknown escape — preserve backslash + char literally per PRD-114.
+        // Unknown escape — preserve backslash + char literally.
         out += '\\' + c.advance();
       }
       continue;

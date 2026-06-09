@@ -1,11 +1,7 @@
 /**
- * Food domain — PRD-107 schema (recipes + versions + tags).
- *
- *   recipes               — stable recipe identity (slug, type, hero, archived)
- *   recipe_versions       — content snapshots: body_dsl, yield, compile_status
- *   recipe_tags           — free-form tags per recipe
- *
- * See `docs/themes/07-food/prds/107-recipe-model/README.md`.
+ *   recipes          — stable recipe identity (slug, type, hero, archived)
+ *   recipe_versions  — content snapshots: body_dsl, yield, compile_status
+ *   recipe_tags      — free-form tags per recipe
  */
 import { sql } from 'drizzle-orm';
 import {
@@ -67,9 +63,8 @@ export const recipeVersions = sqliteTable(
     servings: integer('servings'),
     prepMinutes: integer('prep_minutes'),
     cookMinutes: integer('cook_minutes'),
-    // source_id will reference ingest_sources(id) once PRD-110 lands; column
-    // declared as plain integer for now to avoid a forward FK to a missing
-    // table (drizzle would emit a malformed FK clause).
+    // Plain integer — the FK to `ingest_sources(id)` is added by the
+    // ingest-sources migration to avoid a forward declaration here.
     sourceId: integer('source_id'),
     compileStatus: text('compile_status', { enum: ['uncompiled', 'compiled', 'failed'] })
       .notNull()

@@ -1,12 +1,9 @@
 import { lookupRecipeYield, lookupSlug } from './resolve-slug.js';
 
 /**
- * Step body resolver — PRD-115.
- *
- * Walks the step body parts and resolves inline `@N` (index) and `@slug`
- * references. Step refs do NOT auto-create — they're informational
- * pointers; missing refs raise `UnresolvedStepRefIndex` or
- * `UnresolvedStepRefSlug`.
+ * Walks step body parts and resolves inline `@N` (index) and `@slug`
+ * references. Step refs do NOT auto-create — missing refs raise
+ * `UnresolvedStepRefIndex` or `UnresolvedStepRefSlug`.
  */
 import type { SourceSpan, StepBlock, StepBodyPart } from './ast.js';
 import type { ResolverState } from './resolver-state.js';
@@ -134,9 +131,8 @@ function lookupSlugForStepRef(
     return emptyRef();
   }
   if (reg.kind === 'prep_state') {
-    // Step body refs treat any non-ingredient/recipe target as unresolved —
-    // per PRD-115, the consistent error code for a step-body @slug failure
-    // is UnresolvedStepRefSlug, paired with a proposedSlugs hint.
+    // Step body refs treat any non-ingredient/recipe target as unresolved;
+    // surface as UnresolvedStepRefSlug + proposedSlugs hint for consistency.
     state.errors.push({
       code: 'UnresolvedStepRefSlug',
       message: `@${slug} in step body resolves to a prep_state; expected an ingredient or recipe`,

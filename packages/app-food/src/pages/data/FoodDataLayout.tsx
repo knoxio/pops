@@ -1,11 +1,8 @@
 /**
- * Layout shell for `/food/data` (PRD-122).
- *
- * Renders the page header + a tab strip that links to each sub-route under
- * `/food/data/<slug>`. On narrow viewports the strip collapses to a native
- * `<select>` (acts as the mobile dropdown the PRD spec calls for) so the
- * tabs stay reachable at 375px without horizontal scroll. The active tab
- * comes from the URL — there is no client-side tab state.
+ * Layout shell for `/food/data`. Renders the page header + a tab strip
+ * that links to each sub-route under `/food/data/<slug>`. On narrow
+ * viewports the strip collapses to a native `<select>`. Active tab comes
+ * from the URL — no client-side tab state.
  */
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';

@@ -1,12 +1,10 @@
 /**
- * Food domain — PRD-116 compile schema.
- *
  *   recipe_lines                  — one row per @ingredient block; canonical-unit index
  *   recipe_steps                  — one row per @step block; markdown + resolved JSON
  *   recipe_version_proposed_slugs — unresolved-slug pointers from a failed compile
  *
- * Written by `compileRecipeVersion` (in `packages/app-food/src/dsl/compile.ts`).
- * Read by the planner / solver / shopping-list generators (Epics 04–07).
+ * Written by `compileRecipeVersion`. Read by the planner / solver / shopping-
+ * list generators.
  */
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
@@ -80,7 +78,7 @@ export const recipeVersionProposedSlugs = sqliteTable(
     suggestedKind: text('suggested_kind', {
       enum: ['ingredient', 'recipe', 'prep_state'],
     }),
-    /** `SourceSpan` from PRD-114's AST, serialised as JSON. */
+    /** AST `SourceSpan`, serialised as JSON. */
     fromLocJson: text('from_loc_json').notNull(),
     createdAt: text('created_at')
       .notNull()

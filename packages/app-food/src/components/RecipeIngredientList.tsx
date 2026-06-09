@@ -7,14 +7,10 @@ import { formatQty, lineAnchorId, lineCanonicalQty } from './RecipeRenderer.help
 import type { RecipeLineWithResolved } from './RecipeRenderer.types';
 
 /**
- * Render the ingredients section — PRD-121.
- *
  * Each `<li>` carries an `id` derived from the line's `position` so step
  * body chips can scroll the matching row into view via `#line-N` anchors.
- *
- * Scaling multiplies the canonical quantity; the original-text aside (the
- * "(originally 1 cup)" hint) is left unscaled because it is the literal
- * the user typed.
+ * Scaling multiplies the canonical quantity; the original-text aside is
+ * left unscaled because it is the literal the user typed.
  */
 export interface RecipeIngredientListProps {
   lines: RecipeLineWithResolved[];

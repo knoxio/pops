@@ -1,9 +1,5 @@
 /**
- * Shared error-mapping helpers for the conversions router (PRD-123 Phase B).
- *
- * Extracted from `./router.ts` so that file stays under the per-file
- * max-lines lint cap. The three helpers mirror the convention the aliases
- * and variants routers established for the rest of the food module:
+ * Error-mapping convention shared with the aliases / variants routers:
  *
  *   - SQLite `UNIQUE` constraint failures → tRPC `CONFLICT`
  *   - `expectRow(...)` "no row" failures   → tRPC `NOT_FOUND`

@@ -1,24 +1,15 @@
-/**
- * Pure helpers shared across `RecipeRenderer` subcomponents — PRD-121.
- *
- * Everything here is deterministic. `scaleFactor` clamping, yield-label
- * assembly, canonical-quantity selection, and anchor matching are written
- * as pure functions so the test suite can exercise edge cases without
- * mounting React.
- */
 import type { IngredientRow, IngredientVariantRow, PrepStateRow } from '@pops/db-types';
 
 import type { RecipeLineWithResolved } from './RecipeRenderer.types';
 
 /**
- * `scaleFactor=0` or negative is clamped to 1.0 per PRD AC line 229 — the
- * caller may still pass valid fractional / large scales like 0.5 or 4.
+ * `scaleFactor=0` or negative is clamped to 1.0. Fractional / large scales
+ * (0.5, 4, …) pass through.
  *
  * The console warning is one-shot per (module-load × invalid value) so a
  * caller that re-renders with the same broken value every frame doesn't
- * spam the console — yet a caller that toggles between two different
- * broken values still gets one signal per offender. Tracked in module
- * state so the runtime cost is a single `Set.has`.
+ * spam the console; a caller that toggles between two broken values still
+ * gets one signal per offender.
  */
 const warnedInvalidScaleFactors = new Set<number | string>();
 
@@ -95,7 +86,7 @@ export function buildYieldLabel(args: {
 
 /**
  * DOM id used to scroll-target an ingredient list row from a step ref —
- * matches the `#line-N` anchor PRD-116 writes into `body_md`.
+ * matches the `#line-N` anchor written into `body_md` at compile time.
  */
 export function lineAnchorId(position: number): string {
   return `line-${position}`;

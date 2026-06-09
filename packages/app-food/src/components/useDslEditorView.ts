@@ -1,34 +1,24 @@
 /**
- * `useDslEditorView` — owns the imperative CodeMirror 6 lifecycle for the
- * DSL editor (PRD-120 part A; autocomplete extension added in 120-B;
- * issues / squiggles / tooltip in 120-C; chip widgets + mobile fallback
- * in 120-D).
+ * Owns the imperative CodeMirror 6 lifecycle for the DSL editor:
  *
- * Pulled out of `DslEditor.tsx` so the component itself stays under the
- * lint cap and the React surface is purely declarative. The hook:
- *
- *   - Mounts a single `EditorView` into the supplied host div on first
- *     render and tears it down on unmount.
+ *   - Mounts a single `EditorView` into the host div on first render and
+ *     tears it down on unmount.
  *   - Toggles `EditorState.readOnly` + `EditorView.editable` via a
- *     `Compartment.reconfigure` transaction so the swap doesn't blow away
- *     the undo history or cursor position.
- *   - Re-syncs the document when `initialValue` changes from outside
- *     (parent loaded a new version). One-way only — the parent owns the
- *     canonical value via the debounced `onChange`.
+ *     `Compartment.reconfigure` so the swap doesn't blow away undo
+ *     history or cursor position.
+ *   - Re-syncs the document when `initialValue` changes from outside.
+ *     One-way only — the parent owns the canonical value via the
+ *     debounced `onChange`.
  *   - Watches `window.matchMedia('(max-width: 767px)')` and reconfigures
  *     the chip-widgets compartment between desktop (widget-replace) and
- *     mobile (inline-mark) renderings. The swap is a compartment
- *     reconfigure so cursor + undo state stay intact when the user rotates
- *     a tablet or resizes the window.
+ *     mobile (inline-mark) renderings.
  *   - Reads autocomplete lookups through a ref-backed proxy so the
- *     extension picks up source swaps from PRD-120 part B without
- *     re-mounting the EditorView.
+ *     extension picks up source swaps without re-mounting the EditorView.
  *
- * The hook deliberately doesn't return the `EditorView`; callers that
- * need it (tests, future plumbing) reach for
- * `EditorView.findFromDOM(host.querySelector('.cm-editor'))` instead.
- * That keeps the React render path immune to the imperative view's
- * mutation timeline.
+ * The hook deliberately doesn't return the `EditorView`; callers that need
+ * it (tests, autocomplete plumbing) reach for
+ * `EditorView.findFromDOM(host.querySelector('.cm-editor'))` instead, so
+ * the React render path stays immune to the imperative view's mutations.
  */
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
@@ -52,11 +42,11 @@ export interface UseDslEditorViewOptions {
   onChange: (value: string) => void;
   readOnly: boolean;
   issues: readonly CompileEditorIssue[];
-  /** Autocomplete lookups (PRD-120 part B). When `null`, the
-   *  autocomplete extension still mounts but every source resolves to
-   *  an empty list — useful in tests that don't want to stub the
-   *  lookups and in callers that haven't wired up the React Query hook
-   *  yet. */
+  /**
+   * Autocomplete lookups. When `null`, the extension still mounts but every
+   * source resolves to an empty list — useful in tests that don't want to
+   * stub the lookups.
+   */
   autocompleteSources: DslAutocompleteSources | null;
 }
 

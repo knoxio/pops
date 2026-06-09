@@ -1,11 +1,7 @@
 /**
- * Food domain — PRD-111 schema (meal plan).
- *
  *   plan_slots    — extensible slot vocabulary (breakfast / lunch / dinner /
  *                   snack / prep-session by default; users can append).
  *   plan_entries  — one row per planned cook (date, slot, recipe).
- *
- * See `docs/themes/07-food/prds/111-plan-entry-model/README.md`.
  */
 import { sql } from 'drizzle-orm';
 import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
@@ -38,8 +34,8 @@ export const planEntries = sqliteTable(
     // Null = use the recipe's current_version_id at cook time.
     recipeVersionId: integer('recipe_version_id').references(() => recipeVersions.id),
     plannedServings: integer('planned_servings').notNull().default(1),
-    // Nullable until the entry transitions from "planned" to "cooked"; set
-    // by the cook flow (Epic 05) when a recipe_runs row is created.
+    // Nullable until the entry transitions from "planned" to "cooked" — set
+    // by the cook flow when a `recipe_runs` row is created.
     recipeRunId: integer('recipe_run_id').references(() => recipeRuns.id),
     notes: text('notes'),
     createdAt: text('created_at')

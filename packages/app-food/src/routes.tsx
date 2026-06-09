@@ -93,7 +93,6 @@ export const navConfig = {
   items: [
     { path: '', label: 'Home', labelKey: 'food.home', icon: 'LayoutDashboard' },
     { path: '/data', label: 'Manage data', labelKey: 'food.data', icon: 'Database' },
-    // Recipes sub-nav populated by PRD-119.
   ],
 } satisfies AppNavConfigShape;
 

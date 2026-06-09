@@ -1,12 +1,3 @@
-/**
- * Conversion-table service layer — PRD-123.
- *
- * Mutations (CRUD) for `unit_conversions` and `ingredient_weights`. The
- * `resolveCanonicalQty` helper does the 3-step lookup PRD-123 specifies
- * (ingredient-weight first, then generic unit conversion, then "unresolved")
- * and is the procedure PRD-116's compile calls via
- * `packages/app-food/src/dsl/normalisation.ts`.
- */
 import { and, eq, isNull } from 'drizzle-orm';
 
 import { SeededRowProtected } from '../errors.js';
@@ -133,17 +124,16 @@ export type ResolveCanonicalResult =
   | { kind: 'unresolved' };
 
 /**
- * The PRD-123 3-step resolution:
+ * 3-step resolution:
  *
- * 1. **`ingredient_weights`** for `(ingredientId, variantId, unit)`, fall back
- *    to `(ingredientId, NULL, unit)`. Always converts to grams.
- * 2. **`unit_conversions`** for `(fromUnit, *)`. Picks the to_unit row by row
- *    order — the schema doesn't ambiguously fan out for v1, so first match wins.
+ * 1. **`ingredient_weights`** for `(ingredientId, variantId, unit)`, falling
+ *    back to `(ingredientId, NULL, unit)`. Always converts to grams.
+ * 2. **`unit_conversions`** for `(fromUnit, *)`. First match wins.
  * 3. **No match** → `{ kind: 'unresolved' }`; caller falls back to the
  *    ingredient's `default_unit` with null qty.
  *
- * Identity carry-over for `g`/`ml`/`count` is handled here so the compile-time
- * helper has a single entry point (no branch on the unit string in compile-lines).
+ * Identity carry-over for `g`/`ml`/`count` is handled here so callers have
+ * a single entry point.
  */
 export function resolveCanonicalQty(
   db: FoodDb,
@@ -196,10 +186,8 @@ function lookupUnitConversion(
   db: FoodDb,
   fromUnit: string
 ): { toUnit: CanonicalUnit; ratio: number } | null {
-  // Order by `id` so "first match" is deterministic — SQLite doesn't promise
-  // insertion order on unindexed selects, and multiple rows can exist for the
-  // same `from_unit` if a user (or PRD-113's seed) populated more than one
-  // `to_unit` for the same source unit.
+  // Order by `id` so "first match" is deterministic when multiple rows
+  // exist for the same `from_unit`.
   const rows = db
     .select({ toUnit: unitConversions.toUnit, ratio: unitConversions.ratio })
     .from(unitConversions)

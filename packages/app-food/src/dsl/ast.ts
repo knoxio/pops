@@ -1,10 +1,8 @@
 /**
- * Recipe DSL AST — PRD-114 / ADR-023.
- *
- * Drizzle-independent: the parser is pure text processing and emits these
- * shapes verbatim. PRD-115's resolver later turns slug references into entity
- * ids; PRD-116 materialises into `recipe_lines` / `recipe_steps`. The AST is
- * a stable contract between the parser and those downstream stages.
+ * Recipe DSL AST. See ADR-023 for the grammar. Drizzle-independent:
+ * the parser is pure text processing and emits these shapes verbatim.
+ * The resolver turns slug references into entity ids; compile materialises
+ * into `recipe_lines` / `recipe_steps`.
  */
 
 /** 1-indexed source position used in editor diagnostics. */

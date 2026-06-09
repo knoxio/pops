@@ -1,14 +1,9 @@
 /**
- * Food domain — PRD-106 schema (ingredient model + slug registry).
- *
  *   slug_registry         — global namespace shared by ingredients, recipes, prep_states
  *   ingredients           — canonical hierarchy (max depth 3, app-enforced)
- *   ingredient_variants   — presentations of an ingredient, slug-scoped per parent.
- *                           Extended by PRD-108 with `default_shelf_life_days_{fridge,freezer}`.
+ *   ingredient_variants   — presentations of an ingredient, slug-scoped per parent
  *   prep_states           — small enum of trivial knife/process modifiers
  *   ingredient_aliases    — case-insensitive lookup pointing at ingredient OR variant
- *
- * See `docs/themes/07-food/prds/106-ingredient-model/README.md`.
  */
 import { sql } from 'drizzle-orm';
 import {
@@ -68,7 +63,7 @@ export const ingredientVariants = sqliteTable(
     defaultUnit: text('default_unit', { enum: ['g', 'ml', 'count'] }).notNull(),
     packageSizeG: real('package_size_g'),
     notes: text('notes'),
-    // PRD-108: shelf-life defaults for `expires_at` auto-population at cook time.
+    // Shelf-life defaults feed `expires_at` auto-population at cook time.
     // Null = unknown / shelf-stable.
     defaultShelfLifeDaysFridge: integer('default_shelf_life_days_fridge'),
     defaultShelfLifeDaysFreezer: integer('default_shelf_life_days_freezer'),
@@ -107,9 +102,9 @@ export const ingredientAliases = sqliteTable(
       'ck_aliases_xor_target',
       sql`(${t.ingredientId} IS NOT NULL) <> (${t.variantId} IS NOT NULL)`
     ),
-    // Table-level UNIQUE per the PRD spec. Hand-edited to partial uniques in
-    // the migration so SQLite's NULL-is-distinct rule doesn't let duplicates
-    // slip through when variant_id (or ingredient_id) is NULL.
+    // Hand-edited to partial UNIQUEs in the migration so SQLite's NULL-is-
+    // distinct rule doesn't let duplicates slip through when variant_id (or
+    // ingredient_id) is NULL.
     unique('uq_aliases_alias_target').on(t.alias, t.ingredientId, t.variantId),
     // Case-insensitive alias index — migration hand-edited for COLLATE NOCASE.
     index('idx_aliases_alias').on(t.alias),

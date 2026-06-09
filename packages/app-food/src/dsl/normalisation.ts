@@ -1,14 +1,8 @@
 /**
- * Recipe-line unit normalisation — PRD-123.
- *
- * Wraps the conversion-service `resolveCanonicalQty` so PRD-116's compile
- * has a single helper to call per ingredient line. The fallback contract
- * (unresolved → ingredient's `default_unit`) is implemented here so the
- * compile pipeline doesn't need to know about the resolution algorithm.
- *
- * v1 (PRD-116) was identity carry-over only; this module replaces that
- * shape. Anything that previously called `carryOverMetric` should now
- * call `normaliseLineQty`.
+ * Wraps `resolveCanonicalQty` so the compile pipeline has a single helper
+ * per ingredient line. The fallback contract (unresolved → ingredient's
+ * `default_unit` with null qty) lives here, so compile stays oblivious to
+ * the resolution algorithm.
  */
 import { conversionsService } from '@pops/app-food-db';
 

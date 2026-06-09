@@ -1,10 +1,6 @@
 /**
  * `printRecipeAst` — reverse of `parseRecipeDsl` modulo whitespace.
  *
- * Used by:
- *   - PRD-114 round-trip stability tests (parse → print → parse → assertEqual)
- *   - PRD-120's editor for "format on save" once the AST has been edited via UI
- *
  * Always emits the compact descriptor form (`slug:variant:prep` with `_` for
  * skipped middle segments). Markdown blocks are emitted verbatim. Inline
  * `@time` / `@temperature` / `@N` / `@slug` are re-inserted into step bodies.

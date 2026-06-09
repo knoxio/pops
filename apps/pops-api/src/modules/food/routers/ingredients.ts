@@ -1,14 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-/**
- * Food → ingredients tRPC procedures (PRD-122).
- *
- * Thin wrappers over the food domain services exposed by `@pops/app-food-db`.
- * Validation lives in zod input schemas; business invariants (slug shape,
- * hierarchy depth, cycle detection) live in the service layer and are
- * mapped to typed TRPCErrors here so clients can switch on `code`.
- */
 import {
   IngredientCycleError,
   IngredientHierarchyDepthExceeded,

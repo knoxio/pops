@@ -1,21 +1,3 @@
-/**
- * Ingredient-alias services — PRD-106 / PRD-122 (data management page).
- *
- * Aliases point at exactly one of `ingredient_id` or `variant_id` (XOR
- * CHECK enforced at the row level). The partial UNIQUE indexes from the
- * PRD-106 migration handle deduplication per target, so duplicate inserts
- * surface as bare SQLite UNIQUE errors here.
- *
- * `mergeAliases` re-points a set of existing aliases to a single canonical
- * target. The PRD-122 spec calls for INSERT-then-DELETE in one transaction
- * so the audit trail is preserved (we recreate at the new target instead
- * of UPDATE-ing the FK). Existing rows that already point at the canonical
- * target are kept; the rest are migrated.
- *
- * `bulkApprove` flips a batch of `source='llm'` aliases to `source='user'`
- * so the operator's "trust this LLM proposal" affordance becomes the
- * authoritative state without an extra column.
- */
 import { and, eq, inArray, like, or } from 'drizzle-orm';
 
 import { ingredientAliases, type IngredientAliasRow } from '../schema.js';
@@ -103,11 +85,10 @@ export interface MergeAliasesResult {
  * (DELETE) in the same transaction.
  *
  * The INSERT uses `ON CONFLICT DO NOTHING` against the per-target partial
- * UNIQUE indexes (PRD-106): when the same alias text already exists at the
- * canonical target, the duplicate is silently collapsed onto the existing
- * row while the original is still removed. Without this, a merge across
- * targets that happen to share alias text would fail SQLite's UNIQUE and
- * abort the whole transaction.
+ * UNIQUE indexes: when the same alias text already exists at the canonical
+ * target, the duplicate is silently collapsed onto the existing row while
+ * the original is still removed. Without this, a merge across targets that
+ * share alias text would fail SQLite's UNIQUE and abort the transaction.
  */
 export function mergeAliases(db: FoodDb, input: MergeAliasesInput): MergeAliasesResult {
   if (input.aliasIds.length === 0) return { mergedCount: 0 };

@@ -1,12 +1,8 @@
 /**
- * Hero image uploader (PRD-124).
- *
  * Shows the current hero or a drop-zone, accepts drag-drop or click-to-pick,
  * reads the picked file as base64, and calls `food.heroImage.upload`. Errors
  * surface as toasts; the parent gets notified through `onUploaded` /
- * `onRemoved` callbacks so the recipe edit page can refresh its query state.
- *
- * No client-side resize in v1 — the server's sharp pipeline handles it.
+ * `onRemoved` callbacks so it can refresh its query state.
  */
 import { type JSX, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

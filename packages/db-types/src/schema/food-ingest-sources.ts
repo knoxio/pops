@@ -1,15 +1,10 @@
 /**
- * Food domain — PRD-110 schema (ingest_sources).
- *
- *   ingest_sources        — provenance row per multimodal ingest run; FKs
- *                           back to recipes(id) for the drafted recipe.
+ * Provenance row per multimodal ingest run; FKs back to `recipes(id)` for
+ * the drafted recipe.
  *
  * Path columns are stored relative to FOOD_INGEST_DIR. The absolute path is
- * computed at read time via `ingestDirFor(sourceId)` (see
- * `packages/app-food/src/storage/ingest-paths.ts`) so deployments can
+ * computed at read time via `ingestDirFor(sourceId)` so deployments can
  * relocate the media root without rewriting rows.
- *
- * See `docs/themes/07-food/prds/110-ingest-sources/README.md`.
  */
 import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';

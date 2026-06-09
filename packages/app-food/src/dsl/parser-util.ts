@@ -1,16 +1,10 @@
-/**
- * Parser support utilities — PRD-114.
- *
- * Sibling of `parser.ts`. Keeps the entry-point file under the line cap.
- */
 import type { Cursor } from './cursor.js';
 import type { CursorMark } from './parser-state.js';
 
 /**
  * Find the offset of the matching `)` for a `(` that the cursor just passed.
- * Strings are single-line: a `\n` inside a string ends it (per PRD-114's
- * recovery rule), allowing paren matching to continue past an unterminated
- * string on subsequent lines.
+ * Strings are single-line: a `\n` inside a string ends it, allowing paren
+ * matching to continue past an unterminated string on subsequent lines.
  */
 export function findBalancedClose(c: Cursor): number {
   let depth = 1;

@@ -1,17 +1,12 @@
 /**
- * Hero image upload service (PRD-124).
- *
- * Owns the on-disk + DB lifecycle for `recipes.hero_image_path`:
+ * On-disk + DB lifecycle for `recipes.hero_image_path`:
  *   - validates the upload (mime type, size, decodable image header)
  *   - writes the original atomically (`.tmp` + rename)
  *   - generates two derived thumbnails with sharp (320px webp, 640px webp)
  *   - updates `recipes.hero_image_path` and removes any stale prior original
  *
- * sharp lives in this package (already a runtime dep) so the heavy work is
- * done here rather than in `@pops/app-food` which is also consumed by the
- * browser bundle.
- *
- * See `docs/themes/07-food/prds/124-hero-image-upload/README.md`.
+ * sharp lives in this package (browser-bundled `@pops/app-food` can't
+ * carry it), so the heavy work is done here.
  */
 import {
   existsSync,

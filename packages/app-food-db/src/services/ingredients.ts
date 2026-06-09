@@ -1,19 +1,10 @@
 /**
- * Ingredient services — PRD-106.
- *
- * Functions are pure relative to the `db` argument: they take a drizzle
- * connection (or a transaction handle) and return the result of the mutation.
- * Each service that touches both `ingredients` and `slug_registry` does so
- * inside the same transaction so partial-failure rollbacks leave both tables
- * consistent.
- *
  * Application-side invariants:
  *   - slug shape: kebab-case `[a-z0-9]+(-[a-z0-9]+)*` (via `assertValidSlug`)
  *   - ingredient hierarchy depth ≤ 3 (counted at insert / re-parent)
  *   - ingredient parent chain forms no cycles (DFS at insert / re-parent)
- *   - slug_registry is the cross-kind uniqueness surface — service inserts
- *     fail with `SlugAlreadyRegisteredError` (vs. the bare UNIQUE error from
- *     SQLite) so callers get the existing kind in the error.
+ *   - slug_registry inserts throw `SlugAlreadyRegisteredError` (vs. the bare
+ *     SQLite UNIQUE) so callers get the colliding kind in the error.
  */
 import { eq } from 'drizzle-orm';
 

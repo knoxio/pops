@@ -3,21 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '@pops/ui';
 
 /**
- * `@temperature(...)` rendered as a small badge inside step bodies — PRD-121.
- *
- * Renders the unit symbol per AC line 221:
+ * `@temperature(...)` rendered as a small badge:
  *   `:c`   → `180 °C`
  *   `:f`   → `350 °F`
  *   `:gas` → `Gas 5`
  *
- * Cosmetic only — no click behaviour, no callback. Step-level temperature
- * (PRD-116's hoist column) renders the same way as inline `@temperature`;
- * the renderer reuses this component for both.
+ * Cosmetic only. Step-level temperature reuses this component.
  */
 export interface TempBadgeProps {
   /** Numeric value. */
   value: number;
-  /** Normalised PRD-116 unit. */
+  /** Normalised unit. */
   unit: 'c' | 'f' | 'gas';
 }
 

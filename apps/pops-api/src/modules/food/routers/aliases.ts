@@ -7,17 +7,9 @@ import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 
 /**
- * Food → aliases tRPC procedures (PRD-122).
- *
- * Aliases point at exactly one of (ingredient_id, variant_id) per PRD-106's
- * XOR CHECK. The merge mutation rewires multiple aliases to a single
- * canonical target inside a transaction; bulk-approve flips llm-sourced
- * rows to user-sourced for the "trust this LLM proposal" affordance.
- *
- * The aliases service explicitly relies on the DB-level partial UNIQUE
- * indexes for dedupe — duplicate (alias, target) inserts surface as raw
- * SQLite UNIQUE constraint errors. Map those to CONFLICT here so clients
- * get a stable code instead of an opaque 500.
+ * The aliases service relies on the DB's partial UNIQUE indexes for dedupe —
+ * duplicate `(alias, target)` inserts surface as raw SQLite UNIQUE errors,
+ * mapped to CONFLICT here so clients get a stable code instead of a 500.
  */
 
 const SOURCE_ENUM = z.enum(['user', 'llm', 'ingest']);

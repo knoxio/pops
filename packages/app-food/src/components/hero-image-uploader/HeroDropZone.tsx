@@ -1,7 +1,6 @@
 /**
- * Drop-zone for the empty hero state (PRD-124). Exposed as a `role="button"`
- * so keyboard activation (Enter / Space) opens the file picker — drag-drop
- * is supported alongside the click path.
+ * Drop-zone for the empty hero state. `role="button"` so keyboard
+ * activation (Enter / Space) opens the file picker.
  */
 import type { JSX } from 'react';
 

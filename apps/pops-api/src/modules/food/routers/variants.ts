@@ -7,16 +7,9 @@ import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 
 /**
- * Food → variants tRPC procedures (PRD-122).
- *
- * Variants are scoped under their parent ingredient (PRD-106 invariant);
- * `(ingredient_id, slug)` UNIQUE is enforced at the DB level. There's no
- * global "list all variants" endpoint — use `food.ingredients.get` for the
- * per-parent set.
- *
- * Shelf-life fields (`defaultShelfLifeDaysFridge` / `Freezer`) land on the
- * `ingredient_variants` row via PRD-108's ALTER. The data page surfaces
- * them inline alongside the other variant columns.
+ * Variants are scoped under their parent ingredient; `(ingredient_id, slug)`
+ * UNIQUE is DB-enforced. No global "list all variants" endpoint — use
+ * `food.ingredients.get` for the per-parent set.
  */
 
 const UNIT_ENUM = z.enum(['g', 'ml', 'count']);

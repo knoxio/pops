@@ -1,23 +1,16 @@
 /**
- * Substitution services — PRD-109.
- *
- * Substitutions are directed edges between ingredients (or variants). A
- * bidirectional sub is two rows; the schema makes no attempt to link them.
+ * Substitutions are directed edges between ingredients (or variants).
+ * A bidirectional sub is two rows; the schema makes no attempt to link them.
  * Edges are either `global` (apply anywhere) or `recipe`-scoped (override
  * the global edge for one recipe).
  *
- * The service layer enforces three rules that the schema cannot:
- *   1. Self-substitution (`from = to` on the same side) is rejected with
- *      `CannotSubstituteSelf`. The xor CHECKs make it impossible to express
- *      this in pure SQL without exploding into four cases.
- *   2. `context_tags` is stored as a JSON-encoded array of strings. Callers
- *      pass arrays; the service serialises via `JSON.stringify`.
- *   3. Scope/recipe coherence (recipe-scoped → recipe_id present, global →
- *      recipe_id absent) is also enforced at the schema level, but the
- *      service normalises null/undefined before INSERT so the CHECK never
- *      fires from a caller mistake.
- *
- * Query helpers (cook-time sub lookup, plan-time graph walk) live in Epic 06.
+ * The service layer enforces three rules the schema cannot:
+ *   1. Self-substitution (`from = to` on the same side) → `CannotSubstituteSelf`.
+ *      The xor CHECKs make this impossible to express in pure SQL without
+ *      exploding into four cases.
+ *   2. `context_tags` is JSON-encoded. Callers pass arrays.
+ *   3. Scope/recipe coherence is also enforced by CHECK, but the service
+ *      normalises null/undefined before INSERT so callers can't trip it.
  */
 import { and, eq } from 'drizzle-orm';
 
