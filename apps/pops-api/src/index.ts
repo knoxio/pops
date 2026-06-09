@@ -6,7 +6,7 @@ config(); // loads apps/pops-api/.env if it exists
 config({ path: '../../.env', override: false }); // loads root .env without overriding
 
 import { createApp } from './app.js';
-import { closeDb } from './db.js';
+import { closeDb, getCoreDrizzle } from './db.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
 import {
@@ -34,6 +34,17 @@ import { getRedisClient, shutdownRedis } from './redis.js';
 
 const port = Number(process.env['PORT'] ?? 3000);
 const app = createApp();
+
+// Eagerly open the core pillar's SQLite + apply its journal at boot so
+// the per-pillar migrations land before any request hits the API. The
+// handle itself is not yet consumed for production traffic — PR 3 of
+// phase 2 flips service-accounts callers to `getCoreDrizzle()`.
+try {
+  getCoreDrizzle();
+} catch (err) {
+  console.error('[db] Failed to open the core pillar SQLite:', err);
+  throw err;
+}
 
 // Clean up expired and orphaned env DBs left over from any previous crash
 const { expired, orphaned } = startupCleanup();
