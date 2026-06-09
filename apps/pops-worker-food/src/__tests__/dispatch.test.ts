@@ -135,9 +135,14 @@ describe('runIngestJob', () => {
 
 describe('default handler stubs', () => {
   it('remaining stub kinds resolve to NotImplemented failures with the stub version', async () => {
+    // Real handlers ship per-kind:
+    //   - PRD-127 → `url-web`
+    //   - PRD-131 → `screenshot`
+    //   - PRD-132 → `text`
+    // PRDs 128/129/130 will pop `url-instagram` off this list when they
+    // land.
     const kinds: IngestJobData[] = [
       { kind: 'url-instagram', sourceId: 2, url: 'https://instagram.com/r/abc' },
-      { kind: 'screenshot', sourceId: 3, mimeType: 'image/png', contentPath: '/tmp/x.png' },
     ];
     for (const data of kinds) {
       const result = await runIngestJob(data, ctx, defaultHandlers);
