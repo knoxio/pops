@@ -30,6 +30,7 @@ import {
   recordSlug,
   unregisterSlug,
 } from './internal';
+import { deleteRecipeScopedSubstitutions } from './substitutions';
 
 export type RecipeType =
   | 'plate'
@@ -146,6 +147,9 @@ export function deleteRecipe(db: FoodDb, recipeId: number): void {
       .where(eq(recipes.id, recipeId))
       .all();
     if (existing.length === 0) return;
+    // PRD-109 — recipe-scoped substitutions reference this recipe via FK;
+    // drop them in the same transaction so the FK doesn't reject the delete.
+    deleteRecipeScopedSubstitutions(tx, recipeId);
     // Drop versions first so the recipes-row delete succeeds against the FK.
     tx.delete(recipeVersions).where(eq(recipeVersions.recipeId, recipeId)).run();
     tx.delete(recipes).where(eq(recipes.id, recipeId)).run();

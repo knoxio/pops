@@ -25,6 +25,9 @@ const MIGRATIONS = [
   '0058_high_sentinel.sql',
   '0059_useful_hiroim.sql',
   '0060_familiar_leo.sql',
+  // PRD-109's substitutions table is referenced from deleteRecipe, which
+  // cascades any recipe-scoped subs before dropping the recipe row.
+  '0061_shocking_skreet.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),

@@ -428,6 +428,13 @@
       "when": 1780925430396,
       "tag": "0060_familiar_leo",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1780965235287,
+      "tag": "0061_shocking_skreet",
+      "breakpoints": true
     }
   ]
 }

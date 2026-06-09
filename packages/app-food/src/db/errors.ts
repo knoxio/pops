@@ -111,3 +111,23 @@ export class IngredientHierarchyDepthExceeded extends Error {
     this.depth = depth;
   }
 }
+
+// ── PRD-109 errors ──────────────────────────────────────────────────────
+
+/**
+ * Thrown when a substitution edge would point an ingredient (or variant) at
+ * itself. Enforced at the service layer — there is no schema-level CHECK for
+ * it because each side is a one-of-two FK and the comparison would have to
+ * collapse the xor across columns.
+ */
+export class CannotSubstituteSelf extends Error {
+  readonly side: 'ingredient' | 'variant';
+  readonly id: number;
+
+  constructor(side: 'ingredient' | 'variant', id: number) {
+    super(`Cannot create a substitution from ${side} #${id} to itself`);
+    this.name = 'CannotSubstituteSelf';
+    this.side = side;
+    this.id = id;
+  }
+}

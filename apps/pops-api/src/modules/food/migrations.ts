@@ -19,6 +19,8 @@ export const foodMigrationTags: readonly string[] = [
   // PRD-108 — batches + recipe_runs + batch_consumptions; ALTER ingredient_variants
   // with default_shelf_life_days_{fridge,freezer}.
   '0060_familiar_leo',
+  // PRD-109 — substitutions.
+  '0061_shocking_skreet',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

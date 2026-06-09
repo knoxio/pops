@@ -38,6 +38,7 @@ export {
   recipeVersions,
   slugRegistry,
 } from './food.js';
+export { substitutions } from './food-substitutions.js';
 export { homeInventory } from './inventory.js';
 export { itemConnections } from './item-connections.js';
 export { itemFixtureConnections } from './item-fixture-connections.js';
