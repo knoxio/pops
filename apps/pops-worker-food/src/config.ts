@@ -33,6 +33,10 @@ export interface WorkerConfig {
   drainTimeoutMs: number;
   /** Pinned semicolon-delimited tool versions for `IngestMeta.extractor_version`. */
   extractorVersion: string;
+  /** Per-source workdir root for downloaded media (PRD-110 / PRD-129 / PRD-130). */
+  ingestDir: string;
+  /** Netscape cookies.txt mounted from the host (PRD-129 operator runbook). */
+  instagramCookiesPath: string;
 }
 
 const DEFAULT_CONCURRENCY = 2;
@@ -70,5 +74,7 @@ export function loadConfig(): WorkerConfig {
     healthPort: readIntEnv('FOOD_WORKER_HEALTH_PORT', DEFAULT_HEALTH_PORT),
     drainTimeoutMs: readIntEnv('FOOD_WORKER_DRAIN_TIMEOUT_MS', DEFAULT_DRAIN_TIMEOUT_MS),
     extractorVersion: process.env['POPS_WORKER_FOOD_VERSION'] ?? 'pops-worker-food@0.1.0',
+    ingestDir: process.env['FOOD_INGEST_DIR'] ?? '/data/food/ingest',
+    instagramCookiesPath: process.env['INSTAGRAM_COOKIES_PATH'] ?? '/secrets/instagram-cookies.txt',
   };
 }
