@@ -37,9 +37,32 @@ export interface DispatchUriOptions extends ResolveUriOptions {
   readonly remoteResolve?: RemoteResolve;
   /** Timeout for the remote call in milliseconds. Default 5_000. */
   readonly remoteTimeoutMs?: number;
+  /**
+   * Pillar id of the current process. URIs owned by this id are ALWAYS routed
+   * to the in-process resolver, even if `POPS_PILLARS` accidentally lists a
+   * baseUrl for it. Defaults to `'core'` because this dispatcher lives inside
+   * core today; pillar-local dispatchers (when they exist) pass their own id.
+   * Without this guard, a `core:http://core-api:3000` env entry would POST to
+   * the same process and self-recurse until the request times out.
+   */
+  readonly selfPillarId?: string;
 }
 
 const DEFAULT_REMOTE_TIMEOUT_MS = 5_000;
+const DEFAULT_SELF_PILLAR_ID = 'core';
+
+/**
+ * Known `UriResolverResult.kind` values. Centralised so the remote-leg parser
+ * can reject unknown discriminator values from a misbehaving or
+ * mismatched-version pillar.
+ */
+const KNOWN_KINDS = new Set<UriResolverResult['kind']>([
+  'object',
+  'not-found',
+  'module-absent',
+  'pillar-unavailable',
+  'malformed',
+]);
 
 /**
  * Resolve a `pops:{pillar}/{type}/{id}` URI, routing across the pillar
@@ -48,12 +71,15 @@ const DEFAULT_REMOTE_TIMEOUT_MS = 5_000;
  * Order of checks:
  *   1. Parse the URI — malformed input returns `malformed` without touching
  *      the registry. (Mirrors `resolveUri`.)
- *   2. Look up the owning pillar in `POPS_PILLARS`. Hit ⇒ remote leg.
+ *   2. If the URI is owned by `selfPillarId`, ALWAYS resolve in-process —
+ *      even if `POPS_PILLARS` contains a self-entry. Prevents self-recursion
+ *      on misconfiguration.
+ *   3. Look up the owning pillar in `POPS_PILLARS`. Hit ⇒ remote leg.
  *      Miss ⇒ fall through to in-process `resolveUri`.
- *   3. Remote leg: POST to `${baseUrl}/uri/resolve` with `{uri}`. Bound by
+ *   4. Remote leg: POST to `${baseUrl}/uri/resolve` with `{uri}`. Bound by
  *      `remoteTimeoutMs`. Any throw (network error, abort, non-2xx, malformed
- *      JSON) becomes `pillar-unavailable` so the caller treats it as a
- *      transient placeholder.
+ *      JSON, unknown response.kind) becomes `pillar-unavailable` so the
+ *      caller treats it as a transient placeholder.
  */
 export async function dispatchUri(
   uri: string,
@@ -65,7 +91,13 @@ export async function dispatchUri(
     return { kind: 'malformed', uri, reason: parsed.reason };
   }
 
-  // 2. Look up the owning pillar.
+  // 2. Self-pillar short-circuit: never proxy to ourselves.
+  const selfPillarId = options.selfPillarId ?? DEFAULT_SELF_PILLAR_ID;
+  if (parsed.parsed.moduleId === selfPillarId) {
+    return resolveUri(uri, options);
+  }
+
+  // 3. Look up the owning pillar.
   const entry = getPillarEntry(parsed.parsed.moduleId);
   if (!entry) {
     // No remote pillar registered — fall back to the existing in-process path.
@@ -101,15 +133,22 @@ const defaultRemoteResolve: RemoteResolve = async (entry, uri, signal) => {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} ${response.statusText}`);
   }
-  const json = (await response.json()) as UriResolverResult;
-  if (
-    typeof json !== 'object' ||
-    json === null ||
-    typeof (json as { kind?: unknown }).kind !== 'string'
-  ) {
+  const json: unknown = await response.json();
+  if (typeof json !== 'object' || json === null) {
+    throw new Error('response is not a JSON object');
+  }
+  const kind = (json as { kind?: unknown }).kind;
+  if (typeof kind !== 'string') {
     throw new Error('response missing discriminator field');
   }
-  return json;
+  // Guard against version skew: a pillar running an older/newer build might
+  // return a `kind` this dispatcher does not understand. Mapping it to
+  // `pillar-unavailable` (via the throw → catch path) is safer than
+  // propagating an invalid discriminated-union shape to consumers.
+  if (!KNOWN_KINDS.has(kind as UriResolverResult['kind'])) {
+    throw new Error(`unknown response kind '${kind}'`);
+  }
+  return json as UriResolverResult;
 };
 
 function describeRemoteError(err: unknown, timeoutMs: number, aborted: boolean): string {

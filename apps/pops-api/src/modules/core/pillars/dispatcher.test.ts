@@ -164,4 +164,84 @@ describe('dispatchUri — remote leg', () => {
       fetchSpy.mockRestore();
     }
   });
+
+  it('returns pillar-unavailable when the remote response uses an unknown kind (default fetch remote)', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ kind: 'wat', moduleId: 'food' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    try {
+      const result = await dispatchUri('pops:food/recipe/rec-1', {
+        registry: EMPTY_REGISTRY,
+        isInstalled: ALL_INSTALLED,
+      });
+      expect(result).toEqual({
+        kind: 'pillar-unavailable',
+        moduleId: 'food',
+        reason: expect.stringContaining("unknown response kind 'wat'"),
+      });
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
+
+describe('dispatchUri — self-pillar short-circuit', () => {
+  it('resolves selfPillarId-owned URIs in-process even when registry has a self-entry', async () => {
+    // Misconfiguration: POPS_PILLARS lists `core:http://core-api:3000`.
+    // Without the short-circuit, dispatchUri would POST to itself and
+    // recurse until timeout. With it, the in-process resolver handles it.
+    process.env[ENV_KEY] = 'core:http://core-api:3000';
+    __resetPillarRegistryCache();
+    const remote = vi.fn();
+    const manifest: ModuleManifest = {
+      id: 'core',
+      name: 'Core',
+      surfaces: ['app'],
+      uriHandler: {
+        types: ['setting'],
+        resolve: async (_type, id) => ({ kind: 'object', data: { id } }),
+      },
+    };
+    const result = await dispatchUri('pops:core/setting/foo', {
+      registry: [manifest],
+      isInstalled: ALL_INSTALLED,
+      remoteResolve: remote,
+    });
+    expect(remote).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: 'object',
+      moduleId: 'core',
+      type: 'setting',
+      id: 'foo',
+      data: { id: 'foo' },
+    });
+  });
+
+  it('honours a custom selfPillarId for pillar-local dispatchers', async () => {
+    // A pillar-local dispatcher (e.g. inside food-api) would pass its own id.
+    // Even if food appears in POPS_PILLARS, it must NOT proxy to itself.
+    process.env[ENV_KEY] = 'food:http://food-api:3000';
+    __resetPillarRegistryCache();
+    const remote = vi.fn();
+    const manifest: ModuleManifest = {
+      id: 'food',
+      name: 'Food',
+      surfaces: ['app'],
+      uriHandler: {
+        types: ['recipe'],
+        resolve: async (_type, id) => ({ kind: 'object', data: { id } }),
+      },
+    };
+    const result = await dispatchUri('pops:food/recipe/r-1', {
+      registry: [manifest],
+      isInstalled: ALL_INSTALLED,
+      remoteResolve: remote,
+      selfPillarId: 'food',
+    });
+    expect(remote).not.toHaveBeenCalled();
+    expect(result.kind).toBe('object');
+  });
 });

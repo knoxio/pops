@@ -53,12 +53,6 @@ export function createApp(): express.Express {
   // (moving it before express.json() would be safe but creates confusion about ordering).
   app.use(healthRouter);
 
-  // Pillar registry HTTP surface (ADR-026 P2): POST /uri/resolve, GET /pillars.
-  // Placed before authMiddleware because inter-pillar HTTP travels on the
-  // internal Docker network rather than through Cloudflare Access. JSON body
-  // parsing was registered above, so the POST handler can read req.body.
-  app.use(pillarsRouter);
-
   // Up Bank webhook handler (processes its own raw body + signature verification)
   app.use(upBankRouter);
 
@@ -84,6 +78,14 @@ export function createApp(): express.Express {
   // Placed after health/webhook/media routes (those skip auth or use their own).
   // In development, bypasses JWT check and attaches mock user.
   app.use(authMiddleware);
+
+  // Pillar registry HTTP surface (ADR-026 P2): POST /uri/resolve, GET /pillars.
+  // Both endpoints expose deployment topology / object data, so they sit
+  // behind authMiddleware. Inter-pillar HTTP between sibling pillars (a
+  // future concern — no other pillars exist yet) will need a service-token
+  // auth mechanism layered on top; gating these routes now ensures they
+  // never go public during the pre-flight window.
+  app.use(pillarsRouter);
 
   // Env CRUD routes — mounted before env context middleware so these always
   // use the prod DB regardless of any ?env= query param on the request.

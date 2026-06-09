@@ -48,6 +48,18 @@ describe('parsePillarsEnv', () => {
     ]);
   });
 
+  it('rejects baseUrl with a path prefix', () => {
+    expect(() => parsePillarsEnv('food:http://food-api:3000/api')).toThrow(/bare origin/);
+  });
+
+  it('rejects baseUrl with a query string', () => {
+    expect(() => parsePillarsEnv('food:http://food-api:3000?x=1')).toThrow(/bare origin/);
+  });
+
+  it('rejects baseUrl with a fragment', () => {
+    expect(() => parsePillarsEnv('food:http://food-api:3000#frag')).toThrow(/bare origin/);
+  });
+
   it('accepts https baseUrls', () => {
     expect(parsePillarsEnv('food:https://food.example.com')).toEqual([
       { id: 'food', baseUrl: 'https://food.example.com' },

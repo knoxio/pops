@@ -120,6 +120,19 @@ function parseBaseUrl(id: string, baseUrlRaw: string): string {
   if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
     throw new PillarsEnvParseError(`pillar '${id}' baseUrl '${baseUrlRaw}' must use http or https`);
   }
-  // Normalise: drop trailing slash so callers can append paths cleanly.
-  return baseUrlRaw.endsWith('/') ? baseUrlRaw.slice(0, -1) : baseUrlRaw;
+  // Require a bare origin — no path, query, or fragment. The dispatcher
+  // builds endpoints by appending `/uri/resolve`; allowing a path prefix
+  // would silently route to the wrong handler (e.g. `${baseUrl}/api/uri/resolve`).
+  if (
+    (parsedUrl.pathname !== '/' && parsedUrl.pathname !== '') ||
+    parsedUrl.search !== '' ||
+    parsedUrl.hash !== ''
+  ) {
+    throw new PillarsEnvParseError(
+      `pillar '${id}' baseUrl '${baseUrlRaw}' must be a bare origin (no path, query, or fragment)`
+    );
+  }
+  // Normalise via URL.origin so the stored value has no trailing slash and
+  // callers can always append paths cleanly.
+  return parsedUrl.origin;
 }
