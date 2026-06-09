@@ -31,7 +31,6 @@ import {
   type ScanResult,
   type StepBodyRef,
 } from './renumber-scanner';
-import { findMatchingParen } from './renumber-scanner-util';
 
 export { scanIngredientUsages };
 export type { IngredientDeclaration, ScanResult, StepBodyRef };
@@ -144,17 +143,9 @@ function buildSlotChange(
   sourceDecl: IngredientDeclaration,
   newIndex: number
 ): RenumberChange {
-  const slotStart = slotDecl.blockStart;
-  const slotEnd = findBlockEnd(source, slotDecl);
-  const sourceBlockText = source.slice(sourceDecl.blockStart, findBlockEnd(source, sourceDecl));
+  const sourceBlockText = source.slice(sourceDecl.blockStart, sourceDecl.blockEnd);
   const rewritten = rewriteIndexInBlock(sourceBlockText, sourceDecl, newIndex);
-  return { from: slotStart, to: slotEnd, insert: rewritten };
-}
-
-function findBlockEnd(source: string, decl: IngredientDeclaration): number {
-  const open = decl.blockStart + '@ingredient'.length;
-  const close = findMatchingParen(source, open);
-  return close === -1 ? source.length : close + 1;
+  return { from: slotDecl.blockStart, to: slotDecl.blockEnd, insert: rewritten };
 }
 
 function rewriteIndexInBlock(

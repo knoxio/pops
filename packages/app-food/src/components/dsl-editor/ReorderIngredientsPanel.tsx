@@ -62,10 +62,16 @@ export function ReorderIngredientsPanel(props: ReorderIngredientsPanelProps) {
           onMove={move}
         />
         <DialogFooter>
-          <Button variant="outline" onClick={() => props.onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => props.onOpenChange(false)}
+            data-testid="dsl-editor-reorder-cancel"
+          >
             {t('editor.reorder.cancel')}
           </Button>
           <Button
+            type="button"
             onClick={() => props.onApply(order)}
             disabled={order.length === 0 || isIdentity(order)}
             data-testid="dsl-editor-reorder-apply"

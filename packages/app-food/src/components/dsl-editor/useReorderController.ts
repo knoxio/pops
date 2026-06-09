@@ -62,17 +62,26 @@ export function useReorderController(options: UseReorderControllerOptions): Reor
         setOpenState(false);
         return;
       }
-      const source = view.state.doc.toString();
-      const scan = scanIngredientUsages(source);
-      if (!structuralMatch(scan.declarations, snapshotRef.current)) {
-        setOpenState(false);
-        return;
-      }
-      const plan = buildRenumberPlan(source, permutation, scan);
-      if (plan.changes.length > 0) {
-        view.dispatch({
-          changes: plan.changes.map((c) => ({ from: c.from, to: c.to, insert: c.insert })),
-        });
+      try {
+        const source = view.state.doc.toString();
+        const scan = scanIngredientUsages(source);
+        if (!structuralMatch(scan.declarations, snapshotRef.current)) {
+          setOpenState(false);
+          return;
+        }
+        const plan = buildRenumberPlan(source, permutation, scan);
+        if (plan.changes.length > 0) {
+          view.dispatch({
+            changes: plan.changes.map((c) => ({ from: c.from, to: c.to, insert: c.insert })),
+          });
+        }
+      } catch (err) {
+        // buildRenumberPlan throws RenumberPermutationError on a malformed
+        // permutation or on overlapping changes (a half-typed document the
+        // structural-match check didn't catch). The dialog state is the
+        // only thing the user sees — close it rather than wedge the UI.
+        // The doc is unchanged because the throw happens before dispatch.
+        console.warn('reorder apply failed:', err);
       }
       setOpenState(false);
     },

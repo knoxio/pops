@@ -62,6 +62,40 @@ describe('scanIngredientUsages', () => {
     expect(result.declarations).toHaveLength(1);
     expect(result.declarations[0]?.currentIndex).toBe(1);
   });
+
+  it('ignores @ingredient(...) text that appears inside a // comment', () => {
+    const src = [
+      '// see @ingredient(99, fake, 1:g) — historical note',
+      '@ingredient(1, salt, 1:g)',
+    ].join('\n');
+    const result = scanIngredientUsages(src);
+    expect(result.declarations).toHaveLength(1);
+    expect(result.declarations[0]?.currentIndex).toBe(1);
+  });
+
+  it('ignores @ingredient(...) text that appears inside a string literal', () => {
+    const src = [
+      '@recipe(slug="x", title="add @ingredient(99, fake, 1:g) later")',
+      '@ingredient(1, salt, 1:g)',
+    ].join('\n');
+    const result = scanIngredientUsages(src);
+    expect(result.declarations).toHaveLength(1);
+    expect(result.declarations[0]?.currentIndex).toBe(1);
+  });
+
+  it('drops @ingredient declarations whose call never closes', () => {
+    const src = '@ingredient(1, salt, 1:g\n@ingredient(2, sugar, 2:g)';
+    const result = scanIngredientUsages(src);
+    expect(result.declarations).toHaveLength(1);
+    expect(result.declarations[0]?.currentIndex).toBe(2);
+  });
+
+  it('records blockEnd just past the matching closing paren', () => {
+    const src = '@ingredient(1, salt, 1:g)\n';
+    const decl = scanIngredientUsages(src).declarations[0];
+    expect(decl).toBeDefined();
+    expect(src.slice(decl?.blockStart, decl?.blockEnd)).toBe('@ingredient(1, salt, 1:g)');
+  });
 });
 
 describe('buildRenumberPlan — identity case', () => {
@@ -237,5 +271,18 @@ describe('buildRenumberPlan — duplicate currentIndex (broken doc)', () => {
     const plan = buildRenumberPlan(src, [1, 0]);
     expect(plan.newSource).toContain('@ingredient(1, sugar, 2:g)');
     expect(plan.newSource).toContain('@ingredient(2, salt, 1:g)');
+  });
+});
+
+describe('buildRenumberPlan — unclosed declarations are dropped, never overlap', () => {
+  it('plans only against declarations whose call closes', () => {
+    const src = [
+      '@ingredient(1, salt, 1:g',
+      '@ingredient(2, sugar, 2:g',
+      '@ingredient(3, water, 100:ml)',
+    ].join('\n');
+    const plan = buildRenumberPlan(src, [0]);
+    expect(plan.newSource).toContain('@ingredient(1, water, 100:ml)');
+    expect(plan.changes.every((c) => c.to >= c.from)).toBe(true);
   });
 });

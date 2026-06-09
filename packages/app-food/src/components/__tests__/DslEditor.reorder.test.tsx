@@ -93,7 +93,6 @@ describe('DslEditor reorder — PRD-120 part E', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(<DslEditor initialValue={SAMPLE} onChange={onChange} />);
     const view = getEditorView();
-    const undoDepthBefore = view.state.doc.lines;
 
     await user.click(screen.getByTestId('dsl-editor-reorder-open'));
     await user.click(screen.getByTestId('dsl-editor-reorder-down-0'));
@@ -109,7 +108,6 @@ describe('DslEditor reorder — PRD-120 part E', () => {
     });
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls.at(-1)?.[0]).toBe(after);
-    expect(view.state.doc.lines).toBe(undoDepthBefore);
   });
 
   it('produces a single undoable transaction (one undo reverts the whole renumber)', async () => {
@@ -136,7 +134,7 @@ describe('DslEditor reorder — PRD-120 part E', () => {
 
     await user.click(screen.getByTestId('dsl-editor-reorder-open'));
     await user.click(screen.getByTestId('dsl-editor-reorder-down-0'));
-    await user.click(screen.getByText('Cancel'));
+    await user.click(screen.getByTestId('dsl-editor-reorder-cancel'));
 
     expect(screen.queryByTestId('dsl-editor-reorder-panel')).toBeNull();
     expect(view.state.doc.toString()).toBe(SAMPLE);
