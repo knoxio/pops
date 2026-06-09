@@ -271,6 +271,47 @@ export function setCoreDb(next: OpenedCoreDb | null): OpenedCoreDb | null {
   return prev;
 }
 
+/**
+ * One-shot backfill copying service-account rows from the shared
+ * `pops.db` into the core pillar's `core.db`. Idempotent — the
+ * `WHERE id NOT IN (...)` filter means re-running after a partial
+ * failure picks up where it left off without duplicating rows.
+ *
+ * Boot-time contract: PR 2 of phase 2 opened the core DB but did not
+ * yet consume it. PR 3 (this entry point) flips service-accounts
+ * traffic to the core handle, so the first deploy after PR 3 needs to
+ * carry the existing rows across before any reads come from the new
+ * file. Subsequent boots find the core copy already populated and
+ * become a no-op via the existence filter.
+ *
+ * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
+ * stale on-disk pops.db never bricks the boot path. Failures here
+ * leave the core copy empty for that boot; the next deploy retries.
+ */
+export function backfillCoreFromShared(): void {
+  if (!coreDb) return;
+  const sharedPath = resolveSqlitePath();
+  try {
+    coreDb.raw.prepare('ATTACH DATABASE ? AS pops').run(sharedPath);
+    try {
+      const hasTable = coreDb.raw
+        .prepare("SELECT 1 FROM pops.sqlite_master WHERE type='table' AND name='service_accounts'")
+        .get();
+      if (hasTable) {
+        coreDb.raw.exec(`
+          INSERT INTO service_accounts
+            SELECT * FROM pops.service_accounts
+            WHERE id NOT IN (SELECT id FROM service_accounts)
+        `);
+      }
+    } finally {
+      coreDb.raw.exec('DETACH DATABASE pops');
+    }
+  } catch (err) {
+    console.warn('[db] Core service-accounts backfill failed (non-fatal):', err);
+  }
+}
+
 export function setDb(newDb: BetterSqlite3.Database): BetterSqlite3.Database | null {
   const prev = prodDb;
   prodDb = newDb;

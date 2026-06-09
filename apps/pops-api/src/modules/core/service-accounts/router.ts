@@ -22,7 +22,7 @@ import {
   serviceAccountsService,
 } from '@pops/core-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { mapDomainErrors, mapDomainErrorsAsync } from '../../../shared/trpc-error-mapper.js';
 import { router, userOnlyProcedure } from '../../../trpc.js';
@@ -34,7 +34,7 @@ import {
 
 export const serviceAccountsRouter = router({
   list: userOnlyProcedure.output(z.array(ServiceAccountSchema)).query(() => {
-    return serviceAccountsService.listServiceAccounts(getDrizzle());
+    return serviceAccountsService.listServiceAccounts(getCoreDrizzle());
   }),
 
   create: userOnlyProcedure
@@ -44,7 +44,7 @@ export const serviceAccountsRouter = router({
       mapDomainErrorsAsync(async () => {
         try {
           return await serviceAccountsService.createServiceAccount(
-            getDrizzle(),
+            getCoreDrizzle(),
             input,
             ctx.user.email
           );
@@ -63,7 +63,7 @@ export const serviceAccountsRouter = router({
     .mutation(({ input }) =>
       mapDomainErrors(() => {
         try {
-          serviceAccountsService.revokeServiceAccount(getDrizzle(), input.id);
+          serviceAccountsService.revokeServiceAccount(getCoreDrizzle(), input.id);
         } catch (err) {
           if (err instanceof ServiceAccountNotFoundError) {
             throw new NotFoundError('ServiceAccount', input.id);
