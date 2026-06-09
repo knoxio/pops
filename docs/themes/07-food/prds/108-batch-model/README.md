@@ -173,33 +173,37 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds the `ALTER TABLE ingredient_variants` columns (`default_shelf_life_days_fridge`, `default_shelf_life_days_freezer`).
-- [ ] Migration adds `batches`, `recipe_runs`, `batch_consumptions` per the SQL above.
-- [ ] All CHECKs, FKs, and indexes verified via PRAGMA introspection.
-- [ ] `packages/db-types` regenerated; types exported.
+- [x] Migration `0060_familiar_leo.sql` adds the `ALTER TABLE ingredient_variants` columns (`default_shelf_life_days_fridge`, `default_shelf_life_days_freezer`).
+- [x] Same migration adds `batches`, `recipe_runs`, `batch_consumptions`. Hand-edited to add the CHECK constraints on enum columns (`unit`, `source_type`, `location`), the numeric CHECKs (`qty_remaining >= 0`, `qty_consumed > 0`, `scale_factor > 0`, `rating BETWEEN 1 AND 5 OR NULL`), and the partial indexes (`idx_batches_remaining WHERE qty_remaining > 0`, `idx_recipe_runs_complete WHERE completed_at IS NOT NULL`).
+- [x] All CHECKs, FKs, and indexes verified via the Vitest invariant suite (PRAGMA-introspection cases for tables + partial indexes; constraint cases for each CHECK).
+- [x] `packages/db-types` re-exports the three new tables + `Row` / `Insert` types via `db-types/src/food.ts`. Schema source split into `db-types/src/schema/{food-ingredients,food-recipes,food-batches}.ts` (each <200 lines under the max-lines cap); `schema/food.ts` is a thin barrel re-export.
 
 ### Consumption helper
 
-- [ ] `packages/app-food/src/services/batch-consumption.ts` exports `consumeForRun(runId, needs, db): ConsumptionResult` matching the API above.
-- [ ] FIFO ordering verified: a recipe needing 300g, given batch A (200g, expires tomorrow) + batch B (200g, expires next week), consumes 200g from A then 100g from B.
-- [ ] Transaction rollback on shortfall: a recipe needing 500g with only 300g available leaves `qty_remaining` unchanged on all batches.
-- [ ] Consumption is atomic across multiple `needs[]`: a recipe needing variant X (available) AND variant Y (short) leaves X untouched.
+- [x] `packages/app-food/src/db/services/batches.ts` exports `consumeForRun(db, runId, needs): ConsumptionResult` matching the discriminated-union API. (Path differs from the literal PRD spec — `src/db/services/` matches the rest of the food service layer rather than the older `src/services/` proposal.)
+- [x] FIFO ordering verified by the `consumes the expiry-sooner batch first, then spills into the later one` test (batch A 200g expires tomorrow + batch B 200g expires next week, need 300g → 200 from A then 100 from B).
+- [x] Transaction rollback on shortfall verified by the `rolls back all decrements atomically` test.
+- [x] Multi-need atomicity verified by the `multi-need atomicity: one short need rolls back the other satisfied need` test (variant X has enough, variant Y is short, both rolled back).
 
 ### Recipe-run service
 
-- [ ] `markRunComplete(runId, opts)` creates a yielded batch for component recipes; rejects with `CannotCookUncompiledRecipe` if the version is failed/uncompiled.
-- [ ] `expires_at` on the yielded batch defaults to `produced_at + default_shelf_life_days_<location>` from the yield variant, with UI override.
+- [x] `packages/app-food/src/db/services/recipe-runs.ts` exports `markRunComplete(db, runId, opts)`. Yielded batch creation is conditional on `opts.yield` (matches PRD-145's queued `opts: { yield?: ... }` shape from the "Subsequent amendments" note). Rejects with `CannotCookUncompiledRecipe` when the recipe_version's `compile_status` is not `'compiled'`.
+- [x] `expires_at` on the yielded batch defaults to `produced_at + default_shelf_life_days_<location>` from the yield variant (`fridge`/`freezer`), null otherwise; `opts.yield.expiresAt` overrides. Verified by three tests (`auto-fills...`, `leaves expires_at NULL when location=pantry`, `explicit expiresAt overrides...`).
 
 ### Invariants
 
-- [ ] Inserting a `batch_consumptions` row with `qty_consumed = 0` fails the CHECK.
-- [ ] Inserting a `batch` row with `qty_remaining = -1` fails the CHECK.
-- [ ] Inserting a `recipe_run` with `scale_factor = 0` fails the CHECK.
-- [ ] Deleting an ingredient_variant with extant batches fails with FK violation.
+- [x] Inserting a `batch_consumptions` row with `qty_consumed = 0` fails the CHECK.
+- [x] Inserting a `batch` row with `qty_remaining = -1` fails the CHECK.
+- [x] Inserting a `recipe_run` with `scale_factor = 0` fails the CHECK.
+- [x] Deleting an ingredient_variant with extant batches fails with FK violation.
+
+### Backend module wiring
+
+- [x] `0060_familiar_leo` appended to `apps/pops-api/src/modules/food/migrations.ts` `foodMigrationTags`. Ownership row added to `apps/pops-api/src/db/migration-ownership.ts`. Contract guard `migration-ownership.test.ts` passes (4/4).
 
 ### Tests
 
-- [ ] Vitest integration suite at `packages/app-food/src/services/__tests__/batches.test.ts` covers each invariant and the FIFO algorithm with multi-batch cases.
+- [x] Vitest integration suite at `packages/app-food/src/db/__tests__/batches.test.ts` — 20 cases covering each invariant + the FIFO algorithm with multi-batch / multi-need cases + `markRunComplete` happy path + rejection path + expires_at default-shelf-life behaviour.
 
 ## Out of Scope
 

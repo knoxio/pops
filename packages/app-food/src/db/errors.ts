@@ -84,6 +84,22 @@ export class ConcurrentPromotion extends Error {
   }
 }
 
+// ── PRD-108 errors ──────────────────────────────────────────────────────
+
+export class CannotCookUncompiledRecipe extends Error {
+  readonly recipeVersionId: number;
+  readonly compileStatus: 'uncompiled' | 'failed';
+
+  constructor(recipeVersionId: number, compileStatus: 'uncompiled' | 'failed') {
+    super(
+      `Cannot cook recipe_version #${recipeVersionId} — compile_status="${compileStatus}". Recompile before cooking.`
+    );
+    this.name = 'CannotCookUncompiledRecipe';
+    this.recipeVersionId = recipeVersionId;
+    this.compileStatus = compileStatus;
+  }
+}
+
 export class IngredientHierarchyDepthExceeded extends Error {
   readonly parentId: number;
   readonly depth: number;

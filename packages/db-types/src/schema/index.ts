@@ -26,10 +26,13 @@ export { environments } from './environments.js';
 export { episodes } from './episodes.js';
 export { fixtures } from './fixtures.js';
 export {
+  batchConsumptions,
+  batches,
   ingredientAliases,
   ingredients,
   ingredientVariants,
   prepStates,
+  recipeRuns,
   recipes,
   recipeTags,
   recipeVersions,

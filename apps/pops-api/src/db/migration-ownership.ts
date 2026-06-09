@@ -80,6 +80,8 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0058_high_sentinel': 'food',
   // PRD-107 — food recipes + recipe_versions + recipe_tags.
   '0059_useful_hiroim': 'food',
+  // PRD-108 — food batches + recipe_runs + batch_consumptions + variant shelf-life columns.
+  '0060_familiar_leo': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

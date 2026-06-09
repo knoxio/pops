@@ -421,6 +421,13 @@
       "when": 1780923871609,
       "tag": "0059_useful_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1780925430396,
+      "tag": "0060_familiar_leo",
+      "breakpoints": true
     }
   ]
 }

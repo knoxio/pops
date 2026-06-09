@@ -28,23 +28,30 @@ import {
 import { createPrepState } from '../services/prep-states';
 import { createVariant } from '../services/variants';
 
-// Resolve the migration relative to the repo, not the package — the SQL lives
-// under apps/pops-api/.
-const MIGRATION_SQL = readFileSync(
-  join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations/0058_high_sentinel.sql'),
-  'utf8'
+// All food-domain migrations are applied: drizzle's TypeScript types reflect
+// the full schema (e.g. PRD-108's shelf-life columns on ingredient_variants),
+// so inserts via drizzle would fail against a partial DB even if this PRD
+// doesn't exercise the new columns.
+const MIGRATIONS = [
+  '0058_high_sentinel.sql',
+  '0059_useful_hiroim.sql',
+  '0060_familiar_leo.sql',
+].map((name) =>
+  readFileSync(
+    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
+    'utf8'
+  )
 );
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
   const raw = new Database(':memory:');
   raw.pragma('foreign_keys = ON');
-  // Drizzle's migration runner expects a meta journal. The PRD-106 schema is
-  // self-contained, so apply the SQL directly — strip drizzle's
-  // statement-breakpoint markers first.
-  const stmts = MIGRATION_SQL.split('--> statement-breakpoint');
-  for (const stmt of stmts) {
-    const trimmed = stmt.trim();
-    if (trimmed.length > 0) raw.exec(trimmed);
+  for (const migration of MIGRATIONS) {
+    const stmts = migration.split('--> statement-breakpoint');
+    for (const stmt of stmts) {
+      const trimmed = stmt.trim();
+      if (trimmed.length > 0) raw.exec(trimmed);
+    }
   }
   return { db: drizzle(raw), raw };
 }

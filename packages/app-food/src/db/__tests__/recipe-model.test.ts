@@ -21,7 +21,11 @@ import { type FoodDb } from '../services/ingredients';
 import { createNewVersion, promoteVersion, updateDraftVersion } from '../services/recipe-versions';
 import { archiveRecipe, createRecipe, deleteRecipe, renameRecipeSlug } from '../services/recipes';
 
-const MIGRATIONS = ['0058_high_sentinel.sql', '0059_useful_hiroim.sql'].map((name) =>
+const MIGRATIONS = [
+  '0058_high_sentinel.sql',
+  '0059_useful_hiroim.sql',
+  '0060_familiar_leo.sql',
+].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
     'utf8'
