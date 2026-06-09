@@ -7,7 +7,7 @@
  * lookups, so the wire output is ready for the UI table without per-row
  * roundtrips.
  */
-import { sql } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 
 import { ingredients, ingredientVariants, recipes } from '../schema.js';
 import { listSubstitutions, type ListSubstitutionsInput } from './substitutions-queries.js';
@@ -55,7 +55,7 @@ function ingredientMap(db: FoodDb, ids: readonly number[]): Map<number, Ingredie
   const rows = db
     .select({ id: ingredients.id, slug: ingredients.slug, name: ingredients.name })
     .from(ingredients)
-    .where(sql`${ingredients.id} IN ${ids}`)
+    .where(inArray(ingredients.id, [...ids]))
     .all();
   return new Map(rows.map((r) => [r.id, r]));
 }
@@ -70,7 +70,7 @@ function variantMap(db: FoodDb, ids: readonly number[]): Map<number, VariantLite
       ingredientId: ingredientVariants.ingredientId,
     })
     .from(ingredientVariants)
-    .where(sql`${ingredientVariants.id} IN ${ids}`)
+    .where(inArray(ingredientVariants.id, [...ids]))
     .all();
   return new Map(rows.map((r) => [r.id, r]));
 }
@@ -80,7 +80,7 @@ function recipeMap(db: FoodDb, ids: readonly number[]): Map<number, RecipeLite> 
   const rows = db
     .select({ id: recipes.id, slug: recipes.slug })
     .from(recipes)
-    .where(sql`${recipes.id} IN ${ids}`)
+    .where(inArray(recipes.id, [...ids]))
     .all();
   return new Map(rows.map((r) => [r.id, r]));
 }

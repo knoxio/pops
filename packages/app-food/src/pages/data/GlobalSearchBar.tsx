@@ -119,7 +119,7 @@ export function GlobalSearchBar() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t('data.search.placeholder')}
-        aria-controls={listboxId}
+        aria-controls={enabled && items.length > 0 ? listboxId : undefined}
         aria-autocomplete="list"
       />
       <SearchResults

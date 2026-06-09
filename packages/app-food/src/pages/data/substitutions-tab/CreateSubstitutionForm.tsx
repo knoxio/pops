@@ -3,51 +3,22 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Label, TextInput } from '@pops/ui';
 
+import {
+  buildSubmitInput,
+  INITIAL_FORM,
+  isFormValid,
+  type FormState,
+} from './create-form-helpers.js';
 import { EndpointPicker } from './EndpointPicker';
 
 import type { SubstitutionScope } from '@pops/app-food-db';
 
-import type { CreateSubstitutionFormInput, SubstitutionEndpointInput } from './types';
+import type { CreateSubstitutionFormInput } from './types';
 
 interface Props {
   isSubmitting: boolean;
   errorMessage: string | null;
   onSubmit: (input: CreateSubstitutionFormInput) => void;
-}
-
-interface FormState {
-  from: SubstitutionEndpointInput | null;
-  to: SubstitutionEndpointInput | null;
-  ratio: string;
-  scope: SubstitutionScope;
-  recipeId: string;
-  contextTags: string;
-  notes: string;
-}
-
-const INITIAL: FormState = {
-  from: null,
-  to: null,
-  ratio: '1',
-  scope: 'global',
-  recipeId: '',
-  contextTags: '',
-  notes: '',
-};
-
-function parseTags(raw: string): readonly string[] {
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
-
-function isFormValid(form: FormState): boolean {
-  if (form.from === null || form.to === null) return false;
-  const ratio = Number(form.ratio);
-  if (!Number.isFinite(ratio) || ratio <= 0) return false;
-  if (form.scope === 'recipe' && form.recipeId.trim().length === 0) return false;
-  return true;
 }
 
 function EndpointFields({
@@ -151,24 +122,9 @@ function TagsNotesFields({
   );
 }
 
-function buildSubmitInput(form: FormState): CreateSubstitutionFormInput | null {
-  if (form.from === null || form.to === null) return null;
-  const recipeId =
-    form.scope === 'recipe' && form.recipeId.trim().length > 0 ? Number(form.recipeId) : null;
-  return {
-    from: form.from,
-    to: form.to,
-    ratio: Number(form.ratio),
-    scope: form.scope,
-    recipeId,
-    contextTags: parseTags(form.contextTags),
-    notes: form.notes.trim().length > 0 ? form.notes.trim() : null,
-  };
-}
-
 export function CreateSubstitutionForm({ isSubmitting, errorMessage, onSubmit }: Props) {
   const { t } = useTranslation('food');
-  const [form, setForm] = useState<FormState>(INITIAL);
+  const [form, setForm] = useState<FormState>(INITIAL_FORM);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -176,7 +132,7 @@ export function CreateSubstitutionForm({ isSubmitting, errorMessage, onSubmit }:
     const payload = buildSubmitInput(form);
     if (payload === null) return;
     onSubmit(payload);
-    setForm(INITIAL);
+    setForm(INITIAL_FORM);
   }
 
   return (
