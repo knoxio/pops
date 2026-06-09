@@ -18,6 +18,10 @@ export interface CreateVariantInput {
   defaultUnit: 'g' | 'ml' | 'count';
   packageSizeG?: number | null;
   notes?: string | null;
+  /** PRD-108: feeds expiry auto-fill at cook time. Null = unknown / shelf-stable. */
+  defaultShelfLifeDaysFridge?: number | null;
+  /** PRD-108: feeds expiry auto-fill at cook time. Null = unknown / shelf-stable. */
+  defaultShelfLifeDaysFreezer?: number | null;
 }
 
 export function createVariant(db: FoodDb, input: CreateVariantInput): IngredientVariantRow {
@@ -31,6 +35,8 @@ export function createVariant(db: FoodDb, input: CreateVariantInput): Ingredient
       defaultUnit: input.defaultUnit,
       packageSizeG: input.packageSizeG ?? null,
       notes: input.notes ?? null,
+      defaultShelfLifeDaysFridge: input.defaultShelfLifeDaysFridge ?? null,
+      defaultShelfLifeDaysFreezer: input.defaultShelfLifeDaysFreezer ?? null,
     })
     .returning()
     .all();

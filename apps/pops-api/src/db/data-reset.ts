@@ -55,6 +55,27 @@ const APPLICATION_TABLES = [
   'rotation_sources',
   'comparison_dimensions',
   'tag_vocabulary',
+  // Lists (PRD-112) — children first.
+  'list_items',
+  'lists',
+  // Food (PRD-106 → PRD-112) — children first, parents last so FK order holds
+  // even when `foreign_keys = ON` (the wipe runs with FKs OFF, but the order
+  // is documented as a safety net in case a caller forgets to disable them).
+  'batch_consumptions',
+  'recipe_runs',
+  'batches',
+  'plan_entries',
+  'plan_slots',
+  'substitutions',
+  'recipe_tags',
+  'recipe_versions',
+  'recipes',
+  'ingredient_aliases',
+  'ingredient_variants',
+  'prep_states',
+  'ingredients',
+  'ingest_sources',
+  'slug_registry',
 ] as const;
 
 function resetAutoIncrementSequences(db: BetterSqlite3.Database): void {
@@ -68,8 +89,20 @@ function resetAutoIncrementSequences(db: BetterSqlite3.Database): void {
 
 /** Delete all application rows (call with `PRAGMA foreign_keys = OFF` if FK order is unknown). */
 export function deleteAllApplicationRows(db: BetterSqlite3.Database): void {
+  // Some legacy migration-safety tests apply only a subset of migrations, so
+  // not every table in the list will exist. Skip missing tables rather than
+  // throwing — the wipe semantics are "if it's there, clear it".
+  const existing = new Set(
+    (
+      db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as {
+        name: string;
+      }[]
+    ).map((row) => row.name)
+  );
   for (const name of APPLICATION_TABLES) {
-    db.exec(`DELETE FROM "${name}"`);
+    if (existing.has(name)) {
+      db.exec(`DELETE FROM "${name}"`);
+    }
   }
   resetAutoIncrementSequences(db);
 }

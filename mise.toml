@@ -120,9 +120,15 @@ dir = "apps/pops-api"
 run = "pnpm db:clear"
 
 [tasks."db:seed"]
-description = "Full wipe (all app tables) then seed comprehensive cross-domain test data"
+description = "Full wipe (all app tables) then seed comprehensive cross-domain test data (incl. PRD-113 food fixtures)"
 dir = "apps/pops-api"
-run = "pnpm db:seed"
+run = ["pnpm db:seed", "mise run db:seed:food"]
+
+[tasks."db:seed:food"]
+description = "Wipe food + lists tables only, then seed PRD-113 phase-1 food fixtures"
+dir = "packages/app-food"
+env = { SQLITE_PATH = "{{config_root}}/apps/pops-api/data/pops.db" }
+run = "pnpm db:seed:food"
 
 # ============================================================================
 # Drizzle ORM
