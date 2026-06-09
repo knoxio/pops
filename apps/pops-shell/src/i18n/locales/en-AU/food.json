@@ -28,5 +28,14 @@
   "data.conversions.pending": "Conversions are owned by PRD-123 and will land separately.",
   "editor.ariaLabel": "Recipe DSL editor",
   "editor.readOnlyBanner": "This version is published. Create a new draft to edit.",
-  "status.comingSoon": "Coming soon"
+  "status.comingSoon": "Coming soon",
+  "hero.alt": "Recipe hero image",
+  "hero.dropPrompt": "Drop an image or tap to choose",
+  "hero.acceptHint": "JPG, PNG, or WebP up to {{mb}} MB",
+  "hero.replace": "Replace",
+  "hero.remove": "Remove",
+  "hero.uploading": "Uploading…",
+  "hero.removing": "Removing…",
+  "hero.uploadSuccess": "Hero image uploaded.",
+  "hero.removeSuccess": "Hero image removed."
 }

@@ -28,5 +28,14 @@
   "data.conversions.pending": "Conversões pertencem ao PRD-123 e serão entregues separadamente.",
   "editor.ariaLabel": "Editor da DSL de receitas",
   "editor.readOnlyBanner": "Esta versão foi publicada. Crie um novo rascunho para editar.",
-  "status.comingSoon": "Em breve"
+  "status.comingSoon": "Em breve",
+  "hero.alt": "Imagem principal da receita",
+  "hero.dropPrompt": "Solte uma imagem ou toque para escolher",
+  "hero.acceptHint": "JPG, PNG ou WebP até {{mb}} MB",
+  "hero.replace": "Substituir",
+  "hero.remove": "Remover",
+  "hero.uploading": "Enviando…",
+  "hero.removing": "Removendo…",
+  "hero.uploadSuccess": "Imagem principal enviada.",
+  "hero.removeSuccess": "Imagem principal removida."
 }
