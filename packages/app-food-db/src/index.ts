@@ -35,6 +35,7 @@ export * as slugSearchService from './services/slug-search.js';
 export * as substitutionsService from './services/substitutions.js';
 export * as substitutionsQueries from './services/substitutions-queries.js';
 export * as substitutionsGraph from './services/substitutions-graph.js';
+export * as substitutionsHydrate from './services/substitutions-hydrate.js';
 export * as variantsService from './services/variants.js';
 export * as conversionsService from './services/conversions.js';
 export * as conversionsQueries from './services/conversions-queries.js';
@@ -64,3 +65,7 @@ export type {
   GraphViewResult,
   GraphViewSide,
 } from './services/substitutions-graph.js';
+export type {
+  HydratedEndpoint,
+  HydratedSubstitutionView,
+} from './services/substitutions-hydrate.js';

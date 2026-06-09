@@ -496,6 +496,69 @@ describe('food.substitutions', () => {
     expect(updated.ratio).toBe(0.75);
     expect(updated.contextTags).toEqual(['baking']);
   });
+
+  it('listHydrated returns rows with from/to slugs and parent slugs', async () => {
+    const { banana, apple } = await seedTwoIngredients();
+    await caller.food.substitutions.create({
+      from: { ingredientId: banana },
+      to: { ingredientId: apple },
+    });
+    const result = await caller.food.substitutions.listHydrated({});
+    expect(result.items).toHaveLength(1);
+    const item = result.items[0];
+    expect(item?.from).toMatchObject({ kind: 'ingredient', slug: 'banana', name: 'Banana' });
+    expect(item?.to).toMatchObject({ kind: 'ingredient', slug: 'apple', name: 'Apple' });
+    expect(item?.recipeSlug).toBeNull();
+  });
+
+  it('listHydrated filters by to-ingredient', async () => {
+    const { banana, apple } = await seedTwoIngredients();
+    const pear = await caller.food.ingredients.create({
+      slug: 'pear',
+      name: 'Pear',
+      defaultUnit: 'count',
+    });
+    await caller.food.substitutions.create({
+      from: { ingredientId: banana },
+      to: { ingredientId: apple },
+    });
+    await caller.food.substitutions.create({
+      from: { ingredientId: banana },
+      to: { ingredientId: pear!.id },
+    });
+    const filtered = await caller.food.substitutions.listHydrated({ toIngredientId: pear!.id });
+    expect(filtered.items).toHaveLength(1);
+    expect(filtered.items[0]?.to.slug).toBe('pear');
+  });
+
+  it('listHydrated resolves variant endpoints with parent slug', async () => {
+    const banana = await caller.food.ingredients.create({
+      slug: 'banana',
+      name: 'Banana',
+      defaultUnit: 'count',
+    });
+    const apple = await caller.food.ingredients.create({
+      slug: 'apple',
+      name: 'Apple',
+      defaultUnit: 'count',
+    });
+    const ripe = await caller.food.variants.create({
+      ingredientId: banana!.id,
+      slug: 'ripe',
+      name: 'Ripe',
+      defaultUnit: 'count',
+    });
+    await caller.food.substitutions.create({
+      from: { variantId: ripe.id },
+      to: { ingredientId: apple!.id },
+    });
+    const result = await caller.food.substitutions.listHydrated({});
+    expect(result.items[0]?.from).toMatchObject({
+      kind: 'variant',
+      slug: 'ripe',
+      parentSlug: 'banana',
+    });
+  });
 });
 
 describe('food.slugs.search', () => {

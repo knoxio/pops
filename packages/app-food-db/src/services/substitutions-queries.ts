@@ -34,6 +34,8 @@ function rowToView(row: SubstitutionRow): SubstitutionView {
 export interface ListSubstitutionsInput {
   fromIngredientId?: number;
   fromVariantId?: number;
+  toIngredientId?: number;
+  toVariantId?: number;
   scope?: SubstitutionScope;
   recipeId?: number;
   contextTag?: string;
@@ -49,6 +51,12 @@ export function listSubstitutions(
   }
   if (input.fromVariantId !== undefined) {
     filters.push(eq(substitutions.fromVariantId, input.fromVariantId));
+  }
+  if (input.toIngredientId !== undefined) {
+    filters.push(eq(substitutions.toIngredientId, input.toIngredientId));
+  }
+  if (input.toVariantId !== undefined) {
+    filters.push(eq(substitutions.toVariantId, input.toVariantId));
   }
   if (input.scope !== undefined) {
     filters.push(eq(substitutions.scope, input.scope));

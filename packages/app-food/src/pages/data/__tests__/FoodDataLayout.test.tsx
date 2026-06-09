@@ -14,9 +14,21 @@
 import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { FoodDataLayout, getActiveTabSlug } from '../FoodDataLayout';
+
+vi.mock('@pops/api-client', () => ({
+  trpc: {
+    food: {
+      slugs: {
+        search: {
+          useQuery: () => ({ data: { items: [] }, isLoading: false }),
+        },
+      },
+    },
+  },
+}));
 
 // Mount FoodDataLayout directly (no `React.lazy`) so the tablist/dropdown
 // assertions don't race the dynamic imports of the per-tab modules. The

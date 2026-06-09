@@ -10,6 +10,7 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 
+import { GlobalSearchBar } from './GlobalSearchBar.js';
 import { DEFAULT_TAB_SLUG, FOOD_DATA_TABS, type FoodDataTab } from './tab-config.js';
 
 function tabBaseClasses(): string {
@@ -99,6 +100,8 @@ export function FoodDataLayout() {
         <h1 className="text-3xl font-bold tracking-tight">{t('data.title')}</h1>
         <p className="text-muted-foreground max-w-2xl">{t('data.intro')}</p>
       </header>
+
+      <GlobalSearchBar />
 
       <FoodDataDesktopTabs activeSlug={activeSlug} />
       <FoodDataMobileTabs activeSlug={activeSlug} />
