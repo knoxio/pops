@@ -458,6 +458,25 @@ See `CONVENTIONS.md` for coding conventions (styling, API patterns, component ru
 - Aim for small, well named and well structured code.
 - REuse reuse reuse. DRY principles!
 
+### Agent automation (overrides default ask-before-commit behavior)
+
+When working in this repository (any `pops*` workspace), agents should:
+
+- **Auto-commit logical chunks as you go.** Don't wait for explicit permission for each commit. A "logical chunk" is one coherent change: a feature increment, a bug fix, a refactor that compiles + passes tests. Don't bundle unrelated changes into one commit.
+- **Auto-open the PR when the work is ready for review.** Push the branch and run `gh pr create` without prompting first. PR title + body must follow the project conventions (see commit messages in git log for tone).
+- **Still ask before any destructive operation.** No force-push, no `git reset --hard` on shared branches, no pushes directly to `main`, no PR closes/merges, no branch deletes — these always require explicit user confirmation regardless of this override.
+- **Still respect signed-off / no-claude-references rules** from the global `~/.claude/CLAUDE.md`: no Claude as co-author, no Claude references in commit messages or PR bodies.
+- **Still verify CI passes locally before pushing** per the "CI should never fail" rule in `~/.claude/CLAUDE.md`.
+
+### PR review cadence
+
+GitHub Copilot's automated PR review is **disabled** on this repo (it was hitting usage limits). The user is **not** reviewing PRs manually either. There is no review safety net — every PR you open ships as-is.
+
+Implication for agents:
+
+- **Get the PR right before pushing.** Run typecheck, tests, lint, and the relevant Docker/compose validations locally. If it fails locally, it ships broken.
+- Do **not** suggest "request a re-review" or "ping a human" — neither will happen.
+
 ### UI Component Rule: Search Before You Build (mandatory, no exceptions)
 
 **Before writing any new UI element, run this search first:**
