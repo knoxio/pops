@@ -9,7 +9,7 @@
  * exactly as it did before P1 landed.
  *
  * A per-pillar config (next to each `packages/<id>-db/`) is built with the
- * same helper — see `./drizzle.config.builder.ts` for the contract.
+ * same helper — see `./src/db/drizzle-config-builder.ts` for the contract.
  *
  * Migration workflow (unchanged):
  *   1. Edit schema files in `packages/db-types/src/schema/`

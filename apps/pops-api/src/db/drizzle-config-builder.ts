@@ -86,7 +86,10 @@ function resolveSqliteUrl(pillarId: string, override: string | undefined): strin
 /**
  * Build a drizzle-kit `Config` for one pillar.
  *
- * Each pillar's `packages/<id>-db/drizzle.config.ts` is a one-liner:
+ * Each pillar's `packages/<id>-db/drizzle.config.ts` is a one-liner. The
+ * helper is exposed from `@pops/api` under the `./drizzle-config-builder`
+ * subpath (see `apps/pops-api/package.json#exports`), so a pillar `-db`
+ * package can import it as a workspace dep:
  *
  * ```ts
  * import { buildPillarDrizzleConfig } from '@pops/api/drizzle-config-builder';

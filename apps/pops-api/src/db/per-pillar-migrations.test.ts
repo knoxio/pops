@@ -3,6 +3,9 @@
  *
  * Stubs a tmp repoRoot with synthetic pillar `<id>-db/migrations/` dirs and
  * journals, then drives the runner against an in-memory SQLite database.
+ * `resolveInstalledPackage` is forced to `null` so the workspace fallback
+ * (repoRoot-based) path is exercised — there's a dedicated test for the
+ * installed-package branch that injects a stub.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -29,6 +32,14 @@ afterEach(() => {
 
 function pillar(id: string): PillarDescriptor {
   return { id, dbPackageDir: `packages/${id}-db` };
+}
+
+/** Default options used by the workspace-fallback tests. */
+function workspaceOpts(): {
+  repoRoot: string;
+  resolveInstalledPackage: () => null;
+} {
+  return { repoRoot, resolveInstalledPackage: () => null };
 }
 
 function writePillarJournal(
@@ -69,7 +80,7 @@ async function withDb<T>(run: (db: BetterSqlite3.Database) => T | Promise<T>): P
 describe('runPerPillarMigrations', () => {
   it('is a no-op when no pillar has a journal yet', async () => {
     await withDb((db) => {
-      const result = runPerPillarMigrations(db, [pillar('core'), pillar('food')], { repoRoot });
+      const result = runPerPillarMigrations(db, [pillar('core'), pillar('food')], workspaceOpts());
       expect(result.applied).toEqual([]);
       expect(result.backfilled).toEqual([]);
       expect(result.alreadyApplied).toEqual([]);
@@ -92,7 +103,7 @@ describe('runPerPillarMigrations', () => {
       { tag: '0002_core_sync_logs', sql: 'CREATE TABLE sync_logs (id INTEGER PRIMARY KEY);' },
     ]);
     await withDb((db) => {
-      const result = runPerPillarMigrations(db, [pillar('core'), pillar('food')], { repoRoot });
+      const result = runPerPillarMigrations(db, [pillar('core'), pillar('food')], workspaceOpts());
       expect(result.applied).toEqual(['0001_core_settings', '0002_core_sync_logs']);
       expect(result.pillarsApplied).toEqual(['core']);
       expect(result.pillarsSkipped).toEqual(['food']);
@@ -110,14 +121,14 @@ describe('runPerPillarMigrations', () => {
       { tag: '0001_core_only', sql: 'CREATE TABLE only_once (id INTEGER);' },
     ]);
     await withDb((db) => {
-      const first = runPerPillarMigrations(db, [pillar('core')], { repoRoot });
+      const first = runPerPillarMigrations(db, [pillar('core')], workspaceOpts());
       expect(first.applied).toEqual(['0001_core_only']);
       // Insert a sentinel row; the migration would crash on re-run if the
       // CREATE TABLE re-fired without backfill recovery — but the cache
       // skip should keep the table untouched.
       db.exec('INSERT INTO only_once (id) VALUES (1)');
 
-      const second = runPerPillarMigrations(db, [pillar('core')], { repoRoot });
+      const second = runPerPillarMigrations(db, [pillar('core')], workspaceOpts());
       expect(second.applied).toEqual([]);
       expect(second.alreadyApplied).toEqual(['0001_core_only']);
 
@@ -130,7 +141,7 @@ describe('runPerPillarMigrations', () => {
     writePillarJournal('core', [{ tag: '0001_core', sql: 'CREATE TABLE core_t (id INTEGER);' }]);
     writePillarJournal('food', [{ tag: '0001_food', sql: 'CREATE TABLE food_t (id INTEGER);' }]);
     await withDb((db) => {
-      const result = runPerPillarMigrations(db, [pillar('core'), pillar('food')], { repoRoot });
+      const result = runPerPillarMigrations(db, [pillar('core'), pillar('food')], workspaceOpts());
       expect(result.applied).toEqual(['0001_core', '0001_food']);
       expect(result.pillarsApplied).toEqual(['core', 'food']);
       expect(result.pillarsSkipped).toEqual([]);
@@ -140,10 +151,51 @@ describe('runPerPillarMigrations', () => {
   it('skips a pillar whose journal exists but is empty', async () => {
     writePillarJournal('core', []);
     await withDb((db) => {
-      const result = runPerPillarMigrations(db, [pillar('core')], { repoRoot });
+      const result = runPerPillarMigrations(db, [pillar('core')], workspaceOpts());
       expect(result.applied).toEqual([]);
       expect(result.pillarsApplied).toEqual([]);
       expect(result.pillarsSkipped).toEqual(['core']);
+    });
+  });
+
+  it('prefers the installed-package resolver when it returns a path', async () => {
+    // Stub an "installed" package at <repoRoot>/installed/core-db; write
+    // its migrations there. The workspace fallback path is intentionally
+    // left empty so the test fails if the resolver isn't consulted first.
+    const installedPkgRoot = join(repoRoot, 'installed', 'core-db');
+    mkdirSync(join(installedPkgRoot, 'migrations', 'meta'), { recursive: true });
+    writeFileSync(
+      join(installedPkgRoot, 'migrations', 'meta', '_journal.json'),
+      JSON.stringify({
+        version: '7',
+        dialect: 'sqlite',
+        entries: [
+          {
+            idx: 0,
+            version: '7',
+            when: 1,
+            tag: '0001_from_installed',
+            breakpoints: true,
+          },
+        ],
+      })
+    );
+    writeFileSync(
+      join(installedPkgRoot, 'migrations', '0001_from_installed.sql'),
+      'CREATE TABLE installed_marker (id INTEGER);'
+    );
+    await withDb((db) => {
+      const result = runPerPillarMigrations(db, [pillar('core')], {
+        repoRoot,
+        resolveInstalledPackage: (id) => (id === 'core' ? installedPkgRoot : null),
+      });
+      expect(result.applied).toEqual(['0001_from_installed']);
+      expect(result.pillarsApplied).toEqual(['core']);
+
+      const tables = (
+        db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
+      ).map((t) => t.name);
+      expect(tables).toContain('installed_marker');
     });
   });
 
