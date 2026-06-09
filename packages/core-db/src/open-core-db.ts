@@ -7,7 +7,7 @@
  * minimal — it does NOT load the sqlite-vec extension or the
  * vector-index helpers (those stay with pops-api's `getDrizzle()` for
  * now) and it relies on drizzle-orm's built-in `migrate` helper to apply
- * the in-package migrations journal at `packages/core-db/migrations/`.
+ * the in-package migrations journal at `packages/core-db/migrations/meta/_journal.json`.
  *
  * No production consumer wires this up yet. Subsequent PRs add the
  * `CORE_SQLITE_PATH` env-var read in pops-api, the boot-time call, and
@@ -24,10 +24,11 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import type { CoreDb } from './services/internal.js';
 
 /**
- * Path to the migrations folder inside this package. Resolved relative to
- * the compiled `dist/index.js` (or `src/open-core-db.ts` in dev) so it
- * works both when consumed via the workspace symlink and when bundled
- * into a Docker image's `node_modules/@pops/core-db/`.
+ * Path to the migrations folder inside this package. Resolved relative
+ * to this module's location (`src/open-core-db.ts` in dev,
+ * `dist/open-core-db.js` after build) so it works both when consumed
+ * via the workspace symlink and when bundled into a Docker image's
+ * `node_modules/@pops/core-db/`.
  */
 function migrationsDir(): string {
   const here = dirname(fileURLToPath(import.meta.url));
@@ -51,18 +52,29 @@ export interface OpenedCoreDb {
  *
  * Side effects:
  *   - The parent directory of `path` is created if missing (recursive).
- *   - `journal_mode=WAL` and `foreign_keys=ON` are enabled.
- *   - Every migration in `packages/core-db/migrations/_journal.json` is
- *     applied via drizzle's built-in migrator (idempotent — re-running
+ *   - `journal_mode=WAL`, `foreign_keys=ON`, and `busy_timeout=5000` are
+ *     enabled to match the shared singleton in `apps/pops-api/src/db.ts`.
+ *   - Every migration in `packages/core-db/migrations/meta/_journal.json`
+ *     is applied via drizzle's built-in migrator (idempotent — re-running
  *     against the same DB short-circuits on the `__drizzle_migrations`
  *     hash check).
+ *
+ * If the migration apply throws (corrupt DB, malformed migration, missing
+ * folder), the raw handle is closed before the error is re-thrown so the
+ * caller can't leak a locked file descriptor.
  */
 export function openCoreDb(path: string): OpenedCoreDb {
   mkdirSync(dirname(path), { recursive: true });
   const raw = new Database(path);
   raw.pragma('journal_mode = WAL');
   raw.pragma('foreign_keys = ON');
+  raw.pragma('busy_timeout = 5000');
   const db = drizzle(raw) as CoreDb;
-  migrate(db, { migrationsFolder: migrationsDir() });
+  try {
+    migrate(db, { migrationsFolder: migrationsDir() });
+  } catch (err) {
+    raw.close();
+    throw err;
+  }
   return { db, raw };
 }

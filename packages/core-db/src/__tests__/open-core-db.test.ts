@@ -34,6 +34,7 @@ describe('openCoreDb', () => {
       expect(existsSync(path)).toBe(true);
       expect(raw.pragma('journal_mode', { simple: true })).toBe('wal');
       expect(raw.pragma('foreign_keys', { simple: true })).toBe(1);
+      expect(raw.pragma('busy_timeout', { simple: true })).toBe(5000);
     } finally {
       raw.close();
     }
