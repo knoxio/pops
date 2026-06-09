@@ -23,8 +23,10 @@ interface Props {
 
 /**
  * Search box + recipe-type chips + tag chips + archived/draft toggles + sort.
- * Search is debounced inside the page so this component only emits final
- * filter state when the user pauses typing.
+ * `onChange` fires on every keystroke / chip toggle / select change — the
+ * parent page (`RecipeListPage`) debounces the resulting `search` field
+ * before passing it to the query hook, so this component stays a thin
+ * controlled-input shell.
  */
 export function RecipeListFilters({ value, onChange, availableTags }: Props): ReactElement {
   const { t } = useTranslation('food');

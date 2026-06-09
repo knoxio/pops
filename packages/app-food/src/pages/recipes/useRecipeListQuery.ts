@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { trpc } from '@pops/api-client';
 
-import type { RecipeListFilterState } from './recipe-list-types.js';
+import type { RecipeListFilterState, RecipeType } from './recipe-list-types.js';
 
 export interface UseRecipeListQueryArgs {
   filters: RecipeListFilterState;
@@ -12,7 +12,7 @@ export interface UseRecipeListQueryArgs {
 export interface RecipeListItemView {
   slug: string;
   title: string | null;
-  recipeType: string;
+  recipeType: RecipeType;
   heroImagePath: string | null;
   prepMinutes: number | null;
   cookMinutes: number | null;
