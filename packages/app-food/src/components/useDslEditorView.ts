@@ -1,6 +1,6 @@
 /**
  * `useDslEditorView` — owns the imperative CodeMirror 6 lifecycle for the
- * DSL editor (PRD-120 part A).
+ * DSL editor (PRD-120 part A; chip widgets + mobile fallback added in 120-D).
  *
  * Pulled out of `DslEditor.tsx` so the component itself stays under the
  * lint cap and the React surface is purely declarative. The hook:
@@ -13,6 +13,11 @@
  *   - Re-syncs the document when `initialValue` changes from outside
  *     (parent loaded a new version). One-way only — the parent owns the
  *     canonical value via the debounced `onChange`.
+ *   - Watches `window.matchMedia('(max-width: 767px)')` and reconfigures
+ *     the chip-widgets compartment between desktop (widget-replace) and
+ *     mobile (inline-mark) renderings. The swap is a compartment
+ *     reconfigure so cursor + undo state stay intact when the user rotates
+ *     a tablet or resizes the window.
  *
  * The hook deliberately doesn't return the `EditorView`; callers that
  * need it (tests, future autocomplete plumbing) reach for
@@ -27,8 +32,10 @@ import { EditorView, keymap, lineNumbers } from '@codemirror/view';
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 
 import { recipeDsl } from '../dsl/codemirror';
+import { chipWidgetsExtension } from './dsl-editor/chip-widgets-extension';
 
 const DEBOUNCE_MS = 250;
+const MOBILE_QUERY = '(max-width: 767px)';
 
 export interface UseDslEditorViewOptions {
   initialValue: string;
@@ -36,12 +43,20 @@ export interface UseDslEditorViewOptions {
   readOnly: boolean;
 }
 
+interface ViewCompartments {
+  readOnly: Compartment;
+  chips: Compartment;
+}
+
 export function useDslEditorView(
   hostRef: MutableRefObject<HTMLDivElement | null>,
   options: UseDslEditorViewOptions
 ): void {
   const viewRef = useRef<EditorView | null>(null);
-  const readOnlyCompartmentRef = useRef<Compartment>(new Compartment());
+  const compartmentsRef = useRef<ViewCompartments>({
+    readOnly: new Compartment(),
+    chips: new Compartment(),
+  });
   const onChangeRef = useRef(options.onChange);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -60,9 +75,11 @@ export function useDslEditorView(
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return undefined;
-    const view = createEditorView(host, options, readOnlyCompartmentRef.current, emit);
+    const view = createEditorView(host, options, compartmentsRef.current, emit);
     viewRef.current = view;
+    const stopMql = watchMobileQuery(view, compartmentsRef.current.chips);
     return () => {
+      stopMql();
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         debounceRef.current = null;
@@ -79,7 +96,9 @@ export function useDslEditorView(
     const view = viewRef.current;
     if (!view) return;
     view.dispatch({
-      effects: readOnlyCompartmentRef.current.reconfigure(buildReadOnlyExtension(options.readOnly)),
+      effects: compartmentsRef.current.readOnly.reconfigure(
+        buildReadOnlyExtension(options.readOnly)
+      ),
     });
   }, [options.readOnly]);
 
@@ -102,12 +121,31 @@ function buildReadOnlyExtension(
   return [EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)];
 }
 
+function detectCompactInitial(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia(MOBILE_QUERY).matches;
+}
+
+function watchMobileQuery(view: EditorView, chipsCompartment: Compartment): () => void {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => {};
+  const mql = window.matchMedia(MOBILE_QUERY);
+  const apply = (matches: boolean): void => {
+    view.dispatch({
+      effects: chipsCompartment.reconfigure(chipWidgetsExtension({ compact: matches })),
+    });
+  };
+  const listener = (event: MediaQueryListEvent): void => apply(event.matches);
+  mql.addEventListener('change', listener);
+  return () => mql.removeEventListener('change', listener);
+}
+
 function createEditorView(
   host: HTMLDivElement,
   options: UseDslEditorViewOptions,
-  compartment: Compartment,
+  compartments: ViewCompartments,
   emit: (value: string) => void
 ): EditorView {
+  const compact = detectCompactInitial();
   return new EditorView({
     state: EditorState.create({
       doc: options.initialValue,
@@ -118,7 +156,8 @@ function createEditorView(
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         recipeDsl(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
-        compartment.of(buildReadOnlyExtension(options.readOnly)),
+        compartments.readOnly.of(buildReadOnlyExtension(options.readOnly)),
+        compartments.chips.of(chipWidgetsExtension({ compact })),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) emit(update.state.doc.toString());
         }),
