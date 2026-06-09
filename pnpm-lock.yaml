@@ -875,6 +875,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.8
         version: 4.1.8(vitest@4.1.8)
+      axe-core:
+        specifier: ^4.12.0
+        version: 4.12.0
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0

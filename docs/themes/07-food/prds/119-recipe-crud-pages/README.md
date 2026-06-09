@@ -188,43 +188,43 @@ Inline per theme protocol.
 - [x] All seven routes from the table above mounted in `packages/app-food/src/routes.tsx`. (119-A: real route for list; placeholder for B/C/D until those PRs land.)
 - [x] Each page component lives in `packages/app-food/src/pages/` and is a thin wrapper around hooks + the editor/renderer components. (119-A: list page only; B/C/D follow.)
 - [x] List page renders compact recipe cards with working search and filter. (119-A)
-- [ ] New page saves a recipe end-to-end: type valid DSL → click save → redirected to edit page → recipe appears in the list.
-- [ ] Detail page renders the cookbook view for sample recipes from PRD-113's seed.
-- [ ] Edit page wraps PRD-120's editor with save/promote/discard controls.
-- [ ] Drafts page lists drafts with per-row actions; promote moves a draft to current and archives the prior current.
+- [x] New page saves a recipe end-to-end: type valid DSL → click save → redirected to edit page → recipe appears in the list. (119-C)
+- [x] Detail page renders the cookbook view for sample recipes from PRD-113's seed. (119-B; verified via the RecipeRenderer wrap.)
+- [x] Edit page wraps PRD-120's editor with save/promote/discard controls. (119-C)
+- [x] Drafts page lists drafts with per-row actions; promote moves a draft to current and archives the prior current. (119-D)
 
 ### tRPC procedures
 
-- [ ] All procedures listed in the API section exist in `apps/pops-api/src/modules/food/router.ts`.
-- [ ] All mutations run in a single Drizzle transaction.
-- [ ] `saveDraft` returns the `CompileResult` (success or errors) so the editor can show feedback.
-- [ ] `create` parses DSL to extract the slug; rejects with `MissingRecipeHeader` if absent.
-- [ ] All procedures have Vitest integration tests against an in-memory DB seeded with PRD-113 data.
+- [x] All procedures listed in the API section exist in `apps/pops-api/src/modules/food/router.ts`. (119-API: 11 procedures wired under `food.recipes.*`.)
+- [x] All mutations run in a single Drizzle transaction. (119-API)
+- [x] `saveDraft` returns the `CompileResult` (success or errors) so the editor can show feedback. (119-API)
+- [x] `create` parses DSL to extract the slug; rejects with `MissingRecipeHeader` if absent. (119-API)
+- [x] All procedures have Vitest integration tests against an in-memory DB seeded with PRD-113 data. (119-API: 27 cases.)
 
 ### Flows
 
-- [ ] **New recipe end-to-end**: open `/food/recipes/new`, paste a valid sample DSL, save → land on `/food/recipes/<slug>/edit` → promote → `/food/recipes/<slug>` shows the rendered recipe.
-- [ ] **Edit a current recipe**: open detail of a current recipe, click Edit → new draft created → editor shows the body → save → compile errors (if any) appear inline → promote → detail page shows the new content.
-- [ ] **Discard a draft**: drafts page → click Discard on a draft → confirm → `archiveVersion` runs → row disappears from the drafts list.
-- [ ] **Restore historic version**: open `/food/recipes/:slug/v/2` → "Restore as new draft" → land on `/food/recipes/:slug/edit` with that version's DSL → save → promote.
+- [x] **New recipe end-to-end**: open `/food/recipes/new`, paste a valid sample DSL, save → land on `/food/recipes/<slug>/edit` → promote → `/food/recipes/<slug>` shows the rendered recipe. (119-C wires create → navigate → edit; 119-B's detail page renders the promoted version.)
+- [x] **Edit a current recipe**: open detail of a current recipe, click Edit → new draft created → editor shows the body → save → compile errors (if any) appear inline → promote → detail page shows the new content. (119-B's action menu links to /edit; 119-C's createNewDraft + saveDraft + promote flows.)
+- [x] **Discard a draft**: drafts page → click Discard on a draft → confirm → `archiveVersion` runs → row disappears from the drafts list. (119-D)
+- [x] **Restore historic version**: open `/food/recipes/:slug/v/2` → "Restore as new draft" → land on `/food/recipes/:slug/edit` with that version's DSL → save → promote. (119-B's RecipeVersionDetailPage calls food.recipes.restoreVersion and routes to /edit.)
 
 ### Auto-create surfacing
 
-- [ ] When a save triggers auto-creation of ingredients/variants (via PRD-115/116 `creations` flow), the editor's response shows a banner listing the created entities with links to `/food/data?focus=<slug>`.
-- [ ] The banner is dismissible; not persistent.
+- [x] When a save triggers auto-creation of ingredients/variants (via PRD-115/116 `creations` flow), the editor's response shows a banner listing the created entities with links to `/food/data?focus=<slug>`. (119-C's `AutoCreatedBanner` sourced from `listProposedSlugs`.)
+- [x] The banner is dismissible; not persistent. (119-C)
 
 ### Mobile
 
-- [ ] List page is readable at 375px; cards stack single-column.
-- [ ] Detail page renders at 375px without horizontal scroll.
-- [ ] Edit page on mobile uses PRD-120's mobile editor mode (autocomplete in bottom drawer).
-- [ ] All action menus are tappable (44px minimum target size).
+- [x] List page is readable at 375px; cards stack single-column. (119-A's RecipeListCard uses `flex` + `truncate` so the layout reflows; 119-E adds a viewport regression test.)
+- [x] Detail page renders at 375px without horizontal scroll. (119-B's Shell uses `flex-wrap` for the action menu row; verified inline.)
+- [ ] Edit page on mobile uses PRD-120's mobile editor mode (autocomplete in bottom drawer). (Deferred — PRD-120's mobile drawer ships in a future part of PRD-120; 119-E's mobile audit confirms the surrounding chrome is mobile-friendly already.)
+- [x] All action menus are tappable (44px minimum target size). (119-B's RecipeActionMenu uses the shared Radix-backed `DropdownMenu` which honours the design system's tap-target sizes.)
 
 ### Tests
 
-- [ ] Vitest + RTL suite at `packages/app-food/src/pages/__tests__/*.test.tsx` covers each page with happy-path + key error states.
-- [ ] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/recipes-router.test.ts` covers each tRPC procedure.
-- [ ] E2E flow test (in `apps/pops-shell/e2e/` if Playwright is set up, otherwise deferred): the New → Edit → Promote → Detail flow runs end-to-end against a real shell + API.
+- [x] Vitest + RTL suite at `packages/app-food/src/pages/__tests__/*.test.tsx` covers each page with happy-path + key error states. (119-A: 18, 119-B: 17, 119-C: 12, 119-D: 12, 119-E: 7 — total 66.)
+- [x] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/recipes-router.test.ts` covers each tRPC procedure. (119-API: 27 cases.)
+- [ ] E2E flow test (in `apps/pops-shell/e2e/` if Playwright is set up, otherwise deferred): the New → Edit → Promote → Detail flow runs end-to-end against a real shell + API. (Deferred — the local CI gauntlet now runs without a backing pops-api dev server; setting up the seeded fixture + worker pipeline for the e2e is a follow-up.)
 
 ## Out of Scope
 
