@@ -145,6 +145,25 @@ describe('food.ingredients', () => {
     const list = await caller.food.ingredients.list({});
     expect(list.items).toEqual([]);
   });
+
+  it('update rejects an empty patch with BAD_REQUEST', async () => {
+    const apple = await caller.food.ingredients.create({
+      slug: 'apple',
+      name: 'Apple',
+      defaultUnit: 'count',
+    });
+    await expect(caller.food.ingredients.update({ id: apple!.id })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+  });
+
+  it('list returns ingredients in stable slug order', async () => {
+    await caller.food.ingredients.create({ slug: 'cherry', name: 'C', defaultUnit: 'count' });
+    await caller.food.ingredients.create({ slug: 'apple', name: 'A', defaultUnit: 'count' });
+    await caller.food.ingredients.create({ slug: 'banana', name: 'B', defaultUnit: 'count' });
+    const result = await caller.food.ingredients.list({});
+    expect(result.items.map((i) => i.slug)).toEqual(['apple', 'banana', 'cherry']);
+  });
 });
 
 describe('food.variants', () => {
@@ -179,6 +198,69 @@ describe('food.variants', () => {
     const updated = await caller.food.variants.update({ id: raw.id, name: 'Fresh' });
     expect(updated?.name).toBe('Fresh');
   });
+
+  it('create accepts shelf-life fields and persists them', async () => {
+    const banana = await caller.food.ingredients.create({
+      slug: 'banana',
+      name: 'Banana',
+      defaultUnit: 'count',
+    });
+    const raw = await caller.food.variants.create({
+      ingredientId: banana!.id,
+      slug: 'raw',
+      name: 'Raw',
+      defaultUnit: 'count',
+      defaultShelfLifeDaysFridge: 7,
+      defaultShelfLifeDaysFreezer: 90,
+    });
+    expect(raw.defaultShelfLifeDaysFridge).toBe(7);
+    expect(raw.defaultShelfLifeDaysFreezer).toBe(90);
+  });
+
+  it('create maps a duplicate (ingredientId, slug) to CONFLICT', async () => {
+    const banana = await caller.food.ingredients.create({
+      slug: 'banana',
+      name: 'Banana',
+      defaultUnit: 'count',
+    });
+    await caller.food.variants.create({
+      ingredientId: banana!.id,
+      slug: 'raw',
+      name: 'Raw',
+      defaultUnit: 'count',
+    });
+    await expect(
+      caller.food.variants.create({
+        ingredientId: banana!.id,
+        slug: 'raw',
+        name: 'Raw again',
+        defaultUnit: 'count',
+      })
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+  });
+
+  it('update rejects an empty patch with BAD_REQUEST', async () => {
+    const banana = await caller.food.ingredients.create({
+      slug: 'banana',
+      name: 'Banana',
+      defaultUnit: 'count',
+    });
+    const raw = await caller.food.variants.create({
+      ingredientId: banana!.id,
+      slug: 'raw',
+      name: 'Raw',
+      defaultUnit: 'count',
+    });
+    await expect(caller.food.variants.update({ id: raw.id })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+  });
+
+  it('delete returns NOT_FOUND for an unknown id', async () => {
+    await expect(caller.food.variants.delete({ id: 9999 })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
 });
 
 describe('food.aliases', () => {
@@ -203,6 +285,14 @@ describe('food.aliases', () => {
       target: { kind: 'ingredient', id },
     });
     expect(targeted.items).toHaveLength(1);
+  });
+
+  it('create maps a duplicate alias at the same target to CONFLICT', async () => {
+    const id = await seedBanana();
+    await caller.food.aliases.create({ alias: 'platano', target: { kind: 'ingredient', id } });
+    await expect(
+      caller.food.aliases.create({ alias: 'platano', target: { kind: 'ingredient', id } })
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
   });
 
   it('merge re-points and bulkApprove flips llm→user', async () => {
@@ -285,6 +375,38 @@ describe('food.substitutions', () => {
         to: { ingredientId: banana },
       })
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('create rejects a from-endpoint with both ingredientId and variantId', async () => {
+    const { banana, apple } = await seedTwoIngredients();
+    await expect(
+      caller.food.substitutions.create({
+        from: { ingredientId: banana, variantId: 1 },
+        to: { ingredientId: apple },
+      })
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('create rejects scope="recipe" without recipeId', async () => {
+    const { banana, apple } = await seedTwoIngredients();
+    await expect(
+      caller.food.substitutions.create({
+        from: { ingredientId: banana },
+        to: { ingredientId: apple },
+        scope: 'recipe',
+      })
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('update rejects an empty patch', async () => {
+    const { banana, apple } = await seedTwoIngredients();
+    const sub = await caller.food.substitutions.create({
+      from: { ingredientId: banana },
+      to: { ingredientId: apple },
+    });
+    await expect(caller.food.substitutions.update({ id: sub.id })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
   });
 
   it('update patches ratio + tags inline', async () => {

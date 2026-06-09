@@ -1,4 +1,10 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+import { aliasesService } from '@pops/app-food-db';
+
+import { getDrizzle } from '../../../db.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 
 /**
  * Food → aliases tRPC procedures (PRD-122).
@@ -7,11 +13,12 @@ import { z } from 'zod';
  * XOR CHECK. The merge mutation rewires multiple aliases to a single
  * canonical target inside a transaction; bulk-approve flips llm-sourced
  * rows to user-sourced for the "trust this LLM proposal" affordance.
+ *
+ * The aliases service explicitly relies on the DB-level partial UNIQUE
+ * indexes for dedupe — duplicate (alias, target) inserts surface as raw
+ * SQLite UNIQUE constraint errors. Map those to CONFLICT here so clients
+ * get a stable code instead of an opaque 500.
  */
-import { aliasesService } from '@pops/app-food-db';
-
-import { getDrizzle } from '../../../db.js';
-import { protectedProcedure, router } from '../../../trpc.js';
 
 const SOURCE_ENUM = z.enum(['user', 'llm', 'ingest']);
 
@@ -19,6 +26,27 @@ const TARGET_SCHEMA = z.object({
   kind: z.enum(['ingredient', 'variant']),
   id: z.number(),
 });
+
+function isSqliteUniqueError(err: unknown): boolean {
+  return (
+    err !== null &&
+    typeof err === 'object' &&
+    'code' in err &&
+    typeof (err as { code: unknown }).code === 'string' &&
+    (err as { code: string }).code === 'SQLITE_CONSTRAINT_UNIQUE'
+  );
+}
+
+function mapAliasError(err: unknown): never {
+  if (isSqliteUniqueError(err)) {
+    throw new TRPCError({
+      code: 'CONFLICT',
+      message: 'An alias with this text already exists for the target',
+      cause: err,
+    });
+  }
+  throw err as Error;
+}
 
 export const aliasesRouter = router({
   list: protectedProcedure
@@ -41,11 +69,23 @@ export const aliasesRouter = router({
         source: SOURCE_ENUM.optional(),
       })
     )
-    .mutation(({ input }) => aliasesService.createAlias(getDrizzle(), input)),
+    .mutation(({ input }) => {
+      try {
+        return aliasesService.createAlias(getDrizzle(), input);
+      } catch (err) {
+        mapAliasError(err);
+      }
+    }),
 
   updateText: protectedProcedure
     .input(z.object({ id: z.number(), alias: z.string().min(1) }))
-    .mutation(({ input }) => aliasesService.updateAliasText(getDrizzle(), input.id, input.alias)),
+    .mutation(({ input }) => {
+      try {
+        return aliasesService.updateAliasText(getDrizzle(), input.id, input.alias);
+      } catch (err) {
+        mapAliasError(err);
+      }
+    }),
 
   delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => {
     aliasesService.deleteAlias(getDrizzle(), input.id);

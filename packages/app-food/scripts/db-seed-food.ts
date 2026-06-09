@@ -15,7 +15,7 @@ import { existsSync } from 'node:fs';
 import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
-import { seedFood } from '@pops/app-food-db';
+import { seedFood } from '@pops/app-food-db/seed';
 
 if (process.env.NODE_ENV === 'production') {
   console.error("❌ Refusing to run: NODE_ENV is 'production'.");

@@ -4,7 +4,7 @@ import { z } from 'zod';
 /**
  * Food → ingredients tRPC procedures (PRD-122).
  *
- * Thin wrappers over the food domain services exposed by `@pops/app-food/db`.
+ * Thin wrappers over the food domain services exposed by `@pops/app-food-db`.
  * Validation lives in zod input schemas; business invariants (slug shape,
  * hierarchy depth, cycle detection) live in the service layer and are
  * mapped to typed TRPCErrors here so clients can switch on `code`.
@@ -33,13 +33,56 @@ function mapServiceError(err: unknown): never {
   if (err instanceof IngredientCycleError || err instanceof IngredientHierarchyDepthExceeded) {
     throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err });
   }
+  // Surface SQLite FK violations as a structured CONFLICT — the blocker
+  // enumeration below intentionally only covers variants + aliases, but
+  // recipe_lines / recipe_versions.yield_ingredient_id / substitutions
+  // also reference ingredients. A FK error here means the row is in use
+  // somewhere we didn't enumerate; bubble it up cleanly rather than 500.
+  if (isSqliteForeignKeyError(err)) {
+    throw new TRPCError({
+      code: 'CONFLICT',
+      message: 'Ingredient is referenced by other rows in the food schema',
+      cause: err,
+    });
+  }
   throw err as Error;
 }
+
+function isSqliteForeignKeyError(err: unknown): boolean {
+  return (
+    err !== null &&
+    typeof err === 'object' &&
+    'code' in err &&
+    typeof (err as { code: unknown }).code === 'string' &&
+    (err as { code: string }).code.startsWith('SQLITE_CONSTRAINT')
+  );
+}
+
+const UPDATE_INPUT = z
+  .object({
+    id: z.number(),
+    name: z.string().min(1).optional(),
+    defaultUnit: UNIT_ENUM.optional(),
+    densityGPerMl: z.number().nullable().optional(),
+    notes: z.string().nullable().optional(),
+  })
+  .refine((v) => Object.keys(v).some((k) => k !== 'id' && v[k as keyof typeof v] !== undefined), {
+    message: 'patch must include at least one field besides id',
+  });
 
 export const ingredientsRouter = router({
   list: protectedProcedure
     .input(z.object({ search: z.string().optional(), parentId: z.number().nullable().optional() }))
-    .query(({ input }) => ({ items: ingredientsQueries.listIngredients(getDrizzle(), input) })),
+    .query(({ input }) => {
+      const items = ingredientsQueries.listIngredients(getDrizzle(), input);
+      // Stable order so the UI doesn't re-paint on every refetch and tests
+      // can assert against a deterministic sequence. Sorting in JS is fine
+      // at this scale (the canonical ingredient set is hundreds, not
+      // millions, of rows).
+      return {
+        items: [...items].toSorted((a, b) => a.slug.localeCompare(b.slug)),
+      };
+    }),
 
   get: protectedProcedure
     .input(z.object({ idOrSlug: z.union([z.number(), z.string()]) }))
@@ -77,20 +120,10 @@ export const ingredientsRouter = router({
       }
     }),
 
-  update: protectedProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        name: z.string().min(1).optional(),
-        defaultUnit: UNIT_ENUM.optional(),
-        densityGPerMl: z.number().nullable().optional(),
-        notes: z.string().nullable().optional(),
-      })
-    )
-    .mutation(({ input }) => {
-      const { id, ...patch } = input;
-      return ingredientsService.updateIngredient(getDrizzle(), id, patch);
-    }),
+  update: protectedProcedure.input(UPDATE_INPUT).mutation(({ input }) => {
+    const { id, ...patch } = input;
+    return ingredientsService.updateIngredient(getDrizzle(), id, patch);
+  }),
 
   rename: protectedProcedure
     .input(z.object({ oldSlug: z.string(), newSlug: z.string() }))
@@ -122,7 +155,11 @@ export const ingredientsRouter = router({
     if (blockers.variants > 0 || blockers.aliases > 0) {
       return { ok: false as const, blockers };
     }
-    ingredientsService.deleteIngredient(db, input.id);
+    try {
+      ingredientsService.deleteIngredient(db, input.id);
+    } catch (err) {
+      mapServiceError(err);
+    }
     return { ok: true as const };
   }),
 });

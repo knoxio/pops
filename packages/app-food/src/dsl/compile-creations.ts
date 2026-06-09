@@ -14,12 +14,12 @@ import { eq } from 'drizzle-orm';
 
 import { ingredientsService, slugRegistry, variantsService } from '@pops/app-food-db';
 
-const { createIngredient } = ingredientsService;
-const { createVariant } = variantsService;
-
 import type { FoodDb } from '@pops/app-food-db';
 
 import type { ResolverCreation } from './resolver-types';
+
+const { createIngredient } = ingredientsService;
+const { createVariant } = variantsService;
 
 export function applyCreations(db: FoodDb, creations: readonly ResolverCreation[]): number {
   // Ingredients first so the variant lookups in the second pass can resolve

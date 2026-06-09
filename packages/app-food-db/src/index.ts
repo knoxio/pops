@@ -37,8 +37,14 @@ export * as substitutionsQueries from './services/substitutions-queries.js';
 export * as variantsService from './services/variants.js';
 export * as conversionsService from './services/conversions.js';
 
-// Seed entry points (PRD-113).
-export { seedFood, type SeedFoodSummary } from './seed/index.js';
+// NOTE: `seedFood` is NOT re-exported here. It lives at the
+// `@pops/app-food-db/seed` subpath because the seed module pulls in
+// `@pops/app-lists` at runtime via `seed/step-lists.ts`. Re-exporting
+// from the root would force every consumer of `@pops/app-food-db`
+// (notably the pops-api routers in production) to eagerly evaluate the
+// seed — and the pops-api Docker image doesn't ship `@pops/app-lists`'s
+// source. Seed consumers (the `mise db:seed:food` CLI, vitest suites)
+// import the subpath explicitly.
 
 // Named result + view types — re-exported at the barrel so the tRPC
 // router's inferred types in pops-api don't trip TS2883 ("the inferred

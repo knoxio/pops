@@ -12,9 +12,9 @@
  */
 import { conversionsService } from '@pops/app-food-db';
 
-const { resolveCanonicalQty } = conversionsService;
-
 import type { CanonicalUnit, FoodDb } from '@pops/app-food-db';
+
+const { resolveCanonicalQty } = conversionsService;
 
 export interface NormaliseLineInput {
   ingredientId: number;

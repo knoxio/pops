@@ -25,10 +25,11 @@ import {
 
 import { detectRecipeCycle } from '../cycle';
 
+import type { ResolvedIngredientBlock, ResolvedRecipeAst } from '../resolver-types';
+
 const { createIngredient } = ingredientsService;
 const { promoteVersion } = recipeVersionsService;
 const { createRecipe } = recipesService;
-import type { ResolvedIngredientBlock, ResolvedRecipeAst } from '../resolver-types';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',
