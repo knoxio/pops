@@ -15,6 +15,7 @@
  * `runEvictionTick(db, dir)` so the worker, a one-shot CLI, and the unit
  * tests can all invoke the same logic.
  */
+import { type Stats } from 'node:fs';
 import { readdir, rm, stat } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
@@ -117,7 +118,7 @@ async function listSourceDirs(dir: string): Promise<DirEntry[]> {
     const sourceId = Number.parseInt(name, 10);
     if (!Number.isFinite(sourceId) || sourceId <= 0) continue;
     const absolutePath = join(dir, name);
-    let info;
+    let info: Stats;
     try {
       info = await stat(absolutePath);
     } catch (err) {

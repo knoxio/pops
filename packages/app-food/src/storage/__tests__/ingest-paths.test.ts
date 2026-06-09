@@ -66,5 +66,17 @@ describe('ingest-paths', () => {
       process.env['FOOD_INGEST_DIR'] = '/var/pops/ingest';
       expect(() => relativeToIngestDir('/var/pops/ingest')).toThrow(/outside FOOD_INGEST_DIR/);
     });
+
+    it('accepts filenames that begin with ".." but are not parent refs', () => {
+      // `..foo` is a perfectly valid filename living under the root and
+      // must not be conflated with `..` (parent dir).
+      process.env['FOOD_INGEST_DIR'] = '/var/pops/ingest';
+      expect(relativeToIngestDir('/var/pops/ingest/17/..foo')).toBe('17/..foo');
+    });
+
+    it('rejects a true parent-dir traversal', () => {
+      process.env['FOOD_INGEST_DIR'] = '/var/pops/ingest';
+      expect(() => relativeToIngestDir('/var/pops/sibling')).toThrow(/outside FOOD_INGEST_DIR/);
+    });
   });
 });

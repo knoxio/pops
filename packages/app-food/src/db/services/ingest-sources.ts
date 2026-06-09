@@ -78,9 +78,10 @@ export function linkDraftRecipe(
  * eviction job after the on-disk directory has been removed. Path columns
  * are preserved — they describe where the files used to live.
  *
- * Uses an `IN` clause via repeated single-row updates to keep the helper
- * dependency-light; the eviction tick caps the batch at 100 ids, so this
- * is fine.
+ * Implemented as a loop of single-row UPDATEs to keep the helper
+ * dependency-light. Batch size is whatever `runEvictionTick` evicted in
+ * one pass — usually small (often 0–5) because the job runs frequently,
+ * but the implementation imposes no upper bound.
  */
 export function markArchived(db: FoodDb, sourceIds: readonly number[]): void {
   const stamp = new Date().toISOString();
