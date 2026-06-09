@@ -26,6 +26,7 @@ const config: StorybookConfig = {
           '@pops/ui': path.resolve(__dirname, '../../../packages/ui/src'),
           '@pops/app-media': path.resolve(__dirname, '../../../packages/app-media/src'),
           '@pops/app-finance': path.resolve(__dirname, '../../../packages/app-finance/src'),
+          '@pops/app-food': path.resolve(__dirname, '../../../packages/app-food/src'),
           '@pops/app-inventory': path.resolve(__dirname, '../../../packages/app-inventory/src'),
         },
       },
