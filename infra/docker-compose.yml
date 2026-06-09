@@ -99,6 +99,62 @@ services:
       pops-redis:
         condition: service_healthy
 
+  # ── FOOD INGEST WORKER ───────────────────────────────────────────
+  # PRD-126 — consumes the `food.ingest` BullMQ queue produced by
+  # pops-api (PRD-125) and runs the per-kind ingest pipelines (PRDs
+  # 127–132). Results post back to pops-api via the internal-token
+  # gated `food.ingest.workerComplete` mutation. Stateless with respect
+  # to SQLite — all DB writes happen server-side.
+  pops-worker-food:
+    image: ghcr.io/knoxio/pops-worker-food:${POPS_IMAGE_TAG:-main}
+    container_name: pops-worker-food
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
+    networks:
+      - backend
+    volumes:
+      - food-ingest-data:/data/food/ingest
+      # Cookie file is operator-managed (see PRD-129's runbook). Comment
+      # out the mount when no cookies are provisioned — yt-dlp falls
+      # back to anonymous mode and Instagram reels will fail with
+      # auth-dead, which the inbox surfaces as a `partial` outcome.
+      - ../secrets/instagram-cookies.txt:/secrets/instagram-cookies.txt:ro
+    secrets:
+      - claude_api_key
+      - pops_api_internal_token
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://pops-redis:6379
+      POPS_API_URL: http://pops-api:3000
+      # POPS_API_INTERNAL_TOKEN + ANTHROPIC_API_KEY come from
+      # /run/secrets/<lowercased-name> via pops-api's env.ts convention.
+      # Worker pool & rate limiting (PRD-125 contract).
+      FOOD_WORKER_CONCURRENCY: ${FOOD_WORKER_CONCURRENCY:-2}
+      FOOD_INGEST_TIMEOUT_SEC: ${FOOD_INGEST_TIMEOUT_SEC:-300}
+      FOOD_INGEST_RATE_PER_MIN: ${FOOD_INGEST_RATE_PER_MIN:-30}
+      FOOD_INGEST_DIR: /data/food/ingest
+      INSTAGRAM_COOKIES_PATH: /secrets/instagram-cookies.txt
+      # Per-handler model overrides (PRDs 128 / 130 / 131 / 132).
+      FOOD_WEB_LLM_MODEL: ${FOOD_WEB_LLM_MODEL:-claude-haiku-4-5-20251001}
+      FOOD_IG_VISION_MODEL: ${FOOD_IG_VISION_MODEL:-claude-haiku-4-5-20251001}
+      FOOD_SCREENSHOT_VISION_MODEL: ${FOOD_SCREENSHOT_VISION_MODEL:-claude-haiku-4-5-20251001}
+      FOOD_TEXT_LLM_MODEL: ${FOOD_TEXT_LLM_MODEL:-claude-haiku-4-5-20251001}
+      # Cost observability — PRD-133's logger warns when a job exceeds this.
+      FOOD_INGEST_COST_CAP_PER_JOB_USD: ${FOOD_INGEST_COST_CAP_PER_JOB_USD:-0.05}
+    expose:
+      - '9090'
+    depends_on:
+      pops-redis:
+        condition: service_healthy
+      pops-api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:9090/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   # ── FRONTEND ─────────────────────────────────────────────────────
   pops-shell:
     image: ghcr.io/knoxio/pops-shell:${POPS_IMAGE_TAG:-main}
@@ -309,6 +365,8 @@ volumes:
     name: pops-paperless-consume
   paperless-redis:
     name: pops-paperless-redis
+  food-ingest-data:
+    name: pops-food-ingest-data
 
 secrets:
   notion_api_token:
@@ -325,6 +383,8 @@ secrets:
     file: ../secrets/finance_api_key
   pops_api_key:
     file: ../secrets/pops_api_key
+  pops_api_internal_token:
+    file: ../secrets/pops_api_internal_token
   tmdb_api_key:
     file: ../secrets/tmdb_api_key
   thetvdb_api_key:

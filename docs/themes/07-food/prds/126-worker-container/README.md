@@ -217,41 +217,41 @@ Inline per theme protocol.
 
 ### Image
 
-- [ ] `infra/docker/pops-worker-food/Dockerfile` matches the structure above.
-- [ ] Multi-stage build; final image < 2 GB.
-- [ ] faster-whisper `distil-large-v3` model baked into the image (downloaded at build time).
-- [ ] yt-dlp and faster-whisper versions pinned; documented in the Dockerfile + a `versions.json` in `infra/docker/pops-worker-food/`.
-- [ ] GitHub Actions workflow builds + pushes to `ghcr.io/knoxio/pops-worker-food:latest` on changes under `apps/pops-worker-food/**` or `infra/docker/pops-worker-food/**`.
+- [x] `infra/docker/pops-worker-food/Dockerfile` matches the structure above.
+- [x] Multi-stage build; final image < 2 GB.
+- [x] faster-whisper `distil-large-v3` model baked into the image (downloaded at build time).
+- [x] yt-dlp and faster-whisper versions pinned; documented in the Dockerfile + a `versions.json` in `infra/docker/pops-worker-food/`.
+- [x] GitHub Actions workflow builds + pushes to `ghcr.io/knoxio/pops-worker-food:latest` on changes under `apps/pops-worker-food/**` or `infra/docker/pops-worker-food/**`.
 
 ### Compose
 
-- [ ] `infra/docker-compose.yml` adds the `worker-food` service per the spec.
-- [ ] Cookie volume mount documented; `infra/secrets/.gitignore` excludes the cookie file.
-- [ ] Healthcheck succeeds when worker is running.
+- [x] `infra/docker-compose.yml` adds the `worker-food` service per the spec.
+- [ ] Cookie volume mount documented; `infra/secrets/.gitignore` excludes the cookie file. <!-- Documented inline in compose; the `infra/secrets/` directory is operator-managed and out of repo (PRD-129 owns the cookie-refresh runbook). -->
+- [x] Healthcheck succeeds when worker is running.
 
 ### Worker daemon
 
-- [ ] `apps/pops-worker-food/src/worker.ts` exists; compiled output runs in the container.
-- [ ] BullMQ Worker connects, picks up `food.ingest` jobs, dispatches to per-kind handlers via `runIngestJob`.
-- [ ] Graceful shutdown on SIGTERM drains active jobs (up to 60s).
-- [ ] Cancellation is checked between pipeline stages.
+- [x] `apps/pops-worker-food/src/worker.ts` exists; compiled output runs in the container.
+- [x] BullMQ Worker connects, picks up `food.ingest` jobs, dispatches to per-kind handlers via `runIngestJob`.
+- [x] Graceful shutdown on SIGTERM drains active jobs (up to 60s).
+- [x] Cancellation is checked between pipeline stages.
 
 ### Internal API auth
 
-- [ ] `POPS_API_INTERNAL_TOKEN` env var consumed; passed in `X-Internal-Token` header.
-- [ ] pops-api validates the token on `food.ingest.workerComplete` mutation; rejects without it.
+- [x] `POPS_API_INTERNAL_TOKEN` env var consumed; passed in `x-pops-internal-token` header (PRD-125's actual contract; the spec text says `X-Internal-Token`, but the implemented producer reads `x-pops-internal-token` per `apps/pops-api/src/trpc.ts`).
+- [x] pops-api validates the token on `food.ingest.workerComplete` mutation; rejects without it.
 
 ### Observability
 
-- [ ] `/healthz` endpoint at port 9090 returns the documented JSON.
-- [ ] Every log line includes `sourceId` and `jobId` when in a job context.
-- [ ] Compose healthcheck succeeds.
+- [x] `/healthz` endpoint at port 9090 returns the documented JSON.
+- [x] Every log line includes `sourceId` and `jobId` when in a job context.
+- [x] Compose healthcheck succeeds.
 
 ### Tests
 
-- [ ] Vitest unit tests at `apps/pops-worker-food/src/__tests__/dispatch.test.ts` cover `runIngestJob` dispatching to each handler (handlers mocked).
-- [ ] Integration test (Vitest + testcontainers OR docker-compose-based) spins up worker + redis + mock api; submits a job; asserts the worker picks it up and calls the mock api's `workerComplete`.
-- [ ] CI builds the image on PR (image not pushed unless on main).
+- [x] Vitest unit tests at `apps/pops-worker-food/src/__tests__/dispatch.test.ts` cover `runIngestJob` dispatching to each handler (handlers mocked).
+- [ ] Integration test (Vitest + testcontainers OR docker-compose-based) spins up worker + redis + mock api; submits a job; asserts the worker picks it up and calls the mock api's `workerComplete`. <!-- Deferred to a follow-up — testcontainers infra not yet wired into the monorepo. The unit suite exercises the dispatch round-trip with mocked handlers + a mocked api client. -->
+- [x] CI builds the image on PR (image not pushed unless on main).
 
 ## Out of Scope
 
