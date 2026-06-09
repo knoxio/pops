@@ -8,6 +8,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
+COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists/package.json ./packages/app-lists/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
