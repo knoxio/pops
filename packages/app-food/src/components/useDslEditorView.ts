@@ -1,6 +1,7 @@
 /**
  * `useDslEditorView` — owns the imperative CodeMirror 6 lifecycle for the
- * DSL editor (PRD-120 part A; chip widgets + mobile fallback added in 120-D).
+ * DSL editor (PRD-120 part A; issues / squiggles / tooltip in 120-C;
+ * chip widgets + mobile fallback in 120-D).
  *
  * Pulled out of `DslEditor.tsx` so the component itself stays under the
  * lint cap and the React surface is purely declarative. The hook:
@@ -33,6 +34,9 @@ import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 
 import { recipeDsl } from '../dsl/codemirror';
 import { chipWidgetsExtension } from './dsl-editor/chip-widgets-extension';
+import { issuesExtension, setIssuesEffect } from './dsl-editor/issues-extension';
+
+import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
 const DEBOUNCE_MS = 250;
 const MOBILE_QUERY = '(max-width: 767px)';
@@ -41,6 +45,7 @@ export interface UseDslEditorViewOptions {
   initialValue: string;
   onChange: (value: string) => void;
   readOnly: boolean;
+  issues: readonly CompileEditorIssue[];
 }
 
 interface ViewCompartments {
@@ -110,6 +115,14 @@ export function useDslEditorView(
       changes: { from: 0, to: view.state.doc.length, insert: options.initialValue },
     });
   }, [options.initialValue]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: setIssuesEffect.of([...options.issues]),
+    });
+  }, [options.issues]);
 }
 
 function buildReadOnlyExtension(
@@ -145,6 +158,9 @@ function createEditorView(
   compartments: ViewCompartments,
   emit: (value: string) => void
 ): EditorView {
+  // Initial `options.issues` is seeded by the `useEffect(...,
+  // [options.issues])` block above, which fires once after mount —
+  // dispatching here would double-render (PR #2716 review feedback).
   const compact = detectCompactInitial();
   return new EditorView({
     state: EditorState.create({
@@ -155,6 +171,7 @@ function createEditorView(
         bracketMatching(),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         recipeDsl(),
+        issuesExtension(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         compartments.readOnly.of(buildReadOnlyExtension(options.readOnly)),
         compartments.chips.of(chipWidgetsExtension({ compact })),

@@ -16,7 +16,11 @@ import { EditorView } from '@codemirror/view';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { issuesField } from '../dsl-editor/issues-state';
+import { renderTooltipDom } from '../dsl-editor/issues-tooltip';
 import { DslEditor } from '../DslEditor';
+
+import type { CompileEditorIssue } from '../dsl-editor/issues-types';
 
 /** CodeMirror exposes `EditorView.findFromDOM(node)` which walks up from
  *  any descendant until it locates the live view. We use it to drive the
@@ -282,5 +286,124 @@ describe('DslEditor — PRD-120 part D (chip widgets)', () => {
     expect(rendered).toContain('@cilantro');
     expect(rendered).toContain('@time(20:min)');
     expect(rendered).toContain('@temperature(180:c)');
+  });
+});
+
+describe('DslEditor — PRD-120 part C (issues prop)', () => {
+  const SAMPLE = '@ingredient(1, banana:raw:foo, 1:cup)';
+  const ERROR_ISSUE: CompileEditorIssue = {
+    severity: 'error',
+    code: 'UnresolvedPrepStateSlug',
+    message: 'Unknown prep state',
+    // `foo` at columns 27..30 — see dsl-editor-issues-span.test.ts.
+    loc: { startLine: 1, startCol: 27, endLine: 1, endCol: 30 },
+    slug: 'foo',
+  };
+  const INFO_ISSUE: CompileEditorIssue = {
+    severity: 'info',
+    code: 'ProposedSlug',
+    message: 'Proposed: foo-prep',
+    loc: { startLine: 1, startCol: 27, endLine: 1, endCol: 30 },
+    slug: 'foo-prep',
+  };
+
+  function decorationData(view: EditorView): Array<Record<string, string>> {
+    const out: Array<Record<string, string>> = [];
+    const iter = view.state.field(issuesField).decorations.iter();
+    while (iter.value !== null) {
+      const spec = iter.value.spec as {
+        class?: string;
+        attributes?: Record<string, string>;
+      };
+      out.push({
+        ...spec.attributes,
+        class: spec.class ?? '',
+        from: String(iter.from),
+        to: String(iter.to),
+      });
+      iter.next();
+    }
+    return out;
+  }
+
+  it('renders no decorations when issues is omitted', () => {
+    render(<DslEditor initialValue={SAMPLE} onChange={() => {}} />);
+    expect(decorationData(getEditorView())).toHaveLength(0);
+  });
+
+  it('renders an error decoration at the exact span the parser emitted', () => {
+    render(<DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[ERROR_ISSUE]} />);
+    const marks = decorationData(getEditorView());
+    expect(marks).toEqual([
+      {
+        class: 'cm-dsl-issue cm-dsl-issue--error',
+        'data-dsl-issue-severity': 'error',
+        'data-dsl-issue-code': 'UnresolvedPrepStateSlug',
+        from: '26',
+        to: '29',
+      },
+    ]);
+  });
+
+  it('renders an info decoration with a distinct class from errors', () => {
+    render(<DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[INFO_ISSUE]} />);
+    const marks = decorationData(getEditorView());
+    expect(marks).toHaveLength(1);
+    expect(marks[0]['data-dsl-issue-severity']).toBe('info');
+    expect(marks[0].class).toBe('cm-dsl-issue cm-dsl-issue--info');
+  });
+
+  it('replaces the decoration set when issues change', () => {
+    const { rerender } = render(
+      <DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[ERROR_ISSUE]} />
+    );
+    expect(decorationData(getEditorView())[0]['data-dsl-issue-severity']).toBe('error');
+
+    rerender(<DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[INFO_ISSUE]} />);
+    expect(decorationData(getEditorView())[0]['data-dsl-issue-severity']).toBe('info');
+  });
+
+  it('clears all decorations when issues is emptied', () => {
+    const { rerender } = render(
+      <DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[ERROR_ISSUE, INFO_ISSUE]} />
+    );
+    expect(decorationData(getEditorView())).toHaveLength(2);
+
+    rerender(<DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[]} />);
+    expect(decorationData(getEditorView())).toHaveLength(0);
+  });
+
+  it('builds a tooltip DOM that surfaces the error message + code + slug', () => {
+    const dom = renderTooltipDom([ERROR_ISSUE]);
+    expect(dom.getAttribute('data-testid')).toBe('dsl-editor-issue-tooltip');
+    expect(dom.textContent).toContain('UnresolvedPrepStateSlug');
+    expect(dom.textContent).toContain('Unknown prep state');
+    expect(dom.textContent).toContain('foo');
+    const row = dom.querySelector('[data-dsl-issue-severity="error"]');
+    expect(row).not.toBeNull();
+  });
+
+  it('stacks multiple issues in the tooltip DOM in input order', () => {
+    const dom = renderTooltipDom([ERROR_ISSUE, INFO_ISSUE]);
+    const rows = dom.querySelectorAll('.cm-dsl-issue-tooltip__row');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].getAttribute('data-dsl-issue-severity')).toBe('error');
+    expect(rows[1].getAttribute('data-dsl-issue-severity')).toBe('info');
+  });
+
+  it('drops decorations whose span no longer fits the document', () => {
+    const offDoc: CompileEditorIssue = {
+      ...ERROR_ISSUE,
+      loc: { startLine: 12, startCol: 1, endLine: 12, endCol: 4 },
+    };
+    render(<DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[ERROR_ISSUE, offDoc]} />);
+    // 1 of 2 issues makes it onto the doc; the other silently drops.
+    expect(decorationData(getEditorView())).toHaveLength(1);
+  });
+
+  it('mounts the diagnostic gutter column', () => {
+    render(<DslEditor initialValue={SAMPLE} onChange={() => {}} issues={[ERROR_ISSUE]} />);
+    const surface = screen.getByTestId('dsl-editor-surface');
+    expect(surface.querySelector('.cm-dsl-issue-gutter-column')).not.toBeNull();
   });
 });

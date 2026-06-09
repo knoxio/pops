@@ -1,19 +1,22 @@
 /**
- * DslEditor stories — covers the chip-widget surface added in PRD-120 part D.
+ * DslEditor stories — covers the 120-A scaffold, the 120-C `issues`
+ * surface (squiggles + tooltip + gutter), the 120-D chip widgets, and
+ * the read-only mode.
  *
  * `apps/pops-storybook/.storybook/main.ts` discovers stories from
- * `packages/*\/src/**\/*.stories.@(...)`, so this file lives next to the
- * component (same convention RecipeRenderer.stories.tsx adopted).
+ * `packages/*\/src/**\/*.stories.@(ts|tsx)`, so this file lives next to
+ * the component (same convention `RecipeRenderer.stories.tsx` adopted).
  *
- * Stories intentionally render the editor in a controlled wrapper that
- * doesn't pump value changes back into the editor on each keystroke —
- * the editor is the source of truth for its own document while the
- * story is on screen. 120-F will broaden this with the empty / with-errors
- * / with-proposed-slugs / read-only variants the PRD enumerates.
+ * Stories use a `StoryHost` wrapper that owns the document via
+ * `useState` — editing in the rendered Storybook canvas updates the
+ * editor's text in place (the host does NOT pump value back into
+ * `initialValue`, only stores it; the editor is the source of truth
+ * for its own document while the story is on screen).
  */
 import { useState } from 'react';
 
 import { DslEditor } from './DslEditor';
+import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -27,18 +30,54 @@ const SAMPLE = [
   '@step("Melt @3 over each patty, then sandwich in @brioche-bun")',
 ].join('\n');
 
+// `chuck:ground` has an unknown prep state (`ground` isn't in the
+// curated catalogue) and the brioche-bun line refers to a slug that
+// the resolver would auto-propose. The fixtures below mirror that.
+const ERROR_ISSUES: CompileEditorIssue[] = [
+  {
+    severity: 'error',
+    code: 'UnresolvedPrepStateSlug',
+    message: 'Unknown prep state "ground"',
+    // `ground` on line 3 spans cols 22..28 (endCol exclusive).
+    loc: { startLine: 3, startCol: 22, endLine: 3, endCol: 28 },
+    slug: 'ground',
+  },
+];
+
+const INFO_ISSUES: CompileEditorIssue[] = [
+  {
+    severity: 'info',
+    code: 'ProposedSlug',
+    message: 'Will create new ingredient: brioche-bun',
+    // `brioche-bun` on line 4 spans cols 16..27 (endCol exclusive).
+    loc: { startLine: 4, startCol: 16, endLine: 4, endCol: 27 },
+    slug: 'brioche-bun',
+  },
+  {
+    severity: 'info',
+    code: 'ProposedSlug',
+    message: 'Will create new ingredient: american-cheese',
+    // `american-cheese` on line 5 spans cols 16..31 (endCol exclusive).
+    loc: { startLine: 5, startCol: 16, endLine: 5, endCol: 31 },
+    slug: 'american-cheese',
+  },
+];
+
 function StoryHost({
   initialValue,
   readOnly,
+  issues,
 }: {
   initialValue: string;
   readOnly?: boolean;
+  issues?: readonly CompileEditorIssue[];
 }): JSX.Element {
   const [value, setValue] = useState(initialValue);
   return (
     <DslEditor
       initialValue={value}
       readOnly={readOnly}
+      issues={issues}
       onChange={(next) => {
         setValue(next);
       }}
@@ -68,10 +107,22 @@ export const SampleRecipe: Story = {
   args: { initialValue: SAMPLE },
 };
 
-export const ReadOnly: Story = {
-  args: { initialValue: SAMPLE, readOnly: true },
-};
-
 export const Empty: Story = {
   args: { initialValue: '' },
+};
+
+export const WithErrors: Story = {
+  args: { initialValue: SAMPLE, issues: ERROR_ISSUES },
+};
+
+export const WithProposedSlugs: Story = {
+  args: { initialValue: SAMPLE, issues: INFO_ISSUES },
+};
+
+export const Mixed: Story = {
+  args: { initialValue: SAMPLE, issues: [...ERROR_ISSUES, ...INFO_ISSUES] },
+};
+
+export const ReadOnly: Story = {
+  args: { initialValue: SAMPLE, readOnly: true, issues: ERROR_ISSUES },
 };
