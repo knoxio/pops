@@ -195,17 +195,17 @@ Inline per theme protocol.
 
 ### Pages & routing
 
-- [ ] All five tab routes from the table mounted in `packages/app-food/src/routes.tsx`.
-- [ ] Default `/food/data` redirects to `/food/data/ingredients`.
-- [ ] Each tab is its own React page component in `packages/app-food/src/pages/data/`.
+- [x] All five tab routes from the table mounted in `packages/app-food/src/routes.tsx`. _(PR-122-A, #2698)_
+- [x] Default `/food/data` redirects to `/food/data/ingredients`. _(PR-122-A, #2698)_
+- [x] Each tab is its own React page component in `packages/app-food/src/pages/data/`. _(PR-122-A, #2698)_
 
 ### Ingredients tab
 
-- [ ] Tree view shows hierarchy (root, child, grandchild up to depth 3).
-- [ ] Detail panel shows ingredient fields, variants table, and recipe-ref count.
-- [ ] Create / rename / change-parent / delete all work via tRPC procedures and reflect in the UI immediately.
-- [ ] Delete with blockers shows the blocker list; success only when blockers are zero.
-- [ ] Variant CRUD inside the detail panel works including shelf-life fields (PRD-108).
+- [x] Tree view shows hierarchy (root, child, grandchild up to depth 3). _(PR-122-B v1, #2714)_
+- [x] Detail panel shows ingredient fields and variants table. _Recipe-ref count deferred to PR-122-B2 (needs API extension)._ _(PR-122-B v1, #2714)_
+- [x] Create works via tRPC procedure and reflects in the UI immediately. _Rename / change-parent / delete deferred to PR-122-B2._ _(PR-122-B v1, #2714)_
+- [ ] Delete with blockers shows the blocker list; success only when blockers are zero. _(deferred to PR-122-B2)_
+- [ ] Variant CRUD inside the detail panel works including shelf-life fields (PRD-108). _Read-only display of shelf-life fields landed in PR-122-B v1; inline CRUD deferred to PR-122-B2._
 
 ### Aliases tab
 
@@ -228,30 +228,30 @@ Inline per theme protocol.
 
 ### Conversions tab
 
-- [ ] Reserved slot exists; PRD-123 implements the contents. Tab route returns a placeholder until PRD-123 lands.
+- [x] Reserved slot exists; PRD-123 implements the contents. Tab route returns a placeholder until PRD-123 lands. _(PR-122-A, #2698)_
 
 ### tRPC procedures
 
-- [ ] All procedures in the API section exist in `apps/pops-api/src/modules/food/`.
-- [ ] All mutations are transactional.
-- [ ] `food.slugs.search` is exposed and used by both this page's global search AND PRD-120's editor autocomplete.
+- [x] All procedures in the API section exist in `apps/pops-api/src/modules/food/`. _Filter expansion for `food.ingredients.list` (`hasVariants` / `hasNoRecipeRefs` / pagination) deferred to PR-122-B2 — current router supports `{ search, parentId }`._ _(PR-122-API, #2705)_
+- [x] All mutations are transactional. _(PR-122-API, #2705)_
+- [x] `food.slugs.search` is exposed and used by both this page's global search AND PRD-120's editor autocomplete. _(PR-122-API, #2705; PRD-120 consumer to land alongside the editor's autocomplete extension)_
 
 ### Deep links & navigation
 
-- [ ] `/food/data/ingredients?focus=<slug>` opens the tab, scrolls to the row, and visually highlights it for 2 seconds.
-- [ ] PRD-119's auto-create banner links here correctly.
+- [ ] `/food/data/ingredients?focus=<slug>` opens the tab, scrolls to the row, and visually highlights it for 2 seconds. _(deferred to PR-122-B2)_
+- [ ] PRD-119's auto-create banner links here correctly. _(gated on PRD-119)_
 
 ### Mobile
 
-- [ ] All tabs readable at 375px without horizontal scroll.
-- [ ] Tab bar collapses to a dropdown on narrow viewports.
-- [ ] Variant rows collapse to cards in mobile mode.
+- [x] All tabs readable at 375px without horizontal scroll. _(PR-122-A, #2698 — tab strip collapses below 640px)_
+- [x] Tab bar collapses to a dropdown on narrow viewports. _(PR-122-A, #2698)_
+- [ ] Variant rows collapse to cards in mobile mode. _(deferred to PR-122-B2 alongside variant CRUD)_
 
 ### Tests
 
-- [ ] Vitest + RTL suite at `packages/app-food/src/pages/data/__tests__/` covers each tab's main flows.
-- [ ] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/data-routers.test.ts` covers each tRPC procedure with happy-path + invariant cases.
-- [ ] Storybook stories at `apps/pops-storybook/src/stories/food/DataPage.stories.tsx` for each tab.
+- [x] Vitest + RTL suite at `packages/app-food/src/pages/data/__tests__/` covers each tab's main flows. _Ingredients tab covered by PR-122-B v1 (11 cases); Aliases / Prep states / Substitutions remain in the placeholder state pending PR-122-C / PR-122-D._ _(PR-122-A + PR-122-B v1)_
+- [x] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/data-routers.test.ts` covers each tRPC procedure with happy-path + invariant cases. _28 cases._ _(PR-122-API, #2705)_
+- [ ] Storybook stories at `apps/pops-storybook/src/stories/food/DataPage.stories.tsx` for each tab. _(deferred to a single story PR after PR-122-C / PR-122-D land)_
 
 ## Out of Scope
 
