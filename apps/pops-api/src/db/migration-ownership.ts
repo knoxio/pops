@@ -82,6 +82,8 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0059_useful_hiroim': 'food',
   // PRD-108 — food batches + recipe_runs + batch_consumptions + variant shelf-life columns.
   '0060_familiar_leo': 'food',
+  // PRD-109 — food substitutions.
+  '0061_shocking_skreet': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

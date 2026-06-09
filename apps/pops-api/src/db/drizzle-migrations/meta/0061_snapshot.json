@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "0e17c164-9040-48d6-8469-0cf6292ec22c",
+  "id": "3cd6ff27-c1d6-48b3-9399-7a44ae55d33a",
   "prevId": "bd2f18d4-c369-421f-b630-0ffc9fd1b4e6",
   "tables": {
     "ai_alert_rules": {
@@ -3737,6 +3737,10 @@
         "ck_subs_scope_recipe": {
           "name": "ck_subs_scope_recipe",
           "value": "(\"substitutions\".\"scope\" = 'recipe' AND \"substitutions\".\"recipe_id\" IS NOT NULL) OR (\"substitutions\".\"scope\" = 'global' AND \"substitutions\".\"recipe_id\" IS NULL)"
+        },
+        "ck_subs_scope": {
+          "name": "ck_subs_scope",
+          "value": "\"substitutions\".\"scope\" IN ('global','recipe')"
         },
         "ck_subs_ratio_positive": {
           "name": "ck_subs_ratio_positive",

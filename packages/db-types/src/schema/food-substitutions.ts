@@ -50,6 +50,9 @@ export const substitutions = sqliteTable(
       'ck_subs_scope_recipe',
       sql`(${t.scope} = 'recipe' AND ${t.recipeId} IS NOT NULL) OR (${t.scope} = 'global' AND ${t.recipeId} IS NULL)`
     ),
+    // scope must be one of the allowed values — mirrors the enum CHECK in the
+    // migration so that a schema-derived rebuild can't accidentally drop it.
+    check('ck_subs_scope', sql`${t.scope} IN ('global','recipe')`),
     // Ratio must be strictly positive.
     check('ck_subs_ratio_positive', sql`${t.ratio} > 0`),
     index('idx_subs_from_ing').on(t.fromIngredientId),

@@ -83,10 +83,16 @@ A recursive resolution: for each candidate recipe, check each recipe line. A lin
 ## Business Rules
 
 - Substitutions are directed. Bidirectional subs = two rows; nothing in the schema groups them.
-- Same (from, to, scope, recipe_id) tuple cannot be inserted twice; enforced by a partial UNIQUE index in addition to the row-level CHECKs:
+- Same (from, to, scope, recipe_id) tuple cannot be inserted twice. SQLite treats NULL as distinct inside compound UNIQUE constraints, and the XOR CHECKs guarantee exactly one of `from_ingredient_id` / `from_variant_id` (and same on the `to` side) is NULL on every row — so the naive four-column tuple lets duplicates slip in. The migration splits the constraint into **eight partial UNIQUE indexes**, one per `{from, to} × {ingredient, variant}` combination × `{global, recipe}` scope, e.g.:
   ```sql
-  CREATE UNIQUE INDEX uq_subs_global_pair ON substitutions(from_ingredient_id, from_variant_id, to_ingredient_id, to_variant_id) WHERE scope = 'global';
-  CREATE UNIQUE INDEX uq_subs_recipe_pair ON substitutions(from_ingredient_id, from_variant_id, to_ingredient_id, to_variant_id, recipe_id) WHERE scope = 'recipe';
+  -- global scope — four indexes, one per from/to ingredient-vs-variant combo
+  CREATE UNIQUE INDEX uq_subs_global_ing_ing ON substitutions(from_ingredient_id, to_ingredient_id)
+    WHERE scope = 'global' AND from_variant_id IS NULL AND to_variant_id IS NULL;
+  CREATE UNIQUE INDEX uq_subs_global_ing_var ON substitutions(from_ingredient_id, to_variant_id)
+    WHERE scope = 'global' AND from_variant_id IS NULL AND to_ingredient_id IS NULL;
+  -- ... uq_subs_global_var_ing, uq_subs_global_var_var
+  -- recipe scope — same four shapes, plus recipe_id in the index, gated by scope = 'recipe'
+  -- ... uq_subs_recipe_ing_ing through uq_subs_recipe_var_var
   ```
 - Ratio is always positive. Zero or negative throws CHECK violation.
 - Context tags are stored as a JSON array of strings. Service writes via `JSON.stringify`; reads use `json_each` or app-side parse.
@@ -114,7 +120,7 @@ Inline per theme protocol.
 
 ### Schema
 
-- [x] Migration adds `substitutions` per the SQL above, plus the two partial UNIQUE indexes.
+- [x] Migration adds `substitutions` per the SQL above, plus the eight partial UNIQUE indexes that defeat SQLite's NULL-as-distinct UNIQUE rule (four per scope, one per from/to ingredient-vs-variant combination).
 - [x] All CHECKs and FKs verified via PRAGMA.
 - [x] `packages/db-types` regenerated.
 
