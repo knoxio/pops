@@ -297,6 +297,31 @@ describe('food.inbox router — PRD-136', () => {
       expect(result).toEqual({ ok: false, reason: 'NoteTooLong' });
     });
 
+    it('returns AlreadyReviewed without throwing when a sibling rejection already exists (race-safe)', async () => {
+      // Regression — PRD-136 Copilot R1 caught a TOCTOU between the
+      // pre-INSERT SELECT and the INSERT itself. The fix uses
+      // `onConflictDoNothing()` so the INSERT is the source of truth; a
+      // second reject lands on the conflict and gets `AlreadyReviewed`
+      // instead of letting SQLite throw on the PK.
+      const seed = seedRecipeWithIngestDraft('reject-race');
+      const first = await caller.food.inbox.reject({
+        versionId: seed.draftVersionId,
+        reason: 'duplicate',
+      });
+      expect(first).toEqual({ ok: true });
+      // Manually flip the archived version back to draft so the second
+      // reject's preflight passes — the race we care about is the
+      // pre-INSERT check against the rejection row, not the status guard.
+      getDrizzle().run(
+        sql`UPDATE recipe_versions SET status='draft' WHERE id = ${seed.draftVersionId}`
+      );
+      const second = await caller.food.inbox.reject({
+        versionId: seed.draftVersionId,
+        reason: 'not-a-recipe',
+      });
+      expect(second).toEqual({ ok: false, reason: 'AlreadyReviewed' });
+    });
+
     it('rejects manually-authored drafts with NotIngestOriginated', async () => {
       const db = getDrizzle();
       const recipe = recipesService.createRecipe(db, {

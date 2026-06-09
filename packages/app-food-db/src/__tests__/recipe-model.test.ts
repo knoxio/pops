@@ -250,6 +250,48 @@ describe('PRD-107 — recipe + version invariants', () => {
         expect(result.row.status).toBe('current');
       }
     });
+
+    it('rolls the archive step back when the update-to-current trips a constraint', () => {
+      // Regression — `promoteVersion` archives the previously-current row
+      // BEFORE flipping the new one to current. The fix (PRD-136 Copilot
+      // R1) wraps the writes in a drizzle transaction whose failure path
+      // is throw-based, so a constraint failure on the second update
+      // rolls the archive back too. Without it, returning `{ ok: false }`
+      // from inside the tx callback would commit the archive and leave
+      // the recipe with no current at all.
+      //
+      // Trigger the conflict deterministically with a `RAISE(ABORT)`
+      // trigger on `UPDATE OF status` for the target row — same
+      // post-condition the partial-UNIQUE would enforce against a racing
+      // concurrent promote. The error code is `SQLITE_CONSTRAINT_TRIGGER`
+      // (not `SQLITE_CONSTRAINT_UNIQUE`), so `isUniqueConstraintError`
+      // re-throws and the test asserts on the post-condition instead of
+      // the return shape: v1 must remain `current` (archive rolled back).
+      const { recipeId, versionId: v1 } = makeCompiledRecipe(db, 'pad-thai');
+      promoteVersion(db, v1);
+      const v2 = createNewVersion(db, {
+        recipeId,
+        title: 'v2',
+        bodyDsl: '@recipe(pad-thai)',
+      });
+      db.update(recipeVersions)
+        .set({ compileStatus: 'compiled' })
+        .where(eq(recipeVersions.id, v2.id))
+        .run();
+      raw.exec(`CREATE TRIGGER block_v2_promote
+                BEFORE UPDATE OF status ON recipe_versions
+                FOR EACH ROW
+                WHEN NEW.id = ${v2.id} AND NEW.status = 'current'
+                BEGIN SELECT RAISE(ABORT, 'simulated concurrent promotion'); END;`);
+      expect(() => promoteVersion(db, v2.id)).toThrow();
+      raw.exec(`DROP TRIGGER block_v2_promote;`);
+      const v1Row = db
+        .select({ status: recipeVersions.status })
+        .from(recipeVersions)
+        .where(eq(recipeVersions.id, v1))
+        .all()[0];
+      expect(v1Row?.status).toBe('current');
+    });
   });
 
   describe('updateDraftVersion', () => {

@@ -134,61 +134,90 @@ export function archiveVersion(db: FoodDb, versionId: number): RecipeVersionRow 
  * try/catch around the outer tx. PRD-119's tRPC wrapper consumes the same
  * shape directly.
  */
+/**
+ * Internal sentinel: thrown inside the tx callback when the partial-UNIQUE
+ * fires, caught at the public-API boundary, mapped to the structured
+ * `{ ok: false, reason: 'ConcurrentPromotion' }` shape. Throwing (instead of
+ * returning the failure from the callback) is critical — drizzle's tx
+ * implementation commits on normal return, so a `return { ok: false }`
+ * after the archive step would permanently archive the previous current
+ * version and leave the recipe with no current at all. Throw → tx rolls
+ * back to the pre-archive state.
+ */
+class ConcurrentPromotionInternal extends Error {
+  readonly recipeId: number;
+  constructor(recipeId: number) {
+    super(`Concurrent promotion on recipe #${recipeId}`);
+    this.name = 'ConcurrentPromotionInternal';
+    this.recipeId = recipeId;
+  }
+}
+
 export function promoteVersion(db: FoodDb, versionId: number): PromoteVersionResult {
-  return db.transaction((tx) => {
-    const existing = tx
-      .select({
-        id: recipeVersions.id,
-        recipeId: recipeVersions.recipeId,
-        status: recipeVersions.status,
-        compileStatus: recipeVersions.compileStatus,
-      })
-      .from(recipeVersions)
-      .where(eq(recipeVersions.id, versionId))
-      .all();
-    const target = existing[0];
-    if (target === undefined) {
-      throw new Error(`recipe_version #${versionId} not found`);
+  try {
+    const row = db.transaction((tx) => promoteVersionTx(tx, versionId));
+    return { ok: true, row };
+  } catch (err) {
+    if (err instanceof ConcurrentPromotionInternal) {
+      return { ok: false, reason: 'ConcurrentPromotion', recipeId: err.recipeId };
     }
-    if (target.compileStatus !== 'compiled') {
-      throw new CannotPromoteUncompiledVersion(
-        versionId,
-        target.compileStatus as 'uncompiled' | 'failed'
-      );
-    }
-    if (target.status === 'current') {
-      // Idempotent re-promotion — return the already-current row.
-      const row = tx.select().from(recipeVersions).where(eq(recipeVersions.id, versionId)).all();
-      return { ok: true, row: expectRow(row, `promoteVersion(${versionId}) idempotent`) };
-    }
-    // Archive any other version currently set to 'current' for this recipe.
+    throw err;
+  }
+}
+
+function promoteVersionTx(tx: FoodDb, versionId: number): RecipeVersionRow {
+  const existing = tx
+    .select({
+      id: recipeVersions.id,
+      recipeId: recipeVersions.recipeId,
+      status: recipeVersions.status,
+      compileStatus: recipeVersions.compileStatus,
+    })
+    .from(recipeVersions)
+    .where(eq(recipeVersions.id, versionId))
+    .all();
+  const target = existing[0];
+  if (target === undefined) {
+    throw new Error(`recipe_version #${versionId} not found`);
+  }
+  if (target.compileStatus !== 'compiled') {
+    throw new CannotPromoteUncompiledVersion(
+      versionId,
+      target.compileStatus as 'uncompiled' | 'failed'
+    );
+  }
+  if (target.status === 'current') {
+    // Idempotent re-promotion — return the already-current row.
+    const row = tx.select().from(recipeVersions).where(eq(recipeVersions.id, versionId)).all();
+    return expectRow(row, `promoteVersion(${versionId}) idempotent`);
+  }
+  // Archive any other version currently set to 'current' for this recipe.
+  tx.update(recipeVersions)
+    .set({ status: 'archived' })
+    .where(and(eq(recipeVersions.recipeId, target.recipeId), eq(recipeVersions.status, 'current')))
+    .run();
+  try {
     tx.update(recipeVersions)
-      .set({ status: 'archived' })
-      .where(
-        and(eq(recipeVersions.recipeId, target.recipeId), eq(recipeVersions.status, 'current'))
-      )
+      .set({ status: 'current' })
+      .where(eq(recipeVersions.id, versionId))
       .run();
-    try {
-      tx.update(recipeVersions)
-        .set({ status: 'current' })
-        .where(eq(recipeVersions.id, versionId))
-        .run();
-    } catch (err) {
-      // Partial UNIQUE on (recipe_id) WHERE status='current' fires here when
-      // another tx beat us. Surface as a structured failure so composing
-      // callers can roll the outer tx back without try/catch.
-      if (isUniqueConstraintError(err)) {
-        return { ok: false, reason: 'ConcurrentPromotion', recipeId: target.recipeId };
-      }
-      throw err;
+  } catch (err) {
+    // Partial UNIQUE on (recipe_id) WHERE status='current' fires here when
+    // another tx beat us. Throw the internal sentinel so drizzle rolls
+    // the whole tx back (including the archive step above) — otherwise the
+    // recipe would be left with no current version. Caught in
+    // `promoteVersion`'s outer try/catch and surfaced as a structured result.
+    if (isUniqueConstraintError(err)) {
+      throw new ConcurrentPromotionInternal(target.recipeId);
     }
-    tx.update(recipes)
-      .set({ currentVersionId: versionId })
-      .where(eq(recipes.id, target.recipeId))
-      .run();
-    const final = tx.select().from(recipeVersions).where(eq(recipeVersions.id, versionId)).all();
-    return { ok: true, row: expectRow(final, `promoteVersion(${versionId})`) };
-  });
+    throw err;
+  }
+  tx.update(recipes)
+    .set({ currentVersionId: versionId })
+    .where(eq(recipes.id, target.recipeId))
+    .run();
+  const final = tx.select().from(recipeVersions).where(eq(recipeVersions.id, versionId)).all();
+  return expectRow(final, `promoteVersion(${versionId})`);
 }
 
 function isUniqueConstraintError(err: unknown): boolean {

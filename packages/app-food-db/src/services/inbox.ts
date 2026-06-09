@@ -136,20 +136,23 @@ export function rejectDraft(db: FoodDb, input: RejectInput): RejectResult {
     if (row.sourceId === null) return fail('NotIngestOriginated');
     if (row.recipeArchivedAt !== null) return fail('RecipeArchived');
     if (row.status !== 'draft') return fail('NotADraft');
-    const existing = tx
-      .select({ versionId: recipeVersionRejections.versionId })
-      .from(recipeVersionRejections)
-      .where(eq(recipeVersionRejections.versionId, input.versionId))
-      .all();
-    if (existing[0] !== undefined) return fail('AlreadyReviewed');
+    // Race-safe check-and-insert: `onConflictDoNothing` makes the INSERT
+    // itself the source of truth instead of a separate SELECT, so two
+    // concurrent rejects can't both pass and one throw on the PK. The
+    // returning clause tells us whether we wrote anything; zero rows means
+    // a sibling rejection already exists.
     const trimmedNote = (input.note ?? '').trim();
-    tx.insert(recipeVersionRejections)
+    const inserted = tx
+      .insert(recipeVersionRejections)
       .values({
         versionId: input.versionId,
         reason: input.reason,
         note: trimmedNote.length === 0 ? null : trimmedNote,
       })
-      .run();
+      .onConflictDoNothing()
+      .returning()
+      .all();
+    if (inserted[0] === undefined) return fail('AlreadyReviewed');
     archiveVersion(tx, input.versionId);
     return { ok: true };
   });
