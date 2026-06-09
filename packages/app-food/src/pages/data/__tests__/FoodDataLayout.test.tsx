@@ -5,8 +5,14 @@
  * + `NavLink` + redirect machinery exercises the real React Router
  * resolution path. Each tab's body is asserted via the i18n title
  * (sourced from `apps/pops-shell/.../food.json`).
+ *
+ * The route tree imports tab modules via `React.lazy`, so the
+ * RouterProvider is wrapped in a Suspense boundary; without it,
+ * CI runs hit the lazy module's pending promise and `findByText`
+ * times out before resolution.
  */
 import { render, screen } from '@testing-library/react';
+import { Suspense } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
@@ -22,7 +28,11 @@ function renderAt(initialPath: string) {
     ],
     { initialEntries: [initialPath] }
   );
-  return render(<RouterProvider router={router} />);
+  return render(
+    <Suspense fallback={<div data-testid="lazy-fallback">loading</div>}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
 }
 
 describe('PRD-122 — /food/data shell', () => {
