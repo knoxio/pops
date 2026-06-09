@@ -23,6 +23,9 @@ const PrepStatesTab = lazy(() =>
 const SubstitutionsTab = lazy(() =>
   import('./pages/data/SubstitutionsTab').then((m) => ({ default: m.SubstitutionsTab }))
 );
+const SubGraphPage = lazy(() =>
+  import('./pages/data/substitutions-graph/SubGraphPage').then((m) => ({ default: m.SubGraphPage }))
+);
 const ConversionsTab = lazy(() =>
   import('./pages/data/ConversionsTab').then((m) => ({ default: m.ConversionsTab }))
 );
@@ -63,6 +66,11 @@ export const routes: RouteObject[] = [
       { path: 'aliases', element: <AliasesTab /> },
       { path: 'prep-states', element: <PrepStatesTab /> },
       { path: 'substitutions', element: <SubstitutionsTab /> },
+      // PRD-148: graph visualisation lives at /food/data/substitutions/graph.
+      // Declared as a sibling under `data` (not nested under `substitutions`)
+      // so the active-tab resolver in FoodDataLayout still highlights the
+      // Substitutions tab while the graph subroute is open.
+      { path: 'substitutions/graph', element: <SubGraphPage /> },
       { path: 'conversions', element: <ConversionsTab /> },
     ],
   },

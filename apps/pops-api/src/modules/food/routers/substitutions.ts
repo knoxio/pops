@@ -3,12 +3,76 @@ import { z } from 'zod';
 
 import {
   CannotSubstituteSelf,
+  substitutionsGraph,
   substitutionsQueries,
   substitutionsService,
+  type GraphViewEdgeRow,
+  type GraphViewSide,
 } from '@pops/app-food-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+
+/**
+ * PRD-148 graph-view composite id. Encodes the side as
+ * `ingredient:<id>` or `variant:<id>` so the client can dedupe nodes
+ * across edges without doing any schema reasoning.
+ */
+function sideToNodeId(side: GraphViewSide): string {
+  return side.kind === 'variant'
+    ? `variant:${side.variantId ?? 0}`
+    : `ingredient:${side.ingredientId}`;
+}
+
+/** Compose the minimum spanning subgraph of nodes that any edge touches. */
+function deriveNodes(edges: GraphViewEdgeRow[]): GraphViewNode[] {
+  const byId = new Map<string, GraphViewNode>();
+  for (const edge of edges) {
+    for (const side of [edge.fromSide, edge.toSide]) {
+      const id = sideToNodeId(side);
+      if (byId.has(id)) continue;
+      byId.set(id, {
+        id,
+        kind: side.kind,
+        ingredientId: side.ingredientId,
+        variantId: side.variantId,
+        ingredientSlug: side.ingredientSlug,
+        ingredientName: side.ingredientName,
+        variantSlug: side.variantSlug,
+        variantName: side.variantName,
+      });
+    }
+  }
+  return [...byId.values()];
+}
+
+export interface GraphViewNode {
+  id: string;
+  kind: 'ingredient' | 'variant';
+  ingredientId: number;
+  variantId: number | null;
+  ingredientSlug: string;
+  ingredientName: string;
+  variantSlug: string | null;
+  variantName: string | null;
+}
+
+export interface GraphViewEdge {
+  id: number;
+  fromNodeId: string;
+  toNodeId: string;
+  ratio: number;
+  contextTags: readonly string[];
+  scope: 'global' | 'recipe';
+  recipeId: number | null;
+  recipeSlug: string | null;
+  notes: string | null;
+}
+
+export interface GraphView {
+  nodes: GraphViewNode[];
+  edges: GraphViewEdge[];
+}
 
 /**
  * Food → substitutions tRPC procedures (PRD-122 + PRD-109).
@@ -64,7 +128,36 @@ const UPDATE_INPUT = z
     message: 'patch must include at least one field besides id',
   });
 
+const GRAPH_VIEW_INPUT = z
+  .object({
+    scope: SCOPE_ENUM.optional(),
+    recipeId: z.number().optional(),
+    contextTag: z.string().optional(),
+    search: z.string().optional(),
+  })
+  .refine((v) => (v.scope === 'recipe' ? v.recipeId !== undefined : true), {
+    message: 'scope="recipe" requires recipeId',
+  });
+
 export const substitutionsRouter = router({
+  graphView: protectedProcedure.input(GRAPH_VIEW_INPUT.optional()).query(({ input }): GraphView => {
+    const filter = input ?? {};
+    const { edges: hydrated } = substitutionsGraph.loadGraphView(getDrizzle(), filter);
+    const edges: GraphViewEdge[] = hydrated.map((edge) => ({
+      id: edge.id,
+      fromNodeId: sideToNodeId(edge.fromSide),
+      toNodeId: sideToNodeId(edge.toSide),
+      ratio: edge.ratio,
+      contextTags: edge.contextTags,
+      scope: edge.scope,
+      recipeId: edge.recipeId,
+      recipeSlug: edge.recipeSlug,
+      notes: edge.notes,
+    }));
+    const nodes = deriveNodes(hydrated);
+    return { nodes, edges };
+  }),
+
   list: protectedProcedure
     .input(
       z
