@@ -17,10 +17,12 @@
  * `draftRecipeId` FK is filled by a second pass (`linkIngestSourcesToDrafts`)
  * after `step-recipes` runs — at insert time the recipe rows don't exist yet.
  *
- * Path columns store values relative to `FOOD_INGEST_DIR` (PRD-110); the
- * absolute path is computed by `ingestDirFor(sourceId)` at read time. The
- * seed does NOT create the files on disk — fixtures cover row shape only;
- * the worker (PRD-126) owns file lifecycle.
+ * Path columns store the bare filename in the fixture; `step-ingest-sources`
+ * patches them post-insert into PRD-110's `<source_id>/<filename>` layout
+ * (e.g. `42/video.mp4`) using the auto-increment id. The absolute path is
+ * computed by `ingestDirFor(sourceId)` at read time. The seed does NOT
+ * create the files on disk — fixtures cover row shape only; the worker
+ * (PRD-126) owns file lifecycle.
  */
 
 import type { IngestSourceKind } from '../schema.js';

@@ -47,6 +47,8 @@ const MIGRATIONS = [
   '0062_chemical_donald_blake.sql', // PRD-112 lists + list_items
   '0063_bumpy_wolverine.sql', // PRD-111 plan_slots + plan_entries
   '0064_peaceful_magma.sql', // PRD-110 ingest_sources
+  '0065_prd_116_recipe_compile.sql', // PRD-116 recipe_lines + recipe_steps + proposed_slugs
+  '0066_prd_123_conversions.sql', // PRD-123 unit_conversions + ingredient_weights
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );
@@ -178,6 +180,36 @@ describe('PRD-113 phase-1 seed', () => {
           matches.length,
           `ingest_sources(${source.id}) has no matching recipe_versions.source_id for recipe ${source.draft_recipe_id}`
         ).toBe(1);
+      }
+    });
+
+    it("stores media paths in PRD-110's `<source_id>/<filename>` layout", () => {
+      // PRD-110 § Filesystem Layout — relative paths are prefixed with the
+      // per-source subdir (e.g. `42/video.mp4`). Catches a regression where
+      // a future change writes bare filenames.
+      const rows = raw
+        .prepare(`SELECT id, transcript_path, keyframes_dir, video_path FROM ingest_sources`)
+        .all() as {
+        id: number;
+        transcript_path: string | null;
+        keyframes_dir: string | null;
+        video_path: string | null;
+      }[];
+      expect(rows.length).toBe(2);
+      const assertPrefix = (column: string, id: number, value: string | null): void => {
+        if (value === null) return; // url-web rows leave transcript/video null
+        const expectedPrefix = `${id}/`;
+        expect(
+          value.startsWith(expectedPrefix),
+          `ingest_sources(${id}).${column} = "${value}" does not start with "${expectedPrefix}"`
+        ).toBe(true);
+        // Defensive: the path beyond the prefix must be non-empty.
+        expect(value.slice(expectedPrefix.length).length).toBeGreaterThan(0);
+      };
+      for (const row of rows) {
+        assertPrefix('transcript_path', row.id, row.transcript_path);
+        assertPrefix('keyframes_dir', row.id, row.keyframes_dir);
+        assertPrefix('video_path', row.id, row.video_path);
       }
     });
 
