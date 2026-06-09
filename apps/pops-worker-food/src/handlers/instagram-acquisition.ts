@@ -93,7 +93,13 @@ export interface RunInstagramAcquisitionOptions {
   rmFn?: (path: string) => Promise<void>;
   /** yt-dlp timeout override (ms). */
   timeoutMs?: number;
+  /** How often the orchestrator polls `ctx.isCancelled()` while yt-dlp
+   *  is running so an in-flight cancel can SIGTERM the child. */
+  cancellationPollIntervalMs?: number;
 }
+
+const DEFAULT_CANCELLATION_POLL_MS = 1_000;
+const NEVER_CANCELLED: HandlerContext = { isCancelled: () => false };
 
 function resolveWorkDir(sourceId: number, opts: RunInstagramAcquisitionOptions): string {
   const root = opts.ingestDir ?? process.env['FOOD_INGEST_DIR'] ?? '/data/food/ingest';
@@ -143,16 +149,46 @@ async function collectArtefacts(
   return { ok: true, workDir, videoPath, infoJsonPath, thumbnailPath, caption };
 }
 
+function startCancellationPoll(
+  ctx: HandlerContext,
+  controller: AbortController,
+  intervalMs: number
+): { stop: () => void; isAborted: () => boolean } {
+  let aborted = false;
+  const handle = setInterval(() => {
+    if (controller.signal.aborted) return;
+    void Promise.resolve(ctx.isCancelled())
+      .then((cancelled) => {
+        if (cancelled && !controller.signal.aborted) {
+          aborted = true;
+          controller.abort();
+        }
+      })
+      .catch(() => undefined);
+  }, intervalMs);
+  handle.unref?.();
+  return {
+    stop: () => clearInterval(handle),
+    isAborted: () => aborted,
+  };
+}
+
 /**
  * PRD-129 entry point. Spawns yt-dlp, classifies the outcome, and
  * returns a typed `AcquisitionResult`. The PRD-130 STT + vision
  * pipeline consumes this directly; the v1 worker handler wraps the
  * failure variants into `IngestJobResult` so the dispatch round-trip
  * stays green until 130 lands.
+ *
+ * Cancellation: `ctx.isCancelled()` is checked before spawn, polled
+ * while yt-dlp is running (and forwards to a SIGTERM/SIGKILL via the
+ * AbortSignal), and checked once more after the child exits. A
+ * cancellation at any point returns `{ kind: 'cancelled' }` with a
+ * `rm -rf` of the workdir.
  */
 export async function runInstagramAcquisition(
   data: Extract<IngestJobData, { kind: 'url-instagram' }>,
-  ctx: HandlerContext,
+  ctx: HandlerContext = NEVER_CANCELLED,
   opts: RunInstagramAcquisitionOptions = {}
 ): Promise<AcquisitionResult> {
   if (await ctx.isCancelled()) return { ok: false, kind: 'cancelled' };
@@ -166,14 +202,27 @@ export async function runInstagramAcquisition(
   await mkdirImpl(workDir);
 
   const ytDlp = opts.runYtDlpFn ?? runYtDlp;
-  const ytDlpResult = await ytDlp({
-    url: data.url,
-    cookiesPath,
-    output: workDir,
-    timeoutMs: opts.timeoutMs,
-  });
+  const controller = new AbortController();
+  const poll = startCancellationPoll(
+    ctx,
+    controller,
+    opts.cancellationPollIntervalMs ?? DEFAULT_CANCELLATION_POLL_MS
+  );
 
-  if (await ctx.isCancelled()) {
+  let ytDlpResult;
+  try {
+    ytDlpResult = await ytDlp({
+      url: data.url,
+      cookiesPath,
+      output: workDir,
+      timeoutMs: opts.timeoutMs,
+      signal: controller.signal,
+    });
+  } finally {
+    poll.stop();
+  }
+
+  if (poll.isAborted() || (await ctx.isCancelled())) {
     await rmImpl(workDir).catch(() => undefined);
     return { ok: false, kind: 'cancelled' };
   }

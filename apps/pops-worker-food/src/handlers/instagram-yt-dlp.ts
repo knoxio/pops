@@ -11,6 +11,9 @@ import { join } from 'node:path';
 
 export const DEFAULT_YT_DLP_TIMEOUT_MS = 60_000;
 export const DEFAULT_RATE_LIMIT_FALLBACK_SEC = 300;
+/** Grace period between SIGTERM and SIGKILL. Bounded so a misbehaving
+ *  yt-dlp can't stall a BullMQ worker slot. */
+export const DEFAULT_SIGKILL_GRACE_MS = 5_000;
 const DEFAULT_MAX_FILESIZE = '100M';
 const DEFAULT_SOCKET_TIMEOUT = '30';
 const DEFAULT_YT_DLP_RETRIES = '2';
@@ -20,9 +23,13 @@ export interface RunYtDlpOptions {
   cookiesPath: string;
   output: string;
   timeoutMs?: number;
+  /** Grace period between SIGTERM and SIGKILL when a kill is forced
+   *  (timeout or signal abort). Defaults to `DEFAULT_SIGKILL_GRACE_MS`. */
+  sigkillGraceMs?: number;
   /** Test seam — defaults to `spawn` from `node:child_process`. */
   spawnFn?: typeof spawn;
-  /** Aborts the child process when fired (test seam for cancellation). */
+  /** Aborts the child process when fired. The handler uses this to wire
+   *  cooperative cancellation through to a running yt-dlp child. */
   signal?: AbortSignal;
 }
 
@@ -33,16 +40,8 @@ export interface YtDlpResult {
   timedOut: boolean;
 }
 
-/**
- * Spawns yt-dlp with PRD-129's pinned flags and captures stdout/stderr.
- * Returns `exitCode=-1` when the process is killed by an abort signal
- * so callers can distinguish that from a normal failure.
- */
-export async function runYtDlp(opts: RunYtDlpOptions): Promise<YtDlpResult> {
-  const spawnImpl = opts.spawnFn ?? spawn;
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_YT_DLP_TIMEOUT_MS;
-
-  const args = [
+function buildYtDlpArgs(opts: RunYtDlpOptions): string[] {
+  return [
     '--cookies',
     opts.cookiesPath,
     '--write-info-json',
@@ -60,13 +59,65 @@ export async function runYtDlp(opts: RunYtDlpOptions): Promise<YtDlpResult> {
     DEFAULT_YT_DLP_RETRIES,
     opts.url,
   ];
+}
+
+interface KillSwitch {
+  forceKill: () => void;
+  clear: () => void;
+}
+
+/**
+ * Returns a forceful-termination helper that escalates SIGTERM →
+ * SIGKILL after `graceMs`. Idempotent: the second `forceKill()` call
+ * is a no-op while the SIGKILL timer is still armed. `clear()` cancels
+ * a pending SIGKILL when the child exits cleanly first.
+ */
+function makeKillSwitch(
+  child: import('node:child_process').ChildProcess,
+  graceMs: number
+): KillSwitch {
+  let sigkillTimer: NodeJS.Timeout | null = null;
+  return {
+    forceKill: () => {
+      if (sigkillTimer != null) return;
+      child.kill('SIGTERM');
+      sigkillTimer = setTimeout(() => {
+        child.kill('SIGKILL');
+      }, graceMs);
+    },
+    clear: () => {
+      if (sigkillTimer != null) {
+        clearTimeout(sigkillTimer);
+        sigkillTimer = null;
+      }
+    },
+  };
+}
+
+/**
+ * Spawns yt-dlp with PRD-129's pinned flags and captures stdout/stderr.
+ * Returns `exitCode=-1` whenever the child is terminated by a signal
+ * (timeout SIGTERM/SIGKILL or abort-signal kill) — use `timedOut` to
+ * distinguish a timeout from an external abort. On a clean exit the
+ * real exit code is preserved verbatim.
+ *
+ * A SIGTERM is always followed by a SIGKILL after `sigkillGraceMs` so a
+ * misbehaving yt-dlp can never stall a BullMQ worker slot indefinitely.
+ */
+export async function runYtDlp(opts: RunYtDlpOptions): Promise<YtDlpResult> {
+  const spawnImpl = opts.spawnFn ?? spawn;
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_YT_DLP_TIMEOUT_MS;
+  const sigkillGraceMs = opts.sigkillGraceMs ?? DEFAULT_SIGKILL_GRACE_MS;
 
   return new Promise<YtDlpResult>((resolve, reject) => {
-    const child = spawnImpl('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawnImpl('yt-dlp', buildYtDlpArgs(opts), {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
     let stdout = '';
     let stderr = '';
     let timedOut = false;
+    const kill = makeKillSwitch(child, sigkillGraceMs);
 
     child.stdout?.on('data', (chunk: Buffer | string) => {
       stdout += String(chunk);
@@ -77,23 +128,23 @@ export async function runYtDlp(opts: RunYtDlpOptions): Promise<YtDlpResult> {
 
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill('SIGTERM');
+      kill.forceKill();
     }, timeoutMs);
-
-    const onAbort = (): void => {
-      child.kill('SIGTERM');
-    };
+    const onAbort = (): void => kill.forceKill();
     opts.signal?.addEventListener('abort', onAbort, { once: true });
 
-    child.on('error', (err) => {
+    const cleanup = (): void => {
       clearTimeout(timer);
+      kill.clear();
       opts.signal?.removeEventListener('abort', onAbort);
+    };
+
+    child.on('error', (err) => {
+      cleanup();
       reject(err instanceof Error ? err : new Error(String(err)));
     });
-
     child.on('close', (code, sig) => {
-      clearTimeout(timer);
-      opts.signal?.removeEventListener('abort', onAbort);
+      cleanup();
       const exitCode = code ?? (sig != null ? -1 : 0);
       resolve({ exitCode, stdout, stderr, timedOut });
     });

@@ -316,6 +316,55 @@ describe('runInstagramAcquisition', () => {
     expect(rmFn).toHaveBeenCalledWith(join(scratch, String(IG_JOB.sourceId)));
   });
 
+  it('mid-spawn cancellation aborts yt-dlp via the signal and cleans the workdir', async () => {
+    const rmFn = vi.fn(async () => undefined);
+    let ytDlpAborted = false;
+    let cancelled = false;
+    const ctx: HandlerContext = { isCancelled: () => cancelled };
+
+    const result = await runInstagramAcquisition(IG_JOB, ctx, {
+      ingestDir: scratch,
+      cookiesPath: '/tmp/cookies.txt',
+      mkdirFn: async () => undefined,
+      rmFn,
+      cancellationPollIntervalMs: 10,
+      runYtDlpFn: async (args) =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            cancelled = true;
+          }, 20);
+          args.signal?.addEventListener('abort', () => {
+            ytDlpAborted = true;
+            resolve({ exitCode: -1, stdout: '', stderr: '', timedOut: false });
+          });
+        }),
+    });
+
+    expect(ytDlpAborted).toBe(true);
+    expect(result).toEqual({ ok: false, kind: 'cancelled' });
+    expect(rmFn).toHaveBeenCalledWith(join(scratch, String(IG_JOB.sourceId)));
+  });
+
+  it('defaults ctx to a never-cancelled context so single-arg use matches the PRD doc', async () => {
+    const workDir = join(scratch, String(IG_JOB.sourceId));
+    const ranYtDlp = vi.fn(async () => VIDEO_RESULT);
+
+    // Single positional `data` argument — matches the PRD's
+    // `runInstagramAcquisition(data)` example. We pass opts to inject
+    // the test seams but deliberately omit `ctx`.
+    const result = await runInstagramAcquisition(IG_JOB, undefined, {
+      ingestDir: scratch,
+      cookiesPath: '/tmp/cookies.txt',
+      mkdirFn: async () => undefined,
+      runYtDlpFn: ranYtDlp,
+    });
+
+    expect(ranYtDlp).toHaveBeenCalledTimes(1);
+    // No artefacts written → missing-artifacts, not cancelled.
+    expect(result).toEqual({ ok: false, kind: 'missing-artifacts' });
+    expect(workDir.endsWith(String(IG_JOB.sourceId))).toBe(true);
+  });
+
   it('reads INSTAGRAM_COOKIES_PATH and FOOD_INGEST_DIR from env when not overridden', async () => {
     const captured: { url?: string; cookiesPath?: string; output?: string } = {};
     const prevDir = process.env['FOOD_INGEST_DIR'];
@@ -487,5 +536,42 @@ describe('runYtDlp', () => {
 
     expect(result.timedOut).toBe(true);
     expect(child.kill).toHaveBeenCalled();
+  });
+
+  it('escalates SIGTERM to SIGKILL after the grace period if the child does not exit', async () => {
+    vi.useFakeTimers();
+    const child = new EventEmitter() as ChildProcess;
+    Object.defineProperty(child, 'stdout', { value: new EventEmitter() });
+    Object.defineProperty(child, 'stderr', { value: new EventEmitter() });
+    // The fake child swallows SIGTERM (does NOT emit close) so we can
+    // observe the escalation. SIGKILL closes the process.
+    child.kill = vi.fn((sig?: NodeJS.Signals | number): boolean => {
+      if (sig === 'SIGKILL') {
+        setImmediate(() => child.emit('close', null, 'SIGKILL'));
+      }
+      return true;
+    });
+    const spawnFn = vi.fn(() => child);
+
+    const promise = runYtDlp({
+      url: 'https://instagram.com/reel/x/',
+      cookiesPath: '/tmp/cookies.txt',
+      output: '/tmp/wd',
+      spawnFn: spawnFn as never,
+      timeoutMs: 100,
+      sigkillGraceMs: 50,
+    });
+
+    await vi.advanceTimersByTimeAsync(120);
+    expect(child.kill).toHaveBeenCalledWith('SIGTERM');
+    expect(child.kill).not.toHaveBeenCalledWith('SIGKILL');
+
+    await vi.advanceTimersByTimeAsync(60);
+    expect(child.kill).toHaveBeenCalledWith('SIGKILL');
+
+    vi.useRealTimers();
+    const result = await promise;
+    expect(result.timedOut).toBe(true);
+    expect(result.exitCode).toBe(-1);
   });
 });
