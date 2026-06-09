@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { RecipeStepBody } from './RecipeStepBody';
 import { TempBadge } from './TempBadge';
 
+import type { ResolvedStepBody } from '@pops/app-food-db';
+import type { RecipeLineWithResolved } from '@pops/app-food-db';
 import type { RecipeStepRow } from '@pops/db-types';
-
-import type { ResolvedStepBody } from '../dsl/resolver-types';
-import type { RecipeLineWithResolved } from './RecipeRenderer.types';
 
 /**
  * Each step row's `body_resolved_json` is parsed into a `ResolvedStepBody`

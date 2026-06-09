@@ -41,14 +41,11 @@ import {
   variantsService,
   type FoodDb,
 } from '@pops/app-food-db';
+import { compileRecipeVersion } from '@pops/app-food-db';
 
-import { compileRecipeVersion } from '../../dsl/compile';
 import { RecipeRenderer } from '../RecipeRenderer';
 
-import type {
-  RecipeLineWithResolved,
-  RecipeVersionWithCompiledData,
-} from '../RecipeRenderer.types';
+import type { RecipeLineWithResolved, RecipeVersionWithCompiledData } from '@pops/app-food-db';
 
 const { createIngredient } = ingredientsService;
 const { createPrepState } = prepStatesService;

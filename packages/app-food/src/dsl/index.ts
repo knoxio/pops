@@ -1,3 +1,6 @@
+// Re-export shim — the DSL pipeline lives in `@pops/app-food-db` so the
+// backend can compile/parse without dragging React + CodeMirror in. The
+// Lezer grammar + CodeMirror language extension stay in this package.
 export type {
   AstBlock,
   Descriptor,
@@ -12,11 +15,11 @@ export type {
   StepBody,
   StepBodyPart,
   YieldDecl,
-} from './ast.js';
-export type { ParseError, ParseErrorCode } from './errors.js';
-export { parseRecipeDsl, type ParseResult } from './parser.js';
-export { printRecipeAst } from './printer.js';
-export { resolveRecipeAst } from './resolver.js';
+} from '@pops/app-food-db';
+export type { ParseError, ParseErrorCode } from '@pops/app-food-db';
+export { parseRecipeDsl, type ParseResult } from '@pops/app-food-db';
+export { printRecipeAst } from '@pops/app-food-db';
+export { resolveRecipeAst } from '@pops/app-food-db';
 export type {
   ProposedSlug,
   ResolveContext,
@@ -32,14 +35,14 @@ export type {
   ResolvedStepBodyPart,
   ResolvedYield,
   ResolverCreation,
-} from './resolver-types.js';
-export { detectRecipeCycle } from './cycle.js';
-export type { CycleContext, CycleDescription, CycleError, CycleResult } from './cycle-types.js';
-export { compileRecipeVersion } from './compile.js';
+} from '@pops/app-food-db';
+export { detectRecipeCycle } from '@pops/app-food-db';
+export type { CycleContext, CycleDescription, CycleError, CycleResult } from '@pops/app-food-db';
+export { compileRecipeVersion } from '@pops/app-food-db';
 export type {
   CompileError,
   CompileErrorJson,
   CompilePhase,
   CompileResult,
   MaterialiseError,
-} from './compile-types.js';
+} from '@pops/app-food-db';

@@ -15,19 +15,18 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  conversionsService,
-  ingredientsService,
-  prepStatesService,
   recipeLines,
   recipeSteps,
   recipeVersionProposedSlugs,
   recipeVersions,
-  recipesService,
-  variantsService,
-  type FoodDb,
-} from '@pops/app-food-db';
-
-import { compileRecipeVersion } from '../compile';
+} from '../../schema.js';
+import * as conversionsService from '../../services/conversions.js';
+import * as ingredientsService from '../../services/ingredients.js';
+import { type FoodDb } from '../../services/internal.js';
+import * as prepStatesService from '../../services/prep-states.js';
+import * as recipesService from '../../services/recipes.js';
+import * as variantsService from '../../services/variants.js';
+import { compileRecipeVersion } from '../compile.js';
 
 const { createIngredientWeight, createUnitConversion } = conversionsService;
 const { createIngredient } = ingredientsService;

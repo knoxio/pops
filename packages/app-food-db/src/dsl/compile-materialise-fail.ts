@@ -9,11 +9,10 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { recipeLines, recipeSteps, recipeVersions } from '@pops/app-food-db';
+import { recipeLines, recipeSteps, recipeVersions } from '../schema.js';
 
-import type { FoodDb } from '@pops/app-food-db';
-
-import type { CompileError, CompileResult } from './compile-types';
+import type { FoodDb } from '../services/internal.js';
+import type { CompileError, CompileResult } from './compile-types.js';
 
 export function failMaterialise(db: FoodDb, versionId: number, caught: unknown): CompileResult {
   const message = caught instanceof Error ? caught.message : String(caught);

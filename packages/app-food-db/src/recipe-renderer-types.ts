@@ -1,9 +1,10 @@
 /**
- * Joined display types consumed by `RecipeRenderer`. The server procedure
- * assembling the payload imports from here too, so the page, server, and
- * Storybook all share the same shape.
+ * Joined display types consumed by `RecipeRenderer` (PRD-121) AND assembled
+ * by `food.recipes.getForRendering` (PRD-119).
  *
- * Pure types — safe to import server-side without pulling React in.
+ * Lived next to `RecipeRenderer.tsx` in `@pops/app-food` until PRD-119
+ * moved them here so the server procedure can build the payload without
+ * `pops-api` pulling React in. Pure types — no runtime code.
  */
 import type {
   IngredientRow,
@@ -15,12 +16,13 @@ import type {
 } from '@pops/db-types';
 
 /**
- * Joined display row for `recipe_lines` — raw columns plus the ingredient /
- * variant / prep_state / recipe-ref names needed to render without further
- * round-trips. Built server-side; the renderer is pure presentation.
+ * Joined display row for `recipe_lines` (PRD-116) — the raw column set plus
+ * the ingredient / variant / prep_state / recipe-ref names needed to render
+ * a row without further round-trips. PRD-119 builds this server-side; the
+ * renderer is pure presentation.
  */
 export interface RecipeLineWithResolved {
-  // recipe_lines columns:
+  // recipe_lines columns (PRD-116):
   id: number;
   position: number;
   ingredientId: number;
@@ -51,15 +53,18 @@ export interface RecipeLineWithResolved {
 }
 
 /**
- * Everything `RecipeRenderer` needs. Yields join out to the relevant
- * ingredient / variant / prep_state rows for the human label.
+ * Everything `RecipeRenderer` needs to render a compiled recipe. The recipe
+ * header lives on `recipes` (PRD-107) and the content on `recipe_versions`
+ * (PRD-107); the compiled lines and steps live on `recipe_lines` /
+ * `recipe_steps` (PRD-116). Yields join out to the relevant ingredient /
+ * variant / prep_state rows for the human label.
  */
 export interface RecipeVersionWithCompiledData {
   version: RecipeVersionRow;
   recipe: RecipeRow;
   lines: RecipeLineWithResolved[];
   steps: RecipeStepRow[];
-  /** Yield FKs are nullable while the slug is auto-created. */
+  /** PRD-107 — yield foreign keys are nullable while the slug is auto-created. */
   yieldIngredient: IngredientRow | null;
   yieldVariant: IngredientVariantRow | null;
   yieldPrepState: PrepStateRow | null;
@@ -74,8 +79,11 @@ export interface RecipeRendererProps {
   /** Display-only multiplier on quantities. Defaults to 1.0. */
   scaleFactor?: number;
   /**
-   * Fire-and-forget — the renderer does not track running timers, so the
-   * parent owns timer state. There is no Stop interaction here.
+   * Fire-and-forget — `RecipeRenderer` does not track running timers, so
+   * the parent owns timer state. The cooking-mode surface (deferred per
+   * PRD-121 Out of Scope) will wire the stop side; the renderer doesn't
+   * surface a Stop interaction itself, so `onTimerStop` is intentionally
+   * not part of the v1 API.
    */
   onTimerStart?: (durationMinutes: number, stepPosition: number) => void;
   /** `'detail'` is the full page; `'compact'` is the list-card preview. */

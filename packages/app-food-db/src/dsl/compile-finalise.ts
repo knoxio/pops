@@ -6,18 +6,17 @@
  */
 import { eq } from 'drizzle-orm';
 
-import {
-  recipeLines,
-  recipeSteps,
-  recipeVersionProposedSlugs,
-  recipeVersions,
-} from '@pops/app-food-db';
+import { recipeLines, recipeSteps, recipeVersionProposedSlugs, recipeVersions } from '../schema.js';
 
-import type { FoodDb } from '@pops/app-food-db';
-
-import type { RecipeAst, RecipeHeader } from './ast';
-import type { CompileError, CompileErrorJson, CompilePhase, CompileResult } from './compile-types';
-import type { ResolveResult, ResolvedRecipeAst } from './resolver-types';
+import type { FoodDb } from '../services/internal.js';
+import type { RecipeAst, RecipeHeader } from './ast.js';
+import type {
+  CompileError,
+  CompileErrorJson,
+  CompilePhase,
+  CompileResult,
+} from './compile-types.js';
+import type { ResolveResult, ResolvedRecipeAst } from './resolver-types.js';
 
 export function persistProposedSlugs(
   tx: FoodDb,

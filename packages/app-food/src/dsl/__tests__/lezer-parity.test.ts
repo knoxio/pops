@@ -15,13 +15,14 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { parseRecipeDsl } from '@pops/app-food-db';
+
 import { parser as lezerParser } from '../dsl-parser';
-import { parseRecipeDsl } from '../parser';
 import { ALL_SAMPLES } from './samples';
 
 import type { SyntaxNode, Tree } from '@lezer/common';
 
-import type { RecipeAst } from '../ast';
+import type { RecipeAst } from '@pops/app-food-db';
 
 interface CallSignature {
   name: string;

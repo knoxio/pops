@@ -9,14 +9,14 @@ import { RecipeIngredientList } from './RecipeIngredientList';
 import { clampScaleFactor, formatQty } from './RecipeRenderer.helpers';
 import { RecipeStepList } from './RecipeStepList';
 
-import type { RecipeRendererProps, RecipeVersionWithCompiledData } from './RecipeRenderer.types';
+import type { RecipeRendererProps, RecipeVersionWithCompiledData } from '@pops/app-food-db';
 
 export type {
   RecipeLineWithResolved,
   RecipeRendererProps,
   RecipeRendererVariant,
   RecipeVersionWithCompiledData,
-} from './RecipeRenderer.types';
+} from '@pops/app-food-db';
 
 /**
  * Cookbook-styled read view of a compiled recipe. Pure presentation —

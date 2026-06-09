@@ -13,7 +13,7 @@
  * line/col, `endCol` exclusive) so the editor can convert it to a
  * CodeMirror offset range deterministically.
  */
-import type { SourceSpan } from '../../dsl/ast';
+import type { SourceSpan } from '@pops/app-food-db';
 
 export type IssueSeverity = 'error' | 'info';
 

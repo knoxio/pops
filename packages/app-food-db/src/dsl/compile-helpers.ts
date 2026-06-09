@@ -1,12 +1,11 @@
 import { inArray } from 'drizzle-orm';
 
-import { ingredients } from '@pops/app-food-db';
+import { ingredients } from '../schema.js';
 
-import type { FoodDb } from '@pops/app-food-db';
-
-import type { IngredientBlock, RecipeAst } from './ast';
-import type { IngredientSlugMap, LineLabelMap } from './compile-md';
-import type { ResolvedRecipeAst, ResolvedStepBlock } from './resolver-types';
+import type { FoodDb } from '../services/internal.js';
+import type { IngredientBlock, RecipeAst } from './ast.js';
+import type { IngredientSlugMap, LineLabelMap } from './compile-md.js';
+import type { ResolvedRecipeAst, ResolvedStepBlock } from './resolver-types.js';
 
 export function serialiseSourceDescriptor(block: IngredientBlock): string {
   const parts: string[] = [block.descriptor.ingredient];

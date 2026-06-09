@@ -9,11 +9,12 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { ingredientsService, slugRegistry, variantsService } from '@pops/app-food-db';
+import { slugRegistry } from '../schema.js';
+import * as ingredientsService from '../services/ingredients.js';
+import * as variantsService from '../services/variants.js';
 
-import type { FoodDb } from '@pops/app-food-db';
-
-import type { ResolverCreation } from './resolver-types';
+import type { FoodDb } from '../services/internal.js';
+import type { ResolverCreation } from './resolver-types.js';
 
 const { createIngredient } = ingredientsService;
 const { createVariant } = variantsService;

@@ -10,11 +10,8 @@
  * `makeRecipeData` lets each test override individual slices without
  * restating the full payload — keeps the test file readable.
  */
-import type { ResolvedStepBody } from '../../dsl/resolver-types';
-import type {
-  RecipeLineWithResolved,
-  RecipeVersionWithCompiledData,
-} from '../RecipeRenderer.types';
+import type { ResolvedStepBody } from '@pops/app-food-db';
+import type { RecipeLineWithResolved, RecipeVersionWithCompiledData } from '@pops/app-food-db';
 
 const BASE_RECIPE = {
   id: 1,

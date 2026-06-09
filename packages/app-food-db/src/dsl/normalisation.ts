@@ -4,9 +4,10 @@
  * `default_unit` with null qty) lives here, so compile stays oblivious to
  * the resolution algorithm.
  */
-import { conversionsService } from '@pops/app-food-db';
+import * as conversionsService from '../services/conversions.js';
 
-import type { CanonicalUnit, FoodDb } from '@pops/app-food-db';
+import type { CanonicalUnit } from '../schema.js';
+import type { FoodDb } from '../services/internal.js';
 
 const { resolveCanonicalQty } = conversionsService;
 
