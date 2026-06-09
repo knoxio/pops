@@ -12,6 +12,8 @@ const KEYS = [
   'FOOD_WORKER_HEALTH_PORT',
   'FOOD_WORKER_DRAIN_TIMEOUT_MS',
   'POPS_WORKER_FOOD_VERSION',
+  'FOOD_INGEST_DIR',
+  'INSTAGRAM_COOKIES_PATH',
 ] as const;
 
 const snapshot: Partial<Record<(typeof KEYS)[number], string | undefined>> = {};
@@ -48,6 +50,8 @@ describe('loadConfig', () => {
       healthPort: 9090,
       drainTimeoutMs: 60_000,
       extractorVersion: 'pops-worker-food@0.1.0',
+      ingestDir: '/data/food/ingest',
+      instagramCookiesPath: '/secrets/instagram-cookies.txt',
     });
   });
 
@@ -61,6 +65,8 @@ describe('loadConfig', () => {
     process.env['FOOD_WORKER_HEALTH_PORT'] = '9999';
     process.env['FOOD_WORKER_DRAIN_TIMEOUT_MS'] = '30000';
     process.env['POPS_WORKER_FOOD_VERSION'] = 'pops-worker-food@1.2.3';
+    process.env['FOOD_INGEST_DIR'] = '/tmp/ingest';
+    process.env['INSTAGRAM_COOKIES_PATH'] = '/tmp/cookies.txt';
     const cfg = loadConfig();
     expect(cfg).toEqual({
       redisUrl: 'redis://redis:6379',
@@ -72,6 +78,8 @@ describe('loadConfig', () => {
       healthPort: 9999,
       drainTimeoutMs: 30_000,
       extractorVersion: 'pops-worker-food@1.2.3',
+      ingestDir: '/tmp/ingest',
+      instagramCookiesPath: '/tmp/cookies.txt',
     });
   });
 
