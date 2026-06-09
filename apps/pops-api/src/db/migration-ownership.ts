@@ -84,6 +84,8 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0060_familiar_leo': 'food',
   // PRD-109 — food substitutions.
   '0061_shocking_skreet': 'food',
+  // PRD-112 — lists + list_items (generic lists package; food is first consumer).
+  '0062_chemical_donald_blake': 'lists',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

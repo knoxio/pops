@@ -117,34 +117,34 @@ Inline per theme protocol.
 
 ### Package scaffold
 
-- [ ] `packages/app-lists/` created with `package.json` (name `@pops/app-lists`), `tsconfig.json`, and the `src/` skeleton described above.
-- [ ] Package added to `pnpm-workspace.yaml` (already present via wildcard).
-- [ ] `mise typecheck` includes the new package.
+- [x] `packages/app-lists/` created with `package.json` (name `@pops/app-lists`), `tsconfig.json`, and the `src/` skeleton described above.
+- [x] Package added to `pnpm-workspace.yaml` (workspace lists packages explicitly; new entry required).
+- [x] `mise typecheck` includes the new package.
 
 ### Schema
 
-- [ ] Migration adds `lists` and `list_items` per the SQL above.
-- [ ] Migrations file naming follows the existing pattern in `apps/pops-api/src/db/migrations/`.
-- [ ] Per-module ownership tag (PRD-101) declared so Lists migrations are gated on the lists module being installed (the food package will declare a dependency).
-- [ ] `packages/db-types` regenerated to export the new tables.
+- [x] Migration adds `lists` and `list_items` per the SQL above.
+- [x] Migration file generated under `apps/pops-api/src/db/drizzle-migrations/` per the drizzle-kit flow (see `MIGRATIONS_FROZEN.md`); the legacy hand-written `src/db/migrations/` directory is no longer used.
+- [x] Per-module ownership tag (PRD-101) declared so Lists migrations are gated on the lists module being installed (the food package will declare a dependency).
+- [x] `packages/db-types` regenerated to export the new tables.
 
 ### Service layer
 
-- [ ] `packages/app-lists/src/db/services/lists.ts` exposes: `createList`, `archiveList`, `unarchiveList`, `deleteList`, `getList`, `listLists` (filtered by kind / owner_app).
-- [ ] `packages/app-lists/src/db/services/list-items.ts` exposes: `addItem`, `bulkAdd`, `updateItem`, `removeItem`, `checkItem`, `uncheckItem`, `reorderItems`.
-- [ ] `bulkAdd` is one transaction (no N+1 inserts).
+- [x] `packages/app-lists/src/db/services/lists.ts` exposes: `createList`, `archiveList`, `unarchiveList`, `deleteList`, `getList`, `listLists` (filtered by kind / owner_app).
+- [x] `packages/app-lists/src/db/services/list-items.ts` exposes: `addItem`, `bulkAdd`, `updateItem`, `removeItem`, `checkItem`, `uncheckItem`, `reorderItems`.
+- [x] `bulkAdd` is one transaction (no N+1 inserts).
 
 ### Invariants (each verified by Vitest)
 
-- [ ] Inserting a list with `kind='foo'` fails the CHECK.
-- [ ] Inserting a `list_item` with `ref_kind='foo'` fails the CHECK.
-- [ ] `deleteList` removes all `list_items` for that list in the same transaction.
-- [ ] `checkItem` sets `checked=1` and `checked_at` to now; `uncheckItem` reverts.
-- [ ] `bulkAdd` of 50 items completes in one transaction (asserted via timing or transaction-id check).
+- [x] Inserting a list with `kind='foo'` fails the CHECK.
+- [x] Inserting a `list_item` with `ref_kind='foo'` fails the CHECK.
+- [x] `deleteList` removes all `list_items` for that list in the same transaction.
+- [x] `checkItem` sets `checked=1` and `checked_at` to now; `uncheckItem` reverts.
+- [x] `bulkAdd` of 50 items completes in one transaction (asserted via timing or transaction-id check).
 
 ### Tests
 
-- [ ] Vitest suite at `packages/app-lists/src/db/__tests__/lists.test.ts` covers each invariant and the bulkAdd path.
+- [x] Vitest suite at `packages/app-lists/src/db/__tests__/lists.test.ts` covers each invariant and the bulkAdd path.
 
 ## Out of Scope
 

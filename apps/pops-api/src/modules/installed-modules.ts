@@ -25,6 +25,7 @@ import { manifest as coreManifest } from './core/index.js';
 import { manifest as financeManifest } from './finance/index.js';
 import { manifest as foodManifest } from './food/index.js';
 import { manifest as inventoryManifest } from './inventory/index.js';
+import { manifest as listsManifest } from './lists/index.js';
 import { manifest as mediaManifest } from './media/index.js';
 
 import type { ModuleManifest } from '@pops/types';
@@ -46,6 +47,7 @@ function liveManifests(): readonly ModuleManifest[] {
     coreManifest,
     financeManifest,
     foodManifest,
+    listsManifest,
     mediaManifest,
     inventoryManifest,
     cerebrumManifest,

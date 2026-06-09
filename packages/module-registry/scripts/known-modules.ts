@@ -72,6 +72,13 @@ export const MANIFEST_SOURCES: readonly ModuleManifest[] = [
     description: 'Recipes, ingredients, meal planning, and multimodal ingestion.',
   },
   {
+    id: 'lists',
+    name: 'Lists',
+    version: '0.1.0',
+    surfaces: ['app'],
+    description: 'Generic lists — shopping, packing, todo. Food is the first consumer.',
+  },
+  {
     id: 'media',
     name: 'Media',
     version: '0.1.0',
