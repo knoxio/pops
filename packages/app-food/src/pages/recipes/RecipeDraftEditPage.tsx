@@ -42,6 +42,9 @@ function RecipeDraftEditBody({ slug, draftNo }: { slug: string; draftNo: number 
     return <Status text={t('recipes.draftEdit.loading')} />;
   }
   if (draftsQuery.error !== null) {
+    if (isTrpcNotFound(draftsQuery.error)) {
+      return <Alert text={t('recipes.detail.notFound')} />;
+    }
     return <Alert text={t('recipes.draftEdit.error', { message: draftsQuery.error.message })} />;
   }
   if (match === null) {
@@ -63,5 +66,17 @@ function Alert({ text }: { text: string }): ReactElement {
     <p role="alert" className="p-6 text-sm text-destructive">
       {text}
     </p>
+  );
+}
+
+/**
+ * Detect tRPC NOT_FOUND via `error.data.code` so the not-found branch
+ * doesn't depend on regex-matching English server messages.
+ */
+function isTrpcNotFound(err: unknown): boolean {
+  if (err === null || typeof err !== 'object') return false;
+  const data = (err as { data?: { code?: unknown } }).data;
+  return (
+    typeof data === 'object' && data !== null && (data as { code?: unknown }).code === 'NOT_FOUND'
   );
 }

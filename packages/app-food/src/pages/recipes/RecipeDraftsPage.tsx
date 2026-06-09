@@ -39,6 +39,16 @@ function RecipeDraftsBody({ slug }: { slug: string }): ReactElement {
     );
   }
   if (draftsQuery.error !== null) {
+    // tRPC's NOT_FOUND (unknown slug) gets a fully-localised copy via
+    // recipes.detail.notFound. Other errors fall back to the generic
+    // localised template with the server message appended.
+    if (isTrpcNotFound(draftsQuery.error)) {
+      return (
+        <p role="alert" className="p-6 text-sm text-destructive">
+          {t('recipes.detail.notFound')}
+        </p>
+      );
+    }
     return (
       <p role="alert" className="p-6 text-sm text-destructive">
         {t('recipes.drafts.error', { message: draftsQuery.error.message })}
@@ -88,5 +98,18 @@ function EmptyState({ slug, t }: { slug: string; t: (key: string) => string }): 
         <Link to={`/food/recipes/${slug}/edit`}>{t('recipes.drafts.empty.cta')}</Link>
       </Button>
     </div>
+  );
+}
+
+/**
+ * `useQuery.error` is a `TRPCClientErrorLike` whose `.data.code` carries
+ * the tRPC error code. Check the code directly so the not-found branch
+ * doesn't rely on regex-matching English server messages.
+ */
+function isTrpcNotFound(err: unknown): boolean {
+  if (err === null || typeof err !== 'object') return false;
+  const data = (err as { data?: { code?: unknown } }).data;
+  return (
+    typeof data === 'object' && data !== null && (data as { code?: unknown }).code === 'NOT_FOUND'
   );
 }

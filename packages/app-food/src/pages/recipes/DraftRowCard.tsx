@@ -17,7 +17,13 @@ export interface DraftRow {
 interface DraftRowProps {
   slug: string;
   draft: DraftRow;
-  refetch: () => void;
+  /**
+   * Fired after a successful promote/discard. Returns a Promise (the
+   * caller wraps `utils.food.recipes.listDrafts.invalidate`); the row
+   * deliberately doesn't await it but tracks the type so future
+   * refactors can.
+   */
+  refetch: () => Promise<unknown>;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }
 
@@ -42,7 +48,7 @@ interface DraftRowMutations {
 
 function useDraftRowMutations(
   slug: string,
-  refetch: () => void,
+  refetch: () => Promise<unknown>,
   t: (key: string, opts?: Record<string, unknown>) => string
 ): DraftRowMutations {
   const navigate = useNavigate();
@@ -52,7 +58,7 @@ function useDraftRowMutations(
       if (res.ok === true) {
         toast.success(t('recipes.drafts.row.promoted'));
         void utils.food.recipes.list.invalidate();
-        refetch();
+        void refetch();
         void navigate(`/food/recipes/${slug}`);
       } else {
         toast.error(t(`recipes.edit.promoteFailed.${res.reason}` as const));
@@ -63,7 +69,7 @@ function useDraftRowMutations(
   const discardMutation = trpc.food.recipes.archiveVersion.useMutation({
     onSuccess: () => {
       toast.success(t('recipes.drafts.row.discarded'));
-      refetch();
+      void refetch();
     },
     onError: (err) => toast.error(t('recipes.drafts.row.discardError', { message: err.message })),
   });
