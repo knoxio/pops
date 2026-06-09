@@ -17,6 +17,8 @@ import type {
   ingredientAliases,
   ingredients,
   ingredientVariants,
+  planEntries,
+  planSlots,
   prepStates,
   recipeRuns,
   recipes,
@@ -56,3 +58,9 @@ export type BatchConsumptionInsert = InferInsertModel<typeof batchConsumptions>;
 // PRD-109
 export type SubstitutionRow = InferSelectModel<typeof substitutions>;
 export type SubstitutionInsert = InferInsertModel<typeof substitutions>;
+
+// PRD-111
+export type PlanSlotRow = InferSelectModel<typeof planSlots>;
+export type PlanSlotInsert = InferInsertModel<typeof planSlots>;
+export type PlanEntryRow = InferSelectModel<typeof planEntries>;
+export type PlanEntryInsert = InferInsertModel<typeof planEntries>;

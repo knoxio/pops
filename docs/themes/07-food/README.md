@@ -22,7 +22,7 @@ The North Star: get the user cooking from their Instagram saved folder within th
 
 | #   | Epic                                                                       | Summary                                                                                             | Status      |
 | --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----------- |
-| 00  | [Schema & Foundations](epics/00-schema-and-foundations.md)                 | All food schemas with invariants enforced; `mise db:seed:food` produces a coherent fixture database | Not started |
+| 00  | [Schema & Foundations](epics/00-schema-and-foundations.md)                 | All food schemas with invariants enforced; `mise db:seed:food` produces a coherent fixture database | In progress |
 | 01  | [Recipe & Ingredient Management](epics/01-recipe-ingredient-management.md) | `app-food` scaffold, recipe CRUD with versions, ingredient/variant/alias management UI              | Not started |
 | 02  | [Ingestion Pipeline](epics/02-ingestion-pipeline.md)                       | BullMQ queue, `pops-worker-food` container, web/Instagram/screenshot/text ingestion to drafts       | Not started |
 | 03  | [Draft Review & Approval](epics/03-draft-review.md)                        | Review queue UI, ingredient resolution, tag confirmation, promotion to current version              | Not started |

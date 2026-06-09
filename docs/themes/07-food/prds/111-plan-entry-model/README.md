@@ -116,30 +116,30 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds `plan_slots` and `plan_entries` per the SQL above.
-- [ ] PRD-113 (seed) inserts the 5 default slots.
-- [ ] Drizzle schema and `packages/db-types` regenerated.
-- [ ] Indexes verified.
+- [x] Migration adds `plan_slots` and `plan_entries` per the SQL above.
+- [ ] PRD-113 (seed) inserts the 5 default slots. _(deferred — PRD-113 owns the seed insertion. The PRD-111 invariant suite seeds an equivalent vocabulary in-memory so the FK can be exercised standalone.)_
+- [x] Drizzle schema and `packages/db-types` regenerated.
+- [x] Indexes verified.
 
 ### Service layer
 
-- [ ] `packages/app-food/src/db/services/plan.ts` exposes typed methods: `addPlanEntry`, `removePlanEntry`, `reorderSlot`, `addCustomSlot`.
-- [ ] `addPlanEntry` accepts `recipe_version_id` as optional (null = use current).
-- [ ] `removePlanEntry` rejects deletion when `recipe_run_id IS NOT NULL` with `PlanEntryHasCookEvent`.
+- [x] `packages/app-food/src/db/services/plan.ts` exposes typed methods: `addPlanEntry`, `removePlanEntry`, `reorderSlot`, `addCustomSlot`.
+- [x] `addPlanEntry` accepts `recipe_version_id` as optional (null = use current).
+- [x] `removePlanEntry` rejects deletion when `recipe_run_id IS NOT NULL` with `PlanEntryHasCookEvent`.
 
 ### Invariants (each verified by a Vitest case)
 
-- [ ] Inserting a plan entry with `planned_servings = 0` fails the CHECK.
-- [ ] Inserting a plan entry with `slot='nonexistent'` fails the FK.
-- [ ] Inserting a plan entry with `recipe_id` referencing a deleted recipe fails the FK.
-- [ ] Adding multiple plan entries with the same `(date, slot)` succeeds and they're returned in `position` order.
-- [ ] `addCustomSlot('elevenses', 'Elevenses')` succeeds; `removeSlot('breakfast')` (a default) is rejected by service.
-- [ ] Deleting a plan entry with `recipe_run_id` set is rejected by service.
+- [x] Inserting a plan entry with `planned_servings = 0` fails the CHECK.
+- [x] Inserting a plan entry with `slot='nonexistent'` fails the FK.
+- [x] Inserting a plan entry with `recipe_id` referencing a deleted recipe fails the FK.
+- [x] Adding multiple plan entries with the same `(date, slot)` succeeds and they're returned in `position` order.
+- [x] `addCustomSlot('elevenses', 'Elevenses')` succeeds; `deleteSlot('breakfast')` (a default) is rejected by service with `PlanSlotIsDefault`.
+- [x] Deleting a plan entry with `recipe_run_id` set is rejected by service.
 
 ### Tests
 
-- [ ] Vitest suite at `packages/app-food/src/db/__tests__/plan-entries.test.ts` covers each invariant and the multi-recipe-per-slot ordering case.
-- [ ] Test for the "this week's plan" query returns rows in `(date, ps.display_order, position)` order.
+- [x] Vitest suite at `packages/app-food/src/db/__tests__/plan-entries.test.ts` covers each invariant and the multi-recipe-per-slot ordering case.
+- [x] Test for the "this week's plan" query returns rows in `(date, ps.display_order, position)` order.
 
 ## Out of Scope
 
