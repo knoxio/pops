@@ -15,7 +15,7 @@ This epic is pipeline-only. The review queue UI that promotes drafts to canonica
 | #   | PRD                                                                           | Summary                                                                                               | Status      |
 | --- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------- |
 | 125 | [Ingest API & BullMQ Queue Contract](../prds/125-ingest-api/README.md)        | `POST /api/food/ingest` endpoint; BullMQ `food.ingest` queue; job shape, retries, backoff; status API | Not started |
-| 126 | [pops-worker-food Container](../prds/126-worker-container/README.md)          | Docker image (Node + Python venv + yt-dlp + ffmpeg + faster-whisper); long-running daemon; lifecycle  | Not started |
+| 126 | [pops-worker-food Container](../prds/126-worker-container/README.md)          | Docker image (Node + Python venv + yt-dlp + ffmpeg + faster-whisper); long-running daemon; lifecycle  | Partial     |
 | 127 | [Web URL — JSON-LD Extraction](../prds/127-web-jsonld/README.md)              | Fetch HTML, parse `application/ld+json` Recipe schema, map to draft. Fast path, no LLM call.          | Not started |
 | 128 | [Web URL — LLM Fallback Extraction](../prds/128-web-llm-fallback/README.md)   | When JSON-LD absent: readability extract → DSL via text LLM. Slower path; one Claude call per ingest. | Not started |
 | 129 | [Instagram Acquisition](../prds/129-instagram-acquisition/README.md)          | yt-dlp + cookie management; caption + video + info JSON download; auth-dead detection                 | Not started |
