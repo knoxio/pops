@@ -22,3 +22,7 @@ export { TimerButton } from './components/TimerButton';
 export type { TimerButtonProps } from './components/TimerButton';
 export { TempBadge } from './components/TempBadge';
 export type { TempBadgeProps } from './components/TempBadge';
+
+// PRD-120 — DSL Editor (Part A scaffold + Part D chip widgets).
+export { DslEditor } from './components/DslEditor';
+export type { DslEditorProps } from './components/DslEditor';

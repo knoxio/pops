@@ -13,8 +13,8 @@
  * DOM. This is the same approach @codemirror/view's own test suite uses.
  */
 import { EditorView } from '@codemirror/view';
-import { act, cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DslEditor } from '../DslEditor';
 
@@ -29,6 +29,36 @@ function getEditorView(): EditorView {
   const view = EditorView.findFromDOM(cmEditor as HTMLElement);
   if (!view) throw new Error('CodeMirror view not attached to surface');
   return view;
+}
+
+function installMatchMedia(matches: boolean): { setMatches: (next: boolean) => void } {
+  type Listener = (event: MediaQueryListEvent) => void;
+  const listeners = new Set<Listener>();
+  let current = matches;
+  const mql = {
+    get matches() {
+      return current;
+    },
+    media: '(max-width: 767px)',
+    onchange: null,
+    addEventListener: (_type: 'change', cb: Listener) => listeners.add(cb),
+    removeEventListener: (_type: 'change', cb: Listener) => listeners.delete(cb),
+    dispatchEvent: () => true,
+    addListener: (cb: Listener) => listeners.add(cb),
+    removeListener: (cb: Listener) => listeners.delete(cb),
+  } as unknown as MediaQueryList;
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (_query: string) => mql,
+  });
+  return {
+    setMatches: (next: boolean) => {
+      current = next;
+      const event = { matches: next } as MediaQueryListEvent;
+      for (const cb of [...listeners]) cb(event);
+    },
+  };
 }
 
 afterEach(() => {
@@ -138,5 +168,119 @@ describe('DslEditor — PRD-120 part A', () => {
     rerender(<DslEditor initialValue="hello" onChange={() => {}} readOnly={false} />);
     expect(screen.queryByTestId('dsl-editor-readonly-banner')).toBeNull();
     expect(getEditorView().state.doc.toString()).toBe('hello');
+  });
+});
+
+describe('DslEditor — PRD-120 part D (chip widgets)', () => {
+  beforeEach(() => {
+    installMatchMedia(false);
+  });
+
+  const RECIPE = [
+    '@recipe(slug="x", title="X")',
+    '@yield(x, 1:count)',
+    '@ingredient(1, banana:raw, 100:g)',
+    '@ingredient(2, flour, 200:g)',
+    '@step("Mash the @1 and add @cilantro for @time(20:min) at @temperature(180:c)")',
+  ].join('\n');
+
+  function chipsInDom(): HTMLElement[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('.cm-dsl-chip'));
+  }
+
+  it('renders a chip widget for each @N ref inside a @step body', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const refChips = chipsInDom().filter((el) => el.getAttribute('data-chip-kind') === 'ref-index');
+    expect(refChips).toHaveLength(1);
+    expect(refChips[0]?.textContent).toContain('#1');
+    expect(refChips[0]?.textContent).toContain('banana');
+  });
+
+  it('renders a chip for @slug refs in step bodies', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const slugChips = chipsInDom().filter((el) => el.getAttribute('data-chip-kind') === 'ref-slug');
+    expect(slugChips).toHaveLength(1);
+    expect(slugChips[0]?.textContent).toBe('cilantro');
+  });
+
+  it('renders @time(20:min) as a pill labeled "20 min"', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const time = chipsInDom().find((el) => el.getAttribute('data-chip-kind') === 'time');
+    expect(time).toBeDefined();
+    expect(time?.textContent).toBe('20 min');
+  });
+
+  it('renders @temperature(180:c) as a pill labeled "180 °C"', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const temp = chipsInDom().find((el) => el.getAttribute('data-chip-kind') === 'temperature');
+    expect(temp).toBeDefined();
+    expect(temp?.textContent).toBe('180 °C');
+  });
+
+  it('jumps cursor to matching @ingredient declaration on chip click', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const view = getEditorView();
+    const refChip = chipsInDom().find((el) => el.getAttribute('data-chip-kind') === 'ref-index');
+    expect(refChip).toBeDefined();
+    const jumpFrom = refChip?.getAttribute('data-chip-jump-from');
+    expect(jumpFrom).toBeTruthy();
+
+    act(() => {
+      if (refChip) fireEvent.click(refChip);
+    });
+
+    const cursor = view.state.selection.main.head;
+    expect(cursor).toBe(Number.parseInt(jumpFrom ?? '0', 10));
+    // The expected offset is the `@` of `@ingredient(1, ...)` — the third
+    // line in the document.
+    const line = view.state.doc.lineAt(cursor);
+    expect(line.text.startsWith('@ingredient(1,')).toBe(true);
+  });
+
+  it('jumps cursor when a focused chip is activated with Enter', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const view = getEditorView();
+    const refChip = chipsInDom().find((el) => el.getAttribute('data-chip-kind') === 'ref-index');
+    expect(refChip).toBeDefined();
+    if (!refChip) return;
+    const jumpFrom = Number.parseInt(refChip.getAttribute('data-chip-jump-from') ?? '0', 10);
+
+    act(() => {
+      fireEvent.keyDown(refChip, { key: 'Enter' });
+    });
+    expect(view.state.selection.main.head).toBe(jumpFrom);
+  });
+
+  it('jumps cursor when a focused chip is activated with Space', () => {
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const view = getEditorView();
+    const refChip = chipsInDom().find((el) => el.getAttribute('data-chip-kind') === 'ref-index');
+    expect(refChip).toBeDefined();
+    if (!refChip) return;
+    const jumpFrom = Number.parseInt(refChip.getAttribute('data-chip-jump-from') ?? '0', 10);
+
+    act(() => {
+      fireEvent.keyDown(refChip, { key: ' ' });
+    });
+    expect(view.state.selection.main.head).toBe(jumpFrom);
+  });
+
+  it('renders chips as inline labels (no widget replacement) under mobile width', () => {
+    const { setMatches } = installMatchMedia(true);
+    // Confirm the helper is referenced so the lint cap on unused locals
+    // doesn't fire — also gives us a no-op handle for follow-on tests.
+    void setMatches;
+    render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
+    const view = getEditorView();
+    // In compact mode the chip ranges are `Decoration.mark` so the underlying
+    // source characters (`@1`, `@cilantro`, `@time(20:min)`,
+    // `@temperature(180:c)`) are still present in the contentDOM text. The
+    // desktop variant would replace those ranges with widgets, hiding the raw
+    // characters.
+    const rendered = view.contentDOM.textContent ?? '';
+    expect(rendered).toContain('@1');
+    expect(rendered).toContain('@cilantro');
+    expect(rendered).toContain('@time(20:min)');
+    expect(rendered).toContain('@temperature(180:c)');
   });
 });
