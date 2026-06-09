@@ -149,6 +149,10 @@ export const ingredientsRouter = router({
     .input(z.object({ id: z.number() }))
     .query(({ input }) => ingredientsQueries.getIngredientDeleteBlockers(getDrizzle(), input.id)),
 
+  recipeRefs: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(({ input }) => ingredientsQueries.getRecipeRefsForIngredient(getDrizzle(), input.id)),
+
   delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => {
     const db = getDrizzle();
     const blockers = ingredientsQueries.getIngredientDeleteBlockers(db, input.id);

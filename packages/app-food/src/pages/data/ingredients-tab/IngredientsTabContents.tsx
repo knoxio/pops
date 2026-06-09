@@ -2,17 +2,23 @@
  * Ingredients tab (PRD-122). Two-column layout: tree on the left,
  * detail panel on the right. Mobile collapses to single column (the
  * detail appears below the tree).
+ *
+ * Orchestrates the detail panel's CRUD dialogs (rename / change-parent /
+ * delete + variant create/edit/delete) and the `?focus=<slug>` deep-link
+ * scroll + 2 s highlight. The actual layout JSX lives in
+ * `IngredientsTabLayout.tsx`; this component composes the data hooks
+ * and hands the assembled props through.
  */
-import { useTranslation } from 'react-i18next';
+import { useCallback } from 'react';
 
-import { Button } from '@pops/ui';
-
-import { CreateIngredientDialog } from './CreateIngredientDialog';
-import { IngredientDetailPanel } from './IngredientDetailPanel';
-import { IngredientsTree } from './IngredientsTree';
+import { useBlockersQuery, useRecipeRefCount } from './ingredient-tab-queries';
+import { IngredientsTabLayout } from './IngredientsTabLayout';
+import { useFocusedIngredient } from './useFocusedIngredient';
+import { useIngredientActions } from './useIngredientActions';
 import { useIngredientsTab } from './useIngredientsTab';
+import { useVariantActions } from './useVariantActions';
 
-import type { IngredientRow, IngredientVariantRow } from '@pops/app-food-db';
+import type { IngredientRow } from '@pops/app-food-db';
 
 function findParentRow(
   selectedRow: IngredientRow | null,
@@ -22,83 +28,50 @@ function findParentRow(
   return rows.find((row) => row.id === selectedRow.parentId) ?? null;
 }
 
-interface DetailColumnProps {
-  selectedId: number | null;
-  isLoading: boolean;
-  selectedRow: IngredientRow | null;
-  variants: readonly IngredientVariantRow[];
-  parentName: string | null;
+function useIngredientFocus(state: ReturnType<typeof useIngredientsTab>) {
+  const onResolved = useCallback((id: number) => state.selectIngredient(id), [state]);
+  const onExpandAncestors = useCallback((ids: readonly number[]) => state.expandMany(ids), [state]);
+  return useFocusedIngredient({
+    ingredients: state.flatIngredients,
+    isListLoading: state.isLoadingList,
+    onResolved,
+    onExpandAncestors,
+  });
 }
 
-function DetailColumn({
-  selectedId,
-  isLoading,
-  selectedRow,
-  variants,
-  parentName,
-}: DetailColumnProps) {
-  const { t } = useTranslation('food');
-  if (selectedId === null) {
-    return <p className="text-muted-foreground text-sm">{t('data.ingredients.selectionPrompt')}</p>;
-  }
-  if (isLoading) {
-    return <p className="text-muted-foreground text-sm">{t('data.ingredients.loading')}</p>;
-  }
-  if (selectedRow === null) return null;
-  return (
-    <IngredientDetailPanel ingredient={selectedRow} variants={variants} parentName={parentName} />
-  );
+function getSelectedRow(state: ReturnType<typeof useIngredientsTab>): IngredientRow | null {
+  const data = state.detail.data;
+  return data === undefined ? null : data.ingredient;
 }
 
 export function IngredientsTabContents() {
-  const { t } = useTranslation('food');
   const state = useIngredientsTab();
-
-  const selectedRow = state.detail.data?.ingredient ?? null;
-  const variants = state.detail.data?.variants ?? [];
+  const selectedRow = getSelectedRow(state);
+  const ingredientActions = useIngredientActions(selectedRow === null ? null : selectedRow.id);
+  const variantActions = useVariantActions(selectedRow === null ? null : selectedRow.id);
+  const blockers = useBlockersQuery({
+    ingredient: selectedRow,
+    deleteOpen: ingredientActions.open.delete,
+  });
+  const recipeRefs = useRecipeRefCount(
+    selectedRow === null ? null : selectedRow.id,
+    ingredientActions.open.delete
+  );
+  const focused = useIngredientFocus(state);
+  const variants = state.detail.data === undefined ? [] : state.detail.data.variants;
   const parentRow = findParentRow(selectedRow, state.flatIngredients);
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(280px,1fr)_2fr]">
-      <section className="space-y-3" aria-label={t('data.ingredients.title')}>
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide">
-            {t('data.ingredients.title')}
-          </h2>
-          <Button size="sm" onClick={state.openCreateDialog}>
-            {t('data.ingredients.create.openButton')}
-          </Button>
-        </div>
-        <IngredientsTree
-          tree={state.tree}
-          selectedId={state.selectedId}
-          expandedIds={state.expandedIds}
-          search={state.search}
-          onSearchChange={state.setSearch}
-          onSelect={state.selectIngredient}
-          onToggle={state.toggleNode}
-          isLoading={state.isLoadingList}
-        />
-      </section>
-
-      <section aria-label={t('data.ingredients.detailAriaLabel')}>
-        <DetailColumn
-          selectedId={state.selectedId}
-          isLoading={state.detail.isLoading}
-          selectedRow={selectedRow}
-          variants={variants}
-          parentName={parentRow?.name ?? null}
-        />
-      </section>
-
-      <CreateIngredientDialog
-        open={state.createDialogOpen}
-        onOpenChange={(open) => (open ? state.openCreateDialog() : state.closeCreateDialog())}
-        ingredients={state.flatIngredients}
-        isSubmitting={state.isCreatingIngredient}
-        errorMessage={state.createErrorMessage}
-        onSubmit={state.submitCreate}
-      />
-    </div>
+    <IngredientsTabLayout
+      state={state}
+      selectedRow={selectedRow}
+      variants={variants}
+      parentName={parentRow === null ? null : parentRow.name}
+      ingredientActions={ingredientActions}
+      variantActions={variantActions}
+      focused={focused}
+      blockers={blockers.data}
+      recipeRefCountForDelete={recipeRefs.count}
+      deleteRefsLoading={blockers.isLoading || recipeRefs.isLoading}
+    />
   );
 }

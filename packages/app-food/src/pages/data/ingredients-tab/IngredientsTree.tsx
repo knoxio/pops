@@ -13,6 +13,7 @@ interface Props {
   tree: IngredientTreeNode[];
   selectedId: number | null;
   expandedIds: ReadonlySet<number>;
+  highlightedId: number | null;
   search: string;
   onSearchChange: (next: string) => void;
   onSelect: (id: number) => void;
@@ -24,6 +25,7 @@ export function IngredientsTree({
   tree,
   selectedId,
   expandedIds,
+  highlightedId,
   search,
   onSearchChange,
   onSelect,
@@ -45,6 +47,7 @@ export function IngredientsTree({
         tree={tree}
         selectedId={selectedId}
         expandedIds={expandedIds}
+        highlightedId={highlightedId}
         onSelect={onSelect}
         onToggle={onToggle}
       />
@@ -57,11 +60,20 @@ interface TreeBodyProps {
   tree: IngredientTreeNode[];
   selectedId: number | null;
   expandedIds: ReadonlySet<number>;
+  highlightedId: number | null;
   onSelect: (id: number) => void;
   onToggle: (id: number) => void;
 }
 
-function TreeBody({ isLoading, tree, selectedId, expandedIds, onSelect, onToggle }: TreeBodyProps) {
+function TreeBody({
+  isLoading,
+  tree,
+  selectedId,
+  expandedIds,
+  highlightedId,
+  onSelect,
+  onToggle,
+}: TreeBodyProps) {
   const { t } = useTranslation('food');
   if (isLoading) {
     return <p className="text-muted-foreground text-sm">{t('data.ingredients.loading')}</p>;
@@ -78,6 +90,7 @@ function TreeBody({ isLoading, tree, selectedId, expandedIds, onSelect, onToggle
           depth={0}
           selectedId={selectedId}
           expandedIds={expandedIds}
+          highlightedId={highlightedId}
           onSelect={onSelect}
           onToggle={onToggle}
         />

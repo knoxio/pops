@@ -5,12 +5,15 @@
  * line cap. Mutations and slug-registry maintenance stay in the parent
  * service; reads (list / get / variants / blocker enumeration) live here.
  */
-import { and, eq, like, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, like, or, sql } from 'drizzle-orm';
 
 import {
   ingredientAliases,
   ingredients,
   ingredientVariants,
+  recipeLines,
+  recipes,
+  recipeVersions,
   type IngredientRow,
   type IngredientVariantRow,
 } from '../schema.js';
@@ -85,4 +88,95 @@ export function getIngredientDeleteBlockers(
     .where(eq(ingredientAliases.ingredientId, ingredientId))
     .all();
   return { variants: variants.length, aliases: aliases.length };
+}
+
+export interface RecipeRefRow {
+  recipeId: number;
+  recipeSlug: string;
+  recipeTitle: string;
+}
+
+export interface RecipeRefsSummary {
+  count: number;
+  recipes: RecipeRefRow[];
+}
+
+/**
+ * Recipes that reference this ingredient via at least one compiled
+ * `recipe_lines` row. Deduped per recipe (a recipe with five lines using the
+ * same ingredient counts once). Title is sourced from the recipe's
+ * `current_version` when one exists, falling back to the most-recent
+ * `recipe_versions` row so freshly-imported drafts still display a name.
+ *
+ * Uncompiled recipes do not appear — `recipe_lines` is only populated by
+ * PRD-116's compile pass. That's the same behaviour the auto-create deep-link
+ * relies on, and means the count tracks the curated DSL graph rather than
+ * the raw draft body.
+ */
+export function getRecipeRefsForIngredient(db: FoodDb, ingredientId: number): RecipeRefsSummary {
+  const distinctRecipeIds = db
+    .selectDistinct({ recipeId: recipeVersions.recipeId })
+    .from(recipeLines)
+    .innerJoin(recipeVersions, eq(recipeLines.recipeVersionId, recipeVersions.id))
+    .where(eq(recipeLines.ingredientId, ingredientId))
+    .all()
+    .map((row) => row.recipeId);
+  if (distinctRecipeIds.length === 0) return { count: 0, recipes: [] };
+  const recipeRows = db
+    .select({
+      id: recipes.id,
+      slug: recipes.slug,
+      currentVersionId: recipes.currentVersionId,
+    })
+    .from(recipes)
+    .where(inArray(recipes.id, distinctRecipeIds))
+    .orderBy(asc(recipes.slug))
+    .all();
+  const titleByRecipeId = collectRecipeTitles(db, distinctRecipeIds);
+  const items: RecipeRefRow[] = recipeRows.map((row) => ({
+    recipeId: row.id,
+    recipeSlug: row.slug,
+    recipeTitle: titleByRecipeId.get(row.id) ?? row.slug,
+  }));
+  return { count: items.length, recipes: items };
+}
+
+function collectRecipeTitles(db: FoodDb, recipeIds: number[]): Map<number, string> {
+  const rows = db
+    .select({
+      recipeId: recipeVersions.recipeId,
+      versionId: recipeVersions.id,
+      versionNo: recipeVersions.versionNo,
+      title: recipeVersions.title,
+    })
+    .from(recipeVersions)
+    .where(inArray(recipeVersions.recipeId, recipeIds))
+    .all();
+  const currentByRecipe = new Map<number, number>();
+  const currentTitle = new Map<number, string>();
+  const fallbackTitle = new Map<number, { versionNo: number; title: string }>();
+  const currentVersionRows = db
+    .select({ id: recipes.id, currentVersionId: recipes.currentVersionId })
+    .from(recipes)
+    .where(inArray(recipes.id, recipeIds))
+    .all();
+  for (const row of currentVersionRows) {
+    if (row.currentVersionId !== null) currentByRecipe.set(row.id, row.currentVersionId);
+  }
+  for (const row of rows) {
+    if (currentByRecipe.get(row.recipeId) === row.versionId) {
+      currentTitle.set(row.recipeId, row.title);
+      continue;
+    }
+    const prev = fallbackTitle.get(row.recipeId);
+    if (prev === undefined || row.versionNo > prev.versionNo) {
+      fallbackTitle.set(row.recipeId, { versionNo: row.versionNo, title: row.title });
+    }
+  }
+  const merged = new Map<number, string>();
+  for (const id of recipeIds) {
+    const title = currentTitle.get(id) ?? fallbackTitle.get(id)?.title;
+    if (title !== undefined) merged.set(id, title);
+  }
+  return merged;
 }
