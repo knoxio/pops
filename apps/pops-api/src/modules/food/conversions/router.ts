@@ -9,16 +9,20 @@
  *              `packages/app-food/src/dsl/normalisation.ts` (no tRPC hop).
  *
  * Services live in `@pops/app-food-db` (PRD-122 part API extracted them).
- * `deleteUnit` / `deleteWeight` catch the upstream `SeededRowProtected`
- * error and translate to the discriminated `{ ok:false, reason:'seeded' }`
- * shape the UI consumes.
+ *
+ * Error mapping (mirrors the aliases / variants routers):
+ *   - `SeededRowProtected`           → `{ ok:false, reason:'seeded' }`
+ *   - SQLite `UNIQUE` constraint     → tRPC `CONFLICT`
+ *   - `expectRow` miss (no such id)  → tRPC `NOT_FOUND`
+ *   - anything else                   propagates as-is
  */
 import { z } from 'zod';
 
-import { conversionsQueries, conversionsService, SeededRowProtected } from '@pops/app-food-db';
+import { conversionsQueries, conversionsService } from '@pops/app-food-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { runCreate, runDelete, runUpdate } from './error-mapping.js';
 import {
   CanonicalUnitSchema,
   IngredientWeightSchema,
@@ -68,22 +72,6 @@ const ResolveInputSchema = z.object({
   qty: z.number(),
 });
 
-/**
- * Phase A's `deleteUnitConversion` / `deleteIngredientWeight` throw
- * `SeededRowProtected` (a domain-level invariant). The wire surface
- * prefers the discriminated `ok:false / reason:'seeded'` shape because the
- * UI renders a tooltip rather than a toast. Anything else propagates.
- */
-function runDelete(fn: () => void): { ok: true } | { ok: false; reason: 'seeded' } {
-  try {
-    fn();
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof SeededRowProtected) return { ok: false, reason: 'seeded' };
-    throw err;
-  }
-}
-
 export const conversionsRouter = router({
   /** ----- unit_conversions ----- */
   listUnits: protectedProcedure
@@ -101,7 +89,11 @@ export const conversionsRouter = router({
     .input(CreateUnitInputSchema)
     .output(z.object({ data: UnitConversionSchema }))
     .mutation(({ input }) => ({
-      data: toUnitConversion(conversionsService.createUnitConversion(getDrizzle(), input)),
+      data: toUnitConversion(
+        runCreate('unit_conversion', () =>
+          conversionsService.createUnitConversion(getDrizzle(), input)
+        )
+      ),
     })),
 
   updateUnit: protectedProcedure
@@ -110,7 +102,11 @@ export const conversionsRouter = router({
     .mutation(({ input }) => {
       const { id, ...patch } = input;
       return {
-        data: toUnitConversion(conversionsService.updateUnitConversion(getDrizzle(), id, patch)),
+        data: toUnitConversion(
+          runUpdate('unit_conversion', id, () =>
+            conversionsService.updateUnitConversion(getDrizzle(), id, patch)
+          )
+        ),
       };
     }),
 
@@ -128,6 +124,7 @@ export const conversionsRouter = router({
         .object({
           ingredientId: z.number().int().positive().optional(),
           search: z.string().optional(),
+          seededOnly: z.boolean().optional(),
         })
         .optional()
     )
@@ -142,7 +139,11 @@ export const conversionsRouter = router({
     .input(CreateWeightInputSchema)
     .output(z.object({ data: IngredientWeightSchema }))
     .mutation(({ input }) => ({
-      data: toIngredientWeight(conversionsService.createIngredientWeight(getDrizzle(), input)),
+      data: toIngredientWeight(
+        runCreate('ingredient_weight', () =>
+          conversionsService.createIngredientWeight(getDrizzle(), input)
+        )
+      ),
     })),
 
   updateWeight: protectedProcedure
@@ -152,7 +153,9 @@ export const conversionsRouter = router({
       const { id, ...patch } = input;
       return {
         data: toIngredientWeight(
-          conversionsService.updateIngredientWeight(getDrizzle(), id, patch)
+          runUpdate('ingredient_weight', id, () =>
+            conversionsService.updateIngredientWeight(getDrizzle(), id, patch)
+          )
         ),
       };
     }),

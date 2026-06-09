@@ -7,10 +7,11 @@
  * `setDb`, and exercises every procedure end-to-end through an `appRouter`
  * caller. Coverage: boolean `seeded` round-trip, idempotent delete on
  * unknown id, `SeededRowProtected` → discriminated `{ ok:false,
- * reason:'seeded' }` short-circuit, `expectRow` propagation on unknown-id
- * updates, Zod-boundary rejection, unique-constraint rejection, and every
- * resolve path (identity / unit-conversion / weight wins over unit / variant
- * wins over null-variant / null-variant fallback / unresolved).
+ * reason:'seeded' }` short-circuit, UNIQUE → tRPC `CONFLICT` mapping on
+ * create, `expectRow` → tRPC `NOT_FOUND` mapping on update, Zod-boundary
+ * rejection, `seededOnly` filter on listWeights, and every resolve path
+ * (identity / unit-conversion / weight wins over unit / variant wins over
+ * null-variant / null-variant fallback / unresolved).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -175,11 +176,11 @@ describe('food.conversions.createUnit', () => {
     ).rejects.toThrow();
   });
 
-  it('rejects duplicate (from_unit, to_unit) at the unique constraint', async () => {
+  it('maps a duplicate (from_unit, to_unit) UNIQUE failure to tRPC CONFLICT', async () => {
     await caller.food.conversions.createUnit({ fromUnit: 'tbsp', toUnit: 'ml', ratio: 15 });
     await expect(
       caller.food.conversions.createUnit({ fromUnit: 'tbsp', toUnit: 'ml', ratio: 14.79 })
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
   });
 });
 
@@ -199,13 +200,14 @@ describe('food.conversions.updateUnit', () => {
     expect(updated.notes).toBe('metric, AU bias');
   });
 
-  it('throws when updating an unknown id (expectRow guard)', async () => {
-    // Phase A's `conversionsService.updateUnitConversion` uses `expectRow` so
-    // an unknown id surfaces as a generic Error rather than a typed NotFound.
-    // The router lets it propagate — Express-level error middleware converts
-    // it to a 500. Clients should not be hitting unknown ids in practice
-    // (the list/get-then-mutate flow rules them out).
-    await expect(caller.food.conversions.updateUnit({ id: 9999, ratio: 1 })).rejects.toThrow();
+  it('maps an unknown-id update to tRPC NOT_FOUND', async () => {
+    // Phase A's `conversionsService.updateUnitConversion` throws an
+    // `expectRow` miss; the router's `runUpdate` helper translates that
+    // to a typed NOT_FOUND so clients can branch on the error code instead
+    // of pattern-matching message strings.
+    await expect(caller.food.conversions.updateUnit({ id: 9999, ratio: 1 })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 });
 
@@ -293,7 +295,7 @@ describe('food.conversions.{create,list,update,delete}Weight', () => {
     expect(variants).toContain(null);
   });
 
-  it('rejects duplicate (ingredient, variant, unit) at the unique constraint', async () => {
+  it('maps a duplicate (ingredient, variant, unit) UNIQUE failure to tRPC CONFLICT', async () => {
     const onionId = seedIngredient(db, 'Onion', 'onion');
     await caller.food.conversions.createWeight({
       ingredientId: onionId,
@@ -306,7 +308,7 @@ describe('food.conversions.{create,list,update,delete}Weight', () => {
         unit: 'medium',
         grams: 160,
       })
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
   });
 
   it('deleteWeight on a seeded row short-circuits with ok:false', async () => {
@@ -322,8 +324,34 @@ describe('food.conversions.{create,list,update,delete}Weight', () => {
     expect(result).toEqual({ ok: false, reason: 'seeded' });
   });
 
-  it('updateWeight throws for an unknown id (expectRow guard)', async () => {
-    await expect(caller.food.conversions.updateWeight({ id: 9999, grams: 1 })).rejects.toThrow();
+  it('updateWeight on an unknown id maps to tRPC NOT_FOUND', async () => {
+    await expect(
+      caller.food.conversions.updateWeight({ id: 9999, grams: 1 })
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('listWeights honours the seededOnly toggle', async () => {
+    const onionId = seedIngredient(db, 'Onion', 'onion');
+    // One user-added + one seeded; seededOnly must return only the seeded row.
+    await caller.food.conversions.createWeight({
+      ingredientId: onionId,
+      unit: 'medium',
+      grams: 150,
+    });
+    db.prepare(
+      `INSERT INTO ingredient_weights (ingredient_id, variant_id, unit, grams, is_seeded) VALUES (?, NULL, 'large', 200, 1)`
+    ).run(onionId);
+
+    const all = await caller.food.conversions.listWeights({ ingredientId: onionId });
+    expect(all.items).toHaveLength(2);
+
+    const seededOnly = await caller.food.conversions.listWeights({
+      ingredientId: onionId,
+      seededOnly: true,
+    });
+    expect(seededOnly.items).toHaveLength(1);
+    expect(seededOnly.items[0]?.unit).toBe('large');
+    expect(seededOnly.items[0]?.seeded).toBe(true);
   });
 });
 

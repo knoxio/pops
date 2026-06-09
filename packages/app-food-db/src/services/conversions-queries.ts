@@ -54,6 +54,10 @@ function combineFilters(filters: SQL[]): SQL | undefined {
 export interface ListIngredientWeightsInput {
   ingredientId?: number;
   search?: string;
+  /** Mirror of `ListUnitConversionsInput.seededOnly` so the data page can
+   *  filter weight rows on the same "show only PRD-113-seeded entries"
+   *  toggle that already drives the unit-conversions tab. */
+  seededOnly?: boolean;
 }
 
 export function listIngredientWeights(
@@ -67,6 +71,7 @@ export function listIngredientWeights(
   if (input.search !== undefined && input.search.length > 0) {
     filters.push(like(ingredientWeights.unit, `%${input.search}%`));
   }
+  if (input.seededOnly === true) filters.push(eq(ingredientWeights.isSeeded, 1));
   const where = combineFilters(filters);
   const q = db.select().from(ingredientWeights);
   return (where ? q.where(where) : q)
