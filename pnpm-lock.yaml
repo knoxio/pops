@@ -961,12 +961,6 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
     devDependencies:
-      '@pops/ui':
-        specifier: workspace:*
-        version: link:../ui
-      '@tanstack/react-query':
-        specifier: 5.101.0
-        version: 5.101.0(react@19.2.7)
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
@@ -988,18 +982,12 @@ importers:
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
-      date-fns:
-        specifier: ^4.4.0
-        version: 4.4.0
       i18next:
         specifier: ^26.3.1
         version: 26.3.1(typescript@6.0.3)
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1(@noble/hashes@1.8.0)
-      lucide-react:
-        specifier: ^1.17.0
-        version: 1.17.0(react@19.2.7)
       react:
         specifier: ^19.2.7
         version: 19.2.7

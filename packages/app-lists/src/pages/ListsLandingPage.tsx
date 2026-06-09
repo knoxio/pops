@@ -1,12 +1,17 @@
 import { useTranslation } from 'react-i18next';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@pops/ui';
-
 /**
  * Placeholder landing page at `/lists`. PRD-140 turns this into the real list
  * index once `lists.list.*` / `lists.items.*` tRPC procedures land. Keeping
  * the route mountable from day one means PRD-139 can ship independently of
  * any consumer module.
+ *
+ * Plain HTML on purpose: app-lists is consumed by pops-api transitively (via
+ * `@pops/app-food-db` → `@pops/app-lists/db`), and the pops-api Docker image
+ * intentionally doesn't ship frontend dep trees. Pulling `@pops/ui` here
+ * would force the pops-api image to resolve every shadcn/Radix transitive,
+ * for code it never runs. The shell's Tailwind preset still styles these
+ * utility classes the same way it does for `@pops/ui` Cards.
  *
  * No data fetching so the page is usable the moment the module is installed.
  */
@@ -24,25 +29,31 @@ export function ListsLandingPage() {
         aria-label={t('comingSoon.heading')}
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
-        <Card aria-disabled className="opacity-70">
-          <CardHeader>
-            <CardTitle>{t('browse.title')}</CardTitle>
-            <CardDescription>{t('browse.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {t('status.comingSoon')}
-          </CardContent>
-        </Card>
+        <article
+          aria-disabled
+          className="bg-card text-card-foreground rounded-lg border opacity-70 shadow-sm"
+        >
+          <div className="flex flex-col space-y-1.5 p-6">
+            <h2 className="text-2xl leading-none font-semibold tracking-tight">
+              {t('browse.title')}
+            </h2>
+            <p className="text-muted-foreground text-sm">{t('browse.description')}</p>
+          </div>
+          <div className="text-muted-foreground p-6 pt-0 text-sm">{t('status.comingSoon')}</div>
+        </article>
 
-        <Card aria-disabled className="opacity-70">
-          <CardHeader>
-            <CardTitle>{t('newList.title')}</CardTitle>
-            <CardDescription>{t('newList.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {t('status.comingSoon')}
-          </CardContent>
-        </Card>
+        <article
+          aria-disabled
+          className="bg-card text-card-foreground rounded-lg border opacity-70 shadow-sm"
+        >
+          <div className="flex flex-col space-y-1.5 p-6">
+            <h2 className="text-2xl leading-none font-semibold tracking-tight">
+              {t('newList.title')}
+            </h2>
+            <p className="text-muted-foreground text-sm">{t('newList.description')}</p>
+          </div>
+          <div className="text-muted-foreground p-6 pt-0 text-sm">{t('status.comingSoon')}</div>
+        </article>
       </section>
     </div>
   );
