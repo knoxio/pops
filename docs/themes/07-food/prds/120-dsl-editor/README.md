@@ -169,11 +169,11 @@ Inline per theme protocol.
 
 ### Autocomplete
 
-- [ ] After typing `@`, the suggestion list shows the 6 function names.
-- [ ] After typing `@ingredient(1, `, the suggestion list queries `food.slugs.search` and shows results.
-- [ ] After typing a known ingredient slug + `:`, the suggestion list shows that ingredient's variants from the DB.
-- [ ] After typing `@ingredient(1, banana:raw:`, the suggestion list shows the 15 curated prep_states.
-- [ ] Inside a `@step("...")` body, typing `@` shows currently-declared ingredient indexes AND a fuzzy slug search.
+- [x] After typing `@`, the suggestion list shows the 6 function names. (120-B: `DSL_FUNCTION_SUGGESTIONS` source — verified in `autocomplete-source.test.ts`.)
+- [x] After typing `@ingredient(1, `, the suggestion list queries `food.slugs.search` and shows results. (120-B: descriptor-slug context + `searchSlugs(query, ['ingredient', 'recipe'])`.)
+- [x] After typing a known ingredient slug + `:`, the suggestion list shows that ingredient's variants from the DB. (120-B: descriptor-variant context calls `listVariantsForIngredient(slug)` which wraps `food.ingredients.get`.)
+- [x] After typing `@ingredient(1, banana:raw:`, the suggestion list shows the 15 curated prep_states. (120-B: descriptor-prep context calls `listPrepStates` which wraps `food.prepStates.list`.)
+- [x] Inside a `@step("...")` body, typing `@` shows currently-declared ingredient indexes AND a fuzzy slug search. (120-B: `step-ref` context unions `collectStepIndexes(doc)` with `searchSlugs(query, ['ingredient', 'recipe'])`.)
 
 ### Error squiggles
 
@@ -198,7 +198,7 @@ Inline per theme protocol.
 
 - [x] When `readOnly={true}`, no keystrokes modify the document. (Enforced by `EditorView.editable.of(false)` + `EditorState.readOnly` — verified in the RTL suite via `contentDOM.contenteditable` + `state.readOnly`.)
 - [x] Banner is shown at the top.
-- [ ] Autocomplete and the Recompile button are disabled. _(Autocomplete lands in 120-B; the Recompile button lands in 120-C.)_
+- [ ] Autocomplete and the Recompile button are disabled. _(120-B mounts the autocomplete extension unconditionally; CodeMirror's `EditorState.readOnly` blocks the `apply` callback for the user when the doc is read-only, but the popup itself still opens. Read-only suppression of the popup is a tiny polish task deferred to 120-F alongside the mobile drawer; the Recompile button still belongs to 120-C.)_
 
 ### Accessibility & responsive
 
