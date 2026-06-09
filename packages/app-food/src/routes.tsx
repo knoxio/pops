@@ -77,11 +77,6 @@ const PromptViewerPage = lazy(() =>
 const RecipeListPage = lazy(() =>
   import('./pages/recipes/RecipeListPage').then((m) => ({ default: m.RecipeListPage }))
 );
-const RecipePagePlaceholder = lazy(() =>
-  import('./pages/recipes/RecipePagePlaceholder').then((m) => ({
-    default: m.RecipePagePlaceholder,
-  }))
-);
 const RecipeDetailPage = lazy(() =>
   import('./pages/recipes/RecipeDetailPage').then((m) => ({ default: m.RecipeDetailPage }))
 );
