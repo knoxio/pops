@@ -30,7 +30,7 @@ export type IngestState = 'pending' | 'processing' | 'completed' | 'failed' | 'p
 const BULLMQ_TO_INGEST: Partial<Record<JobType | string, IngestState>> = {
   waiting: 'pending',
   delayed: 'pending',
-  waiting_children: 'pending',
+  'waiting-children': 'pending',
   prioritized: 'pending',
   active: 'processing',
   completed: 'completed',

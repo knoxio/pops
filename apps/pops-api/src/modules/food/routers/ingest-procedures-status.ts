@@ -57,13 +57,44 @@ async function fetchJobTimings(sourceId: number): Promise<JobTimings> {
   return map.get(sourceId) ?? EMPTY_TIMINGS;
 }
 
+/** BullMQ pagination chunk size — keep individual Redis round-trips small. */
+const SCAN_PAGE_SIZE = 100;
+/** Maximum jobs we'll walk per request. Mirrors the queue's
+ *  `removeOnComplete: { count: 1_000 }` retention so the scan can find
+ *  any job still tracked by Redis. Beyond this the DB row's state is
+ *  authoritative anyway (set by `workerComplete`). */
+const SCAN_MAX_JOBS = 1_000;
+
 /**
- * BullMQ has no native "get job by data.sourceId" — we scan the recent
- * window once and bucket by sourceId. Cheaper than O(rows × Redis round
+ * BullMQ has no native "get job by data.sourceId" — we paginate the
+ * recent window and bucket by sourceId, stopping early once every
+ * requested id has been resolved. Cheaper than O(rows × Redis round
  * trips) when `list` returns many rows. When PRD-126 lands a heavier
  * worker we can persist `jobId` on `ingest_sources` and skip the scan
  * altogether.
  */
+type BullMQJob = Awaited<
+  ReturnType<NonNullable<ReturnType<typeof getFoodIngestQueue>>['getJobs']>
+>[number];
+
+async function recordJobTimings(
+  job: BullMQJob,
+  wanted: ReadonlySet<number>,
+  out: Map<number, JobTimings>
+): Promise<void> {
+  const data: unknown = job.data;
+  if (typeof data !== 'object' || data === null) return;
+  const sourceId = (data as { sourceId?: number }).sourceId;
+  if (typeof sourceId !== 'number' || !wanted.has(sourceId) || out.has(sourceId)) return;
+  const state = await job.getState();
+  out.set(sourceId, {
+    jobId: job.id ?? null,
+    bullmqState: state,
+    startedAt: job.processedOn ? new Date(job.processedOn).toISOString() : null,
+    completedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+  });
+}
+
 async function fetchJobTimingsBatch(
   sourceIds: readonly number[]
 ): Promise<Map<number, JobTimings>> {
@@ -72,19 +103,19 @@ async function fetchJobTimingsBatch(
   const queue = getFoodIngestQueue();
   if (queue === null) return out;
   const wanted = new Set(sourceIds);
-  const jobs = await queue.getJobs(['waiting', 'delayed', 'active', 'completed', 'failed'], 0, 99);
-  for (const job of jobs) {
-    const data: unknown = job.data;
-    if (typeof data !== 'object' || data === null) continue;
-    const sourceId = (data as { sourceId?: number }).sourceId;
-    if (typeof sourceId !== 'number' || !wanted.has(sourceId) || out.has(sourceId)) continue;
-    const state = await job.getState();
-    out.set(sourceId, {
-      jobId: job.id ?? null,
-      bullmqState: state,
-      startedAt: job.processedOn ? new Date(job.processedOn).toISOString() : null,
-      completedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
-    });
+  for (let offset = 0; offset < SCAN_MAX_JOBS; offset += SCAN_PAGE_SIZE) {
+    if (out.size === wanted.size) break;
+    const end = offset + SCAN_PAGE_SIZE - 1;
+    const jobs = await queue.getJobs(
+      ['waiting', 'delayed', 'active', 'completed', 'failed'],
+      offset,
+      end
+    );
+    if (jobs.length === 0) break;
+    for (const job of jobs) {
+      await recordJobTimings(job, wanted, out);
+    }
+    if (jobs.length < SCAN_PAGE_SIZE) break; // exhausted the window
   }
   return out;
 }

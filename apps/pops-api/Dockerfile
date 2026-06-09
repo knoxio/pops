@@ -39,6 +39,8 @@ WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/module-registry
 RUN pnpm build
+WORKDIR /app/packages/food-contracts
+RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build
 

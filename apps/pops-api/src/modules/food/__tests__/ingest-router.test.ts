@@ -338,4 +338,56 @@ describe('food.ingest.workerComplete', () => {
       })
     ).rejects.toThrow();
   });
+
+  it('throws when sourceId does not exist (no silent UPDATE)', async () => {
+    const caller = createInternalCaller();
+    await expect(
+      caller.food.ingest.workerComplete({
+        sourceId: 99999,
+        ok: false,
+        errorCode: 'X',
+        errorMessage: 'Y',
+        meta: { extractor_version: 'v1', stages: {} },
+      })
+    ).rejects.toThrow();
+  });
+
+  it('is idempotent on ok=true — second call returns the same draftRecipeId', async () => {
+    const publicCaller = createPublicCaller();
+    const started = await publicCaller.food.ingest.start({ kind: 'text', body: 'r' });
+    const caller = createInternalCaller();
+    const dsl = '@recipe(slug=idem, title="Idempotent")\n@yield 1 x';
+    const first = await caller.food.ingest.workerComplete({
+      sourceId: started.sourceId,
+      ok: true,
+      dsl,
+      meta: { extractor_version: 'v1', stages: {} },
+    });
+    if (!first.ok) throw new Error('expected ok=true');
+    const second = await caller.food.ingest.workerComplete({
+      sourceId: started.sourceId,
+      ok: true,
+      dsl,
+      meta: { extractor_version: 'v1', stages: {} },
+    });
+    if (!second.ok) throw new Error('expected ok=true');
+    expect(second.draftRecipeId).toBe(first.draftRecipeId);
+    // Single recipe row — no duplicate slug insert.
+    const recipeCount = (db.prepare(`SELECT COUNT(*) AS n FROM recipes`).get() as { n: number }).n;
+    expect(recipeCount).toBe(1);
+  });
+});
+
+describe('food.ingest.start rollback', () => {
+  it('removes the ingest_sources row when enqueue fails', async () => {
+    queueDisabled = true;
+    const caller = createPublicCaller();
+    const before = (db.prepare(`SELECT COUNT(*) AS n FROM ingest_sources`).get() as { n: number })
+      .n;
+    await expect(
+      caller.food.ingest.start({ kind: 'text', body: 'A recipe' })
+    ).rejects.toMatchObject({ code: 'SERVICE_UNAVAILABLE' });
+    const after = (db.prepare(`SELECT COUNT(*) AS n FROM ingest_sources`).get() as { n: number }).n;
+    expect(after).toBe(before);
+  });
 });

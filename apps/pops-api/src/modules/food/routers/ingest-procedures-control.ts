@@ -49,7 +49,17 @@ function findOnDiskScreenshot(
   return null;
 }
 
-const CANCELLABLE = new Set(['waiting', 'delayed', 'active', 'waiting_children', 'prioritized']);
+// Note: BullMQ uses `waiting-children` (hyphen), not `waiting_children`
+// (underscore) as the state literal. Earlier code listed the wrong
+// spelling and silently never matched.
+const CANCELLABLE_STATES = [
+  'waiting',
+  'delayed',
+  'active',
+  'waiting-children',
+  'prioritized',
+] as const;
+const CANCELLABLE = new Set<string>(CANCELLABLE_STATES);
 
 async function findJobBySourceId(
   sourceId: number
@@ -58,7 +68,12 @@ async function findJobBySourceId(
 > {
   const queue = getFoodIngestQueue();
   if (queue === null) return null;
-  const jobs = await queue.getJobs(['waiting', 'delayed', 'active'], 0, 99);
+  // Scan the SAME states `cancelIngest` recognises as cancellable —
+  // earlier `findJobBySourceId` only looked at `waiting/delayed/active`
+  // and silently lost any job stuck in `waiting_children` / `prioritized`.
+  // BullMQ's `getJobs` overload doesn't accept readonly arrays — copy
+  // into a mutable array.
+  const jobs = await queue.getJobs([...CANCELLABLE_STATES], 0, 99);
   for (const job of jobs) {
     const data: unknown = job.data;
     if (

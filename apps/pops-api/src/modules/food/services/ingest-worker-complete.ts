@@ -12,6 +12,10 @@
  *     to `ingest_sources` (PRD-138 amendment columns). Returns
  *     `{ ok: false, reason }` to the worker.
  *
+ * Each branch is idempotent. BullMQ retries the callback on transient
+ * network errors, so a second `ok:true` call sees the previously-set
+ * `draft_recipe_id` and returns it instead of re-inserting the slug.
+ *
  * `compileRecipeVersion` lives in `@pops/app-food` (frontend-bound
  * package, depends on @pops/api-client) — calling it here would close a
  * `pops-api → @pops/app-food → @pops/api-client → @pops/api` package
@@ -45,6 +49,35 @@ function deriveTitle(dsl: string): string {
   return 'Untitled ingested recipe';
 }
 
+export class WorkerCompleteSourceNotFound extends Error {
+  constructor(sourceId: number) {
+    super(`ingest_sources #${sourceId} not found`);
+    this.name = 'WorkerCompleteSourceNotFound';
+  }
+}
+
+interface ExistingSourceRow {
+  id: number;
+  draftRecipeId: number | null;
+}
+
+/** Reads the row once at the top of the transaction so the worker sees a
+ *  clear failure when `sourceId` doesn't exist (or was double-evicted)
+ *  rather than a silent no-op UPDATE. */
+function loadSourceRow(tx: FoodDb, sourceId: number): ExistingSourceRow {
+  const rows = tx
+    .select({
+      id: ingestSources.id,
+      draftRecipeId: ingestSources.draftRecipeId,
+    })
+    .from(ingestSources)
+    .where(eq(ingestSources.id, sourceId))
+    .all();
+  const row = rows[0];
+  if (row === undefined) throw new WorkerCompleteSourceNotFound(sourceId);
+  return row;
+}
+
 export interface WorkerCompleteSuccessResult {
   ok: true;
   draftRecipeId: number;
@@ -64,6 +97,18 @@ function applySuccess(
   result: Extract<IngestJobResult, { ok: true }>
 ): WorkerCompleteSuccessResult {
   return db.transaction((tx): WorkerCompleteSuccessResult => {
+    const existing = loadSourceRow(tx, sourceId);
+    // Idempotency — re-running `ok: true` after the previous run already
+    // created the draft must return the existing recipe rather than
+    // attempt a duplicate `slug_registry` insert (which would throw on
+    // unique constraint).
+    if (existing.draftRecipeId !== null) {
+      return {
+        ok: true,
+        draftRecipeId: existing.draftRecipeId,
+        compileStatus: 'uncompiled',
+      };
+    }
     const created = recipesService.createRecipe(tx, {
       slug: deriveSlug(sourceId),
       firstVersion: {
@@ -99,15 +144,21 @@ function applyFailure(
   sourceId: number,
   result: Extract<IngestJobResult, { ok: false }>
 ): WorkerCompleteFailureResult {
-  db.update(ingestSources)
-    .set({
-      extractedJson: JSON.stringify(result.meta),
-      errorCode: result.errorCode,
-      errorMessage: result.errorMessage,
-    })
-    .where(eq(ingestSources.id, sourceId))
-    .run();
-  return { ok: false, reason: result.errorCode };
+  return db.transaction((tx): WorkerCompleteFailureResult => {
+    // Verify the row exists before the UPDATE — Drizzle's `.run()` would
+    // silently affect zero rows otherwise, and the worker would see a
+    // spurious "failure recorded" response.
+    loadSourceRow(tx, sourceId);
+    tx.update(ingestSources)
+      .set({
+        extractedJson: JSON.stringify(result.meta),
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+      })
+      .where(eq(ingestSources.id, sourceId))
+      .run();
+    return { ok: false, reason: result.errorCode };
+  });
 }
 
 export function applyWorkerComplete(

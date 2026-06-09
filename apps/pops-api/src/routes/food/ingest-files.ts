@@ -87,10 +87,12 @@ function findFileWithExtension(
   } catch {
     return null;
   }
-  const lcEntries = new Set(entries.map((e) => e.toLowerCase()));
-  for (const ext of exts) {
-    const candidate = `${baseName}.${ext}`;
-    if (lcEntries.has(candidate)) return join(dir, candidate);
+  // Case-insensitive match but preserve on-disk casing — case-sensitive
+  // filesystems (Linux prod runtime) would otherwise 404 when the worker
+  // wrote `Screenshot.PNG` and the route looked for `screenshot.png`.
+  const wanted = new Set(exts.map((ext) => `${baseName}.${ext}`.toLowerCase()));
+  for (const entry of entries) {
+    if (wanted.has(entry.toLowerCase())) return join(dir, entry);
   }
   return null;
 }
