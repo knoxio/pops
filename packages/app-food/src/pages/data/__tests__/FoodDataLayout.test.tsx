@@ -13,33 +13,18 @@
  */
 import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
-import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
-import { FoodDataLayout, getActiveTabSlug } from '../FoodDataLayout';
-
-// Mount FoodDataLayout directly (no `React.lazy`) so the tablist/dropdown
-// assertions don't race the dynamic imports of the per-tab modules. The
-// per-tab content is intentionally stubbed — those flows are exercised
-// by each tab's own test file (e.g. IngredientsTab.test.tsx).
-function StubTabContent({ slug }: { slug: string }) {
-  return <div data-testid={`stub-${slug}`}>{slug}</div>;
-}
+import { routes } from '../../../routes';
+import { getActiveTabSlug } from '../FoodDataLayout.js';
 
 function renderAt(initialPath: string) {
   const router = createMemoryRouter(
     [
       {
-        path: '/food/data',
-        element: <FoodDataLayout />,
-        children: [
-          { index: true, element: <Navigate to="ingredients" replace /> },
-          { path: 'ingredients', element: <StubTabContent slug="ingredients" /> },
-          { path: 'aliases', element: <StubTabContent slug="aliases" /> },
-          { path: 'prep-states', element: <StubTabContent slug="prep-states" /> },
-          { path: 'substitutions', element: <StubTabContent slug="substitutions" /> },
-          { path: 'conversions', element: <StubTabContent slug="conversions" /> },
-        ],
+        path: '/food',
+        children: routes,
       },
     ],
     { initialEntries: [initialPath] }
@@ -55,34 +40,46 @@ describe('PRD-122 — /food/data shell', () => {
   it('redirects /food/data to /food/data/ingredients by default', async () => {
     renderAt('/food/data');
     expect(await screen.findByRole('heading', { name: /manage data/i })).toBeInTheDocument();
-    // The redirect lands on the Ingredients tab; the mobile dropdown
-    // mirrors the active slug, so its value reflects the redirect target.
-    const dropdown = (await screen.findByLabelText(/data tabs/i, {
-      selector: 'select',
-    })) as HTMLSelectElement;
-    expect(dropdown.value).toBe('ingredients');
+    // The index <Navigate> redirects to the ingredients tab, which then
+    // lazy-loads `IngredientsTab`. The double-hop is consistently slow
+    // enough on CI runners that the default 1s findBy timeout races with
+    // the resolution. Bump to 3s for this one assertion.
+    expect(
+      await screen.findByText(/canonical ingredients/i, undefined, { timeout: 3000 })
+    ).toBeInTheDocument();
   });
 
-  // Per-tab content + route tests below previously asserted on the
-  // placeholder text rendered by each lazy tab module. Under vitest's
-  // full-suite run, the lazy chunk loading cascades through the same
-  // worker pool that other test files have already exercised, and the
-  // resolution intermittently stalls on the Suspense fallback. The
-  // active-tab semantics are covered by `getActiveTabSlug` unit tests
-  // below (pure function, deterministic) and the tablist + dropdown
-  // tests further down (which run synchronously off the URL via
-  // `useLocation`, no lazy chunks involved).
+  it('renders the Aliases tab at /food/data/aliases', async () => {
+    renderAt('/food/data/aliases');
+    expect(await screen.findByText(/alternate names that resolve/i)).toBeInTheDocument();
+  });
+
+  it('renders the Prep states tab at /food/data/prep-states', async () => {
+    renderAt('/food/data/prep-states');
+    expect(await screen.findByText(/knife and process modifiers/i)).toBeInTheDocument();
+  });
+
+  it('renders the Substitutions tab at /food/data/substitutions', async () => {
+    renderAt('/food/data/substitutions');
+    expect(await screen.findByText(/directed substitution edges/i)).toBeInTheDocument();
+  });
+
+  it('renders the Conversions tab as a PRD-123 placeholder', async () => {
+    renderAt('/food/data/conversions');
+    expect(await screen.findByText(/unit and weight conversions/i)).toBeInTheDocument();
+    expect(await screen.findByText(/owned by PRD-123/i)).toBeInTheDocument();
+  });
 
   it('exposes a desktop tablist with one entry per tab', async () => {
     renderAt('/food/data/ingredients');
-    const tablist = await screen.findByRole('tablist', { name: /data tabs/i }, { timeout: 5000 });
+    const tablist = await screen.findByRole('tablist', { name: /data tabs/i });
     const tabs = tablist.querySelectorAll('a[role="tab"]');
     expect(tabs).toHaveLength(5);
   });
 
   it('marks the active tab via aria-selected + tabIndex', async () => {
     renderAt('/food/data/aliases');
-    const tablist = await screen.findByRole('tablist', { name: /data tabs/i }, { timeout: 5000 });
+    const tablist = await screen.findByRole('tablist', { name: /data tabs/i });
     const tabs = Array.from(tablist.querySelectorAll<HTMLAnchorElement>('a[role="tab"]'));
     const aliases = tabs.find((a) => a.textContent === 'Aliases');
     const ingredients = tabs.find((a) => a.textContent === 'Ingredients');
@@ -110,11 +107,7 @@ describe('PRD-122 — /food/data shell', () => {
 
   it('exposes a mobile dropdown with the same set of tabs', async () => {
     renderAt('/food/data/ingredients');
-    const dropdown = await screen.findByLabelText(
-      /data tabs/i,
-      { selector: 'select' },
-      { timeout: 5000 }
-    );
+    const dropdown = await screen.findByLabelText(/data tabs/i, { selector: 'select' });
     const options = dropdown.querySelectorAll('option');
     expect(options).toHaveLength(5);
     expect((dropdown as HTMLSelectElement).value).toBe('ingredients');

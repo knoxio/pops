@@ -1,4 +1,4 @@
-import { lookupRecipeYield, lookupSlug } from './resolve-slug';
+import { lookupRecipeYield, lookupSlug } from './resolve-slug.js';
 
 /**
  * Step body resolver — PRD-115.
@@ -8,9 +8,9 @@ import { lookupRecipeYield, lookupSlug } from './resolve-slug';
  * pointers; missing refs raise `UnresolvedStepRefIndex` or
  * `UnresolvedStepRefSlug`.
  */
-import type { SourceSpan, StepBlock, StepBodyPart } from './ast';
-import type { ResolverState } from './resolver-state';
-import type { ResolvedStepBlock, ResolvedStepBodyPart } from './resolver-types';
+import type { SourceSpan, StepBlock, StepBodyPart } from './ast.js';
+import type { ResolverState } from './resolver-state.js';
+import type { ResolvedStepBlock, ResolvedStepBodyPart } from './resolver-types.js';
 
 export function resolveStep(block: StepBlock, state: ResolverState): ResolvedStepBlock {
   const loc = block.loc ?? { startLine: 1, startCol: 1, endLine: 1, endCol: 1 };

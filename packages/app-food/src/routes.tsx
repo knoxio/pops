@@ -3,7 +3,49 @@ import { Navigate } from 'react-router';
 
 import type { RouteObject } from 'react-router';
 
-import type { IconName } from '@pops/navigation';
+/**
+ * Local mirror of the shell's `IconName` union. The shell owns the canonical
+ * vocabulary in `@pops/navigation/src/types.ts`; this copy is kept in sync
+ * because depending on `@pops/navigation` would re-introduce a build cycle
+ * with `@pops/api` via `@pops/api-client`. If a new icon ships in
+ * `@pops/navigation`, mirror it here when this package needs to reference it.
+ */
+type IconName =
+  | 'Activity'
+  | 'ArrowLeftRight'
+  | 'BarChart3'
+  | 'Bell'
+  | 'Bookmark'
+  | 'BookOpen'
+  | 'Bot'
+  | 'Building2'
+  | 'Clock'
+  | 'Compass'
+  | 'CreditCard'
+  | 'Database'
+  | 'DollarSign'
+  | 'Download'
+  | 'FileText'
+  | 'Film'
+  | 'GitPullRequest'
+  | 'History'
+  | 'Layers'
+  | 'LayoutDashboard'
+  | 'Library'
+  | 'MapPin'
+  | 'MessageSquare'
+  | 'Network'
+  | 'Package'
+  | 'PiggyBank'
+  | 'Plug'
+  | 'Search'
+  | 'Settings'
+  | 'ShieldCheck'
+  | 'Shuffle'
+  | 'Star'
+  | 'Trophy'
+  | 'Utensils'
+  | 'Zap';
 
 const FoodLandingPage = lazy(() =>
   import('./pages/FoodLandingPage').then((m) => ({ default: m.FoodLandingPage }))

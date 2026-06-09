@@ -11,12 +11,12 @@ import { and, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { CannotSubstituteSelf } from '../errors';
-import { substitutions } from '../schema';
-import { createIngredient, type FoodDb } from '../services/ingredients';
-import { createRecipe, deleteRecipe } from '../services/recipes';
-import { createSubstitution, deleteRecipeScopedSubstitutions } from '../services/substitutions';
-import { createVariant } from '../services/variants';
+import { CannotSubstituteSelf } from '../errors.js';
+import { substitutions } from '../schema.js';
+import { createIngredient, type FoodDb } from '../services/ingredients.js';
+import { createRecipe, deleteRecipe } from '../services/recipes.js';
+import { createSubstitution, deleteRecipeScopedSubstitutions } from '../services/substitutions.js';
+import { createVariant } from '../services/variants.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

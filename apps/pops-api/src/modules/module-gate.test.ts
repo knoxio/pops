@@ -12,7 +12,11 @@ const APP_KEY = 'POPS_APPS';
 const OVERLAY_KEY = 'POPS_OVERLAYS';
 
 function makeCaller() {
-  return appRouter.createCaller({ user: { email: 'test@example.com' }, serviceAccount: null });
+  return appRouter.createCaller({
+    user: { email: 'test@example.com' },
+    serviceAccount: null,
+    internalCaller: false,
+  });
 }
 
 describe('PRD-100 module gate (tRPC)', () => {

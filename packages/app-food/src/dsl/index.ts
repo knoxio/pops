@@ -18,11 +18,11 @@ export type {
   StepBody,
   StepBodyPart,
   YieldDecl,
-} from './ast';
-export type { ParseError, ParseErrorCode } from './errors';
-export { parseRecipeDsl, type ParseResult } from './parser';
-export { printRecipeAst } from './printer';
-export { resolveRecipeAst } from './resolver';
+} from './ast.js';
+export type { ParseError, ParseErrorCode } from './errors.js';
+export { parseRecipeDsl, type ParseResult } from './parser.js';
+export { printRecipeAst } from './printer.js';
+export { resolveRecipeAst } from './resolver.js';
 export type {
   ProposedSlug,
   ResolveContext,
@@ -38,14 +38,14 @@ export type {
   ResolvedStepBodyPart,
   ResolvedYield,
   ResolverCreation,
-} from './resolver-types';
-export { detectRecipeCycle } from './cycle';
-export type { CycleContext, CycleDescription, CycleError, CycleResult } from './cycle-types';
-export { compileRecipeVersion } from './compile';
+} from './resolver-types.js';
+export { detectRecipeCycle } from './cycle.js';
+export type { CycleContext, CycleDescription, CycleError, CycleResult } from './cycle-types.js';
+export { compileRecipeVersion } from './compile.js';
 export type {
   CompileError,
   CompileErrorJson,
   CompilePhase,
   CompileResult,
   MaterialiseError,
-} from './compile-types';
+} from './compile-types.js';

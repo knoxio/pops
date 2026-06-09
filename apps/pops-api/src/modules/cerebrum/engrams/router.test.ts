@@ -12,7 +12,11 @@ import { resetCerebrumCache } from '../instance.js';
 import type { Database } from 'better-sqlite3';
 
 function createCaller() {
-  return appRouter.createCaller({ user: { email: 'test@example.com' }, serviceAccount: null });
+  return appRouter.createCaller({
+    user: { email: 'test@example.com' },
+    serviceAccount: null,
+    internalCaller: false,
+  });
 }
 
 describe('cerebrum tRPC router', () => {

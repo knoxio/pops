@@ -21,8 +21,8 @@ import {
   PlanSlotIsDefault,
   PlanSlotNotFound,
   PlanSlotSlugAlreadyExists,
-} from '../errors';
-import { planEntries, planSlots } from '../schema';
+} from '../errors.js';
+import { planEntries, planSlots } from '../schema.js';
 import {
   addCustomSlot,
   addPlanEntry,
@@ -32,11 +32,11 @@ import {
   removePlanEntry,
   reorderSlot,
   updateSlot,
-} from '../services/plan';
-import { createRun } from '../services/recipe-runs';
-import { createRecipe } from '../services/recipes';
+} from '../services/plan.js';
+import { createRun } from '../services/recipe-runs.js';
+import { createRecipe } from '../services/recipes.js';
 
-import type { FoodDb } from '../services/internal';
+import type { FoodDb } from '../services/internal.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

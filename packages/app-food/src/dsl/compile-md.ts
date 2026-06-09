@@ -13,7 +13,7 @@
  * depending on the surface — markdown for the static cookbook view, the
  * resolved JSON for cooking-mode timers.
  */
-import type { ResolvedStepBody, ResolvedStepBodyPart } from './resolver-types';
+import type { ResolvedStepBody, ResolvedStepBodyPart } from './resolver-types.js';
 
 /**
  * Lookup from `position` to a render label (descriptor text). The compile

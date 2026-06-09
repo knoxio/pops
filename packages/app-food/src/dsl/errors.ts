@@ -6,7 +6,7 @@
  * (unbalanced parens at file scope) short-circuit. The result is a single
  * `ParseResult` with N errors covering all the bad bits.
  */
-import type { SourceSpan } from './ast';
+import type { SourceSpan } from './ast.js';
 
 export type ParseErrorCode =
   | 'MissingRecipeHeader'

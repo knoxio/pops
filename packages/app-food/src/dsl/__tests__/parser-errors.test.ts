@@ -6,9 +6,9 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { parseRecipeDsl } from '../parser';
+import { parseRecipeDsl } from '../parser.js';
 
-import type { ParseErrorCode } from '../errors';
+import type { ParseErrorCode } from '../errors.js';
 
 const RECIPE_HEADER = `@recipe(slug="x", title="X")
 @yield(x, 1:count)

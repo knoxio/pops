@@ -12,14 +12,14 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { CannotCookUncompiledRecipe } from '../errors';
-import { batches, ingredientVariants, recipeVersions } from '../schema';
-import { consumeForRun, type ConsumptionNeed } from '../services/batches';
-import { createIngredient } from '../services/ingredients';
-import { type FoodDb } from '../services/ingredients';
-import { createRun, markRunComplete } from '../services/recipe-runs';
-import { createRecipe } from '../services/recipes';
-import { createVariant } from '../services/variants';
+import { CannotCookUncompiledRecipe } from '../errors.js';
+import { batches, ingredientVariants, recipeVersions } from '../schema.js';
+import { consumeForRun, type ConsumptionNeed } from '../services/batches.js';
+import { createIngredient } from '../services/ingredients.js';
+import { type FoodDb } from '../services/ingredients.js';
+import { createRun, markRunComplete } from '../services/recipe-runs.js';
+import { createRecipe } from '../services/recipes.js';
+import { createVariant } from '../services/variants.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

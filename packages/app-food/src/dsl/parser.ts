@@ -1,4 +1,4 @@
-import { readIdentifier } from './lex';
+import { readIdentifier } from './lex.js';
 import {
   type CursorMark,
   handleIngredient,
@@ -7,8 +7,8 @@ import {
   handleYield,
   newState,
   type ParserState,
-} from './parser-state';
-import { findBalancedClose, recomputeLineCol } from './parser-util';
+} from './parser-state.js';
+import { findBalancedClose, recomputeLineCol } from './parser-util.js';
 
 /**
  * Recipe DSL parser entry point — PRD-114 / ADR-023.
@@ -20,13 +20,13 @@ import { findBalancedClose, recomputeLineCol } from './parser-util';
  *
  * Pure: same input → same output. No I/O, no DB lookups, no random.
  */
-import type { MarkdownBlock, RecipeAst } from './ast';
-import type { ParseError } from './errors';
+import type { MarkdownBlock, RecipeAst } from './ast.js';
+import type { ParseError } from './errors.js';
 
 export type ParseResult = { ok: true; ast: RecipeAst } | { ok: false; errors: ParseError[] };
 
-export type { ParseError, ParseErrorCode } from './errors';
-export type { SourceSpan } from './ast';
+export type { ParseError, ParseErrorCode } from './errors.js';
+export type { SourceSpan } from './ast.js';
 
 export function parseRecipeDsl(input: string): ParseResult {
   const state = newState(input);

@@ -38,6 +38,13 @@ export const ingestSources = sqliteTable(
     // row persists; only the files are gone. Path columns stay populated to
     // describe where the files used to be.
     archivedAt: text('archived_at'),
+    // PRD-125 amendment driven by PRD-138 — meta-JSON-only path doesn't
+    // survive BullMQ TTL, so the failure-band columns persist directly.
+    // Populated by `food.ingest.workerComplete` on `ok: false`.
+    errorCode: text('error_code'),
+    errorMessage: text('error_message'),
+    // Initialised to 0 by `food.ingest.start`; incremented by `food.ingest.retry`.
+    attempts: integer('attempts').notNull().default(0),
   },
   (t) => [
     index('idx_ingest_sources_kind').on(t.kind),

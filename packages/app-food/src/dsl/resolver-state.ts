@@ -6,7 +6,7 @@
  * accumulator; the top-level `resolveRecipeAst` decides ok/!ok based on
  * `errors.length`.
  */
-import type { IngredientBlock } from './ast';
+import type { IngredientBlock } from './ast.js';
 import type {
   ProposedSlug,
   ResolveContext,
@@ -14,7 +14,7 @@ import type {
   ResolvedBlock,
   ResolvedIngredientBlock,
   ResolverCreation,
-} from './resolver-types';
+} from './resolver-types.js';
 
 export interface ResolverState {
   ctx: ResolveContext;

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { TabPlaceholder } from './TabPlaceholder';
+import { TabPlaceholder } from './TabPlaceholder.js';
 
 export function ConversionsTab() {
   const { t } = useTranslation('food');

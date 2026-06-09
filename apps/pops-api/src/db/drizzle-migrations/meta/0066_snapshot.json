@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d5410a4e-4f71-4c81-a9fe-dbf8d72a9905",
+  "id": "309f74ab-5b94-4b34-a595-575bdf265a8b",
   "prevId": "4a15eba6-d936-4c8d-a437-498af360bd4e",
   "tables": {
     "ai_alert_rules": {
@@ -3210,176 +3210,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "ingredient_weights": {
-      "name": "ingredient_weights",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "ingredient_id": {
-          "name": "ingredient_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "variant_id": {
-          "name": "variant_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "unit": {
-          "name": "unit",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "grams": {
-          "name": "grams",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "is_seeded": {
-          "name": "is_seeded",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(datetime('now'))"
-        }
-      },
-      "indexes": {
-        "idx_ingredient_weights_ingredient": {
-          "name": "idx_ingredient_weights_ingredient",
-          "columns": ["ingredient_id"],
-          "isUnique": false
-        },
-        "uq_ingredient_weights_ing_var_unit": {
-          "name": "uq_ingredient_weights_ing_var_unit",
-          "columns": ["ingredient_id", "variant_id", "unit"],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "ingredient_weights_ingredient_id_ingredients_id_fk": {
-          "name": "ingredient_weights_ingredient_id_ingredients_id_fk",
-          "tableFrom": "ingredient_weights",
-          "tableTo": "ingredients",
-          "columnsFrom": ["ingredient_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "ingredient_weights_variant_id_ingredient_variants_id_fk": {
-          "name": "ingredient_weights_variant_id_ingredient_variants_id_fk",
-          "tableFrom": "ingredient_weights",
-          "tableTo": "ingredient_variants",
-          "columnsFrom": ["variant_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "unit_conversions": {
-      "name": "unit_conversions",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "from_unit": {
-          "name": "from_unit",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "to_unit": {
-          "name": "to_unit",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ratio": {
-          "name": "ratio",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "is_seeded": {
-          "name": "is_seeded",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(datetime('now'))"
-        }
-      },
-      "indexes": {
-        "idx_unit_conversions_from": {
-          "name": "idx_unit_conversions_from",
-          "columns": ["from_unit"],
-          "isUnique": false
-        },
-        "uq_unit_conversions_from_to": {
-          "name": "uq_unit_conversions_from_to",
-          "columns": ["from_unit", "to_unit"],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "ingest_sources": {
       "name": "ingest_sources",
       "columns": {
@@ -3467,6 +3297,28 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "error_code": {
+          "name": "error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "error_message": {
+          "name": "error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {

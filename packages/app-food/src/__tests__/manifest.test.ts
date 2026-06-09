@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { manifest, navConfig, routes } from '../index';
+import { manifest, navConfig, routes } from '../index.js';
 
 describe('PRD-118 — app-food module manifest', () => {
   it('declares id="food"', () => {

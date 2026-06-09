@@ -1,6 +1,6 @@
-import { isIdentStart } from './cursor';
-import { readNumber, readQtyUnit, readSlug } from './lex';
-import { type PartialIngredient, readNamedArg } from './parse-ingredient-named';
+import { isIdentStart } from './cursor.js';
+import { readNumber, readQtyUnit, readSlug } from './lex.js';
+import { type PartialIngredient, readNamedArg } from './parse-ingredient-named.js';
 
 /**
  * `@ingredient(...)` parser — PRD-114.
@@ -15,9 +15,9 @@ import { type PartialIngredient, readNamedArg } from './parse-ingredient-named';
  * Per-key named-arg readers live in `parse-ingredient-named.ts` so this
  * file stays under the line / complexity caps.
  */
-import type { Descriptor, IngredientBlock, QtyUnit } from './ast';
-import type { Cursor } from './cursor';
-import type { ParseError } from './errors';
+import type { Descriptor, IngredientBlock, QtyUnit } from './ast.js';
+import type { Cursor } from './cursor.js';
+import type { ParseError } from './errors.js';
 
 export function parseIngredientArgs(c: Cursor, errors: ParseError[]): IngredientBlock | null {
   const partial: PartialIngredient = {};

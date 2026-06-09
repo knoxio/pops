@@ -10,9 +10,9 @@ import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { ListItemNotFoundError, ListNotFoundError } from '../errors';
-import { listItems, lists } from '../schema';
-import { type ListsDb } from '../services/internal';
+import { ListItemNotFoundError, ListNotFoundError } from '../errors.js';
+import { listItems, lists } from '../schema.js';
+import { type ListsDb } from '../services/internal.js';
 import {
   addItem,
   bulkAdd,
@@ -22,7 +22,7 @@ import {
   reorderItems,
   uncheckItem,
   updateItem,
-} from '../services/list-items';
+} from '../services/list-items.js';
 import {
   archiveList,
   createList,
@@ -31,7 +31,7 @@ import {
   listLists,
   unarchiveList,
   updateList,
-} from '../services/lists';
+} from '../services/lists.js';
 
 const MIGRATION_SQL = readFileSync(
   join(

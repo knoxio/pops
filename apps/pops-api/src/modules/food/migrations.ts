@@ -29,6 +29,9 @@ export const foodMigrationTags: readonly string[] = [
   '0065_prd_116_recipe_compile',
   // PRD-123 — unit_conversions + ingredient_weights.
   '0066_prd_123_conversions',
+  // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns on
+  // ingest_sources (persists failure detail past BullMQ TTL).
+  '0067_prd_125_ingest_error_columns',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { FoodLandingPage } from '../FoodLandingPage';
+import { FoodLandingPage } from '../FoodLandingPage.js';
 
 describe('PRD-118 — FoodLandingPage', () => {
   it('renders heading + intro without crashing', () => {

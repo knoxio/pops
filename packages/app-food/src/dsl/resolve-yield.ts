@@ -1,5 +1,5 @@
-import { newIngredientCreation, newVariantCreation } from './resolve-create';
-import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from './resolve-slug';
+import { newIngredientCreation, newVariantCreation } from './resolve-create.js';
+import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from './resolve-slug.js';
 
 /**
  * `@yield(...)` resolver — PRD-115.
@@ -8,9 +8,9 @@ import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from '.
  * optional variant scoped under that ingredient, and the optional
  * prep_state (curated; no auto-create).
  */
-import type { SourceSpan, YieldDecl } from './ast';
-import type { ResolverState } from './resolver-state';
-import type { ResolvedYield } from './resolver-types';
+import type { SourceSpan, YieldDecl } from './ast.js';
+import type { ResolverState } from './resolver-state.js';
+import type { ResolvedYield } from './resolver-types.js';
 
 interface YieldCtx {
   decl: YieldDecl;

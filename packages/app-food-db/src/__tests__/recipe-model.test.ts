@@ -14,12 +14,21 @@ import {
   CannotEditPublishedVersion,
   CannotPromoteUncompiledVersion,
   SlugAlreadyRegisteredError,
-} from '../errors';
-import { recipes, recipeTags, recipeVersions, slugRegistry } from '../schema';
-import { createIngredient } from '../services/ingredients';
-import { type FoodDb } from '../services/ingredients';
-import { createNewVersion, promoteVersion, updateDraftVersion } from '../services/recipe-versions';
-import { archiveRecipe, createRecipe, deleteRecipe, renameRecipeSlug } from '../services/recipes';
+} from '../errors.js';
+import { recipes, recipeTags, recipeVersions, slugRegistry } from '../schema.js';
+import { createIngredient } from '../services/ingredients.js';
+import { type FoodDb } from '../services/ingredients.js';
+import {
+  createNewVersion,
+  promoteVersion,
+  updateDraftVersion,
+} from '../services/recipe-versions.js';
+import {
+  archiveRecipe,
+  createRecipe,
+  deleteRecipe,
+  renameRecipeSlug,
+} from '../services/recipes.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',
