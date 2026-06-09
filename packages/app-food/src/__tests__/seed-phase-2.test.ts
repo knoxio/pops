@@ -91,9 +91,26 @@ describe('PRD-113 phase-2 — seed + compile smoke', () => {
   });
 
   describe('summary + counts', () => {
-    it('returns non-skipped summary with the expected recipe count', () => {
+    it('returns non-skipped summary and seeds the required Phase-2 fixtures', () => {
+      // Assert by slug rather than exact count so adding a sample recipe in a
+      // later phase doesn't false-fail this test — the invariant we care
+      // about is "Phase-2 compile works for every seeded fixture", not the
+      // fixture count itself.
       expect(summary.skipped).toBe(false);
-      expect(summary.recipes).toBe(5);
+      const REQUIRED_SLUGS = [
+        'smash-patty',
+        'smash-burger',
+        'weeknight-pasta',
+        'roast-chicken',
+        'breakfast-eggs',
+      ] as const;
+      const seededSlugs = db.select({ slug: recipes.slug }).from(recipes).all();
+      const slugSet = new Set(seededSlugs.map((row) => row.slug));
+      for (const slug of REQUIRED_SLUGS) {
+        expect(slugSet.has(slug), `recipe "${slug}" missing from seed`).toBe(true);
+      }
+      expect(summary.recipes).toBe(seededSlugs.length);
+      expect(summary.recipes).toBeGreaterThanOrEqual(REQUIRED_SLUGS.length);
     });
 
     it('seeds PRD-123 conversion rows alongside the recipes', () => {

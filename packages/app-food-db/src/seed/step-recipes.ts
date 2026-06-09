@@ -4,7 +4,7 @@
  * `seedRecipeHeaders` is the Phase-1 path: it calls `createRecipe` for each
  * fixture and stashes both the recipe id and the first-version id in the
  * SeedContext. The DSL body lives in `recipe_versions.body_dsl` as plain
- * text; `compile_state` defaults to uncompiled and `status` to draft.
+ * text; `compile_status` defaults to `'uncompiled'` and `status` to `'draft'`.
  *
  * `seedRecipesAndCompile` is the Phase-2 path: same create flow, plus a
  * caller-injected `compile` callback that drives PRD-116's

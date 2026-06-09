@@ -2,7 +2,7 @@
  * PRD-113 fixture set — recipe headers + DSL bodies (phases 1 + 2).
  *
  * Phase 1 stores these bodies verbatim and leaves `recipe_versions.status =
- * 'draft'` + `compile_state = 'uncompiled'`. Phase 2 (post PRD-116) drives
+ * 'draft'` + `compile_status = 'uncompiled'`. Phase 2 (post PRD-116) drives
  * `compileRecipeVersion` against each row so `recipe_lines` / `recipe_steps`
  * get populated and the version is promoted to `current` — the cross-PRD
  * smoke test PRD-113 was originally specced as.
