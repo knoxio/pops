@@ -13,10 +13,13 @@ import { CORE_PILLAR_ID } from './manifest-pillar';
  * reachable from the browser; the aggregator on core-api does the
  * per-pillar HTTP fan-out. The shell consumes only the aggregated map.
  *
- * Failures are intentionally soft: a network problem or parse error
- * returns an empty registry / empty health map and is logged. The
- * provider treats every pillar as `'unknown'` in that state, which
- * collapses to "render the route optimistically".
+ * Failures are intentionally soft. A registry fetch that errors,
+ * parses to the wrong shape, or returns an empty list collapses to
+ * the synthetic `core` self-entry so the shell always has at least
+ * one pillar to reason about. A health fetch that fails returns an
+ * empty map, which the provider exposes as `'unknown'` for every
+ * pillar — `PillarGuard` treats unknown as healthy so a slow / failed
+ * boot does not paint placeholders over working routes.
  */
 import type { PillarRegistryEntry } from '@pops/types';
 

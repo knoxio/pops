@@ -88,13 +88,17 @@ router.get('/pillars/health', async (_req, res) => {
 });
 
 function listPillarsWithSelf(): readonly PillarRegistryEntry[] {
-  // The /pillars view always includes a synthetic `core` self-entry so a
-  // consumer can iterate the registry without special-casing the dispatcher
-  // host. The `baseUrl` of the self-entry is intentionally empty: pillars
-  // talking to themselves use the in-process resolver, not HTTP.
+  // The /pillars view always includes a `core` self-entry so a consumer can
+  // iterate the registry without special-casing the dispatcher host. The
+  // `baseUrl` of the self-entry is always empty — pillars talking to
+  // themselves use the in-process resolver, not HTTP — and a deployer's
+  // misconfigured `core:http://...` entry is normalised the same way so the
+  // contract holds regardless of how `POPS_PILLARS` is set.
   const remote = getPillarRegistry();
-  if (remote.some((p) => p.id === 'core')) return remote;
   const self: PillarRegistryEntry = { id: 'core', baseUrl: '' };
+  if (remote.some((p) => p.id === 'core')) {
+    return remote.map((p) => (p.id === 'core' ? self : p));
+  }
   return [self, ...remote];
 }
 
