@@ -36,7 +36,11 @@ ARG WHISPER_MODEL=distil-large-v3
 FROM python:3.12-slim AS model-baker
 ARG FASTER_WHISPER_VERSION
 ARG WHISPER_MODEL
-RUN pip install --no-cache-dir "faster-whisper==${FASTER_WHISPER_VERSION}"
+# `requests` is a transitive runtime dep of faster-whisper's
+# `download_model` path but is not declared in `pyproject.toml` for some
+# 1.x releases — install it explicitly so the bake step doesn't fail
+# with ModuleNotFoundError during the import that triggers the download.
+RUN pip install --no-cache-dir "faster-whisper==${FASTER_WHISPER_VERSION}" requests
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('${WHISPER_MODEL}', device='cpu', compute_type='int8')"
 
 # ─── stage 2 · prune ────────────────────────────────────────────────
@@ -87,7 +91,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m venv /opt/venv \
  && /opt/venv/bin/pip install --no-cache-dir \
       "yt-dlp==${YT_DLP_VERSION}" \
-      "faster-whisper==${FASTER_WHISPER_VERSION}"
+      "faster-whisper==${FASTER_WHISPER_VERSION}" \
+      requests
 ENV PATH="/opt/venv/bin:${PATH}"
 
 # Bring in the prebaked HuggingFace cache so first-job latency doesn't
