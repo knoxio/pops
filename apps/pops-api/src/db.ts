@@ -4,7 +4,10 @@ import { unlinkSync } from 'node:fs';
 import BetterSqlite3 from 'better-sqlite3';
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
 
+import { openCoreDb, type CoreDb, type OpenedCoreDb } from '@pops/core-db';
+
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
+import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
 import { migrationOwners } from './db/migration-ownership.js';
 import {
@@ -26,6 +29,18 @@ import { isVecAvailable, tryLoadVecExtension } from './db/vec-loader.js';
 import { readInstalledModules, type InstalledModules } from './modules/env-modules.js';
 
 let prodDb: BetterSqlite3.Database | null = null;
+
+/**
+ * Lazily-initialised handle to the core pillar's SQLite file.
+ *
+ * Phase 2 PR 2 of the core pillar migration: opens the connection at
+ * first call (mirroring the shared `prodDb` singleton pattern) but does
+ * NOT yet consume it for any reads/writes. PR 3 of phase 2 flips
+ * service-accounts traffic over to this handle; PR 4 drops the
+ * service-accounts table from the shared journal + adds the Litestream
+ * config.
+ */
+let coreDb: OpenedCoreDb | null = null;
 
 const asyncDb = new AsyncLocalStorage<BetterSqlite3.Database>();
 
@@ -216,6 +231,44 @@ export function closeDb(): void {
     prodDb.close();
     prodDb = null;
   }
+  closeCoreDb();
+}
+
+/**
+ * Lazily open the core pillar's SQLite file and return the drizzle
+ * handle. Phase 2 PR 2 wires the connection up at boot but does NOT
+ * yet route any production traffic through it — the existing shared
+ * singleton continues to serve every read/write. The handle is here so
+ * PR 3 can flip service-accounts callers over with a one-line edit.
+ */
+export function getCoreDrizzle(): CoreDb {
+  if (!coreDb) {
+    coreDb = openCoreDb(resolveCoreSqlitePath());
+  }
+  return coreDb.db;
+}
+
+/**
+ * Close the core pillar's connection if it was opened. Idempotent —
+ * safe to call from {@link closeDb} on shutdown even when the core
+ * handle was never resolved.
+ */
+export function closeCoreDb(): void {
+  if (coreDb) {
+    coreDb.raw.close();
+    coreDb = null;
+  }
+}
+
+/**
+ * Test-only: swap the core pillar handle. Used by `setupTestContext`
+ * to inject an in-memory DB so test suites don't write to the dev
+ * `data/core.db` file. Returns the previous handle (or null).
+ */
+export function setCoreDb(next: OpenedCoreDb | null): OpenedCoreDb | null {
+  const prev = coreDb;
+  coreDb = next;
+  return prev;
 }
 
 export function setDb(newDb: BetterSqlite3.Database): BetterSqlite3.Database | null {
