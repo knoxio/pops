@@ -185,9 +185,9 @@ Inline per theme protocol.
 
 ### Pages
 
-- [ ] All seven routes from the table above mounted in `packages/app-food/src/routes.tsx`.
-- [ ] Each page component lives in `packages/app-food/src/pages/` and is a thin wrapper around hooks + the editor/renderer components.
-- [ ] List page renders compact recipe cards with working search and filter.
+- [x] All seven routes from the table above mounted in `packages/app-food/src/routes.tsx`. (119-A: real route for list; placeholder for B/C/D until those PRs land.)
+- [x] Each page component lives in `packages/app-food/src/pages/` and is a thin wrapper around hooks + the editor/renderer components. (119-A: list page only; B/C/D follow.)
+- [x] List page renders compact recipe cards with working search and filter. (119-A)
 - [ ] New page saves a recipe end-to-end: type valid DSL → click save → redirected to edit page → recipe appears in the list.
 - [ ] Detail page renders the cookbook view for sample recipes from PRD-113's seed.
 - [ ] Edit page wraps PRD-120's editor with save/promote/discard controls.
