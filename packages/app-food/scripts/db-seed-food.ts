@@ -1,5 +1,5 @@
 /**
- * Food-only seed runner (PRD-113 phase 1).
+ * Food-only seed runner (PRD-113 phase 1 + 3).
  *
  * Wipes food + lists tables in the SQLite file at `SQLITE_PATH` (or the dev
  * default `./apps/pops-api/data/pops.db` relative to the repo root) and
@@ -83,6 +83,7 @@ try {
     console.log(`  batch_consumptions:${summary.batchConsumptions}`);
     console.log(`  lists:             ${summary.lists}`);
     console.log(`  list_items:        ${summary.listItems}`);
+    console.log(`  ingest_sources:    ${summary.ingestSources}`);
   })();
 } finally {
   db.pragma('foreign_keys = ON');

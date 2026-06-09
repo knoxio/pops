@@ -1,5 +1,5 @@
 /**
- * PRD-113 phase-1 seed tests.
+ * PRD-113 phase-1 + phase-3 seed tests.
  *
  * Applies every food + lists migration to an in-memory SQLite, runs
  * `seedFood`, then asserts:
@@ -11,6 +11,9 @@
  *     criterion #4 is covered by at least one seeded substitution
  *   - batches mix NULL `expires_at` (shelf-stable) and explicit expiry rows
  *   - plan_entries mix slotted and ad-hoc (the prep-session entries)
+ *   - phase-3 ingest_sources rows are linked both ways (recipe_versions
+ *     .source_id and ingest_sources.draft_recipe_id), covering both url-web
+ *     and url-instagram kinds
  *   - re-running seedFood is a no-op (skipped + zero counts)
  *
  * No Redis, no API process — pure schema + service exercise.
@@ -23,7 +26,15 @@ import { eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { batches, planEntries, recipeRuns, slugRegistry, substitutions } from '../schema.js';
+import {
+  batches,
+  ingestSources,
+  planEntries,
+  recipeRuns,
+  recipeVersions,
+  slugRegistry,
+  substitutions,
+} from '../schema.js';
 import { seedFood, type SeedFoodSummary } from '../seed/index.js';
 
 import type { FoodDb } from '../services/internal.js';
@@ -35,6 +46,7 @@ const MIGRATIONS = [
   '0061_shocking_skreet.sql', // PRD-109 substitutions
   '0062_chemical_donald_blake.sql', // PRD-112 lists + list_items
   '0063_bumpy_wolverine.sql', // PRD-111 plan_slots + plan_entries
+  '0064_peaceful_magma.sql', // PRD-110 ingest_sources
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );
@@ -87,6 +99,97 @@ describe('PRD-113 phase-1 seed', () => {
     });
     it('seeds plan slots including the user-added "late-night" slot', () => {
       expect(summary.planSlots).toBe(6);
+    });
+    it('seeds the two phase-3 ingest_sources fixtures', () => {
+      expect(summary.ingestSources).toBe(2);
+    });
+  });
+
+  describe('ingest_sources (phase 3)', () => {
+    it('inserts both fixture kinds (url-instagram + url-web)', () => {
+      const kinds = db
+        .select({ kind: ingestSources.kind })
+        .from(ingestSources)
+        .all()
+        .map((row) => row.kind)
+        .toSorted();
+      expect(kinds).toEqual(['url-instagram', 'url-web']);
+    });
+
+    it('links every ingest_sources row back to a seeded recipe', () => {
+      const orphans = db
+        .select({ n: sql<number>`count(*)` })
+        .from(ingestSources)
+        .where(isNull(ingestSources.draftRecipeId))
+        .all();
+      expect(orphans[0]?.n ?? 0).toBe(0);
+    });
+
+    it('wires recipe_versions.source_id for ingest-originated drafts', () => {
+      // PRD-135's inbox-inspector scope is `recipe_versions.source_id IS NOT NULL`.
+      const linked = db
+        .select({ n: sql<number>`count(*)` })
+        .from(recipeVersions)
+        .where(isNotNull(recipeVersions.sourceId))
+        .all();
+      expect(linked[0]?.n ?? 0).toBe(2);
+    });
+
+    it('manually-authored recipes leave source_id NULL', () => {
+      // Two ingest-sourced (smash-burger, weeknight-pasta), two manual (roast-chicken,
+      // breakfast-eggs). Manual drafts MUST NOT appear in the inbox scope.
+      const nullSourced = db
+        .select({ n: sql<number>`count(*)` })
+        .from(recipeVersions)
+        .where(isNull(recipeVersions.sourceId))
+        .all();
+      expect(nullSourced[0]?.n ?? 0).toBe(2);
+    });
+
+    it('round-trips draft_recipe_id ↔ recipe_versions.source_id symmetrically', () => {
+      // Every ingest_sources row should round-trip: the recipe it points at
+      // (draft_recipe_id) should have a current version whose source_id points
+      // back at the same ingest_sources row. Catches off-by-one wiring bugs.
+      const rows = raw
+        .prepare(
+          `SELECT s.id AS source_id, s.draft_recipe_id, r.id AS recipe_id, v.source_id AS version_source_id
+             FROM ingest_sources s
+             JOIN recipes r ON r.id = s.draft_recipe_id
+             JOIN recipe_versions v ON v.recipe_id = r.id`
+        )
+        .all() as {
+        source_id: number;
+        draft_recipe_id: number;
+        recipe_id: number;
+        version_source_id: number | null;
+      }[];
+      expect(rows.length).toBe(2);
+      for (const row of rows) {
+        expect(row.version_source_id).toBe(row.source_id);
+      }
+    });
+
+    it('records extractor_version on every row', () => {
+      const blanks = db
+        .select({ extractor: ingestSources.extractorVersion })
+        .from(ingestSources)
+        .all()
+        .filter((row) => row.extractor.trim().length === 0);
+      expect(blanks.length).toBe(0);
+    });
+
+    it('only ingest-sourced recipes appear in the inbox-scope query', () => {
+      // Replicates PRD-135's intended SELECT verbatim — drafts whose
+      // recipe_versions.source_id IS NOT NULL.
+      const inbox = raw
+        .prepare(
+          `SELECT r.slug FROM recipes r
+             JOIN recipe_versions v ON v.recipe_id = r.id
+             WHERE v.source_id IS NOT NULL
+             ORDER BY r.slug`
+        )
+        .all() as { slug: string }[];
+      expect(inbox.map((row) => row.slug)).toEqual(['smash-burger', 'weeknight-pasta']);
     });
   });
 
