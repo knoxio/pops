@@ -27,9 +27,14 @@
  * supposed to treat `onChange` as the source of truth and not re-pump the
  * same value back as a new `initialValue`.
  */
-import { useMemo, useRef } from 'react';
+import { EditorView } from '@codemirror/view';
+import { useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Button } from '@pops/ui';
+
+import { ReorderIngredientsPanel } from './dsl-editor/ReorderIngredientsPanel';
+import { useReorderController } from './dsl-editor/useReorderController';
 import { useDslEditorView } from './useDslEditorView';
 
 import type { DslAutocompleteSources } from './dsl-editor/autocomplete-types';
@@ -70,32 +75,73 @@ export function DslEditor(props: DslEditorProps) {
   // re-dispatches when the caller passes a genuinely new array (a fresh
   // empty literal each render would otherwise thrash the editor).
   const issues = useMemo(() => props.issues ?? EMPTY_ISSUES, [props.issues]);
+  const readOnly = props.readOnly === true;
   useDslEditorView(hostRef, {
     initialValue: props.initialValue,
     onChange: props.onChange,
-    readOnly: props.readOnly === true,
+    readOnly,
     issues,
     autocompleteSources: props.autocompleteSources ?? null,
   });
 
+  const getView = useCallback((): EditorView | null => {
+    const host = hostRef.current;
+    if (host === null) return null;
+    const cm = host.querySelector('.cm-editor');
+    return cm === null ? null : (EditorView.findFromDOM(cm as HTMLElement) ?? null);
+  }, []);
+  const reorder = useReorderController({ getView });
+
   const wrapperClass = ['dsl-editor', props.className].filter(Boolean).join(' ');
   return (
     <div className={wrapperClass} data-testid="dsl-editor">
-      {props.readOnly === true ? (
-        <div
-          role="status"
-          className="dsl-editor__readonly-banner"
-          data-testid="dsl-editor-readonly-banner"
-        >
-          {t('editor.readOnlyBanner')}
-        </div>
-      ) : null}
+      <DslEditorHeader readOnly={readOnly} onOpenReorder={() => reorder.setOpen(true)} />
       <div
         ref={hostRef}
         className="dsl-editor__surface"
         data-testid="dsl-editor-surface"
         aria-label={t('editor.ariaLabel')}
       />
+      <ReorderIngredientsPanel
+        open={reorder.open}
+        onOpenChange={reorder.setOpen}
+        declarations={reorder.declarations}
+        onApply={reorder.apply}
+      />
+    </div>
+  );
+}
+
+function DslEditorHeader({
+  readOnly,
+  onOpenReorder,
+}: {
+  readOnly: boolean;
+  onOpenReorder: () => void;
+}) {
+  const { t } = useTranslation('food');
+  if (readOnly) {
+    return (
+      <div
+        role="status"
+        className="dsl-editor__readonly-banner"
+        data-testid="dsl-editor-readonly-banner"
+      >
+        {t('editor.readOnlyBanner')}
+      </div>
+    );
+  }
+  return (
+    <div className="dsl-editor__toolbar flex items-center gap-2" data-testid="dsl-editor-toolbar">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onOpenReorder}
+        data-testid="dsl-editor-reorder-open"
+      >
+        {t('editor.reorder.open')}
+      </Button>
     </div>
   );
 }
