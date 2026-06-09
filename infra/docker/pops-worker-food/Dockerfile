@@ -28,7 +28,7 @@
 # Pinned versions also keep model + handler outputs deterministic for
 # the `extractor_version` metadata field (PRD-125 contract).
 
-ARG YT_DLP_VERSION=2025.10.26
+ARG YT_DLP_VERSION=2025.10.22
 ARG FASTER_WHISPER_VERSION=1.2.0
 ARG WHISPER_MODEL=distil-large-v3
 
