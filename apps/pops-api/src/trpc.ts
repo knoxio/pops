@@ -4,13 +4,14 @@
  */
 import { initTRPC, TRPCError } from '@trpc/server';
 
-import { verifyCloudflareJWT } from './middleware/cloudflare-jwt.js';
-import { parseApiKey } from './modules/core/service-accounts/key.js';
 import {
-  authenticateServiceAccount,
-  hasScopeFor,
   type AuthenticatedServiceAccount,
-} from './modules/core/service-accounts/service.js';
+  serviceAccountKeys,
+  serviceAccountsService,
+} from '@pops/core-db';
+
+import { getDrizzle } from './db.js';
+import { verifyCloudflareJWT } from './middleware/cloudflare-jwt.js';
 import { KNOWN_APPS, KNOWN_OVERLAYS, readInstalledModules } from './modules/env-modules.js';
 
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
@@ -56,9 +57,13 @@ async function tryServiceAccountAuth(
 ): Promise<AuthenticatedServiceAccount | null> {
   const header = readApiKeyHeader(req);
   if (!header) return null;
-  const parsed = parseApiKey(header);
+  const parsed = serviceAccountKeys.parseApiKey(header);
   if (!parsed) return null;
-  return authenticateServiceAccount(parsed.prefix, parsed.secret);
+  return serviceAccountsService.authenticateServiceAccount(
+    getDrizzle(),
+    parsed.prefix,
+    parsed.secret
+  );
 }
 
 /**
@@ -202,7 +207,7 @@ export const protectedProcedure = t.procedure.use(moduleGate).use(({ ctx, path, 
   }
 
   if (ctx.serviceAccount) {
-    if (!hasScopeFor(ctx.serviceAccount.scopes, path)) {
+    if (!serviceAccountsService.hasScopeFor(ctx.serviceAccount.scopes, path)) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: `Service account '${ctx.serviceAccount.name}' is not authorised for '${path}'`,
