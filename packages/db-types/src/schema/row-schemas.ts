@@ -33,6 +33,7 @@ export * from './food-ingest-sources-row-schemas.js';
 export * from './food-ingredients-row-schemas.js';
 export * from './food-plan-row-schemas.js';
 export * from './food-recipes-row-schemas.js';
+export * from './food-rejections-row-schemas.js';
 export * from './food-substitutions-row-schemas.js';
 export * from './glia-row-schemas.js';
 export * from './inventory-row-schemas.js';

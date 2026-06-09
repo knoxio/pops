@@ -72,6 +72,7 @@ const FOOD_MIGRATIONS = [
   '0065_prd_116_recipe_compile.sql',
   '0066_prd_123_conversions.sql',
   '0067_prd_125_ingest_error_columns.sql',
+  '0068_prd_136_inbox_review.sql',
 ];
 
 function applyMigrations(db: Database): void {

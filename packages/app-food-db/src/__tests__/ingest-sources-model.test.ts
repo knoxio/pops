@@ -26,6 +26,8 @@ const MIGRATIONS = [
   '0064_peaceful_magma.sql',
   // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns.
   '0067_prd_125_ingest_error_columns.sql',
+  // PRD-136 amendment — reviewed_at column on ingest_sources.
+  '0068_prd_136_inbox_review.sql',
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );

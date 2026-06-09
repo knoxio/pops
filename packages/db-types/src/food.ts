@@ -28,6 +28,7 @@ import type {
   recipeSteps,
   recipeTags,
   recipeVersionProposedSlugs,
+  recipeVersionRejections,
   recipeVersions,
   slugRegistry,
   unitConversions,
@@ -83,6 +84,11 @@ export type RecipeStepRow = InferSelectModel<typeof recipeSteps>;
 export type RecipeStepInsert = InferInsertModel<typeof recipeSteps>;
 export type RecipeVersionProposedSlugRow = InferSelectModel<typeof recipeVersionProposedSlugs>;
 export type RecipeVersionProposedSlugInsert = InferInsertModel<typeof recipeVersionProposedSlugs>;
+
+// PRD-136
+export type RecipeVersionRejectionRow = InferSelectModel<typeof recipeVersionRejections>;
+export type RecipeVersionRejectionInsert = InferInsertModel<typeof recipeVersionRejections>;
+export type RecipeVersionRejectionReason = RecipeVersionRejectionRow['reason'];
 
 // PRD-123
 export type UnitConversionRow = InferSelectModel<typeof unitConversions>;

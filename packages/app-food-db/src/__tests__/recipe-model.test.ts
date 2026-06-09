@@ -235,7 +235,20 @@ describe('PRD-107 — recipe + version invariants', () => {
       const { versionId } = makeCompiledRecipe(db, 'pad-thai');
       promoteVersion(db, versionId);
       const second = promoteVersion(db, versionId);
-      expect(second.status).toBe('current');
+      expect(second.ok).toBe(true);
+      if (second.ok) {
+        expect(second.row.status).toBe('current');
+      }
+    });
+
+    it('returns ok:true with the promoted row on the happy path', () => {
+      const { versionId } = makeCompiledRecipe(db, 'pad-thai');
+      const result = promoteVersion(db, versionId);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.row.id).toBe(versionId);
+        expect(result.row.status).toBe('current');
+      }
     });
   });
 

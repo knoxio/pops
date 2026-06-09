@@ -108,6 +108,9 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns
   // on ingest_sources for failure-band persistence across BullMQ TTL.
   '0067_prd_125_ingest_error_columns': 'food',
+  // PRD-136 — recipe_version_rejections + ingest_sources.reviewed_at for the
+  // inbox approve/reject flow.
+  '0068_prd_136_inbox_review': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

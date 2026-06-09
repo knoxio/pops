@@ -6,7 +6,6 @@ import { TRPCError } from '@trpc/server';
 import {
   CannotEditPublishedVersion,
   CannotPromoteUncompiledVersion,
-  ConcurrentPromotion,
   SlugAlreadyRegisteredError,
 } from '@pops/app-food-db';
 
@@ -65,15 +64,17 @@ export function mapSaveDraftError(err: unknown): never {
  * `promote` returns a discriminated result instead of throwing because the
  * editor surfaces the reason inline (banner / toast) rather than blowing up
  * the page. All four failure modes are user-actionable.
+ *
+ * `ConcurrentPromotion` arrives from `promoteVersion` as a structured result
+ * (PRD-136 amendment to PRD-107) and is forwarded by the caller; this mapper
+ * only handles the still-thrown variants: `CannotPromoteUncompiledVersion`
+ * and the "not found" pre-validation Error.
  */
 export function promoteFailure(reason: PromoteReason): PromoteResult {
   return { ok: false, reason };
 }
 
 export function mapPromoteError(err: unknown): PromoteResult | never {
-  if (err instanceof ConcurrentPromotion) {
-    return promoteFailure('ConcurrentPromotion');
-  }
   if (err instanceof CannotPromoteUncompiledVersion) {
     return promoteFailure('CannotPromoteUncompiledVersion');
   }

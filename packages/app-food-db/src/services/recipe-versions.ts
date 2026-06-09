@@ -7,17 +7,27 @@
  * Promotion is an atomic three-step: write the new current, archive any
  * previously-current row, update `recipes.current_version_id`. The partial
  * UNIQUE `uq_recipe_versions_one_current` ensures the second of two
- * concurrent promotions fails — that surfaces as `ConcurrentPromotion`.
+ * concurrent promotions fails — that surfaces via the discriminated
+ * `PromoteVersionResult` shape as `{ ok: false, reason: 'ConcurrentPromotion' }`.
  */
 import { and, eq, max } from 'drizzle-orm';
 
-import {
-  CannotEditPublishedVersion,
-  CannotPromoteUncompiledVersion,
-  ConcurrentPromotion,
-} from '../errors.js';
+import { CannotEditPublishedVersion, CannotPromoteUncompiledVersion } from '../errors.js';
 import { recipes, recipeVersions, type RecipeVersionRow } from '../schema.js';
 import { expectRow, type FoodDb } from './internal.js';
+
+/**
+ * Discriminated result for `promoteVersion`. `ConcurrentPromotion` is the
+ * only runtime race the partial-UNIQUE can surface; modelling it as a
+ * structured result (PRD-136 amendment to PRD-107) lets callers that need to
+ * compose promote with other tx side-effects (the inbox approve flow) branch
+ * without a try/catch around `db.transaction`. `CannotPromoteUncompiledVersion`
+ * is still thrown — that indicates a caller didn't pre-validate
+ * `compile_status`, not a race.
+ */
+export type PromoteVersionResult =
+  | { ok: true; row: RecipeVersionRow }
+  | { ok: false; reason: 'ConcurrentPromotion'; recipeId: number };
 
 export interface CreateNewVersionInput {
   recipeId: number;
@@ -113,12 +123,18 @@ export function archiveVersion(db: FoodDb, versionId: number): RecipeVersionRow 
  * Promote a draft to `current` atomically: archives any previously-current
  * version, sets the new one to current, updates `recipes.current_version_id`.
  *
+ * Accepts either a top-level `FoodDb` or a transactional handle — when called
+ * inside an outer transaction (e.g. PRD-136's inbox approve flow) the work
+ * runs in a SAVEPOINT so both commits/rollbacks are atomic with the outer tx.
+ *
  * Refuses to promote a version whose `compile_status` is not `'compiled'`
  * (throws `CannotPromoteUncompiledVersion`). On a partial-UNIQUE conflict
- * from a concurrent promotion, throws `ConcurrentPromotion` instead of
- * surfacing the bare SQLite error.
+ * from a concurrent promotion, returns `{ ok: false, reason: 'ConcurrentPromotion' }`
+ * — the structured shape lets composing callers (PRD-136) branch without a
+ * try/catch around the outer tx. PRD-119's tRPC wrapper consumes the same
+ * shape directly.
  */
-export function promoteVersion(db: FoodDb, versionId: number): RecipeVersionRow {
+export function promoteVersion(db: FoodDb, versionId: number): PromoteVersionResult {
   return db.transaction((tx) => {
     const existing = tx
       .select({
@@ -143,7 +159,7 @@ export function promoteVersion(db: FoodDb, versionId: number): RecipeVersionRow 
     if (target.status === 'current') {
       // Idempotent re-promotion — return the already-current row.
       const row = tx.select().from(recipeVersions).where(eq(recipeVersions.id, versionId)).all();
-      return expectRow(row, `promoteVersion(${versionId}) idempotent`);
+      return { ok: true, row: expectRow(row, `promoteVersion(${versionId}) idempotent`) };
     }
     // Archive any other version currently set to 'current' for this recipe.
     tx.update(recipeVersions)
@@ -159,9 +175,10 @@ export function promoteVersion(db: FoodDb, versionId: number): RecipeVersionRow 
         .run();
     } catch (err) {
       // Partial UNIQUE on (recipe_id) WHERE status='current' fires here when
-      // another tx beat us. Map to typed error.
+      // another tx beat us. Surface as a structured failure so composing
+      // callers can roll the outer tx back without try/catch.
       if (isUniqueConstraintError(err)) {
-        throw new ConcurrentPromotion(target.recipeId);
+        return { ok: false, reason: 'ConcurrentPromotion', recipeId: target.recipeId };
       }
       throw err;
     }
@@ -170,7 +187,7 @@ export function promoteVersion(db: FoodDb, versionId: number): RecipeVersionRow 
       .where(eq(recipes.id, target.recipeId))
       .run();
     const final = tx.select().from(recipeVersions).where(eq(recipeVersions.id, versionId)).all();
-    return expectRow(final, `promoteVersion(${versionId})`);
+    return { ok: true, row: expectRow(final, `promoteVersion(${versionId})`) };
   });
 }
 

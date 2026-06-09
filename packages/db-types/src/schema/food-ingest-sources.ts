@@ -40,6 +40,11 @@ export const ingestSources = sqliteTable(
     errorMessage: text('error_message'),
     // Initialised to 0 by `food.ingest.start`; incremented by `food.ingest.retry`.
     attempts: integer('attempts').notNull().default(0),
+    // PRD-136 — set when `food.inbox.approve` succeeds. NULL while the source
+    // is pending review or rejected (reject is non-terminal — the row can be
+    // un-rejected later). Used by PRD-134's Drafts-tab query to filter out
+    // approved sources without a JOIN through `recipes.current_version_id`.
+    reviewedAt: text('reviewed_at'),
   },
   (t) => [
     index('idx_ingest_sources_kind').on(t.kind),
