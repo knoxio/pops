@@ -82,6 +82,14 @@ const RecipePagePlaceholder = lazy(() =>
     default: m.RecipePagePlaceholder,
   }))
 );
+const RecipeDetailPage = lazy(() =>
+  import('./pages/recipes/RecipeDetailPage').then((m) => ({ default: m.RecipeDetailPage }))
+);
+const RecipeVersionDetailPage = lazy(() =>
+  import('./pages/recipes/RecipeVersionDetailPage').then((m) => ({
+    default: m.RecipeVersionDetailPage,
+  }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -134,8 +142,8 @@ export const routes: RouteObject[] = [
   // from breaking during the staged rollout.
   { path: 'recipes', element: <RecipeListPage /> },
   { path: 'recipes/new', element: <RecipePagePlaceholder /> },
-  { path: 'recipes/:slug', element: <RecipePagePlaceholder /> },
-  { path: 'recipes/:slug/v/:versionNo', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/:slug', element: <RecipeDetailPage /> },
+  { path: 'recipes/:slug/v/:versionNo', element: <RecipeVersionDetailPage /> },
   { path: 'recipes/:slug/edit', element: <RecipePagePlaceholder /> },
   { path: 'recipes/:slug/drafts', element: <RecipePagePlaceholder /> },
   { path: 'recipes/:slug/drafts/:draftNo', element: <RecipePagePlaceholder /> },
