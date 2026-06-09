@@ -35,13 +35,28 @@ export function mapCreateRecipeError(err: unknown): never {
   throw err as Error;
 }
 
+// PRD-107's `updateDraftVersion` / `promoteVersion` throw an untyped
+// `Error("recipe_version #<id> not found")` when the id doesn't exist.
+// Detect that shape so we can map it cleanly instead of leaking a 500.
+function isMissingVersionError(err: unknown): boolean {
+  return err instanceof Error && /recipe_version #\d+ not found/i.test(err.message);
+}
+
 /**
  * `saveDraft` operates only on draft rows; published/archived rows reject
- * with a typed `CannotEditPublishedVersion`.
+ * with a typed `CannotEditPublishedVersion`. A missing version row maps to
+ * `NOT_FOUND` rather than the raw service `Error`.
  */
 export function mapSaveDraftError(err: unknown): never {
   if (err instanceof CannotEditPublishedVersion) {
     throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err });
+  }
+  if (isMissingVersionError(err)) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: (err as Error).message,
+      cause: err,
+    });
   }
   throw err as Error;
 }
@@ -49,7 +64,7 @@ export function mapSaveDraftError(err: unknown): never {
 /**
  * `promote` returns a discriminated result instead of throwing because the
  * editor surfaces the reason inline (banner / toast) rather than blowing up
- * the page. All three failure modes are user-actionable.
+ * the page. All four failure modes are user-actionable.
  */
 export function promoteFailure(reason: PromoteReason): PromoteResult {
   return { ok: false, reason };
@@ -61,6 +76,9 @@ export function mapPromoteError(err: unknown): PromoteResult | never {
   }
   if (err instanceof CannotPromoteUncompiledVersion) {
     return promoteFailure('CannotPromoteUncompiledVersion');
+  }
+  if (isMissingVersionError(err)) {
+    return promoteFailure('VersionNotFound');
   }
   throw err as Error;
 }

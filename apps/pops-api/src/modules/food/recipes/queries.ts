@@ -8,7 +8,7 @@
  * + proposed-slug helpers live in sibling files to honour the per-file
  * line cap.
  */
-import { and, asc, desc, eq, gt, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 
 import { recipes, recipeTags, recipeVersions, type FoodDb } from '@pops/app-food-db';
 
@@ -134,14 +134,14 @@ function buildWhere(filter: ListRecipesFilter): ReturnType<typeof and> {
   return clauses.length === 0 ? undefined : and(...clauses);
 }
 
-function visibilityClauses(filter: ListRecipesFilter): ReturnType<typeof sql>[] {
-  const clauses = [];
+function visibilityClauses(filter: ListRecipesFilter): SQL[] {
+  const clauses: SQL[] = [];
   if (!filter.includeArchived) clauses.push(sql`${recipes.archivedAt} IS NULL`);
   if (!filter.includeDraftOnly) clauses.push(sql`${recipes.currentVersionId} IS NOT NULL`);
   return clauses;
 }
 
-function searchClauses(filter: ListRecipesFilter): ReturnType<typeof or>[] {
+function searchClauses(filter: ListRecipesFilter): SQL[] {
   if (!filter.search || filter.search.length === 0) return [];
   const pattern = `%${filter.search.toLowerCase()}%`;
   const clause = or(
@@ -151,8 +151,8 @@ function searchClauses(filter: ListRecipesFilter): ReturnType<typeof or>[] {
   return clause === undefined ? [] : [clause];
 }
 
-function filterClauses(filter: ListRecipesFilter): ReturnType<typeof inArray>[] {
-  const clauses = [];
+function filterClauses(filter: ListRecipesFilter): SQL[] {
+  const clauses: SQL[] = [];
   if (filter.recipeTypes && filter.recipeTypes.length > 0) {
     clauses.push(inArray(recipes.recipeType, filter.recipeTypes));
   }

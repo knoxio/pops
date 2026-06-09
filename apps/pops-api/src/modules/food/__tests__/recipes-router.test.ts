@@ -292,6 +292,12 @@ describe('food.recipes router — PRD-119', () => {
         })
       ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
     });
+
+    it('maps a missing versionId to NOT_FOUND instead of leaking a 500', async () => {
+      await expect(
+        caller.food.recipes.saveDraft({ versionId: 99_999, dsl: '@recipe(slug="x")' })
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
   });
 
   describe('promote', () => {
@@ -315,6 +321,11 @@ describe('food.recipes router — PRD-119', () => {
       // No saveDraft yet → compile_status remains 'uncompiled'.
       const result = await caller.food.recipes.promote({ versionId: draft.versionId });
       expect(result).toEqual({ ok: false, reason: 'CannotPromoteUncompiledVersion' });
+    });
+
+    it('returns { ok:false, reason: "VersionNotFound" } for an unknown versionId', async () => {
+      const result = await caller.food.recipes.promote({ versionId: 99_999 });
+      expect(result).toEqual({ ok: false, reason: 'VersionNotFound' });
     });
   });
 
