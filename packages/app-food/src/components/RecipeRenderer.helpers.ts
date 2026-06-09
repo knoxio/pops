@@ -13,13 +13,35 @@ import type { RecipeLineWithResolved } from './RecipeRenderer.types';
 /**
  * `scaleFactor=0` or negative is clamped to 1.0 per PRD AC line 229 — the
  * caller may still pass valid fractional / large scales like 0.5 or 4.
- * Emits a one-shot console warning so authoring bugs surface in dev.
+ *
+ * The console warning is one-shot per (module-load × invalid value) so a
+ * caller that re-renders with the same broken value every frame doesn't
+ * spam the console — yet a caller that toggles between two different
+ * broken values still gets one signal per offender. Tracked in module
+ * state so the runtime cost is a single `Set.has`.
  */
+const warnedInvalidScaleFactors = new Set<number | string>();
+
 export function clampScaleFactor(input: number | undefined): number {
   if (input === undefined) return 1;
   if (Number.isFinite(input) && input > 0) return input;
-  console.warn(`[RecipeRenderer] scaleFactor=${input} is invalid; clamping to 1.0`);
+  const key = Number.isNaN(input) ? 'NaN' : (input as number);
+  if (!warnedInvalidScaleFactors.has(key)) {
+    warnedInvalidScaleFactors.add(key);
+    console.warn(`[RecipeRenderer] scaleFactor=${input} is invalid; clamping to 1.0`);
+  }
   return 1;
+}
+
+/**
+ * Test-only reset hook for the one-shot warning state.
+ *
+ * Vitest re-imports the module per worker but assertions across multiple
+ * test cases in the same file need a clean slate; tests call this in their
+ * `beforeEach`. Not exported from the package barrel.
+ */
+export function _resetScaleFactorWarnings(): void {
+  warnedInvalidScaleFactors.clear();
 }
 
 /**

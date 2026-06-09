@@ -83,9 +83,14 @@ export interface RecipeRendererProps {
   recipeVersion: RecipeVersionWithCompiledData;
   /** Display-only multiplier on quantities. Defaults to 1.0. */
   scaleFactor?: number;
-  /** Fire-and-forget — `RecipeRenderer` does not track running timers. */
+  /**
+   * Fire-and-forget — `RecipeRenderer` does not track running timers, so
+   * the parent owns timer state. The cooking-mode surface (deferred per
+   * PRD-121 Out of Scope) will wire the stop side; the renderer doesn't
+   * surface a Stop interaction itself, so `onTimerStop` is intentionally
+   * not part of the v1 API.
+   */
   onTimerStart?: (durationMinutes: number, stepPosition: number) => void;
-  onTimerStop?: (stepPosition: number) => void;
   /** `'detail'` is the full page; `'compact'` is the list-card preview. */
   variant?: RecipeRendererVariant;
   className?: string;

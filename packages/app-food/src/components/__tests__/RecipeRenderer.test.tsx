@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RecipeRenderer } from '../RecipeRenderer';
 import {
+  _resetScaleFactorWarnings,
   buildYieldLabel,
   clampScaleFactor,
   formatQty,
@@ -22,11 +23,24 @@ describe('PRD-121 — RecipeRenderer helpers', () => {
   });
 
   it('clampScaleFactor clamps zero / negative / NaN to 1 with a warning', () => {
+    _resetScaleFactorWarnings();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(clampScaleFactor(0)).toBe(1);
     expect(clampScaleFactor(-2)).toBe(1);
     expect(clampScaleFactor(Number.NaN)).toBe(1);
     expect(warnSpy).toHaveBeenCalledTimes(3);
+    warnSpy.mockRestore();
+  });
+
+  it('clampScaleFactor only warns once per unique invalid value (no log spam on re-render)', () => {
+    _resetScaleFactorWarnings();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    // Same bad value, 5 calls — only one warning should fire.
+    for (let i = 0; i < 5; i++) clampScaleFactor(0);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    // A different invalid value still emits its own warning.
+    clampScaleFactor(-2);
+    expect(warnSpy).toHaveBeenCalledTimes(2);
     warnSpy.mockRestore();
   });
 
@@ -448,6 +462,39 @@ describe('PRD-121 — Step body two-pass substitution', () => {
 
     await userEvent.click(screen.getByTestId('timer-button'));
     expect(onTimerStart).toHaveBeenCalledWith(2, 1); // 2 min not 6
+  });
+
+  it('does not desync the cursor when an anchor kind disagrees with the next resolved part', () => {
+    // body_md says "first anchor is a TIMER then a TEMPERATURE" — but the
+    // resolved JSON only carries the temperature (a drifted body_md slipped
+    // a stray `#timer` link in). The timer anchor must NOT consume the
+    // temperature part — the temperature anchor that follows should still
+    // bind to it.
+    const bodyResolved: ResolvedStepBody = [
+      { kind: 'text', value: 'Wait a bit and then heat to ' },
+      { kind: 'temperature', qty: { qty: 200, unit: 'c' } },
+      { kind: 'text', value: '.' },
+    ];
+    const data = makeRecipeData({
+      steps: [
+        {
+          id: 11,
+          recipeVersionId: 10,
+          position: 1,
+          bodyMd: 'Wait a bit [stray](#timer) and then heat to [200°c](#temperature).',
+          bodyResolvedJson: JSON.stringify(bodyResolved),
+          durationMinutes: null,
+          temperatureValue: null,
+          temperatureUnit: null,
+        },
+      ],
+    });
+    render(<RecipeRenderer recipeVersion={data} />);
+
+    // No TimerButton — the stray `#timer` anchor falls back to a plain <a>.
+    expect(screen.queryByTestId('timer-button')).toBeNull();
+    // Temperature still renders because the cursor never advanced past it.
+    expect(screen.getByTestId('temp-badge')).toHaveTextContent('200 °C');
   });
 });
 

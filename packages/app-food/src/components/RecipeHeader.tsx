@@ -116,10 +116,11 @@ function YieldLine({
 }
 
 function TagsRow({ tags }: { tags: string[] }) {
+  const { t } = useTranslation('food');
   return (
     <ul
       className="flex flex-wrap items-center gap-1"
-      aria-label="Recipe tags"
+      aria-label={t('renderer.tagsAria')}
       data-testid="recipe-tags"
     >
       {tags.map((tag) => (

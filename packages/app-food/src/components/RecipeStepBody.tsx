@@ -48,11 +48,14 @@ interface Cursor {
   index: number;
 }
 
-function nextStructural(cursor: Cursor): StructuralPart | null {
-  const part = cursor.parts[cursor.index];
-  if (part === undefined) return null;
+/** Peek at the next structural part without advancing the cursor. */
+function peekStructural(cursor: Cursor): StructuralPart | null {
+  return cursor.parts[cursor.index] ?? null;
+}
+
+/** Advance the cursor — only called once a matched part has been consumed. */
+function advanceCursor(cursor: Cursor): void {
   cursor.index += 1;
-  return part;
 }
 
 function lineByPosition(
@@ -83,13 +86,16 @@ export function RecipeStepBody({
       if (!anchor) {
         return <a href={href}>{children}</a>;
       }
-      const part = nextStructural(cursor);
+      const part = peekStructural(cursor);
       // Defensive: the markdown anchor count must match the resolved parts
-      // count. If they diverge, fall back to a plain link so the body
-      // stays readable even when something upstream drifted.
+      // count. If they diverge, fall back to a plain link AND leave the
+      // cursor in place so later anchors still match their resolved part
+      // (advancing on mismatch would cascade the desync to every following
+      // anchor).
       if (!part || part.kind !== mappedKindForAnchor(anchor)) {
         return <a href={href}>{children}</a>;
       }
+      advanceCursor(cursor);
       const label = childrenToText(children);
       return renderStructuralPart({
         anchor,

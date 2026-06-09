@@ -54,6 +54,12 @@ const MIGRATIONS = [
   '0059_useful_hiroim.sql',
   '0060_familiar_leo.sql',
   '0065_prd_116_recipe_compile.sql',
+  // PRD-123 — `compileRecipeVersion` consults `unit_conversions` +
+  // `ingredient_weights` via `normaliseLineQty`. The fixture DSL uses only
+  // canonical units (g / count), so the lookup falls through to the
+  // unresolved path; the tables still need to exist or the prepared
+  // statement preparation fails before that fallback can run.
+  '0066_prd_123_conversions.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),

@@ -43,7 +43,7 @@ const meta: Meta<typeof RecipeRenderer> = {
       const i18n = useFoodI18n();
       return (
         <I18nextProvider i18n={i18n}>
-          <div style={{ maxWidth: '720px' }}>
+          <div className="max-w-3xl">
             <Story />
           </div>
         </I18nextProvider>

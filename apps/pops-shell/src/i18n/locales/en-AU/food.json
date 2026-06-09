@@ -43,6 +43,7 @@
   "renderer.servings_one": "{{count}} serving",
   "renderer.servings_other": "{{count}} servings",
   "renderer.yieldLabel": "Yields: {{label}}",
+  "renderer.tagsAria": "Recipe tags",
   "renderer.ingredientsHeading": "Ingredients",
   "renderer.stepsHeading": "Steps",
   "renderer.noSteps": "No steps yet.",
