@@ -50,7 +50,11 @@ export function relativeToIngestDir(absolutePath: string): string {
   }
   const root = ingestRootDir();
   const rel = relative(root, absolutePath);
-  if (rel.length === 0 || rel.startsWith('..')) {
+  // On Windows, `path.relative` returns an absolute path when the inputs
+  // are on different drives (e.g. `D:\\foo` vs `C:\\bar`). That value
+  // would slip past the `..` prefix check, so reject any absolute output
+  // outright in addition to the empty / traversal cases.
+  if (rel.length === 0 || rel.startsWith('..') || isAbsolute(rel)) {
     throw new Error(`Path "${absolutePath}" is outside FOOD_INGEST_DIR (${root})`);
   }
   return sep === '/' ? rel : rel.split(sep).join('/');

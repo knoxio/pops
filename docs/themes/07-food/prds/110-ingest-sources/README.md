@@ -143,7 +143,8 @@ Inline per theme protocol.
 
 ### Litestream
 
-- [x] `infra/` Litestream config excludes `${FOOD_INGEST_DIR}` and the new path is documented in the infra repo readme or pops AGENTS.md if appropriate. (Implementation note: the homelab `infra/` repo is private; the exclusion expectation is documented in this repo's `AGENTS.md` under Tech Stack and as a comment on the `.env.example` entry so the infra change carries the required context. The Litestream YAML update happens in the homelab-infra repo as a follow-up.)
+- [x] The Litestream-exclusion expectation for `${FOOD_INGEST_DIR}` is documented in this repo (AGENTS.md under Tech Stack + comment on the `.env.example` entry), so the operator landing the homelab-infra YAML change has the required context.
+- [ ] The Litestream YAML in the private `homelab-infra` repo is updated to exclude `${FOOD_INGEST_DIR}`. Tracked as a follow-up outside this repo; this PR cannot tick it.
 
 ### Invariants
 

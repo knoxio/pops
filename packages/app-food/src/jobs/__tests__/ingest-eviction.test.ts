@@ -128,9 +128,35 @@ describe('PRD-110 — runEvictionTick', () => {
     }
     const result = await runEvictionTick(db, workdir);
     expect(result.skippedInFlight.toSorted((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
-    expect(result.evictedIds).toEqual([]); // mature count is exactly 100
+    // Total is 105 (>100), eligible is 100; overflow = min(5, 100) = 5, so
+    // the 5 oldest mature dirs (highest ages) get evicted to bring total
+    // down toward the cap. In-flight dirs are never touched.
+    expect(result.evictedIds.toSorted((a, b) => a - b)).toEqual([101, 102, 103, 104, 105]);
     const remaining = await readdir(workdir);
-    expect(remaining).toHaveLength(105);
+    expect(remaining).toHaveLength(100);
+  });
+
+  it('rejects a relative dir argument', async () => {
+    await expect(runEvictionTick(db, 'relative/path')).rejects.toThrow(/absolute path/);
+  });
+
+  it('still evicts mature dirs when in-flight backlog pushes the total past the cap', async () => {
+    // 110 in-flight dirs (id 1-110) + 5 mature dirs (id 111-115) = 115 total.
+    // entries.length - MAX = 15, eligible.length = 5 → overflow = min(15, 5) = 5.
+    for (let i = 0; i < 115; i += 1) {
+      createIngestSource(db, { kind: 'text', extractorVersion: 'pipeline-v1' });
+    }
+    for (let id = 1; id <= 110; id += 1) {
+      await seedSourceDir(workdir, id, 1); // in-flight
+    }
+    for (let id = 111; id <= 115; id += 1) {
+      await seedSourceDir(workdir, id, IN_FLIGHT_GRACE_MS / 1000 + (200 - id));
+    }
+    const result = await runEvictionTick(db, workdir);
+    expect(result.evictedIds.toSorted((a, b) => a - b)).toEqual([111, 112, 113, 114, 115]);
+    expect(result.skippedInFlight).toHaveLength(110);
+    const remaining = await readdir(workdir);
+    expect(remaining).toHaveLength(110); // all the in-flight ones, untouched
   });
 
   it('ignores non-numeric and non-directory entries at the root', async () => {

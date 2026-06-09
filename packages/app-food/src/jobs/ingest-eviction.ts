@@ -16,7 +16,7 @@
  * tests can all invoke the same logic.
  */
 import { readdir, rm, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import { markArchived } from '../db/services/ingest-sources';
 import { type FoodDb } from '../db/services/internal';
@@ -59,6 +59,9 @@ interface DirEntry {
  * `ingestRootDir()` from `../storage/ingest-paths`.
  */
 export async function runEvictionTick(db: FoodDb, dir: string): Promise<EvictionResult> {
+  if (!isAbsolute(dir)) {
+    throw new Error(`runEvictionTick requires an absolute path; received "${dir}"`);
+  }
   const entries = await listSourceDirs(dir);
   const now = Date.now();
   const skippedInFlight: number[] = [];
@@ -70,7 +73,11 @@ export async function runEvictionTick(db: FoodDb, dir: string): Promise<Eviction
     }
     eligible.push(entry);
   }
-  const overflow = eligible.length - MAX_INGEST_DIRS;
+  // Total-vs-eligible: if a huge backlog of in-flight dirs leaves few
+  // eligible victims, we still need to claw the count down toward the cap
+  // when the TOTAL exceeds it. Eviction is bounded by eligible.length,
+  // never touches in-flight dirs.
+  const overflow = Math.min(entries.length - MAX_INGEST_DIRS, eligible.length);
   if (overflow <= 0) {
     return {
       evictedIds: [],
