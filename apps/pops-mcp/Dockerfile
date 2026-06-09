@@ -11,6 +11,7 @@ COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists/package.json ./packages/app-lists/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
+COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY apps/pops-api/package.json ./apps/pops-api/
 COPY apps/pops-mcp/package.json ./apps/pops-mcp/
@@ -31,6 +32,9 @@ COPY packages/app-lists-db/src ./packages/app-lists-db/src
 COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/
 COPY packages/app-food-db/src ./packages/app-food-db/src
 COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
+COPY packages/core-db/src ./packages/core-db/src
+COPY packages/core-db/tsconfig.json ./packages/core-db/
+COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/food-contracts/src ./packages/food-contracts/src
 COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 
@@ -51,6 +55,8 @@ RUN pnpm build
 WORKDIR /app/packages/module-registry
 RUN pnpm build
 WORKDIR /app/packages/food-contracts
+RUN pnpm build
+WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build

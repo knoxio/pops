@@ -11,6 +11,7 @@ COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists/package.json ./packages/app-lists/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
+COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
@@ -30,6 +31,9 @@ COPY packages/app-lists-db/src ./packages/app-lists-db/src
 COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/
 COPY packages/app-food-db/src ./packages/app-food-db/src
 COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
+COPY packages/core-db/src ./packages/core-db/src
+COPY packages/core-db/tsconfig.json ./packages/core-db/
+COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/food-contracts/src ./packages/food-contracts/src
 COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
@@ -43,6 +47,8 @@ RUN pnpm build
 WORKDIR /app/packages/module-registry
 RUN pnpm build
 WORKDIR /app/packages/food-contracts
+RUN pnpm build
+WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
@@ -83,6 +89,9 @@ COPY --from=builder /app/packages/app-lists-db/dist ./node_modules/@pops/app-lis
 COPY --from=builder /app/packages/app-lists-db/package.json ./node_modules/@pops/app-lists-db/
 COPY --from=builder /app/packages/app-lists/src ./node_modules/@pops/app-lists/src
 COPY --from=builder /app/packages/app-lists/package.json ./node_modules/@pops/app-lists/
+COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
+COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
+COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src
