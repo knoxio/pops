@@ -3,7 +3,8 @@
  * `fetch-html.ts` to keep each file under the line cap.
  */
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; POPS-Food-Ingest/1.0; +https://example.com)';
+const USER_AGENT =
+  'Mozilla/5.0 (compatible; POPS-Food-Ingest/1.0; +https://github.com/knoxio/pops)';
 
 export interface ResolvedFetchOptions {
   fetchImpl: typeof fetch;
@@ -48,6 +49,9 @@ export async function followRedirects(
       maxRedirects: opts.maxRedirects,
       start,
     });
+    // Drain the 3xx body so Undici can return the socket to its keep-alive
+    // pool — leaving redirect bodies unconsumed leaks connections under load.
+    await drainBody(res);
     if (next.tag === 'failed') return next;
     currentUrl = next.url;
   }
@@ -89,6 +93,14 @@ interface RedirectTargetArgs {
   hop: number;
   maxRedirects: number;
   start: number;
+}
+
+async function drainBody(res: Response): Promise<void> {
+  try {
+    await res.body?.cancel();
+  } catch {
+    /* nothing to do — the body may already be consumed or detached */
+  }
 }
 
 function readRedirectTarget(args: RedirectTargetArgs): { tag: 'ok'; url: string } | FollowFail {

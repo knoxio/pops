@@ -77,7 +77,6 @@ const KNOWN_UNITS: readonly string[] = [
   'sprig',
   'cans',
   'can',
-  'cans',
   'lb',
   'lbs',
   'oz',
@@ -132,17 +131,24 @@ export function parseIngredientLine(raw: string): IngredientParse {
   const { qty, rest: afterQty } = readQuantity(stripped);
   if (qty === null) {
     const desc = afterQty.trim();
-    return {
-      qty: 1,
-      unit: 'count',
-      descriptorSlug: slugify(desc) || 'ingredient',
-      descriptorRaw: desc,
-    };
+    return { qty: 1, unit: 'count', descriptorSlug: descriptorSlugOf(desc), descriptorRaw: desc };
   }
   const { unit, rest: afterUnit } = readUnit(afterQty);
   const descriptor = afterUnit.replace(/^[,\s]+/, '').trim();
-  const descriptorSlug = slugify(descriptor) || 'ingredient';
-  return { qty, unit, descriptorSlug, descriptorRaw: descriptor };
+  return { qty, unit, descriptorSlug: descriptorSlugOf(descriptor), descriptorRaw: descriptor };
+}
+
+/**
+ * `slugify('')` returns the recipe-level fallback `'recipe'`, which is the
+ * wrong default for an ingredient descriptor — it can collide with the
+ * recipe slug itself. For ingredient lines with a quantity/unit but no
+ * descriptor (e.g. just "2" or "2 ,"), emit the explicit `'ingredient'`
+ * sentinel instead.
+ */
+function descriptorSlugOf(descriptor: string): string {
+  if (descriptor.trim() === '') return 'ingredient';
+  const slug = slugify(descriptor);
+  return slug === 'recipe' ? 'ingredient' : slug;
 }
 
 interface QuantityRead {
