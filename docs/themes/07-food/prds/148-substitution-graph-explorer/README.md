@@ -182,45 +182,45 @@ Inline per theme protocol.
 
 ### Routes & shell
 
-- [ ] `/food/data/substitutions/graph` registered as a route in PRD-122's substitutions tab area (sub-route).
-- [ ] PRD-122's Substitutions tab gains a "View as graph" button linking here.
-- [ ] `?node=<slug>` switches to radial focus view.
-- [ ] `?edge=<id>` opens the edge detail side-panel on initial load.
+- [x] `/food/data/substitutions/graph` registered as a route in PRD-122's substitutions tab area (sub-route).
+- [ ] PRD-122's Substitutions tab gains a "View as graph" button linking here. **Deferred to PRD-122-D** — the tab is still PRD-122-A's `TabPlaceholder`; adding the link here would conflict with PRD-122-D's tab rewrite.
+- [x] `?node=<slug>` switches to radial focus view.
+- [x] `?edge=<id>` opens the edge detail side-panel on initial load.
 
 ### Graph rendering
 
-- [ ] `react-force-graph-2d` added to `packages/app-food/package.json` (or sub-package's deps where the explorer lives) at install time.
-- [ ] Force-directed layout renders 500-node graphs in <2 seconds initial layout (matching the edge-case timing claim).
-- [ ] Node colour distinguishes ingredient vs variant.
-- [ ] Edge style distinguishes global (solid) vs recipe-scoped (dashed).
-- [ ] Edge thickness scales by ratio in `[0.5, 2.0]` range; outside that range clamps to max.
-- [ ] Radial view fans incoming left / outgoing right around the focused node.
+- [x] `react-force-graph-2d` added to `packages/app-food/package.json` (or sub-package's deps where the explorer lives) at install time.
+- [ ] Force-directed layout renders 500-node graphs in <2 seconds initial layout (matching the edge-case timing claim). **Not benchmarked** — the seed (PRD-113) has ~10 subs. Capability stated; revisit when scale matters.
+- [x] Node colour distinguishes ingredient vs variant.
+- [x] Edge style distinguishes global (solid) vs recipe-scoped (dashed).
+- [x] Edge thickness scales by ratio in `[0.5, 2.0]` range; outside that range clamps to max.
+- [x] Radial view fans incoming left / outgoing right around the focused node.
 
 ### Side panels
 
-- [ ] Node detail panel lists incoming + outgoing subs separately with counts.
-- [ ] Edge detail panel shows ratio, context tags, scope, recipe link (if scoped), notes.
-- [ ] Edit / Delete in edge panel link back to PRD-122 with `?focus=<edgeId>`.
+- [x] Node detail panel lists incoming + outgoing subs separately with counts.
+- [x] Edge detail panel shows ratio, context tags, scope, recipe link (if scoped), notes.
+- [x] Edit / Delete in edge panel link back to PRD-122 with `?focus=<edgeId>`.
 
 ### Filtering
 
-- [ ] Scope toggle switches between global / recipe-scoped.
-- [ ] Recipe-scope requires a recipe pick (dropdown).
-- [ ] Context-tag filter applies via `json_each`.
-- [ ] Search filters by slug + name (case-insensitive substring, debounced).
+- [x] Scope toggle switches between global / recipe-scoped.
+- [ ] Recipe-scope requires a recipe pick (dropdown). **Deferred to PRD-119** (`food.recipes.list`). Scope toggle currently shows an empty-state placeholder when `scope=recipe` is selected; the wire-level `recipeId` filter is implemented + tested so the picker is a single-prop change once PRD-119 lands.
+- [x] Context-tag filter applies via `json_each`.
+- [x] Search filters by slug + name (case-insensitive substring, debounced). 200ms debounce via `useDebouncedValue` from `@pops/ui`.
 
 ### tRPC
 
-- [ ] `food.substitutions.graphView` returns `GraphView` matching the schema; one round-trip.
-- [ ] Filter combinations produce a single SQL query (no N+1).
+- [x] `food.substitutions.graphView` returns `GraphView` matching the schema; one round-trip.
+- [x] Filter combinations produce a single SQL query (no N+1). Four bounded `SELECT`s (filtered substitutions + ingredients/variants/recipes by `IN` set); never per-edge fanout.
 
 ### Tests
 
-- [ ] Vitest + RTL at `packages/app-food/src/pages/data/substitutions-graph/__tests__/SubGraphPage.test.tsx`:
+- [x] Vitest + RTL at `packages/app-food/src/pages/data/substitutions-graph/__tests__/SubGraphPage.test.tsx`:
   - Graph renders nodes + edges from a seeded fixture.
   - Filter combinations narrow correctly.
   - Side panel opens on node + edge click.
-- [ ] Vitest integration at `apps/pops-api/src/modules/food/__tests__/substitutions-graph.test.ts`:
+- [x] Vitest integration at `apps/pops-api/src/modules/food/__tests__/substitutions-graph.test.ts`:
   - `graphView` returns minimum spanning subgraph for the filter.
   - Empty filters return the full global graph.
 

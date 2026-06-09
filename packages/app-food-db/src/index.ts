@@ -34,6 +34,7 @@ export * as recipesService from './services/recipes.js';
 export * as slugSearchService from './services/slug-search.js';
 export * as substitutionsService from './services/substitutions.js';
 export * as substitutionsQueries from './services/substitutions-queries.js';
+export * as substitutionsGraph from './services/substitutions-graph.js';
 export * as variantsService from './services/variants.js';
 export * as conversionsService from './services/conversions.js';
 export * as conversionsQueries from './services/conversions-queries.js';
@@ -54,3 +55,9 @@ export type { BulkApproveAliasesResult, MergeAliasesResult } from './services/al
 export type { DeleteBlockerSummary } from './services/ingredients-queries.js';
 export type { SlugMatch } from './services/slug-search.js';
 export type { SubstitutionScope, SubstitutionView } from './services/substitutions-queries.js';
+export type {
+  GraphViewEdgeRow,
+  GraphViewFilter,
+  GraphViewResult,
+  GraphViewSide,
+} from './services/substitutions-graph.js';
