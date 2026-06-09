@@ -10,7 +10,7 @@
  *   food.ingredients.{list, get, create, update, rename, changeParent,
  *                     blockers, delete}
  *   food.variants.{create, update, delete}
- *   food.aliases.{list, create, updateText, delete, merge, bulkApprove}
+ *   food.aliases.{list, listWithTargets, create, updateText, delete, merge, bulkApprove}
  *   food.prepStates.{list, create}
  *   food.substitutions.{list, create, update, delete}
  *   food.slugs.search
@@ -357,6 +357,46 @@ describe('food.aliases', () => {
       target: { kind: 'ingredient', id },
     });
     expect(targeted.items).toHaveLength(1);
+  });
+
+  it('listWithTargets denormalises ingredient + variant labels', async () => {
+    const banana = await caller.food.ingredients.create({
+      slug: 'banana',
+      name: 'Banana',
+      defaultUnit: 'count',
+    });
+    const variant = await caller.food.variants.create({
+      ingredientId: banana!.id,
+      slug: 'ripe',
+      name: 'Ripe',
+      defaultUnit: 'count',
+    });
+    await caller.food.aliases.create({
+      alias: 'platano',
+      target: { kind: 'ingredient', id: banana!.id },
+    });
+    await caller.food.aliases.create({
+      alias: 'maduro',
+      target: { kind: 'variant', id: variant!.id },
+    });
+    const list = await caller.food.aliases.listWithTargets({});
+    expect(list.items).toHaveLength(2);
+    const platano = list.items.find((r) => r.alias.alias === 'platano');
+    const maduro = list.items.find((r) => r.alias.alias === 'maduro');
+    expect(platano?.target).toEqual({
+      kind: 'ingredient',
+      id: banana!.id,
+      slug: 'banana',
+      name: 'Banana',
+    });
+    expect(maduro?.target).toEqual({
+      kind: 'variant',
+      id: variant!.id,
+      slug: 'ripe',
+      name: 'Ripe',
+      parentIngredientSlug: 'banana',
+      parentIngredientName: 'Banana',
+    });
   });
 
   it('create maps a duplicate alias at the same target to CONFLICT', async () => {

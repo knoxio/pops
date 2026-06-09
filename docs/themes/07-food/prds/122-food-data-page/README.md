@@ -209,15 +209,15 @@ Inline per theme protocol.
 
 ### Aliases tab
 
-- [ ] Table renders aliases with sortable columns.
-- [ ] Add / edit / delete / merge / bulk-approve actions all work.
-- [ ] Merge correctly consolidates rows in one transaction.
+- [x] Table renders aliases with sortable columns.
+- [x] Add / edit / delete / merge / bulk-approve actions all work.
+- [x] Merge correctly consolidates rows in one transaction.
 
 ### Prep states tab
 
-- [ ] Lists the 15 seeded states + any user-added.
-- [ ] Add works.
-- [ ] Delete/rename disabled with tooltip explaining "not in v1".
+- [x] Lists the 15 seeded states + any user-added.
+- [x] Add works.
+- [x] Delete/rename disabled with tooltip explaining "not in v1".
 
 ### Substitutions tab
 
