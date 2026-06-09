@@ -71,6 +71,9 @@ const SubGraphPage = lazy(() =>
 const ConversionsTab = lazy(() =>
   import('./pages/data/ConversionsTab').then((m) => ({ default: m.ConversionsTab }))
 );
+const PromptViewerPage = lazy(() =>
+  import('./pages/PromptViewerPage').then((m) => ({ default: m.PromptViewerPage }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -93,6 +96,7 @@ export const navConfig = {
   items: [
     { path: '', label: 'Home', labelKey: 'food.home', icon: 'LayoutDashboard' },
     { path: '/data', label: 'Manage data', labelKey: 'food.data', icon: 'Database' },
+    { path: '/prompts', label: 'Prompts', labelKey: 'food.prompts', icon: 'FileText' },
   ],
 } satisfies AppNavConfigShape;
 
@@ -115,4 +119,5 @@ export const routes: RouteObject[] = [
       { path: 'conversions', element: <ConversionsTab /> },
     ],
   },
+  { path: 'prompts', element: <PromptViewerPage /> },
 ];
