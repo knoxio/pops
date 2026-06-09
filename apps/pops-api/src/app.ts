@@ -13,6 +13,7 @@ import { openApiDocument } from './openapi.js';
 import { appRouter } from './router.js';
 import cerebrumQueryStreamRouter from './routes/cerebrum/query-stream.js';
 import egoChatStreamRouter from './routes/ego/chat-stream.js';
+import foodRecipesImagesRouter from './routes/food/recipes.js';
 import healthRouter from './routes/health.js';
 import inventoryDocumentFilesRouter from './routes/inventory/document-files.js';
 import documentThumbnailRouter from './routes/inventory/documents.js';
@@ -67,6 +68,10 @@ export function createApp(): express.Express {
   // Inventory document upload serving — static files from INVENTORY_DOCUMENTS_DIR.
   // Placed before authMiddleware so download links open without JWT cookies.
   app.use(inventoryDocumentFilesRouter);
+
+  // Food recipe hero image serving — static files from FOOD_RECIPES_DIR.
+  // Placed before authMiddleware so <img> tags can render without JWT cookies.
+  app.use(foodRecipesImagesRouter);
 
   // Cloudflare Access JWT auth — validates cf-access-jwt-assertion header.
   // Placed after health/webhook/media routes (those skip auth or use their own).

@@ -26,6 +26,7 @@ import { manifest as cerebrumEgoManifest } from './modules/cerebrum/ego/index.js
 import { manifest as cerebrumManifest } from './modules/cerebrum/index.js';
 import { manifest as coreManifest } from './modules/core/index.js';
 import { manifest as financeManifest } from './modules/finance/index.js';
+import { manifest as foodManifest } from './modules/food/index.js';
 import {
   __resetInstalledManifestsOverride,
   __setInstalledManifestsOverride,
@@ -133,6 +134,7 @@ describe('PRD-101 US-03 AppRouter type narrowing (compile-time)', () => {
       inventoryManifest.id,
       cerebrumManifest.id,
       cerebrumEgoManifest.id,
+      foodManifest.id,
     ]);
     for (const path of routerKeys()) {
       const top = path.split('.')[0] ?? '';

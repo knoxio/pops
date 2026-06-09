@@ -168,55 +168,55 @@ Inline per theme protocol.
 
 ### Storage layout & config
 
-- [ ] `FOOD_RECIPES_DIR` added to `apps/pops-api/.env.example` with default + "not backed up" comment.
-- [ ] Env loader has a hard-coded default `./data/food/recipes`.
-- [ ] Litestream config in `infra/` excludes `${FOOD_RECIPES_DIR}`.
+- [x] `FOOD_RECIPES_DIR` added to `apps/pops-api/.env.example` with default + "not backed up" comment.
+- [x] Env loader has a hard-coded default `./data/food/recipes`.
+- [ ] Litestream config in `infra/` excludes `${FOOD_RECIPES_DIR}`. — _Litestream config lives in `knoxio/homelab-infra` (out-of-tree); this AC is unblocked but the external follow-up is queued, matching the precedent set by PRD-110's `FOOD_INGEST_DIR`._
 
 ### Filesystem helpers
 
-- [ ] `packages/app-food/src/storage/hero-paths.ts` exports `heroPathFor(recipeId, ext)`, `thumbPathFor(recipeId)`, `cardPathFor(recipeId)` returning absolute paths.
-- [ ] Path-traversal guard helper that integer-validates `recipeId`.
+- [x] `packages/app-food/src/storage/hero-paths.ts` exports `heroPathFor(recipeId, ext)`, `thumbPathFor(recipeId)`, `cardPathFor(recipeId)` returning absolute paths.
+- [x] Path-traversal guard helper that integer-validates `recipeId`.
 
 ### Upload
 
-- [ ] `food.heroImage.upload` tRPC mutation accepts base64 image, validates size + mimeType, writes the original atomically, generates thumbnails, updates `recipes.hero_image_path`.
-- [ ] Old hero file with different ext is deleted on replacement.
-- [ ] Returns image dimensions in the response.
-- [ ] Vitest integration test: upload a 500x500 PNG, assert files exist on disk, assert `hero_image_path` is updated.
+- [x] `food.heroImage.upload` tRPC mutation accepts base64 image, validates size + mimeType, writes the original atomically, generates thumbnails, updates `recipes.hero_image_path`.
+- [x] Old hero file with different ext is deleted on replacement.
+- [x] Returns image dimensions in the response.
+- [x] Vitest integration test: upload a 500x500 PNG, assert files exist on disk, assert `hero_image_path` is updated.
 
 ### Thumbnails
 
-- [ ] Thumbnails written as WebP at 320px and 640px wide.
-- [ ] EXIF stripped from thumbnails.
-- [ ] Vitest test: upload a JPEG with EXIF, assert thumbnail has no EXIF block.
-- [ ] Vitest test: simulate sharp failure, assert original is kept and warning logged.
+- [x] Thumbnails written as WebP at 320px and 640px wide.
+- [x] EXIF stripped from thumbnails.
+- [x] Vitest test: upload a JPEG with EXIF, assert thumbnail has no EXIF block.
+- [x] Vitest test: simulate sharp failure, assert original is kept and warning logged.
 
 ### Serving
 
-- [ ] `GET /api/food/recipes/<recipeId>/hero.<ext>` streams the file.
-- [ ] `GET /api/food/recipes/<recipeId>/hero-thumb.webp` streams the thumbnail.
-- [ ] `GET /api/food/recipes/<recipeId>/hero-card.webp` streams the card-size.
-- [ ] Path-traversal attempts rejected with 400.
-- [ ] Missing file → 404 (renderer's `onError` falls back).
+- [x] `GET /api/food/recipes/<recipeId>/hero.<ext>` streams the file.
+- [x] `GET /api/food/recipes/<recipeId>/hero-thumb.webp` streams the thumbnail.
+- [x] `GET /api/food/recipes/<recipeId>/hero-card.webp` streams the card-size.
+- [x] Path-traversal attempts rejected with 400.
+- [x] Missing file → 404 (renderer's `onError` falls back).
 
 ### UI component
 
-- [ ] `packages/app-food/src/components/HeroImageUploader.tsx` exports `HeroImageUploader`.
-- [ ] Drop-zone accepts drag-drop + file picker.
-- [ ] Replace and Remove buttons work.
-- [ ] Progress indicator during upload.
-- [ ] Mobile-friendly tap targets (44px min).
-- [ ] PRD-119's edit page mounts this component in a side panel.
+- [x] `packages/app-food/src/components/HeroImageUploader.tsx` exports `HeroImageUploader`.
+- [x] Drop-zone accepts drag-drop + file picker.
+- [x] Replace and Remove buttons work.
+- [x] Progress indicator during upload.
+- [x] Mobile-friendly tap targets (44px min).
+- [ ] PRD-119's edit page mounts this component in a side panel. — _Deferred: PRD-119 is not yet implemented; the component is ready and `HeroImageUploader` is exported from `@pops/app-food` for PRD-119 to mount._
 
 ### Remove
 
-- [ ] `food.heroImage.remove` mutation deletes files + clears `hero_image_path`.
+- [x] `food.heroImage.remove` mutation deletes files + clears `hero_image_path`.
 
 ### Tests
 
-- [ ] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/hero-image-router.test.ts` covers upload happy path, oversize rejection, mime rejection, corrupted-image rejection, thumbnail-failure fallback, replace flow, remove flow.
-- [ ] Vitest + RTL suite for `HeroImageUploader.tsx` covers UI states with mocked tRPC.
-- [ ] Storybook story for the uploader component.
+- [x] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/hero-image-router.test.ts` covers upload happy path, oversize rejection, mime rejection, corrupted-image rejection, thumbnail-failure fallback, replace flow, remove flow.
+- [x] Vitest + RTL suite for `HeroImageUploader.tsx` covers UI states with mocked tRPC.
+- [x] Storybook story for the uploader component.
 
 ## Out of Scope
 

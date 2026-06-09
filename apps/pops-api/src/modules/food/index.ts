@@ -9,11 +9,14 @@
  * See `docs/themes/07-food/` for the theme spec.
  */
 import { router } from '../../trpc.js';
+import { heroImageRouter } from './hero-image/router.js';
 import { foodMigrations } from './migrations.js';
 
 import type { ModuleManifest } from '@pops/types';
 
-export const foodRouter = router({});
+export const foodRouter = router({
+  heroImage: heroImageRouter,
+});
 
 export const manifest: ModuleManifest<typeof foodRouter> = {
   id: 'food',
