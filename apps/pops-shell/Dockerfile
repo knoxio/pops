@@ -14,6 +14,7 @@ COPY packages/app-food/package.json ./packages/app-food/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/app-lists/package.json ./packages/app-lists/
+COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
@@ -36,6 +37,7 @@ COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/
 COPY packages/module-registry/src ./packages/module-registry/src
 COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
 COPY packages/app-lists/ ./packages/app-lists/
+COPY packages/app-lists-db/ ./packages/app-lists-db/
 COPY packages/app-food-db/ ./packages/app-food-db/
 COPY packages/food-contracts/ ./packages/food-contracts/
 WORKDIR /app/packages/db-types
@@ -46,6 +48,8 @@ WORKDIR /app/packages/module-registry
 RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
+WORKDIR /app/packages/app-lists-db
+RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build
 
@@ -55,6 +59,7 @@ COPY packages/ui/ ./packages/ui/
 COPY packages/app-finance/ ./packages/app-finance/
 COPY packages/app-food/ ./packages/app-food/
 COPY packages/app-lists/ ./packages/app-lists/
+COPY packages/app-lists-db/ ./packages/app-lists-db/
 COPY packages/app-media/ ./packages/app-media/
 COPY packages/app-inventory/ ./packages/app-inventory/
 COPY packages/app-ai/ ./packages/app-ai/

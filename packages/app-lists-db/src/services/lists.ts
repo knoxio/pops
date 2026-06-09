@@ -69,11 +69,15 @@ export function archiveList(db: ListsDb, listId: number): ListRow {
   return db.transaction((tx) => {
     const existing = getList(tx, listId);
     if (existing === null) throw new ListNotFoundError(listId);
-    if (existing.archivedAt !== null) return existing;
+    // PRD-140 §Edge Cases: archiving an already-archived list updates
+    // `archived_at` to the new timestamp (idempotent at the row level, not
+    // at the timestamp level). The UI debounces; the service is the safe
+    // path for any caller that wants the canonical "I archived this just
+    // now" wall-clock.
     const rows = tx
       .update(lists)
       .set({ archivedAt: nowIso() })
-      .where(and(eq(lists.id, listId), isNull(lists.archivedAt)))
+      .where(eq(lists.id, listId))
       .returning()
       .all();
     return expectRow(rows, `archiveList(${listId})`);

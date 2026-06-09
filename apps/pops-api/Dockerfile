@@ -10,6 +10,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists/package.json ./packages/app-lists/
+COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
@@ -25,6 +26,8 @@ COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/
 COPY packages/module-registry/src ./packages/module-registry/src
 COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
 COPY packages/app-lists/src ./packages/app-lists/src
+COPY packages/app-lists-db/src ./packages/app-lists-db/src
+COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/
 COPY packages/app-food-db/src ./packages/app-food-db/src
 COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
 COPY packages/food-contracts/src ./packages/food-contracts/src
@@ -40,6 +43,8 @@ RUN pnpm build
 WORKDIR /app/packages/module-registry
 RUN pnpm build
 WORKDIR /app/packages/food-contracts
+RUN pnpm build
+WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build
@@ -74,6 +79,8 @@ COPY --from=builder /app/packages/module-registry/dist ./node_modules/@pops/modu
 COPY --from=builder /app/packages/module-registry/package.json ./node_modules/@pops/module-registry/
 COPY --from=builder /app/packages/app-food-db/dist ./node_modules/@pops/app-food-db/dist
 COPY --from=builder /app/packages/app-food-db/package.json ./node_modules/@pops/app-food-db/
+COPY --from=builder /app/packages/app-lists-db/dist ./node_modules/@pops/app-lists-db/dist
+COPY --from=builder /app/packages/app-lists-db/package.json ./node_modules/@pops/app-lists-db/
 COPY --from=builder /app/packages/app-lists/src ./node_modules/@pops/app-lists/src
 COPY --from=builder /app/packages/app-lists/package.json ./node_modules/@pops/app-lists/
 

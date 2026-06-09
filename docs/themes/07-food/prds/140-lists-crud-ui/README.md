@@ -274,14 +274,14 @@ Inline per theme protocol.
 
 ### tRPC procedures
 
-- [ ] All procedures in the API section exist in `apps/pops-api/src/modules/lists/router.ts`.
-- [ ] All mutations are transactional.
-- [ ] `lists.list.list` includes computed `itemCount`, `uncheckedCount`, `lastUpdatedAt`.
-- [ ] `lists.items.reorder` rejects if `orderedIds.length !== current count`.
+- [x] All procedures in the API section exist in `apps/pops-api/src/modules/lists/router.ts`.
+- [x] All mutations are transactional.
+- [x] `lists.list.list` includes computed `itemCount`, `uncheckedCount`, `lastUpdatedAt`.
+- [x] `lists.items.reorder` rejects if `orderedIds.length !== current count`.
 
 ### Manifest wiring
 
-- [ ] PRD-139's manifest gets its `backend.router` slot filled with `listsRouter` (this is the consumer side of PRD-139's frontend-only scope).
+- [x] PRD-139's manifest gets its `backend.router` slot filled with `listsRouter` (this is the consumer side of PRD-139's frontend-only scope).
 
 ### Mobile
 
@@ -293,7 +293,7 @@ Inline per theme protocol.
 ### Tests
 
 - [ ] Vitest + RTL at `packages/app-lists/src/pages/__tests__/*.test.tsx` covers each page.
-- [ ] Vitest integration at `apps/pops-api/src/modules/lists/__tests__/lists-router.test.ts` covers each procedure.
+- [x] Vitest integration at `apps/pops-api/src/modules/lists/__tests__/lists-router.test.ts` covers each procedure.
 - [ ] E2E: create list → add 3 items → check one → reorder → archive → restore.
 
 ## Out of Scope

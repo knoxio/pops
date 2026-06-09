@@ -72,9 +72,9 @@ describe('PRD-101 US-03 root router composition', () => {
       cerebrumManifest.id,
       cerebrumEgoManifest.id,
       foodManifest.id,
-      // listsManifest is intentionally omitted — `listsRouter = router({})`
-      // has no procedures yet (PRD-139+ will fill it). `allowed` (below)
-      // still includes it so a future addition doesn't trip the guard.
+      // PRD-140 fills `listsRouter` with the lists CRUD procedures, so the
+      // `lists` top-level id appears under `appRouter` now.
+      listsManifest.id,
     ]);
     const actualTops = new Set(routerKeys().map((k) => k.split('.')[0]));
     for (const id of expectedTops) {

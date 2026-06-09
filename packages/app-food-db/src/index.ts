@@ -41,12 +41,11 @@ export * as conversionsQueries from './services/conversions-queries.js';
 
 // NOTE: `seedFood` is NOT re-exported here. It lives at the
 // `@pops/app-food-db/seed` subpath because the seed module pulls in
-// `@pops/app-lists` at runtime via `seed/step-lists.ts`. Re-exporting
+// `@pops/app-lists-db` at runtime via `seed/step-lists.ts`. Re-exporting
 // from the root would force every consumer of `@pops/app-food-db`
 // (notably the pops-api routers in production) to eagerly evaluate the
-// seed — and the pops-api Docker image doesn't ship `@pops/app-lists`'s
-// source. Seed consumers (the `mise db:seed:food` CLI, vitest suites)
-// import the subpath explicitly.
+// seed — keeping it on a subpath isolates the dependency to the CLI +
+// vitest call sites that explicitly import it.
 
 // Named result + view types — re-exported at the barrel so the tRPC
 // router's inferred types in pops-api don't trip TS2883 ("the inferred

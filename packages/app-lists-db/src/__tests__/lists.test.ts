@@ -36,7 +36,7 @@ import {
 const MIGRATION_SQL = readFileSync(
   join(
     __dirname,
-    '../../../../../apps/pops-api/src/db/drizzle-migrations/0062_chemical_donald_blake.sql'
+    '../../../../apps/pops-api/src/db/drizzle-migrations/0062_chemical_donald_blake.sql'
   ),
   'utf8'
 );
@@ -147,12 +147,20 @@ describe('PRD-112 — lists schema + service layer', () => {
   });
 
   describe('archiveList / unarchiveList', () => {
-    it('archive is idempotent (re-archiving keeps the same archivedAt)', () => {
+    it('archive on an already-archived list refreshes archivedAt to now', () => {
+      // PRD-140 §Edge Cases — repeating archive updates the timestamp.
       const list = createList(db, { name: 'A', kind: 'shopping', ownerApp: 'food' });
       const first = archiveList(db, list.id);
-      const second = archiveList(db, list.id);
       expect(first.archivedAt).not.toBeNull();
-      expect(second.archivedAt).toBe(first.archivedAt);
+      // Spin until the wall-clock advances at least one millisecond so the
+      // re-archive timestamp is provably newer.
+      const startMs = Date.parse(first.archivedAt ?? '');
+      while (Date.now() <= startMs) {
+        // tight loop — sub-ms wait
+      }
+      const second = archiveList(db, list.id);
+      expect(second.archivedAt).not.toBeNull();
+      expect(Date.parse(second.archivedAt ?? '')).toBeGreaterThan(startMs);
     });
 
     it('unarchive restores items in their existing checked state', () => {
