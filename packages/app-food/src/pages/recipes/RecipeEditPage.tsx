@@ -37,17 +37,37 @@ interface DraftState {
 }
 
 function RecipeEditBody({ slug }: { slug: string }): ReactElement {
-  const { t } = useTranslation('food');
   const [draft, setDraft] = useState<DraftState>({ versionId: null, versionNo: null });
+  useOpenDraftOnMount(slug, (d) => setDraft(d));
+  return <RecipeEditShell slug={slug} versionId={draft.versionId} versionNo={draft.versionNo} />;
+}
+
+interface RecipeEditShellProps {
+  slug: string;
+  versionId: number | null;
+  versionNo: number | null;
+}
+
+/**
+ * Shared edit surface — used by `/edit` (which targets the latest draft
+ * via `createNewDraft`) and by `/drafts/:draftNo` (which targets a
+ * specific draft looked up by versionNo). The shell takes the resolved
+ * (versionId, versionNo) so both call sites converge on identical UX
+ * once the target draft is known.
+ */
+export function RecipeEditShell({
+  slug,
+  versionId,
+  versionNo,
+}: RecipeEditShellProps): ReactElement {
+  const { t } = useTranslation('food');
   const [dsl, setDsl] = useState<string>('');
   const dslSeeded = useRef(false);
   const [latestCompile, setLatestCompile] = useState<CompileResult | null>(null);
 
-  useOpenDraftOnMount(slug, (d) => setDraft(d));
-
   const renderingQuery = trpc.food.recipes.getForRendering.useQuery(
-    { slug, versionNo: draft.versionNo ?? undefined },
-    { enabled: draft.versionNo !== null }
+    { slug, versionNo: versionNo ?? undefined },
+    { enabled: versionNo !== null }
   );
   useEffect(() => {
     if (!dslSeeded.current && renderingQuery.data) {
@@ -57,21 +77,16 @@ function RecipeEditBody({ slug }: { slug: string }): ReactElement {
   }, [renderingQuery.data]);
 
   const proposedSlugsQuery = trpc.food.recipes.listProposedSlugs.useQuery(
-    { versionId: draft.versionId ?? 0 },
-    { enabled: draft.versionId !== null }
+    { versionId: versionId ?? 0 },
+    { enabled: versionId !== null }
   );
   const proposedRows = proposedSlugsQuery.data?.items ?? [];
 
-  const actions = useRecipeEditMutations({
-    slug,
-    versionId: draft.versionId,
-    dsl,
-    setLatestCompile,
-  });
+  const actions = useRecipeEditMutations({ slug, versionId, dsl, setLatestCompile });
   const issues = buildEditorIssues(latestCompile, proposedRows);
   const canPromote = latestCompile !== null && latestCompile.ok === true && !actions.isSaving;
 
-  if (draft.versionId === null || !dslSeeded.current) {
+  if (versionId === null || !dslSeeded.current) {
     return <Status text={t('recipes.edit.opening')} />;
   }
 
