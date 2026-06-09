@@ -40,11 +40,8 @@ import {
 import { createPrepState, listPrepStates } from '../services/prep-states';
 import { createRecipe } from '../services/recipes';
 import { searchSlugs } from '../services/slug-search';
-import {
-  createSubstitution,
-  listSubstitutions,
-  updateSubstitution,
-} from '../services/substitutions';
+import { createSubstitution } from '../services/substitutions';
+import { listSubstitutions, updateSubstitution } from '../services/substitutions-queries';
 import { createVariant } from '../services/variants';
 
 const MIGRATIONS = [
@@ -212,6 +209,40 @@ describe('PRD-122 — data-page services', () => {
       expect(rows[0]?.id).toBe(existing.id);
     });
 
+    it('mergeAliases collapses duplicate alias text at the canonical target without aborting', () => {
+      // 'fruta' is already on banana. The merge of an apple-side 'fruta'
+      // would collide with banana's row via the partial UNIQUE; ON CONFLICT
+      // DO NOTHING lets the merge complete by silently dropping the dup.
+      createAlias(db, {
+        alias: 'fruta',
+        target: { kind: 'ingredient', id: seed.bananaId },
+      });
+      const conflicting = createAlias(db, {
+        alias: 'fruta',
+        target: { kind: 'ingredient', id: seed.appleId },
+        source: 'llm',
+      });
+      const unique = createAlias(db, {
+        alias: 'manzana',
+        target: { kind: 'ingredient', id: seed.appleId },
+        source: 'llm',
+      });
+      const result = mergeAliases(db, {
+        aliasIds: [conflicting.id, unique.id],
+        target: { kind: 'ingredient', id: seed.bananaId },
+      });
+      expect(result.mergedCount).toBe(2);
+      const bananaAliases = listAliases(db, {
+        target: { kind: 'ingredient', id: seed.bananaId },
+      });
+      expect(bananaAliases.map((a) => a.alias).toSorted()).toEqual(['fruta', 'manzana']);
+      // The colliding apple row was deleted as part of the merge.
+      const appleAliases = listAliases(db, {
+        target: { kind: 'ingredient', id: seed.appleId },
+      });
+      expect(appleAliases).toHaveLength(0);
+    });
+
     it('bulkApproveAliases flips llm rows to user and skips already-user rows', () => {
       const a = createAlias(db, {
         alias: 'a',
@@ -349,6 +380,24 @@ describe('PRD-122 — data-page services', () => {
       expect(baking[0]?.contextTags).toEqual(['baking', 'sweet']);
     });
 
+    it('listSubstitutions includes wildcard edges (empty context_tags) when filtering by a tag', () => {
+      // PRD-109 amendment: empty context_tags = "applies in any context".
+      // Tag-filtered queries must surface wildcards alongside specific matches.
+      createSubstitution(db, {
+        from: { ingredientId: seed.bananaId },
+        to: { ingredientId: seed.appleId },
+        contextTags: [],
+      });
+      createSubstitution(db, {
+        from: { ingredientId: seed.bananaId },
+        to: { variantId: seed.appleRawVariantId },
+        contextTags: ['savory'],
+      });
+      const baking = listSubstitutions(db, { contextTag: 'baking' });
+      expect(baking).toHaveLength(1);
+      expect(baking[0]?.contextTags).toEqual([]);
+    });
+
     it('updateSubstitution patches ratio and contextTags', () => {
       const sub = createSubstitution(db, {
         from: { ingredientId: seed.bananaId },
@@ -362,6 +411,14 @@ describe('PRD-122 — data-page services', () => {
       });
       expect(updated.ratio).toBe(0.75);
       expect(updated.contextTags).toEqual(['baking', 'sweet']);
+    });
+
+    it('updateSubstitution rejects an empty patch', () => {
+      const sub = createSubstitution(db, {
+        from: { ingredientId: seed.bananaId },
+        to: { ingredientId: seed.appleId },
+      });
+      expect(() => updateSubstitution(db, sub.id, {})).toThrow(/at least one field/);
     });
   });
 

@@ -1,7 +1,9 @@
 /**
  * Tab metadata for the `/food/data` page (PRD-122).
  *
- * Single source for the tab strip + the mobile dropdown + the routes file.
+ * Drives the desktop tab strip and the mobile dropdown. The routes file
+ * (`packages/app-food/src/routes.tsx`) declares each child route directly
+ * — keep the two lists aligned by hand when a tab is added or removed.
  * Each entry's `slug` is the URL segment (`/food/data/<slug>`) and the
  * matching i18n key under the `food` namespace.
  *

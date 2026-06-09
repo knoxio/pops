@@ -101,6 +101,13 @@ export interface MergeAliasesResult {
  * pointing at the target are left untouched. Each row to be migrated is
  * recreated (INSERT) at the new target and the original row is removed
  * (DELETE) in the same transaction.
+ *
+ * The INSERT uses `ON CONFLICT DO NOTHING` against the per-target partial
+ * UNIQUE indexes (PRD-106): when the same alias text already exists at the
+ * canonical target, the duplicate is silently collapsed onto the existing
+ * row while the original is still removed. Without this, a merge across
+ * targets that happen to share alias text would fail SQLite's UNIQUE and
+ * abort the whole transaction.
  */
 export function mergeAliases(db: FoodDb, input: MergeAliasesInput): MergeAliasesResult {
   if (input.aliasIds.length === 0) return { mergedCount: 0 };
@@ -124,6 +131,7 @@ export function mergeAliases(db: FoodDb, input: MergeAliasesInput): MergeAliases
           ingredientId,
           variantId,
         })
+        .onConflictDoNothing()
         .run();
       mergedCount += 1;
     }

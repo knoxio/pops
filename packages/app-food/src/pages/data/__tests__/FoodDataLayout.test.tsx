@@ -17,6 +17,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
 import { routes } from '../../../routes';
+import { getActiveTabSlug } from '../FoodDataLayout';
 
 function renderAt(initialPath: string) {
   const router = createMemoryRouter(
@@ -74,6 +75,34 @@ describe('PRD-122 — /food/data shell', () => {
     const tablist = await screen.findByRole('tablist', { name: /data tabs/i });
     const tabs = tablist.querySelectorAll('a[role="tab"]');
     expect(tabs).toHaveLength(5);
+  });
+
+  it('marks the active tab via aria-selected + tabIndex', async () => {
+    renderAt('/food/data/aliases');
+    const tablist = await screen.findByRole('tablist', { name: /data tabs/i });
+    const tabs = Array.from(tablist.querySelectorAll<HTMLAnchorElement>('a[role="tab"]'));
+    const aliases = tabs.find((a) => a.textContent === 'Aliases');
+    const ingredients = tabs.find((a) => a.textContent === 'Ingredients');
+    expect(aliases?.getAttribute('aria-selected')).toBe('true');
+    expect(aliases?.tabIndex).toBe(0);
+    expect(ingredients?.getAttribute('aria-selected')).toBe('false');
+    expect(ingredients?.tabIndex).toBe(-1);
+  });
+
+  describe('getActiveTabSlug — leading-segment match', () => {
+    it('resolves the slug from a direct match', () => {
+      expect(getActiveTabSlug('/food/data/aliases')).toBe('aliases');
+      expect(getActiveTabSlug('/food/data/prep-states')).toBe('prep-states');
+    });
+
+    it('keeps the parent tab active when the URL has a nested sub-route', () => {
+      expect(getActiveTabSlug('/food/data/aliases/123/edit')).toBe('aliases');
+    });
+
+    it('falls back to the default tab when no segment matches', () => {
+      expect(getActiveTabSlug('/food/data/mystery')).toBe('ingredients');
+      expect(getActiveTabSlug('/food/data')).toBe('ingredients');
+    });
   });
 
   it('exposes a mobile dropdown with the same set of tabs', async () => {
