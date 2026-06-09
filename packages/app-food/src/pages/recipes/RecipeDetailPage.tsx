@@ -7,9 +7,11 @@ import { trpc } from '@pops/api-client';
 
 import { RecipeRenderer } from '../../components/RecipeRenderer.js';
 import { MissingCurrentVersionBanner } from './MissingCurrentVersionBanner.js';
-import { RecipeActionMenu } from './RecipeActionMenu.js';
+import { RecipeActionMenu, type RecipeActionMenuItem } from './RecipeActionMenu.js';
 import { RecipeArchiveDialog } from './RecipeArchiveDialog.js';
 import { RecipeScaleProvider, useRecipeScale } from './RecipeScaleProvider.js';
+import { SendToListPortal } from './SendToListPortal.js';
+import { buildSendMenuItem, canSendRecipe, useSendFlow } from './use-send-flow.js';
 import { useRecipeDetailData } from './useRecipeDetailData.js';
 
 /**
@@ -36,6 +38,7 @@ function RecipeDetailBody({ slug }: { slug: string }): ReactElement {
   const { scaleFactor } = useRecipeScale();
   const { data, draftCount, isLoading, error } = useRecipeDetailData({ slug });
   const archive = useArchiveFlow(slug);
+  const send = useSendFlow();
 
   if (isLoading) {
     return <Status text={t('recipes.detail.loading')} />;
@@ -52,10 +55,21 @@ function RecipeDetailBody({ slug }: { slug: string }): ReactElement {
       </Shell>
     );
   }
+  const sendMenuItem = buildSendMenuItem({
+    label: t('recipes.detail.sendToList.menuItem'),
+    canSend: canSendRecipe(data),
+    onSelect: send.open,
+  });
   return (
-    <Shell title={data.recipe.slug} draftCount={draftCount} onArchive={archive.open}>
+    <Shell
+      title={data.recipe.slug}
+      draftCount={draftCount}
+      onArchive={archive.open}
+      extraItems={[sendMenuItem]}
+    >
       <RecipeRenderer recipeVersion={data} scaleFactor={scaleFactor} variant="detail" />
       <ArchiveDialogPortal slug={slug} title={data.version.title} archive={archive} />
+      <SendToListPortal flow={send} versionId={data.version.id} />
     </Shell>
   );
 }
@@ -126,15 +140,21 @@ interface ShellProps {
   draftCount: number;
   onArchive: () => void;
   children: ReactElement | ReactElement[];
+  extraItems?: RecipeActionMenuItem[];
 }
 
-function Shell({ title, draftCount, onArchive, children }: ShellProps): ReactElement {
+function Shell({ title, draftCount, onArchive, children, extraItems }: ShellProps): ReactElement {
   return (
     <div className="space-y-4 p-6">
       <header className="flex items-start justify-between gap-4">
         <h1 className="sr-only">{title}</h1>
         <div className="ml-auto">
-          <RecipeActionMenu slug={title} draftCount={draftCount} onArchive={onArchive} />
+          <RecipeActionMenu
+            slug={title}
+            draftCount={draftCount}
+            onArchive={onArchive}
+            extraItems={extraItems}
+          />
         </div>
       </header>
       {children}

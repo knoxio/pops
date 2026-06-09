@@ -1,24 +1,28 @@
 /**
- * `food.recipes.*` tRPC router — PRD-119 part API.
+ * `food.recipes.*` tRPC router — PRD-119 part API + PRD-142 amendments.
  *
- * 11 procedures spanning the recipe CRUD surface. Each delegates to a
- * helper module in this directory; the router file stays declarative.
+ * 13 procedures spanning the recipe CRUD surface plus the send-to-list
+ * flow. Each delegates to a helper module in this directory; the router
+ * file stays declarative.
  *
- * | procedure          | helper file              |
- * | ------------------ | ------------------------ |
- * | list               | queries.ts               |
- * | getForRendering    | get-for-rendering.ts     |
- * | create             | create.ts                |
- * | createNewDraft     | create.ts                |
- * | saveDraft          | save.ts                  |
- * | promote            | save.ts                  |
- * | archiveVersion     | save.ts                  |
- * | archiveRecipe      | save.ts                  |
- * | listDrafts         | queries.ts               |
- * | restoreVersion     | create.ts                |
- * | listProposedSlugs  | queries.ts               |
+ * | procedure            | helper file                            |
+ * | -------------------- | -------------------------------------- |
+ * | list                 | queries.ts                             |
+ * | getForRendering      | get-for-rendering.ts                   |
+ * | create               | create.ts                              |
+ * | createNewDraft       | create.ts                              |
+ * | saveDraft            | save.ts                                |
+ * | promote              | save.ts                                |
+ * | archiveVersion       | save.ts                                |
+ * | archiveRecipe        | save.ts                                |
+ * | listDrafts           | queries.ts                             |
+ * | restoreVersion       | create.ts                              |
+ * | listProposedSlugs    | queries.ts                             |
+ * | prepareSendToList    | send-to-list/prepare.ts (PRD-142)      |
+ * | sendToList           | send-to-list/send.ts (PRD-142)         |
  *
- * See `docs/themes/07-food/prds/119-recipe-crud-pages/README.md`.
+ * See `docs/themes/07-food/prds/119-recipe-crud-pages/README.md` and
+ * `docs/themes/07-food/prds/142-recipe-send-to-list/README.md`.
  */
 import { TRPCError } from '@trpc/server';
 
@@ -33,13 +37,17 @@ import {
   ListDraftsInputSchema,
   ListInputSchema,
   ListProposedSlugsInputSchema,
+  PrepareSendToListInputSchema,
   RecipeSlugInputSchema,
   RestoreVersionInputSchema,
   SaveDraftInputSchema,
+  SendToListInputSchema,
   VersionIdInputSchema,
 } from './inputs.js';
 import { decodeCursor, listDraftsForSlug, listProposedSlugs, listRecipes } from './queries.js';
 import { archiveRecipeBySlug, archiveVersionRow, promote, saveDraft } from './save.js';
+import { prepareSendToList } from './send-to-list/prepare.js';
+import { sendToList } from './send-to-list/send.js';
 
 const DEFAULT_LIMIT = 20;
 
@@ -100,6 +108,18 @@ export const recipesRouter = router({
 
   listProposedSlugs: protectedProcedure.input(ListProposedSlugsInputSchema).query(({ input }) => {
     return { items: listProposedSlugs(getDrizzle(), input.versionId) };
+  }),
+
+  prepareSendToList: protectedProcedure.input(PrepareSendToListInputSchema).query(({ input }) => {
+    return prepareSendToList(getDrizzle(), input.versionId, input.scaleFactor);
+  }),
+
+  sendToList: protectedProcedure.input(SendToListInputSchema).mutation(({ input }) => {
+    return sendToList(getDrizzle(), {
+      versionId: input.versionId,
+      scaleFactor: input.scaleFactor,
+      target: input.target,
+    });
   }),
 });
 

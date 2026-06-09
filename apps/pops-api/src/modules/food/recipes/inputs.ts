@@ -56,3 +56,24 @@ export const RestoreVersionInputSchema = z.object({
 export const ListProposedSlugsInputSchema = z.object({
   versionId: z.number().int().positive(),
 });
+
+/**
+ * PRD-142 — `food.recipes.prepareSendToList` (query).
+ */
+export const PrepareSendToListInputSchema = z.object({
+  versionId: z.number().int().positive(),
+  scaleFactor: z.number().positive().optional(),
+});
+
+/**
+ * PRD-142 — `food.recipes.sendToList` (mutation). Target is a discriminated
+ * union: existing list (by id) or a brand-new shopping list (by name).
+ */
+export const SendToListInputSchema = z.object({
+  versionId: z.number().int().positive(),
+  scaleFactor: z.number().positive().optional(),
+  target: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('existing'), listId: z.number().int().positive() }),
+    z.object({ kind: z.literal('new'), name: z.string().min(1) }),
+  ]),
+});
