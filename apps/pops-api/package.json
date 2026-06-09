@@ -77,6 +77,7 @@
     "@anthropic-ai/sdk": "^0.100.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@pops/app-food-db": "workspace:*",
+    "@pops/app-lists-db": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/food-contracts": "workspace:*",
     "@pops/module-registry": "workspace:*",

@@ -1,19 +1,20 @@
 /**
  * Lists domain — backend module.
  *
- * Schema-only: the manifest's `backend.router` is an empty tRPC stub. Epic
- * 04 PRDs (139 onwards) fill it with the lists CRUD procedures consumed by
- * the top-level `/lists` shell module.
+ * PRD-139 wired the empty stub; PRD-140 fills `backend.router` with the
+ * 14-procedure CRUD surface that backs the `/lists` UI. Schema + service
+ * layer lives in `@pops/app-lists-db` (extracted from `@pops/app-lists`
+ * along the same lines as `@pops/app-food-db`).
  *
- * See `docs/themes/07-food/prds/112-lists-schema/` for the schema spec and
- * `docs/themes/07-food/epics/04-lists-and-shopping.md` for the consumer side.
+ * See `docs/themes/07-food/prds/140-lists-crud-ui/` for the API surface and
+ * `docs/themes/07-food/prds/112-lists-schema/` for the schema spec.
  */
-import { router } from '../../trpc.js';
 import { listsMigrations } from './migrations.js';
+import { listsRouter } from './router.js';
 
 import type { ModuleManifest } from '@pops/types';
 
-export const listsRouter = router({});
+export { listsRouter } from './router.js';
 
 export const manifest: ModuleManifest<typeof listsRouter> = {
   id: 'lists',

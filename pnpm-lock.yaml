@@ -45,6 +45,9 @@ importers:
       '@pops/app-food-db':
         specifier: workspace:*
         version: link:../../packages/app-food-db
+      '@pops/app-lists-db':
+        specifier: workspace:*
+        version: link:../../packages/app-lists-db
       '@pops/db-types':
         specifier: workspace:*
         version: link:../../packages/db-types
@@ -826,9 +829,9 @@ importers:
 
   packages/app-food-db:
     dependencies:
-      '@pops/app-lists':
+      '@pops/app-lists-db':
         specifier: workspace:*
-        version: link:../app-lists
+        version: link:../app-lists-db
       '@pops/db-types':
         specifier: workspace:*
         version: link:../db-types
@@ -963,6 +966,9 @@ importers:
 
   packages/app-lists:
     dependencies:
+      '@pops/app-lists-db':
+        specifier: workspace:*
+        version: link:../app-lists-db
       '@pops/db-types':
         specifier: workspace:*
         version: link:../db-types
@@ -1012,6 +1018,31 @@ importers:
       react-router:
         specifier: ^7.16.0
         version: 7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.1)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.1)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
+  packages/app-lists-db:
+    dependencies:
+      '@pops/db-types':
+        specifier: workspace:*
+        version: link:../db-types
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.12
+        version: 7.6.13
+      '@vitest/coverage-v8':
+        specifier: ^4.1.8
+        version: 4.1.8(vitest@4.1.8)
+      better-sqlite3:
+        specifier: ^12.10.0
+        version: 12.10.0
       typescript:
         specifier: ^6.0.3
         version: 6.0.3

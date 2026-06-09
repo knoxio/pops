@@ -4,6 +4,7 @@ packages:
   - 'packages/app-food'
   - 'packages/app-food-db'
   - 'packages/app-lists'
+  - 'packages/app-lists-db'
   - 'packages/app-media'
   - 'packages/app-inventory'
   - 'packages/app-ai'

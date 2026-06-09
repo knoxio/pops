@@ -1,5 +1,5 @@
 {
-  "name": "@pops/app-food-db",
+  "name": "@pops/app-lists-db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,10 +9,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./seed": {
-      "types": "./dist/seed/index.d.ts",
-      "default": "./dist/seed/index.js"
     }
   },
   "scripts": {
@@ -23,7 +19,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@pops/app-lists-db": "workspace:*",
     "@pops/db-types": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
