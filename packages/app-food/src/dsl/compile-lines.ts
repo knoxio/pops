@@ -1,13 +1,15 @@
+import { normaliseLineQty } from './normalisation';
+
+import type { CanonicalUnit } from '../db/schema';
 /**
- * `recipe_lines` materialiser — PRD-116.
+ * `recipe_lines` materialiser — PRD-116 + PRD-123.
  *
  * Maps a `ResolvedIngredientBlock` + the author's original descriptor
- * string to an INSERT row. v1 conversion is the identity carry-over:
- * `original_unit ∈ {g,ml,count}` → the matching `qty_*` column gets the
- * value; otherwise all three stay null and `canonical_unit` falls back to
- * the ingredient's `default_unit` (the conversion-table PRD upgrades
- * this).
+ * string to an INSERT row. PRD-123 upgraded the normalisation step from
+ * identity carry-over to a 3-step lookup in `unit_conversions` and
+ * `ingredient_weights` — handled by `normaliseLineQty` in `normalisation.ts`.
  */
+import type { FoodDb } from '../db/services/internal';
 import type { ResolvedIngredientBlock } from './resolver-types';
 
 export interface LineInsert {
@@ -24,7 +26,7 @@ export interface LineInsert {
   qtyG: number | null;
   qtyMl: number | null;
   qtyCount: number | null;
-  canonicalUnit: 'g' | 'ml' | 'count';
+  canonicalUnit: CanonicalUnit;
   optional: number;
   notes: string | null;
 }
@@ -33,15 +35,22 @@ export function buildLineInsert(args: {
   block: ResolvedIngredientBlock;
   recipeVersionId: number;
   originalText: string;
-  ingredientDefaultUnit: 'g' | 'ml' | 'count';
+  ingredientDefaultUnit: CanonicalUnit;
+  db: FoodDb;
 }): LineInsert {
-  const { block, recipeVersionId, originalText, ingredientDefaultUnit } = args;
+  const { block, recipeVersionId, originalText, ingredientDefaultUnit, db } = args;
   if (block.ingredientId === null) {
     throw new Error(
       `buildLineInsert: block index=${block.index} has null ingredientId — creations not applied`
     );
   }
-  const canonical = carryOverMetric(block.qty, block.unit, ingredientDefaultUnit);
+  const canonical = normaliseLineQty(db, {
+    ingredientId: block.ingredientId,
+    variantId: block.variantId,
+    unit: block.unit,
+    qty: block.qty,
+    ingredientDefaultUnit,
+  });
   return {
     recipeVersionId,
     position: block.index,
@@ -53,28 +62,11 @@ export function buildLineInsert(args: {
     originalText,
     originalQty: block.qty,
     originalUnit: block.unit,
-    qtyG: canonical.unit === 'g' ? canonical.qty : null,
-    qtyMl: canonical.unit === 'ml' ? canonical.qty : null,
-    qtyCount: canonical.unit === 'count' ? canonical.qty : null,
-    canonicalUnit: canonical.unit,
+    qtyG: canonical.qtyG,
+    qtyMl: canonical.qtyMl,
+    qtyCount: canonical.qtyCount,
+    canonicalUnit: canonical.canonicalUnit,
     optional: block.optional ? 1 : 0,
     notes: block.notes,
   };
-}
-
-interface CanonicalQty {
-  qty: number | null;
-  unit: 'g' | 'ml' | 'count';
-}
-
-/** v1 identity carry-over. Unknown units fall through to the ingredient's default. */
-export function carryOverMetric(
-  qty: number,
-  unit: string,
-  fallback: 'g' | 'ml' | 'count'
-): CanonicalQty {
-  if (unit === 'g' || unit === 'ml' || unit === 'count') {
-    return { qty, unit };
-  }
-  return { qty: null, unit: fallback };
 }

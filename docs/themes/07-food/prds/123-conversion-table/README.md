@@ -195,14 +195,14 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds `unit_conversions` and `ingredient_weights` per the SQL above.
-- [ ] Indexes and UNIQUE constraints verified via PRAGMA.
-- [ ] `packages/db-types` regenerated.
+- [x] Migration adds `unit_conversions` and `ingredient_weights` per the SQL above. (`0066_prd_123_conversions.sql`. NULL-distinct UNIQUE on `ingredient_weights` split into two partial uniques — `(ingredient_id, variant_id, unit) WHERE variant_id IS NOT NULL` + `(ingredient_id, unit) WHERE variant_id IS NULL` — so the null-variant shape collapses correctly under SQLite's NULL-distinct semantics.)
+- [x] Indexes and UNIQUE constraints verified via PRAGMA. (covered by the invariant suite running both partial uniques + the CHECK on `to_unit` and `ratio > 0` / `grams > 0`.)
+- [x] `packages/db-types` regenerated.
 
 ### Resolution helper
 
-- [ ] `packages/app-food/src/dsl/normalisation.ts` exports `normaliseLineQty(line, db)` per the algorithm above.
-- [ ] Vitest suite at `packages/app-food/src/dsl/__tests__/normalisation.test.ts` covers:
+- [x] `packages/app-food/src/dsl/normalisation.ts` exports `normaliseLineQty(db, input)` per the algorithm above.
+- [x] Vitest suite at `packages/app-food/src/dsl/__tests__/normalisation.test.ts` covers:
   - Identity carry-over: input g → qty_g equals original_qty.
   - Unit conversion: input cup → qty_ml = original_qty × 240.
   - Ingredient weight: input medium onion → qty_g = original_qty × 150.
@@ -211,8 +211,8 @@ Inline per theme protocol.
 
 ### PRD-116 integration
 
-- [ ] PRD-116's compile invokes `normaliseLineQty` for each line during step 9.
-- [ ] After this PRD ships, re-running PRD-113's seed produces `recipe_lines` rows with populated `qty_g`/`qty_ml`/`qty_count` for sample recipes whose DSL uses `cup` / `tbsp` / `medium` units.
+- [x] PRD-116's compile invokes `normaliseLineQty` for each line during step 9. (via `compile-lines.ts` `buildLineInsert` — the old `carryOverMetric` is replaced.)
+- [ ] After this PRD ships, re-running PRD-113's seed produces `recipe_lines` rows with populated `qty_g`/`qty_ml`/`qty_count` for sample recipes whose DSL uses `cup` / `tbsp` / `medium` units. _Pending PRD-113 Phase 2 + seed integration below._
 
 ### tRPC procedures
 

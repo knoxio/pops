@@ -15,6 +15,7 @@ export {
   ingredientAliases,
   ingredients,
   ingredientVariants,
+  ingredientWeights,
   planEntries,
   planSlots,
   prepStates,
@@ -27,12 +28,14 @@ export {
   recipeVersions,
   slugRegistry,
   substitutions,
+  unitConversions,
 } from '@pops/db-types';
 export type {
   BatchConsumptionInsert,
   BatchConsumptionRow,
   BatchInsert,
   BatchRow,
+  CanonicalUnit,
   IngestSourceInsert,
   IngestSourceKind,
   IngestSourceRow,
@@ -42,6 +45,8 @@ export type {
   IngredientRow,
   IngredientVariantInsert,
   IngredientVariantRow,
+  IngredientWeightInsert,
+  IngredientWeightRow,
   PlanEntryInsert,
   PlanEntryRow,
   PlanSlotInsert,
@@ -66,4 +71,6 @@ export type {
   SlugRegistryRow,
   SubstitutionInsert,
   SubstitutionRow,
+  UnitConversionInsert,
+  UnitConversionRow,
 } from '@pops/db-types';

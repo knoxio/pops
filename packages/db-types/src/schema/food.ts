@@ -13,6 +13,7 @@
  *   - `food-plan.ts` — PRD-111 (plan_slots, plan_entries).
  *   - `food-ingest-sources.ts` — PRD-110 (ingest_sources).
  *   - `food-compile.ts` — PRD-116 (recipe_lines, recipe_steps, proposed_slugs).
+ *   - `food-conversions.ts` — PRD-123 (unit_conversions, ingredient_weights).
  *
  * This barrel is the import surface every other layer (db-types/src/index.ts,
  * `@pops/app-food`, drizzle-kit's schema glob) reads from.
@@ -23,3 +24,4 @@ export * from './food-batches.js';
 export * from './food-plan.js';
 export * from './food-ingest-sources.js';
 export * from './food-compile.js';
+export * from './food-conversions.js';
