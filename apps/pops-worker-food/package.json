@@ -23,6 +23,7 @@
   "devDependencies": {
     "@pops/api": "workspace:*",
     "@pops/app-food": "workspace:*",
+    "@pops/app-food-db": "workspace:*",
     "@types/node": "^25.9.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",

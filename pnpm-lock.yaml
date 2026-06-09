@@ -444,6 +444,9 @@ importers:
       '@pops/app-food':
         specifier: workspace:*
         version: link:../../packages/app-food
+      '@pops/app-food-db':
+        specifier: workspace:*
+        version: link:../../packages/app-food-db
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1

@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { parseRecipeDsl } from '@pops/app-food/src/dsl/parser';
+import { parseRecipeDsl } from '@pops/app-food-db';
 
 import { mapJsonLdToDsl } from '../handlers/web/map-to-dsl.js';
 
