@@ -75,10 +75,11 @@ export function DslEditor(props: DslEditorProps) {
   // re-dispatches when the caller passes a genuinely new array (a fresh
   // empty literal each render would otherwise thrash the editor).
   const issues = useMemo(() => props.issues ?? EMPTY_ISSUES, [props.issues]);
+  const readOnly = props.readOnly === true;
   useDslEditorView(hostRef, {
     initialValue: props.initialValue,
     onChange: props.onChange,
-    readOnly: props.readOnly === true,
+    readOnly,
     issues,
     autocompleteSources: props.autocompleteSources ?? null,
   });
@@ -92,33 +93,9 @@ export function DslEditor(props: DslEditorProps) {
   const reorder = useReorderController({ getView });
 
   const wrapperClass = ['dsl-editor', props.className].filter(Boolean).join(' ');
-  const readOnly = props.readOnly === true;
   return (
     <div className={wrapperClass} data-testid="dsl-editor">
-      {readOnly ? (
-        <div
-          role="status"
-          className="dsl-editor__readonly-banner"
-          data-testid="dsl-editor-readonly-banner"
-        >
-          {t('editor.readOnlyBanner')}
-        </div>
-      ) : (
-        <div
-          className="dsl-editor__toolbar flex items-center gap-2"
-          data-testid="dsl-editor-toolbar"
-        >
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => reorder.setOpen(true)}
-            data-testid="dsl-editor-reorder-open"
-          >
-            {t('editor.reorder.open')}
-          </Button>
-        </div>
-      )}
+      <DslEditorHeader readOnly={readOnly} onOpenReorder={() => reorder.setOpen(true)} />
       <div
         ref={hostRef}
         className="dsl-editor__surface"
@@ -131,6 +108,40 @@ export function DslEditor(props: DslEditorProps) {
         declarations={reorder.declarations}
         onApply={reorder.apply}
       />
+    </div>
+  );
+}
+
+function DslEditorHeader({
+  readOnly,
+  onOpenReorder,
+}: {
+  readOnly: boolean;
+  onOpenReorder: () => void;
+}) {
+  const { t } = useTranslation('food');
+  if (readOnly) {
+    return (
+      <div
+        role="status"
+        className="dsl-editor__readonly-banner"
+        data-testid="dsl-editor-readonly-banner"
+      >
+        {t('editor.readOnlyBanner')}
+      </div>
+    );
+  }
+  return (
+    <div className="dsl-editor__toolbar flex items-center gap-2" data-testid="dsl-editor-toolbar">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onOpenReorder}
+        data-testid="dsl-editor-reorder-open"
+      >
+        {t('editor.reorder.open')}
+      </Button>
     </div>
   );
 }
