@@ -20,10 +20,10 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-// PRD-114 parser. Deep import is intentional — `@pops/app-food` package
-// root re-exports React components we don't want pulled into the worker
-// test harness.
-import { parseRecipeDsl } from '@pops/app-food/src/dsl/parser';
+// PRD-114 parser. PRD-119-API extracted the DSL pipeline out of `@pops/app-food`
+// into `@pops/app-food-db` so the backend (and this worker) can pull it in
+// without React + CodeMirror getting dragged along.
+import { parseRecipeDsl } from '@pops/app-food-db';
 
 import { runWebUrlIngestWith } from '../handlers/web-url.js';
 import { extractRecipeJsonLd } from '../handlers/web/extract-json-ld.js';
