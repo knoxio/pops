@@ -27,9 +27,14 @@
  * supposed to treat `onChange` as the source of truth and not re-pump the
  * same value back as a new `initialValue`.
  */
-import { useMemo, useRef } from 'react';
+import { EditorView } from '@codemirror/view';
+import { useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Button } from '@pops/ui';
+
+import { ReorderIngredientsPanel } from './dsl-editor/ReorderIngredientsPanel';
+import { useReorderController } from './dsl-editor/useReorderController';
 import { useDslEditorView } from './useDslEditorView';
 
 import type { DslAutocompleteSources } from './dsl-editor/autocomplete-types';
@@ -78,10 +83,19 @@ export function DslEditor(props: DslEditorProps) {
     autocompleteSources: props.autocompleteSources ?? null,
   });
 
+  const getView = useCallback((): EditorView | null => {
+    const host = hostRef.current;
+    if (host === null) return null;
+    const cm = host.querySelector('.cm-editor');
+    return cm === null ? null : (EditorView.findFromDOM(cm as HTMLElement) ?? null);
+  }, []);
+  const reorder = useReorderController({ getView });
+
   const wrapperClass = ['dsl-editor', props.className].filter(Boolean).join(' ');
+  const readOnly = props.readOnly === true;
   return (
     <div className={wrapperClass} data-testid="dsl-editor">
-      {props.readOnly === true ? (
+      {readOnly ? (
         <div
           role="status"
           className="dsl-editor__readonly-banner"
@@ -89,12 +103,33 @@ export function DslEditor(props: DslEditorProps) {
         >
           {t('editor.readOnlyBanner')}
         </div>
-      ) : null}
+      ) : (
+        <div
+          className="dsl-editor__toolbar flex items-center gap-2"
+          data-testid="dsl-editor-toolbar"
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => reorder.setOpen(true)}
+            data-testid="dsl-editor-reorder-open"
+          >
+            {t('editor.reorder.open')}
+          </Button>
+        </div>
+      )}
       <div
         ref={hostRef}
         className="dsl-editor__surface"
         data-testid="dsl-editor-surface"
         aria-label={t('editor.ariaLabel')}
+      />
+      <ReorderIngredientsPanel
+        open={reorder.open}
+        onOpenChange={reorder.setOpen}
+        declarations={reorder.declarations}
+        onApply={reorder.apply}
       />
     </div>
   );
