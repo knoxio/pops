@@ -22,16 +22,28 @@ import type { ResolvedStepBody, ResolvedStepBodyPart } from './resolver-types';
  */
 export type LineLabelMap = ReadonlyMap<number, string>;
 
-export function renderBodyMd(body: ResolvedStepBody, labels: LineLabelMap): string {
-  return body.map((part) => renderPart(part, labels)).join('');
+/**
+ * Lookup from `ingredients.id` to the canonical `ingredients.slug`. Used to
+ * render `@slug` step refs (the resolver pins these to `ingredientId`, not
+ * the original text) as `[slug](#ingredient-slug)` per the PRD-116 spec.
+ */
+export type IngredientSlugMap = ReadonlyMap<number, string>;
+
+export interface RenderContext {
+  labels: LineLabelMap;
+  slugsByIngredientId: IngredientSlugMap;
 }
 
-function renderPart(part: ResolvedStepBodyPart, labels: LineLabelMap): string {
+export function renderBodyMd(body: ResolvedStepBody, ctx: RenderContext): string {
+  return body.map((part) => renderPart(part, ctx)).join('');
+}
+
+function renderPart(part: ResolvedStepBodyPart, ctx: RenderContext): string {
   switch (part.kind) {
     case 'text':
       return part.value;
     case 'ref':
-      return renderRef(part, labels);
+      return renderRef(part, ctx);
     case 'time':
       return `[${formatQty(part.qty.qty)} ${part.qty.unit}](#timer)`;
     case 'temperature':
@@ -41,16 +53,15 @@ function renderPart(part: ResolvedStepBodyPart, labels: LineLabelMap): string {
 
 function renderRef(
   part: Extract<ResolvedStepBodyPart, { kind: 'ref' }>,
-  labels: LineLabelMap
+  ctx: RenderContext
 ): string {
   if (part.ingredientIndex !== null) {
-    const label = labels.get(part.ingredientIndex) ?? `line-${part.ingredientIndex}`;
+    const label = ctx.labels.get(part.ingredientIndex) ?? `line-${part.ingredientIndex}`;
     return `[${label}](#line-${part.ingredientIndex})`;
   }
-  // Slug-only ref (rare in compiled steps; the resolver normally pins these
-  // to a block when possible). Fall back to the resolved ingredientId-based
-  // anchor so the link still points at something.
   if (part.ingredientId !== null) {
+    const slug = ctx.slugsByIngredientId.get(part.ingredientId);
+    if (slug !== undefined) return `[${slug}](#ingredient-${slug})`;
     return `[ingredient-${part.ingredientId}](#ingredient-${part.ingredientId})`;
   }
   return '[?](#unresolved)';

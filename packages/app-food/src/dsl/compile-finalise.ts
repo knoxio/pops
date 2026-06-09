@@ -7,18 +7,44 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { recipeLines, recipeSteps, recipeVersions } from '../db/schema';
+import { recipeLines, recipeSteps, recipeVersionProposedSlugs, recipeVersions } from '../db/schema';
 
 import type { FoodDb } from '../db/services/internal';
 import type { RecipeAst, RecipeHeader } from './ast';
 import type { CompileError, CompileErrorJson, CompilePhase, CompileResult } from './compile-types';
-import type { ResolvedRecipeAst } from './resolver-types';
+import type { ResolveResult, ResolvedRecipeAst } from './resolver-types';
+
+export function persistProposedSlugs(
+  tx: FoodDb,
+  versionId: number,
+  resolveResult: ResolveResult
+): void {
+  tx.delete(recipeVersionProposedSlugs)
+    .where(eq(recipeVersionProposedSlugs.recipeVersionId, versionId))
+    .run();
+  for (const proposed of resolveResult.proposedSlugs) {
+    tx.insert(recipeVersionProposedSlugs)
+      .values({
+        recipeVersionId: versionId,
+        slug: proposed.slug,
+        suggestedKind: proposed.suggestedKind ?? null,
+        fromLocJson: JSON.stringify(proposed.fromLoc),
+      })
+      .run();
+  }
+}
 
 export function failParse(
   tx: FoodDb,
   versionId: number,
   errors: readonly CompileError[]
 ): CompileResult {
+  // Parse failure: the version is unusable; clear any stale review-queue
+  // entries from a prior compile so they don't outlive the version they
+  // were proposed against.
+  tx.delete(recipeVersionProposedSlugs)
+    .where(eq(recipeVersionProposedSlugs.recipeVersionId, versionId))
+    .run();
   return failCompile({ tx, versionId, phase: 'parse', errors, proposedSlugsCount: 0 });
 }
 

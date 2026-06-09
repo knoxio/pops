@@ -9,15 +9,23 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { recipeLines, recipeSteps, recipeVersionProposedSlugs, recipeVersions } from '../db/schema';
+import { recipeLines, recipeSteps, recipeVersions } from '../db/schema';
 import { applyCreations } from './compile-creations';
-import { failCycle, failParse, failResolve, updateHeader } from './compile-finalise';
+import {
+  failCycle,
+  failParse,
+  failResolve,
+  persistProposedSlugs,
+  updateHeader,
+} from './compile-finalise';
 import {
   buildIngredientDefaultUnitLookup,
+  buildIngredientSlugLookup,
   buildLineLabels,
   serialiseSourceDescriptor,
 } from './compile-helpers';
 import { buildLineInsert } from './compile-lines';
+import { failMaterialise } from './compile-materialise-fail';
 import { buildStepInsert } from './compile-steps';
 import { detectRecipeCycle } from './cycle';
 import { parseRecipeDsl } from './parser';
@@ -25,12 +33,16 @@ import { resolveRecipeAst } from './resolver';
 
 import type { FoodDb } from '../db/services/internal';
 import type { IngredientBlock, RecipeAst } from './ast';
-import type { LineLabelMap } from './compile-md';
+import type { RenderContext } from './compile-md';
 import type { CompileResult } from './compile-types';
-import type { ResolveResult, ResolvedRecipeAst } from './resolver-types';
+import type { ResolvedRecipeAst } from './resolver-types';
 
 export function compileRecipeVersion(versionId: number, db: FoodDb): CompileResult {
-  return db.transaction((tx): CompileResult => compileInTx(tx, versionId));
+  try {
+    return db.transaction((tx): CompileResult => compileInTx(tx, versionId));
+  } catch (caught) {
+    return failMaterialise(db, versionId, caught);
+  }
 }
 
 function compileInTx(tx: FoodDb, versionId: number): CompileResult {
@@ -93,23 +105,6 @@ function compileResolved(
   return materialise({ tx, versionId, ast, resolved: resolveResult.resolved, creationCount });
 }
 
-function persistProposedSlugs(tx: FoodDb, versionId: number, resolveResult: ResolveResult): void {
-  tx.delete(recipeVersionProposedSlugs)
-    .where(eq(recipeVersionProposedSlugs.recipeVersionId, versionId))
-    .run();
-  if (resolveResult.proposedSlugs.length === 0) return;
-  for (const proposed of resolveResult.proposedSlugs) {
-    tx.insert(recipeVersionProposedSlugs)
-      .values({
-        recipeVersionId: versionId,
-        slug: proposed.slug,
-        suggestedKind: proposed.suggestedKind ?? null,
-        fromLocJson: JSON.stringify(proposed.fromLoc),
-      })
-      .run();
-  }
-}
-
 interface MaterialiseArgs {
   tx: FoodDb;
   versionId: number;
@@ -124,8 +119,11 @@ function materialise(args: MaterialiseArgs): CompileResult {
   tx.delete(recipeSteps).where(eq(recipeSteps.recipeVersionId, versionId)).run();
 
   const lineCount = insertLines(tx, versionId, ast, resolved);
-  const labels = buildLineLabels(ast);
-  const stepCount = insertSteps(tx, versionId, resolved, labels);
+  const render: RenderContext = {
+    labels: buildLineLabels(ast),
+    slugsByIngredientId: buildIngredientSlugLookup(tx, resolved),
+  };
+  const stepCount = insertSteps(tx, versionId, resolved, render);
   updateHeader(tx, versionId, resolved);
   return { ok: true, lineCount, stepCount, creationCount };
 }
@@ -171,7 +169,7 @@ function insertSteps(
   tx: FoodDb,
   versionId: number,
   resolved: ResolvedRecipeAst,
-  labels: LineLabelMap
+  render: RenderContext
 ): number {
   let position = 0;
   let inserted = 0;
@@ -182,7 +180,7 @@ function insertSteps(
       block,
       position,
       recipeVersionId: versionId,
-      labels,
+      render,
     });
     tx.insert(recipeSteps).values(row).run();
     inserted += 1;

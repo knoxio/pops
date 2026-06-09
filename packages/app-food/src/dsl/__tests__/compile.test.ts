@@ -237,8 +237,19 @@ describe('PRD-116 — compile pipeline: failure phases', () => {
     seedKnownIngredients(db);
   });
 
-  it('parse phase: empty DSL fails with MissingRecipeHeader', () => {
+  it('parse phase: empty DSL fails with MissingRecipeHeader + clears stale proposedSlugs', () => {
     const versionId = makeRecipe(db, 'broken', '');
+    // Seed a stale proposed-slug row from a notional prior compile so we can
+    // verify the parse-failure path clears it (PRD-116 invariant — a parse
+    // failure leaves the version's review-queue surface empty).
+    db.insert(recipeVersionProposedSlugs)
+      .values({
+        recipeVersionId: versionId,
+        slug: 'leftover-from-prior',
+        suggestedKind: 'ingredient',
+        fromLocJson: JSON.stringify({ startLine: 1, startCol: 1, endLine: 1, endCol: 1 }),
+      })
+      .run();
     const result = compileRecipeVersion(versionId, db);
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -250,9 +261,15 @@ describe('PRD-116 — compile pipeline: failure phases', () => {
       .where(eq(recipeVersions.id, versionId))
       .all();
     expect(row[0]?.compileStatus).toBe('failed');
-    // Lines/steps cleared (defensively empty since this is the first compile).
     expect(
       db.select().from(recipeLines).where(eq(recipeLines.recipeVersionId, versionId)).all()
+    ).toHaveLength(0);
+    expect(
+      db
+        .select()
+        .from(recipeVersionProposedSlugs)
+        .where(eq(recipeVersionProposedSlugs.recipeVersionId, versionId))
+        .all()
     ).toHaveLength(0);
   });
 
@@ -302,7 +319,7 @@ describe('PRD-116 — compile pipeline: failure phases', () => {
     expect(lines[0]?.ingredientId).not.toBeNull();
   });
 
-  it('resolve phase clears the recipe_versions header AND keeps proposedSlugs for review', () => {
+  it('resolve phase: re-compile with a new unknown slug replaces prior proposedSlugs rows', () => {
     const versionId = makeRecipe(
       db,
       'bad-prep',

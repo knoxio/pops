@@ -1,4 +1,4 @@
-import { renderBodyMd, type LineLabelMap } from './compile-md';
+import { renderBodyMd, type RenderContext } from './compile-md';
 
 /**
  * `recipe_steps` materialiser — PRD-116.
@@ -25,13 +25,13 @@ export function buildStepInsert(args: {
   block: ResolvedStepBlock;
   position: number;
   recipeVersionId: number;
-  labels: LineLabelMap;
+  render: RenderContext;
 }): StepInsert {
-  const { block, position, recipeVersionId, labels } = args;
+  const { block, position, recipeVersionId, render } = args;
   return {
     recipeVersionId,
     position,
-    bodyMd: renderBodyMd(block.bodyResolved, labels),
+    bodyMd: renderBodyMd(block.bodyResolved, render),
     bodyResolvedJson: JSON.stringify(block.bodyResolved),
     durationMinutes: extractDurationMinutes(block),
     temperatureValue: block.temperature?.qty ?? null,
