@@ -1,14 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
-import { TabPlaceholder } from './TabPlaceholder.js';
+import { ConversionsTabContents } from './conversions-tab/ConversionsTabContents';
 
 export function ConversionsTab() {
-  const { t } = useTranslation('food');
-  return (
-    <TabPlaceholder
-      title={t('data.conversions.title')}
-      description={t('data.conversions.description')}
-      pendingLabel={t('data.conversions.pending')}
-    />
-  );
+  return <ConversionsTabContents />;
 }
