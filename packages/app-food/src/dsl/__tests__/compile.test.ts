@@ -15,19 +15,25 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  conversionsService,
+  ingredientsService,
+  prepStatesService,
   recipeLines,
   recipeSteps,
   recipeVersionProposedSlugs,
   recipeVersions,
-} from '../../db/schema';
-import { createIngredientWeight, createUnitConversion } from '../../db/services/conversions';
-import { createIngredient } from '../../db/services/ingredients';
-import { createPrepState } from '../../db/services/prep-states';
-import { createRecipe } from '../../db/services/recipes';
-import { createVariant } from '../../db/services/variants';
+  recipesService,
+  variantsService,
+  type FoodDb,
+} from '@pops/app-food-db';
+
 import { compileRecipeVersion } from '../compile';
 
-import type { FoodDb } from '../../db/services/internal';
+const { createIngredientWeight, createUnitConversion } = conversionsService;
+const { createIngredient } = ingredientsService;
+const { createPrepState } = prepStatesService;
+const { createRecipe } = recipesService;
+const { createVariant } = variantsService;
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

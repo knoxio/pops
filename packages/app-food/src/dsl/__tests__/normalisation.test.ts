@@ -12,12 +12,18 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { createIngredientWeight, createUnitConversion } from '../../db/services/conversions';
-import { createIngredient } from '../../db/services/ingredients';
-import { createVariant } from '../../db/services/variants';
+import {
+  conversionsService,
+  ingredientsService,
+  variantsService,
+  type FoodDb,
+} from '@pops/app-food-db';
+
 import { normaliseLineQty } from '../normalisation';
 
-import type { FoodDb } from '../../db/services/internal';
+const { createIngredientWeight, createUnitConversion } = conversionsService;
+const { createIngredient } = ingredientsService;
+const { createVariant } = variantsService;
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

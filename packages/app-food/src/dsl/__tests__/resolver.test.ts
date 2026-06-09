@@ -14,16 +14,24 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { recipeVersions } from '../../db/schema';
-import { createIngredient } from '../../db/services/ingredients';
-import { createPrepState } from '../../db/services/prep-states';
-import { promoteVersion } from '../../db/services/recipe-versions';
-import { createRecipe } from '../../db/services/recipes';
-import { createVariant } from '../../db/services/variants';
+import {
+  ingredientsService,
+  prepStatesService,
+  recipesService,
+  recipeVersions,
+  recipeVersionsService,
+  variantsService,
+  type FoodDb,
+} from '@pops/app-food-db';
+
 import { parseRecipeDsl } from '../parser';
 import { resolveRecipeAst } from '../resolver';
 
-import type { FoodDb } from '../../db/services/internal';
+const { createIngredient } = ingredientsService;
+const { createPrepState } = prepStatesService;
+const { promoteVersion } = recipeVersionsService;
+const { createRecipe } = recipesService;
+const { createVariant } = variantsService;
 import type {
   ResolveErrorCode,
   ResolveResult,

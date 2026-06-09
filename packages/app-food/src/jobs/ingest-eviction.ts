@@ -19,8 +19,9 @@ import { type Stats } from 'node:fs';
 import { readdir, rm, stat } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { markArchived } from '../db/services/ingest-sources';
-import { type FoodDb } from '../db/services/internal';
+import { ingestSourcesService, type FoodDb } from '@pops/app-food-db';
+
+const { markArchived } = ingestSourcesService;
 
 /** Cap from PRD-110. Hard-coded; bumped centrally if the disk math changes. */
 export const MAX_INGEST_DIRS = 100;

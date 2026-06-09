@@ -12,11 +12,11 @@
  */
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
-import { ListNotFoundError } from '../errors';
-import { listItems, lists, type ListKind, type ListRow } from '../schema';
-import { expectRow, type ListsDb, nowIso } from './internal';
+import { ListNotFoundError } from '../errors.js';
+import { listItems, lists, type ListKind, type ListRow } from '../schema.js';
+import { expectRow, type ListsDb, nowIso } from './internal.js';
 
-export type { ListsDb } from './internal';
+export type { ListsDb } from './internal.js';
 
 export interface CreateListInput {
   name: string;

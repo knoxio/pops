@@ -9,7 +9,8 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { recipeLines, recipeSteps, recipeVersions } from '../db/schema';
+import { recipeLines, recipeSteps, recipeVersions } from '@pops/app-food-db';
+
 import { applyCreations } from './compile-creations';
 import {
   failCycle,
@@ -31,7 +32,8 @@ import { detectRecipeCycle } from './cycle';
 import { parseRecipeDsl } from './parser';
 import { resolveRecipeAst } from './resolver';
 
-import type { FoodDb } from '../db/services/internal';
+import type { FoodDb } from '@pops/app-food-db';
+
 import type { IngredientBlock, RecipeAst } from './ast';
 import type { RenderContext } from './compile-md';
 import type { CompileResult } from './compile-types';

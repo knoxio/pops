@@ -66,6 +66,7 @@ jobs:
           cd packages/db-types && pnpm build
           cd ../types && pnpm build
           cd ../module-registry && pnpm build
+          cd ../app-food-db && pnpm build
 
       - name: Type check
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'

@@ -9,9 +9,10 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { recipeLines, recipeSteps, recipeVersions } from '../db/schema';
+import { recipeLines, recipeSteps, recipeVersions } from '@pops/app-food-db';
 
-import type { FoodDb } from '../db/services/internal';
+import type { FoodDb } from '@pops/app-food-db';
+
 import type { CompileError, CompileResult } from './compile-types';
 
 export function failMaterialise(db: FoodDb, versionId: number, caught: unknown): CompileResult {

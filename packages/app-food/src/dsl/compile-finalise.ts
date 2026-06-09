@@ -7,9 +7,15 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { recipeLines, recipeSteps, recipeVersionProposedSlugs, recipeVersions } from '../db/schema';
+import {
+  recipeLines,
+  recipeSteps,
+  recipeVersionProposedSlugs,
+  recipeVersions,
+} from '@pops/app-food-db';
 
-import type { FoodDb } from '../db/services/internal';
+import type { FoodDb } from '@pops/app-food-db';
+
 import type { RecipeAst, RecipeHeader } from './ast';
 import type { CompileError, CompileErrorJson, CompilePhase, CompileResult } from './compile-types';
 import type { ResolveResult, ResolvedRecipeAst } from './resolver-types';

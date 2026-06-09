@@ -10,10 +10,11 @@
  * shape. Anything that previously called `carryOverMetric` should now
  * call `normaliseLineQty`.
  */
-import { resolveCanonicalQty } from '../db/services/conversions';
+import { conversionsService } from '@pops/app-food-db';
 
-import type { CanonicalUnit } from '../db/schema';
-import type { FoodDb } from '../db/services/internal';
+import type { CanonicalUnit, FoodDb } from '@pops/app-food-db';
+
+const { resolveCanonicalQty } = conversionsService;
 
 export interface NormaliseLineInput {
   ingredientId: number;

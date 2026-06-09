@@ -1,4 +1,5 @@
-import type { FoodDb } from '../db/services/internal';
+import type { FoodDb } from '@pops/app-food-db';
+
 /**
  * Recipe-graph cycle detection types — PRD-117.
  *
