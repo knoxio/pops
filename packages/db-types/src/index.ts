@@ -100,6 +100,7 @@ export {
   recipeTags,
   recipeVersions,
   slugRegistry,
+  substitutions,
   itemConnections,
   itemFixtureConnections,
   itemDocuments,

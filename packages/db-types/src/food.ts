@@ -10,6 +10,7 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
+import type { substitutions } from './schema/food-substitutions.js';
 import type {
   batchConsumptions,
   batches,
@@ -51,3 +52,7 @@ export type RecipeRunRow = InferSelectModel<typeof recipeRuns>;
 export type RecipeRunInsert = InferInsertModel<typeof recipeRuns>;
 export type BatchConsumptionRow = InferSelectModel<typeof batchConsumptions>;
 export type BatchConsumptionInsert = InferInsertModel<typeof batchConsumptions>;
+
+// PRD-109
+export type SubstitutionRow = InferSelectModel<typeof substitutions>;
+export type SubstitutionInsert = InferInsertModel<typeof substitutions>;

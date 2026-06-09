@@ -114,27 +114,27 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds `substitutions` per the SQL above, plus the two partial UNIQUE indexes.
-- [ ] All CHECKs and FKs verified via PRAGMA.
-- [ ] `packages/db-types` regenerated.
+- [x] Migration adds `substitutions` per the SQL above, plus the two partial UNIQUE indexes.
+- [x] All CHECKs and FKs verified via PRAGMA.
+- [x] `packages/db-types` regenerated.
 
 ### Invariants (each verified by a Vitest case)
 
-- [ ] Inserting a sub with both `from_ingredient_id` AND `from_variant_id` fails the CHECK.
-- [ ] Inserting a sub with neither side set on `from` or `to` fails.
-- [ ] Inserting a sub with `scope='recipe'` but no `recipe_id` fails.
-- [ ] Inserting a sub with `scope='global'` AND `recipe_id` set fails.
-- [ ] Inserting a sub with `ratio = 0` or negative fails.
-- [ ] Inserting two global subs for the same (from, to) pair fails the partial UNIQUE.
-- [ ] Inserting two recipe-scoped subs for the same (from, to, recipe_id) fails.
-- [ ] Inserting a global AND a recipe-scoped sub for the same (from, to) but different scope succeeds.
-- [ ] Service rejects self-substitution (`from = to`) with `CannotSubstituteSelf`.
-- [ ] Context tag JSON round-trips: insert `["savory","baking"]`, read back, get the same array.
+- [x] Inserting a sub with both `from_ingredient_id` AND `from_variant_id` fails the CHECK.
+- [x] Inserting a sub with neither side set on `from` or `to` fails.
+- [x] Inserting a sub with `scope='recipe'` but no `recipe_id` fails.
+- [x] Inserting a sub with `scope='global'` AND `recipe_id` set fails.
+- [x] Inserting a sub with `ratio = 0` or negative fails.
+- [x] Inserting two global subs for the same (from, to) pair fails the partial UNIQUE.
+- [x] Inserting two recipe-scoped subs for the same (from, to, recipe_id) fails.
+- [x] Inserting a global AND a recipe-scoped sub for the same (from, to) but different scope succeeds.
+- [x] Service rejects self-substitution (`from = to`) with `CannotSubstituteSelf`.
+- [x] Context tag JSON round-trips: insert `["savory","baking"]`, read back, get the same array.
 
 ### Tests
 
-- [ ] Vitest suite at `packages/app-food/src/db/__tests__/substitutions.test.ts` covers each invariant.
-- [ ] A small smoke test for `json_each` query against `context_tags` proves the filter pattern from "Query patterns" actually works.
+- [x] Vitest suite at `packages/app-food/src/db/__tests__/substitutions.test.ts` covers each invariant.
+- [x] A small smoke test for `json_each` query against `context_tags` proves the filter pattern from "Query patterns" actually works.
 
 ## Out of Scope
 

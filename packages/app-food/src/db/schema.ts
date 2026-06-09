@@ -20,6 +20,7 @@ export {
   recipeTags,
   recipeVersions,
   slugRegistry,
+  substitutions,
 } from '@pops/db-types';
 export type {
   BatchConsumptionInsert,
@@ -44,4 +45,6 @@ export type {
   RecipeVersionRow,
   SlugRegistryInsert,
   SlugRegistryRow,
+  SubstitutionInsert,
+  SubstitutionRow,
 } from '@pops/db-types';
