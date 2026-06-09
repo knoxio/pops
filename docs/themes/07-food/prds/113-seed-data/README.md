@@ -300,11 +300,22 @@ Inline per theme protocol.
 - [ ] PRD-113 cross-link landed in PRD-107's "Out of Scope" section (or the recipe service docs) so future doc readers know where the seed is.
 - [ ] `docs/themes/07-food/README.md` epic table status for Epic 00 may flip to `Done` once this PRD's acceptance is met AND the prior 6 PRDs' acceptance is met.
 
+## Implementation phasing
+
+PRD-113 ships in three sub-phases so the seed unblocks downstream work as Epic 00 / I1b PRDs land:
+
+- **Phase 1** — non-compile fixture set (ingredients + variants + prep_states + aliases + substitutions + plan slots + plan entries + lists + batches + uncompiled recipe headers). Does NOT depend on PRD-116. Shipped.
+- **Phase 2** — sample recipe DSL bodies parsed → resolved → cycle-checked → materialised via `compileRecipeVersion` (PRD-116). Closes the cross-PRD smoke this PRD was originally specced as. Also picks up `unit_conversions` + `ingredient_weights` seed rows from PRD-123.
+- **Phase 3** — `ingest_sources` provenance fixtures so PRD-135's inbox inspector renders against real rows (two rows, one `url-instagram` + one `url-web`, linked bidirectionally with seeded draft recipes via `recipe_versions.source_id` and `ingest_sources.draft_recipe_id`). Paths follow PRD-110's `<source_id>/<filename>` layout. Shipped.
+
+Phase split lives in the private roadmap (`.claude/food-app-roadmap.md`); each phase ships as its own PR.
+
 ## Out of Scope
 
 - Bulk import of common-ingredient datasets (USDA, Open Food Facts) — deferred. Hand-curated 20 is enough for v1.
-- Seeding `ingest_sources` or `recipe_runs` or `batches` — these are user-data tables; seed leaves them empty.
+- Seeding `recipe_runs` or `batches` user-history — Phase 1 seeds the minimum needed to exercise `recipe_runs` ↔ `batches` ↔ `batch_consumptions` wiring; broader user-history fixtures stay out of scope.
 - Performance tuning of the seed beyond the 30-second target.
 - Localisation of seed data (Australian English in v1; the user is in AU).
-- Sample plan entries — deferred to Epic 05's plan UI work.
-- Sample shopping lists — deferred to Epic 04.
+- Sample plan entries — _superseded by Phase 1, which seeds plan slots + entries to exercise PRD-111's schema._
+- Sample shopping lists — _superseded by Phase 1, which seeds two lists (one shopping, one generic) via PRD-112's services._
+- `ingest_sources` fixtures — _superseded by Phase 3 (two rows so PRD-135's inbox surface has provenance to render against)._

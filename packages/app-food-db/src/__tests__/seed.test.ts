@@ -1,5 +1,5 @@
 /**
- * PRD-113 phase-1 seed tests.
+ * PRD-113 phase-1 + phase-3 seed tests.
  *
  * Applies every food + lists migration to an in-memory SQLite, runs
  * `seedFood`, then asserts:
@@ -11,6 +11,9 @@
  *     criterion #4 is covered by at least one seeded substitution
  *   - batches mix NULL `expires_at` (shelf-stable) and explicit expiry rows
  *   - plan_entries mix slotted and ad-hoc (the prep-session entries)
+ *   - phase-3 ingest_sources rows are linked both ways (recipe_versions
+ *     .source_id and ingest_sources.draft_recipe_id), covering both url-web
+ *     and url-instagram kinds
  *   - re-running seedFood is a no-op (skipped + zero counts)
  *
  * No Redis, no API process — pure schema + service exercise.
@@ -23,7 +26,15 @@ import { eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { batches, planEntries, recipeRuns, slugRegistry, substitutions } from '../schema.js';
+import {
+  batches,
+  ingestSources,
+  planEntries,
+  recipeRuns,
+  recipeVersions,
+  slugRegistry,
+  substitutions,
+} from '../schema.js';
 import { seedFood, type SeedFoodSummary } from '../seed/index.js';
 
 import type { FoodDb } from '../services/internal.js';
@@ -35,6 +46,9 @@ const MIGRATIONS = [
   '0061_shocking_skreet.sql', // PRD-109 substitutions
   '0062_chemical_donald_blake.sql', // PRD-112 lists + list_items
   '0063_bumpy_wolverine.sql', // PRD-111 plan_slots + plan_entries
+  '0064_peaceful_magma.sql', // PRD-110 ingest_sources
+  '0065_prd_116_recipe_compile.sql', // PRD-116 recipe_lines + recipe_steps + proposed_slugs
+  '0066_prd_123_conversions.sql', // PRD-123 unit_conversions + ingredient_weights
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );
@@ -87,6 +101,139 @@ describe('PRD-113 phase-1 seed', () => {
     });
     it('seeds plan slots including the user-added "late-night" slot', () => {
       expect(summary.planSlots).toBe(6);
+    });
+    it('seeds the two phase-3 ingest_sources fixtures', () => {
+      expect(summary.ingestSources).toBe(2);
+    });
+  });
+
+  describe('ingest_sources (phase 3)', () => {
+    it('inserts both fixture kinds (url-instagram + url-web)', () => {
+      const kinds = db
+        .select({ kind: ingestSources.kind })
+        .from(ingestSources)
+        .all()
+        .map((row) => row.kind)
+        .toSorted();
+      expect(kinds).toEqual(['url-instagram', 'url-web']);
+    });
+
+    it('links every ingest_sources row back to a seeded recipe', () => {
+      const orphans = db
+        .select({ n: sql<number>`count(*)` })
+        .from(ingestSources)
+        .where(isNull(ingestSources.draftRecipeId))
+        .all();
+      expect(orphans[0]?.n ?? 0).toBe(0);
+    });
+
+    it('wires recipe_versions.source_id for ingest-originated drafts', () => {
+      // PRD-135's inbox-inspector scope is `recipe_versions.source_id IS NOT NULL`.
+      const linked = db
+        .select({ n: sql<number>`count(*)` })
+        .from(recipeVersions)
+        .where(isNotNull(recipeVersions.sourceId))
+        .all();
+      expect(linked[0]?.n ?? 0).toBe(2);
+    });
+
+    it('manually-authored recipes leave source_id NULL', () => {
+      // Assert by slug rather than by count so the test survives future
+      // fixture growth (more ingest-sourced or more manual recipes both stay
+      // green) while still checking the actual invariant: every
+      // currently-manual recipe lands with source_id NULL.
+      const MANUAL_SLUGS = ['roast-chicken', 'breakfast-eggs'] as const;
+      const rows = raw
+        .prepare(
+          `SELECT r.slug, v.source_id
+             FROM recipes r JOIN recipe_versions v ON v.recipe_id = r.id
+             WHERE r.slug IN (${MANUAL_SLUGS.map(() => '?').join(',')})`
+        )
+        .all(...MANUAL_SLUGS) as { slug: string; source_id: number | null }[];
+      // Every version for these manual recipes MUST have source_id NULL —
+      // even if a future phase introduces additional versions.
+      expect(rows.length).toBeGreaterThanOrEqual(MANUAL_SLUGS.length);
+      for (const row of rows) {
+        expect(row.source_id, `Manual recipe "${row.slug}" leaked a source_id`).toBeNull();
+      }
+    });
+
+    it('round-trips draft_recipe_id ↔ recipe_versions.source_id symmetrically', () => {
+      // For each ingest_sources row, the recipe it drafts (draft_recipe_id)
+      // must have AT LEAST ONE recipe_version whose source_id points back at
+      // the ingest_sources row. EXISTS semantics — robust to a recipe later
+      // gaining additional versions that aren't ingest-sourced.
+      const sourceRows = raw.prepare(`SELECT id, draft_recipe_id FROM ingest_sources`).all() as {
+        id: number;
+        draft_recipe_id: number | null;
+      }[];
+      expect(sourceRows.length).toBe(2);
+      for (const source of sourceRows) {
+        expect(source.draft_recipe_id).not.toBeNull();
+        const matches = raw
+          .prepare(
+            `SELECT 1 FROM recipe_versions
+               WHERE recipe_id = ? AND source_id = ? LIMIT 1`
+          )
+          .all(source.draft_recipe_id, source.id) as unknown[];
+        expect(
+          matches.length,
+          `ingest_sources(${source.id}) has no matching recipe_versions.source_id for recipe ${source.draft_recipe_id}`
+        ).toBe(1);
+      }
+    });
+
+    it("stores media paths in PRD-110's `<source_id>/<filename>` layout", () => {
+      // PRD-110 § Filesystem Layout — relative paths are prefixed with the
+      // per-source subdir (e.g. `42/video.mp4`). Catches a regression where
+      // a future change writes bare filenames.
+      const rows = raw
+        .prepare(`SELECT id, transcript_path, keyframes_dir, video_path FROM ingest_sources`)
+        .all() as {
+        id: number;
+        transcript_path: string | null;
+        keyframes_dir: string | null;
+        video_path: string | null;
+      }[];
+      expect(rows.length).toBe(2);
+      const assertPrefix = (column: string, id: number, value: string | null): void => {
+        if (value === null) return; // url-web rows leave transcript/video null
+        const expectedPrefix = `${id}/`;
+        expect(
+          value.startsWith(expectedPrefix),
+          `ingest_sources(${id}).${column} = "${value}" does not start with "${expectedPrefix}"`
+        ).toBe(true);
+        // Defensive: the path beyond the prefix must be non-empty.
+        expect(value.slice(expectedPrefix.length).length).toBeGreaterThan(0);
+      };
+      for (const row of rows) {
+        assertPrefix('transcript_path', row.id, row.transcript_path);
+        assertPrefix('keyframes_dir', row.id, row.keyframes_dir);
+        assertPrefix('video_path', row.id, row.video_path);
+      }
+    });
+
+    it('records extractor_version on every row', () => {
+      const blanks = db
+        .select({ extractor: ingestSources.extractorVersion })
+        .from(ingestSources)
+        .all()
+        .filter((row) => row.extractor.trim().length === 0);
+      expect(blanks.length).toBe(0);
+    });
+
+    it('only ingest-sourced recipes appear in the inbox-scope query', () => {
+      // Replicates PRD-135's intended SELECT verbatim — drafts whose
+      // recipe_versions.source_id IS NOT NULL.
+      const inbox = raw
+        .prepare(
+          `SELECT r.slug FROM recipes r
+             JOIN recipe_versions v ON v.recipe_id = r.id
+             WHERE v.source_id IS NOT NULL
+             ORDER BY r.slug`
+        )
+        .all() as { slug: string }[];
+      expect(inbox.map((row) => row.slug)).toEqual(['smash-burger', 'weeknight-pasta']);
     });
   });
 

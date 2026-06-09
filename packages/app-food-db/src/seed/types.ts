@@ -1,17 +1,24 @@
 /**
  * Shared types for the PRD-113 food seed.
  *
- * Phase 1 ships the non-compile fixture set: ingredients, variants, prep
+ * Phase 1 shipped the non-compile fixture set (ingredients, variants, prep
  * states, aliases, substitutions, plan slots + entries, lists + items,
- * batches, and recipe headers with uncompiled DSL bodies. The cross-PRD
- * smoke (DSL parse → resolve → cycle → materialise) lands in phase 2 once
- * PRD-116 ships `compileRecipeVersion`.
+ * batches, recipe headers with uncompiled DSL bodies). Phase 3 adds
+ * `ingest_sources` rows so PRD-135's inbox inspector has provenance
+ * fixtures. The cross-PRD smoke (DSL parse → resolve → cycle → materialise)
+ * still lands in phase 2 on top of PRD-116.
  */
 import type { ListsDb } from '@pops/app-lists';
 
 import type { FoodDb } from '../services/internal.js';
 
-/** Surface of every phase-1 step so the orchestrator can roll up counts. */
+/**
+ * Surface of every seed step (phase 1 + phase 3) so the orchestrator can
+ * roll up counts. `ingestSources` is the only phase-3 addition; every
+ * other field comes from a phase-1 step. Phase 2 (PRD-116 compile smoke)
+ * adds no new count fields — it materialises recipe_lines / recipe_steps
+ * for already-counted recipes.
+ */
 export interface StepCounts {
   prepStates: number;
   ingredients: number;
@@ -27,6 +34,7 @@ export interface StepCounts {
   batchConsumptions: number;
   lists: number;
   listItems: number;
+  ingestSources: number;
 }
 
 /** Final summary returned by `seedFood`. */
@@ -50,6 +58,7 @@ export const ZERO_COUNTS: StepCounts = {
   batchConsumptions: 0,
   lists: 0,
   listItems: 0,
+  ingestSources: 0,
 };
 
 /**
@@ -71,6 +80,13 @@ export interface SeedContext {
   planSlotBySlug: Map<string, { slug: string; name: string }>;
   /** `<list-slug>` → list id. */
   listIdBySlug: Map<string, number>;
+  /**
+   * `<recipe-slug>` → `ingest_sources.id`. Populated by
+   * `seedIngestSources` BEFORE `step-recipes` runs so the recipe-version
+   * insert can wire `source_id`. `linkIngestSourcesToDrafts` later reads
+   * the same map plus `recipeIdBySlug` to patch `draft_recipe_id`.
+   */
+  ingestSourceIdByRecipeSlug: Map<string, number>;
 }
 
 export function freshContext(): SeedContext {
@@ -83,6 +99,7 @@ export function freshContext(): SeedContext {
     recipeRunIdByRecipeSlug: new Map(),
     planSlotBySlug: new Map(),
     listIdBySlug: new Map(),
+    ingestSourceIdByRecipeSlug: new Map(),
   };
 }
 
