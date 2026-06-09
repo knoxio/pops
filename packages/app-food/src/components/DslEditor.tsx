@@ -32,10 +32,11 @@ import { useTranslation } from 'react-i18next';
 
 import { useDslEditorView } from './useDslEditorView';
 
+import type { DslAutocompleteSources } from './dsl-editor/autocomplete-types';
 import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
-/** Public props — kept narrow so 120-B/C can extend without breaking
- * earlier callers. */
+/** Public props — kept narrow so future 120 parts can extend without
+ * breaking earlier callers. */
 export interface DslEditorProps {
   /** Current `body_dsl` string. */
   initialValue: string;
@@ -54,6 +55,10 @@ export interface DslEditorProps {
   readOnly?: boolean;
   /** Extra class on the wrapping div for layout integration. */
   className?: string;
+  /** Autocomplete lookups (PRD-120 part B). When omitted, the
+   *  autocomplete dropdown stays empty. Production wiring uses
+   *  `useDslAutocompleteSources()` which wraps tRPC + React Query. */
+  autocompleteSources?: DslAutocompleteSources;
 }
 
 const EMPTY_ISSUES: readonly CompileEditorIssue[] = Object.freeze([]);
@@ -70,6 +75,7 @@ export function DslEditor(props: DslEditorProps) {
     onChange: props.onChange,
     readOnly: props.readOnly === true,
     issues,
+    autocompleteSources: props.autocompleteSources ?? null,
   });
 
   const wrapperClass = ['dsl-editor', props.className].filter(Boolean).join(' ');

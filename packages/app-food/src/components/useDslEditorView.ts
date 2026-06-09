@@ -1,7 +1,8 @@
 /**
  * `useDslEditorView` — owns the imperative CodeMirror 6 lifecycle for the
- * DSL editor (PRD-120 part A; issues / squiggles / tooltip in 120-C;
- * chip widgets + mobile fallback in 120-D).
+ * DSL editor (PRD-120 part A; autocomplete extension added in 120-B;
+ * issues / squiggles / tooltip in 120-C; chip widgets + mobile fallback
+ * in 120-D).
  *
  * Pulled out of `DslEditor.tsx` so the component itself stays under the
  * lint cap and the React surface is purely declarative. The hook:
@@ -19,9 +20,12 @@
  *     mobile (inline-mark) renderings. The swap is a compartment
  *     reconfigure so cursor + undo state stay intact when the user rotates
  *     a tablet or resizes the window.
+ *   - Reads autocomplete lookups through a ref-backed proxy so the
+ *     extension picks up source swaps from PRD-120 part B without
+ *     re-mounting the EditorView.
  *
  * The hook deliberately doesn't return the `EditorView`; callers that
- * need it (tests, future autocomplete plumbing) reach for
+ * need it (tests, future plumbing) reach for
  * `EditorView.findFromDOM(host.querySelector('.cm-editor'))` instead.
  * That keeps the React render path immune to the imperative view's
  * mutation timeline.
@@ -33,9 +37,11 @@ import { EditorView, keymap, lineNumbers } from '@codemirror/view';
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 
 import { recipeDsl } from '../dsl/codemirror';
+
+import { dslAutocompletion } from './dsl-editor/autocomplete-extension';
+import type { DslAutocompleteSources } from './dsl-editor/autocomplete-types';
 import { chipWidgetsExtension } from './dsl-editor/chip-widgets-extension';
 import { issuesExtension, setIssuesEffect } from './dsl-editor/issues-extension';
-
 import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
 const DEBOUNCE_MS = 250;
@@ -46,6 +52,12 @@ export interface UseDslEditorViewOptions {
   onChange: (value: string) => void;
   readOnly: boolean;
   issues: readonly CompileEditorIssue[];
+  /** Autocomplete lookups (PRD-120 part B). When `null`, the
+   *  autocomplete extension still mounts but every source resolves to
+   *  an empty list — useful in tests that don't want to stub the
+   *  lookups and in callers that haven't wired up the React Query hook
+   *  yet. */
+  autocompleteSources: DslAutocompleteSources | null;
 }
 
 interface ViewCompartments {
@@ -63,11 +75,20 @@ export function useDslEditorView(
     chips: new Compartment(),
   });
   const onChangeRef = useRef(options.onChange);
+  // Sources are stashed in a ref so the autocomplete extension — which
+  // is closed-over at mount — can always read the current lookups
+  // without us rebuilding the EditorView when callers hand a fresh
+  // object identity on every render (common in tests).
+  const sourcesRef = useRef<DslAutocompleteSources | null>(options.autocompleteSources);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     onChangeRef.current = options.onChange;
   }, [options.onChange]);
+
+  useEffect(() => {
+    sourcesRef.current = options.autocompleteSources;
+  }, [options.autocompleteSources]);
 
   const emit = useCallback((value: string): void => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -80,18 +101,15 @@ export function useDslEditorView(
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return undefined;
-    const view = createEditorView(host, options, compartmentsRef.current, emit);
-    viewRef.current = view;
-    const stopMql = watchMobileQuery(view, compartmentsRef.current.chips);
-    return () => {
-      stopMql();
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-        debounceRef.current = null;
-      }
-      view.destroy();
-      viewRef.current = null;
-    };
+    return mountEditorView({
+      host,
+      options,
+      compartments: compartmentsRef.current,
+      emit,
+      sourcesRef,
+      viewRef,
+      debounceRef,
+    });
     // Mount-only effect; subsequent prop changes are routed through the
     // dedicated effects below so we keep undo history + cursor state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,15 +175,45 @@ function watchMobileQuery(view: EditorView, chipsCompartment: Compartment): () =
   return () => mql.removeEventListener('change', listener);
 }
 
-function createEditorView(
-  host: HTMLDivElement,
-  options: UseDslEditorViewOptions,
-  compartments: ViewCompartments,
-  emit: (value: string) => void
-): EditorView {
-  // Initial `options.issues` is seeded by the `useEffect(...,
-  // [options.issues])` block above, which fires once after mount —
-  // dispatching here would double-render (PR #2716 review feedback).
+interface CreateEditorViewArgs {
+  options: UseDslEditorViewOptions;
+  compartments: ViewCompartments;
+  emit: (value: string) => void;
+  sourcesRef: MutableRefObject<DslAutocompleteSources | null>;
+}
+
+interface MountEditorViewArgs extends CreateEditorViewArgs {
+  host: HTMLDivElement;
+  viewRef: MutableRefObject<EditorView | null>;
+  debounceRef: MutableRefObject<ReturnType<typeof setTimeout> | null>;
+}
+
+/** Mount the EditorView for the lifetime of the host effect and return
+ *  the React-style cleanup. Pulled out of `useDslEditorView` so that
+ *  hook stays under the per-function line cap once the compartment +
+ *  mobile-query + autocomplete plumbing all land in the same mount
+ *  callback. */
+function mountEditorView(args: MountEditorViewArgs): () => void {
+  const { host, options, compartments, emit, sourcesRef, viewRef, debounceRef } = args;
+  const view = createEditorView(host, { options, compartments, emit, sourcesRef });
+  viewRef.current = view;
+  const stopMql = watchMobileQuery(view, compartments.chips);
+  return () => {
+    stopMql();
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    view.destroy();
+    viewRef.current = null;
+  };
+}
+
+function createEditorView(host: HTMLDivElement, args: CreateEditorViewArgs): EditorView {
+  const { options, compartments, emit, sourcesRef } = args;
+  // Initial `options.issues` is seeded by the `useEffect(..., [options.issues])`
+  // block in `useSyncEffects`, which fires once after mount — dispatching
+  // here would double-render (PR #2716 review feedback).
   const compact = detectCompactInitial();
   return new EditorView({
     state: EditorState.create({
@@ -180,6 +228,7 @@ function createEditorView(
         keymap.of([...defaultKeymap, ...historyKeymap]),
         compartments.readOnly.of(buildReadOnlyExtension(options.readOnly)),
         compartments.chips.of(chipWidgetsExtension({ compact })),
+        dslAutocompletion(buildSourcesProxy(sourcesRef)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) emit(update.state.doc.toString());
         }),
@@ -187,4 +236,27 @@ function createEditorView(
     }),
     parent: host,
   });
+}
+
+/** Indirect every lookup through the ref so the autocomplete extension
+ *  observes the latest sources without forcing a re-mount. When the
+ *  caller hasn't provided sources the proxy returns empty lists,
+ *  which the CodeMirror source folds into a `null` result. */
+function buildSourcesProxy(
+  ref: MutableRefObject<DslAutocompleteSources | null>
+): DslAutocompleteSources {
+  return {
+    searchSlugs: async (query, kinds) => {
+      const s = ref.current;
+      return s === null ? [] : await s.searchSlugs(query, kinds);
+    },
+    listVariantsForIngredient: async (slug) => {
+      const s = ref.current;
+      return s === null ? [] : await s.listVariantsForIngredient(slug);
+    },
+    listPrepStates: async () => {
+      const s = ref.current;
+      return s === null ? [] : await s.listPrepStates();
+    },
+  };
 }

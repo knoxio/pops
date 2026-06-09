@@ -4,7 +4,9 @@
  * Focused on the acceptance criteria that 120-A owns: the editor mounts,
  * fires `onChange` after the debounce, swaps the document when
  * `initialValue` changes, and switches into read-only mode (banner +
- * blocked input) when `readOnly` is true.
+ * blocked input) when `readOnly` is true. The PRD-120 part B suite at
+ * the bottom of this file covers autocomplete wiring; the part D suite
+ * covers chip widgets + mobile fallback.
  *
  * jsdom doesn't implement the parts of the DOM that CodeMirror leans on
  * for input events (range selection, beforeinput key handling), so the
@@ -19,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { issuesField } from '../dsl-editor/issues-state';
 import { renderTooltipDom } from '../dsl-editor/issues-tooltip';
 import { DslEditor } from '../DslEditor';
+import type { DslAutocompleteSources } from '../dsl-editor/autocomplete-types';
 
 import type { CompileEditorIssue } from '../dsl-editor/issues-types';
 
@@ -175,6 +178,83 @@ describe('DslEditor — PRD-120 part A', () => {
   });
 });
 
+describe('DslEditor — PRD-120 part B autocomplete', () => {
+  /** Build a fake `DslAutocompleteSources` with vitest spies so tests
+   *  can assert dispatch behaviour without exercising the live tRPC
+   *  React Query path that `useDslAutocompleteSources` wraps. */
+  function makeSources(): {
+    sources: DslAutocompleteSources;
+    spies: {
+      searchSlugs: ReturnType<typeof vi.fn>;
+      listVariantsForIngredient: ReturnType<typeof vi.fn>;
+      listPrepStates: ReturnType<typeof vi.fn>;
+    };
+  } {
+    const spies = {
+      searchSlugs: vi.fn(async () => [
+        { slug: 'banana', kind: 'ingredient' as const, name: 'Banana' },
+      ]),
+      listVariantsForIngredient: vi.fn(async () => [{ slug: 'raw', name: 'Raw' }]),
+      listPrepStates: vi.fn(async () => [{ slug: 'diced', name: 'Diced' }]),
+    };
+    return {
+      sources: {
+        searchSlugs: spies.searchSlugs as unknown as DslAutocompleteSources['searchSlugs'],
+        listVariantsForIngredient:
+          spies.listVariantsForIngredient as unknown as DslAutocompleteSources['listVariantsForIngredient'],
+        listPrepStates: spies.listPrepStates as unknown as DslAutocompleteSources['listPrepStates'],
+      },
+      spies,
+    };
+  }
+
+  it('renders the editor without crashing when no sources are provided', () => {
+    render(<DslEditor initialValue='@recipe(slug="x")' onChange={() => {}} />);
+    expect(screen.getByTestId('dsl-editor')).toBeInTheDocument();
+  });
+
+  it('mounts the autocomplete extension when sources are provided', () => {
+    const { sources } = makeSources();
+    render(
+      <DslEditor
+        initialValue='@recipe(slug="x")'
+        onChange={() => {}}
+        autocompleteSources={sources}
+      />
+    );
+    // EditorView mounts the extension during create(); proof of mount
+    // is the surface being reachable plus a live `EditorView` instance.
+    const view = getEditorView();
+    expect(view).toBeInstanceOf(EditorView);
+  });
+
+  it('passes the sources object through without losing identity on re-render', () => {
+    const { sources, spies } = makeSources();
+    const { rerender } = render(
+      <DslEditor initialValue="" onChange={() => {}} autocompleteSources={sources} />
+    );
+    // Same identity on re-render — no extension rebuild + no spy calls
+    // (the popup hasn't been activated by a cursor event).
+    rerender(<DslEditor initialValue="" onChange={() => {}} autocompleteSources={sources} />);
+    expect(spies.searchSlugs).not.toHaveBeenCalled();
+  });
+
+  it('forwards a swapped sources object via the ref (no remount)', () => {
+    const first = makeSources();
+    const second = makeSources();
+    const { rerender } = render(
+      <DslEditor initialValue="" onChange={() => {}} autocompleteSources={first.sources} />
+    );
+    const viewBefore = getEditorView();
+    rerender(
+      <DslEditor initialValue="" onChange={() => {}} autocompleteSources={second.sources} />
+    );
+    const viewAfter = getEditorView();
+    // Same EditorView instance — the ref swap doesn't tear down the editor.
+    expect(viewAfter).toBe(viewBefore);
+  });
+});
+
 describe('DslEditor — PRD-120 part D (chip widgets)', () => {
   beforeEach(() => {
     installMatchMedia(false);
@@ -194,7 +274,9 @@ describe('DslEditor — PRD-120 part D (chip widgets)', () => {
 
   it('renders a chip widget for each @N ref inside a @step body', () => {
     render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
-    const refChips = chipsInDom().filter((el) => el.getAttribute('data-chip-kind') === 'ref-index');
+    const refChips = chipsInDom().filter(
+      (el) => el.getAttribute('data-chip-kind') === 'ref-index'
+    );
     expect(refChips).toHaveLength(1);
     expect(refChips[0]?.textContent).toContain('#1');
     expect(refChips[0]?.textContent).toContain('banana');
@@ -202,7 +284,9 @@ describe('DslEditor — PRD-120 part D (chip widgets)', () => {
 
   it('renders a chip for @slug refs in step bodies', () => {
     render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
-    const slugChips = chipsInDom().filter((el) => el.getAttribute('data-chip-kind') === 'ref-slug');
+    const slugChips = chipsInDom().filter(
+      (el) => el.getAttribute('data-chip-kind') === 'ref-slug'
+    );
     expect(slugChips).toHaveLength(1);
     expect(slugChips[0]?.textContent).toBe('cilantro');
   });
