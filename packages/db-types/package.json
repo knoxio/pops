@@ -13,16 +13,24 @@
     "./schema": {
       "types": "./dist/schema/index.d.ts",
       "default": "./dist/schema/index.js"
+    },
+    "./row-schemas": {
+      "types": "./dist/schema/row-schemas.d.ts",
+      "default": "./dist/schema/row-schemas.js"
     }
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
+    "gen:row-schemas": "node scripts/gen-row-schemas.mjs",
+    "lint:row-schemas": "node scripts/gen-row-schemas.mjs --check",
     "test": "echo \"(no tests in @pops/db-types)\""
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
