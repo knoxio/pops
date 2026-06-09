@@ -134,9 +134,8 @@ describe('runIngestJob', () => {
 });
 
 describe('default handler stubs', () => {
-  it('all kinds resolve to NotImplemented failures with the stub version', async () => {
+  it('remaining stub kinds resolve to NotImplemented failures with the stub version', async () => {
     const kinds: IngestJobData[] = [
-      { kind: 'url-web', sourceId: 1, url: 'https://example.com' },
       { kind: 'url-instagram', sourceId: 2, url: 'https://instagram.com/r/abc' },
       { kind: 'screenshot', sourceId: 3, mimeType: 'image/png', contentPath: '/tmp/x.png' },
       { kind: 'text', sourceId: 4, body: 'hi' },

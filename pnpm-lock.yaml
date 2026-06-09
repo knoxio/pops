@@ -435,6 +435,9 @@ importers:
       '@pops/api':
         specifier: workspace:*
         version: link:../pops-api
+      '@pops/app-food':
+        specifier: workspace:*
+        version: link:../../packages/app-food
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
