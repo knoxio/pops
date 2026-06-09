@@ -28,6 +28,7 @@ export interface WorkerConfig {
   internalToken: string;
   concurrency: number;
   ratePerMin: number;
+  jobTimeoutSec: number;
   healthPort: number;
   drainTimeoutMs: number;
   /** Pinned semicolon-delimited tool versions for `IngestMeta.extractor_version`. */
@@ -36,6 +37,7 @@ export interface WorkerConfig {
 
 const DEFAULT_CONCURRENCY = 2;
 const DEFAULT_RATE_PER_MIN = 30;
+const DEFAULT_JOB_TIMEOUT_SEC = 300;
 const DEFAULT_HEALTH_PORT = 9090;
 const DEFAULT_DRAIN_TIMEOUT_MS = 60_000;
 
@@ -43,10 +45,10 @@ function readIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
   if (raw == null || raw === '') return fallback;
   const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error(`Invalid ${name}: ${raw} (expected positive integer)`);
   }
-  return Math.floor(parsed);
+  return parsed;
 }
 
 function requireSecret(name: string): string {
@@ -64,6 +66,7 @@ export function loadConfig(): WorkerConfig {
     internalToken: requireSecret('POPS_API_INTERNAL_TOKEN'),
     concurrency: readIntEnv('FOOD_WORKER_CONCURRENCY', DEFAULT_CONCURRENCY),
     ratePerMin: readIntEnv('FOOD_INGEST_RATE_PER_MIN', DEFAULT_RATE_PER_MIN),
+    jobTimeoutSec: readIntEnv('FOOD_INGEST_TIMEOUT_SEC', DEFAULT_JOB_TIMEOUT_SEC),
     healthPort: readIntEnv('FOOD_WORKER_HEALTH_PORT', DEFAULT_HEALTH_PORT),
     drainTimeoutMs: readIntEnv('FOOD_WORKER_DRAIN_TIMEOUT_MS', DEFAULT_DRAIN_TIMEOUT_MS),
     extractorVersion: process.env['POPS_WORKER_FOOD_VERSION'] ?? 'pops-worker-food@0.1.0',

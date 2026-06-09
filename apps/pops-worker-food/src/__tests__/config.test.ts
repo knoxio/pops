@@ -8,6 +8,7 @@ const KEYS = [
   'POPS_API_INTERNAL_TOKEN',
   'FOOD_WORKER_CONCURRENCY',
   'FOOD_INGEST_RATE_PER_MIN',
+  'FOOD_INGEST_TIMEOUT_SEC',
   'FOOD_WORKER_HEALTH_PORT',
   'FOOD_WORKER_DRAIN_TIMEOUT_MS',
   'POPS_WORKER_FOOD_VERSION',
@@ -43,6 +44,7 @@ describe('loadConfig', () => {
       internalToken: 'tok',
       concurrency: 2,
       ratePerMin: 30,
+      jobTimeoutSec: 300,
       healthPort: 9090,
       drainTimeoutMs: 60_000,
       extractorVersion: 'pops-worker-food@0.1.0',
@@ -55,6 +57,7 @@ describe('loadConfig', () => {
     process.env['POPS_API_URL'] = 'http://api:3000/';
     process.env['FOOD_WORKER_CONCURRENCY'] = '4';
     process.env['FOOD_INGEST_RATE_PER_MIN'] = '60';
+    process.env['FOOD_INGEST_TIMEOUT_SEC'] = '120';
     process.env['FOOD_WORKER_HEALTH_PORT'] = '9999';
     process.env['FOOD_WORKER_DRAIN_TIMEOUT_MS'] = '30000';
     process.env['POPS_WORKER_FOOD_VERSION'] = 'pops-worker-food@1.2.3';
@@ -65,6 +68,7 @@ describe('loadConfig', () => {
       internalToken: 'tok',
       concurrency: 4,
       ratePerMin: 60,
+      jobTimeoutSec: 120,
       healthPort: 9999,
       drainTimeoutMs: 30_000,
       extractorVersion: 'pops-worker-food@1.2.3',
@@ -81,5 +85,11 @@ describe('loadConfig', () => {
     process.env['POPS_API_INTERNAL_TOKEN'] = 'tok';
     process.env['FOOD_INGEST_RATE_PER_MIN'] = 'fast';
     expect(() => loadConfig()).toThrow(/FOOD_INGEST_RATE_PER_MIN/);
+  });
+
+  it('rejects decimal values (silent floor would hide misconfiguration)', () => {
+    process.env['POPS_API_INTERNAL_TOKEN'] = 'tok';
+    process.env['FOOD_WORKER_CONCURRENCY'] = '1.9';
+    expect(() => loadConfig()).toThrow(/FOOD_WORKER_CONCURRENCY/);
   });
 });

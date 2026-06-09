@@ -221,7 +221,7 @@ Inline per theme protocol.
 - [x] Multi-stage build; final image < 2 GB.
 - [x] faster-whisper `distil-large-v3` model baked into the image (downloaded at build time).
 - [x] yt-dlp and faster-whisper versions pinned; documented in the Dockerfile + a `versions.json` in `infra/docker/pops-worker-food/`.
-- [x] GitHub Actions workflow builds + pushes to `ghcr.io/knoxio/pops-worker-food:latest` on changes under `apps/pops-worker-food/**` or `infra/docker/pops-worker-food/**`.
+- [x] GitHub Actions workflow builds + pushes to `ghcr.io/knoxio/pops-worker-food:main` (matches the `pops-api` / `pops-shell` / `pops-mcp` `:main` + `sha-<short>` tagging convention; the spec text said `:latest`, but POPS uses `:main` for the rolling default-branch image) on changes under `apps/pops-worker-food/**` or `infra/docker/pops-worker-food/**`.
 
 ### Compose
 

@@ -115,14 +115,15 @@ services:
       - backend
     volumes:
       - food-ingest-data:/data/food/ingest
-      # Cookie file is operator-managed (see PRD-129's runbook). Comment
-      # out the mount when no cookies are provisioned — yt-dlp falls
-      # back to anonymous mode and Instagram reels will fail with
-      # auth-dead, which the inbox surfaces as a `partial` outcome.
-      - ../secrets/instagram-cookies.txt:/secrets/instagram-cookies.txt:ro
     secrets:
       - claude_api_key
       - pops_api_internal_token
+      # Cookie file is operator-managed (see PRD-129's runbook). Mounted
+      # via a Docker secret rather than a bind-mount so an empty
+      # placeholder under `infra/secrets/instagram_cookies` is enough to
+      # start the stack — yt-dlp falls back to anonymous mode when the
+      # file is empty, which the inbox surfaces as `auth-dead` partials.
+      - instagram_cookies
     environment:
       NODE_ENV: production
       REDIS_URL: redis://pops-redis:6379
@@ -134,7 +135,7 @@ services:
       FOOD_INGEST_TIMEOUT_SEC: ${FOOD_INGEST_TIMEOUT_SEC:-300}
       FOOD_INGEST_RATE_PER_MIN: ${FOOD_INGEST_RATE_PER_MIN:-30}
       FOOD_INGEST_DIR: /data/food/ingest
-      INSTAGRAM_COOKIES_PATH: /secrets/instagram-cookies.txt
+      INSTAGRAM_COOKIES_PATH: /run/secrets/instagram_cookies
       # Per-handler model overrides (PRDs 128 / 130 / 131 / 132).
       FOOD_WEB_LLM_MODEL: ${FOOD_WEB_LLM_MODEL:-claude-haiku-4-5-20251001}
       FOOD_IG_VISION_MODEL: ${FOOD_IG_VISION_MODEL:-claude-haiku-4-5-20251001}
@@ -385,6 +386,8 @@ secrets:
     file: ../secrets/pops_api_key
   pops_api_internal_token:
     file: ../secrets/pops_api_internal_token
+  instagram_cookies:
+    file: ../secrets/instagram_cookies
   tmdb_api_key:
     file: ../secrets/tmdb_api_key
   thetvdb_api_key:

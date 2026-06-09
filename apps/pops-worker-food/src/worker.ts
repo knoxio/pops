@@ -17,8 +17,11 @@
  *      exits.
  *
  * Cancellation is cooperative — handlers check `ctx.isCancelled()`
- * between pipeline stages. We forward `job.isToBeRemoved()` from BullMQ
- * so a `cancel` from the API surfaces inside the running handler.
+ * between pipeline stages. We surface it by polling `job.getState()`
+ * for `'unknown'` (BullMQ has no `isToBeRemoved()` method; the PRD
+ * spec text sketches one). When the API calls `food.ingest.cancel`,
+ * `job.remove()` deletes the row in Redis, the next state check returns
+ * `'unknown'`, and the handler short-circuits with `errorCode='Cancelled'`.
  */
 import { Worker } from 'bullmq';
 import pino from 'pino';
@@ -57,9 +60,44 @@ async function isJobCancelled(job: Job<IngestJobData>): Promise<boolean> {
   }
 }
 
-async function processJob(job: Job<IngestJobData>, client: TrpcClient): Promise<IngestJobResult> {
+/**
+ * Per-job timeout enforced in-band via `Promise.race`. BullMQ has no
+ * native per-job timeout — `stalledInterval` only detects lost-lock
+ * after the fact. Racing the handler against a timer gives the worker
+ * a deterministic failure path (and a callback to pops-api with a
+ * `TimedOut` error code) instead of leaking long-running stages.
+ */
+export function timeoutResult(extractorVersion: string, sec: number): IngestJobResult {
+  return {
+    ok: false,
+    errorCode: 'TimedOut',
+    errorMessage: `Job exceeded FOOD_INGEST_TIMEOUT_SEC=${sec}`,
+    meta: { extractor_version: extractorVersion, stages: {} },
+  };
+}
+
+async function processJob(
+  job: Job<IngestJobData>,
+  client: TrpcClient,
+  config: WorkerConfig
+): Promise<IngestJobResult> {
   const ctx: HandlerContext = { isCancelled: () => isJobCancelled(job) };
-  const result = await runIngestJob(job.data, ctx);
+  const timeoutMs = config.jobTimeoutSec * 1000;
+
+  let timer: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<IngestJobResult>((resolve) => {
+    timer = setTimeout(() => {
+      logger.warn(
+        { jobId: job.id, sourceId: job.data.sourceId, jobTimeoutSec: config.jobTimeoutSec },
+        'job timed out'
+      );
+      resolve(timeoutResult(config.extractorVersion, config.jobTimeoutSec));
+    }, timeoutMs);
+  });
+
+  const result = await Promise.race([runIngestJob(job.data, ctx), timeoutPromise]);
+  if (timer) clearTimeout(timer);
+
   try {
     await postWorkerComplete(client, job.data.sourceId, result);
   } catch (err) {
@@ -84,7 +122,7 @@ export async function startWorker(config: WorkerConfig): Promise<{
 
   const worker = new Worker<IngestJobData, IngestJobResult>(
     FOOD_INGEST_QUEUE_NAME,
-    (job) => processJob(job, client),
+    (job) => processJob(job, client, config),
     {
       connection,
       concurrency: config.concurrency,
