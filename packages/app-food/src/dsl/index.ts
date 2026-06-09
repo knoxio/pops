@@ -39,3 +39,5 @@ export type {
   ResolvedYield,
   ResolverCreation,
 } from './resolver-types';
+export { detectRecipeCycle } from './cycle';
+export type { CycleContext, CycleDescription, CycleError, CycleResult } from './cycle-types';

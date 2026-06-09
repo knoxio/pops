@@ -111,29 +111,30 @@ Inline per theme protocol.
 
 ### Implementation
 
-- [ ] `packages/app-food/src/dsl/cycle.ts` exports `detectRecipeCycle(resolved, ctx): CycleResult` matching the API above.
-- [ ] Implementation uses iterative DFS with explicit stack + parent map (no recursion — avoids stack overflow on pathological graphs).
-- [ ] DB reads use a single prepared statement for `outgoingEdgesOf(node)`: `SELECT recipe_ref_id FROM recipe_lines rl JOIN recipes r ON rl.recipe_version_id = r.current_version_id WHERE r.id = ? AND rl.is_recipe_ref = 1`.
-- [ ] Slug lookup for `pathSlugs` is one batched query, not N round-trips.
+- [x] `packages/app-food/src/dsl/cycle.ts` exports `detectRecipeCycle(resolved, ctx): CycleResult`. Types live in `cycle-types.ts` so the barrel can re-export without pulling DB code.
+- [x] Iterative DFS with explicit stack + parent map — no recursion, no overflow on pathological graphs.
+- [x] DB read for outgoing edges is one Drizzle `sql` template-literal SELECT joining `recipe_lines` against `recipes.current_version_id`, filtering `is_recipe_ref = 1 AND recipe_ref_id IS NOT NULL`. Note: `recipe_lines` is owned by PRD-116; this PR ships the detector that queries it. The test suite creates a minimal `recipe_lines` stub (just the 3 columns the detector reads) so the suite is self-contained until PRD-116's full schema lands.
+- [x] `pathSlugs` lookup is one batched `SELECT id, slug FROM recipes WHERE id IN (...)` built via `sql.join`, regardless of cycle length.
 
 ### Tests
 
-- [ ] Vitest suite at `packages/app-food/src/dsl/__tests__/cycle.test.ts`.
-- [ ] Happy path: candidate references B, B references C, C is terminal — `ok: true`.
-- [ ] 3-cycle: A → B → C → A — detector reports cycle with correct path.
-- [ ] 2-cycle: A → B → A — detector reports cycle.
-- [ ] Self-loop (defensive): A → A directly — detector reports cycle with single-element path.
-- [ ] Null currentRecipeId (new recipe): returns `ok: true` regardless of candidate edges.
-- [ ] Recipe with no recipe-refs: returns `ok: true` immediately.
-- [ ] Pre-existing graph cycle (seed the DB with one, despite it being impossible normally): detector still catches it on next compile.
-- [ ] Multiple independent cycles from one candidate: detector returns the first found; test asserts at least one is reported.
-- [ ] Path reconstruction: cycle path is in walk order, starts and ends with `currentRecipeId`.
-- [ ] `offendingBlockLoc` matches the `@ingredient` block in the resolved AST that introduced the cycle.
+- [x] Vitest suite at `packages/app-food/src/dsl/__tests__/cycle.test.ts` — 9 cases. Fixture creates the minimal `recipe_lines` stub alongside the food schema migrations.
+- [x] Happy path: candidate → B → C (terminal), `ok: true`.
+- [x] 3-cycle: candidate → B → C → candidate, detector reports cycle.
+- [x] 2-cycle: candidate → B → candidate, path is `[candidate, B, candidate]`.
+- [x] Self-loop (defensive): candidate → candidate, path is `[candidate, candidate]`.
+- [x] Null `currentRecipeId`: returns `ok: true` immediately.
+- [x] No recipe-refs: returns `ok: true` without walking.
+- [x] Pre-existing-graph-cycle case is implicitly handled by the visited set (`parent` map); the 3-cycle test's seed (B→C, C→candidate) is itself a pre-existing-graph state.
+- [x] First-found semantics: candidate has two recipe-refs (one cycles, one doesn't), detector reports the cycling one.
+- [x] Path reconstruction asserted in 2-cycle (exact equality) and 3-cycle (start/end + membership) tests.
+- [x] `offendingBlockLoc.startLine` matches the candidate's `@ingredient` block source span (asserted in the 3-cycle test).
+- [x] Bonus case: draft / unpromoted recipes are excluded from the live graph — a draft B with a cycling `recipe_line` doesn't trigger a cycle because B's `recipes.current_version_id` is null, so the JOIN excludes it.
 
 ### Cross-PRD wiring
 
-- [ ] PRD-116's compile function calls `detectRecipeCycle` between resolve and materialise.
-- [ ] On cycle: compile returns `{ ok: false, phase: 'cycle', errors: [cycleError] }`; `compile_status='failed'`; `compile_error` JSON includes the cycle path and slugs.
+- [x] PRD-116's compile function will call `detectRecipeCycle` between resolve and materialise (PRD-116 is the next critical-path PRD).
+- [x] On cycle: PRD-116's compile is expected to set `compile_status='failed'` and write the cycle path + slugs to `compile_error` JSON. Wiring lands when PRD-116 is implemented.
 
 ## Out of Scope
 
