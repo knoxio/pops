@@ -39,7 +39,13 @@ describe('PRD-122 — /food/data shell', () => {
   it('redirects /food/data to /food/data/ingredients by default', async () => {
     renderAt('/food/data');
     expect(await screen.findByRole('heading', { name: /manage data/i })).toBeInTheDocument();
-    expect(await screen.findByText(/canonical ingredients/i)).toBeInTheDocument();
+    // The index <Navigate> redirects to the ingredients tab, which then
+    // lazy-loads `IngredientsTab`. The double-hop is consistently slow
+    // enough on CI runners that the default 1s findBy timeout races with
+    // the resolution. Bump to 3s for this one assertion.
+    expect(
+      await screen.findByText(/canonical ingredients/i, undefined, { timeout: 3000 })
+    ).toBeInTheDocument();
   });
 
   it('renders the Aliases tab at /food/data/aliases', async () => {
