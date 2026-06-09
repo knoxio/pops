@@ -49,6 +49,7 @@ const FOOD_AND_LISTS_TABLES = [
   'ingredient_variants',
   'prep_states',
   'ingredients',
+  'ingest_sources',
   'slug_registry',
 ] as const;
 
