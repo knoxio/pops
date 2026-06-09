@@ -16,9 +16,10 @@
 import { useState } from 'react';
 
 import { DslEditor } from './DslEditor';
-import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import type { CompileEditorIssue } from './dsl-editor/issues-types';
 
 const SAMPLE = [
   '@recipe(slug="smash-burger", title="Smash Burger", servings=2)',

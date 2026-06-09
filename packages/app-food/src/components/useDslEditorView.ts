@@ -107,6 +107,13 @@ export function useDslEditorView(
     });
   }, [options.readOnly]);
 
+  useSyncEffects(viewRef, options);
+}
+
+function useSyncEffects(
+  viewRef: MutableRefObject<EditorView | null>,
+  options: UseDslEditorViewOptions
+): void {
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
@@ -114,15 +121,13 @@ export function useDslEditorView(
     view.dispatch({
       changes: { from: 0, to: view.state.doc.length, insert: options.initialValue },
     });
-  }, [options.initialValue]);
+  }, [options.initialValue, viewRef]);
 
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({
-      effects: setIssuesEffect.of([...options.issues]),
-    });
-  }, [options.issues]);
+    view.dispatch({ effects: setIssuesEffect.of([...options.issues]) });
+  }, [options.issues, viewRef]);
 }
 
 function buildReadOnlyExtension(
