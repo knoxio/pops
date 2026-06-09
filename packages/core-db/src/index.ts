@@ -15,6 +15,8 @@ export * from './schema.js';
 
 export type { CoreDb } from './services/internal.js';
 
+export { openCoreDb, type OpenedCoreDb } from './open-core-db.js';
+
 export * as serviceAccountsService from './services/service-accounts.js';
 export * as serviceAccountKeys from './services/service-account-keys.js';
 
