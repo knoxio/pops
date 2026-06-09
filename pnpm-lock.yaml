@@ -693,15 +693,12 @@ importers:
 
   packages/app-food:
     dependencies:
-      '@pops/api-client':
+      '@pops/app-lists':
         specifier: workspace:*
-        version: link:../api-client
+        version: link:../app-lists
       '@pops/db-types':
         specifier: workspace:*
         version: link:../db-types
-      '@pops/navigation':
-        specifier: workspace:*
-        version: link:../navigation
       '@pops/types':
         specifier: workspace:*
         version: link:../types
@@ -739,6 +736,9 @@ importers:
         specifier: ^7.16.0
         version: 7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
+      '@pops/navigation':
+        specifier: workspace:*
+        version: link:../navigation
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
@@ -766,6 +766,9 @@ importers:
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1(@noble/hashes@1.8.0)
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
