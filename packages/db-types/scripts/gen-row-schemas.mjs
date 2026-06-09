@@ -22,7 +22,7 @@
  *   3. commit
  */
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -96,8 +96,19 @@ function renderIndex(entries) {
   const lines = entries
     .slice()
     .toSorted((a, b) => a.relPath.localeCompare(b.relPath))
-    .map((entry) => `export * from './${entry.relPath.replace(/\.ts$/, '.js')}';`);
+    .map((entry) => `export * from './${toPosix(entry.relPath).replace(/\.ts$/, '.js')}';`);
   return `${HEADER}\n${lines.join('\n')}\n`;
+}
+
+/**
+ * Normalize a path to forward slashes so the emitted TS import
+ * specifiers are portable across Windows + POSIX hosts.
+ *
+ * @param {string} p
+ * @returns {string}
+ */
+function toPosix(p) {
+  return p.replaceAll('\\', '/');
 }
 
 /**
@@ -120,6 +131,26 @@ function findMissingExport(siblingSource, expected) {
   return null;
 }
 
+/**
+ * Find `*RowSchema` exports declared in `siblingSource` that aren't
+ * in `expected` — i.e. stale bindings left behind after a table
+ * was renamed or removed from the source schema file.
+ *
+ * @param {string} siblingSource
+ * @param {string[]} expected
+ * @returns {string[]} - extra export names (already with the `RowSchema` suffix stripped)
+ */
+function findExtraExports(siblingSource, expected) {
+  const expectedSet = new Set(expected);
+  const pattern = /export\s+const\s+([A-Za-z_$][\w$]*)RowSchema\s*=/g;
+  /** @type {string[]} */
+  const extras = [];
+  for (const match of siblingSource.matchAll(pattern)) {
+    if (!expectedSet.has(match[1])) extras.push(match[1]);
+  }
+  return extras;
+}
+
 const sources = walk(schemaRoot).toSorted();
 /** @type {Array<{ siblingPath: string; relPath: string; basename: string; tables: string[] }>} */
 const generated = [];
@@ -128,12 +159,12 @@ for (const file of sources) {
   const source = readFileSync(file, 'utf8');
   const tables = extractTables(source);
   if (tables.length === 0) continue;
-  const basename = file.replace(/\.ts$/, '').split('/').pop();
+  const base = basename(file, '.ts');
   const siblingPath = file.replace(/\.ts$/, '-row-schemas.ts');
   generated.push({
     siblingPath,
     relPath: relative(schemaRoot, siblingPath),
-    basename,
+    basename: base,
     tables,
   });
 }
@@ -189,6 +220,15 @@ function checkSibling(entry, problems) {
     problems.push({
       path,
       reason: `missing export \`${missing}RowSchema = createSelectSchema(${missing})\``,
+    });
+  }
+  const extras = findExtraExports(existing, entry.tables);
+  if (extras.length > 0) {
+    problems.push({
+      path,
+      reason: `stale export(s) for table(s) no longer declared in the source schema: ${extras
+        .map((name) => `\`${name}RowSchema\``)
+        .join(', ')}`,
     });
   }
 }

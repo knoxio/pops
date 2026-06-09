@@ -39,6 +39,7 @@ jobs:
   row-schemas:
     name: Row schemas drift
     needs: [changes]
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: "Skip — no relevant changes"
