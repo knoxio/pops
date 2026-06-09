@@ -90,6 +90,8 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0063_bumpy_wolverine': 'food',
   // PRD-110 — food ingest_sources.
   '0064_peaceful_magma': 'food',
+  // PRD-116 — recipe_lines + recipe_steps + recipe_version_proposed_slugs.
+  '0065_prd_116_recipe_compile': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

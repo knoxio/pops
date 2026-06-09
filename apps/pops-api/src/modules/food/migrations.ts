@@ -25,6 +25,8 @@ export const foodMigrationTags: readonly string[] = [
   '0063_bumpy_wolverine',
   // PRD-110 — ingest_sources.
   '0064_peaceful_magma',
+  // PRD-116 — recipe_lines + recipe_steps + recipe_version_proposed_slugs.
+  '0065_prd_116_recipe_compile',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

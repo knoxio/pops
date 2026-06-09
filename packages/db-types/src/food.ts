@@ -21,9 +21,12 @@ import type {
   planEntries,
   planSlots,
   prepStates,
+  recipeLines,
   recipeRuns,
   recipes,
+  recipeSteps,
   recipeTags,
+  recipeVersionProposedSlugs,
   recipeVersions,
   slugRegistry,
 } from './schema/food.js';
@@ -70,3 +73,11 @@ export type PlanEntryInsert = InferInsertModel<typeof planEntries>;
 export type IngestSourceRow = InferSelectModel<typeof ingestSources>;
 export type IngestSourceInsert = InferInsertModel<typeof ingestSources>;
 export type IngestSourceKind = IngestSourceRow['kind'];
+
+// PRD-116
+export type RecipeLineRow = InferSelectModel<typeof recipeLines>;
+export type RecipeLineInsert = InferInsertModel<typeof recipeLines>;
+export type RecipeStepRow = InferSelectModel<typeof recipeSteps>;
+export type RecipeStepInsert = InferInsertModel<typeof recipeSteps>;
+export type RecipeVersionProposedSlugRow = InferSelectModel<typeof recipeVersionProposedSlugs>;
+export type RecipeVersionProposedSlugInsert = InferInsertModel<typeof recipeVersionProposedSlugs>;

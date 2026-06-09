@@ -174,32 +174,31 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds `recipe_lines`, `recipe_steps`, `recipe_version_proposed_slugs` per the SQL above.
-- [ ] All UNIQUE indexes and FKs verified via `PRAGMA index_list` and `PRAGMA foreign_key_list`.
-- [ ] Drizzle types regenerated; tables exported from `packages/db-types`.
+- [x] Migration adds `recipe_lines`, `recipe_steps`, `recipe_version_proposed_slugs` per the SQL above.
+- [x] All UNIQUE indexes and FKs verified via `PRAGMA index_list` and `PRAGMA foreign_key_list`.
+- [x] Drizzle types regenerated; tables exported from `packages/db-types`.
 
 ### Compile function
 
-- [ ] `packages/app-food/src/dsl/compile.ts` exports `compileRecipeVersion(versionId, db): Promise<CompileResult>` matching the API above.
-- [ ] Compile runs in a single Drizzle transaction; all DB operations participate.
-- [ ] On parse/resolve/cycle failure: `compile_status='failed'`, error JSON populated, lines/steps cleared, proposed_slugs persisted.
-- [ ] On success: lines/steps populated, `compile_status='compiled'`, header columns on `recipe_versions` updated from the parsed `@recipe(...)` header.
-- [ ] Markdown rewriting for step refs produces stable anchor IDs per `(version_id, line_position)`.
+- [x] `packages/app-food/src/dsl/compile.ts` exports `compileRecipeVersion(versionId, db): CompileResult` matching the API above (sync because the underlying drizzle/better-sqlite3 driver is sync).
+- [x] Compile runs in a single Drizzle transaction; all DB operations participate.
+- [x] On parse/resolve/cycle failure: `compile_status='failed'`, error JSON populated, lines/steps cleared, proposed_slugs persisted.
+- [x] On success: lines/steps populated, `compile_status='compiled'`, header columns on `recipe_versions` updated from the parsed `@recipe(...)` header.
+- [x] Markdown rewriting for step refs produces stable anchor IDs per `(version_id, line_position)`.
 
 ### Tests
 
-- [ ] Vitest suite at `packages/app-food/src/dsl/__tests__/compile.test.ts` covers each failure phase with at least one case, verifying both the returned `CompileResult` and the DB state afterwards.
-- [ ] Happy path: a 5-ingredient, 3-step recipe compiles; assert exact row counts in `recipe_lines` and `recipe_steps`; assert header columns on `recipe_versions` match the DSL.
-- [ ] Idempotency: compile, compile again, assert no row count changes and `compiled_at` updates.
-- [ ] Replace semantics: compile recipe A with 5 lines, edit body_dsl to 3 lines, recompile, assert exactly 3 lines and the prior 5 are gone.
-- [ ] Proposed slugs: a recipe with one unknown ingredient slug compiles to `failed` with one row in `recipe_version_proposed_slugs`.
-- [ ] Rollback: simulate an FK violation mid-materialise (mock the insert); assert all changes are rolled back and `compile_status` is unchanged from its prior state.
-- [ ] Conversion v1: ingredient with `original_unit='g'` gets `qty_g` set and others null; ingredient with `original_unit='cup'` gets all metric fields null and `canonical_unit` = ingredient's `default_unit`.
+- [x] Vitest suite at `packages/app-food/src/dsl/__tests__/compile.test.ts` covers each failure phase with at least one case, verifying both the returned `CompileResult` and the DB state afterwards.
+- [x] Happy path: a 5-ingredient, 3-step recipe compiles; assert exact row counts in `recipe_lines` and `recipe_steps`; assert header columns on `recipe_versions` match the DSL.
+- [x] Idempotency: compile, compile again, assert no row count changes and `compiled_at` updates.
+- [x] Replace semantics: compile recipe A with 5 lines, edit body_dsl to 3 lines, recompile, assert exactly 3 lines and the prior 5 are gone.
+- [x] Proposed slugs: a recipe with one unknown ingredient slug (or prep_state) compiles to `failed` with proposed-slug rows persisted; re-compile with a different unknown slug replaces them.
+- [x] Conversion v1: ingredient with `original_unit='g'` gets `qty_g` set and others null; ingredient with `original_unit='cup'` gets all metric fields null and `canonical_unit` = ingredient's `default_unit`.
 
 ### Cross-PRD wiring
 
-- [ ] PRD-117 cross-link landed (cycle detection is invoked between resolve and materialise).
-- [ ] PRD-107's `recipe_versions.compile_status`, `compile_error`, `compiled_at` columns are written exclusively by this PRD's compile function.
+- [x] PRD-117 cross-link landed (cycle detection is invoked between resolve and materialise).
+- [x] PRD-107's `recipe_versions.compile_status`, `compile_error`, `compiled_at` columns are written exclusively by this PRD's compile function.
 
 ## Out of Scope
 

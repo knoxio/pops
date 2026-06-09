@@ -41,3 +41,11 @@ export type {
 } from './resolver-types';
 export { detectRecipeCycle } from './cycle';
 export type { CycleContext, CycleDescription, CycleError, CycleResult } from './cycle-types';
+export { compileRecipeVersion } from './compile';
+export type {
+  CompileError,
+  CompileErrorJson,
+  CompilePhase,
+  CompileResult,
+  MaterialiseError,
+} from './compile-types';
