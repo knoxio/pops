@@ -74,6 +74,14 @@ const ConversionsTab = lazy(() =>
 const PromptViewerPage = lazy(() =>
   import('./pages/PromptViewerPage').then((m) => ({ default: m.PromptViewerPage }))
 );
+const RecipeListPage = lazy(() =>
+  import('./pages/recipes/RecipeListPage').then((m) => ({ default: m.RecipeListPage }))
+);
+const RecipePagePlaceholder = lazy(() =>
+  import('./pages/recipes/RecipePagePlaceholder').then((m) => ({
+    default: m.RecipePagePlaceholder,
+  }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -95,6 +103,7 @@ export const navConfig = {
   basePath: '/food',
   items: [
     { path: '', label: 'Home', labelKey: 'food.home', icon: 'LayoutDashboard' },
+    { path: '/recipes', label: 'Recipes', labelKey: 'food.recipes', icon: 'BookOpen' },
     { path: '/data', label: 'Manage data', labelKey: 'food.data', icon: 'Database' },
     { path: '/prompts', label: 'Prompts', labelKey: 'food.prompts', icon: 'FileText' },
   ],
@@ -119,5 +128,16 @@ export const routes: RouteObject[] = [
       { path: 'conversions', element: <ConversionsTab /> },
     ],
   },
+  // PRD-119 — recipe CRUD pages. 119-A mounts the list page + placeholders
+  // for routes that 119-B/C/D will fill (detail, new, edit, drafts,
+  // historic versions). Wiring the routes up-front keeps internal links
+  // from breaking during the staged rollout.
+  { path: 'recipes', element: <RecipeListPage /> },
+  { path: 'recipes/new', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/:slug', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/:slug/v/:versionNo', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/:slug/edit', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/:slug/drafts', element: <RecipePagePlaceholder /> },
+  { path: 'recipes/:slug/drafts/:draftNo', element: <RecipePagePlaceholder /> },
   { path: 'prompts', element: <PromptViewerPage /> },
 ];
