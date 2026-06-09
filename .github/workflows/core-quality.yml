@@ -1,0 +1,41 @@
+name: Core DB Quality
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/core-db/**"
+      - "packages/db-types/**"
+      - "apps/pops-api/src/db/drizzle-migrations/0054_service_accounts.sql"
+      - ".github/workflows/core-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
+  pull_request:
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'packages/core-db/**'
+              - 'packages/db-types/**'
+              - 'apps/pops-api/src/db/drizzle-migrations/0054_service_accounts.sql'
+              - '.github/workflows/core-quality.yml'
+              - '.github/workflows/_pkg-check.yml'
+
+  quality:
+    needs: [changes]
+    if: always()
+    uses: ./.github/workflows/_pkg-check.yml
+    with:
+      package-path: packages/core-db
+      needs-db-build: true
+      skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

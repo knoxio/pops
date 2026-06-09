@@ -10,6 +10,7 @@ packages:
   - 'packages/app-cerebrum'
   - 'packages/overlay-ego'
   - 'packages/api-client'
+  - 'packages/core-db'
   - 'packages/db-types'
   - 'packages/food-contracts'
   - 'packages/types'
