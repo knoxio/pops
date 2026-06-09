@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { issuesField } from '../dsl-editor/issues-state';
 import { renderTooltipDom } from '../dsl-editor/issues-tooltip';
 import { DslEditor } from '../DslEditor';
+
 import type { DslAutocompleteSources } from '../dsl-editor/autocomplete-types';
 
 import type { CompileEditorIssue } from '../dsl-editor/issues-types';
@@ -274,9 +275,7 @@ describe('DslEditor — PRD-120 part D (chip widgets)', () => {
 
   it('renders a chip widget for each @N ref inside a @step body', () => {
     render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
-    const refChips = chipsInDom().filter(
-      (el) => el.getAttribute('data-chip-kind') === 'ref-index'
-    );
+    const refChips = chipsInDom().filter((el) => el.getAttribute('data-chip-kind') === 'ref-index');
     expect(refChips).toHaveLength(1);
     expect(refChips[0]?.textContent).toContain('#1');
     expect(refChips[0]?.textContent).toContain('banana');
@@ -284,9 +283,7 @@ describe('DslEditor — PRD-120 part D (chip widgets)', () => {
 
   it('renders a chip for @slug refs in step bodies', () => {
     render(<DslEditor initialValue={RECIPE} onChange={() => {}} />);
-    const slugChips = chipsInDom().filter(
-      (el) => el.getAttribute('data-chip-kind') === 'ref-slug'
-    );
+    const slugChips = chipsInDom().filter((el) => el.getAttribute('data-chip-kind') === 'ref-slug');
     expect(slugChips).toHaveLength(1);
     expect(slugChips[0]?.textContent).toBe('cilantro');
   });
