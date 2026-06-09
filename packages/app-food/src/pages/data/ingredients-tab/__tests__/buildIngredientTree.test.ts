@@ -21,7 +21,8 @@ function row(overrides: Partial<IngredientRow> & { id: number; slug: string }): 
 }
 
 describe('buildIngredientTree', () => {
-  it('groups children under their declared parent', () => {
+  it('groups children under their declared parent and sorts them by slug', () => {
+    // Input intentionally unsorted to prove the function enforces order.
     const tree = buildIngredientTree([
       row({ id: 1, slug: 'fruit' }),
       row({ id: 2, slug: 'banana', parentId: 1 }),
@@ -29,13 +30,13 @@ describe('buildIngredientTree', () => {
     ]);
     expect(tree).toHaveLength(1);
     expect(tree[0]?.row.slug).toBe('fruit');
-    expect(tree[0]?.children.map((c) => c.row.slug)).toEqual(['banana', 'apple']);
+    expect(tree[0]?.children.map((c) => c.row.slug)).toEqual(['apple', 'banana']);
   });
 
-  it('keeps multiple root-level rows', () => {
+  it('sorts root-level rows by slug regardless of input order', () => {
     const tree = buildIngredientTree([
-      row({ id: 1, slug: 'fruit' }),
-      row({ id: 2, slug: 'vegetable' }),
+      row({ id: 1, slug: 'vegetable' }),
+      row({ id: 2, slug: 'fruit' }),
     ]);
     expect(tree.map((n) => n.row.slug)).toEqual(['fruit', 'vegetable']);
   });

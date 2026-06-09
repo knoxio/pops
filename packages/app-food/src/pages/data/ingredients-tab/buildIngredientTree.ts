@@ -1,17 +1,25 @@
 /**
  * Build a hierarchical tree of ingredients from a flat list.
  *
- * The food schema caps depth at 3 (PRD-106 invariant), and the API
- * returns rows already sorted by slug (PRD-122-API), so the tree
- * preserves alphabetical order at every level. Orphan rows (parent_id
- * points at an ingredient that's missing from the list — e.g. because
- * a search filter dropped it) get re-rooted so they remain visible.
+ * The food schema caps depth at 3 (PRD-106 invariant). The tree
+ * enforces alphabetical (slug) order at every level — the API already
+ * returns rows sorted that way (PRD-122-API), but the function sorts
+ * defensively so callers that pass unsorted input still get
+ * deterministic ordering. Orphan rows (parent_id points at an
+ * ingredient that's missing from the list — e.g. because a search
+ * filter dropped it) get re-rooted so they remain visible.
  */
 import type { IngredientRow } from '@pops/app-food-db';
 
 export interface IngredientTreeNode {
   row: IngredientRow;
   children: IngredientTreeNode[];
+}
+
+function sortBySlug(nodes: IngredientTreeNode[]): IngredientTreeNode[] {
+  nodes.sort((a, b) => a.row.slug.localeCompare(b.row.slug));
+  for (const node of nodes) sortBySlug(node.children);
+  return nodes;
 }
 
 export function buildIngredientTree(rows: readonly IngredientRow[]): IngredientTreeNode[] {
@@ -32,5 +40,5 @@ export function buildIngredientTree(rows: readonly IngredientRow[]): IngredientT
       roots.push(node);
     }
   }
-  return roots;
+  return sortBySlug(roots);
 }

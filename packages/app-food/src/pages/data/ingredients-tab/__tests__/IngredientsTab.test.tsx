@@ -17,7 +17,10 @@ import { IngredientsTab } from '../../IngredientsTab';
 const mockListQuery = vi.fn();
 const mockGetQuery = vi.fn();
 const mockMutate = vi.fn();
-let mutationOptions: { onSuccess?: () => void; onError?: (err: { message: string }) => void } = {};
+let mutationOptions: {
+  onSuccess?: () => void;
+  onError?: (err: { message: string; data?: { code?: string } | null }) => void;
+} = {};
 const mockInvalidate = vi.fn();
 const mockUtilsList = { invalidate: mockInvalidate };
 
@@ -144,8 +147,11 @@ describe('PRD-122-B — IngredientsTab', () => {
     await userEvent.type(screen.getByLabelText(/^slug$/i), 'banana');
     await userEvent.type(screen.getByLabelText(/^name$/i), 'Banana');
     await userEvent.click(screen.getByRole('button', { name: /^create$/i }));
-    mutationOptions.onError?.({ message: 'Slug already registered' });
-    expect(await screen.findByRole('alert')).toHaveTextContent(/slug already registered/i);
+    mutationOptions.onError?.({
+      message: 'Slug already registered',
+      data: { code: 'CONFLICT' },
+    });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/slug is already in use/i);
   });
 
   it('renders embedded variants when the detail returns any', async () => {

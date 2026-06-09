@@ -5,6 +5,7 @@
  * intent via callbacks.
  */
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@pops/ui';
 
@@ -28,11 +29,14 @@ function ExpandToggle({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation('food');
   if (!hasChildren) return <span className="inline-block w-4" aria-hidden />;
   return (
     <button
       type="button"
-      aria-label={isExpanded ? 'Collapse' : 'Expand'}
+      aria-label={
+        isExpanded ? t('data.ingredients.tree.collapse') : t('data.ingredients.tree.expand')
+      }
       onClick={(e) => {
         e.stopPropagation();
         onToggle();

@@ -13,34 +13,33 @@
  */
 import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
-import { createMemoryRouter, RouterProvider } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
+import { describe, expect, it } from 'vitest';
 
-import { routes } from '../../../routes';
-import { getActiveTabSlug } from '../FoodDataLayout';
+import { FoodDataLayout, getActiveTabSlug } from '../FoodDataLayout';
 
-// The Ingredients tab now consumes `food.ingredients.{list,get}` via
-// @pops/api-client. Stub the client surface so the layout test can
-// render the tab without a real tRPC Provider tree.
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      ingredients: {
-        list: { useQuery: () => ({ data: { items: [] }, isLoading: false }) },
-        get: { useQuery: () => ({ data: undefined, isLoading: false }) },
-        create: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-      },
-    },
-    useUtils: () => ({ food: { ingredients: { list: { invalidate: vi.fn() } } } }),
-  },
-}));
+// Mount FoodDataLayout directly (no `React.lazy`) so the tablist/dropdown
+// assertions don't race the dynamic imports of the per-tab modules. The
+// per-tab content is intentionally stubbed — those flows are exercised
+// by each tab's own test file (e.g. IngredientsTab.test.tsx).
+function StubTabContent({ slug }: { slug: string }) {
+  return <div data-testid={`stub-${slug}`}>{slug}</div>;
+}
 
 function renderAt(initialPath: string) {
   const router = createMemoryRouter(
     [
       {
-        path: '/food',
-        children: routes,
+        path: '/food/data',
+        element: <FoodDataLayout />,
+        children: [
+          { index: true, element: <Navigate to="ingredients" replace /> },
+          { path: 'ingredients', element: <StubTabContent slug="ingredients" /> },
+          { path: 'aliases', element: <StubTabContent slug="aliases" /> },
+          { path: 'prep-states', element: <StubTabContent slug="prep-states" /> },
+          { path: 'substitutions', element: <StubTabContent slug="substitutions" /> },
+          { path: 'conversions', element: <StubTabContent slug="conversions" /> },
+        ],
       },
     ],
     { initialEntries: [initialPath] }

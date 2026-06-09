@@ -8,6 +8,8 @@
  */
 import { useTranslation } from 'react-i18next';
 
+import type { TFunction } from 'i18next';
+
 import type { IngredientVariantRow } from '@pops/app-food-db';
 
 interface Props {
@@ -41,7 +43,7 @@ export function VariantsTable({ variants }: Props) {
               <td className="py-1 pr-3">{v.defaultUnit}</td>
               <td className="py-1 pr-3">{v.packageSizeG ?? '—'}</td>
               <td className="py-1 pr-3 text-muted-foreground text-xs">
-                {formatShelfLife(v.defaultShelfLifeDaysFridge, v.defaultShelfLifeDaysFreezer)}
+                {formatShelfLife(t, v.defaultShelfLifeDaysFridge, v.defaultShelfLifeDaysFreezer)}
               </td>
             </tr>
           ))}
@@ -51,9 +53,13 @@ export function VariantsTable({ variants }: Props) {
   );
 }
 
-function formatShelfLife(fridge: number | null, freezer: number | null): string {
+function formatShelfLife(t: TFunction, fridge: number | null, freezer: number | null): string {
   const parts: string[] = [];
-  if (fridge !== null) parts.push(`fridge ${fridge}d`);
-  if (freezer !== null) parts.push(`freezer ${freezer}d`);
+  if (fridge !== null) {
+    parts.push(t('data.ingredients.variants.shelfLifeFridge', { days: fridge }));
+  }
+  if (freezer !== null) {
+    parts.push(t('data.ingredients.variants.shelfLifeFreezer', { days: freezer }));
+  }
   return parts.length > 0 ? parts.join(' · ') : '—';
 }
