@@ -9,8 +9,8 @@
  * Mirrors the split convention used by `@pops/app-food` (root frontend +
  * `./server` backend).
  */
-export * from './schema';
-export * from './errors';
-export * from './services/lists';
-export * from './services/list-items';
-export type { ListsDb } from './services/internal';
+export * from './schema.js';
+export * from './errors.js';
+export * from './services/lists.js';
+export * from './services/list-items.js';
+export type { ListsDb } from './services/internal.js';

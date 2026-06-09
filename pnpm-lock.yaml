@@ -988,9 +988,6 @@ importers:
         specifier: ^7.16.0
         version: 7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
-      '@pops/navigation':
-        specifier: workspace:*
-        version: link:../navigation
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
