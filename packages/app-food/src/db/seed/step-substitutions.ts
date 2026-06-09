@@ -38,27 +38,35 @@ function resolveEndpoint(
   throw new Error(`Sub ${side} endpoint has neither ingredient nor variant`);
 }
 
+function resolveRecipeId(
+  fixture: (typeof SUBSTITUTION_FIXTURES)[number],
+  ctx: SeedContext
+): number | null {
+  if ((fixture.scope ?? 'global') !== 'recipe') return null;
+  // Defensive: a fixture declaring scope='recipe' without recipeSlug would
+  // otherwise silently insert a recipe-scoped sub with NULL recipe_id —
+  // violating PRD-109 invariants. Fail loud at seed time.
+  if (fixture.recipeSlug === undefined) {
+    throw new Error(`Sub fixture has scope='recipe' but no recipeSlug`);
+  }
+  const id = ctx.recipeIdBySlug.get(fixture.recipeSlug);
+  if (id === undefined) {
+    throw new Error(`Sub fixture references unknown recipe "${fixture.recipeSlug}"`);
+  }
+  return id;
+}
+
 function buildInput(
   fixture: (typeof SUBSTITUTION_FIXTURES)[number],
   ctx: SeedContext
 ): CreateSubstitutionInput {
-  const from = resolveEndpoint('from', fixture.from, ctx);
-  const to = resolveEndpoint('to', fixture.to, ctx);
-  const scope = fixture.scope ?? 'global';
-  const recipeId =
-    scope === 'recipe' && fixture.recipeSlug !== undefined
-      ? ctx.recipeIdBySlug.get(fixture.recipeSlug)
-      : null;
-  if (scope === 'recipe' && recipeId === undefined) {
-    throw new Error(`Sub recipe scope requires known recipe; "${fixture.recipeSlug}" missing`);
-  }
   return {
-    from,
-    to,
+    from: resolveEndpoint('from', fixture.from, ctx),
+    to: resolveEndpoint('to', fixture.to, ctx),
     ratio: fixture.ratio,
     contextTags: fixture.contextTags,
-    scope,
-    recipeId: recipeId ?? null,
+    scope: fixture.scope ?? 'global',
+    recipeId: resolveRecipeId(fixture, ctx),
     notes: fixture.notes ?? null,
   };
 }

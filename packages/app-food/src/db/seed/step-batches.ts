@@ -66,14 +66,34 @@ function insertRecipeRunRow(db: FoodDb, ctx: SeedContext): number {
   return row.id;
 }
 
+function batchSourceId(fixture: BatchFixture, runId: number): number | null {
+  if (fixture.sourceType !== 'recipe_run') return null;
+  // Defensive: a recipe_run batch fixture must name the run it points at.
+  // Otherwise the source_id would silently fall back to NULL — defeating the
+  // provenance the source_type=recipe_run row was supposed to record.
+  if (fixture.recipeRunRecipeSlug === undefined) {
+    throw new Error(
+      `Batch fixture has sourceType='recipe_run' but no recipeRunRecipeSlug — provenance would be lost`
+    );
+  }
+  if (fixture.recipeRunRecipeSlug !== RECIPE_RUN_FIXTURE.recipeSlug) {
+    // Phase 1 only seeds one run; assert the fixture points at that one so
+    // adding a second run later forces the seeder to be updated rather than
+    // silently misattributing the batch.
+    throw new Error(
+      `Batch fixture recipeRunRecipeSlug "${fixture.recipeRunRecipeSlug}" does not match the seeded run "${RECIPE_RUN_FIXTURE.recipeSlug}"`
+    );
+  }
+  return runId;
+}
+
 function insertOneBatch(
   db: FoodDb,
   fixture: BatchFixture,
   ctx: SeedContext,
   runId: number
 ): number {
-  const sourceId =
-    fixture.sourceType === 'recipe_run' && fixture.recipeRunRecipeSlug !== undefined ? runId : null;
+  const sourceId = batchSourceId(fixture, runId);
   const inserted = db
     .insert(batches)
     .values({

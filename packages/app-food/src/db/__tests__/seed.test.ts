@@ -312,5 +312,12 @@ describe('PRD-113 phase-1 seed', () => {
         .get() as { n: number };
       expect(orphans.n).toBe(0);
     });
+    it('persists source="user" (PRD-106 enum has no "seed" value)', () => {
+      const sourceMix = raw
+        .prepare(`SELECT source, COUNT(*) AS n FROM ingredient_aliases GROUP BY source`)
+        .all() as { source: string; n: number }[];
+      expect(sourceMix.length).toBe(1);
+      expect(sourceMix[0]?.source).toBe('user');
+    });
   });
 });

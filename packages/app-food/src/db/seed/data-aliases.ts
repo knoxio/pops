@@ -3,9 +3,9 @@
  *
  * Targets either an ingredient or a variant. Exactly one of `ingredientSlug`
  * / `variantOfIngredient` must be set; variant aliases scope under their
- * parent ingredient. Source 'seed' marks the row as fixture-sourced (the
- * canonical source vocabulary is user/llm/ingest per PRD-106; the seed uses
- * 'user' as the closest approximation since "seeded" isn't an enum value).
+ * parent ingredient. The seeder persists `source = 'user'` (PRD-106's enum
+ * is `user | llm | ingest`; there's no `seed` value, and `user` is the
+ * closest fit for human-curated rows that pre-populate the dev DB).
  */
 
 export interface AliasFixture {
