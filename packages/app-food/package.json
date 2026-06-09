@@ -16,6 +16,13 @@
     "db:seed:food": "tsx scripts/db-seed-food.ts"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.43.1",
+    "@lezer/highlight": "^1.2.3",
+    "@lezer/lr": "^1.4.10",
+    "@pops/api-client": "workspace:*",
     "@pops/app-lists": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/types": "workspace:*",
@@ -32,6 +39,7 @@
     "react-router": "^7.16.0"
   },
   "devDependencies": {
+    "@lezer/generator": "^1.8.0",
     "@pops/navigation": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

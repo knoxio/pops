@@ -26,5 +26,7 @@
   "data.conversions.title": "Conversões",
   "data.conversions.description": "Conversões de unidades e pesos usadas pelo pipeline de compilação.",
   "data.conversions.pending": "Conversões pertencem ao PRD-123 e serão entregues separadamente.",
+  "editor.ariaLabel": "Editor da DSL de receitas",
+  "editor.readOnlyBanner": "Esta versão foi publicada. Crie um novo rascunho para editar.",
   "status.comingSoon": "Em breve"
 }

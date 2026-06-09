@@ -1,0 +1,87 @@
+// Lezer grammar for the recipe DSL — PRD-120 part A.
+//
+// Source-of-truth grammar is the hand-rolled parser at parser.ts (PRD-114),
+// which is the spec the resolver / materialiser consume. This grammar is a
+// CodeMirror-only mirror used for syntax highlighting + folding + bracket
+// matching. The parity test in __tests__/lezer-parity.test.ts feeds the
+// PRD-114 sample recipes through both parsers and asserts the top-level
+// call sequence matches; that's the drift trip-wire.
+//
+// Markdown lines between calls are NOT modelled as a grammar production.
+// Lezer's tokenizer doesn't have enough context to disambiguate a
+// markdown sentence ("Make sure to rinse") from a sequence of
+// identifiers, and modelling that explicitly with @local tokens would
+// double the grammar size. Instead we lean on Lezer's error recovery:
+// the parser sees an unexpected token, emits an error node, and resyncs
+// at the next `@` or `//`. CodeMirror renders the resulting error nodes
+// as plain text — exactly the highlighting we want for markdown prose.
+
+@top Recipe { item* }
+
+item { Call | Comment }
+
+Call { FunctionName "(" ArgList? ")" }
+
+FunctionName { "@" Identifier }
+
+ArgList { Arg ("," Arg)* (",")? }
+
+Arg { NamedArg | Value }
+
+NamedArg { Identifier "=" Value }
+
+Value { String | Boolean | QtyUnit | Descriptor | Number }
+
+// `qty:unit` (e.g. `100:g`, `0:none`). Must come before bare Number so the
+// generator picks the longer match when a number is followed by `:ident`.
+QtyUnit { Number ":" Identifier }
+
+// `slug[:variant_or_skip[:prep_or_skip]]`. The optional segments may be
+// either an identifier or the literal `_` skip marker.
+Descriptor { Identifier (":" DescriptorPart (":" DescriptorPart)?)? }
+
+DescriptorPart { Identifier | SkipMarker }
+
+SkipMarker { "_" }
+
+// Skip whitespace + anything else outside of a Call / Comment. The
+// `ProseChunk` token is greedy: it eats a whole run of non-`@`, non-`//`
+// characters so Lezer doesn't waste states tokenising markdown words one
+// by one.
+@skip { whitespace | ProseChunk }
+
+@tokens {
+  whitespace { $[ \t\r\n]+ }
+
+  // Identifier: lowercase, digits, hyphens. Cannot start with a digit.
+  Identifier { $[a-z] $[a-z0-9\-]* }
+
+  // Boolean must precede Identifier in the @tokens block so the
+  // tokenizer resolves the keyword first.
+  Boolean { "true" | "false" }
+
+  Number { ("-")? $[0-9]+ ("." $[0-9]+)? }
+
+  // Strings: double-quoted, with `\` escape. We don't allow raw newlines
+  // inside a string — the parser doesn't either.
+  String { '"' ( !["\\\n] | "\\" _ )* '"' }
+
+  // Line comment: `// ...` to end of line.
+  Comment { "//" ![\n]* }
+
+  // Catch-all for markdown prose: any non-blank line that doesn't open a
+  // call (`@`) or a comment (`//`). Marked as a skipped token so it
+  // doesn't show up in the tree but also doesn't trip the parser. The
+  // first-char set deliberately excludes `_` (the SkipMarker literal),
+  // lowercase letters (Identifier), and digits / `-` (Number) so the
+  // tokenizer has zero ambiguity at top level — prose starts with an
+  // uppercase letter, `#`, `>`, or punctuation that none of the other
+  // tokens can start with.
+  ProseChunk { $[A-Z#>.!?;] ![\n]* }
+
+  "(" ")" "=" "," ":"
+
+  @precedence { Comment, Boolean, Identifier, ProseChunk }
+}
+
+@detectDelim
