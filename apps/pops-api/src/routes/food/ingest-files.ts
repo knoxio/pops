@@ -23,6 +23,7 @@ import { join, resolve } from 'node:path';
 
 import { type Router as ExpressRouter, type Request, type Response, Router } from 'express';
 
+import { getDb } from '../../db.js';
 import { tryServeFile } from '../media/images-helpers.js';
 
 /** Inbox-served media is user-content; short cache so re-uploads land. */
@@ -48,6 +49,31 @@ function validateSourceId(req: Request, res: Response): number | null {
     return null;
   }
   return Number(raw);
+}
+
+/**
+ * Reject requests for sources the user shouldn't see — the row doesn't
+ * exist OR the eviction job already archived it (`archived_at IS NOT NULL`).
+ * Without this guard, anyone who guesses a `sourceId` can fish for media
+ * files on disk regardless of whether the source row was ever real.
+ *
+ * The check is a single prepared SELECT keyed by primary key — cheap; we
+ * skip the Drizzle wrapper to keep the route lean (and dep-free of the
+ * food-domain schema imports).
+ */
+function isServableSource(sourceId: number): boolean {
+  try {
+    const row = getDb()
+      .prepare<[number], { archived_at: string | null }>(
+        `SELECT archived_at FROM ingest_sources WHERE id = ?`
+      )
+      .get(sourceId);
+    return row !== undefined && row.archived_at === null;
+  } catch {
+    // If the table doesn't exist (e.g. tests without food migrations
+    // applied), fail closed — the route serves nothing.
+    return false;
+  }
 }
 
 function findFileWithExtension(
@@ -85,6 +111,10 @@ router.get(
   async (req: Request, res: Response): Promise<void> => {
     const sourceId = validateSourceId(req, res);
     if (sourceId === null) return;
+    if (!isServableSource(sourceId)) {
+      res.status(404).json({ error: 'File not found' });
+      return;
+    }
     const filePath = findFileWithExtension(
       ingestDirFor(sourceId),
       'screenshot',
@@ -99,6 +129,10 @@ router.get(
   async (req: Request, res: Response): Promise<void> => {
     const sourceId = validateSourceId(req, res);
     if (sourceId === null) return;
+    if (!isServableSource(sourceId)) {
+      res.status(404).json({ error: 'File not found' });
+      return;
+    }
     const filePath = findFileWithExtension(ingestDirFor(sourceId), 'video', VIDEO_EXTENSIONS);
     await serveOr404(filePath, res);
   }

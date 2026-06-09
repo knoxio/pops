@@ -277,4 +277,65 @@ describe('food.ingest.workerComplete', () => {
     expect(versionRow.body_dsl).toContain('Sear patties');
     expect(versionRow.source_id).toBe(started.sourceId);
   });
+
+  it('persists partialReason inside extracted_json so status can recover it', async () => {
+    const publicCaller = createPublicCaller();
+    const started = await publicCaller.food.ingest.start({
+      kind: 'url-instagram',
+      url: 'https://instagram.com/p/abc',
+    });
+    const caller = createInternalCaller();
+    const dsl = '@recipe(slug=foo, title="Partial")\n@yield 1 thing';
+    const result = await caller.food.ingest.workerComplete({
+      sourceId: started.sourceId,
+      ok: true,
+      dsl,
+      meta: { extractor_version: 'v1', stages: { stt: { ok: false } } },
+      partialReason: 'stt-failed',
+    });
+    if (!result.ok) throw new Error('expected ok=true');
+    const row = db
+      .prepare(`SELECT extracted_json FROM ingest_sources WHERE id = ?`)
+      .get(started.sourceId) as { extracted_json: string };
+    const parsed = JSON.parse(row.extracted_json) as { partialReason: string };
+    expect(parsed.partialReason).toBe('stt-failed');
+  });
+
+  it('derives title from @recipe(... title="...") not a missing @title token', async () => {
+    const publicCaller = createPublicCaller();
+    const started = await publicCaller.food.ingest.start({
+      kind: 'text',
+      body: 'A recipe',
+    });
+    const caller = createInternalCaller();
+    const dsl =
+      '@recipe(slug=carbonara, title="Spaghetti carbonara")\n@yield 2 plates\n@step\nWhisk.';
+    const result = await caller.food.ingest.workerComplete({
+      sourceId: started.sourceId,
+      ok: true,
+      dsl,
+      meta: { extractor_version: 'v1', stages: {} },
+    });
+    if (!result.ok) throw new Error('expected ok=true');
+    const versionRow = db
+      .prepare(`SELECT title FROM recipe_versions WHERE recipe_id = ?`)
+      .get(result.draftRecipeId) as { title: string };
+    expect(versionRow.title).toBe('Spaghetti carbonara');
+  });
+
+  it('rejects partialReason values outside the closed enum', async () => {
+    const publicCaller = createPublicCaller();
+    const started = await publicCaller.food.ingest.start({ kind: 'text', body: 'r' });
+    const caller = createInternalCaller();
+    await expect(
+      caller.food.ingest.workerComplete({
+        sourceId: started.sourceId,
+        ok: true,
+        dsl: '@recipe(slug=r, title="r")\n@yield 1 x',
+        meta: { extractor_version: 'v1', stages: {} },
+        // @ts-expect-error — runtime rejection test for the Zod enum gate
+        partialReason: 'made-up-reason',
+      })
+    ).rejects.toThrow();
+  });
 });

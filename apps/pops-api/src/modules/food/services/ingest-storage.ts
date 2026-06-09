@@ -68,6 +68,16 @@ export function writeScreenshotPayload(
   // Trim the data-URI prefix if the caller sent the raw `data:image/png;base64,...`
   // header — be permissive on input, strict on output.
   const cleaned = contentBase64.replace(/^data:[^;]+;base64,/, '');
+  // Pre-decode size check — base64 encodes ~4/3 bytes per source byte, so a
+  // cleaned payload longer than this can't decode to ≤ SCREENSHOT_MAX_BYTES.
+  // Without the pre-check, `Buffer.from(huge_string, 'base64')` would
+  // allocate the full decoded buffer before we can reject it.
+  const maxBase64Chars = Math.ceil((SCREENSHOT_MAX_BYTES * 4) / 3);
+  if (cleaned.length > maxBase64Chars) {
+    throw new Error(
+      `Screenshot base64 payload (${cleaned.length} chars) exceeds the pre-decode cap (${maxBase64Chars} chars) for ${SCREENSHOT_MAX_BYTES} bytes`
+    );
+  }
   const buffer = Buffer.from(cleaned, 'base64');
   if (buffer.length > SCREENSHOT_MAX_BYTES) {
     throw new Error(

@@ -17,6 +17,8 @@ import {
   type IngestState,
 } from '../services/ingest-state.js';
 
+import type { PartialReason } from '@pops/food-contracts';
+
 export interface IngestStatusView {
   sourceId: number;
   kind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
@@ -25,7 +27,7 @@ export interface IngestStatusView {
   startedAt: string | null;
   completedAt: string | null;
   draftRecipeId: number | null;
-  partialReason?: string;
+  partialReason?: PartialReason;
   errorCode?: string;
   errorMessage?: string;
   attempts: number;
@@ -38,32 +40,53 @@ interface JobTimings {
   completedAt: string | null;
 }
 
+const EMPTY_TIMINGS: JobTimings = {
+  jobId: null,
+  bullmqState: null,
+  startedAt: null,
+  completedAt: null,
+};
+
+/**
+ * Fetch BullMQ timings for ONE source id. Used by `status`. The `list`
+ * endpoint uses `fetchJobTimingsBatch` below to scan jobs once per request
+ * and build a sourceId → timings map.
+ */
 async function fetchJobTimings(sourceId: number): Promise<JobTimings> {
+  const map = await fetchJobTimingsBatch([sourceId]);
+  return map.get(sourceId) ?? EMPTY_TIMINGS;
+}
+
+/**
+ * BullMQ has no native "get job by data.sourceId" — we scan the recent
+ * window once and bucket by sourceId. Cheaper than O(rows × Redis round
+ * trips) when `list` returns many rows. When PRD-126 lands a heavier
+ * worker we can persist `jobId` on `ingest_sources` and skip the scan
+ * altogether.
+ */
+async function fetchJobTimingsBatch(
+  sourceIds: readonly number[]
+): Promise<Map<number, JobTimings>> {
+  const out = new Map<number, JobTimings>();
+  if (sourceIds.length === 0) return out;
   const queue = getFoodIngestQueue();
-  if (queue === null) return { jobId: null, bullmqState: null, startedAt: null, completedAt: null };
-  // BullMQ has no native "get job by data.sourceId" — we keep the source
-  // id in `data.sourceId` and scan recent jobs. For v1 this is fine
-  // (queue.getJobs is paginated; we look at the recent window). When
-  // PRD-126 lands a heavier worker we can persist `jobId` on
-  // `ingest_sources` to skip the scan; for now keep the contract minimal.
+  if (queue === null) return out;
+  const wanted = new Set(sourceIds);
   const jobs = await queue.getJobs(['waiting', 'delayed', 'active', 'completed', 'failed'], 0, 99);
   for (const job of jobs) {
     const data: unknown = job.data;
-    if (
-      typeof data === 'object' &&
-      data !== null &&
-      (data as { sourceId?: number }).sourceId === sourceId
-    ) {
-      const state = await job.getState();
-      return {
-        jobId: job.id ?? null,
-        bullmqState: state,
-        startedAt: job.processedOn ? new Date(job.processedOn).toISOString() : null,
-        completedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
-      };
-    }
+    if (typeof data !== 'object' || data === null) continue;
+    const sourceId = (data as { sourceId?: number }).sourceId;
+    if (typeof sourceId !== 'number' || !wanted.has(sourceId) || out.has(sourceId)) continue;
+    const state = await job.getState();
+    out.set(sourceId, {
+      jobId: job.id ?? null,
+      bullmqState: state,
+      startedAt: job.processedOn ? new Date(job.processedOn).toISOString() : null,
+      completedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+    });
   }
-  return { jobId: null, bullmqState: null, startedAt: null, completedAt: null };
+  return out;
 }
 
 function rowToView(row: IngestSourceRow, timings: JobTimings): IngestStatusView {
@@ -119,11 +142,12 @@ export async function listIngestSources(
     .all();
   const hasMore = rows.length > filter.limit;
   const sliced = hasMore ? rows.slice(0, filter.limit) : rows;
-  const views: IngestStatusView[] = [];
-  for (const row of sliced) {
-    const timings = await fetchJobTimings(row.id);
-    views.push(rowToView(row, timings));
-  }
+  // Batch the BullMQ scan — one round trip for the whole page, not one
+  // per row. See `fetchJobTimingsBatch` above for the contract.
+  const timingsBySourceId = await fetchJobTimingsBatch(sliced.map((row) => row.id));
+  const views: IngestStatusView[] = sliced.map((row) =>
+    rowToView(row, timingsBySourceId.get(row.id) ?? EMPTY_TIMINGS)
+  );
   const filtered =
     filter.state === undefined ? views : views.filter((v) => v.state === filter.state);
   const nextCursor = hasMore ? String(sliced[sliced.length - 1]?.id ?? '') : undefined;

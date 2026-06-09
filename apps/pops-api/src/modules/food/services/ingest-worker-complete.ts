@@ -24,7 +24,15 @@ import { type FoodDb, ingestSources, recipesService } from '@pops/app-food-db';
 import type { IngestJobResult } from '@pops/food-contracts';
 
 const INGEST_RECIPE_SLUG_PREFIX = 'ingest-source-';
-const TITLE_RE = /@title\s+"([^"]+)"/;
+/** Lightweight match against `@recipe(... title="...")` — the DSL grammar in
+ *  `packages/app-food/src/dsl/parse-recipe.ts` declares `title` as a named
+ *  arg inside `@recipe(...)`. We deliberately don't call the full parser to
+ *  avoid depending on `@pops/app-food` (which would close the cycle through
+ *  @pops/api-client); the regex is permissive enough for any author-written
+ *  `title="..."` inside the `@recipe(...)` header. Falls back to a generic
+ *  title when the worker emits a body the parser would reject — the inbox
+ *  surfaces the literal DSL anyway. */
+const TITLE_RE = /@recipe\s*\([^)]*\btitle\s*=\s*"([^"]+)"/;
 
 function deriveSlug(sourceId: number): string {
   return `${INGEST_RECIPE_SLUG_PREFIX}${sourceId}`;
@@ -64,9 +72,18 @@ function applySuccess(
         sourceId,
       },
     });
+    // Persist `partialReason` nested inside the meta blob so
+    // `extractPartialReason` (status / list) can recover it after BullMQ
+    // TTL expiry. The IngestMeta envelope is permissive — handler PRDs
+    // 127–132 own the `stages` payload; this field is the only one the
+    // producer side needs to surface to the inbox UI.
+    const persistedMeta =
+      result.partialReason === undefined
+        ? result.meta
+        : { ...result.meta, partialReason: result.partialReason };
     tx.update(ingestSources)
       .set({
-        extractedJson: JSON.stringify(result.meta),
+        extractedJson: JSON.stringify(persistedMeta),
         draftRecipeId: created.recipe.id,
         errorCode: null,
         errorMessage: null,

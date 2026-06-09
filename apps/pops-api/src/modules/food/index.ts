@@ -1,12 +1,17 @@
 /**
  * Food domain — backend module.
  *
- * PRD-122 (data management page) wires six sub-routers under `food.*`:
- * ingredients, variants, aliases, prepStates, substitutions, slugs. PRD-123
- * adds `conversions`; PRD-124 adds `heroImage`; PRD-125 adds `ingest` (the
- * ingestion-pipeline producer + internal `workerComplete` mutation). Recipe
- * mutations come later via PRD-119. The shared `slugs.search` procedure is
- * consumed by both the data page and PRD-120's DSL editor.
+ * Mounts the per-domain sub-routers under `food.*`:
+ *
+ *   - `food.heroImage`     — PRD-124 hero image upload + thumbnail pipeline.
+ *   - `food.ingest`        — PRD-125 ingestion API (BullMQ producer +
+ *                            internal `workerComplete` for the worker).
+ *   - `food.ingredients` / `variants` / `aliases` / `prepStates` /
+ *     `substitutions` / `slugs` — PRD-122 part API data-management surface.
+ *   - `food.conversions`   — PRD-123 phase B unit conversions.
+ *
+ * Recipe CRUD lands later via PRD-119. Migration tags owned by this module
+ * are listed in `migrations.ts`.
  *
  * See `docs/themes/07-food/` for the theme spec.
  */

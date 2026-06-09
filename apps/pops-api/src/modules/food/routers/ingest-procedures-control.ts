@@ -6,6 +6,9 @@
  * pipeline stages (PRD-126). `retry` re-enqueues with the same input,
  * increments `attempts`, and reuses the same `sourceId`.
  */
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { eq, sql } from 'drizzle-orm';
 
 import { type FoodDb, ingestSources } from '@pops/app-food-db';
@@ -14,6 +17,37 @@ import { getFoodIngestQueue } from '../queue.js';
 import { enqueueIngestJob, type EnqueueResult } from '../services/ingest-enqueue.js';
 
 import type { IngestJobData } from '@pops/food-contracts';
+
+/** Mirror of `packages/app-food/src/storage/ingest-paths.ts`. */
+const DEFAULT_FOOD_INGEST_DIR = './data/food/ingest';
+const MIME_BY_EXT: Record<string, 'image/jpeg' | 'image/png' | 'image/webp'> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+};
+
+function findOnDiskScreenshot(
+  sourceId: number
+): { mimeType: 'image/jpeg' | 'image/png' | 'image/webp'; filename: string } | null {
+  const configured = process.env['FOOD_INGEST_DIR'];
+  const root = configured && configured.length > 0 ? configured : DEFAULT_FOOD_INGEST_DIR;
+  const dir = resolve(root, String(sourceId));
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return null;
+  }
+  for (const entry of entries) {
+    const match = /^screenshot\.([a-z0-9]+)$/i.exec(entry);
+    if (match === null) continue;
+    const ext = match[1]?.toLowerCase() ?? '';
+    const mimeType = MIME_BY_EXT[ext];
+    if (mimeType !== undefined) return { mimeType, filename: entry };
+  }
+  return null;
+}
 
 const CANCELLABLE = new Set(['waiting', 'delayed', 'active', 'waiting_children', 'prioritized']);
 
@@ -73,17 +107,24 @@ function jobDataFromRow(row: {
         throw new Error(`Retry blocked: ingest_sources #${row.id} missing caption/body`);
       }
       return { kind: 'text', sourceId: row.id, body: row.caption };
-    case 'screenshot':
+    case 'screenshot': {
       // Screenshot retry reuses the original on-disk file under the per-
-      // source dir. The worker resolves via `ingestRootDir()`.
+      // source dir. Mime is not persisted in `ingest_sources`; recover it
+      // from the filename extension so jpg / webp retries don't fall back
+      // to `.png`.
+      const found = findOnDiskScreenshot(row.id);
+      if (found === null) {
+        throw new Error(
+          `Retry blocked: screenshot for ingest_sources #${row.id} not on disk (already evicted?)`
+        );
+      }
       return {
         kind: 'screenshot',
         sourceId: row.id,
-        // Mime is the original mime; for v1 we only stored the file path,
-        // not the mime. Worker re-derives from extension if needed.
-        mimeType: 'image/png',
-        contentPath: `${row.id}/screenshot.png`,
+        mimeType: found.mimeType,
+        contentPath: `${row.id}/${found.filename}`,
       };
+    }
   }
 }
 

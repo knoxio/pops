@@ -14,6 +14,19 @@ import { z } from 'zod';
 /** Subset of valid screenshot mime types — matches PRD-110's `screenshot.<ext>` amendment. */
 export const ScreenshotMimeType = z.enum(['image/jpeg', 'image/png', 'image/webp']);
 
+/** Mirrors `PartialReason` from `@pops/food-contracts` so the wire surface
+ *  rejects values outside the contract. The handler PRDs (127–132) emit
+ *  exactly these strings; widening here would let a misbehaving worker leak
+ *  arbitrary strings into the inbox UI. */
+export const PartialReasonSchema = z.enum([
+  'auth-dead',
+  'rate-limited',
+  'stt-failed',
+  'vision-failed',
+  'caption-only-fallback',
+  'empty-extraction',
+]);
+
 export const IngestStartInput = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('url-web'), url: z.url() }),
   z.object({ kind: z.literal('url-instagram'), url: z.url() }),
@@ -42,7 +55,7 @@ export const IngestStatusOutput = z.object({
   startedAt: z.string().nullable(),
   completedAt: z.string().nullable(),
   draftRecipeId: z.number().int().positive().nullable(),
-  partialReason: z.string().optional(),
+  partialReason: PartialReasonSchema.optional(),
   errorCode: z.string().optional(),
   errorMessage: z.string().optional(),
   attempts: z.number().int().nonnegative(),
@@ -85,7 +98,7 @@ export const WorkerCompleteInput = z.discriminatedUnion('ok', [
     ok: z.literal(true),
     dsl: z.string().min(1),
     meta: MetaSchema,
-    partialReason: z.string().optional(),
+    partialReason: PartialReasonSchema.optional(),
   }),
   z.object({
     sourceId: z.number().int().positive(),

@@ -9,6 +9,21 @@ import type { JobType } from 'bullmq';
  * the worker writes back via `workerComplete`.
  */
 import type { IngestSourceRow } from '@pops/app-food-db';
+import type { PartialReason } from '@pops/food-contracts';
+
+function isPartialReason(value: string): value is PartialReason {
+  switch (value) {
+    case 'auth-dead':
+    case 'rate-limited':
+    case 'stt-failed':
+    case 'vision-failed':
+    case 'caption-only-fallback':
+    case 'empty-extraction':
+      return true;
+    default:
+      return false;
+  }
+}
 
 export type IngestState = 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
 
@@ -52,16 +67,18 @@ export function deriveIngestState(
  * Extracted out so `status` and `list` use the same partial-reason lookup.
  * Treats malformed JSON as "no partial reason" rather than throwing.
  */
-export function extractPartialReason(extractedJson: string | null): string | undefined {
+export function extractPartialReason(extractedJson: string | null): PartialReason | undefined {
   if (extractedJson === null) return undefined;
+  let parsed: unknown;
   try {
-    const parsed: unknown = JSON.parse(extractedJson);
-    if (typeof parsed === 'object' && parsed !== null && 'partialReason' in parsed) {
-      const reason = (parsed as { partialReason: unknown }).partialReason;
-      return typeof reason === 'string' ? reason : undefined;
-    }
+    parsed = JSON.parse(extractedJson);
   } catch {
     return undefined;
   }
-  return undefined;
+  if (typeof parsed !== 'object' || parsed === null || !('partialReason' in parsed)) {
+    return undefined;
+  }
+  const reason: unknown = parsed.partialReason;
+  if (typeof reason !== 'string') return undefined;
+  return isPartialReason(reason) ? reason : undefined;
 }
