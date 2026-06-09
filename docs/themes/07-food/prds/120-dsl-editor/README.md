@@ -209,7 +209,7 @@ Inline per theme protocol.
 ### Tests
 
 - [ ] Vitest + React Testing Library suite at `packages/app-food/src/components/__tests__/DslEditor.test.tsx` covers each acceptance criterion above with a deterministic mock for `food.slugs.search`.
-- [ ] Storybook stories at `apps/pops-storybook/src/stories/food/DslEditor.stories.tsx` cover: empty document, sample recipe, document with errors, document with proposed slugs, read-only.
+- [ ] Storybook stories at `packages/app-food/src/components/DslEditor.stories.tsx` cover: empty document, sample recipe, document with errors, document with proposed slugs, read-only. (Discovery glob lives in `apps/pops-storybook/.storybook/main.ts` and picks up `packages/*\/src/**\/*.stories.@(ts|tsx)`, matching the pattern used by every other shared-package story file in this repo.)
 
 ## Out of Scope
 

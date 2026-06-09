@@ -1,5 +1,5 @@
 /**
- * DslEditor — recipe-DSL CodeMirror 6 editor (PRD-120 part A).
+ * DslEditor — recipe-DSL CodeMirror 6 editor (PRD-120 parts A + C).
  *
  * Pure presentation component. The editor:
  *   - Renders the recipe-DSL source with Lezer-driven syntax highlighting
@@ -9,13 +9,16 @@
  *   - Switches into read-only mode (no keystrokes, banner at the top) when
  *     `readOnly` is true — the parent is expected to pass this for any
  *     `recipe_versions.status ∈ {current, archived}` per PRD-107.
+ *   - Surfaces compile diagnostics passed via `issues` as inline
+ *     squiggles, a gutter marker, and a hover tooltip (120-C).
  *
- * Out-of-scope for this PR (handled by 120-B through 120-F):
+ * Still out of scope for this PR (deferred to 120-B / 120-D / 120-E /
+ * 120-F):
  *   - Autocomplete (consumes `food.slugs.search` from PRD-122-API).
- *   - Error squiggles + tooltips driven by an `issues` prop.
  *   - Chip widgets for inline `@N` / `@slug` / `@time` / `@temperature`.
  *   - Reorder + renumber affordance.
- *   - Mobile-specific autocomplete drawer + a11y polish + Storybook.
+ *   - Mobile-specific autocomplete drawer + axe-core a11y pass.
+ *   - The "Recompile" button — parent-driven, lands with PRD-119.
  *
  * The component is deliberately framework-thin: it owns a single
  * `EditorView` instance and rebuilds the document only when `initialValue`

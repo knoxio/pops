@@ -58,11 +58,14 @@ export function getIssuesForOffset(
   state: EditorState,
   offset: number
 ): CompileEditorIssue[] {
+  // `spanToRange` returns an exclusive `to` (same convention as
+  // `Decoration.mark`), so the hit-test is half-open `[from, to)`. The
+  // offset right after the last decorated character does NOT count.
   const hits: CompileEditorIssue[] = [];
   for (const issue of issues) {
     const range = spanToRange(state, issue.loc);
     if (!range) continue;
-    if (offset >= range.from && offset <= range.to) hits.push(issue);
+    if (offset >= range.from && offset < range.to) hits.push(issue);
   }
   return hits;
 }

@@ -124,7 +124,8 @@ describe('issues StateField — PRD-120 part C', () => {
 describe('getIssuesForOffset — PRD-120 part C', () => {
   it('returns issues whose span covers the offset', () => {
     const state = stateFor('hello world');
-    // ISSUE_A covers cols 1..5 → offsets 0..4 (inclusive of edges).
+    // ISSUE_A covers cols 1..5 → offsets [0, 4) (half-open, like
+    // `Decoration.mark`'s `to`).
     const hits = getIssuesForOffset([ISSUE_A, ISSUE_B], state, 2);
     expect(hits).toEqual([ISSUE_A]);
   });
@@ -146,5 +147,16 @@ describe('getIssuesForOffset — PRD-120 part C', () => {
       loc: { startLine: 5, startCol: 1, endLine: 5, endCol: 4 },
     };
     expect(getIssuesForOffset([offDoc], state, 0)).toEqual([]);
+  });
+
+  it('treats the span end as exclusive', () => {
+    // Mirrors `Decoration.mark`'s `to`-is-exclusive contract — the
+    // character right after the squiggle should NOT surface the
+    // tooltip on hover.
+    const state = stateFor('hello world');
+    // ISSUE_A covers cols 1..5 → offsets [0, 4). Offset 4 is the first
+    // character NOT in the squiggle.
+    expect(getIssuesForOffset([ISSUE_A], state, 3)).toEqual([ISSUE_A]);
+    expect(getIssuesForOffset([ISSUE_A], state, 4)).toEqual([]);
   });
 });
