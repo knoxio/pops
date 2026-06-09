@@ -23,6 +23,7 @@ interface Props {
   variantActions: VariantActions;
   blockers: DeleteBlockerSummary | null;
   recipeRefCountForDelete: number;
+  deleteRefsLoading: boolean;
 }
 
 export function IngredientTabDialogs(props: Props) {
@@ -40,6 +41,7 @@ function IngredientDialogStack({
   ingredientActions,
   blockers,
   recipeRefCountForDelete,
+  deleteRefsLoading,
 }: Props) {
   return (
     <>
@@ -67,6 +69,7 @@ function IngredientDialogStack({
         recipeRefCount={recipeRefCountForDelete}
         hasOtherFkRefs={ingredientActions.hasOtherFkRefs}
         isSubmitting={ingredientActions.isDeleting}
+        isResolvingRefs={deleteRefsLoading}
         errorMessage={ingredientActions.deleteError}
         onCancel={ingredientActions.closeAll}
         onConfirm={ingredientActions.submitDelete}

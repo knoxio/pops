@@ -60,7 +60,7 @@ export function useIngredientActionMutations({ closeAll, onDeleteOtherFkRef }: A
     onError: (err) =>
       setErrors((prev) => ({
         ...prev,
-        rename: mapMutationError(err, t, { fallbackKey: 'data.ingredients.create.error.generic' }),
+        rename: mapMutationError(err, t, { fallbackKey: 'data.ingredients.rename.error.generic' }),
       })),
   });
   const changeParent = trpc.food.ingredients.changeParent.useMutation({
@@ -72,7 +72,7 @@ export function useIngredientActionMutations({ closeAll, onDeleteOtherFkRef }: A
       setErrors((prev) => ({
         ...prev,
         changeParent: mapMutationError(err, t, {
-          fallbackKey: 'data.ingredients.create.error.generic',
+          fallbackKey: 'data.ingredients.changeParent.error.generic',
         }),
       })),
   });

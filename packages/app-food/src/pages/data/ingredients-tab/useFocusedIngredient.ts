@@ -11,7 +11,7 @@
  * re-trigger the visual cue.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useLocation, useSearchParams } from 'react-router';
 
 import type { IngredientRow } from '@pops/app-food-db';
 
@@ -31,10 +31,15 @@ export function useFocusedIngredient({
   onExpandAncestors,
 }: Args) {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const focusSlug = searchParams.get('focus');
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
   const [notFoundSlug, setNotFoundSlug] = useState<string | null>(null);
-  const lastResolvedSlug = useRef<string | null>(null);
+  // Keyed by `(slug, location.key)` so re-navigating to the same `?focus=<slug>`
+  // re-triggers the resolve + highlight — react-router mints a new key per
+  // navigation even when the URL is unchanged, so this re-fires the effect
+  // without thrashing on intra-page renders.
+  const lastResolvedKey = useRef<string | null>(null);
 
   const bySlug = useMemo(() => {
     const map = new Map<string, IngredientRow>();
@@ -49,28 +54,29 @@ export function useFocusedIngredient({
 
   useEffect(() => {
     if (focusSlug === null) {
-      lastResolvedSlug.current = null;
+      lastResolvedKey.current = null;
       setHighlightedId(null);
       setNotFoundSlug(null);
       return;
     }
     if (isListLoading) return;
-    if (lastResolvedSlug.current === focusSlug) return;
+    const key = `${location.key}:${focusSlug}`;
+    if (lastResolvedKey.current === key) return;
 
     const match = bySlug.get(focusSlug);
     if (match === undefined) {
       setNotFoundSlug(focusSlug);
-      lastResolvedSlug.current = focusSlug;
+      lastResolvedKey.current = key;
       return;
     }
-    lastResolvedSlug.current = focusSlug;
+    lastResolvedKey.current = key;
     setNotFoundSlug(null);
 
     const ancestors = collectAncestors(byId, match.id);
     if (ancestors.length > 0) onExpandAncestors(ancestors);
     onResolved(match.id);
     setHighlightedId(match.id);
-  }, [focusSlug, isListLoading, bySlug, byId, onResolved, onExpandAncestors]);
+  }, [focusSlug, location.key, isListLoading, bySlug, byId, onResolved, onExpandAncestors]);
 
   useEffect(() => {
     if (highlightedId === null) return;

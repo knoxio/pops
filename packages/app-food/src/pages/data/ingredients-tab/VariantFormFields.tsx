@@ -45,18 +45,21 @@ export function VariantFormFields({ mode, form, onChange }: Props) {
         id="variant-package"
         labelKey="data.ingredients.variants.form.packageSizeG"
         value={form.packageSizeG}
+        precision="decimal"
         onChange={(packageSizeG) => onChange({ ...form, packageSizeG })}
       />
       <NumericRow
         id="variant-shelf-fridge"
         labelKey="data.ingredients.variants.form.shelfLifeFridge"
         value={form.shelfLifeFridge}
+        precision="integer"
         onChange={(shelfLifeFridge) => onChange({ ...form, shelfLifeFridge })}
       />
       <NumericRow
         id="variant-shelf-freezer"
         labelKey="data.ingredients.variants.form.shelfLifeFreezer"
         value={form.shelfLifeFreezer}
+        precision="integer"
         onChange={(shelfLifeFreezer) => onChange({ ...form, shelfLifeFreezer })}
       />
       <div className="grid gap-1.5">
@@ -77,23 +80,26 @@ function NumericRow({
   id,
   labelKey,
   value,
+  precision,
   onChange,
 }: {
   id: string;
   labelKey: string;
   value: string;
+  precision: 'integer' | 'decimal';
   onChange: (next: string) => void;
 }) {
   const { t } = useTranslation('food');
+  const isInteger = precision === 'integer';
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{t(labelKey)}</Label>
       <input
         id={id}
         type="number"
-        inputMode="decimal"
+        inputMode={isInteger ? 'numeric' : 'decimal'}
         min={0}
-        step="any"
+        step={isInteger ? 1 : 'any'}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="border-input bg-background h-9 rounded-md border px-3 text-sm"

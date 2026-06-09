@@ -60,14 +60,23 @@ function parsePositiveNumber(raw: string): number | null {
   return n;
 }
 
+function parseNonNegativeInt(raw: string): number | null {
+  const n = parsePositiveNumber(raw);
+  if (n === null) return null;
+  // Shelf-life columns are integers on the DB side (PRD-108) and the router
+  // validates with `z.number().int().nonnegative()` — coerce to int so decimal
+  // typos don't reach the backend as `BAD_REQUEST`.
+  return Math.floor(n);
+}
+
 export function variantFormToValues(form: VariantFormState): VariantFormValues {
   return {
     slug: form.slug.trim(),
     name: form.name.trim(),
     defaultUnit: form.defaultUnit,
     packageSizeG: parsePositiveNumber(form.packageSizeG),
-    defaultShelfLifeDaysFridge: parsePositiveNumber(form.shelfLifeFridge),
-    defaultShelfLifeDaysFreezer: parsePositiveNumber(form.shelfLifeFreezer),
+    defaultShelfLifeDaysFridge: parseNonNegativeInt(form.shelfLifeFridge),
+    defaultShelfLifeDaysFreezer: parseNonNegativeInt(form.shelfLifeFreezer),
     notes: form.notes.trim().length === 0 ? null : form.notes.trim(),
   };
 }

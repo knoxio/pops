@@ -119,7 +119,11 @@ function TreeRowItem(props: RowItemProps) {
       className={cn(
         'flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-sm transition-colors',
         props.isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
-        props.isHighlighted && !props.isSelected ? 'bg-amber-200/70 ring-2 ring-amber-500' : null
+        // The amber ring is the deep-link "you just landed here" cue — show it
+        // whether or not the row also happens to be selected, otherwise the
+        // 2-second highlight is invisible because `?focus=<slug>` selects the
+        // row in the same render.
+        props.isHighlighted ? 'ring-2 ring-amber-500 bg-amber-200/70' : null
       )}
       style={{ paddingLeft: `${0.5 + props.depth * 1}rem` }}
     >

@@ -3,27 +3,52 @@
  * component stays under the lint complexity + length caps. Both queries
  * are gated on the delete dialog being open so the API isn't hit until
  * the user is about to delete.
+ *
+ * Both helpers expose `isLoading` so the delete confirm button can stay
+ * disabled until the counts have actually resolved — otherwise a `0`
+ * default during the in-flight window would temporarily enable the
+ * destructive action and surface a confusing FK-CONFLICT path.
  */
 import { trpc } from '@pops/api-client';
 
-import type { IngredientRow } from '@pops/app-food-db';
+import type { DeleteBlockerSummary, IngredientRow } from '@pops/app-food-db';
 
 interface BlockerQueryArgs {
   ingredient: IngredientRow | null;
   deleteOpen: boolean;
 }
 
-export function useBlockersQuery({ ingredient, deleteOpen }: BlockerQueryArgs) {
-  return trpc.food.ingredients.blockers.useQuery(
+export interface BlockersState {
+  data: DeleteBlockerSummary | null;
+  isLoading: boolean;
+}
+
+export function useBlockersQuery({ ingredient, deleteOpen }: BlockerQueryArgs): BlockersState {
+  const query = trpc.food.ingredients.blockers.useQuery(
     { id: ingredient?.id ?? 0 },
     { enabled: ingredient !== null && deleteOpen }
   );
+  return {
+    data: query.data ?? null,
+    isLoading: ingredient !== null && deleteOpen && query.data === undefined,
+  };
 }
 
-export function useRecipeRefCount(ingredientId: number | null, deleteOpen: boolean): number {
+export interface RecipeRefCountState {
+  count: number;
+  isLoading: boolean;
+}
+
+export function useRecipeRefCount(
+  ingredientId: number | null,
+  deleteOpen: boolean
+): RecipeRefCountState {
   const query = trpc.food.ingredients.recipeRefs.useQuery(
     { id: ingredientId ?? 0 },
     { enabled: ingredientId !== null && deleteOpen }
   );
-  return query.data?.count ?? 0;
+  return {
+    count: query.data?.count ?? 0,
+    isLoading: ingredientId !== null && deleteOpen && query.data === undefined,
+  };
 }

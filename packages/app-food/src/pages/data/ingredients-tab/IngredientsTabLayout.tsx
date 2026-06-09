@@ -30,6 +30,7 @@ export interface LayoutProps {
   focused: ReturnType<typeof useFocusedIngredient>;
   blockers: DeleteBlockerSummary | null;
   recipeRefCountForDelete: number;
+  deleteRefsLoading: boolean;
 }
 
 export function IngredientsTabLayout(props: LayoutProps) {
@@ -59,6 +60,7 @@ export function IngredientsTabLayout(props: LayoutProps) {
           variantActions={props.variantActions}
           blockers={props.blockers}
           recipeRefCountForDelete={props.recipeRefCountForDelete}
+          deleteRefsLoading={props.deleteRefsLoading}
         />
       ) : null}
     </div>
@@ -73,7 +75,12 @@ function FocusNotFoundBanner({ slug, onDismiss }: { slug: string; onDismiss: () 
       className="flex items-center justify-between gap-2 rounded border border-amber-500/40 bg-amber-50 p-2 text-sm"
     >
       <span>{t('data.ingredients.focus.notFound', { slug })}</span>
-      <Button size="sm" variant="ghost" onClick={onDismiss}>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={onDismiss}
+        aria-label={t('data.ingredients.focus.dismiss')}
+      >
         ✕
       </Button>
     </div>

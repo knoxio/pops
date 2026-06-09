@@ -49,11 +49,11 @@ export function IngredientsTabContents() {
   const selectedRow = getSelectedRow(state);
   const ingredientActions = useIngredientActions(selectedRow === null ? null : selectedRow.id);
   const variantActions = useVariantActions(selectedRow === null ? null : selectedRow.id);
-  const blockersQuery = useBlockersQuery({
+  const blockers = useBlockersQuery({
     ingredient: selectedRow,
     deleteOpen: ingredientActions.open.delete,
   });
-  const recipeRefCountForDelete = useRecipeRefCount(
+  const recipeRefs = useRecipeRefCount(
     selectedRow === null ? null : selectedRow.id,
     ingredientActions.open.delete
   );
@@ -69,8 +69,9 @@ export function IngredientsTabContents() {
       ingredientActions={ingredientActions}
       variantActions={variantActions}
       focused={focused}
-      blockers={blockersQuery.data ?? null}
-      recipeRefCountForDelete={recipeRefCountForDelete}
+      blockers={blockers.data}
+      recipeRefCountForDelete={recipeRefs.count}
+      deleteRefsLoading={blockers.isLoading || recipeRefs.isLoading}
     />
   );
 }

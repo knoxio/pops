@@ -22,6 +22,13 @@ interface Props {
   recipeRefCount: number;
   hasOtherFkRefs: boolean;
   isSubmitting: boolean;
+  /**
+   * True while the blockers + recipeRefs queries are in-flight. We default
+   * the counts to zero before they resolve, so the destructive button has
+   * to stay disabled during this window — otherwise the user can fire a
+   * delete that the server then rejects with a generic CONFLICT.
+   */
+  isResolvingRefs: boolean;
   errorMessage: string | null;
   onCancel: () => void;
   onConfirm: () => void;
@@ -85,61 +92,86 @@ function BlockerList(props: BlockerListProps) {
   );
 }
 
-export function DeleteIngredientDialog({
-  open,
-  ingredient,
-  blockers,
-  recipeRefCount,
-  hasOtherFkRefs,
-  isSubmitting,
-  errorMessage,
-  onCancel,
-  onConfirm,
-}: Props) {
-  const { t } = useTranslation('food');
-  const isBlocked =
-    (blockers?.variants ?? 0) > 0 ||
-    (blockers?.aliases ?? 0) > 0 ||
-    recipeRefCount > 0 ||
-    hasOtherFkRefs;
-
+function isDeleteBlocked(props: Pick<Props, 'blockers' | 'recipeRefCount' | 'hasOtherFkRefs'>) {
   return (
-    <Dialog open={open} onOpenChange={(next) => (next ? null : onCancel())}>
+    (props.blockers?.variants ?? 0) > 0 ||
+    (props.blockers?.aliases ?? 0) > 0 ||
+    props.recipeRefCount > 0 ||
+    props.hasOtherFkRefs
+  );
+}
+
+export function DeleteIngredientDialog(props: Props) {
+  const { t } = useTranslation('food');
+  // Stay disabled while either reference-count query is still in flight —
+  // otherwise the user can hit Delete during the window where defaults
+  // make `isBlocked === false` even though refs actually exist.
+  const confirmDisabled = props.isSubmitting || props.isResolvingRefs || isDeleteBlocked(props);
+  return (
+    <Dialog open={props.open} onOpenChange={(next) => (next ? null : props.onCancel())}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('data.ingredients.delete.title')}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-sm">
-            {t('data.ingredients.delete.confirmPrompt', { name: ingredient.name })}
-          </p>
-          <BlockerList
-            blockers={blockers}
-            recipeRefCount={recipeRefCount}
-            hasOtherFkRefs={hasOtherFkRefs}
-          />
-          {errorMessage !== null ? (
-            <p role="alert" className="text-destructive text-sm">
-              {errorMessage}
-            </p>
-          ) : null}
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            {t('data.ingredients.actions.cancel')}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={isSubmitting || isBlocked}
-            onClick={onConfirm}
-          >
-            {isSubmitting
-              ? t('data.ingredients.actions.deleting')
-              : t('data.ingredients.delete.submit')}
-          </Button>
-        </DialogFooter>
+        <DeleteBody {...props} />
+        <DeleteFooter
+          confirmDisabled={confirmDisabled}
+          isSubmitting={props.isSubmitting}
+          onCancel={props.onCancel}
+          onConfirm={props.onConfirm}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DeleteBody(props: Props) {
+  const { t } = useTranslation('food');
+  return (
+    <div className="space-y-4">
+      <p className="text-sm">
+        {t('data.ingredients.delete.confirmPrompt', { name: props.ingredient.name })}
+      </p>
+      {props.isResolvingRefs ? (
+        <p className="text-muted-foreground text-sm">{t('data.ingredients.loading')}</p>
+      ) : (
+        <BlockerList
+          blockers={props.blockers}
+          recipeRefCount={props.recipeRefCount}
+          hasOtherFkRefs={props.hasOtherFkRefs}
+        />
+      )}
+      {props.errorMessage !== null ? (
+        <p role="alert" className="text-destructive text-sm">
+          {props.errorMessage}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function DeleteFooter({
+  confirmDisabled,
+  isSubmitting,
+  onCancel,
+  onConfirm,
+}: {
+  confirmDisabled: boolean;
+  isSubmitting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useTranslation('food');
+  return (
+    <DialogFooter>
+      <Button type="button" variant="outline" onClick={onCancel}>
+        {t('data.ingredients.actions.cancel')}
+      </Button>
+      <Button type="button" variant="destructive" disabled={confirmDisabled} onClick={onConfirm}>
+        {isSubmitting
+          ? t('data.ingredients.actions.deleting')
+          : t('data.ingredients.delete.submit')}
+      </Button>
+    </DialogFooter>
   );
 }
