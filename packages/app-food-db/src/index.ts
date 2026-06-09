@@ -74,3 +74,66 @@ export type {
   HydratedEndpoint,
   HydratedSubstitutionView,
 } from './services/substitutions-hydrate.js';
+
+// DSL pipeline — PRDs 114 (parser), 115 (resolver), 117 (cycle), 116 (compile),
+// 123 (normalisation). Lived in `@pops/app-food/src/dsl/` until PRD-119 moved
+// them here so `pops-api` can call compile / parse without dragging React +
+// CodeMirror into the API bundle. `@pops/app-food` re-exports the same names
+// for backwards compat (consumers like the editor + seed test fixtures keep
+// their existing import paths).
+export type {
+  AstBlock,
+  Descriptor,
+  IngredientBlock,
+  MarkdownBlock,
+  QtyUnit,
+  RecipeAst,
+  RecipeHeader,
+  RecipeTypeLiteral,
+  SourceSpan,
+  StepBlock,
+  StepBody,
+  StepBodyPart,
+  YieldDecl,
+} from './dsl/ast.js';
+export type { ParseError, ParseErrorCode } from './dsl/errors.js';
+export { parseRecipeDsl, type ParseResult } from './dsl/parser.js';
+export { printRecipeAst } from './dsl/printer.js';
+export { resolveRecipeAst } from './dsl/resolver.js';
+export type {
+  ProposedSlug,
+  ResolveContext,
+  ResolveError,
+  ResolveErrorCode,
+  ResolveResult,
+  ResolvedBlock,
+  ResolvedIngredientBlock,
+  ResolvedMarkdownBlock,
+  ResolvedRecipeAst,
+  ResolvedStepBlock,
+  ResolvedStepBody,
+  ResolvedStepBodyPart,
+  ResolvedYield,
+  ResolverCreation,
+} from './dsl/resolver-types.js';
+export { detectRecipeCycle } from './dsl/cycle.js';
+export type { CycleContext, CycleDescription, CycleError, CycleResult } from './dsl/cycle-types.js';
+export { compileRecipeVersion } from './dsl/compile.js';
+export type {
+  CompileError,
+  CompileErrorJson,
+  CompilePhase,
+  CompileResult,
+  MaterialiseError,
+} from './dsl/compile-types.js';
+export { normaliseLineQty } from './dsl/normalisation.js';
+
+// Wire-shape types consumed by both PRD-121's `RecipeRenderer` and PRD-119's
+// `food.recipes.getForRendering` server procedure. Pure types — keep here so
+// the server side stays free of any `@pops/app-food` (React) import.
+export type {
+  RecipeLineWithResolved,
+  RecipeRendererProps,
+  RecipeRendererVariant,
+  RecipeVersionWithCompiledData,
+} from './recipe-renderer-types.js';

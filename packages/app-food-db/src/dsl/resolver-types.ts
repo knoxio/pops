@@ -1,6 +1,15 @@
-import type { FoodDb } from '@pops/app-food-db';
-
-import type { QtyUnit, RecipeHeader, SourceSpan } from './ast';
+import type { FoodDb } from '../services/internal.js';
+/**
+ * Resolver types — PRD-115.
+ *
+ * The resolver takes a parser AST (PRD-114) and turns slug references into
+ * entity IDs by reading `slug_registry` and the per-parent variant table
+ * (PRD-106). PRD-116's compiler consumes the result.
+ *
+ * Pure types — no runtime code, so this file can be re-imported by the
+ * package barrel without pulling in DB code.
+ */
+import type { QtyUnit, RecipeHeader, SourceSpan } from './ast.js';
 
 export interface ResolveContext {
   /** Drizzle handle; used only for read-only lookups. */
@@ -24,8 +33,9 @@ export type ResolveResult =
       ok: false;
       /**
        * Partial AST — known slugs / indexes are filled in; unresolved or
-       * wrong-kind references carry `null` ids. Callers can still render
-       * the structure while flagging the per-line errors.
+       * wrong-kind references carry `null` ids. Callers (the Epic 03
+       * inbox renderer, error UIs) can still render the structure while
+       * flagging the per-line errors.
        */
       resolved: ResolvedRecipeAst;
       errors: readonly ResolveError[];
@@ -40,7 +50,7 @@ export interface ResolvedRecipeAst {
 }
 
 export interface ResolvedYield {
-  /** Null while the yield slug is auto-created — compile fills it in. */
+  /** Null while the yield slug is auto-created — PRD-116 fills it in. */
   yieldIngredientId: number | null;
   yieldVariantId: number | null;
   yieldPrepStateId: number | null;
@@ -53,7 +63,7 @@ export type ResolvedBlock = ResolvedIngredientBlock | ResolvedStepBlock | Resolv
 export interface ResolvedIngredientBlock {
   kind: 'ingredient';
   index: number;
-  /** Null while auto-created — compile fills it in. */
+  /** Null while auto-created — PRD-116 fills it in. */
   ingredientId: number | null;
   variantId: number | null;
   prepStateId: number | null;

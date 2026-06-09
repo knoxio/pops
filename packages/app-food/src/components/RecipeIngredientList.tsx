@@ -4,7 +4,7 @@ import { cn } from '@pops/ui';
 
 import { formatQty, lineAnchorId, lineCanonicalQty } from './RecipeRenderer.helpers';
 
-import type { RecipeLineWithResolved } from './RecipeRenderer.types';
+import type { RecipeLineWithResolved } from '@pops/app-food-db';
 
 /**
  * Each `<li>` carries an `id` derived from the line's `position` so step

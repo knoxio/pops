@@ -1,6 +1,5 @@
+import type { RecipeLineWithResolved } from '@pops/app-food-db';
 import type { IngredientRow, IngredientVariantRow, PrepStateRow } from '@pops/db-types';
-
-import type { RecipeLineWithResolved } from './RecipeRenderer.types';
 
 /**
  * `scaleFactor=0` or negative is clamped to 1.0. Fractional / large scales

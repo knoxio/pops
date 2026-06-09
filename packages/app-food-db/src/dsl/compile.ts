@@ -6,35 +6,33 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { recipeLines, recipeSteps, recipeVersions } from '@pops/app-food-db';
-
-import { applyCreations } from './compile-creations';
+import { recipeLines, recipeSteps, recipeVersions } from '../schema.js';
+import { applyCreations } from './compile-creations.js';
 import {
   failCycle,
   failParse,
   failResolve,
   persistProposedSlugs,
   updateHeader,
-} from './compile-finalise';
+} from './compile-finalise.js';
 import {
   buildIngredientDefaultUnitLookup,
   buildIngredientSlugLookup,
   buildLineLabels,
   serialiseSourceDescriptor,
-} from './compile-helpers';
-import { buildLineInsert } from './compile-lines';
-import { failMaterialise } from './compile-materialise-fail';
-import { buildStepInsert } from './compile-steps';
-import { detectRecipeCycle } from './cycle';
-import { parseRecipeDsl } from './parser';
-import { resolveRecipeAst } from './resolver';
+} from './compile-helpers.js';
+import { buildLineInsert } from './compile-lines.js';
+import { failMaterialise } from './compile-materialise-fail.js';
+import { buildStepInsert } from './compile-steps.js';
+import { detectRecipeCycle } from './cycle.js';
+import { parseRecipeDsl } from './parser.js';
+import { resolveRecipeAst } from './resolver.js';
 
-import type { FoodDb } from '@pops/app-food-db';
-
-import type { IngredientBlock, RecipeAst } from './ast';
-import type { RenderContext } from './compile-md';
-import type { CompileResult } from './compile-types';
-import type { ResolvedRecipeAst } from './resolver-types';
+import type { FoodDb } from '../services/internal.js';
+import type { IngredientBlock, RecipeAst } from './ast.js';
+import type { RenderContext } from './compile-md.js';
+import type { CompileResult } from './compile-types.js';
+import type { ResolvedRecipeAst } from './resolver-types.js';
 
 export function compileRecipeVersion(versionId: number, db: FoodDb): CompileResult {
   try {

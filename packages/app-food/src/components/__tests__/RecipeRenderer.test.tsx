@@ -13,7 +13,7 @@ import {
 } from '../RecipeRenderer.helpers';
 import { ingredientBanana, makeLine, makeRecipeData, yieldIngredientPancake } from './fixtures';
 
-import type { ResolvedStepBody } from '../../dsl/resolver-types';
+import type { ResolvedStepBody } from '@pops/app-food-db';
 
 describe('PRD-121 — RecipeRenderer helpers', () => {
   it('clampScaleFactor passes valid scales through', () => {

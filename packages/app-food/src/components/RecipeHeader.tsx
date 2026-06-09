@@ -5,7 +5,7 @@ import { Badge } from '@pops/ui';
 
 import { buildYieldLabel, formatQty } from './RecipeRenderer.helpers';
 
-import type { RecipeVersionWithCompiledData } from './RecipeRenderer.types';
+import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
 
 /**
  * Renders the page-level header for `variant='detail'` — title, version

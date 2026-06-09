@@ -1,0 +1,66 @@
+/**
+ * Map typed PRD-107 / PRD-116 errors → TRPCError or structured results.
+ */
+import { TRPCError } from '@trpc/server';
+
+import {
+  CannotEditPublishedVersion,
+  CannotPromoteUncompiledVersion,
+  ConcurrentPromotion,
+  SlugAlreadyRegisteredError,
+} from '@pops/app-food-db';
+
+import type { PromoteReason, PromoteResult } from './types.js';
+
+export class MissingRecipeHeaderError extends Error {
+  constructor() {
+    super('DSL is missing an @recipe(slug=...) header');
+    this.name = 'MissingRecipeHeaderError';
+  }
+}
+
+/**
+ * Map a create-recipe failure to a TRPCError. `MissingRecipeHeader` is the
+ * editor's most common rejection — it gets BAD_REQUEST with a `cause` so the
+ * client can show the underlying parse-error span when surfacing the error
+ * inline.
+ */
+export function mapCreateRecipeError(err: unknown): never {
+  if (err instanceof MissingRecipeHeaderError) {
+    throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err });
+  }
+  if (err instanceof SlugAlreadyRegisteredError) {
+    throw new TRPCError({ code: 'CONFLICT', message: err.message, cause: err });
+  }
+  throw err as Error;
+}
+
+/**
+ * `saveDraft` operates only on draft rows; published/archived rows reject
+ * with a typed `CannotEditPublishedVersion`.
+ */
+export function mapSaveDraftError(err: unknown): never {
+  if (err instanceof CannotEditPublishedVersion) {
+    throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err });
+  }
+  throw err as Error;
+}
+
+/**
+ * `promote` returns a discriminated result instead of throwing because the
+ * editor surfaces the reason inline (banner / toast) rather than blowing up
+ * the page. All three failure modes are user-actionable.
+ */
+export function promoteFailure(reason: PromoteReason): PromoteResult {
+  return { ok: false, reason };
+}
+
+export function mapPromoteError(err: unknown): PromoteResult | never {
+  if (err instanceof ConcurrentPromotion) {
+    return promoteFailure('ConcurrentPromotion');
+  }
+  if (err instanceof CannotPromoteUncompiledVersion) {
+    return promoteFailure('CannotPromoteUncompiledVersion');
+  }
+  throw err as Error;
+}

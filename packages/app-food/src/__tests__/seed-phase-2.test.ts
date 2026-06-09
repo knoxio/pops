@@ -34,12 +34,11 @@ import {
   recipes,
   unitConversions,
 } from '@pops/app-food-db';
+import { compileRecipeVersion } from '@pops/app-food-db';
+import { detectRecipeCycle } from '@pops/app-food-db';
+import { parseRecipeDsl } from '@pops/app-food-db';
+import { resolveRecipeAst } from '@pops/app-food-db';
 import { seedFood, type SeedFoodSummary } from '@pops/app-food-db/seed';
-
-import { compileRecipeVersion } from '../dsl/compile';
-import { detectRecipeCycle } from '../dsl/cycle';
-import { parseRecipeDsl } from '../dsl/parser';
-import { resolveRecipeAst } from '../dsl/resolver';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

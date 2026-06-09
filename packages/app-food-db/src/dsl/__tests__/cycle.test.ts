@@ -15,17 +15,14 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  ingredientsService,
-  recipesService,
-  recipeVersions,
-  recipeVersionsService,
-  type FoodDb,
-} from '@pops/app-food-db';
+import { recipeVersions } from '../../schema.js';
+import * as ingredientsService from '../../services/ingredients.js';
+import { type FoodDb } from '../../services/internal.js';
+import * as recipeVersionsService from '../../services/recipe-versions.js';
+import * as recipesService from '../../services/recipes.js';
+import { detectRecipeCycle } from '../cycle.js';
 
-import { detectRecipeCycle } from '../cycle';
-
-import type { ResolvedIngredientBlock, ResolvedRecipeAst } from '../resolver-types';
+import type { ResolvedIngredientBlock, ResolvedRecipeAst } from '../resolver-types.js';
 
 const { createIngredient } = ingredientsService;
 const { promoteVersion } = recipeVersionsService;

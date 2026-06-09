@@ -14,18 +14,15 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  ingredientsService,
-  prepStatesService,
-  recipesService,
-  recipeVersions,
-  recipeVersionsService,
-  variantsService,
-  type FoodDb,
-} from '@pops/app-food-db';
-
-import { parseRecipeDsl } from '../parser';
-import { resolveRecipeAst } from '../resolver';
+import { recipeVersions } from '../../schema.js';
+import * as ingredientsService from '../../services/ingredients.js';
+import { type FoodDb } from '../../services/internal.js';
+import * as prepStatesService from '../../services/prep-states.js';
+import * as recipeVersionsService from '../../services/recipe-versions.js';
+import * as recipesService from '../../services/recipes.js';
+import * as variantsService from '../../services/variants.js';
+import { parseRecipeDsl } from '../parser.js';
+import { resolveRecipeAst } from '../resolver.js';
 
 const { createIngredient } = ingredientsService;
 const { createPrepState } = prepStatesService;
@@ -37,7 +34,7 @@ import type {
   ResolveResult,
   ResolvedIngredientBlock,
   ResolvedStepBlock,
-} from '../resolver-types';
+} from '../resolver-types.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

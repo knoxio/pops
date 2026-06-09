@@ -12,14 +12,11 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  conversionsService,
-  ingredientsService,
-  variantsService,
-  type FoodDb,
-} from '@pops/app-food-db';
-
-import { normaliseLineQty } from '../normalisation';
+import * as conversionsService from '../../services/conversions.js';
+import * as ingredientsService from '../../services/ingredients.js';
+import { type FoodDb } from '../../services/internal.js';
+import * as variantsService from '../../services/variants.js';
+import { normaliseLineQty } from '../normalisation.js';
 
 const { createIngredientWeight, createUnitConversion } = conversionsService;
 const { createIngredient } = ingredientsService;
