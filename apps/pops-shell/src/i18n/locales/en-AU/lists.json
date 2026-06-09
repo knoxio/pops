@@ -6,5 +6,74 @@
   "browse.description": "Open an existing list to add, check off, or reorder items.",
   "newList.title": "New list",
   "newList.description": "Start a shopping, packing, or generic list from scratch.",
-  "status.comingSoon": "Coming soon"
+  "status.comingSoon": "Coming soon",
+  "detail": {
+    "loading": "Loading list…",
+    "error": "Could not load this list.",
+    "notFound": "List not found.",
+    "empty": "No items yet. Type a label below and press Enter.",
+    "archivedBadge": "Archived",
+    "kind": {
+      "shopping": "Shopping",
+      "packing": "Packing",
+      "todo": "Todo",
+      "generic": "Generic"
+    },
+    "menu": {
+      "label": "List actions",
+      "rename": "Rename",
+      "changeKind": "Change kind",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete…"
+    },
+    "edit": {
+      "title": "Edit list",
+      "name": "Name",
+      "kind": "Kind",
+      "kindWarning": "Changing kind may hide or show affordances. Items aren't modified.",
+      "nameRequired": "Name is required.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "delete": {
+      "title": "Delete list?",
+      "body": "Permanently delete \"{{name}}\" and its {{count}} item(s)? This can't be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete list",
+      "pending": "Deleting…"
+    },
+    "errors": {
+      "update": "Could not save changes."
+    },
+    "add": {
+      "placeholder": "Add item — press Enter",
+      "qty": "Qty",
+      "unit": "Unit",
+      "submit": "Add",
+      "showOptional": "+ qty / unit",
+      "hideOptional": "Hide qty / unit"
+    },
+    "item": {
+      "checkbox": "Toggle done for {{label}}",
+      "editLabel": "Edit item label",
+      "dragHandle": "Drag to reorder",
+      "unnamed": "(unnamed)",
+      "ref": {
+        "ingredient": "Ingredient",
+        "variant": "Variant",
+        "recipe": "Recipe",
+        "custom": "Custom",
+        "free": "Free"
+      },
+      "menu": {
+        "label": "Item actions",
+        "edit": "Edit",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "delete": "Delete"
+      }
+    }
+  }
 }

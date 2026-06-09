@@ -30,6 +30,11 @@ describe('PRD-139 — app-lists module manifest', () => {
     expect(routes[0]).toMatchObject({ index: true });
   });
 
+  it('exposes a /:id route for the detail page (PRD-140-C)', () => {
+    const detail = routes.find((r) => 'path' in r && r.path === ':id');
+    expect(detail).toBeDefined();
+  });
+
   it('does NOT yet declare a backend slot (PRD-140 fills it)', () => {
     expect(manifest.backend).toBeUndefined();
   });

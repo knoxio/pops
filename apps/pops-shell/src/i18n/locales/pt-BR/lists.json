@@ -6,5 +6,74 @@
   "browse.description": "Abra uma lista existente para adicionar, marcar ou reordenar itens.",
   "newList.title": "Nova lista",
   "newList.description": "Comece uma lista de compras, viagem ou genérica do zero.",
-  "status.comingSoon": "Em breve"
+  "status.comingSoon": "Em breve",
+  "detail": {
+    "loading": "Carregando lista…",
+    "error": "Não foi possível carregar esta lista.",
+    "notFound": "Lista não encontrada.",
+    "empty": "Sem itens ainda. Digite um rótulo abaixo e pressione Enter.",
+    "archivedBadge": "Arquivada",
+    "kind": {
+      "shopping": "Compras",
+      "packing": "Viagem",
+      "todo": "Tarefas",
+      "generic": "Genérica"
+    },
+    "menu": {
+      "label": "Ações da lista",
+      "rename": "Renomear",
+      "changeKind": "Mudar tipo",
+      "archive": "Arquivar",
+      "restore": "Restaurar",
+      "delete": "Excluir…"
+    },
+    "edit": {
+      "title": "Editar lista",
+      "name": "Nome",
+      "kind": "Tipo",
+      "kindWarning": "Mudar o tipo pode ocultar ou exibir recursos. Os itens não são modificados.",
+      "nameRequired": "O nome é obrigatório.",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando…"
+    },
+    "delete": {
+      "title": "Excluir lista?",
+      "body": "Excluir permanentemente \"{{name}}\" e seus {{count}} item(ns)? Não pode ser desfeito.",
+      "cancel": "Cancelar",
+      "confirm": "Excluir lista",
+      "pending": "Excluindo…"
+    },
+    "errors": {
+      "update": "Não foi possível salvar as alterações."
+    },
+    "add": {
+      "placeholder": "Adicionar item — pressione Enter",
+      "qty": "Qtd",
+      "unit": "Unid.",
+      "submit": "Adicionar",
+      "showOptional": "+ qtd / unid.",
+      "hideOptional": "Ocultar qtd / unid."
+    },
+    "item": {
+      "checkbox": "Alternar concluído para {{label}}",
+      "editLabel": "Editar rótulo do item",
+      "dragHandle": "Arrastar para reordenar",
+      "unnamed": "(sem nome)",
+      "ref": {
+        "ingredient": "Ingrediente",
+        "variant": "Variante",
+        "recipe": "Receita",
+        "custom": "Personalizado",
+        "free": "Livre"
+      },
+      "menu": {
+        "label": "Ações do item",
+        "edit": "Editar",
+        "moveUp": "Mover para cima",
+        "moveDown": "Mover para baixo",
+        "delete": "Excluir"
+      }
+    }
+  }
 }

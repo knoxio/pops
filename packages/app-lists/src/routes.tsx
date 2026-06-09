@@ -6,6 +6,10 @@ const ListsLandingPage = lazy(() =>
   import('./pages/ListsLandingPage').then((m) => ({ default: m.ListsLandingPage }))
 );
 
+const ListDetailPage = lazy(() =>
+  import('./pages/ListDetailPage').then((m) => ({ default: m.ListDetailPage }))
+);
+
 /**
  * Local type mirror for compile-time safety (shell owns the canonical types).
  *
@@ -41,4 +45,7 @@ export const navConfig = {
   ],
 } satisfies AppNavConfigShape;
 
-export const routes: RouteObject[] = [{ index: true, element: <ListsLandingPage /> }];
+export const routes: RouteObject[] = [
+  { index: true, element: <ListsLandingPage /> },
+  { path: ':id', element: <ListDetailPage /> },
+];

@@ -244,9 +244,9 @@ Inline per theme protocol.
 
 ### Routes
 
-- [ ] All routes from the table mounted in `packages/app-lists/src/routes.tsx`.
-- [ ] Modals overlay the parent route; URL params `?new=1` and `?edit=1` work; closing returns to the parent.
-- [ ] Direct nav to a modal URL (e.g. `/lists/5?edit=1`) renders parent + modal.
+- [~] All routes from the table mounted in `packages/app-lists/src/routes.tsx`. — `/lists/:id` landed in 140-C; `/lists` is still PRD-139's placeholder until 140-B replaces it with the real index.
+- [ ] Modals overlay the parent route; URL params `?new=1` and `?edit=1` work; closing returns to the parent. — **Deferred to 140-B.** 140-C uses local component state for the edit + delete dialogs since the parent route (`/lists` index) is the modal host per the react-router-v6 nested-route plan; wiring `?edit=1` before 140-B exists would couple the detail page to a non-existent parent route. 140-B will introduce the parent layout + URL-param state and 140-C's modals will be re-wired then.
+- [ ] Direct nav to a modal URL (e.g. `/lists/5?edit=1`) renders parent + modal. — **Deferred to 140-B** (same reason).
 
 ### Index page
 
@@ -257,20 +257,20 @@ Inline per theme protocol.
 
 ### Detail page
 
-- [ ] Header shows name, kind chip, three-dot menu.
-- [ ] Item list renders ordered by `position ASC, id ASC`.
-- [ ] Inline add form: Enter submits + clears; mobile add button works.
-- [ ] Per-item: checkbox, label, optional sub-line, three-dot menu.
-- [ ] Drag-to-reorder works on desktop and mobile.
-- [ ] Inline label edit works (click → input → Enter saves; Esc cancels).
-- [ ] Polling refetches `list.get` every 60s while page is visible.
+- [x] Header shows name, kind chip, three-dot menu. (140-C)
+- [x] Item list renders ordered by `position ASC, id ASC`. (140-C — backed by `lists.list.get` which sorts via `listItemsForList`)
+- [x] Inline add form: Enter submits + clears; mobile add button works. (140-C)
+- [x] Per-item: checkbox, label, optional sub-line, three-dot menu. (140-C)
+- [x] Drag-to-reorder works on desktop and mobile. (140-C — `@dnd-kit/sortable` with PointerSensor + 200ms TouchSensor delay)
+- [x] Inline label edit works (click → input → Enter saves; Esc cancels). (140-C)
+- [x] Polling refetches `list.get` every 60s while page is visible. (140-C — `refetchInterval: 60_000, refetchIntervalInBackground: false`)
 
 ### Modals
 
-- [ ] Create modal validates non-empty name; defaults kind to `shopping`; calls `lists.list.create`.
-- [ ] Edit modal pre-fills; rename works; kind change works with warning.
-- [ ] Edit modal has Archive / Restore button.
-- [ ] Delete confirm dialog requires explicit confirm; cancels safely.
+- [ ] Create modal validates non-empty name; defaults kind to `shopping`; calls `lists.list.create`. — Lives on the index page; ships with 140-B.
+- [x] Edit modal pre-fills; rename works; kind change works with warning. (140-C — local-state modal; URL-param wiring deferred to 140-B per the Routes section above)
+- [x] Edit modal has Archive / Restore button. (140-C)
+- [x] Delete confirm dialog requires explicit confirm; cancels safely. (140-C)
 
 ### tRPC procedures
 
@@ -292,9 +292,9 @@ Inline per theme protocol.
 
 ### Tests
 
-- [ ] Vitest + RTL at `packages/app-lists/src/pages/__tests__/*.test.tsx` covers each page.
+- [~] Vitest + RTL at `packages/app-lists/src/pages/__tests__/*.test.tsx` covers each page. — Detail page covered by `ListDetailPage.test.tsx` (140-C); index page coverage lands with 140-B.
 - [x] Vitest integration at `apps/pops-api/src/modules/lists/__tests__/lists-router.test.ts` covers each procedure.
-- [ ] E2E: create list → add 3 items → check one → reorder → archive → restore.
+- [ ] E2E: create list → add 3 items → check one → reorder → archive → restore. — Spans index + detail; lands with 140-B once the index page exists.
 
 ## Out of Scope
 
