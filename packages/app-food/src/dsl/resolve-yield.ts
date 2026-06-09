@@ -56,8 +56,11 @@ function resolveYieldHead(ctx: YieldCtx): number | null {
   if (reg.kind === 'recipe') {
     return resolveYieldFromRecipe(ctx, reg.targetId);
   }
+  // prep_state in the yield head slot is a kind-mismatch, not an unresolved
+  // ingredient — PRD-115 reserves UnresolvedYieldIngredient for genuine
+  // failure-to-resolve cases.
   state.errors.push({
-    code: 'UnresolvedYieldIngredient',
+    code: 'WrongKindForContext',
     message: `@yield slug "${slug}" resolves to a ${reg.kind}; expected an ingredient or recipe`,
     loc,
     slug,

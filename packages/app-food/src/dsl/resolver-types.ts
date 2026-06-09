@@ -31,6 +31,13 @@ export type ResolveResult =
     }
   | {
       ok: false;
+      /**
+       * Partial AST — known slugs / indexes are filled in; unresolved or
+       * wrong-kind references carry `null` ids. Callers (the Epic 03
+       * inbox renderer, error UIs) can still render the structure while
+       * flagging the per-line errors.
+       */
+      resolved: ResolvedRecipeAst;
       errors: readonly ResolveError[];
       creations: readonly ResolverCreation[];
       proposedSlugs: readonly ProposedSlug[];

@@ -134,15 +134,28 @@ function lookupSlugForStepRef(
     return emptyRef();
   }
   if (reg.kind === 'prep_state') {
+    // Step body refs treat any non-ingredient/recipe target as unresolved —
+    // per PRD-115, the consistent error code for a step-body @slug failure
+    // is UnresolvedStepRefSlug, paired with a proposedSlugs hint.
     state.errors.push({
-      code: 'WrongKindForContext',
-      message: `step body @${slug} resolves to prep_state; expected ingredient or recipe`,
+      code: 'UnresolvedStepRefSlug',
+      message: `@${slug} in step body resolves to a prep_state; expected an ingredient or recipe`,
       loc,
       slug,
     });
+    state.proposedSlugs.push({ slug, fromLoc: loc, suggestedKind: 'ingredient' });
     return emptyRef();
   }
   if (reg.kind === 'recipe') {
+    if (state.ctx.currentRecipeId !== undefined && state.ctx.currentRecipeId === reg.targetId) {
+      state.errors.push({
+        code: 'SelfReferenceRecipe',
+        message: `@${slug} in step body is a self-reference to the current recipe`,
+        loc,
+        slug,
+      });
+      return emptyRef();
+    }
     const ry = lookupRecipeYield(state.ctx.db, reg.targetId);
     return {
       kind: 'ref',

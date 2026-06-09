@@ -245,6 +245,16 @@ describe('PRD-115 — resolver: error codes', () => {
     expect(errorCodes(result)).toContain('WrongKindForContext');
   });
 
+  it('WrongKindForContext — prep slug as yield head', () => {
+    const ast = parse(`@recipe(slug="x", title="X")
+@yield(mashed, 1:count)
+@ingredient(1, banana, 1:count)
+@step("Use @1.")
+`);
+    const result = resolveRecipeAst(ast, { db });
+    expect(errorCodes(result)).toContain('WrongKindForContext');
+  });
+
   it('UnresolvedStepRefIndex — @N in step body with no matching block', () => {
     const ast = parse(`@recipe(slug="x", title="X")
 @yield(banana, 1:count)
@@ -344,5 +354,12 @@ describe('PRD-115 — resolver: mixed path', () => {
     expect(result.proposedSlugs.map((p) => p.slug).toSorted()).toEqual(
       ['also-never-heard', 'never-heard'].toSorted()
     );
+    // Even on error, a partial AST is returned so callers (inbox renderer,
+    // error UIs) can show structure with the resolved bits filled in.
+    expect(result.resolved.blocks).toHaveLength(3);
+    const ing2 = result.resolved.blocks.find(
+      (b): b is ResolvedIngredientBlock => b.kind === 'ingredient' && b.index === 2
+    );
+    expect(ing2?.ingredientId).not.toBeNull();
   });
 });

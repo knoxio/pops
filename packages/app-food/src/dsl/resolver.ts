@@ -54,6 +54,7 @@ export function resolveRecipeAst(ast: RecipeAst, ctx: ResolveContext): ResolveRe
   if (state.errors.length > 0) {
     return {
       ok: false,
+      resolved,
       errors: state.errors,
       creations: state.creations,
       proposedSlugs: state.proposedSlugs,

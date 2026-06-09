@@ -28,6 +28,12 @@ export type ResolveResult =
     }
   | {
       ok: false;
+      /**
+       * Partial AST — known slugs / indexes filled in; unresolved /
+       * wrong-kind refs carry `null` ids. Lets the inbox renderer (Epic 03)
+       * draw structure with per-line errors layered on.
+       */
+      resolved: ResolvedRecipeAst;
       errors: ResolveError[];
       creations: ResolverCreation[];
       proposedSlugs: ProposedSlug[];
@@ -227,9 +233,9 @@ Inline per theme protocol.
 
 ### Tests
 
-- [x] Vitest suite at `packages/app-food/src/dsl/__tests__/resolver.test.ts` — 15 cases. Each `ResolveErrorCode` has a producing case except `AmbiguousSlug`, which is defensive (SQLite PK on `slug_registry` makes it unreachable).
+- [x] Vitest suite at `packages/app-food/src/dsl/__tests__/resolver.test.ts` — 16 cases. Each `ResolveErrorCode` has a producing case except `AmbiguousSlug`, which is defensive (SQLite PK on `slug_registry` makes it unreachable). Both `@ingredient` and `@yield` heads with a prep_state slug raise `WrongKindForContext` (kind-mismatch, not unresolved).
 - [x] Happy path: 3-ingredient recipe with known ingredients + a `banana:raw:mashed` descriptor + a step body `@N` ref resolves cleanly with no errors and no proposed slugs. (The PRD suggested 10 ingredients; scaled to 3 for focus — the surface coverage is the same.)
-- [x] Mixed path: a recipe with 2 unknown slugs (a prep_state + a step `@slug` ref) → `errors.length === 2` and `proposedSlugs.length === 2`, AST still produced.
+- [x] Mixed path: a recipe with 2 unknown slugs (a prep_state + a step `@slug` ref) → `errors.length === 2` and `proposedSlugs.length === 2`. **`ResolveResult` now includes `resolved` on both branches** so callers can render the partial AST alongside the errors. The mixed-path test asserts `result.resolved.blocks` is non-empty and the known ingredient block has a non-null `ingredientId`.
 - [x] Self-reference: `currentRecipeId` set to a seeded recipe's id with an `@ingredient` pointing at that recipe's slug returns `SelfReferenceRecipe`.
 - [x] Recipe-as-ingredient: a recipe with `current_version_id` set resolves cleanly through (seeded via `createRecipe` + `promoteVersion`); without it → `WrongKindForContext`.
 - [x] Variant scoping: `banana:raw` and `apple:raw` resolve to distinct `variantId`s (per-parent scope from PRD-106).
