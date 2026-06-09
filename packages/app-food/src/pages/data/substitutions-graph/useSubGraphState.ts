@@ -31,6 +31,10 @@ export interface SubGraphStateApi {
   selectNode: (node: SubGraphNode) => void;
   selectEdge: (edge: SubGraphEdge) => void;
   clearSelection: () => void;
+  /** Resets every filter + selection to the empty state — wired into the
+   * empty-state "Clear filters" button so over-filtered URLs can be
+   * recovered without manual editing. */
+  clearAllFilters: () => void;
 }
 
 export function useSubGraphState(): SubGraphStateApi {
@@ -79,19 +83,48 @@ export function useSubGraphState(): SubGraphStateApi {
     setSearchParams(next, { replace: false });
   }, [searchParams, setSearchParams]);
 
-  return { filters, queryInput, updateParam, selectNode, selectEdge, clearSelection };
+  const clearAllFilters = useCallback(() => {
+    setSearchParams(new URLSearchParams(), { replace: false });
+  }, [setSearchParams]);
+
+  return {
+    filters,
+    queryInput,
+    updateParam,
+    selectNode,
+    selectEdge,
+    clearSelection,
+    clearAllFilters,
+  };
+}
+
+const VALID_SCOPES: readonly SubGraphScope[] = ['global', 'recipe'];
+
+function parseScope(raw: string | null): SubGraphScope {
+  if (raw !== null && (VALID_SCOPES as readonly string[]).includes(raw)) {
+    return raw as SubGraphScope;
+  }
+  return 'global';
+}
+
+function parseRecipeId(raw: string | null): number | null {
+  if (raw === null || raw === '') return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function nonEmpty(raw: string | null): string | null {
+  return raw !== null && raw !== '' ? raw : null;
 }
 
 function readFilters(searchParams: URLSearchParams): SubGraphFilters {
-  const recipeIdParam = searchParams.get('recipeId');
-  const recipeId = recipeIdParam !== null && recipeIdParam !== '' ? Number(recipeIdParam) : null;
   return {
-    scope: (searchParams.get('scope') as SubGraphScope | null) ?? 'global',
-    recipeId,
-    contextTag: searchParams.get('contextTag'),
+    scope: parseScope(searchParams.get('scope')),
+    recipeId: parseRecipeId(searchParams.get('recipeId')),
+    contextTag: nonEmpty(searchParams.get('contextTag')),
     search: searchParams.get('q') ?? '',
-    focusedSlug: searchParams.get('node'),
-    focusedEdgeId: searchParams.get('edge'),
+    focusedSlug: nonEmpty(searchParams.get('node')),
+    focusedEdgeId: nonEmpty(searchParams.get('edge')),
   };
 }
 

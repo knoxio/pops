@@ -80,6 +80,7 @@ export function SubGraphPage(props: SubGraphPageProps = {}): React.ReactElement 
           onSelectNode={state.selectNode}
           onSelectEdge={state.selectEdge}
           onClearSelection={state.clearSelection}
+          onClearFilters={state.clearAllFilters}
           forceGraphRenderImpl={props.forceGraphRenderImpl}
         />
       )}

@@ -125,11 +125,40 @@ describe('food.substitutions.graphView', () => {
     });
   });
 
-  it('filters by scope; recipe scope requires recipeId', async () => {
+  it('filters by scope; recipe scope requires recipeId at the tRPC boundary', async () => {
     await seedCommonGraph();
     await expect(caller.food.substitutions.graphView({ scope: 'recipe' })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     });
+  });
+
+  it('filters by recipeId when scope=recipe + recipeId is provided', async () => {
+    const ids = await seedCommonGraph();
+    // Need a recipe to point the recipe-scoped sub at.
+    const recipe = await caller.food.ingredients.create({
+      slug: 'placeholder-ing',
+      name: 'placeholder',
+      defaultUnit: 'g',
+    });
+    // We don't have food.recipes.create exposed yet (PRD-119), but the
+    // recipe FK accepts any integer at the SQLite level for test purposes
+    // — insert directly via the DB handle so we can exercise the filter.
+    db.prepare("INSERT INTO recipes (id, slug, recipe_type) VALUES (?, ?, 'plate')").run(
+      99,
+      'cookie-recipe'
+    );
+    await caller.food.substitutions.create({
+      from: { ingredientId: ids.butterId },
+      to: { ingredientId: ids.oliveOilId },
+      scope: 'recipe',
+      recipeId: 99,
+    });
+    const view = await caller.food.substitutions.graphView({ scope: 'recipe', recipeId: 99 });
+    expect(view.edges).toHaveLength(1);
+    expect(view.edges[0]?.recipeId).toBe(99);
+    expect(view.edges[0]?.recipeSlug).toBe('cookie-recipe');
+    // unrelated dependency suppression: keep `recipe` referenced
+    expect(recipe?.slug).toBe('placeholder-ing');
   });
 
   it('honours PRD-109 wildcard semantics on contextTag filter', async () => {

@@ -14,7 +14,7 @@ This epic is **strictly read-only against the substitution graph** — CRUD live
 
 | #   | PRD                                                                                 | Summary                                                                                                                  | Status      |
 | --- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| 148 | [Substitution Graph Explorer](../prds/148-substitution-graph-explorer/README.md)    | `/food/data/substitutions/graph` — visual node-edge view; click a node → see all incoming/outgoing subs                  | Not started |
+| 148 | [Substitution Graph Explorer](../prds/148-substitution-graph-explorer/README.md)    | `/food/data/substitutions/graph` — visual node-edge view; click a node → see all incoming/outgoing subs                  | Partial     |
 | 149 | [Cook-Time Substitution Suggestions](../prds/149-cook-time-substitutions/README.md) | PRD-146 amendment — batch-override picker splits into Same-variant / Substitutions sections; ranks by ratio fit + expiry | Not started |
 | 150 | [What-Can-I-Cook Solver](../prds/150-cook-solver/README.md)                         | `/food/solve` page; deterministic cookable+ranking; consumes PRD-109 graph + PRD-108 batches; fridge-view entry button   | Not started |
 

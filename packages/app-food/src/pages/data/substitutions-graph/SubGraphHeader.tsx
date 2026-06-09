@@ -1,13 +1,17 @@
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 /**
  * Header controls for the PRD-148 substitution graph explorer.
  *
- * Pure presentation — owns no state. The parent page lifts scope /
- * contextTag / search into URL search params and passes the current
- * values + setters down. Keeps the page testable as a single component
- * tree without mocking child state.
+ * Scope toggle / context dropdown are controlled by URL state; the
+ * search input owns local state and debounces its URL-sync by 200ms
+ * (per PRD-148 spec) so per-keystroke typing doesn't churn the
+ * tRPC query or the browser history. Deep links land with the URL's
+ * `q` value pre-populated.
  */
 import { Link } from 'react-router';
+
+import { useDebouncedValue } from '@pops/ui';
 
 import type { SubGraphScope } from './types';
 
@@ -107,14 +111,55 @@ function FilterRow(props: FilterRowProps): React.ReactElement {
           ))}
         </select>
       </label>
-      <input
-        type="search"
-        value={props.search}
-        onChange={(e) => props.onSearchChange(e.target.value)}
-        placeholder={t('data.substitutions.graph.searchPlaceholder')}
-        className="border-input bg-background h-9 flex-1 rounded-md border px-3 text-sm"
-      />
+      <DebouncedSearchInput value={props.search} onChange={props.onSearchChange} />
     </div>
+  );
+}
+
+const SEARCH_DEBOUNCE_MS = 200;
+
+function DebouncedSearchInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (search: string) => void;
+}): React.ReactElement {
+  const { t } = useTranslation('food');
+  const [local, setLocal] = useState(value);
+  // `userTyping` distinguishes a `local` change driven by user keystrokes
+  // (which we want to debounce-emit) from a `local` change pushed in by
+  // the parent (deep link, Clear-filters reset, browser back). Without
+  // this flag, an externally-cleared URL would still receive a stale
+  // debounce fire that re-pushes the previously-typed value.
+  const userTyping = useRef(false);
+  // Re-sync local from the URL-driven prop whenever it changes. The
+  // setLocal + ref reset together ensure a stale debounce can't echo
+  // a pre-clear value back into the URL. React bails on setLocal when
+  // the value already matches, so an echo from our own debounce-emit
+  // (parent processes onChange → re-emits same prop) is a no-op.
+  useEffect(() => {
+    userTyping.current = false;
+    setLocal(value);
+  }, [value]);
+  const debounced = useDebouncedValue(local, SEARCH_DEBOUNCE_MS);
+  useEffect(() => {
+    if (userTyping.current && debounced !== value) {
+      userTyping.current = false;
+      onChange(debounced);
+    }
+  }, [debounced, value, onChange]);
+  return (
+    <input
+      type="search"
+      value={local}
+      onChange={(e) => {
+        userTyping.current = true;
+        setLocal(e.target.value);
+      }}
+      placeholder={t('data.substitutions.graph.searchPlaceholder')}
+      className="border-input bg-background h-9 flex-1 rounded-md border px-3 text-sm"
+    />
   );
 }
 

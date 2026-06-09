@@ -244,4 +244,52 @@ describe('SubGraphPage', () => {
     const link = screen.getByRole('link', { name: /view as table/i });
     expect(link).toHaveAttribute('href', '/food/data/substitutions');
   });
+
+  it('empty state surfaces a "Clear filters" action that resets URL params', async () => {
+    graphViewState.data = { nodes: [], edges: [] };
+    renderAt('/food/data/substitutions/graph?scope=global&contextTag=baking&q=butter');
+    const clear = screen.getByRole('button', { name: /clear filters/i });
+    expect(clear).toBeInTheDocument();
+    fireEvent.click(clear);
+    await waitFor(() => {
+      // After clearing, the filter pass-through (covered in another test)
+      // should see undefined contextTag + search.
+      expect(graphViewState.lastInput).toMatchObject({ scope: 'global' });
+      const input = graphViewState.lastInput as { contextTag?: string; search?: string };
+      expect(input.contextTag).toBeUndefined();
+      expect(input.search).toBeUndefined();
+    });
+  });
+
+  it('coerces invalid URL params to safe defaults', () => {
+    graphViewState.data = { nodes: [], edges: [] };
+    renderAt('/food/data/substitutions/graph?scope=bogus&recipeId=not-a-number&contextTag=');
+    // Bogus scope falls back to 'global'; NaN recipeId drops out; empty
+    // contextTag is treated as null and never reaches the query input.
+    expect(graphViewState.lastInput).toMatchObject({ scope: 'global' });
+    const input = graphViewState.lastInput as { recipeId?: number; contextTag?: string };
+    expect(input.recipeId).toBeUndefined();
+    expect(input.contextTag).toBeUndefined();
+  });
+
+  it('debounces the search input by 200ms before pushing it into the query', async () => {
+    vi.useFakeTimers();
+    graphViewState.data = { nodes: [], edges: [] };
+    renderAt('/food/data/substitutions/graph');
+    const searchBox = screen.getByPlaceholderText(/search ingredients/i);
+    fireEvent.change(searchBox, { target: { value: 'b' } });
+    fireEvent.change(searchBox, { target: { value: 'bu' } });
+    fireEvent.change(searchBox, { target: { value: 'but' } });
+    // No URL/query update should have fired yet — the input is local.
+    const before = graphViewState.lastInput as { search?: string };
+    expect(before.search).toBeUndefined();
+    // Advance past the 200ms debounce; the latest value should land.
+    vi.advanceTimersByTime(220);
+    await vi.runAllTimersAsync();
+    vi.useRealTimers();
+    await waitFor(() => {
+      const after = graphViewState.lastInput as { search?: string };
+      expect(after.search).toBe('but');
+    });
+  });
 });

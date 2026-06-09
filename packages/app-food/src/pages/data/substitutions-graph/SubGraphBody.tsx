@@ -27,6 +27,7 @@ export interface SubGraphBodyProps {
   onSelectNode: (node: SubGraphNode) => void;
   onSelectEdge: (edge: SubGraphEdge) => void;
   onClearSelection: () => void;
+  onClearFilters: () => void;
   forceGraphRenderImpl?: (props: ForceGraphInternalProps) => React.ReactElement;
 }
 
@@ -41,7 +42,7 @@ export function SubGraphBody(props: SubGraphBodyProps): React.ReactElement {
     return <p className="text-destructive p-6 text-sm">{t('data.substitutions.graph.error')}</p>;
   }
   if (props.view.edges.length === 0) {
-    return <EmptyState />;
+    return <EmptyState onClearFilters={props.onClearFilters} />;
   }
   return (
     <div className="flex flex-1 gap-4">
@@ -120,13 +121,20 @@ function SidePanel(props: SidePanelProps): React.ReactElement | null {
   return null;
 }
 
-function EmptyState(): React.ReactElement {
+function EmptyState({ onClearFilters }: { onClearFilters: () => void }): React.ReactElement {
   const { t } = useTranslation('food');
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
       <p className="text-foreground text-sm font-medium">
         {t('data.substitutions.graph.empty.title')}
       </p>
+      <button
+        type="button"
+        onClick={onClearFilters}
+        className="text-foreground hover:bg-muted inline-flex items-center rounded-md border px-3 py-1.5 text-sm"
+      >
+        {t('data.substitutions.graph.empty.clearFilters')}
+      </button>
     </div>
   );
 }

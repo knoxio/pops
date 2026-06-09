@@ -16,12 +16,21 @@ import { protectedProcedure, router } from '../../../trpc.js';
 /**
  * PRD-148 graph-view composite id. Encodes the side as
  * `ingredient:<id>` or `variant:<id>` so the client can dedupe nodes
- * across edges without doing any schema reasoning.
+ * across edges without doing any schema reasoning. Throws on a
+ * malformed side (`kind='variant'` without a `variantId`) rather than
+ * silently coercing to `variant:0`, which would collide across edges
+ * and hide a schema-drift bug.
  */
 function sideToNodeId(side: GraphViewSide): string {
-  return side.kind === 'variant'
-    ? `variant:${side.variantId ?? 0}`
-    : `ingredient:${side.ingredientId}`;
+  if (side.kind === 'variant') {
+    if (side.variantId === null) {
+      throw new Error(
+        `graphView: variant side missing variantId (CHECK drift on ingredient ${side.ingredientId})`
+      );
+    }
+    return `variant:${side.variantId}`;
+  }
+  return `ingredient:${side.ingredientId}`;
 }
 
 /** Compose the minimum spanning subgraph of nodes that any edge touches. */
