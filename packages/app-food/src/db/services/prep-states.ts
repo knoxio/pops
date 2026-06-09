@@ -50,3 +50,7 @@ export function deletePrepState(db: FoodDb, id: number): void {
     unregisterSlug(tx, row.slug);
   });
 }
+
+export function listPrepStates(db: FoodDb): PrepStateRow[] {
+  return db.select().from(prepStates).all();
+}

@@ -65,3 +65,8 @@ export function updateVariant(
 export function deleteVariant(db: FoodDb, id: number): void {
   db.delete(ingredientVariants).where(eq(ingredientVariants.id, id)).run();
 }
+
+export function getVariant(db: FoodDb, id: number): IngredientVariantRow | null {
+  const rows = db.select().from(ingredientVariants).where(eq(ingredientVariants.id, id)).all();
+  return rows[0] ?? null;
+}

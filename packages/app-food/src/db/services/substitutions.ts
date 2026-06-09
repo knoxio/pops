@@ -19,7 +19,7 @@
  *
  * Query helpers (cook-time sub lookup, plan-time graph walk) live in Epic 06.
  */
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { CannotSubstituteSelf } from '../errors';
 import { substitutions, type SubstitutionRow } from '../schema';
@@ -126,6 +126,66 @@ export function createSubstitution(db: FoodDb, input: CreateSubstitutionInput): 
 
 export function deleteSubstitution(db: FoodDb, id: number): void {
   db.delete(substitutions).where(eq(substitutions.id, id)).run();
+}
+
+export interface ListSubstitutionsInput {
+  fromIngredientId?: number;
+  fromVariantId?: number;
+  scope?: SubstitutionScope;
+  recipeId?: number;
+  contextTag?: string;
+}
+
+export function listSubstitutions(
+  db: FoodDb,
+  input: ListSubstitutionsInput = {}
+): SubstitutionView[] {
+  const filters = [];
+  if (input.fromIngredientId !== undefined) {
+    filters.push(eq(substitutions.fromIngredientId, input.fromIngredientId));
+  }
+  if (input.fromVariantId !== undefined) {
+    filters.push(eq(substitutions.fromVariantId, input.fromVariantId));
+  }
+  if (input.scope !== undefined) {
+    filters.push(eq(substitutions.scope, input.scope));
+  }
+  if (input.recipeId !== undefined) {
+    filters.push(eq(substitutions.recipeId, input.recipeId));
+  }
+  if (input.contextTag !== undefined) {
+    // json_each(context_tags) WHERE value = :tag
+    filters.push(
+      sql`EXISTS (SELECT 1 FROM json_each(${substitutions.contextTags}) WHERE value = ${input.contextTag})`
+    );
+  }
+  const q = db.select().from(substitutions);
+  const rows = filters.length > 0 ? q.where(and(...filters)).all() : q.all();
+  return rows.map(rowToView);
+}
+
+export interface UpdateSubstitutionInput {
+  ratio?: number;
+  contextTags?: readonly string[];
+  notes?: string | null;
+}
+
+export function updateSubstitution(
+  db: FoodDb,
+  id: number,
+  input: UpdateSubstitutionInput
+): SubstitutionView {
+  const patch: Record<string, unknown> = {};
+  if (input.ratio !== undefined) patch['ratio'] = input.ratio;
+  if (input.contextTags !== undefined) patch['contextTags'] = JSON.stringify(input.contextTags);
+  if (input.notes !== undefined) patch['notes'] = input.notes;
+  const rows = db
+    .update(substitutions)
+    .set(patch)
+    .where(eq(substitutions.id, id))
+    .returning()
+    .all();
+  return rowToView(expectRow(rows, `updateSubstitution(${id})`));
 }
 
 /**
