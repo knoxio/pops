@@ -6,11 +6,18 @@
  * DSL string from the structured response and posts the
  * `IngestJobResult` back through the BullMQ → tRPC workerComplete loop.
  *
- * Per PRD: a single vision call per ingest. Malformed JSON and SDK
- * failures map to `VisionExtractFailed` (terminal — no retry). File-read
- * failures map to `FileReadFailed`, which BullMQ retries since they may
- * be transient FS issues.
+ * Failure semantics:
+ * - Malformed JSON / zod fail / SDK throw → `VisionExtractFailed`.
+ * - File-read failure → `FileReadFailed`. The worker posts the result
+ *   via `workerComplete` (PRD-125), so BullMQ marks the job complete —
+ *   no automatic retry. The retry surface is PRD-138's Failed tab,
+ *   which reads `ingest_sources.error_code` and exposes a Retry button.
+ *
+ * Cancellation is cooperative: checked before the file read, between
+ * the vision call and the DSL build, and after the DSL build. Mid-
+ * vision-call cancellation is NOT supported per PRD.
  */
+import { buildDsl } from './screenshot-dsl.js';
 import { extractRecipeFromImage, type ExtractRecipeResult } from './screenshot-extract.js';
 
 import type { IngestJobResult, IngestMeta, PartialReason } from '@pops/food-contracts';
@@ -80,8 +87,13 @@ function buildFailureMeta(extraction: Extract<ExtractRecipeResult, { ok: false }
   return meta;
 }
 
-function buildSuccessMeta(extraction: Extract<ExtractRecipeResult, { ok: true }>): IngestMeta {
-  const { vision, parsed, stages, promptVersion } = extraction;
+interface SuccessMetaArgs {
+  extraction: Extract<ExtractRecipeResult, { ok: true }>;
+  dslBuildDurationMs: number;
+}
+
+function buildSuccessMeta(args: SuccessMetaArgs): IngestMeta {
+  const { vision, parsed, stages, promptVersion } = args.extraction;
   return {
     extractor_version: SCREENSHOT_EXTRACTOR_VERSION,
     stages: {
@@ -101,11 +113,11 @@ function buildSuccessMeta(extraction: Extract<ExtractRecipeResult, { ok: true }>
       },
       dsl_build: {
         ok: true,
-        duration_ms: stages.dslBuild.durationMs,
+        duration_ms: args.dslBuildDurationMs,
       },
     },
     total_duration_ms:
-      stages.fileRead.durationMs + stages.vision.durationMs + stages.dslBuild.durationMs,
+      stages.fileRead.durationMs + stages.vision.durationMs + args.dslBuildDurationMs,
     total_cost_usd: vision.costUsd,
     llm_raw_output: parsed,
   };
@@ -140,11 +152,15 @@ export const runScreenshotIngest: IngestHandler<'screenshot'> = async (data, ctx
 
   if (await ctx.isCancelled()) return cancelledResult();
 
+  const dslStart = Date.now();
+  const dsl = buildDsl(extraction.parsed, { source: 'screenshot' });
+  const dslBuildDurationMs = Date.now() - dslStart;
+
   const partialReason = derivePartialReason(extraction);
   return {
     ok: true,
-    dsl: extraction.dsl,
-    meta: buildSuccessMeta(extraction),
+    dsl,
+    meta: buildSuccessMeta({ extraction, dslBuildDurationMs }),
     ...(partialReason && { partialReason }),
   };
 };

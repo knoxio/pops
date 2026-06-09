@@ -6,19 +6,19 @@
  * load) so tests can run without `ANTHROPIC_API_KEY` set and so the SDK
  * isn't instantiated until the first call lands.
  *
- * TODO(PRD-133): replace the inline cost calc with the canonical
- * `ai_model_pricing` lookup once PRD-133 lands. The
- * {@link callClaudeWithLogging} stub here mirrors PRD-133's wrapper
- * signature so the swap is a one-import change at each call site.
+ * Cost calc and logging are intentionally local for now. PRD-133's
+ * `callClaudeWithLogging` lives in `@pops/app-food/ai/log-inference`
+ * but importing it would pull React into the worker bundle; the
+ * cross-package wrapper integration is queued as a follow-up to
+ * PRD-133 (see roadmap claim for PRD-131).
  */
 import Anthropic from '@anthropic-ai/sdk';
 
 /**
  * Hard-coded Haiku 4.5 pricing in USD per million tokens.
- * Sourced from Anthropic's public pricing page as of 2026-06.
- *
- * TODO(PRD-133): replace with `ai_model_pricing` lookup so price
- * updates flow through the DB rather than a release.
+ * Sourced from Anthropic's public pricing page as of 2026-06. The
+ * follow-up that wires the worker into PRD-133's logging wrapper
+ * also replaces this with the `ai_model_pricing` DB lookup.
  */
 const HAIKU_4_5_PRICING_USD_PER_MTOK = {
   input: 0.25,

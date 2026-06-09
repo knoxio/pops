@@ -1,10 +1,12 @@
 /**
  * PRD-131 screenshot extraction pipeline.
  *
- * Runs file read → Claude vision → JSON parse → zod validation → DSL
- * build, returning either a strongly-typed success or a structured
- * failure case that the handler maps onto `IngestJobResult`. Each stage
- * carries its own duration so meta-JSON can record per-stage telemetry.
+ * Runs file read → Claude vision → JSON parse → zod validation,
+ * returning the structured `ParsedRecipe` (or a typed failure) for the
+ * handler to combine with DSL build + meta-JSON assembly. Keeping DSL
+ * build out of this module lets the handler insert a cancellation
+ * check between the vision call and the DSL build (see PRD-131
+ * cancellation contract).
  */
 import { readFile } from 'node:fs/promises';
 
@@ -14,7 +16,7 @@ import {
   SCREENSHOT_DEFAULT_MODEL,
   SCREENSHOT_PROMPT,
 } from '../prompts/screenshot.js';
-import { buildDsl, parsedRecipeSchema, type ParsedRecipe } from './screenshot-dsl.js';
+import { parsedRecipeSchema, type ParsedRecipe } from './screenshot-dsl.js';
 
 export interface ExtractInput {
   contentPath: string;
@@ -36,22 +38,15 @@ interface VisionStage {
   error?: string;
 }
 
-interface DslBuildStage {
-  ok: true;
-  durationMs: number;
-}
-
 export type ExtractRecipeResult =
   | {
       ok: true;
       parsed: ParsedRecipe;
-      dsl: string;
       vision: VisionCallResult;
       promptVersion: string;
       stages: {
         fileRead: FileReadStage & { ok: true; bytes: number };
         vision: VisionStage & { ok: true; raw: string };
-        dslBuild: DslBuildStage;
       };
     }
   | {
@@ -69,7 +64,11 @@ export type ExtractRecipeResult =
 function summarise(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === 'string') return err;
-  return JSON.stringify(err);
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
 }
 
 async function readImage(
@@ -183,20 +182,14 @@ export async function extractRecipeFromImage(input: ExtractInput): Promise<Extra
     });
   }
 
-  const dslStart = Date.now();
-  const dsl = buildDsl(parsedOutcome.parsed, { source: 'screenshot' });
-  const dslBuildDuration = Date.now() - dslStart;
-
   return {
     ok: true,
     parsed: parsedOutcome.parsed,
-    dsl,
     vision,
     promptVersion: PROMPT_VERSION_SCREENSHOT,
     stages: {
       fileRead: { ok: true, durationMs: fileReadDuration, bytes: buffer.byteLength },
       vision: { ok: true, durationMs: vision.latencyMs, raw: vision.text },
-      dslBuild: { ok: true, durationMs: dslBuildDuration },
     },
   };
 }

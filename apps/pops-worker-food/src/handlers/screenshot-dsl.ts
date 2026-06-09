@@ -51,7 +51,7 @@ const stepSchema = z.object({
 export const parsedRecipeSchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
-  servings: z.number().int().positive(),
+  servings: z.number().positive(),
   prep_time_minutes: z.number().nonnegative().optional(),
   cook_time_minutes: z.number().nonnegative().optional(),
   yield_slug: slugSchema,
