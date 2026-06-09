@@ -8,8 +8,9 @@ themes (travel packing, generic todos) compose the same surface.
 
 ## Status
 
-Schema + service layer (PRD-112) and frontend shell module (PRD-139) only.
-Generic lists CRUD UI lands in PRD-140; shopping-list specialisation in
+Schema + service layer (PRD-112), frontend shell module (PRD-139), tRPC
+router (PRD-140 part API), and the `/lists` index page (PRD-140 part B).
+List detail page is PRD-140 part C; shopping-list specialisation lands in
 PRD-141; food → shopping-list send action in PRD-142.
 
 - Schema spec: [PRD-112](../../docs/themes/07-food/prds/112-lists-schema/README.md)
@@ -26,10 +27,19 @@ src/
   manifest.ts                    ModuleManifest declaration (id='lists')
   routes.tsx                     routes + navConfig
   pages/
-    ListsLandingPage.tsx         placeholder /lists landing
+    ListsIndexPage.tsx           /lists — filterable list of all lists (PRD-140 part B)
+    lists-index/                 sub-components for the index page
+      ListRow.tsx                  index row card
+      ListKindChip.tsx             kind badge
+      ListsIndexFilters.tsx        kind chips + archive toggle + sort
+      ListNewModal.tsx             "+ New list" modal (URL ?new=1)
+      KindRadioGroup.tsx           kind picker for the modal
+      useListsIndexQuery.ts        wraps trpc.lists.list.list.useQuery
+      list-index-types.ts          shared filter types + constants
+      __tests__/                   vitest + RTL coverage
     __tests__/
-      ListsLandingPage.test.tsx  render smoke
-  test-setup.ts                  vitest setup (jsdom + i18n)
+      ListsIndexPage.test.tsx    page-level integration
+  test-setup.ts                  vitest setup (jsdom + i18n + ResizeObserver stub)
   __tests__/
     manifest.test.ts             PRD-139 manifest shape
   db/                            PRD-112 — server-only schema + services

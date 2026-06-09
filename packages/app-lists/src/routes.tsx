@@ -2,8 +2,8 @@ import { lazy } from 'react';
 
 import type { RouteObject } from 'react-router';
 
-const ListsLandingPage = lazy(() =>
-  import('./pages/ListsLandingPage').then((m) => ({ default: m.ListsLandingPage }))
+const ListsIndexPage = lazy(() =>
+  import('./pages/ListsIndexPage').then((m) => ({ default: m.ListsIndexPage }))
 );
 
 const ListDetailPage = lazy(() =>
@@ -41,11 +41,11 @@ export const navConfig = {
   basePath: '/lists',
   items: [
     { path: '', label: 'Home', labelKey: 'lists.home', icon: 'LayoutDashboard' },
-    // Index + detail + new routes added by PRD-140 once CRUD lands.
+    // Detail pages (`/lists/:id`) are deep links, not sidebar entries.
   ],
 } satisfies AppNavConfigShape;
 
 export const routes: RouteObject[] = [
-  { index: true, element: <ListsLandingPage /> },
+  { index: true, element: <ListsIndexPage /> },
   { path: ':id', element: <ListDetailPage /> },
 ];
