@@ -19,6 +19,7 @@ import inventoryDocumentFilesRouter from './routes/inventory/document-files.js';
 import documentThumbnailRouter from './routes/inventory/documents.js';
 import inventoryPhotosRouter from './routes/inventory/photos.js';
 import mediaImagesRouter from './routes/media/images.js';
+import pillarsRouter from './routes/pillars.js';
 import upBankRouter from './routes/webhooks/up-bank.js';
 import { createContext } from './trpc.js';
 
@@ -51,6 +52,12 @@ export function createApp(): express.Express {
   // Health check — no request body needed, placed after security/parsing for consistency
   // (moving it before express.json() would be safe but creates confusion about ordering).
   app.use(healthRouter);
+
+  // Pillar registry HTTP surface (ADR-026 P2): POST /uri/resolve, GET /pillars.
+  // Placed before authMiddleware because inter-pillar HTTP travels on the
+  // internal Docker network rather than through Cloudflare Access. JSON body
+  // parsing was registered above, so the POST handler can read req.body.
+  app.use(pillarsRouter);
 
   // Up Bank webhook handler (processes its own raw body + signature verification)
   app.use(upBankRouter);

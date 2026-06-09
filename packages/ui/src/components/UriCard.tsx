@@ -2,22 +2,25 @@
  * UriCard — presentation-only renderer for a `UriResolverResult` returned by
  * `core.uri.resolve` (PRD-101 US-08, ADR-012).
  *
- * Switches on `resolution.kind` and renders one of four cards:
+ * Switches on `resolution.kind` and renders one of five cards:
  *
- *   - `object`         — the consumer-supplied `renderObject` callback (or a
- *                        default that prints `moduleId`/`type`/`id`)
- *   - `not-found`      — "Not found" placeholder with the typed reference
- *   - `module-absent`  — "Module not installed" placeholder, mirroring the
- *                        tone of PRD-100's `NotInstalledPage`
- *   - `malformed`      — "Broken link" placeholder with the malformed URI
- *                        and the parser's reason for debugging
+ *   - `object`             — the consumer-supplied `renderObject` callback (or
+ *                            a default that prints `moduleId`/`type`/`id`)
+ *   - `not-found`          — "Not found" placeholder with the typed reference
+ *   - `module-absent`      — "Module not installed" placeholder, mirroring the
+ *                            tone of PRD-100's `NotInstalledPage`
+ *   - `pillar-unavailable` — "Pillar offline" placeholder for a configured-but-
+ *                            unreachable pillar (ADR-026 P2; transient, not
+ *                            permanent like `module-absent`)
+ *   - `malformed`          — "Broken link" placeholder with the malformed URI
+ *                            and the parser's reason for debugging
  *
  * The component is presentation-only: it does not call tRPC, does not own
  * state, and accepts an already-resolved `UriResolverResult` as a prop. The
  * caller (e.g. cerebrum's chat bubble, a search result item) is responsible
  * for invoking `core.uri.resolve` and threading the result through.
  */
-import { AlertTriangle, FileQuestion, PackageOpen } from 'lucide-react';
+import { AlertTriangle, FileQuestion, PackageOpen, PlugZap } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
@@ -94,6 +97,26 @@ function ModuleAbsentCard({ moduleId }: { moduleId: string }) {
   );
 }
 
+function PillarUnavailableCard({ moduleId, reason }: { moduleId: string; reason: string }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-muted-foreground">
+          <PlugZap className="h-4 w-4" aria-hidden />
+          <span>Pillar offline</span>
+        </CardTitle>
+        <CardDescription>
+          The <strong>{moduleId}</strong> pillar is configured but not currently reachable. The link
+          will resolve once the pillar is back online.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs text-muted-foreground">{reason}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function MalformedCard({ uri, reason }: { uri: string; reason: string }) {
   return (
     <Card>
@@ -143,6 +166,10 @@ export function UriCard({ resolution, renderObject, className }: UriCardProps) {
       );
     case 'module-absent':
       return wrapper(<ModuleAbsentCard moduleId={resolution.moduleId} />);
+    case 'pillar-unavailable':
+      return wrapper(
+        <PillarUnavailableCard moduleId={resolution.moduleId} reason={resolution.reason} />
+      );
     case 'malformed':
       return wrapper(<MalformedCard uri={resolution.uri} reason={resolution.reason} />);
     default: {

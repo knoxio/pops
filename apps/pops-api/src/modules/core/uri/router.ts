@@ -41,6 +41,11 @@ const UriResolverResultSchema = z.discriminatedUnion('kind', [
     moduleId: z.string(),
   }),
   z.object({
+    kind: z.literal('pillar-unavailable'),
+    moduleId: z.string(),
+    reason: z.string(),
+  }),
+  z.object({
     kind: z.literal('malformed'),
     uri: z.string(),
     reason: z.string(),
