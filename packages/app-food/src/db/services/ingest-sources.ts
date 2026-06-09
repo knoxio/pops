@@ -13,12 +13,12 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { IngestSourceNotFound, IngestSourceUrlRequired, type IngestKind } from '../errors';
-import { ingestSources, type IngestSourceRow } from '../schema';
+import { IngestSourceNotFound, IngestSourceUrlRequired } from '../errors';
+import { ingestSources, type IngestSourceKind, type IngestSourceRow } from '../schema';
 import { expectRow, type FoodDb } from './internal';
 
 export interface CreateIngestSourceInput {
-  kind: IngestKind;
+  kind: IngestSourceKind;
   extractorVersion: string;
   url?: string | null;
   caption?: string | null;

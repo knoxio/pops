@@ -5,6 +5,7 @@
  * HTTP. The pops-api router maps them to the appropriate status codes when
  * surfacing to clients.
  */
+import type { IngestSourceKind } from './schema';
 
 export type SlugKind = 'ingredient' | 'recipe' | 'prep_state';
 
@@ -204,12 +205,16 @@ export class PlanSlotSlugAlreadyExists extends Error {
 
 // ── PRD-110 errors ──────────────────────────────────────────────────────
 
-export type IngestKind = 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+/**
+ * @deprecated Use `IngestSourceKind` from `./schema`. Kept as an alias so
+ * existing imports inside the package keep compiling.
+ */
+export type IngestKind = IngestSourceKind;
 
 export class IngestSourceUrlRequired extends Error {
-  readonly kind: IngestKind;
+  readonly kind: IngestSourceKind;
 
-  constructor(kind: IngestKind) {
+  constructor(kind: IngestSourceKind) {
     super(`ingest_sources.url is required for kind="${kind}"`);
     this.name = 'IngestSourceUrlRequired';
     this.kind = kind;

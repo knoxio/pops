@@ -34,7 +34,12 @@ export const IN_FLIGHT_GRACE_MS = 60_000;
 export interface EvictionResult {
   /** Source-IDs the tick removed from disk. */
   evictedIds: readonly number[];
-  /** Total subdirectory count BEFORE the tick (after the in-flight skip). */
+  /**
+   * Total source-ID subdirectories observed at the root BEFORE the tick.
+   * Counts every per-source directory (numeric name), whether or not it
+   * was within the in-flight grace. Non-numeric or non-directory entries
+   * at the root are excluded.
+   */
   consideredCount: number;
   /** Source-IDs skipped because they were within the in-flight grace window. */
   skippedInFlight: readonly number[];

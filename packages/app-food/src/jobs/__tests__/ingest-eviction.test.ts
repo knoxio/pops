@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 /**
  * PRD-110 retention-job tests.
  *
@@ -6,6 +5,7 @@ import { readFileSync } from 'node:fs';
  * tick, and asserts the FIFO cap is enforced + matching `ingest_sources`
  * rows get `archived_at` set.
  */
+import { readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
