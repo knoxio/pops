@@ -28,26 +28,32 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   ingredients,
+  ingredientsService,
   ingredientVariants,
   prepStates,
+  prepStatesService,
   recipeLines,
   recipes,
   recipeSteps,
+  recipesService,
   recipeTags,
   recipeVersions,
-} from '../../db/schema';
-import { createIngredient } from '../../db/services/ingredients';
-import { createPrepState } from '../../db/services/prep-states';
-import { createRecipe } from '../../db/services/recipes';
-import { createVariant } from '../../db/services/variants';
+  variantsService,
+  type FoodDb,
+} from '@pops/app-food-db';
+
 import { compileRecipeVersion } from '../../dsl/compile';
 import { RecipeRenderer } from '../RecipeRenderer';
 
-import type { FoodDb } from '../../db/services/internal';
 import type {
   RecipeLineWithResolved,
   RecipeVersionWithCompiledData,
 } from '../RecipeRenderer.types';
+
+const { createIngredient } = ingredientsService;
+const { createPrepState } = prepStatesService;
+const { createRecipe } = recipesService;
+const { createVariant } = variantsService;
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',
