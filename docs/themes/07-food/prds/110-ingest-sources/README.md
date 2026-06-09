@@ -120,36 +120,36 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds `ingest_sources` per the SQL above.
-- [ ] Drizzle schema and `packages/db-types` regenerated.
-- [ ] Indexes verified via PRAGMA.
+- [x] Migration adds `ingest_sources` per the SQL above.
+- [x] Drizzle schema and `packages/db-types` regenerated.
+- [x] Indexes verified via PRAGMA.
 
 ### Configuration
 
-- [ ] `FOOD_INGEST_DIR` added to `apps/pops-api/.env.example` with the default and the "not backed up" comment.
-- [ ] Env loader has a hard-coded default (`./data/food/ingest`) so the API starts without the var set.
+- [x] `FOOD_INGEST_DIR` added to `apps/pops-api/.env.example` with the default and the "not backed up" comment.
+- [x] Env loader has a hard-coded default (`./data/food/ingest`) so the API starts without the var set.
 
 ### Filesystem helpers
 
-- [ ] `packages/app-food/src/storage/ingest-paths.ts` exports `ingestDirFor(sourceId): string` returning the absolute path.
-- [ ] `packages/app-food/src/storage/ingest-paths.ts` exports `relativeToIngestDir(absolutePath): string` for storing path columns.
+- [x] `packages/app-food/src/storage/ingest-paths.ts` exports `ingestDirFor(sourceId): string` returning the absolute path.
+- [x] `packages/app-food/src/storage/ingest-paths.ts` exports `relativeToIngestDir(absolutePath): string` for storing path columns.
 
 ### Retention job
 
-- [ ] `packages/app-food/src/jobs/ingest-eviction.ts` exports `runEvictionTick(db, dir): Promise<EvictionResult>` that prunes oldest-mtime subdirectories beyond 100.
-- [ ] Each eviction sets `archived_at` in `ingest_sources` for the corresponding ID.
-- [ ] Tick skips directories newer than 60 seconds (avoids racing with in-flight ingests).
-- [ ] Vitest test seeds 105 fake source directories, runs the tick, asserts 5 oldest are gone and 5 `ingest_sources` rows have `archived_at` populated.
+- [x] `packages/app-food/src/jobs/ingest-eviction.ts` exports `runEvictionTick(db, dir): Promise<EvictionResult>` that prunes oldest-mtime subdirectories beyond 100.
+- [x] Each eviction sets `archived_at` in `ingest_sources` for the corresponding ID.
+- [x] Tick skips directories newer than 60 seconds (avoids racing with in-flight ingests).
+- [x] Vitest test seeds 105 fake source directories, runs the tick, asserts 5 oldest are gone and 5 `ingest_sources` rows have `archived_at` populated.
 
 ### Litestream
 
-- [ ] `infra/` Litestream config excludes `${FOOD_INGEST_DIR}` and the new path is documented in the infra repo readme or pops AGENTS.md if appropriate.
+- [x] `infra/` Litestream config excludes `${FOOD_INGEST_DIR}` and the new path is documented in the infra repo readme or pops AGENTS.md if appropriate. (Implementation note: the homelab `infra/` repo is private; the exclusion expectation is documented in this repo's `AGENTS.md` under Tech Stack and as a comment on the `.env.example` entry so the infra change carries the required context. The Litestream YAML update happens in the homelab-infra repo as a follow-up.)
 
 ### Invariants
 
-- [ ] Inserting `kind='url-web'` with `url IS NULL` is rejected by the service (not DB CHECK — `url` is nullable for `kind='text'`).
-- [ ] Inserting with an unknown `kind` value fails the CHECK.
-- [ ] `extractor_version` NOT NULL enforced.
+- [x] Inserting `kind='url-web'` with `url IS NULL` is rejected by the service (not DB CHECK — `url` is nullable for `kind='text'`).
+- [x] Inserting with an unknown `kind` value fails the CHECK.
+- [x] `extractor_version` NOT NULL enforced.
 
 ## Out of Scope
 

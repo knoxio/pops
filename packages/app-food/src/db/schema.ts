@@ -11,6 +11,7 @@
 export {
   batchConsumptions,
   batches,
+  ingestSources,
   ingredientAliases,
   ingredients,
   ingredientVariants,
@@ -29,6 +30,9 @@ export type {
   BatchConsumptionRow,
   BatchInsert,
   BatchRow,
+  IngestSourceInsert,
+  IngestSourceKind,
+  IngestSourceRow,
   IngredientAliasInsert,
   IngredientAliasRow,
   IngredientInsert,

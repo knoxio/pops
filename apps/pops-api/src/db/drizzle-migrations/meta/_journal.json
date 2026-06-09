@@ -449,6 +449,14 @@
       "when": 1780991258231,
       "tag": "0063_bumpy_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "6",
+      "when": 1780964190314,
+      "tag": "0064_peaceful_magma",
+      "breakpoints": true
     }
   ]
 }
+

@@ -201,3 +201,27 @@ export class PlanSlotSlugAlreadyExists extends Error {
     this.slug = slug;
   }
 }
+
+// ── PRD-110 errors ──────────────────────────────────────────────────────
+
+export type IngestKind = 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+
+export class IngestSourceUrlRequired extends Error {
+  readonly kind: IngestKind;
+
+  constructor(kind: IngestKind) {
+    super(`ingest_sources.url is required for kind="${kind}"`);
+    this.name = 'IngestSourceUrlRequired';
+    this.kind = kind;
+  }
+}
+
+export class IngestSourceNotFound extends Error {
+  readonly sourceId: number;
+
+  constructor(sourceId: number) {
+    super(`ingest_sources row #${sourceId} not found`);
+    this.name = 'IngestSourceNotFound';
+    this.sourceId = sourceId;
+  }
+}

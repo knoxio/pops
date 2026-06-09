@@ -265,6 +265,7 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 - **OCR:** Paperless-ngx
 - **Chat:** Moltbot (Telegram)
 - **Backup:** Backblaze B2 via rclone (encrypted)
+- **Litestream exclusions:** `MEDIA_IMAGES_DIR` and `FOOD_INGEST_DIR` are regeneratable media trees and must be excluded from Litestream replication in the homelab-infra repo's Litestream config. The SQLite rows that reference these paths stay backed up; only the bytes are skipped.
 
 ## Import Pipeline
 

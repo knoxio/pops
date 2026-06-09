@@ -92,6 +92,7 @@ export {
   homeInventory,
   batchConsumptions,
   batches,
+  ingestSources,
   listItems,
   lists,
   ingredientAliases,
