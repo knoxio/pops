@@ -9,16 +9,23 @@
  * the food module's read surface stays self-describing.
  */
 export {
+  batchConsumptions,
+  batches,
   ingredientAliases,
   ingredients,
   ingredientVariants,
   prepStates,
+  recipeRuns,
   recipes,
   recipeTags,
   recipeVersions,
   slugRegistry,
 } from '@pops/db-types';
 export type {
+  BatchConsumptionInsert,
+  BatchConsumptionRow,
+  BatchInsert,
+  BatchRow,
   IngredientAliasInsert,
   IngredientAliasRow,
   IngredientInsert,
@@ -29,6 +36,8 @@ export type {
   PrepStateRow,
   RecipeInsert,
   RecipeRow,
+  RecipeRunInsert,
+  RecipeRunRow,
   RecipeTagInsert,
   RecipeTagRow,
   RecipeVersionInsert,

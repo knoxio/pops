@@ -16,6 +16,9 @@ export const foodMigrationTags: readonly string[] = [
   '0058_high_sentinel',
   // PRD-107 — recipes + recipe_versions + recipe_tags.
   '0059_useful_hiroim',
+  // PRD-108 — batches + recipe_runs + batch_consumptions; ALTER ingredient_variants
+  // with default_shelf_life_days_{fridge,freezer}.
+  '0060_familiar_leo',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

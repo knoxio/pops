@@ -11,10 +11,13 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
 import type {
+  batchConsumptions,
+  batches,
   ingredientAliases,
   ingredients,
   ingredientVariants,
   prepStates,
+  recipeRuns,
   recipes,
   recipeTags,
   recipeVersions,
@@ -40,3 +43,11 @@ export type RecipeVersionRow = InferSelectModel<typeof recipeVersions>;
 export type RecipeVersionInsert = InferInsertModel<typeof recipeVersions>;
 export type RecipeTagRow = InferSelectModel<typeof recipeTags>;
 export type RecipeTagInsert = InferInsertModel<typeof recipeTags>;
+
+// PRD-108
+export type BatchRow = InferSelectModel<typeof batches>;
+export type BatchInsert = InferInsertModel<typeof batches>;
+export type RecipeRunRow = InferSelectModel<typeof recipeRuns>;
+export type RecipeRunInsert = InferInsertModel<typeof recipeRuns>;
+export type BatchConsumptionRow = InferSelectModel<typeof batchConsumptions>;
+export type BatchConsumptionInsert = InferInsertModel<typeof batchConsumptions>;
