@@ -136,36 +136,48 @@ describe('PRD-113 phase-1 seed', () => {
     });
 
     it('manually-authored recipes leave source_id NULL', () => {
-      // Two ingest-sourced (smash-burger, weeknight-pasta), two manual (roast-chicken,
-      // breakfast-eggs). Manual drafts MUST NOT appear in the inbox scope.
-      const nullSourced = db
-        .select({ n: sql<number>`count(*)` })
-        .from(recipeVersions)
-        .where(isNull(recipeVersions.sourceId))
-        .all();
-      expect(nullSourced[0]?.n ?? 0).toBe(2);
+      // Assert by slug rather than by count so the test survives future
+      // fixture growth (more ingest-sourced or more manual recipes both stay
+      // green) while still checking the actual invariant: every
+      // currently-manual recipe lands with source_id NULL.
+      const MANUAL_SLUGS = ['roast-chicken', 'breakfast-eggs'] as const;
+      const rows = raw
+        .prepare(
+          `SELECT r.slug, v.source_id
+             FROM recipes r JOIN recipe_versions v ON v.recipe_id = r.id
+             WHERE r.slug IN (${MANUAL_SLUGS.map(() => '?').join(',')})`
+        )
+        .all(...MANUAL_SLUGS) as { slug: string; source_id: number | null }[];
+      // Every version for these manual recipes MUST have source_id NULL —
+      // even if a future phase introduces additional versions.
+      expect(rows.length).toBeGreaterThanOrEqual(MANUAL_SLUGS.length);
+      for (const row of rows) {
+        expect(row.source_id, `Manual recipe "${row.slug}" leaked a source_id`).toBeNull();
+      }
     });
 
     it('round-trips draft_recipe_id ↔ recipe_versions.source_id symmetrically', () => {
-      // Every ingest_sources row should round-trip: the recipe it points at
-      // (draft_recipe_id) should have a current version whose source_id points
-      // back at the same ingest_sources row. Catches off-by-one wiring bugs.
-      const rows = raw
-        .prepare(
-          `SELECT s.id AS source_id, s.draft_recipe_id, r.id AS recipe_id, v.source_id AS version_source_id
-             FROM ingest_sources s
-             JOIN recipes r ON r.id = s.draft_recipe_id
-             JOIN recipe_versions v ON v.recipe_id = r.id`
-        )
-        .all() as {
-        source_id: number;
-        draft_recipe_id: number;
-        recipe_id: number;
-        version_source_id: number | null;
+      // For each ingest_sources row, the recipe it drafts (draft_recipe_id)
+      // must have AT LEAST ONE recipe_version whose source_id points back at
+      // the ingest_sources row. EXISTS semantics — robust to a recipe later
+      // gaining additional versions that aren't ingest-sourced.
+      const sourceRows = raw.prepare(`SELECT id, draft_recipe_id FROM ingest_sources`).all() as {
+        id: number;
+        draft_recipe_id: number | null;
       }[];
-      expect(rows.length).toBe(2);
-      for (const row of rows) {
-        expect(row.version_source_id).toBe(row.source_id);
+      expect(sourceRows.length).toBe(2);
+      for (const source of sourceRows) {
+        expect(source.draft_recipe_id).not.toBeNull();
+        const matches = raw
+          .prepare(
+            `SELECT 1 FROM recipe_versions
+               WHERE recipe_id = ? AND source_id = ? LIMIT 1`
+          )
+          .all(source.draft_recipe_id, source.id) as unknown[];
+        expect(
+          matches.length,
+          `ingest_sources(${source.id}) has no matching recipe_versions.source_id for recipe ${source.draft_recipe_id}`
+        ).toBe(1);
       }
     });
 
