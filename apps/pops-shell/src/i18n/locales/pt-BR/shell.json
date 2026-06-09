@@ -16,5 +16,9 @@
   "locale": "Idioma",
   "localeEnAU": "English (Australia)",
   "localePtBR": "Português (Brasil)",
-  "skipToContent": "Pular para o conteúdo"
+  "skipToContent": "Pular para o conteúdo",
+  "pillarUnavailableTitle": "Pilar indisponível",
+  "pillarUnavailableDescription": "O pilar {{pillar}} não está a responder. As rotas voltarão quando o pilar recuperar.",
+  "pillarUnavailableRetry": "Tentar de novo",
+  "pillarUnavailableRetrying": "A verificar…"
 }

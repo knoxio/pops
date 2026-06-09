@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { isNetworkError } from '@pops/api-client';
 import { Toaster, TooltipProvider } from '@pops/ui';
 
+import { PillarStatusProvider } from './pillars';
 import { router } from './router';
 
 const NETWORK_ERROR_TOAST_ID = 'network-down';
@@ -52,9 +53,11 @@ export function App() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <RouterProvider router={router} />
-        </TooltipProvider>
+        <PillarStatusProvider>
+          <TooltipProvider>
+            <RouterProvider router={router} />
+          </TooltipProvider>
+        </PillarStatusProvider>
         {!import.meta.env.VITE_E2E && <ReactQueryDevtools initialIsOpen={false} />}
         <Toaster />
       </QueryClientProvider>

@@ -16,5 +16,9 @@
   "locale": "Language",
   "localeEnAU": "English (Australia)",
   "localePtBR": "Portuguese (Brazil)",
-  "skipToContent": "Skip to content"
+  "skipToContent": "Skip to content",
+  "pillarUnavailableTitle": "Pillar unavailable",
+  "pillarUnavailableDescription": "The {{pillar}} pillar isn't responding. Its routes will come back online when the pillar recovers.",
+  "pillarUnavailableRetry": "Retry",
+  "pillarUnavailableRetrying": "Checking…"
 }
