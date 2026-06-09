@@ -4,10 +4,6 @@
   "private": true,
   "type": "module",
   "main": "src/index.ts",
-  "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/server.ts"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -23,6 +19,7 @@
     "@lezer/highlight": "^1.2.3",
     "@lezer/lr": "^1.4.10",
     "@pops/api-client": "workspace:*",
+    "@pops/app-food-db": "workspace:*",
     "@pops/app-lists": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/types": "workspace:*",

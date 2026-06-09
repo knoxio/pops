@@ -12,9 +12,9 @@
  */
 import { and, asc, eq, max as sqlMax } from 'drizzle-orm';
 
-import { ListItemNotFoundError } from '../errors';
-import { listItems, type ListItemRefKind, type ListItemRow } from '../schema';
-import { expectRow, type ListsDb, nowIso } from './internal';
+import { ListItemNotFoundError } from '../errors.js';
+import { listItems, type ListItemRefKind, type ListItemRow } from '../schema.js';
+import { expectRow, type ListsDb, nowIso } from './internal.js';
 
 export interface AddItemInput {
   listId: number;

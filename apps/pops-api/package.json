@@ -72,6 +72,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@pops/app-food-db": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/module-registry": "workspace:*",
     "@pops/types": "workspace:*",

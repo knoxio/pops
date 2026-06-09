@@ -130,6 +130,7 @@ describe('PRD-101 US-03 AppRouter type narrowing (compile-time)', () => {
     const allowed = new Set([
       coreManifest.id,
       financeManifest.id,
+      foodManifest.id,
       mediaManifest.id,
       inventoryManifest.id,
       cerebrumManifest.id,

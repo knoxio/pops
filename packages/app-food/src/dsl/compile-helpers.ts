@@ -5,9 +5,10 @@
  */
 import { inArray } from 'drizzle-orm';
 
-import { ingredients } from '../db/schema';
+import { ingredients } from '@pops/app-food-db';
 
-import type { FoodDb } from '../db/services/internal';
+import type { FoodDb } from '@pops/app-food-db';
+
 import type { IngredientBlock, RecipeAst } from './ast';
 import type { IngredientSlugMap, LineLabelMap } from './compile-md';
 import type { ResolvedRecipeAst, ResolvedStepBlock } from './resolver-types';

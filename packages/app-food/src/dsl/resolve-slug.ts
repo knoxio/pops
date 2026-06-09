@@ -14,9 +14,8 @@ import {
   recipeVersions,
   recipes,
   slugRegistry,
-} from '../db/schema';
-
-import type { FoodDb } from '../db/services/internal';
+  type FoodDb,
+} from '@pops/app-food-db';
 
 export interface SlugEntry {
   slug: string;

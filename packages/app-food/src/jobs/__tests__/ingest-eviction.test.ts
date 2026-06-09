@@ -14,10 +14,11 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { ingestSources } from '../../db/schema';
-import { createIngestSource } from '../../db/services/ingest-sources';
-import { type FoodDb } from '../../db/services/internal';
+import { ingestSources, ingestSourcesService, type FoodDb } from '@pops/app-food-db';
+
 import { IN_FLIGHT_GRACE_MS, MAX_INGEST_DIRS, runEvictionTick } from '../ingest-eviction';
+
+const { createIngestSource } = ingestSourcesService;
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

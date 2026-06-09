@@ -1,6 +1,6 @@
 import { normaliseLineQty } from './normalisation';
 
-import type { CanonicalUnit } from '../db/schema';
+import type { CanonicalUnit } from '@pops/app-food-db';
 /**
  * `recipe_lines` materialiser — PRD-116 + PRD-123.
  *
@@ -9,7 +9,8 @@ import type { CanonicalUnit } from '../db/schema';
  * identity carry-over to a 3-step lookup in `unit_conversions` and
  * `ingredient_weights` — handled by `normaliseLineQty` in `normalisation.ts`.
  */
-import type { FoodDb } from '../db/services/internal';
+import type { FoodDb } from '@pops/app-food-db';
+
 import type { ResolvedIngredientBlock } from './resolver-types';
 
 export interface LineInsert {
