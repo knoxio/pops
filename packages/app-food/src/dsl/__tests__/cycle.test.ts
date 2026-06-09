@@ -28,23 +28,14 @@ const MIGRATIONS = [
   '0058_high_sentinel.sql',
   '0059_useful_hiroim.sql',
   '0060_familiar_leo.sql',
+  // PRD-116 lands `recipe_lines` proper — no more stub.
+  '0065_prd_116_recipe_compile.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
     'utf8'
   )
 );
-
-// Minimal `recipe_lines` table from PRD-116, just the 3 columns the detector
-// reads. PRD-116's migration will extend with the full column set.
-const RECIPE_LINES_STUB = `
-  CREATE TABLE recipe_lines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    recipe_version_id INTEGER NOT NULL REFERENCES recipe_versions(id),
-    recipe_ref_id INTEGER REFERENCES recipes(id),
-    is_recipe_ref INTEGER NOT NULL DEFAULT 0
-  );
-`;
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
   const raw = new Database(':memory:');
@@ -56,7 +47,6 @@ function freshDb(): { db: FoodDb; raw: Database.Database } {
       if (trimmed.length > 0) raw.exec(trimmed);
     }
   }
-  raw.exec(RECIPE_LINES_STUB);
   return { db: drizzle(raw), raw };
 }
 
@@ -77,13 +67,28 @@ function makePromotedRecipe(
   return { recipeId: recipe.id, versionId: version.id };
 }
 
-function addRecipeRef(raw: Database.Database, versionId: number, refRecipeId: number): void {
+const refPositions = new Map<number, number>();
+
+function addRecipeRef(
+  raw: Database.Database,
+  versionId: number,
+  refRecipeId: number,
+  ingredientId?: number
+): void {
+  const ingId = ingredientId ?? cachedYieldIngId;
+  const position = (refPositions.get(versionId) ?? 0) + 1;
+  refPositions.set(versionId, position);
   raw
     .prepare(
-      `INSERT INTO recipe_lines (recipe_version_id, recipe_ref_id, is_recipe_ref) VALUES (?, ?, 1)`
+      `INSERT INTO recipe_lines
+         (recipe_version_id, position, ingredient_id, is_recipe_ref, recipe_ref_id,
+          original_text, original_qty, original_unit, canonical_unit)
+       VALUES (?, ?, ?, 1, ?, 'ref', 1, 'count', 'count')`
     )
-    .run(versionId, refRecipeId);
+    .run(versionId, position, ingId, refRecipeId);
 }
+
+let cachedYieldIngId = 0;
 
 function makeCandidateAst(
   refs: { recipeRef: number; index: number; line: number }[]
@@ -130,11 +135,13 @@ describe('PRD-117 — recipe-graph cycle detection', () => {
 
   beforeEach(() => {
     ({ db, raw } = freshDb());
+    refPositions.clear();
     yieldIngId = createIngredient(db, {
       name: 'Yield',
       slug: 'common-yield',
       defaultUnit: 'count',
     }).id;
+    cachedYieldIngId = yieldIngId;
   });
 
   it('happy path: candidate → B → C (terminal) returns ok', () => {

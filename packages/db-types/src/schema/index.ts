@@ -35,9 +35,12 @@ export {
   planEntries,
   planSlots,
   prepStates,
+  recipeLines,
   recipeRuns,
   recipes,
+  recipeSteps,
   recipeTags,
+  recipeVersionProposedSlugs,
   recipeVersions,
   slugRegistry,
 } from './food.js';
