@@ -11,13 +11,26 @@ const apiVersion =
     ? `a${process.env.BUILD_VERSION}`
     : 'dev';
 
+/**
+ * Pillar identity for the ADR-026 health contract. This process is the `core`
+ * pillar in the eventual pillar architecture (settings, AI Ops, pillar
+ * registry, URI dispatcher). The id is the slug other pillars use to address
+ * core in `POPS_PILLARS` and in `pops:core/...` URIs.
+ */
+const SELF_PILLAR_ID = 'core';
+
 router.get('/health', (_req, res) => {
   try {
     const db = getDrizzle();
     const rows = db.all<{ ok: number }>(sql`SELECT 1 AS ok`);
     if (rows[0]?.ok === 1) {
       const redisStatus = getRedisStatus();
+      // `ok: true` and `pillar` are the ADR-026 P2 pillar-health contract
+      // fields. `status: 'ok'`, `version`, `redis` are kept for backwards
+      // compatibility with existing Docker healthchecks and dashboards.
       res.json({
+        ok: true,
+        pillar: SELF_PILLAR_ID,
         status: 'ok',
         version: apiVersion,
         redis: redisStatus === 'ready' ? 'ok' : 'down',

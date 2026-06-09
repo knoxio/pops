@@ -19,6 +19,7 @@ import inventoryDocumentFilesRouter from './routes/inventory/document-files.js';
 import documentThumbnailRouter from './routes/inventory/documents.js';
 import inventoryPhotosRouter from './routes/inventory/photos.js';
 import mediaImagesRouter from './routes/media/images.js';
+import pillarsRouter from './routes/pillars.js';
 import upBankRouter from './routes/webhooks/up-bank.js';
 import { createContext } from './trpc.js';
 
@@ -77,6 +78,14 @@ export function createApp(): express.Express {
   // Placed after health/webhook/media routes (those skip auth or use their own).
   // In development, bypasses JWT check and attaches mock user.
   app.use(authMiddleware);
+
+  // Pillar registry HTTP surface (ADR-026 P2): POST /uri/resolve, GET /pillars.
+  // Both endpoints expose deployment topology / object data, so they sit
+  // behind authMiddleware. Inter-pillar HTTP between sibling pillars (a
+  // future concern — no other pillars exist yet) will need a service-token
+  // auth mechanism layered on top; gating these routes now ensures they
+  // never go public during the pre-flight window.
+  app.use(pillarsRouter);
 
   // Env CRUD routes — mounted before env context middleware so these always
   // use the prod DB regardless of any ?env= query param on the request.

@@ -43,6 +43,13 @@ export type UriResolution<TData = unknown> =
  * - `module-absent`  — owning module is not installed in this deployment;
  *                      caller should render a "module not installed"
  *                      placeholder rather than throw.
+ * - `pillar-unavailable` — owning pillar IS in the registry but its `/uri/resolve`
+ *                      could not be reached (process down, timeout, bad
+ *                      gateway). Distinct from `module-absent`: the module is
+ *                      configured for this deployment but the process is not
+ *                      currently serving. Caller should render a transient
+ *                      "pillar offline" placeholder rather than a permanent
+ *                      "module not installed" one. Introduced by ADR-026 P2.
  * - `malformed`      — URI did not parse per ADR-012 (wrong prefix, missing
  *                      parts, uppercase characters, etc.); `reason` names
  *                      the specific violation for debugging.
@@ -51,6 +58,7 @@ export type UriResolverResult<TData = unknown> =
   | { kind: 'object'; moduleId: string; type: string; id: string; data: TData }
   | { kind: 'not-found'; moduleId: string; type: string; id: string }
   | { kind: 'module-absent'; moduleId: string }
+  | { kind: 'pillar-unavailable'; moduleId: string; reason: string }
   | { kind: 'malformed'; uri: string; reason: string };
 
 export interface UriHandlerDescriptor<TData = unknown> {
