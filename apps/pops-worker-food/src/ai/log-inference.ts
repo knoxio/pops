@@ -3,18 +3,16 @@ import pino from 'pino';
 import type { AnthropicMessage } from './anthropic.js';
 
 /**
- * Local stub of PRD-133's `callClaudeWithLogging`. Records timings and
- * usage, fires the log payload through `opts.onLog` (caller-injected so
- * tests don't need to mock the network), and returns the Anthropic
- * response unchanged.
- *
- * Once PRD-133 ships its canonical `packages/app-food/src/ai/log-inference.ts`
- * wrapper, swap `opts.onLog` for the real `food.ai.logInference` tRPC
- * call. Until then the worker is the single producer and the API will
- * 404 on the route — fire-and-forget on the log POST keeps the handler
- * green either way.
- *
- * TODO(PRD-133): replace this with the canonical wrapper once landed.
+ * Worker-local `callClaudeWithLogging`. Records timings and usage, fires
+ * the log payload through `opts.onLog` (caller-injected so tests don't
+ * need to mock the network), and returns the Anthropic response
+ * unchanged. The PRD-133 canonical wrapper at
+ * `packages/app-food/src/ai/log-inference.ts` is React-coupled (lives in
+ * `@pops/app-food`); follow-up tracked in PRD-133 will extract it to a
+ * backend-only package, at which point this module's `onLog` plugs into
+ * the shared `LogFoodInferenceFn` instead of pino. Operation names here
+ * already match PRD-133's `FoodOperationSchema` literals, so the swap is
+ * mechanical.
  */
 
 const logger = pino({ name: 'food-ai-log-inference', level: process.env['LOG_LEVEL'] ?? 'info' });

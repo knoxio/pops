@@ -297,7 +297,7 @@ Prompt as TS constant in `apps/pops-worker-food/src/prompts/ig-vision.ts`. Read-
 - Acquisition failure (PRD-129) is **terminal for the success path** — no degradation can recover from auth-dead / rate-limited / missing-artifacts. PRD-130 just converts these to the right `IngestJobResult` shape.
 - STT failure is recoverable — caption + vision can still produce a useful draft. Marked partial.
 - Vision failure with no caption is **terminal** — no useful path forward. Failed.
-- Vision failure WITH caption falls through to text-LLM extraction. The fallback reuses PRD-128's `PROMPT_WEB_LLM` via the shared `extractWithClaudeText` helper from PRD-132. AI usage logs the call as `operation='recipe-extract-ig-text-fallback'` (distinct from `recipe-extract-web-llm`) but the prompt version recorded is `web-llm-vN` (the shared prompt's version).
+- Vision failure WITH caption falls through to text-LLM extraction. The fallback calls the shared `extractWithClaudeText` helper from PRD-132 with `source='ig-text-fallback'`; the helper uses PRD-132's `PROMPT_VERSION_TEXT` template (`text-v1.0`) — same JSON output schema as PRD-128's web-LLM path, but the prompt itself is the text-ingest template (permissive on input shape, no readability/page-title scaffolding). AI usage logs the call as `operation='recipe-extract-ig-text-fallback'` and `metadata.prompt_version='text-vN'`.
 - Empty caption + STT skipped (heuristic false-positive) — STT runs anyway because the empty caption can't be structured. The heuristic's `caption.length < 100` check covers this.
 - Concurrent invocations: each runs in its own `${FOOD_INGEST_DIR}/<sourceId>/` workdir; no shared state. Memory pressure from concurrent faster-whisper handled by `FOOD_WORKER_CONCURRENCY` (default 2).
 - Cancellation checked between stages: after acquisition, after STT, after keyframes, before vision call. Mid-vision-call cancellation NOT supported.
@@ -358,8 +358,8 @@ Inline per theme protocol.
 
 ### Text-LLM fallback
 
-- [ ] When vision fails AND caption is non-trivial (>30 chars), invoke text-LLM via `extractWithClaudeText` — the shared helper exported by PRD-132. The fallback **reuses PRD-128's `PROMPT_WEB_LLM`** template (same extraction schema, applies cleanly to caption text).
-- [ ] `ai_inference_log` row uses `operation='recipe-extract-ig-text-fallback'` (distinct operation enum value per PRD-133) but `metadata.prompt_version='web-llm-vN'` (same prompt version that PRD-128 uses) — the operation distinguishes the _call context_ in observability; the prompt template is shared.
+- [ ] When vision fails AND caption is non-trivial (>30 chars), invoke text-LLM via `extractWithClaudeText` — the shared helper exported by PRD-132. The fallback uses **PRD-132's text-ingest prompt** (`PROMPT_VERSION_TEXT`); the JSON output schema is shared with PRD-128.
+- [ ] `ai_inference_log` row uses `operation='recipe-extract-ig-text-fallback'` (distinct operation enum value per PRD-133) and `metadata.prompt_version='text-vN'` — the operation distinguishes the _call context_ in observability; the prompt template is the same one PRD-132's text-ingest uses.
 
 ### Meta & logging
 

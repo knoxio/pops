@@ -91,8 +91,10 @@ async function callClaude(
   model: string,
   prompt: string
 ): Promise<
-  { ok: true; message: AnthropicMessage; durationMs: number } | { ok: false; errorMessage: string }
+  | { ok: true; message: AnthropicMessage; durationMs: number }
+  | { ok: false; errorMessage: string; durationMs: number }
 > {
+  const start = Date.now();
   try {
     const result = await callClaudeWithLogging({
       operation: pickOperation(input.source),
@@ -113,6 +115,7 @@ async function callClaude(
     return {
       ok: false,
       errorMessage: `Claude call failed: ${err instanceof Error ? err.message : String(err)}`,
+      durationMs: Date.now() - start,
     };
   }
 }
@@ -152,7 +155,7 @@ export async function extractWithClaudeText(input: TextExtractInput): Promise<Te
   const client = resolveClient(apiKey);
   const callResult = await callClaude(input, client, model, renderTextPrompt(input.body));
   if (!callResult.ok) {
-    return { ok: false, errorMessage: callResult.errorMessage, durationMs: 0 };
+    return { ok: false, errorMessage: callResult.errorMessage, durationMs: callResult.durationMs };
   }
   const rawOutput = extractTextOutput(callResult.message);
   if (rawOutput == null) {

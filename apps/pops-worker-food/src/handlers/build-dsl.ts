@@ -117,11 +117,13 @@ function buildRecipeHeaderArgs(
 }
 
 function composeSummary(parsed: ExtractedRecipe, opts: BuildDslOptions): string | undefined {
+  // The text prompt instructs the LLM to mark rough-idea elaborations in
+  // `summary` itself; trust the model's signal rather than inferring
+  // "rough idea" from an empty `ingredients` array (which actually means
+  // a partial / failed extraction — those land in the review queue with
+  // `partialReason='empty-extraction'`, not as rough ideas).
   const parts: string[] = [];
   if (parsed.summary && parsed.summary.trim() !== '') parts.push(parsed.summary.trim());
-  if (opts.source === 'text' && parsed.ingredients.length === 0) {
-    parts.push('Generated from rough idea.');
-  }
   if (opts.url) parts.push(`Source: ${opts.url}`);
   return parts.length > 0 ? parts.join(' ') : undefined;
 }

@@ -114,8 +114,8 @@ describe('runTextIngest — validation', () => {
   });
 
   it('short-circuits when cancelled before the LLM call', async () => {
-    const create = vi.fn();
-    __setTextIngestClientForTests(buildMockClient(async () => mockMessage('{}')));
+    const create = vi.fn(async () => mockMessage('{}'));
+    __setTextIngestClientForTests({ messages: { create } });
     const cancelCtx: HandlerContext = { isCancelled: () => true };
     const result = await runTextIngest(
       { kind: 'text', sourceId: 1, body: 'A perfectly fine recipe body.' },
@@ -256,6 +256,55 @@ describe('runTextIngest — error paths', () => {
     if (result.ok) throw new Error('unreachable');
     expect(result.errorCode).toBe('LlmExtractFailed');
     expect(result.errorMessage).toMatch(/non-JSON/);
+  });
+
+  it('fails with LlmExtractFailed when the LLM returns empty strings for required numerics', async () => {
+    // Regression: `numericLike` must reject `""` rather than coercing it
+    // to 0 (Number("") === 0). Silently zeroing missing numeric fields
+    // would let an unusable extraction pass validation.
+    __setTextIngestClientForTests(
+      buildMockClient(async () =>
+        mockMessage(
+          JSON.stringify({
+            title: 'Plain Salad',
+            servings: '',
+            ingredients: [],
+            steps: [],
+          })
+        )
+      )
+    );
+    const result = await runTextIngest(
+      { kind: 'text', sourceId: 1, body: 'A perfectly fine recipe body.' },
+      ctx
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.errorCode).toBe('LlmExtractFailed');
+    expect(result.errorMessage).toMatch(/servings/);
+  });
+
+  it('records duration_ms on the LLM-failure stage when the call throws', async () => {
+    // Regression: the failure path used to hardcode durationMs: 0 which
+    // hid slow timeouts behind a zero-latency log line.
+    __setTextIngestClientForTests({
+      messages: {
+        create: vi.fn(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          throw new Error('network blew up');
+        }),
+      },
+    });
+    const result = await runTextIngest(
+      { kind: 'text', sourceId: 1, body: 'A perfectly fine recipe body.' },
+      ctx
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(result.errorCode).toBe('LlmExtractFailed');
+    const stage = result.meta.stages['llm_extract'] as Record<string, unknown>;
+    expect(typeof stage['duration_ms']).toBe('number');
+    expect(stage['duration_ms']).toBeGreaterThan(0);
   });
 
   it('fails with LlmExtractFailed on schema violation (missing title)', async () => {

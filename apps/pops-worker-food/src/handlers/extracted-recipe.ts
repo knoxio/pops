@@ -40,7 +40,12 @@ const SLUG_RE = /^[a-z][a-z0-9-]*$/;
 
 const numericLike = z.union([z.number(), z.string()]).transform((value, ctx) => {
   if (typeof value === 'number') return value;
-  const parsed = Number(value);
+  const trimmed = value.trim();
+  if (trimmed === '') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'empty numeric value' });
+    return z.NEVER;
+  }
+  const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: `not a number: ${value}` });
     return z.NEVER;

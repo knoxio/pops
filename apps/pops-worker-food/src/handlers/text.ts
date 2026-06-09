@@ -40,7 +40,7 @@ function emptyTextResult(length: number): IngestJobResult {
   return {
     ok: false,
     errorCode: 'EmptyText',
-    errorMessage: `Body must be at least ${MIN_BODY_LENGTH} non-whitespace characters.`,
+    errorMessage: `Body must be at least ${MIN_BODY_LENGTH} characters after trimming.`,
     meta: buildBaseMeta({ input_validate: { ok: false, length, reason: 'below-min' } }),
   };
 }
