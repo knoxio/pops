@@ -36,6 +36,7 @@ export * as substitutionsService from './services/substitutions.js';
 export * as substitutionsQueries from './services/substitutions-queries.js';
 export * as variantsService from './services/variants.js';
 export * as conversionsService from './services/conversions.js';
+export * as conversionsQueries from './services/conversions-queries.js';
 
 // NOTE: `seedFood` is NOT re-exported here. It lives at the
 // `@pops/app-food-db/seed` subpath because the seed module pulls in

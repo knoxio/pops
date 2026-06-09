@@ -33,6 +33,7 @@ import {
   installedManifests,
 } from './modules/installed-modules.js';
 import { manifest as inventoryManifest } from './modules/inventory/index.js';
+import { manifest as listsManifest } from './modules/lists/index.js';
 import { manifest as mediaManifest } from './modules/media/index.js';
 import { appRouter } from './router.js';
 
@@ -70,6 +71,10 @@ describe('PRD-101 US-03 root router composition', () => {
       inventoryManifest.id,
       cerebrumManifest.id,
       cerebrumEgoManifest.id,
+      foodManifest.id,
+      // listsManifest is intentionally omitted — `listsRouter = router({})`
+      // has no procedures yet (PRD-139+ will fill it). `allowed` (below)
+      // still includes it so a future addition doesn't trip the guard.
     ]);
     const actualTops = new Set(routerKeys().map((k) => k.split('.')[0]));
     for (const id of expectedTops) {
@@ -135,7 +140,7 @@ describe('PRD-101 US-03 AppRouter type narrowing (compile-time)', () => {
       inventoryManifest.id,
       cerebrumManifest.id,
       cerebrumEgoManifest.id,
-      foodManifest.id,
+      listsManifest.id,
     ]);
     for (const path of routerKeys()) {
       const top = path.split('.')[0] ?? '';

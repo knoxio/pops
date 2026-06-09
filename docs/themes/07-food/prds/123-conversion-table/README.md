@@ -216,8 +216,8 @@ Inline per theme protocol.
 
 ### tRPC procedures
 
-- [ ] All procedures in the API section exist in `apps/pops-api/src/modules/food/`.
-- [ ] `deleteUnit` returns `{ ok: false, reason: 'seeded' }` for seeded rows.
+- [x] All procedures in the API section exist in `apps/pops-api/src/modules/food/`. (`conversionsRouter` mounted under `food.conversions` — `apps/pops-api/src/modules/food/conversions/router.ts`. Services consumed from `@pops/app-food-db`: `conversionsService` for mutations + `resolveCanonicalQty`, `conversionsQueries` for the paginated list helpers. Shared error mapping in `apps/pops-api/src/modules/food/conversions/error-mapping.ts`.)
+- [x] `deleteUnit` returns `{ ok: false, reason: 'seeded' }` for seeded rows. (`deleteWeight` mirrors the same contract via `runDelete`. Other error mappings: SQLite UNIQUE → tRPC `CONFLICT` on create (`runCreate`); `expectRow` miss → tRPC `NOT_FOUND` on update (`runUpdate`); unknown-id deletes return `{ ok: true }` to match Phase A's idempotent contract.)
 
 ### Admin UI
 
@@ -235,8 +235,8 @@ Inline per theme protocol.
 
 ### Tests
 
-- [ ] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/conversions-router.test.ts`.
-- [ ] Vitest + RTL suite at `packages/app-food/src/pages/data/__tests__/ConversionsPage.test.tsx`.
+- [x] Vitest integration suite at `apps/pops-api/src/modules/food/__tests__/conversions-router.test.ts`. (24 cases: 4 list-units, 3 create-unit incl. UNIQUE→CONFLICT, 2 update-unit incl. unknown→NOT_FOUND, 3 delete-unit incl. idempotent-unknown + seeded short-circuit, 6 weight CRUD/listing + seededOnly toggle + UNIQUE→CONFLICT, 1 seeded-weight short-circuit, 1 unknown-weight→NOT_FOUND, and 6 resolve paths covering identity / unit-conversions / ingredient-weight wins / variant-specific wins / variant→null fallback / unresolved.)
+- [ ] Vitest + RTL suite at `packages/app-food/src/pages/data/__tests__/ConversionsPage.test.tsx`. _Phase C — Conversions tab UI._
 
 ## Out of Scope
 
