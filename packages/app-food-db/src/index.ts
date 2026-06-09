@@ -51,6 +51,10 @@ export * as conversionsQueries from './services/conversions-queries.js';
 // router's inferred types in pops-api don't trip TS2883 ("the inferred
 // type cannot be named without a reference to a deep import path").
 export type { BulkApproveAliasesResult, MergeAliasesResult } from './services/aliases.js';
-export type { DeleteBlockerSummary } from './services/ingredients-queries.js';
+export type {
+  DeleteBlockerSummary,
+  RecipeRefRow,
+  RecipeRefsSummary,
+} from './services/ingredients-queries.js';
 export type { SlugMatch } from './services/slug-search.js';
 export type { SubstitutionScope, SubstitutionView } from './services/substitutions-queries.js';

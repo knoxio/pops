@@ -3,8 +3,13 @@
  * for nodes with children, the slug + name, and a child list when
  * expanded. Selection state lives in the parent; we only signal
  * intent via callbacks.
+ *
+ * Carries a `data-ingredient-id` attribute so the deep-link flow
+ * (`?focus=<slug>`) can scroll to the row, and applies a 2-second
+ * highlight class when the row matches `highlightedId`.
  */
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@pops/ui';
@@ -16,6 +21,7 @@ interface Props {
   depth: number;
   selectedId: number | null;
   expandedIds: ReadonlySet<number>;
+  highlightedId: number | null;
   onSelect: (id: number) => void;
   onToggle: (id: number) => void;
 }
@@ -52,63 +58,99 @@ function ExpandToggle({
   );
 }
 
-export function IngredientTreeNodeRow({
-  node,
-  depth,
-  selectedId,
-  expandedIds,
-  onSelect,
-  onToggle,
-}: Props) {
-  const hasChildren = node.children.length > 0;
-  const isExpanded = expandedIds.has(node.row.id);
-  const isSelected = selectedId === node.row.id;
-
+export function IngredientTreeNodeRow(props: Props) {
+  const hasChildren = props.node.children.length > 0;
+  const isExpanded = props.expandedIds.has(props.node.row.id);
+  const isSelected = props.selectedId === props.node.row.id;
+  const isHighlighted = props.highlightedId === props.node.row.id;
   return (
     <li>
-      <div
-        role="treeitem"
-        aria-selected={isSelected}
-        aria-expanded={hasChildren ? isExpanded : undefined}
-        tabIndex={isSelected ? 0 : -1}
-        onClick={() => onSelect(node.row.id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect(node.row.id);
-          }
-        }}
-        className={cn(
-          'flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-sm',
-          isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-        )}
-        style={{ paddingLeft: `${0.5 + depth * 1}rem` }}
-      >
-        <ExpandToggle
-          hasChildren={hasChildren}
-          isExpanded={isExpanded}
-          onToggle={() => onToggle(node.row.id)}
-        />
-        <span className="truncate">
-          <span className="font-medium">{node.row.name}</span>{' '}
-          <span className="text-muted-foreground text-xs">({node.row.slug})</span>
-        </span>
-      </div>
-      {hasChildren && isExpanded ? (
-        <ul role="group" className="list-none">
-          {node.children.map((child) => (
-            <IngredientTreeNodeRow
-              key={child.row.id}
-              node={child}
-              depth={depth + 1}
-              selectedId={selectedId}
-              expandedIds={expandedIds}
-              onSelect={onSelect}
-              onToggle={onToggle}
-            />
-          ))}
-        </ul>
-      ) : null}
+      <TreeRowItem
+        node={props.node}
+        depth={props.depth}
+        hasChildren={hasChildren}
+        isExpanded={isExpanded}
+        isSelected={isSelected}
+        isHighlighted={isHighlighted}
+        onSelect={props.onSelect}
+        onToggle={props.onToggle}
+      />
+      {hasChildren && isExpanded ? <ChildNodes parent={props.node} {...props} /> : null}
     </li>
+  );
+}
+
+interface RowItemProps {
+  node: IngredientTreeNode;
+  depth: number;
+  hasChildren: boolean;
+  isExpanded: boolean;
+  isSelected: boolean;
+  isHighlighted: boolean;
+  onSelect: (id: number) => void;
+  onToggle: (id: number) => void;
+}
+
+function TreeRowItem(props: RowItemProps) {
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!props.isHighlighted || rowRef.current === null) return;
+    // jsdom doesn't implement scrollIntoView; guard so RTL tests don't trip.
+    if (typeof rowRef.current.scrollIntoView !== 'function') return;
+    rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [props.isHighlighted]);
+  return (
+    <div
+      ref={rowRef}
+      role="treeitem"
+      aria-selected={props.isSelected}
+      aria-expanded={props.hasChildren ? props.isExpanded : undefined}
+      tabIndex={props.isSelected ? 0 : -1}
+      data-ingredient-id={props.node.row.id}
+      data-ingredient-slug={props.node.row.slug}
+      data-highlighted={props.isHighlighted || undefined}
+      onClick={() => props.onSelect(props.node.row.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          props.onSelect(props.node.row.id);
+        }
+      }}
+      className={cn(
+        'flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-sm transition-colors',
+        props.isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+        props.isHighlighted && !props.isSelected ? 'bg-amber-200/70 ring-2 ring-amber-500' : null
+      )}
+      style={{ paddingLeft: `${0.5 + props.depth * 1}rem` }}
+    >
+      <ExpandToggle
+        hasChildren={props.hasChildren}
+        isExpanded={props.isExpanded}
+        onToggle={() => props.onToggle(props.node.row.id)}
+      />
+      <span className="truncate">
+        <span className="font-medium">{props.node.row.name}</span>{' '}
+        <span className="text-muted-foreground text-xs">({props.node.row.slug})</span>
+      </span>
+    </div>
+  );
+}
+
+function ChildNodes(props: Props & { parent: IngredientTreeNode }) {
+  return (
+    <ul role="group" className="list-none">
+      {props.parent.children.map((child) => (
+        <IngredientTreeNodeRow
+          key={child.row.id}
+          node={child}
+          depth={props.depth + 1}
+          selectedId={props.selectedId}
+          expandedIds={props.expandedIds}
+          highlightedId={props.highlightedId}
+          onSelect={props.onSelect}
+          onToggle={props.onToggle}
+        />
+      ))}
+    </ul>
   );
 }

@@ -164,6 +164,78 @@ describe('food.ingredients', () => {
     const result = await caller.food.ingredients.list({});
     expect(result.items.map((i) => i.slug)).toEqual(['apple', 'banana', 'cherry']);
   });
+
+  it('recipeRefs returns zero for an unreferenced ingredient', async () => {
+    const apple = await caller.food.ingredients.create({
+      slug: 'apple',
+      name: 'Apple',
+      defaultUnit: 'count',
+    });
+    const result = await caller.food.ingredients.recipeRefs({ id: apple!.id });
+    expect(result).toEqual({ count: 0, recipes: [] });
+  });
+
+  it('recipeRefs reports recipes that reference this ingredient via recipe_lines', async () => {
+    const apple = await caller.food.ingredients.create({
+      slug: 'apple',
+      name: 'Apple',
+      defaultUnit: 'count',
+    });
+    const recipeId = db
+      .prepare(`INSERT INTO recipes (slug, recipe_type) VALUES ('apple-pie', 'plate') RETURNING id`)
+      .get() as { id: number };
+    db.prepare(
+      `INSERT INTO slug_registry (slug, kind, target_id) VALUES ('apple-pie', 'recipe', ${recipeId.id})`
+    ).run();
+    const versionId = db
+      .prepare(
+        `INSERT INTO recipe_versions (recipe_id, version_no, title, body_dsl, compile_status) VALUES (?, 1, 'Apple pie', '@recipe(apple-pie)', 'compiled') RETURNING id`
+      )
+      .get(recipeId.id) as { id: number };
+    db.prepare(`UPDATE recipes SET current_version_id = ? WHERE id = ?`).run(
+      versionId.id,
+      recipeId.id
+    );
+    db.prepare(
+      `INSERT INTO recipe_lines (recipe_version_id, position, ingredient_id, original_text, original_qty, original_unit, canonical_unit) VALUES (?, 1, ?, 'apple', 1, 'count', 'count')`
+    ).run(versionId.id, apple!.id);
+
+    const result = await caller.food.ingredients.recipeRefs({ id: apple!.id });
+    expect(result.count).toBe(1);
+    expect(result.recipes).toEqual([
+      { recipeId: recipeId.id, recipeSlug: 'apple-pie', recipeTitle: 'Apple pie' },
+    ]);
+  });
+
+  it('recipeRefs dedupes when a recipe references the ingredient on multiple lines', async () => {
+    const apple = await caller.food.ingredients.create({
+      slug: 'apple',
+      name: 'Apple',
+      defaultUnit: 'count',
+    });
+    const recipe = db
+      .prepare(
+        `INSERT INTO recipes (slug, recipe_type) VALUES ('apple-cake', 'plate') RETURNING id`
+      )
+      .get() as { id: number };
+    db.prepare(
+      `INSERT INTO slug_registry (slug, kind, target_id) VALUES ('apple-cake', 'recipe', ${recipe.id})`
+    ).run();
+    const version = db
+      .prepare(
+        `INSERT INTO recipe_versions (recipe_id, version_no, title, body_dsl, compile_status) VALUES (?, 1, 'Apple cake', '', 'compiled') RETURNING id`
+      )
+      .get(recipe.id) as { id: number };
+    db.prepare(`UPDATE recipes SET current_version_id = ? WHERE id = ?`).run(version.id, recipe.id);
+    for (const pos of [1, 2, 3]) {
+      db.prepare(
+        `INSERT INTO recipe_lines (recipe_version_id, position, ingredient_id, original_text, original_qty, original_unit, canonical_unit) VALUES (?, ?, ?, 'apple', 1, 'count', 'count')`
+      ).run(version.id, pos, apple!.id);
+    }
+    const result = await caller.food.ingredients.recipeRefs({ id: apple!.id });
+    expect(result.count).toBe(1);
+    expect(result.recipes[0]?.recipeTitle).toBe('Apple cake');
+  });
 });
 
 describe('food.variants', () => {

@@ -202,10 +202,10 @@ Inline per theme protocol.
 ### Ingredients tab
 
 - [x] Tree view shows hierarchy (root, child, grandchild up to depth 3). _(PR-122-B v1, #2714)_
-- [x] Detail panel shows ingredient fields and variants table. _Recipe-ref count deferred to PR-122-B2 (needs API extension)._ _(PR-122-B v1, #2714)_
-- [x] Create works via tRPC procedure and reflects in the UI immediately. _Rename / change-parent / delete deferred to PR-122-B2._ _(PR-122-B v1, #2714)_
-- [ ] Delete with blockers shows the blocker list; success only when blockers are zero. _(deferred to PR-122-B2)_
-- [ ] Variant CRUD inside the detail panel works including shelf-life fields (PRD-108). _Read-only display of shelf-life fields landed in PR-122-B v1; inline CRUD deferred to PR-122-B2._
+- [x] Detail panel shows ingredient fields and variants table. _(PR-122-B v1, #2714; recipe-ref count added in PR-122-B2)_
+- [x] Create works via tRPC procedure and reflects in the UI immediately. _(PR-122-B v1, #2714; rename / change-parent / delete added in PR-122-B2)_
+- [x] Delete with blockers shows the blocker list; success only when blockers are zero. _(PR-122-B2)_
+- [x] Variant CRUD inside the detail panel works including shelf-life fields (PRD-108). _(PR-122-B2)_
 
 ### Aliases tab
 
@@ -232,20 +232,20 @@ Inline per theme protocol.
 
 ### tRPC procedures
 
-- [x] All procedures in the API section exist in `apps/pops-api/src/modules/food/`. _Filter expansion for `food.ingredients.list` (`hasVariants` / `hasNoRecipeRefs` / pagination) deferred to PR-122-B2 — current router supports `{ search, parentId }`._ _(PR-122-API, #2705)_
+- [x] All procedures in the API section exist in `apps/pops-api/src/modules/food/`. _(PR-122-API, #2705; PR-122-B2 adds `food.ingredients.recipeRefs`. Filter expansion for `food.ingredients.list` — `hasVariants` / `hasNoRecipeRefs` / pagination — remains deferred to a follow-up; not exercised by the UI yet.)_
 - [x] All mutations are transactional. _(PR-122-API, #2705)_
 - [x] `food.slugs.search` is exposed and used by both this page's global search AND PRD-120's editor autocomplete. _(PR-122-API, #2705; PRD-120 consumer to land alongside the editor's autocomplete extension)_
 
 ### Deep links & navigation
 
-- [ ] `/food/data/ingredients?focus=<slug>` opens the tab, scrolls to the row, and visually highlights it for 2 seconds. _(deferred to PR-122-B2)_
+- [x] `/food/data/ingredients?focus=<slug>` opens the tab, scrolls to the row, and visually highlights it for 2 seconds. _(PR-122-B2)_
 - [ ] PRD-119's auto-create banner links here correctly. _(gated on PRD-119)_
 
 ### Mobile
 
 - [x] All tabs readable at 375px without horizontal scroll. _(PR-122-A, #2698 — tab strip collapses below 640px)_
 - [x] Tab bar collapses to a dropdown on narrow viewports. _(PR-122-A, #2698)_
-- [ ] Variant rows collapse to cards in mobile mode. _(deferred to PR-122-B2 alongside variant CRUD)_
+- [x] Variant rows collapse to cards in mobile mode. _(PR-122-B2)_
 
 ### Tests
 

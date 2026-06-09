@@ -12,39 +12,9 @@ import { useTranslation } from 'react-i18next';
 import { trpc } from '@pops/api-client';
 
 import { buildIngredientTree } from './buildIngredientTree';
-
-import type { TFunction } from 'i18next';
+import { mapMutationError } from './errors';
 
 import type { CreateIngredientInput } from './CreateIngredientDialog';
-
-/**
- * Map a tRPC mutation error to a user-facing localized message.
- *
- * The router layer (PRD-122-API) translates service errors to typed
- * `TRPCError` codes:
- *   - InvalidSlugError                       → BAD_REQUEST
- *   - SlugAlreadyRegisteredError             → CONFLICT
- *   - IngredientHierarchyDepthExceeded       → BAD_REQUEST (message includes "Depth")
- *   - IngredientCycleError                   → BAD_REQUEST (message includes "cycle")
- *
- * BAD_REQUEST collapses three distinct service errors; the original
- * `err.message` is the only signal that differentiates them. The mapping
- * here is intentionally conservative — anything unrecognised falls back
- * to the generic message rather than leaking raw service strings.
- */
-function mapCreateError(
-  err: { data?: { code?: string } | null; message: string },
-  t: TFunction
-): string {
-  const code = err.data?.code;
-  if (code === 'CONFLICT') return t('data.ingredients.create.error.slugTaken');
-  if (code === 'BAD_REQUEST') {
-    if (/cycle/i.test(err.message)) return t('data.ingredients.create.error.cycle');
-    if (/depth/i.test(err.message)) return t('data.ingredients.create.error.hierarchyTooDeep');
-    return t('data.ingredients.create.error.invalidSlug');
-  }
-  return t('data.ingredients.create.error.generic');
-}
 
 function useExpandedSet() {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
@@ -56,7 +26,15 @@ function useExpandedSet() {
       return next;
     });
   }, []);
-  return { expandedIds, toggleNode };
+  const expandMany = useCallback((ids: readonly number[]) => {
+    if (ids.length === 0) return;
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.add(id);
+      return next;
+    });
+  }, []);
+  return { expandedIds, toggleNode, expandMany };
 }
 
 function useCreateDialog() {
@@ -70,7 +48,10 @@ function useCreateDialog() {
       setOpen(false);
       void utils.food.ingredients.list.invalidate();
     },
-    onError: (err) => setErrorMessage(mapCreateError(err, t)),
+    onError: (err) =>
+      setErrorMessage(
+        mapMutationError(err, t, { fallbackKey: 'data.ingredients.create.error.generic' })
+      ),
   });
   const submit = useCallback(
     (input: CreateIngredientInput) => {
@@ -106,7 +87,7 @@ function useCreateDialog() {
 export function useIngredientsTab() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const { expandedIds, toggleNode } = useExpandedSet();
+  const { expandedIds, toggleNode, expandMany } = useExpandedSet();
   const createDialog = useCreateDialog();
 
   const listQuery = trpc.food.ingredients.list.useQuery({
@@ -135,6 +116,7 @@ export function useIngredientsTab() {
     setSearch,
     selectIngredient,
     toggleNode,
+    expandMany,
     openCreateDialog: createDialog.openDialog,
     closeCreateDialog: createDialog.closeDialog,
     submitCreate: createDialog.submit,
