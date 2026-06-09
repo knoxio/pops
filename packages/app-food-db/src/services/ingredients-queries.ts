@@ -1,10 +1,3 @@
-/**
- * Read-side helpers for the ingredients tab of the PRD-122 data page.
- *
- * Split from `./ingredients.ts` to keep that file under the per-file
- * line cap. Mutations and slug-registry maintenance stay in the parent
- * service; reads (list / get / variants / blocker enumeration) live here.
- */
 import { and, asc, eq, inArray, like, or, sql } from 'drizzle-orm';
 
 import {

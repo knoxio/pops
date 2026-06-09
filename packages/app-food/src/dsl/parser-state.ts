@@ -4,13 +4,6 @@ import { parseRecipeArgs } from './parse-recipe.js';
 import { parseStepArgs } from './parse-step.js';
 import { parseYieldArgs } from './parse-yield.js';
 
-/**
- * Parser state + per-func handlers — PRD-114.
- *
- * Sibling of `parser.ts`. The top-level dispatcher lives there; the
- * specialised `handle*` functions for each `@func(...)` live here so
- * `parser.ts` stays under the line / complexity caps.
- */
 import type { AstBlock, IngredientBlock, RecipeAst, SourceSpan } from './ast.js';
 import type { ParseError } from './errors.js';
 

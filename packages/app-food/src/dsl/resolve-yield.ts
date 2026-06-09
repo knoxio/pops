@@ -2,8 +2,6 @@ import { newIngredientCreation, newVariantCreation } from './resolve-create.js';
 import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from './resolve-slug.js';
 
 /**
- * `@yield(...)` resolver — PRD-115.
- *
  * Resolves the yield ingredient (or recipe → recipe's own yield), the
  * optional variant scoped under that ingredient, and the optional
  * prep_state (curated; no auto-create).
@@ -57,8 +55,7 @@ function resolveYieldHead(ctx: YieldCtx): number | null {
     return resolveYieldFromRecipe(ctx, reg.targetId);
   }
   // prep_state in the yield head slot is a kind-mismatch, not an unresolved
-  // ingredient — PRD-115 reserves UnresolvedYieldIngredient for genuine
-  // failure-to-resolve cases.
+  // ingredient — UnresolvedYieldIngredient is reserved for genuine failures.
   state.errors.push({
     code: 'WrongKindForContext',
     message: `@yield slug "${slug}" resolves to a ${reg.kind}; expected an ingredient or recipe`,

@@ -1,21 +1,3 @@
-/**
- * Conversion tRPC router — PRD-123 Phase B.
- *
- * Procedures:
- *   listUnits / createUnit / updateUnit / deleteUnit
- *   listWeights / createWeight / updateWeight / deleteWeight
- *   resolve  — server-only contract; PRD-116's compile path calls the
- *              `conversionsService.resolveCanonicalQty` helper directly via
- *              `packages/app-food/src/dsl/normalisation.ts` (no tRPC hop).
- *
- * Services live in `@pops/app-food-db` (PRD-122 part API extracted them).
- *
- * Error mapping (mirrors the aliases / variants routers):
- *   - `SeededRowProtected`           → `{ ok:false, reason:'seeded' }`
- *   - SQLite `UNIQUE` constraint     → tRPC `CONFLICT`
- *   - `expectRow` miss (no such id)  → tRPC `NOT_FOUND`
- *   - anything else                   propagates as-is
- */
 import { z } from 'zod';
 
 import { conversionsQueries, conversionsService } from '@pops/app-food-db';

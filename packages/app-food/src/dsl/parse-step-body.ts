@@ -1,19 +1,17 @@
 import { isDigit, isSlugCont, isSlugStart } from './cursor.js';
 
 /**
- * Step body parser — PRD-114.
- *
- * Step bodies are quoted strings containing markdown text plus inline
- * references and inline functions:
+ * Step bodies are quoted strings containing markdown text plus inline refs
+ * and inline functions:
  *
  *   `@N`         — reference to ingredient with index N
- *   `@slug`      — reference to a registered slug (resolved by PRD-115)
+ *   `@slug`      — reference to a registered slug (resolved downstream)
  *   `@time(qty:unit)`         — inline timer
  *   `@temperature(qty:unit)`  — inline temperature widget
  *
- * Outside `@step` bodies, inline refs are syntax errors at the parser
- * level. Here, we accept any `@N` or `@slug` and record it as a `ref` AST
- * node — PRD-115 validates referents.
+ * Outside `@step` bodies, inline refs are syntax errors. Here, we accept
+ * any `@N` or `@slug` and record it as a `ref` AST node — the resolver
+ * validates referents.
  */
 import type { QtyUnit, StepBody, StepBodyPart } from './ast.js';
 

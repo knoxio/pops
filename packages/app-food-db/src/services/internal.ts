@@ -1,8 +1,3 @@
-/**
- * Shared helpers for the food schema service layer (PRD-106).
- *
- * Not exported from the package — internal to `src/db/services/*.ts`.
- */
 import { eq } from 'drizzle-orm';
 
 import {

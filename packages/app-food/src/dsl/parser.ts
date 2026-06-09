@@ -11,7 +11,7 @@ import {
 import { findBalancedClose, recomputeLineCol } from './parser-util.js';
 
 /**
- * Recipe DSL parser entry point — PRD-114 / ADR-023.
+ * Recipe DSL parser entry point. Grammar in ADR-023.
  *
  * Scans the input at the top level. When a line starts with `@<func>(`
  * (whitespace-tolerant), reads the balanced-paren block and dispatches to

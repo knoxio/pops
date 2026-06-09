@@ -1,10 +1,6 @@
 /**
- * Slug search service — PRD-122 + PRD-120 (autocomplete shared procedure).
- *
- * Substring match against `slug_registry`, returning the original target
- * row's display name where available. Returns nothing for an empty query
- * (caller is expected to debounce on the client). Limit defaults to 25 so
- * the response stays trivial over the wire.
+ * Substring match against `slug_registry`, returning the target row's
+ * display name where available. Empty query returns nothing.
  */
 import { and, eq, inArray, like } from 'drizzle-orm';
 

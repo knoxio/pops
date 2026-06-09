@@ -1,11 +1,8 @@
 /**
- * Recipe compile pipeline — PRD-116.
- *
- * Takes a `recipe_versions.id`, runs parse → resolve → cycle → materialise
- * in one Drizzle transaction, and writes `recipe_lines`, `recipe_steps`,
- * `recipe_version_proposed_slugs` rows alongside an update to
- * `recipe_versions` (compile_status, compile_error, compiled_at, plus the
- * header columns hoisted from `@recipe(...)` and `@yield(...)`).
+ * Recipe compile pipeline. Takes a `recipe_versions.id`, runs
+ * parse → resolve → cycle → materialise in one Drizzle transaction, and
+ * writes `recipe_lines`, `recipe_steps`, `recipe_version_proposed_slugs`
+ * rows alongside an update to `recipe_versions`.
  */
 import { eq } from 'drizzle-orm';
 

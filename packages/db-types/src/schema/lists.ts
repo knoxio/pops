@@ -1,16 +1,10 @@
 /**
- * Lists domain — PRD-112 schema.
+ *   lists       — list header (name, kind, owner_app, archive)
+ *   list_items  — polymorphic items pointing at lists.id, optionally back
+ *                 to an ingredient / variant / recipe (or owner-app custom ref)
  *
- * Two tables form the generic list surface:
- *   lists         — list header (name, kind, owner_app, archive)
- *   list_items    — polymorphic items pointing at lists.id, optionally back to
- *                   an ingredient / variant / recipe (or owner-app custom ref)
- *
- * The `kind` and `ref_kind` enums are intentionally small + closed. Adding a
- * new value = a small migration to extend the CHECK plus a consumer-side PRD
- * specifying the new affordances.
- *
- * See `docs/themes/07-food/prds/112-lists-schema/`.
+ * The `kind` and `ref_kind` enums are intentionally small + closed —
+ * adding a value means extending the CHECK in a migration.
  */
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';

@@ -1,16 +1,11 @@
 /**
- * Node-only path helpers for recipe hero images (PRD-124).
+ * Node-only hero-image path helpers. Split from `./hero-paths.ts` because
+ * the browser-bound `HeroImageUploader` imports constants from that file
+ * and Vite cannot resolve `node:path` or read `process.env`.
  *
- * Split out from `./hero-paths.ts` because the browser-bound
- * `HeroImageUploader` component imports the URL builder + constants from
- * that file; Vite/browser bundles cannot resolve `node:path` or read
- * `process.env`. Anything that touches the filesystem layout's absolute
- * paths lives here.
- *
- * The same convention is mirrored inside `apps/pops-api/src/modules/food/
- * hero-image/paths.ts` — pops-api does not depend on `@pops/app-food` at
- * runtime, so the absolute-path helpers are duplicated there. Keep both
- * sources in sync if the layout changes.
+ * The same layout is mirrored at `apps/pops-api/src/modules/food/
+ * hero-image/paths.ts` — pops-api doesn't depend on `@pops/app-food` at
+ * runtime, so keep both sources in sync.
  */
 import { resolve, sep } from 'node:path';
 

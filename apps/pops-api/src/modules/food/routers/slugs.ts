@@ -1,12 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Food → slugs tRPC procedures (PRD-122 + PRD-120).
- *
- * Single source for slug autocomplete across the data page (global search)
- * and the DSL editor (PRD-120's `slug_registry` lookup). Keeps the surface
- * cheap so it can be polled on every keystroke client-side without paging.
- */
 import { slugSearchService } from '@pops/app-food-db';
 
 import { getDrizzle } from '../../../db.js';

@@ -1,10 +1,7 @@
 /**
- * Server-side path helpers for recipe hero images (PRD-124).
- *
- * Mirrors the convention in `@pops/app-food/src/storage/hero-paths.ts`.
- * pops-api does not depend on the React-bearing app-food package at
- * runtime, so the absolute-path resolution is duplicated here. Keep both
- * in sync if the layout changes.
+ * Mirrors the layout in `@pops/app-food/src/storage/hero-paths.ts`. pops-api
+ * doesn't depend on the React-bearing app-food package at runtime, so the
+ * absolute-path resolution is duplicated here — keep both in sync.
  */
 import { resolve, sep } from 'node:path';
 

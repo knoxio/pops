@@ -1,17 +1,13 @@
 /**
- * Recipe-graph cycle detector — PRD-117 / ADR-022.
+ * Recipe-graph cycle detector. Given a candidate recipe's `ResolvedRecipeAst`
+ * and the live recipe graph in `recipe_lines`, determines whether the
+ * candidate participates in a cycle. Runs between resolve and materialise.
  *
- * Given a candidate recipe's `ResolvedRecipeAst` (from PRD-115) and the
- * live recipe graph in the DB (from PRD-116's `recipe_lines`), determine
- * whether the candidate participates in a cycle. The detector is the last
- * gate before materialisation: PRD-116's compile calls `detectRecipeCycle`
- * between resolve and write.
- *
- * Algorithm: iterative DFS from each candidate target T. The explicit
- * stack + parent map avoids both recursion (no overflow on pathological
- * graphs) and a costly post-walk path reconstruction. The `recipe_lines`
- * read is one prepared SELECT per visited node; `pathSlugs` is one
- * batched SELECT against `recipes`.
+ * Algorithm: iterative DFS from each candidate target T. The explicit stack +
+ * parent map avoids both recursion (no overflow on pathological graphs) and a
+ * costly post-walk path reconstruction. The `recipe_lines` read is one
+ * prepared SELECT per visited node; `pathSlugs` is one batched SELECT
+ * against `recipes`.
  */
 import { sql } from 'drizzle-orm';
 
@@ -48,9 +44,9 @@ function collectTargets(resolved: ResolvedRecipeAst): readonly CandidateTarget[]
 function walk(target: CandidateTarget, ctx: CycleContext): CycleDescription | null {
   const currentId = ctx.currentRecipeId;
   if (currentId === null) return null;
-  // Defensive self-loop: candidate references itself directly. PRD-115's
-  // SelfReferenceRecipe normally catches this earlier — this branch is a
-  // safety net for callers that bypass the resolver.
+  // Defensive self-loop: candidate references itself directly. The resolver's
+  // SelfReferenceRecipe normally catches this earlier — safety net for
+  // callers that bypass the resolver.
   if (target.recipeId === currentId) {
     return buildDescription([currentId, currentId], target.loc, ctx);
   }

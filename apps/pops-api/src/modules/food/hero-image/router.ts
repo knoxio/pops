@@ -1,10 +1,3 @@
-/**
- * food.heroImage tRPC router (PRD-124).
- *
- * Thin wrapper over `./service.ts` that handles the base64 → Buffer decode
- * and maps domain errors to TRPCError codes. The shell calls these from
- * the recipe edit page's HeroImageUploader component.
- */
 import { TRPCError } from '@trpc/server';
 
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';

@@ -4,17 +4,14 @@ import { resolveYield } from './resolve-yield.js';
 import { newResolverState } from './resolver-state.js';
 
 /**
- * Recipe DSL resolver entry point — PRD-115.
+ * Resolves every slug reference in the parser AST to a real entity id via
+ * `slug_registry`. Pure: read-only DB access, deterministic for a given
+ * `(ast, registry snapshot)` pair, no side effects.
  *
- * Takes the parser AST (PRD-114) and resolves every slug reference to a
- * real entity id via `slug_registry` (PRD-106). Pure: read-only DB
- * access, deterministic for a given `(ast, registry snapshot)` pair, no
- * side effects.
- *
- * Output: `ResolvedRecipeAst` plus `creations` (auto-create instructions
- * for unknown ingredient/variant slugs, processed by PRD-116's compiler)
- * and `proposedSlugs` (informational pointers for the Epic 03 review
- * queue when an LLM-ingested recipe carries unresolvable refs).
+ * Output: `ResolvedRecipeAst`, `creations` (auto-create instructions for
+ * unknown ingredient/variant slugs — processed downstream by compile),
+ * and `proposedSlugs` (review-queue pointers for unresolvable LLM-ingested
+ * refs).
  */
 import type { IngredientBlock, RecipeAst } from './ast.js';
 import type { ResolveContext, ResolveResult } from './resolver-types.js';

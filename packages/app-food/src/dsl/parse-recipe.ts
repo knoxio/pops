@@ -2,12 +2,9 @@ import { readIdentifier } from './lex.js';
 import { assignRecipeArg } from './parse-recipe-assign.js';
 
 /**
- * `@recipe(...)` parser — PRD-114.
- *
- * All args are named (key=value). Required: `slug`, `title`. Optional:
- * `servings`, `prep_time`, `cook_time`, `recipe_type`, `summary`. Per-key
- * value assignment lives in `parse-recipe-assign.ts` so this file stays
- * under the line cap.
+ * `@recipe(...)` parser. All args are named (key=value). Required: `slug`,
+ * `title`. Optional: `servings`, `prep_time`, `cook_time`, `recipe_type`,
+ * `summary`.
  */
 import type { RecipeHeader } from './ast.js';
 import type { Cursor } from './cursor.js';

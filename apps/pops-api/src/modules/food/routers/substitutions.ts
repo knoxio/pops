@@ -15,12 +15,11 @@ import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 
 /**
- * PRD-148 graph-view composite id. Encodes the side as
- * `ingredient:<id>` or `variant:<id>` so the client can dedupe nodes
- * across edges without doing any schema reasoning. Throws on a
- * malformed side (`kind='variant'` without a `variantId`) rather than
- * silently coercing to `variant:0`, which would collide across edges
- * and hide a schema-drift bug.
+ * Graph-view composite id. Encodes the side as `ingredient:<id>` or
+ * `variant:<id>` so the client can dedupe nodes across edges without
+ * doing any schema reasoning. Throws on a malformed side (`kind='variant'`
+ * without a `variantId`) rather than silently coercing to `variant:0`,
+ * which would collide across edges and hide a schema-drift bug.
  */
 function sideToNodeId(side: GraphViewSide): string {
   if (side.kind === 'variant') {
@@ -85,13 +84,10 @@ export interface GraphView {
 }
 
 /**
- * Food → substitutions tRPC procedures (PRD-122 + PRD-109).
- *
  * Endpoints are XOR-shaped: exactly one of `ingredientId` / `variantId` on
- * each side. Validation runs at the boundary so client mistakes surface
- * as BAD_REQUEST instead of an opaque INTERNAL_SERVER_ERROR after the
- * SQLite CHECK fires. Scope/recipeId coherence (`recipe` iff `recipeId`
- * set) is enforced here too — the schema has its own CHECK as a backstop.
+ * each side. Validating at the boundary makes client mistakes surface as
+ * BAD_REQUEST instead of a 500 after the SQLite CHECK fires. Scope/recipeId
+ * coherence (`recipe` iff `recipeId` set) is enforced here too.
  */
 
 const ENDPOINT_SCHEMA = z

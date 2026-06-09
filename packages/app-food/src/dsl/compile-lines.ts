@@ -1,15 +1,12 @@
 import { normaliseLineQty } from './normalisation';
 
-import type { CanonicalUnit } from '@pops/app-food-db';
+import type { CanonicalUnit, FoodDb } from '@pops/app-food-db';
 /**
- * `recipe_lines` materialiser — PRD-116 + PRD-123.
- *
- * Maps a `ResolvedIngredientBlock` + the author's original descriptor
- * string to an INSERT row. PRD-123 upgraded the normalisation step from
- * identity carry-over to a 3-step lookup in `unit_conversions` and
- * `ingredient_weights` — handled by `normaliseLineQty` in `normalisation.ts`.
+ * `recipe_lines` materialiser. Maps a `ResolvedIngredientBlock` plus the
+ * author's original descriptor string to an INSERT row. The normalisation
+ * step is delegated to `normaliseLineQty` (3-step lookup in
+ * `unit_conversions` and `ingredient_weights`).
  */
-import type { FoodDb } from '@pops/app-food-db';
 
 import type { ResolvedIngredientBlock } from './resolver-types';
 

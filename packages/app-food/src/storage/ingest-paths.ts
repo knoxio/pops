@@ -1,15 +1,12 @@
 /**
- * Filesystem helpers for the food ingest media root (PRD-110).
+ * Filesystem helpers for the food ingest media root. The ingest root is
+ * configured via `FOOD_INGEST_DIR` and defaults to `./data/food/ingest`.
+ * Path columns in `ingest_sources` are stored relative to the root so
+ * deployments can relocate without rewriting rows.
  *
- * The ingest root is configured via `FOOD_INGEST_DIR` and defaults to
- * `./data/food/ingest`. Path columns in `ingest_sources` are stored
- * relative to the root so deployments can relocate without rewriting rows
- * — `ingestDirFor` joins the configured root each time it's read.
- *
- * All paths returned by these helpers use the platform-native separator;
- * relative path columns are stored with POSIX separators by convention to
- * keep them readable in JSON exports. `relativeToIngestDir` normalises
- * either input.
+ * Returned paths use the platform-native separator; stored relative paths
+ * use POSIX separators for readability in JSON exports.
+ * `relativeToIngestDir` normalises either input.
  */
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 

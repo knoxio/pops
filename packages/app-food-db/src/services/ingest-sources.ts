@@ -1,15 +1,6 @@
 /**
- * Ingest source services — PRD-110.
- *
- * The on-disk media layout (`${FOOD_INGEST_DIR}/<source_id>/...`) is managed
- * by Epic 02's ingestion worker; this service owns the row lifecycle:
- * insert per ingest invocation, link to the drafted recipe once the LLM
- * extraction produced one, and mark `archived_at` when the FIFO eviction
- * job removes the media.
- *
- * Service-layer guards enforce the kind/url invariant PRD-110 calls out
- * (`url` required for `kind ∈ {url-web, url-instagram}`). The DB CHECK
- * handles the enum; everything else is enforced here.
+ * Service-layer guards enforce the kind/url invariant (`url` required for
+ * `kind ∈ {url-web, url-instagram}`). The DB CHECK handles the enum.
  */
 import { eq } from 'drizzle-orm';
 

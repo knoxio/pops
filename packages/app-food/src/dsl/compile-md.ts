@@ -1,7 +1,5 @@
 /**
- * Step body markdown rewriting — PRD-116.
- *
- * Each `ResolvedStepBodyPart` becomes a markdown chunk:
+ * Step body markdown rewriting. Each `ResolvedStepBodyPart` becomes:
  *
  *   text         → verbatim
  *   ref (index)  → `[label](#line-N)` — anchor stable per version
@@ -9,9 +7,8 @@
  *   time         → `[qty unit](#timer)`
  *   temperature  → `[qty°unit](#temperature)`
  *
- * The renderer (Epic 01) consumes either `body_md` or `body_resolved_json`
- * depending on the surface — markdown for the static cookbook view, the
- * resolved JSON for cooking-mode timers.
+ * The renderer consumes either `body_md` or `body_resolved_json` — markdown
+ * for the static cookbook view, JSON for cooking-mode timers.
  */
 import type { ResolvedStepBody, ResolvedStepBodyPart } from './resolver-types.js';
 
@@ -24,8 +21,8 @@ export type LineLabelMap = ReadonlyMap<number, string>;
 
 /**
  * Lookup from `ingredients.id` to the canonical `ingredients.slug`. Used to
- * render `@slug` step refs (the resolver pins these to `ingredientId`, not
- * the original text) as `[slug](#ingredient-slug)` per the PRD-116 spec.
+ * render `@slug` step refs as `[slug](#ingredient-slug)` (the resolver pins
+ * these to `ingredientId`, not the original text).
  */
 export type IngredientSlugMap = ReadonlyMap<number, string>;
 

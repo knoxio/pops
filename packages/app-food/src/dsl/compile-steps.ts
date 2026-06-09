@@ -1,10 +1,8 @@
 import { renderBodyMd, type RenderContext } from './compile-md.js';
 
 /**
- * `recipe_steps` materialiser — PRD-116.
- *
- * Maps a `ResolvedStepBlock` to its INSERT shape. `body_md` is the
- * rewritten markdown (per `compile-md.ts`); `body_resolved_json` is the
+ * `recipe_steps` materialiser. Maps a `ResolvedStepBlock` to its INSERT
+ * shape. `body_md` is the rewritten markdown; `body_resolved_json` is the
  * raw `ResolvedStepBody` so the cooking-mode UI can render typed timers /
  * ingredient chips. `duration_minutes`, `temperature_value`, and
  * `temperature_unit` hoist the named args out for fast queries.

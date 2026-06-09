@@ -1,13 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-/**
- * Food → prepStates tRPC procedures (PRD-122).
- *
- * v1 deliberately omits update/delete — the PRD calls out that prep_states
- * have heavy reference impact and deletion requires cascade analysis that's
- * deferred to a future PRD.
- */
 import { InvalidSlugError, prepStatesService, SlugAlreadyRegisteredError } from '@pops/app-food-db';
 
 import { getDrizzle } from '../../../db.js';

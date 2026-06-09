@@ -1,12 +1,4 @@
 import type { CycleError } from './cycle-types.js';
-/**
- * Compile types — PRD-116.
- *
- * `compileRecipeVersion` runs the parse → resolve → cycle → materialise
- * pipeline against a single `recipe_versions` row, in one Drizzle
- * transaction. The result carries either row counts (success) or a
- * structured error payload (failure).
- */
 import type { ParseError } from './errors.js';
 import type { ResolveError } from './resolver-types.js';
 

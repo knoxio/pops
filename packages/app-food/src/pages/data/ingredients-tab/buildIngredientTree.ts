@@ -1,13 +1,11 @@
 /**
  * Build a hierarchical tree of ingredients from a flat list.
  *
- * The food schema caps depth at 3 (PRD-106 invariant). The tree
- * enforces alphabetical (slug) order at every level — the API already
- * returns rows sorted that way (PRD-122-API), but the function sorts
- * defensively so callers that pass unsorted input still get
- * deterministic ordering. Orphan rows (parent_id points at an
- * ingredient that's missing from the list — e.g. because a search
- * filter dropped it) get re-rooted so they remain visible.
+ * Enforces alphabetical (slug) order at every level — the API already
+ * returns rows sorted that way, but we sort defensively so callers passing
+ * unsorted input still get deterministic ordering. Orphan rows (parent_id
+ * pointing at an ingredient missing from the list — e.g. a search filter
+ * dropped it) get re-rooted so they remain visible.
  */
 import type { IngredientRow } from '@pops/app-food-db';
 

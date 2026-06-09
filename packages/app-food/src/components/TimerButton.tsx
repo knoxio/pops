@@ -4,24 +4,17 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@pops/ui';
 
 /**
- * `@time(...)` rendered as a tappable button inside step bodies — PRD-121.
- *
- * Fire-and-forget — clicking emits `onTimerStart(durationMinutes, stepPosition)`
- * but the button itself owns no state. The future cooking-mode surface owns
- * timer tracking; in `variant='detail'` the click is informational (caller
- * can ignore the callback).
- *
- * `unit` is the original DSL unit (`min`, `h`, `s`, etc.); display formats
- * humanely. `durationMinutes` is the normalised value PRD-116 hoists for
- * fast queries; the callback receives this value because cooking mode
- * always reasons in minutes.
+ * `@time(...)` rendered as a tappable button. Fire-and-forget — clicking
+ * emits `onTimerStart(durationMinutes, stepPosition)` but the button itself
+ * owns no state. `unit` is the original DSL unit (display); the callback
+ * always receives normalised minutes.
  */
 export interface TimerButtonProps {
   /** Original quantity from the DSL — `[2 min]` shows "2 min". */
   qty: number;
   /** Original unit from the DSL — `min`, `h`, `hr`, `hour`, `s`, `sec`. */
   unit: string;
-  /** Normalised duration in minutes (PRD-116 hoist column). */
+  /** Normalised duration in minutes. */
   durationMinutes: number;
   /** Step position the timer belongs to — passed back to the callback. */
   stepPosition: number;

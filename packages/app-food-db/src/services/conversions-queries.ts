@@ -1,12 +1,3 @@
-/**
- * Read-side helpers for PRD-123's conversions tab on the data page.
- *
- * Split from `./conversions.ts` so that file stays focused on mutations +
- * the `resolveCanonicalQty` lookup PRD-116's compile path depends on. The
- * list functions are consumed exclusively by the admin UI's tRPC router
- * (`apps/pops-api/src/modules/food/conversions/router.ts`); compile never
- * paginates.
- */
 import { and, asc, eq, like, or, type SQL } from 'drizzle-orm';
 
 import {
@@ -54,9 +45,6 @@ function combineFilters(filters: SQL[]): SQL | undefined {
 export interface ListIngredientWeightsInput {
   ingredientId?: number;
   search?: string;
-  /** Mirror of `ListUnitConversionsInput.seededOnly` so the data page can
-   *  filter weight rows on the same "show only PRD-113-seeded entries"
-   *  toggle that already drives the unit-conversions tab. */
   seededOnly?: boolean;
 }
 

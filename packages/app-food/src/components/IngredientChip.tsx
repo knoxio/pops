@@ -4,16 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@pops/ui';
 
 /**
- * Inline reference chip rendered inside a step body — PRD-121.
+ * Inline reference chip rendered inside a step body. Clicking scrolls the
+ * matching ingredient list row into view (the caller wires the anchor by
+ * giving each `<li>` an `id` derived from `position`). When the resolver
+ * couldn't bind the ref the chip shows an error badge but stays clickable.
  *
- * Clicking scrolls the matching ingredient list row into view (caller wires
- * up the anchor by giving each list `<li>` an `id` derived from `position`
- * — see `RecipeRenderer.tsx`). When the resolver couldn't bind the ref
- * (`hasError=true`) the chip shows an error badge but stays clickable so
- * the user can hunt for the right index.
- *
- * Styled like `@pops/ui`'s `Chip` (outline / destructive variants) but built
- * on `<a>` so the chip is a real link — keyboard focusable, in-page anchor,
+ * Built on `<a>` so it's a real link — keyboard focusable, in-page anchor,
  * works with `Tab` traversal without `tabIndex` overrides.
  */
 export interface IngredientChipProps {

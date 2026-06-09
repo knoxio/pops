@@ -1,10 +1,3 @@
-/**
- * Read-side helpers for the substitutions tab of the PRD-122 data page.
- *
- * Split from `./substitutions.ts` so that file stays under the per-file
- * line cap. Mutations and the create / delete entry points stay in the
- * parent service; list filters and the patch-style update live here.
- */
 import { and, eq, or, sql } from 'drizzle-orm';
 
 import { substitutions, type SubstitutionRow } from '../schema.js';
@@ -65,10 +58,9 @@ export function listSubstitutions(
     filters.push(eq(substitutions.recipeId, input.recipeId));
   }
   if (input.contextTag !== undefined) {
-    // PRD-109: empty context_tags is a wildcard ("applies in any context").
-    // The tag-specific filter must therefore match the requested tag OR any
-    // wildcard edge — otherwise wildcards silently drop out of cook-time
-    // queries that supply a context.
+    // Empty context_tags is a wildcard ("applies in any context"), so a
+    // tag-specific filter must match the requested tag OR any wildcard edge —
+    // otherwise wildcards drop out of cook-time queries that supply a context.
     filters.push(
       or(
         sql`json_array_length(${substitutions.contextTags}) = 0`,

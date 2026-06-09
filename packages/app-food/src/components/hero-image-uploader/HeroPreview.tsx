@@ -1,12 +1,10 @@
 import { Button } from '@pops/ui';
 
 /**
- * Hero image preview + Replace/Remove action row (PRD-124).
- *
- * The card-size thumb is shown by default; if it 404s (likely cause: the
- * sharp thumbnail step failed during upload), `onError` swaps in the
- * original URL once. The `img.onerror = null` reset prevents an infinite
- * fallback loop when the original is missing too.
+ * Hero image preview + Replace/Remove action row. The card-size thumb is
+ * shown by default; if it 404s, `onError` swaps in the original URL once.
+ * The `img.onerror = null` reset prevents an infinite fallback loop when
+ * the original is missing too.
  */
 import type { JSX } from 'react';
 

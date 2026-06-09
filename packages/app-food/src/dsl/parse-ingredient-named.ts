@@ -1,11 +1,5 @@
 import { readBoolean, readIdentifier, readNumber, readSlug, readString } from './lex.js';
 
-/**
- * Per-key named-arg readers for `@ingredient(...)` — PRD-114.
- *
- * Sibling of `parse-ingredient.ts`; per-key dispatch lives here so the
- * named-arg switch stays under the complexity / max-lines caps.
- */
 import type { Cursor } from './cursor.js';
 import type { ParseError } from './errors.js';
 

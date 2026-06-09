@@ -2,11 +2,9 @@ import { newIngredientCreation, newVariantCreation } from './resolve-create.js';
 import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from './resolve-slug.js';
 
 /**
- * `@ingredient(...)` resolver — PRD-115.
- *
- * Resolves the descriptor (ingredient[:variant[:prep]]) to entity ids,
+ * Resolves the descriptor `ingredient[:variant[:prep]]` to entity ids,
  * detects recipe-as-ingredient refs, and emits auto-create instructions
- * for unknown ingredient/variant slugs. Prep_states are curated — unknown
+ * for unknown ingredient/variant slugs. Prep states are curated — unknown
  * = error.
  */
 import type { IngredientBlock, SourceSpan } from './ast.js';

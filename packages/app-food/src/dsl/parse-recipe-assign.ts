@@ -1,11 +1,5 @@
 import { readNumber, readQtyUnit, readString } from './lex.js';
 
-/**
- * Per-key value assigners for `@recipe(...)` — PRD-114.
- *
- * Kept in a sibling file so `parse-recipe.ts` stays under the 200-line cap
- * and `assignRecipeArg` stays under the function complexity / line caps.
- */
 import type { RecipeHeader, RecipeTypeLiteral } from './ast.js';
 import type { Cursor } from './cursor.js';
 import type { ParseError } from './errors.js';

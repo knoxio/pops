@@ -12,24 +12,20 @@ import type { ResolvedStepBody, ResolvedStepBodyPart } from '../dsl/resolver-typ
 import type { RecipeLineWithResolved } from './RecipeRenderer.types';
 
 /**
- * Render a compiled step body — PRD-121's two-pass markdown approach.
+ * Two-pass step-body render:
  *
- * 1. `body_md` (PRD-116) is markdown with structural refs already rewritten
- *    as anchor links (`[name](#line-3)`, `[2 min](#timer)`, ...). It is the
- *    text + emphasis source of truth.
- * 2. `body_resolved_json` (also PRD-116) is the typed `ResolvedStepBody`
- *    array: text segments plus `ref` / `time` / `temperature` parts. The
- *    structured parts carry the data the chips / timers / temps need
- *    (ingredient id, duration value, temp unit).
+ * 1. `body_md` is markdown with structural refs rewritten as anchor links
+ *    (`[name](#line-3)`, `[2 min](#timer)`, ...). Text/emphasis source of
+ *    truth.
+ * 2. `body_resolved_json` is the typed `ResolvedStepBody`: text segments
+ *    plus `ref` / `time` / `temperature` parts carrying ingredient ids,
+ *    duration values, temp units.
  *
  * As we encounter each anchor in the rendered markdown we pop the next
- * matching part from `body_resolved_json`. Counts must agree (the compile
- * pipeline guarantees this); if they don't, we degrade to a plain link so
- * the body is still readable.
- *
- * Unresolved index refs (`ref.ingredientIndex !== null` with no matching
- * `lines[].position`) render the chip with a destructive error badge per
- * PRD edge-case "Step body with an unresolved `@N`".
+ * matching part from `body_resolved_json`. Counts must agree (compile
+ * guarantees this); on mismatch we degrade to a plain link so the body
+ * stays readable. Unresolved index refs render the chip with a
+ * destructive error badge.
  */
 export interface RecipeStepBodyProps {
   bodyMd: string;

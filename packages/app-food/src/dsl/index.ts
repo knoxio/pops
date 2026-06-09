@@ -1,9 +1,3 @@
-/**
- * Public surface of the recipe DSL parser — PRD-114.
- *
- * Downstream PRDs import from `@pops/app-food` (or directly from
- * `./dsl/parser` / `./dsl/ast` / `./dsl/printer` inside this package).
- */
 export type {
   AstBlock,
   Descriptor,

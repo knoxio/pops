@@ -1,9 +1,6 @@
 /**
- * Ingredient variant services — PRD-106.
- *
- * Variants are scoped under their parent ingredient; the `(ingredient_id,
- * slug)` UNIQUE is enforced at the DB level. Variants do NOT participate
- * in `slug_registry`.
+ * Variants are scoped under their parent ingredient; `(ingredient_id, slug)`
+ * UNIQUE is DB-enforced. Variants do NOT participate in `slug_registry`.
  */
 import { eq } from 'drizzle-orm';
 
@@ -18,9 +15,9 @@ export interface CreateVariantInput {
   defaultUnit: 'g' | 'ml' | 'count';
   packageSizeG?: number | null;
   notes?: string | null;
-  /** PRD-108: feeds expiry auto-fill at cook time. Null = unknown / shelf-stable. */
+  /** Feeds expiry auto-fill at cook time. Null = unknown / shelf-stable. */
   defaultShelfLifeDaysFridge?: number | null;
-  /** PRD-108: feeds expiry auto-fill at cook time. Null = unknown / shelf-stable. */
+  /** Feeds expiry auto-fill at cook time. Null = unknown / shelf-stable. */
   defaultShelfLifeDaysFreezer?: number | null;
 }
 

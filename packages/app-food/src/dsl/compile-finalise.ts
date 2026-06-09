@@ -1,9 +1,8 @@
 /**
- * Failure-path helpers for the PRD-116 compile pipeline.
- *
- * Each `failX` writes `compile_status='failed'` + a structured `compile_error`
- * JSON onto `recipe_versions`, clears any prior `recipe_lines` / `recipe_steps`,
- * and returns a typed `CompileResult` the caller surfaces verbatim.
+ * Failure-path helpers. Each `failX` writes `compile_status='failed'` plus a
+ * structured `compile_error` JSON onto `recipe_versions`, clears any prior
+ * `recipe_lines` / `recipe_steps`, and returns a typed `CompileResult` the
+ * caller surfaces verbatim.
  */
 import { eq } from 'drizzle-orm';
 

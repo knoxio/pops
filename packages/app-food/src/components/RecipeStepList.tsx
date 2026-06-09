@@ -9,17 +9,14 @@ import type { ResolvedStepBody } from '../dsl/resolver-types';
 import type { RecipeLineWithResolved } from './RecipeRenderer.types';
 
 /**
- * Render the steps section — PRD-121.
+ * Each step row's `body_resolved_json` is parsed into a `ResolvedStepBody`
+ * and passed alongside `body_md` to the per-step body renderer for the
+ * two-pass substitution. Step-level `duration_minutes` and `temperature_*`
+ * surface as separate badges — distinct from inline `@time` /
+ * `@temperature` widgets inside the markdown body.
  *
- * Each step row's `body_resolved_json` (PRD-116) is parsed into the typed
- * `ResolvedStepBody` shape and passed alongside `body_md` to the per-step
- * body renderer for the two-pass substitution. Step-level
- * `duration_minutes` and `temperature_*` columns surface as separate
- * badges per PRD line 139 — distinct from inline `@time` / `@temperature`
- * widgets in the markdown body.
- *
- * A defensive parse fall-back on the JSON column produces an empty body —
- * we still render the markdown verbatim so the step is readable.
+ * A defensive parse fall-back on the JSON column produces an empty body
+ * so the markdown still renders.
  */
 export interface RecipeStepListProps {
   steps: RecipeStepRow[];

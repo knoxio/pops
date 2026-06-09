@@ -19,19 +19,14 @@ export type {
 } from './RecipeRenderer.types';
 
 /**
- * Cookbook-styled read view of a compiled recipe — PRD-121.
- *
- * Pure presentation. The renderer never queries — `recipeVersion` is the
- * full joined payload PRD-119's `food.recipes.getForRendering(versionId)`
- * builds server-side. Click callbacks fire-and-forget (cooking-mode owns
- * timer state).
+ * Cookbook-styled read view of a compiled recipe. Pure presentation —
+ * `recipeVersion` is the full joined payload built server-side.
  *
  * Renders the "not yet compiled" placeholder for any non-`compiled`
  * status; renders the archived banner for any recipe with `archived_at`.
  *
  * `variant='compact'` is the list-card preview — a single row with thumb
- * + title + quick facts; suitable for `/food/recipes` list and the
- * solver's "what can I cook" results (Epic 06).
+ * + title + quick facts.
  */
 export function RecipeRenderer({
   recipeVersion,

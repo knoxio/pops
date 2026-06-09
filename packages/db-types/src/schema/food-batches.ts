@@ -1,15 +1,11 @@
 /**
- * Food domain — PRD-108 schema (batch & cook event model).
+ *   batches             — one row per fridge/pantry/freezer slot
+ *   recipe_runs         — cook events pinned to a version
+ *   batch_consumptions  — (run, batch) draws — one row per FIFO touch
  *
- *   batches              — one row per fridge/pantry/freezer slot
- *   recipe_runs          — cook events pinned to a version
- *   batch_consumptions   — (run, batch) draws — one row per FIFO touch
- *
- * Also extends `ingredient_variants` with `default_shelf_life_days_{fridge,
- * freezer}` columns (declared in `./food-ingredients.ts` since Drizzle
- * requires the full table definition in one place).
- *
- * See `docs/themes/07-food/prds/108-batch-model/README.md`.
+ * The `default_shelf_life_days_{fridge,freezer}` columns on
+ * `ingredient_variants` are declared in `./food-ingredients.ts` since
+ * Drizzle requires the full table definition in one place.
  */
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';

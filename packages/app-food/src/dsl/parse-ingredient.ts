@@ -3,7 +3,7 @@ import { readNumber, readQtyUnit, readSlug } from './lex.js';
 import { type PartialIngredient, readNamedArg } from './parse-ingredient-named.js';
 
 /**
- * `@ingredient(...)` parser — PRD-114.
+ * `@ingredient(...)` parser.
  *
  * Compact form: `(index, descriptor, qty:unit, optional?=bool, notes?=string)`.
  * Named form: `(index, slug, variant=, prep=, qty=, unit=, optional=, notes=)`.

@@ -1,17 +1,3 @@
-/**
- * Recipe services — PRD-107.
- *
- * `createRecipe` atomically inserts the `recipes` row + the first
- * `recipe_versions` draft + the `slug_registry` row in one transaction.
- * Slug registration follows PRD-106's pattern: check the registry first so
- * the typed `SlugAlreadyRegisteredError` fires before SQLite's bare UNIQUE.
- *
- * Archive vs delete: archiving sets `archived_at` and keeps the
- * `slug_registry` entry so historic references in archived recipes still
- * resolve. Delete (rare) removes both.
- *
- * See `docs/themes/07-food/prds/107-recipe-model/README.md`.
- */
 import { eq } from 'drizzle-orm';
 
 import { SlugAlreadyRegisteredError, type SlugKind } from '../errors.js';
@@ -147,10 +133,7 @@ export function deleteRecipe(db: FoodDb, recipeId: number): void {
       .where(eq(recipes.id, recipeId))
       .all();
     if (existing.length === 0) return;
-    // PRD-109 — recipe-scoped substitutions reference this recipe via FK;
-    // drop them in the same transaction so the FK doesn't reject the delete.
     deleteRecipeScopedSubstitutions(tx, recipeId);
-    // Drop versions first so the recipes-row delete succeeds against the FK.
     tx.delete(recipeVersions).where(eq(recipeVersions.recipeId, recipeId)).run();
     tx.delete(recipes).where(eq(recipes.id, recipeId)).run();
     const row = expectRow(existing, `deleteRecipe(${recipeId})`);

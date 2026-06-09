@@ -1,17 +1,13 @@
 /**
- * CodeMirror 6 language extension for the recipe DSL — PRD-120 part A.
+ * CodeMirror 6 language extension for the recipe DSL. Wraps the Lezer
+ * parser from `./dsl-parser` (generated from `./dsl.grammar`) in an
+ * `LRLanguage`, maps node names to highlight tags, and configures language
+ * metadata (line comment marker, bracket-matching). Folding for multi-line
+ * `@recipe(...)` is supplied by `foldNodeProp`.
  *
- * Wraps the Lezer parser from `./dsl-parser` (generated from `./dsl.grammar`)
- * in an `LRLanguage`, maps node
- * names to highlight tags, and configures language metadata (line comment
- * marker, bracket-matching). Folding for multi-line `@recipe(...)` is
- * supplied by `foldNodeProp` so CodeMirror's built-in folding gutter can
- * pick it up without extra wiring at the editor level.
- *
- * The Lezer grammar is the source of highlighting truth, and the parity
- * test in `__tests__/lezer-parity.test.ts` keeps it aligned with the
- * canonical hand-rolled parser at `parser.ts` (PRD-114). If the two ever
- * diverge, that test trips before the editor ships a broken highlight.
+ * The Lezer grammar is the source of highlighting truth; the parity test
+ * in `__tests__/lezer-parity.test.ts` keeps it aligned with the hand-rolled
+ * parser at `parser.ts`.
  */
 import {
   LRLanguage,

@@ -1,20 +1,7 @@
 /**
- * FIFO batch consumption — PRD-108.
- *
- * `consumeForRun` walks a list of needs (one per recipe line, post-scaling)
- * and decrements `batches.qty_remaining` in FIFO order. The whole operation
- * runs in one transaction: any shortfall rolls back every decrement so the
- * cook event either consumes everything cleanly or leaves the fridge
- * untouched.
- *
- * FIFO order: `expires_at NULLS LAST, produced_at ASC`. Items with an
- * expiry get consumed first; among those, older first; among shelf-stable
- * (null expiry), older first.
- *
- * Substitution-aware consumption (e.g. consume `whole` batches for a
- * `diced` line) is Epic 06's concern — v1 is strict by `(variant, prep)`.
- *
- * See `docs/themes/07-food/prds/108-batch-model/README.md`.
+ * `consumeForRun` decrements `batches.qty_remaining` in FIFO order
+ * (`expires_at NULLS LAST, produced_at ASC`) inside one transaction — any
+ * shortfall rolls back every decrement.
  */
 import { and, asc, eq, gt, isNull, sql } from 'drizzle-orm';
 
@@ -91,7 +78,7 @@ export function consumeForRun(
  *
  * The batch's stored `unit` must equal `need.canonicalUnit` — recipe_lines
  * carry the canonical metric and batches store in that same unit (no
- * cross-unit conversion at consume time; see PRD-108 rationale).
+ * cross-unit conversion at consume time).
  */
 function drawFromBatches(
   tx: FoodDb,

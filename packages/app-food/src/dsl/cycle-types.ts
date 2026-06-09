@@ -1,13 +1,5 @@
 import type { FoodDb } from '@pops/app-food-db';
 
-/**
- * Recipe-graph cycle detection types — PRD-117.
- *
- * The detector runs between PRD-115 (resolver) and PRD-116 (compile +
- * materialise). It walks the live recipe graph from a candidate recipe's
- * recipe-as-ingredient targets; a path back to the candidate itself is a
- * cycle.
- */
 import type { SourceSpan } from './ast';
 
 export interface CycleContext {

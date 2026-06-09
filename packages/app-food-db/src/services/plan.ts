@@ -1,26 +1,3 @@
-/**
- * Meal-plan services — PRD-111.
- *
- * Schema-level operations for the `plan_slots` extensible vocabulary and the
- * `plan_entries` table. No cook orchestration here — that's Epic 05 (PRD-144
- * wraps these primitives in a single transaction with PRD-108's
- * `consumeForRun` + PRD-145's `createBatchFromRun`).
- *
- * Slot mutation rules (PRD-143 amendments queued in the roadmap):
- *   - `addSlot` (alias `addCustomSlot`) inserts an `is_default=0` row.
- *   - `updateSlot` patches `name` and/or `display_order` on any slot.
- *   - `deleteSlot` refuses `is_default=1` rows and refuses slugs that any
- *     plan_entries row still references.
- *
- * Plan entry rules:
- *   - `addPlanEntry` defers FK rejection to SQLite for `slot`, `recipe_id`,
- *     `recipe_version_id`. The CHECK on `planned_servings > 0` also lives
- *     in the schema.
- *   - `removePlanEntry` refuses rows with a non-null `recipe_run_id` so
- *     cook history's "planned context" stays intact.
- *
- * See `docs/themes/07-food/prds/111-plan-entry-model/README.md`.
- */
 import { and, asc, eq, sql } from 'drizzle-orm';
 
 import {
@@ -137,11 +114,7 @@ export function addSlot(db: FoodDb, input: AddSlotInput): PlanSlotRow {
   return expectRow(rows, `addSlot(${input.slug})`);
 }
 
-/**
- * Backward-compat alias. The original PRD spelt this `addCustomSlot`; the
- * PRD-143 amendment standardises on `addSlot`. Both stay exported so older
- * call sites keep compiling during the rollout.
- */
+/** Backward-compat alias for `addSlot`. */
 export const addCustomSlot = addSlot;
 
 export interface UpdateSlotInput {
@@ -194,10 +167,7 @@ export function deleteSlot(db: FoodDb, slug: string): void {
   db.delete(planSlots).where(eq(planSlots.slug, slug)).run();
 }
 
-/**
- * List the slots in display order, with slug as the tiebreaker — matches the
- * PRD's edge-case behaviour for `display_order` ties.
- */
+/** List slots in display order; slug breaks ties. */
 export function listSlots(db: FoodDb): PlanSlotRow[] {
   return db
     .select()

@@ -1,8 +1,3 @@
-/**
- * Pure helpers for the PRD-116 compile pipeline.
- *
- * Kept separate so `compile.ts` stays within the 200-line file cap.
- */
 import { inArray } from 'drizzle-orm';
 
 import { ingredients } from '@pops/app-food-db';
