@@ -86,9 +86,13 @@ describe('PRD-113 phase-1 seed', () => {
     it('seeds at least 30 aliases (PRD-113 spec)', () => {
       expect(summary.aliases).toBeGreaterThanOrEqual(30);
     });
-    it('seeds at least 4 recipes (smash-burger + pasta + roast + eggs)', () => {
-      expect(summary.recipes).toBeGreaterThanOrEqual(4);
+    it('seeds at least 5 recipes (smash-patty + smash-burger + pasta + roast + eggs)', () => {
+      expect(summary.recipes).toBeGreaterThanOrEqual(5);
       expect(summary.recipeVersions).toBe(summary.recipes);
+    });
+    it('seeds PRD-123 conversion fixtures (unit_conversions + ingredient_weights)', () => {
+      expect(summary.unitConversions).toBeGreaterThanOrEqual(10);
+      expect(summary.ingredientWeights).toBeGreaterThanOrEqual(4);
     });
     it('seeds 10 batches and 1 cook run with consumptions', () => {
       expect(summary.batches).toBe(10);
@@ -142,7 +146,7 @@ describe('PRD-113 phase-1 seed', () => {
       // fixture growth (more ingest-sourced or more manual recipes both stay
       // green) while still checking the actual invariant: every
       // currently-manual recipe lands with source_id NULL.
-      const MANUAL_SLUGS = ['roast-chicken', 'breakfast-eggs'] as const;
+      const MANUAL_SLUGS = ['roast-chicken', 'breakfast-eggs', 'smash-patty'] as const;
       const rows = raw
         .prepare(
           `SELECT r.slug, v.source_id

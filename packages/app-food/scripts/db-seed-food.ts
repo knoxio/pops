@@ -17,6 +17,8 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { seedFood } from '@pops/app-food-db/seed';
 
+import { compileRecipeVersion } from '../src/dsl/compile';
+
 if (process.env.NODE_ENV === 'production') {
   console.error("❌ Refusing to run: NODE_ENV is 'production'.");
   console.error('   This script is for development/testing only.');
@@ -32,7 +34,12 @@ if (!existsSync(DB_PATH)) {
 }
 
 // Wipe only food + lists tables. Children first; `foreign_keys = OFF` makes
-// the order purely defensive.
+// the order purely defensive. PRD-116 (recipe_lines / recipe_steps /
+// recipe_version_proposed_slugs) and PRD-123 (unit_conversions /
+// ingredient_weights) tables are wiped too so re-running the seed stays
+// idempotent — the conversion tables carry a UNIQUE on (from_unit,to_unit)
+// / a partial UNIQUE on (ingredient_id, variant_id, unit) that would
+// otherwise collide on the second run.
 const FOOD_AND_LISTS_TABLES = [
   'list_items',
   'lists',
@@ -43,8 +50,13 @@ const FOOD_AND_LISTS_TABLES = [
   'plan_slots',
   'substitutions',
   'recipe_tags',
+  'recipe_lines',
+  'recipe_steps',
+  'recipe_version_proposed_slugs',
   'recipe_versions',
   'recipes',
+  'ingredient_weights',
+  'unit_conversions',
   'ingredient_aliases',
   'ingredient_variants',
   'prep_states',
@@ -66,24 +78,34 @@ try {
       db.exec(`DELETE FROM "${table}"`);
     }
     const drizzleDb = drizzle(db);
-    const summary = seedFood(drizzleDb, drizzleDb);
+    // Phase 2: drive PRD-116's compile + PRD-107's promote inline so the
+    // seed DB ends up with materialised recipe_lines / recipe_steps and
+    // every recipe's v1 promoted to `current`.
+    const summary = seedFood(drizzleDb, drizzleDb, { compileRecipeVersion });
     console.log('\n✅ Food seed complete\n');
     console.log('📊 Counts:');
-    console.log(`  prep_states:       ${summary.prepStates}`);
-    console.log(`  ingredients:       ${summary.ingredients}`);
-    console.log(`  variants:          ${summary.variants}`);
-    console.log(`  aliases:           ${summary.aliases}`);
-    console.log(`  substitutions:     ${summary.substitutions}`);
-    console.log(`  plan_slots:        ${summary.planSlots}`);
-    console.log(`  plan_entries:      ${summary.planEntries}`);
-    console.log(`  recipes:           ${summary.recipes}`);
-    console.log(`  recipe_versions:   ${summary.recipeVersions}`);
-    console.log(`  batches:           ${summary.batches}`);
-    console.log(`  recipe_runs:       ${summary.recipeRuns}`);
-    console.log(`  batch_consumptions:${summary.batchConsumptions}`);
-    console.log(`  lists:             ${summary.lists}`);
-    console.log(`  list_items:        ${summary.listItems}`);
-    console.log(`  ingest_sources:    ${summary.ingestSources}`);
+    const printRow = (label: string, value: number): void => {
+      // Pad to one space past the widest label so values line up regardless
+      // of which counters are present in the summary.
+      console.log(`  ${`${label}:`.padEnd(21)}${value}`);
+    };
+    printRow('prep_states', summary.prepStates);
+    printRow('ingredients', summary.ingredients);
+    printRow('variants', summary.variants);
+    printRow('aliases', summary.aliases);
+    printRow('substitutions', summary.substitutions);
+    printRow('plan_slots', summary.planSlots);
+    printRow('plan_entries', summary.planEntries);
+    printRow('recipes', summary.recipes);
+    printRow('recipe_versions', summary.recipeVersions);
+    printRow('batches', summary.batches);
+    printRow('recipe_runs', summary.recipeRuns);
+    printRow('batch_consumptions', summary.batchConsumptions);
+    printRow('lists', summary.lists);
+    printRow('list_items', summary.listItems);
+    printRow('ingest_sources', summary.ingestSources);
+    printRow('unit_conversions', summary.unitConversions);
+    printRow('ingredient_weights', summary.ingredientWeights);
   })();
 } finally {
   db.pragma('foreign_keys = ON');
