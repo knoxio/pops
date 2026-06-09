@@ -12,7 +12,13 @@ import type { ListsDb } from '@pops/app-lists';
 
 import type { FoodDb } from '../services/internal.js';
 
-/** Surface of every phase-1 step so the orchestrator can roll up counts. */
+/**
+ * Surface of every seed step (phase 1 + phase 3) so the orchestrator can
+ * roll up counts. `ingestSources` is the only phase-3 addition; every
+ * other field comes from a phase-1 step. Phase 2 (PRD-116 compile smoke)
+ * adds no new count fields — it materialises recipe_lines / recipe_steps
+ * for already-counted recipes.
+ */
 export interface StepCounts {
   prepStates: number;
   ingredients: number;
