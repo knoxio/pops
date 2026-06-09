@@ -73,7 +73,7 @@ Behaviour:
 - **Existing-list radio**: lists shopping-kind lists from `lists.list.list({ kinds: ['shopping'], includeArchived: false, sort: 'updated' })`. Each row shows name, item count, relative update time. Disabled when no shopping lists exist (radio is grey with a "No shopping lists yet" hint).
 - **Create-new radio**: text input prefilled with `"Shopping list — <yyyy-MM-dd>"` per Epic 04's naming default. Editable.
 - **Preview** section: shows what will be sent. Canonical items show the merged qty + unit + label. Unconverted items show their original text. "...N more" collapses long lists; clicking expands. The preview is purely informational — no per-item exclusion in v1.
-- **Already-sent warning**: if the modal detects this recipe was sent to the selected (existing) list before — via the heuristic `notes LIKE '%<recipe-name>%'` on any matching `list_items` — show a yellow inline banner: `"This recipe was last sent to this list on <date>. Send again will add another N× quantity."` Doesn't block; just informs.
+- **Already-sent warning**: if the modal detects this recipe was sent to the selected (existing) list before — via the heuristic `notes LIKE '%<recipe-name>%'` on any matching `list_items` — show a yellow inline "Already sent" badge on the affected row in the existing-list picker. Doesn't block; just informs. (v1 ships the per-row badge; the "last sent on <date>" banner the original mockup showed was dropped — keeping the soft warning as a row-inline indicator avoids carrying a separate `lastSentAt` column through the wire shape for a state the user already sees in the relative update time next to the list.)
 - **Send button** label dynamically shows the count (`Send 12 items`). Disabled while the picker modal is still loading initial data.
 - **Sending state**: button shows a spinner; on success closes the modal and shows a global toast `"Sent 12 items to <list name>. View list."` (the "View list" link navigates to `/lists/<id>`). On error: inline error in the modal; modal stays open so the user can retry.
 
@@ -161,7 +161,7 @@ export type SendToListError =
 3. For each `PreviewItem`:
    - Search target list for an existing `list_items` row with same `(ref_kind, ref_id)` (where `ref_kind='variant'` if `variantId` is non-null, else `'ingredient'`).
      - **Match found**: UPDATE `qty = qty + new_qty`, append recipe-title + prep-states to `notes` (separator: `; `; cap total notes at 500 chars — truncate oldest with `…`), regenerate `label` from updated qty + unit + ingredient name. Track for `mergedCount`.
-     - **No match**: INSERT a new row via PRD-140's `lists.items.bulkAdd` semantics — `label`, `qty`, `unit`, `ref_kind`, `ref_id`, `notes = recipe-title[ + ', prep']`, `position = MAX(position) + 1` per item (each new item gets the next sequential position). Track for `addedCount`.
+     - **No match**: INSERT a new row matching PRD-140's `addItem`/`bulkAdd` row shape — `label`, `qty`, `unit`, `ref_kind`, `ref_id`, `notes = recipe-title[ + ', prep']`, `position = MAX(position) + 1` per item (each new item gets the next sequential position). The implementation calls `addItem(tx, ...)` per row rather than the batch `bulkAdd(tx, listId, items[])` helper because the loop interleaves merges and inserts under a single drizzle transaction — same row shape, same one-tx guarantee. Track for `addedCount`.
 4. All inserts and updates run in one Drizzle transaction.
 5. Return `{ ok: true, listId, addedCount, mergedCount }`.
 

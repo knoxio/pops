@@ -59,19 +59,25 @@ export const ListProposedSlugsInputSchema = z.object({
 
 /**
  * PRD-142 — `food.recipes.prepareSendToList` (query).
+ *
+ * `scaleFactor` accepts any finite number; the server `clampScaleFactor`
+ * normalises 0/negative/non-finite to 1 per PRD §Business Rules. Rejecting
+ * those at the zod boundary would prevent the documented clamp from
+ * running and turn a defensive default into a validation error.
  */
 export const PrepareSendToListInputSchema = z.object({
   versionId: z.number().int().positive(),
-  scaleFactor: z.number().positive().optional(),
+  scaleFactor: z.number().finite().optional(),
 });
 
 /**
  * PRD-142 — `food.recipes.sendToList` (mutation). Target is a discriminated
  * union: existing list (by id) or a brand-new shopping list (by name).
+ * Same finite-not-positive rationale as `prepareSendToList`.
  */
 export const SendToListInputSchema = z.object({
   versionId: z.number().int().positive(),
-  scaleFactor: z.number().positive().optional(),
+  scaleFactor: z.number().finite().optional(),
   target: z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('existing'), listId: z.number().int().positive() }),
     z.object({ kind: z.literal('new'), name: z.string().min(1) }),

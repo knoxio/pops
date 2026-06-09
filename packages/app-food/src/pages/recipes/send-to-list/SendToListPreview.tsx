@@ -31,20 +31,33 @@ export function SendToListPreview({ preview }: Props): ReactElement {
     <div className="space-y-4">
       <Section
         titleKey="recipes.detail.sendToList.preview.canonical"
-        items={preview.canonicalItems.map((it) => it.label)}
+        items={preview.canonicalItems.map(toRow)}
       />
       <Section
         titleKey="recipes.detail.sendToList.preview.unconverted"
-        items={preview.unconvertedItems.map((it) => it.label)}
+        items={preview.unconvertedItems.map(toRow)}
         emptyOK
       />
     </div>
   );
 }
 
+interface Row {
+  key: string;
+  label: string;
+}
+
+function toRow(item: PrepareOutput['canonicalItems'][number]): Row {
+  // First sourceLineId is unique per preview row — canonical items aggregate
+  // multiple lines but the first id is stable across renders, and unconverted
+  // items each have exactly one line id. Beats label-as-key (collisions on
+  // identical text) and idx (lint: no-array-index-key).
+  return { key: String(item.sourceLineIds[0] ?? item.label), label: item.label };
+}
+
 interface SectionProps {
   titleKey: string;
-  items: readonly string[];
+  items: readonly Row[];
   emptyOK?: boolean;
 }
 
@@ -65,8 +78,8 @@ function Section({ titleKey, items, emptyOK }: SectionProps): ReactElement | nul
     <div>
       <h4 className="text-sm font-medium">{t(titleKey, { count: items.length })}</h4>
       <ul className="mt-1 list-disc pl-5 text-sm text-muted-foreground">
-        {visible.map((label) => (
-          <li key={label}>{label}</li>
+        {visible.map((row) => (
+          <li key={row.key}>{row.label}</li>
         ))}
       </ul>
       {overflow > 0 && (

@@ -79,7 +79,7 @@ function ExistingChoice({
         {t('recipes.detail.sendToList.picker.existing')}
       </label>
       {hasLists ? (
-        <ul className="ml-6 mt-2 max-h-40 space-y-1 overflow-y-auto" role="listbox">
+        <ul className="ml-6 mt-2 max-h-40 space-y-1 overflow-y-auto">
           {shoppingLists.map((list) => (
             <ListChoiceRow
               key={list.id}

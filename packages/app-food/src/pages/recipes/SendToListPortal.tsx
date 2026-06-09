@@ -7,6 +7,7 @@
  */
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
 import { SendToListModal } from './send-to-list/index.js';
@@ -20,6 +21,7 @@ interface Props {
 
 export function SendToListPortal({ flow, versionId }: Props): ReactElement {
   const { t } = useTranslation('food');
+  const navigate = useNavigate();
   return (
     <SendToListModal
       open={flow.isOpen}
@@ -35,7 +37,7 @@ export function SendToListPortal({ flow, versionId }: Props): ReactElement {
             action: {
               label: t('recipes.detail.sendToList.toast.viewList'),
               onClick: () => {
-                window.location.href = `/lists/${outcome.listId}`;
+                void navigate(`/lists/${outcome.listId}`);
               },
             },
           }
