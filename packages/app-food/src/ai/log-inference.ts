@@ -1,112 +1,44 @@
 /**
- * PRD-133 — AI usage logging helpers for the food ingestion pipeline.
+ * PRD-133 — `callClaudeWithLogging` wrapper.
  *
- * Exports the types + the `callClaudeWithLogging` wrapper that every
- * food handler in PRDs 127-132 funnels through, plus the canonical
- * `logFoodInference` sink (POSTs to the `food.ai.logInference` tRPC
- * mutation when `POPS_API_URL` + `POPS_API_INTERNAL_TOKEN` are set;
- * no-ops otherwise). The sink is injectable so tests pass a fake and
- * the wrapper stays isomorphic.
+ * Funnels every food handler's Claude call through one place that
+ * measures latency, computes cost, evaluates the per-call cost cap,
+ * and routes a row to the (injectable) log sink. Logging is
+ * fire-and-forget — the wrapper returns immediately after `opts.call()`
+ * resolves; a slow or failing sink can never delay or fail an ingest.
  *
- * Behaviour:
- *
- *   1. Records start time, awaits `opts.call()`.
- *   2. On success: looks up pricing via `deps.lookupPricing`, computes
- *      `costUsd`, evaluates the cost cap, then schedules a log row
- *      with `status: 'success'`. Missing pricing → cost = 0 +
- *      `metadata.cost_missing = true`. costUsd above the cap →
- *      `metadata.over_cost_cap = true` + console warn (v1 does NOT
- *      abort the call).
- *   3. On error: schedules a log row with `status: 'error' +
- *      errorMessage`, then rethrows.
- *   4. Logging is fire-and-forget — the caller never awaits the sink,
- *      so a slow / failing sink can never delay or fail an ingest.
- *      Tests flush the microtask queue before asserting log state.
+ * Types live in `log-inference-types.ts`; the default env-driven sink
+ * lives in `log-inference-sink.ts` and is re-exported here so the
+ * documented entrypoint stays `@pops/app-food/src/ai/log-inference`.
  */
+import { logFoodInference } from './log-inference-sink.js';
+
+import type {
+  CallClaudeWithLoggingDeps,
+  CallClaudeWithLoggingOpts,
+  ClaudeCallResult,
+  ClaudeUsage,
+  LogFoodInferenceFn,
+  LogFoodInferenceInput,
+  PricingEntry,
+} from './log-inference-types.js';
+
+export type {
+  CallClaudeWithLoggingDeps,
+  CallClaudeWithLoggingOpts,
+  ClaudeCallResult,
+  ClaudeUsage,
+  FoodOperation,
+  LogFoodInferenceFn,
+  LogFoodInferenceInput,
+  LookupPricingFn,
+  PricingEntry,
+} from './log-inference-types.js';
+
+export { logFoodInference };
 
 const DEFAULT_FOOD_INGEST_COST_CAP_USD = 0.05;
 
-export type FoodOperation =
-  | 'recipe-extract-web-llm'
-  | 'recipe-extract-ig-vision'
-  | 'recipe-extract-ig-text-fallback'
-  | 'recipe-extract-screenshot'
-  | 'recipe-extract-text';
-
-export interface LogFoodInferenceInput {
-  operation: FoodOperation;
-  contextId: string;
-  provider: 'claude';
-  model: string;
-  promptVersion: string;
-  inputTokens: number;
-  outputTokens: number;
-  costUsd: number;
-  latencyMs: number;
-  status: 'success' | 'error';
-  cached: boolean;
-  errorMessage?: string;
-  metadata?: Record<string, unknown>;
-}
-
-export type LogFoodInferenceFn = (input: LogFoodInferenceInput) => Promise<void>;
-
-export interface ClaudeUsage {
-  inputTokens: number;
-  outputTokens: number;
-}
-
-export interface ClaudeCallResult<T> {
-  response: T;
-  usage: ClaudeUsage;
-}
-
-export interface PricingEntry {
-  /** Cost per million input tokens, USD. */
-  input: number;
-  /** Cost per million output tokens, USD. */
-  output: number;
-}
-
-export type LookupPricingFn = (
-  provider: 'claude',
-  model: string
-) => Promise<PricingEntry | null> | (PricingEntry | null);
-
-export interface CallClaudeWithLoggingOpts<T> {
-  operation: FoodOperation;
-  contextId: string;
-  model: string;
-  promptVersion: string;
-  call: () => Promise<ClaudeCallResult<T>>;
-  /** Additional fields merged into the logged `metadata` JSON. */
-  metadata?: Record<string, unknown>;
-  /**
-   * Per-call cost cap in USD. When the computed costUsd exceeds it the
-   * wrapper flags `metadata.over_cost_cap = true` and warns. Defaults
-   * to `FOOD_INGEST_COST_CAP_PER_JOB_USD` env var (when present) or
-   * 0.05 USD per PRD-126's compose default.
-   */
-  costCapUsd?: number;
-}
-
-export interface CallClaudeWithLoggingDeps {
-  /** Defaults to `logFoodInference` (env-driven POST to the mutation). */
-  log?: LogFoodInferenceFn;
-  lookupPricing: LookupPricingFn;
-  /**
-   * Optional warn hook for log-sink errors. Defaults to `console.warn`.
-   * Lets the worker route to its structured logger and lets tests
-   * silence noise without monkey-patching `console`.
-   */
-  warn?: (message: string, err: unknown) => void;
-}
-
-/**
- * Computes `costUsd` from token counts. Returns `cost = 0` and
- * `missing = true` when no pricing entry is supplied — caller writes
- * that flag into `metadata.cost_missing`.
- */
 export function computeCostUsd(
   inputTokens: number,
   outputTokens: number,
@@ -140,38 +72,6 @@ function defaultWarn(message: string, err: unknown): void {
   console.warn(message, err);
 }
 
-/**
- * Default sink: POSTs the row to `food.ai.logInference` when
- * `POPS_API_URL` + `POPS_API_INTERNAL_TOKEN` are configured (worker /
- * sibling-process env). No-ops in browser / dev / tests where the
- * env is unset — the caller can still inject `deps.log` to override.
- */
-export const logFoodInference: LogFoodInferenceFn = async (input) => {
-  const apiUrl = readEnv('POPS_API_URL');
-  const token = readEnv('POPS_API_INTERNAL_TOKEN');
-  if (!apiUrl || !token) return;
-  if (typeof globalThis.fetch !== 'function') return;
-
-  const url = `${apiUrl.replace(/\/+$/, '')}/trpc/food.ai.logInference`;
-  const res = await globalThis.fetch(url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-pops-internal-token': token,
-    },
-    body: JSON.stringify({ json: input }),
-  });
-  if (!res.ok) {
-    throw new Error(`food.ai.logInference returned HTTP ${res.status}`);
-  }
-};
-
-/**
- * Schedule a log write as a detached promise. The caller never awaits
- * this — that's the whole point of fire-and-forget. Errors from the
- * sink land on `warn` so they show up in operator logs without
- * affecting the caller's control flow.
- */
 function scheduleLog(
   log: LogFoodInferenceFn,
   warn: (message: string, err: unknown) => void,
