@@ -29,7 +29,7 @@ import { seedRecipeHeaders } from './step-recipes.js';
 import { seedSubstitutions } from './step-substitutions.js';
 import { freshContext, type SeedFoodSummary, ZERO_COUNTS } from './types.js';
 
-import type { ListsDb } from '@pops/app-lists';
+import type { ListsDb } from '@pops/app-lists/db';
 
 import type { FoodDb } from '../services/internal.js';
 

@@ -22,7 +22,7 @@ PRD-141; food → shopping-list send action in PRD-142.
 
 ```
 src/
-  index.ts                       public exports (manifest, navConfig, routes, schema, services, types)
+  index.ts                       frontend entrypoint — manifest, navConfig, routes
   manifest.ts                    ModuleManifest declaration (id='lists')
   routes.tsx                     routes + navConfig
   pages/
@@ -32,7 +32,8 @@ src/
   test-setup.ts                  vitest setup (jsdom + i18n)
   __tests__/
     manifest.test.ts             PRD-139 manifest shape
-  db/                            PRD-112
+  db/                            PRD-112 — server-only schema + services
+    index.ts                     @pops/app-lists/db entrypoint
     schema.ts                    re-exports tables from @pops/db-types
     errors.ts                    typed errors raised by the service layer
     services/
@@ -42,6 +43,16 @@ src/
     __tests__/
       lists.test.ts              invariant suite (PRD-112 AC)
 ```
+
+## Entrypoints
+
+| Import               | Use case                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| `@pops/app-lists`    | Frontend — manifest, navConfig, routes. Browser-safe.                               |
+| `@pops/app-lists/db` | Server — schema, services, typed errors, `ListsDb`. Pulls drizzle + better-sqlite3. |
+
+The split keeps the shell bundle free of server-only deps. Mirrors the
+`@pops/app-food` + `@pops/app-food/server` convention.
 
 Migrations live with the canonical schema at `apps/pops-api/src/db/drizzle-migrations/`
 and are owned by the `lists` module per `apps/pops-api/src/db/migration-ownership.ts`.

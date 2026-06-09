@@ -7,7 +7,7 @@
  * smoke (DSL parse → resolve → cycle → materialise) lands in phase 2 once
  * PRD-116 ships `compileRecipeVersion`.
  */
-import type { ListsDb } from '@pops/app-lists';
+import type { ListsDb } from '@pops/app-lists/db';
 
 import type { FoodDb } from '../services/internal.js';
 

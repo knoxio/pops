@@ -5,8 +5,8 @@
  * the canonical code path. Items checked at fixture-time get an immediate
  * `checkItem` call so `checked_at` is populated, matching prod behaviour.
  */
-import { type AddItemInput, addItem, checkItem } from '@pops/app-lists';
-import { createList, type ListsDb } from '@pops/app-lists';
+import { type AddItemInput, addItem, checkItem } from '@pops/app-lists/db';
+import { createList, type ListsDb } from '@pops/app-lists/db';
 
 import { LIST_FIXTURES, type ListItemFixture } from './data-lists.js';
 

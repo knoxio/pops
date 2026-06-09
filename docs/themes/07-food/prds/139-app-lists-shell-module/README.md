@@ -206,8 +206,8 @@ Inline per theme protocol.
 ### Tests
 
 - [x] Vitest case asserts `manifest.id === 'lists'` and that `routes` contains `/lists`.
-- [x] Vitest snapshot test on `ListsLandingPage` (renders without crashing).
-- [x] `apps/pops-shell` integration tests pick up the new module via the registry without code changes.
+- [x] Vitest render test on `ListsLandingPage` (renders title + both placeholder cards without crashing). The original AC said "snapshot test"; explicit assertions were used instead — same coverage, no snapshot churn.
+- [x] `apps/pops-shell` integration tests pick up the new module. **NOTE:** `manifests.test.ts` is extended with the `lists` entry (one line added to the parameterised `pageRoutedApps` table); the original AC implied zero changes, but mirroring the existing food/finance/media/inventory/ai/cerebrum row was the canonical pattern. The build-time registry (`installed-modules.ts`, `nav/registry.ts`) is similarly extended one row each — same shape PRD-118 established.
 
 ### Documentation
 
