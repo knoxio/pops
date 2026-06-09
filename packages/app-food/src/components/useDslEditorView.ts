@@ -24,7 +24,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers } from '@codemirror/view';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 
 import { recipeDsl } from '../dsl/codemirror';
 
@@ -37,7 +37,7 @@ export interface UseDslEditorViewOptions {
 }
 
 export function useDslEditorView(
-  hostRef: React.MutableRefObject<HTMLDivElement | null>,
+  hostRef: MutableRefObject<HTMLDivElement | null>,
   options: UseDslEditorViewOptions
 ): void {
   const viewRef = useRef<EditorView | null>(null);

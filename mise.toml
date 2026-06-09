@@ -157,8 +157,12 @@ run = "pnpm exec drizzle-kit studio"
 description = "Regenerate the Lezer parser for the recipe DSL grammar (PRD-120)"
 dir = "packages/app-food"
 run = """
+# lezer-generator writes BOTH `dsl-parser.ts` (parser tables) and
+# `dsl-parser.terms.ts` (numeric term ids) alongside the -o target so we
+# get both back from a single invocation. Commit both files together —
+# they're a matched pair generated from the same `.grammar` source.
 pnpm exec lezer-generator src/dsl/dsl.grammar -o src/dsl/dsl-parser.ts
-echo "Regenerated src/dsl/dsl-parser.ts — commit alongside any grammar edits."
+echo "Regenerated src/dsl/dsl-parser.ts + dsl-parser.terms.ts — commit both alongside any grammar edits."
 """
 
 # ============================================================================

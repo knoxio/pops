@@ -1,7 +1,8 @@
 /**
  * CodeMirror 6 language extension for the recipe DSL — PRD-120 part A.
  *
- * Wraps the Lezer parser from `./dsl.grammar` in an `LRLanguage`, maps node
+ * Wraps the Lezer parser from `./dsl-parser` (generated from `./dsl.grammar`)
+ * in an `LRLanguage`, maps node
  * names to highlight tags, and configures language metadata (line comment
  * marker, bracket-matching). Folding for multi-line `@recipe(...)` is
  * supplied by `foldNodeProp` so CodeMirror's built-in folding gutter can
@@ -26,7 +27,8 @@ import { parser } from './dsl-parser';
 /**
  * Style mapping from Lezer node names → highlight tags. CodeMirror's
  * default highlight style turns these into the colours each theme defines.
- * Keep the names in sync with the `nodeNames` block in `dsl.grammar.ts`.
+ * Keep the names in sync with the `nodeNames` block in `dsl-parser.ts`
+ * (regenerated via `mise food:dsl:generate`).
  */
 const highlight = styleTags({
   FunctionName: t.keyword,
@@ -34,9 +36,14 @@ const highlight = styleTags({
   Number: t.number,
   Boolean: t.bool,
   Comment: t.lineComment,
-  MarkdownText: t.content,
   // Descriptor parts read as variable-like (slugs that resolve to entities).
-  Identifier: t.variableName,
+  // Scope the variable tag to where Identifier appears under a slug-bearing
+  // parent so that any future top-level/error-recovery Identifier nodes
+  // don't get inadvertently coloured as variables.
+  'DescriptorPart/Identifier': t.variableName,
+  'Descriptor/Identifier': t.variableName,
+  'NamedArg/Identifier': t.propertyName,
+  'QtyUnit/Identifier': t.unit,
   SkipMarker: t.null,
   // Punctuation gets a tag so themes can mute it.
   '( )': t.paren,
