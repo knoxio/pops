@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   CannotSubstituteSelf,
   substitutionsGraph,
+  substitutionsHydrate,
   substitutionsQueries,
   substitutionsService,
   type GraphViewEdgeRow,
@@ -173,6 +174,8 @@ export const substitutionsRouter = router({
         .object({
           fromIngredientId: z.number().optional(),
           fromVariantId: z.number().optional(),
+          toIngredientId: z.number().optional(),
+          toVariantId: z.number().optional(),
           scope: SCOPE_ENUM.optional(),
           recipeId: z.number().optional(),
           contextTag: z.string().optional(),
@@ -181,6 +184,24 @@ export const substitutionsRouter = router({
     )
     .query(({ input }) => ({
       items: substitutionsQueries.listSubstitutions(getDrizzle(), input ?? {}),
+    })),
+
+  listHydrated: protectedProcedure
+    .input(
+      z
+        .object({
+          fromIngredientId: z.number().optional(),
+          fromVariantId: z.number().optional(),
+          toIngredientId: z.number().optional(),
+          toVariantId: z.number().optional(),
+          scope: SCOPE_ENUM.optional(),
+          recipeId: z.number().optional(),
+          contextTag: z.string().optional(),
+        })
+        .optional()
+    )
+    .query(({ input }) => ({
+      items: substitutionsHydrate.listSubstitutionsHydrated(getDrizzle(), input ?? {}),
     })),
 
   create: protectedProcedure.input(CREATE_INPUT).mutation(({ input }) => {

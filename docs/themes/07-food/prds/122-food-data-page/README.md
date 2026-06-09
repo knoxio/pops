@@ -221,10 +221,10 @@ Inline per theme protocol.
 
 ### Substitutions tab
 
-- [ ] Table view with filters for from / to / scope / context tag.
-- [ ] Create with global vs recipe-scoped; recipe picker shows current recipes.
-- [ ] Edit ratio + context tags inline.
-- [ ] Delete works.
+- [x] Table view with filters for from / to / scope / context tag. _(PR-122-D)_
+- [x] Create with global vs recipe-scoped; recipe picker shows current recipes. _Recipe picker reduced to a manual `recipeId` input — `food.recipes.list` lands with PRD-119; copy in the form flags the upgrade._ _(PR-122-D)_
+- [x] Edit ratio + context tags inline. _(PR-122-D)_
+- [x] Delete works. _(PR-122-D)_
 
 ### Conversions tab
 
