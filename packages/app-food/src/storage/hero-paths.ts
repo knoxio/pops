@@ -1,9 +1,13 @@
 /**
- * Filesystem + URL helpers for recipe hero images (PRD-124).
+ * Browser-safe helpers for recipe hero images (PRD-124).
  *
- * The hero root is configured via `FOOD_RECIPES_DIR` and defaults to
- * `./data/food/recipes`. Each recipe owns a subdirectory keyed by its
- * integer id holding the original upload plus two derived thumbnails:
+ * Pure constants + filename validators + URL builder. NO `node:path`, NO
+ * `process.env`, NO filesystem — those live in
+ * `./hero-paths.node.ts` so this module can be imported by browser bundles
+ * (e.g. `HeroImageUploader`) without breaking Vite resolution.
+ *
+ * Layout convention (defined here so both the browser URL builder and the
+ * Node-side absolute-path helpers agree on names):
  *
  *   ${FOOD_RECIPES_DIR}/<recipe_id>/
  *     hero.<ext>          original upload (jpg|png|webp)
@@ -13,16 +17,11 @@
  * `recipes.hero_image_path` stores the relative path of the original
  * (`<recipe_id>/hero.<ext>`); thumbnail paths are derived at read time.
  *
- * Server-side consumers compute the absolute path on disk via the
- * `*AbsPathFor` helpers below. Browser-side consumers compute the URL via
- * `heroImageUrl(currentPath, variant)`.
- *
- * The same convention is mirrored inside `apps/pops-api/src/modules/food/
- * hero-image/service.ts` — pops-api does not depend on `@pops/app-food` at
- * runtime, so the absolute-path helpers are duplicated there. Keep the two
- * sources in sync if the layout ever changes.
+ * The same constants are mirrored inside
+ * `apps/pops-api/src/modules/food/hero-image/paths.ts` — pops-api does not
+ * depend on `@pops/app-food` at runtime, so the absolute-path helpers are
+ * duplicated there. Keep both in sync if the layout ever changes.
  */
-import { posix, resolve, sep } from 'node:path';
 
 /** Hard-coded default — kept in sync with `apps/pops-api/.env.example`. */
 export const DEFAULT_FOOD_RECIPES_DIR = './data/food/recipes';
@@ -43,16 +42,6 @@ export const HERO_ALLOWED_MIME_TYPES = Object.keys(HERO_MIME_TO_EXTENSION);
 
 /** Variant the renderer asks for when constructing an image URL. */
 export type HeroImageVariant = 'original' | 'thumb' | 'card';
-
-/**
- * Resolve the configured recipes root to an absolute path. Reads the env
- * each call so tests can stub it per-case.
- */
-export function recipesRootDir(): string {
-  const configured = process.env['FOOD_RECIPES_DIR'];
-  const raw = configured && configured.length > 0 ? configured : DEFAULT_FOOD_RECIPES_DIR;
-  return resolve(raw);
-}
 
 /**
  * Reject any non-positive integer recipe id. Accepts both numeric and
@@ -79,34 +68,13 @@ export function assertValidRecipeId(recipeId: unknown): number {
   throw new Error(`Invalid recipe id: ${String(recipeId)}`);
 }
 
-/** Absolute path to a recipe's hero directory. */
-export function recipeDirFor(recipeId: number): string {
-  const id = assertValidRecipeId(recipeId);
-  return resolve(recipesRootDir(), String(id));
-}
-
-/** Absolute path to the original hero file with the given extension. */
-export function heroPathFor(recipeId: number, ext: HeroOriginalExtension): string {
-  return resolve(recipeDirFor(recipeId), `hero.${ext}`);
-}
-
-/** Absolute path to the 320px thumbnail. */
-export function thumbPathFor(recipeId: number): string {
-  return resolve(recipeDirFor(recipeId), 'hero-thumb.webp');
-}
-
-/** Absolute path to the 640px card-size thumbnail. */
-export function cardPathFor(recipeId: number): string {
-  return resolve(recipeDirFor(recipeId), 'hero-card.webp');
-}
-
 /**
  * Compose the value stored in `recipes.hero_image_path`. Uses POSIX
  * separators so the string is portable across Linux/macOS/Windows.
  */
 export function relativeHeroPath(recipeId: number, ext: HeroOriginalExtension): string {
   const id = assertValidRecipeId(recipeId);
-  return posix.join(String(id), `hero.${ext}`);
+  return `${id}/hero.${ext}`;
 }
 
 /**
@@ -118,19 +86,6 @@ export function isValidHeroFilename(filename: string): boolean {
   if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) return false;
   if (filename === 'hero-thumb.webp' || filename === 'hero-card.webp') return true;
   return /^hero\.(jpg|jpeg|png|webp)$/.test(filename);
-}
-
-/**
- * Defence-in-depth path-traversal guard for the Express static route.
- * Returns the absolute path iff it lives under the configured root.
- */
-export function resolveServablePath(recipeId: number, filename: string): string | null {
-  if (!isValidHeroFilename(filename)) return null;
-  const id = assertValidRecipeId(recipeId);
-  const root = recipesRootDir();
-  const absPath = resolve(root, String(id), filename);
-  if (absPath !== root && !absPath.startsWith(root + sep)) return null;
-  return absPath;
 }
 
 /**

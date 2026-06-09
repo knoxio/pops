@@ -44,8 +44,6 @@ import {
 
 const DEFAULT_MAX_BYTES = 8 * 1024 * 1024;
 
-export { HERO_ALLOWED_MIME_TYPES };
-
 export interface UploadHeroInput {
   recipeId: number;
   mimeType: string;

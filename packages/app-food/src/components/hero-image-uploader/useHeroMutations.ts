@@ -23,7 +23,9 @@ function validateFile(file: File, maxBytes: number): ValidationResult {
     };
   }
   if (file.size > maxBytes) {
-    const mb = (maxBytes / (1024 * 1024)).toFixed(0);
+    // Round up + clamp to 1 so the toast never tells the user the limit is
+    // "0 MB" when the configured cap is sub-1MB (rare, but seen in tests).
+    const mb = Math.max(1, Math.ceil(maxBytes / (1024 * 1024)));
     return { ok: false, reason: `Image exceeds the ${mb} MB limit.` };
   }
   return { ok: true };

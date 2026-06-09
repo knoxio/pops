@@ -6,20 +6,22 @@ import { resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  DEFAULT_FOOD_RECIPES_DIR,
   HERO_ALLOWED_MIME_TYPES,
   HERO_MIME_TO_EXTENSION,
   assertValidRecipeId,
-  cardPathFor,
   heroImageUrl,
-  heroPathFor,
   isValidHeroFilename,
+  relativeHeroPath,
+} from '../hero-paths';
+import {
+  DEFAULT_FOOD_RECIPES_DIR,
+  cardPathFor,
+  heroPathFor,
   recipeDirFor,
   recipesRootDir,
-  relativeHeroPath,
   resolveServablePath,
   thumbPathFor,
-} from '../hero-paths';
+} from '../hero-paths.node';
 
 const ORIGINAL_ENV = process.env['FOOD_RECIPES_DIR'];
 

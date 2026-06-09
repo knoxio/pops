@@ -7,7 +7,7 @@
  */
 import { z } from 'zod';
 
-import { HERO_ALLOWED_MIME_TYPES } from './service.js';
+import { HERO_ALLOWED_MIME_TYPES } from './paths.js';
 
 /** Mime types the upload endpoint accepts. */
 export const HeroImageMimeSchema = z.enum(HERO_ALLOWED_MIME_TYPES as [string, ...string[]]);

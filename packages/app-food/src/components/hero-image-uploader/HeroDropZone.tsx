@@ -19,7 +19,9 @@ export interface HeroDropZoneProps {
 }
 
 export function HeroDropZone(props: HeroDropZoneProps): JSX.Element {
-  const sizeMb = Math.floor(props.maxBytes / (1024 * 1024));
+  // Round up + clamp to 1 — flooring under-reports sub-1MB caps and would
+  // render "0 MB" for any cap below one mebibyte (test fixture or otherwise).
+  const sizeMb = Math.max(1, Math.ceil(props.maxBytes / (1024 * 1024)));
   return (
     <div
       role="button"
