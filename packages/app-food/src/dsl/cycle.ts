@@ -15,8 +15,8 @@
  */
 import { sql } from 'drizzle-orm';
 
-import type { CycleContext, CycleDescription, CycleResult } from './cycle-types';
-import type { ResolvedIngredientBlock, ResolvedRecipeAst } from './resolver-types';
+import type { CycleContext, CycleDescription, CycleResult } from './cycle-types.js';
+import type { ResolvedIngredientBlock, ResolvedRecipeAst } from './resolver-types.js';
 
 interface CandidateTarget {
   recipeId: number;

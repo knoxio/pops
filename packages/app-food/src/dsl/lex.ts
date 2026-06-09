@@ -1,6 +1,6 @@
-import { isDigit, isIdentCont, isIdentStart, isSlugCont, isSlugStart } from './cursor';
+import { isDigit, isIdentCont, isIdentStart, isSlugCont, isSlugStart } from './cursor.js';
 
-import type { QtyUnit } from './ast';
+import type { QtyUnit } from './ast.js';
 /**
  * Lexer helpers — slug/number/string consumers used by every parser module.
  *
@@ -8,7 +8,7 @@ import type { QtyUnit } from './ast';
  * a span pointing at the offending character. The cursor is mutated only on
  * a successful read; on `null` the cursor sits at the bad position.
  */
-import type { Cursor } from './cursor';
+import type { Cursor } from './cursor.js';
 
 export function readSlug(c: Cursor): string | null {
   if (!isSlugStart(c.peek())) return null;

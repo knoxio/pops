@@ -1,4 +1,4 @@
-import type { CycleError } from './cycle-types';
+import type { CycleError } from './cycle-types.js';
 /**
  * Compile types — PRD-116.
  *
@@ -7,8 +7,8 @@ import type { CycleError } from './cycle-types';
  * transaction. The result carries either row counts (success) or a
  * structured error payload (failure).
  */
-import type { ParseError } from './errors';
-import type { ResolveError } from './resolver-types';
+import type { ParseError } from './errors.js';
+import type { ResolveError } from './resolver-types.js';
 
 export type CompilePhase = 'parse' | 'resolve' | 'cycle' | 'materialise';
 

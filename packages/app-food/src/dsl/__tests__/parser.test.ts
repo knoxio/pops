@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { parseRecipeDsl } from '../parser';
+import { parseRecipeDsl } from '../parser.js';
 import {
   ALL_SAMPLES,
   COMPACT_SKIP_DESCRIPTOR,
@@ -20,9 +20,9 @@ import {
   OPTIONAL_INGREDIENT,
   SIMPLE_PLATE,
   WITH_COMMENTS,
-} from './samples';
+} from './samples.js';
 
-import type { IngredientBlock, StepBlock } from '../ast';
+import type { IngredientBlock, StepBlock } from '../ast.js';
 
 describe('PRD-114 — parser positive samples', () => {
   it.each(ALL_SAMPLES)('parses %s without errors', (_label, src) => {

@@ -1,5 +1,5 @@
-import { readIdentifier } from './lex';
-import { assignRecipeArg } from './parse-recipe-assign';
+import { readIdentifier } from './lex.js';
+import { assignRecipeArg } from './parse-recipe-assign.js';
 
 /**
  * `@recipe(...)` parser — PRD-114.
@@ -9,9 +9,9 @@ import { assignRecipeArg } from './parse-recipe-assign';
  * value assignment lives in `parse-recipe-assign.ts` so this file stays
  * under the line cap.
  */
-import type { RecipeHeader } from './ast';
-import type { Cursor } from './cursor';
-import type { ParseError } from './errors';
+import type { RecipeHeader } from './ast.js';
+import type { Cursor } from './cursor.js';
+import type { ParseError } from './errors.js';
 
 export function parseRecipeArgs(
   c: Cursor,

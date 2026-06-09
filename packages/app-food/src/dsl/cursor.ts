@@ -6,7 +6,7 @@
  * simpler. Every consume advances `offset` AND `line` / `col` so spans for
  * diagnostics are accurate.
  */
-import type { SourceSpan } from './ast';
+import type { SourceSpan } from './ast.js';
 
 export class Cursor {
   readonly input: string;

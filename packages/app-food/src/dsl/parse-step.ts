@@ -1,5 +1,5 @@
-import { readIdentifier, readQtyUnit, readString } from './lex';
-import { parseStepBody } from './parse-step-body';
+import { readIdentifier, readQtyUnit, readString } from './lex.js';
+import { parseStepBody } from './parse-step-body.js';
 
 /**
  * `@step(...)` parser — PRD-114.
@@ -9,9 +9,9 @@ import { parseStepBody } from './parse-step-body';
  * for inline `@N`, `@slug`, `@time(...)`, `@temperature(...)` via
  * `parseStepBody`.
  */
-import type { QtyUnit, StepBlock } from './ast';
-import type { Cursor } from './cursor';
-import type { ParseError } from './errors';
+import type { QtyUnit, StepBlock } from './ast.js';
+import type { Cursor } from './cursor.js';
+import type { ParseError } from './errors.js';
 
 export function parseStepArgs(c: Cursor, errors: ParseError[]): StepBlock | null {
   c.skipWhitespace();

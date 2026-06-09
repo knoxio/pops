@@ -34,6 +34,14 @@ export interface User {
 export interface Context {
   user: User | null;
   serviceAccount: AuthenticatedServiceAccount | null;
+  /**
+   * Set to `true` when the request carries a valid `x-pops-internal-token`
+   * header matching `POPS_API_INTERNAL_TOKEN`. Reserved for sibling-process
+   * calls (e.g. PRD-126's `pops-worker-food` posting back to
+   * `food.ingest.workerComplete`). NOT routable to external clients —
+   * the OpenAPI document excludes `internalProcedure` paths.
+   */
+  internalCaller: boolean;
 }
 
 function readApiKeyHeader(req: CreateExpressContextOptions['req']): string | null {
@@ -63,10 +71,20 @@ async function tryServiceAccountAuth(
  *   2. Otherwise validate the Cloudflare Access JWT (or use the dev /
  *      tunnel-trust shortcuts).
  */
+function isInternalCall(req: CreateExpressContextOptions['req']): boolean {
+  const expected = process.env['POPS_API_INTERNAL_TOKEN'];
+  if (!expected || expected.length === 0) return false;
+  const raw = req.headers['x-pops-internal-token'];
+  const presented = Array.isArray(raw) ? (raw[0] ?? '') : (raw ?? '');
+  return presented.length > 0 && presented === expected;
+}
+
 export async function createContext({ req }: CreateExpressContextOptions): Promise<Context> {
+  const internalCaller = isInternalCall(req);
+
   const serviceAccount = await tryServiceAccountAuth(req);
   if (serviceAccount) {
-    return { user: null, serviceAccount };
+    return { user: null, serviceAccount, internalCaller };
   }
 
   // In development, skip JWT validation and use mock user
@@ -76,6 +94,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         email: 'dev@example.com',
       },
       serviceAccount: null,
+      internalCaller,
     };
   }
 
@@ -84,6 +103,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
     return {
       user: { email: 'tunnel-authenticated@pops.local' },
       serviceAccount: null,
+      internalCaller,
     };
   }
 
@@ -97,14 +117,15 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
           email: payload.email,
         },
         serviceAccount: null,
+        internalCaller,
       };
     } catch (error) {
       console.error('[trpc] JWT verification failed:', error);
-      return { user: null, serviceAccount: null };
+      return { user: null, serviceAccount: null, internalCaller };
     }
   }
 
-  return { user: null, serviceAccount: null };
+  return { user: null, serviceAccount: null, internalCaller };
 }
 
 export type ContextType = Awaited<ReturnType<typeof createContext>>;
@@ -217,6 +238,33 @@ export const userOnlyProcedure = t.procedure.use(moduleGate).use(({ ctx, next })
     ctx: {
       user: ctx.user,
       serviceAccount: ctx.serviceAccount,
+    },
+  });
+});
+
+/**
+ * Internal procedure for sibling-process callers (e.g. PRD-126's
+ * `pops-worker-food` posting back to `food.ingest.workerComplete`). Requires
+ * the request to carry `x-pops-internal-token` matching
+ * `POPS_API_INTERNAL_TOKEN` — set via `createContext`. NOT meant for
+ * user-facing clients; the OpenAPI spec excludes these paths.
+ *
+ * Gates explicitly do NOT include `moduleGate` because internal calls don't
+ * carry an install-set context — they're trusted at the process boundary.
+ */
+export const internalProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.internalCaller) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message:
+        'This endpoint requires a valid x-pops-internal-token header (sibling-process auth).',
+    });
+  }
+  return next({
+    ctx: {
+      user: null,
+      serviceAccount: null,
+      internalCaller: true as const,
     },
   });
 });

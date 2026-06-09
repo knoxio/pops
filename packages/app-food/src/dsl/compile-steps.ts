@@ -1,4 +1,4 @@
-import { renderBodyMd, type RenderContext } from './compile-md';
+import { renderBodyMd, type RenderContext } from './compile-md.js';
 
 /**
  * `recipe_steps` materialiser — PRD-116.
@@ -9,7 +9,7 @@ import { renderBodyMd, type RenderContext } from './compile-md';
  * ingredient chips. `duration_minutes`, `temperature_value`, and
  * `temperature_unit` hoist the named args out for fast queries.
  */
-import type { ResolvedStepBlock } from './resolver-types';
+import type { ResolvedStepBlock } from './resolver-types.js';
 
 export interface StepInsert {
   recipeVersionId: number;

@@ -10,6 +10,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists/package.json ./packages/app-lists/
+COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -26,6 +27,8 @@ COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.bu
 COPY packages/app-lists/src ./packages/app-lists/src
 COPY packages/app-food-db/src ./packages/app-food-db/src
 COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
+COPY packages/food-contracts/src ./packages/food-contracts/src
+COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
@@ -35,6 +38,8 @@ RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/module-registry
+RUN pnpm build
+WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build

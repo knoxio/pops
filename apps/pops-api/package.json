@@ -78,6 +78,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@pops/app-food-db": "workspace:*",
     "@pops/db-types": "workspace:*",
+    "@pops/food-contracts": "workspace:*",
     "@pops/module-registry": "workspace:*",
     "@pops/types": "workspace:*",
     "@trpc/client": "11.17.0",

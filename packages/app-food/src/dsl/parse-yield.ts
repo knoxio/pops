@@ -1,5 +1,5 @@
-import { readSlug } from './lex';
-import { readDescriptor } from './parse-descriptor';
+import { readSlug } from './lex.js';
+import { readDescriptor } from './parse-descriptor.js';
 
 /**
  * `@yield(...)` parser — PRD-114.
@@ -7,9 +7,9 @@ import { readDescriptor } from './parse-descriptor';
  * Positional: `(descriptor, qty:unit)`. Special form `0:none` marks a
  * non-yielding recipe (techniques).
  */
-import type { YieldDecl } from './ast';
-import type { Cursor } from './cursor';
-import type { ParseError } from './errors';
+import type { YieldDecl } from './ast.js';
+import type { Cursor } from './cursor.js';
+import type { ParseError } from './errors.js';
 
 export function parseYieldArgs(c: Cursor, errors: ParseError[]): YieldDecl | null {
   c.skipWhitespace();

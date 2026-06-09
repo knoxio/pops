@@ -20,6 +20,7 @@ export function createCaller(authenticated = true): ReturnType<typeof appRouter.
   const ctx: Context = {
     user: authenticated ? { email: 'test@example.com' } : null,
     serviceAccount: null,
+    internalCaller: false,
   };
   return appRouter.createCaller(ctx);
 }
@@ -39,6 +40,7 @@ export function createServiceAccountCaller(options: {
       name: options.name ?? 'test-sa',
       scopes: options.scopes,
     },
+    internalCaller: false,
   };
   return appRouter.createCaller(ctx);
 }

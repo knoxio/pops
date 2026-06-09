@@ -11,11 +11,11 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { IngestSourceNotFound, IngestSourceUrlRequired } from '../errors';
-import { ingestSources, recipes } from '../schema';
-import { createIngestSource, linkDraftRecipe, markArchived } from '../services/ingest-sources';
-import { type FoodDb } from '../services/internal';
-import { createRecipe } from '../services/recipes';
+import { IngestSourceNotFound, IngestSourceUrlRequired } from '../errors.js';
+import { ingestSources, recipes } from '../schema.js';
+import { createIngestSource, linkDraftRecipe, markArchived } from '../services/ingest-sources.js';
+import { type FoodDb } from '../services/internal.js';
+import { createRecipe } from '../services/recipes.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',
@@ -24,6 +24,8 @@ const MIGRATIONS = [
   '0061_shocking_skreet.sql',
   '0063_bumpy_wolverine.sql',
   '0064_peaceful_magma.sql',
+  // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns.
+  '0067_prd_125_ingest_error_columns.sql',
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );

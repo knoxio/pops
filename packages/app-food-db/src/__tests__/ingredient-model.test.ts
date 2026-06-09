@@ -16,17 +16,17 @@ import {
   IngredientHierarchyDepthExceeded,
   InvalidSlugError,
   SlugAlreadyRegisteredError,
-} from '../errors';
-import { ingredients, prepStates, slugRegistry } from '../schema';
+} from '../errors.js';
+import { ingredients, prepStates, slugRegistry } from '../schema.js';
 import {
   changeIngredientParent,
   createIngredient,
   deleteIngredient,
   type FoodDb,
   renameIngredientSlug,
-} from '../services/ingredients';
-import { createPrepState } from '../services/prep-states';
-import { createVariant } from '../services/variants';
+} from '../services/ingredients.js';
+import { createPrepState } from '../services/prep-states.js';
+import { createVariant } from '../services/variants.js';
 
 // All food-domain migrations are applied: drizzle's TypeScript types reflect
 // the full schema (e.g. PRD-108's shelf-life columns on ingredient_variants),

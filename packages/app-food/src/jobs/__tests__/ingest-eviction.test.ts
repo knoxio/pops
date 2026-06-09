@@ -27,6 +27,8 @@ const MIGRATIONS = [
   '0061_shocking_skreet.sql',
   '0063_bumpy_wolverine.sql',
   '0064_peaceful_magma.sql',
+  // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns.
+  '0067_prd_125_ingest_error_columns.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),

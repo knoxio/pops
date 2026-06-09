@@ -5,8 +5,8 @@
  * derived from the qty:unit it was first seen with. Unknown units fall
  * through to `count`; the user can refine in the management UI.
  */
-import type { SourceSpan } from './ast';
-import type { ResolverCreation } from './resolver-types';
+import type { SourceSpan } from './ast.js';
+import type { ResolverCreation } from './resolver-types.js';
 
 type CanonicalUnit = 'g' | 'ml' | 'count';
 

@@ -282,7 +282,11 @@ describe('food.heroImage router', () => {
     });
 
     it('throws UNAUTHORIZED without auth', async () => {
-      const unauth = appRouter.createCaller({ user: null, serviceAccount: null });
+      const unauth = appRouter.createCaller({
+        user: null,
+        serviceAccount: null,
+        internalCaller: false,
+      });
       await expect(
         unauth.food.heroImage.upload({
           recipeId: 1,

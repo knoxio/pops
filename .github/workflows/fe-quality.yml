@@ -72,6 +72,7 @@ jobs:
           cd packages/db-types && pnpm build
           cd ../types && pnpm build
           cd ../module-registry && pnpm build
+          cd ../food-contracts && pnpm build
           cd ../app-food-db && pnpm build
 
       - name: Type check

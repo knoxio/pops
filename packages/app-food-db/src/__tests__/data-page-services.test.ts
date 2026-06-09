@@ -20,7 +20,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { ingredientAliases } from '../schema';
+import { ingredientAliases } from '../schema.js';
 import {
   bulkApproveAliases,
   createAlias,
@@ -28,21 +28,21 @@ import {
   listAliases,
   mergeAliases,
   updateAliasText,
-} from '../services/aliases';
-import { createIngredient, type FoodDb } from '../services/ingredients';
+} from '../services/aliases.js';
 import {
   getIngredient,
   getIngredientBySlug,
   getIngredientDeleteBlockers,
   listIngredients,
   listVariantsForIngredient,
-} from '../services/ingredients-queries';
-import { createPrepState, listPrepStates } from '../services/prep-states';
-import { createRecipe } from '../services/recipes';
-import { searchSlugs } from '../services/slug-search';
-import { createSubstitution } from '../services/substitutions';
-import { listSubstitutions, updateSubstitution } from '../services/substitutions-queries';
-import { createVariant } from '../services/variants';
+} from '../services/ingredients-queries.js';
+import { createIngredient, type FoodDb } from '../services/ingredients.js';
+import { createPrepState, listPrepStates } from '../services/prep-states.js';
+import { createRecipe } from '../services/recipes.js';
+import { searchSlugs } from '../services/slug-search.js';
+import { listSubstitutions, updateSubstitution } from '../services/substitutions-queries.js';
+import { createSubstitution } from '../services/substitutions.js';
+import { createVariant } from '../services/variants.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',

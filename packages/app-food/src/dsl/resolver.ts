@@ -1,7 +1,7 @@
-import { resolveIngredient } from './resolve-ingredient';
-import { resolveStep } from './resolve-step';
-import { resolveYield } from './resolve-yield';
-import { newResolverState } from './resolver-state';
+import { resolveIngredient } from './resolve-ingredient.js';
+import { resolveStep } from './resolve-step.js';
+import { resolveYield } from './resolve-yield.js';
+import { newResolverState } from './resolver-state.js';
 
 /**
  * Recipe DSL resolver entry point — PRD-115.
@@ -16,8 +16,8 @@ import { newResolverState } from './resolver-state';
  * and `proposedSlugs` (informational pointers for the Epic 03 review
  * queue when an LLM-ingested recipe carries unresolvable refs).
  */
-import type { IngredientBlock, RecipeAst } from './ast';
-import type { ResolveContext, ResolveResult } from './resolver-types';
+import type { IngredientBlock, RecipeAst } from './ast.js';
+import type { ResolveContext, ResolveResult } from './resolver-types.js';
 
 export function resolveRecipeAst(ast: RecipeAst, ctx: ResolveContext): ResolveResult {
   const sourceIngredients = collectIngredients(ast);
@@ -128,4 +128,4 @@ export type {
   ResolvedStepBodyPart,
   ResolvedYield,
   ResolverCreation,
-} from './resolver-types';
+} from './resolver-types.js';

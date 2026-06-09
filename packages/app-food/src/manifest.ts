@@ -1,4 +1,4 @@
-import { navConfig, routes } from './routes';
+import { navConfig, routes } from './routes.js';
 
 import type { ModuleManifest } from '@pops/types';
 

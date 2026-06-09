@@ -1,4 +1,4 @@
-import { isDigit, isSlugCont, isSlugStart } from './cursor';
+import { isDigit, isSlugCont, isSlugStart } from './cursor.js';
 
 /**
  * Step body parser — PRD-114.
@@ -15,7 +15,7 @@ import { isDigit, isSlugCont, isSlugStart } from './cursor';
  * level. Here, we accept any `@N` or `@slug` and record it as a `ref` AST
  * node — PRD-115 validates referents.
  */
-import type { QtyUnit, StepBody, StepBodyPart } from './ast';
+import type { QtyUnit, StepBody, StepBodyPart } from './ast.js';
 
 const INLINE_FUNCS = new Set(['time', 'temperature']);
 

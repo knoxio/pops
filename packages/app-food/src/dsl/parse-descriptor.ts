@@ -1,4 +1,4 @@
-import { readSlug } from './lex';
+import { readSlug } from './lex.js';
 
 /**
  * Compact descriptor parser — `slug[:slug_or_skip[:slug_or_skip]]`.
@@ -8,9 +8,9 @@ import { readSlug } from './lex';
  * variant). Trailing `:` is forbidden — `banana:` raises
  * `TrailingDescriptorColon`.
  */
-import type { Descriptor } from './ast';
-import type { Cursor } from './cursor';
-import type { ParseError } from './errors';
+import type { Descriptor } from './ast.js';
+import type { Cursor } from './cursor.js';
+import type { ParseError } from './errors.js';
 
 export function readDescriptor(c: Cursor, errors: ParseError[]): Descriptor | null {
   const start = c.mark();

@@ -18,7 +18,7 @@ import type {
   RecipeAst,
   StepBlock,
   StepBody,
-} from './ast';
+} from './ast.js';
 
 export function printRecipeAst(ast: RecipeAst): string {
   const parts: string[] = [];

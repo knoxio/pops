@@ -3,8 +3,8 @@
  *
  * Sibling of `parser.ts`. Keeps the entry-point file under the line cap.
  */
-import type { Cursor } from './cursor';
-import type { CursorMark } from './parser-state';
+import type { Cursor } from './cursor.js';
+import type { CursorMark } from './parser-state.js';
 
 /**
  * Find the offset of the matching `)` for a `(` that the cursor just passed.

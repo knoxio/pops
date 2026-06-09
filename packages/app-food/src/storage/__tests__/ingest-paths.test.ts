@@ -10,7 +10,7 @@ import {
   ingestDirFor,
   ingestRootDir,
   relativeToIngestDir,
-} from '../ingest-paths';
+} from '../ingest-paths.js';
 
 const ORIGINAL_ENV = process.env['FOOD_INGEST_DIR'];
 

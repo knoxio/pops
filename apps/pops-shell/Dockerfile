@@ -12,6 +12,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/app-finance/package.json ./packages/app-finance/
 COPY packages/app-food/package.json ./packages/app-food/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
+COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/app-lists/package.json ./packages/app-lists/
 COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
@@ -36,11 +37,14 @@ COPY packages/module-registry/src ./packages/module-registry/src
 COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
 COPY packages/app-lists/ ./packages/app-lists/
 COPY packages/app-food-db/ ./packages/app-food-db/
+COPY packages/food-contracts/ ./packages/food-contracts/
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/module-registry
+RUN pnpm build
+WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build

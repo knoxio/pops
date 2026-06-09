@@ -105,6 +105,9 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0065_prd_116_recipe_compile': 'food',
   // PRD-123 — unit_conversions + ingredient_weights.
   '0066_prd_123_conversions': 'food',
+  // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns
+  // on ingest_sources for failure-band persistence across BullMQ TTL.
+  '0067_prd_125_ingest_error_columns': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

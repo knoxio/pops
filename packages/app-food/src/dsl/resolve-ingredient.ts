@@ -1,5 +1,5 @@
-import { newIngredientCreation, newVariantCreation } from './resolve-create';
-import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from './resolve-slug';
+import { newIngredientCreation, newVariantCreation } from './resolve-create.js';
+import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from './resolve-slug.js';
 
 /**
  * `@ingredient(...)` resolver — PRD-115.
@@ -9,9 +9,9 @@ import { lookupPrepState, lookupRecipeYield, lookupSlug, lookupVariant } from '.
  * for unknown ingredient/variant slugs. Prep_states are curated — unknown
  * = error.
  */
-import type { IngredientBlock, SourceSpan } from './ast';
-import type { ResolverState } from './resolver-state';
-import type { ResolvedIngredientBlock } from './resolver-types';
+import type { IngredientBlock, SourceSpan } from './ast.js';
+import type { ResolverState } from './resolver-state.js';
+import type { ResolvedIngredientBlock } from './resolver-types.js';
 
 interface IngCtx {
   block: IngredientBlock;

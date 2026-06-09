@@ -10,7 +10,7 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 
-import { DEFAULT_TAB_SLUG, FOOD_DATA_TABS, type FoodDataTab } from './tab-config';
+import { DEFAULT_TAB_SLUG, FOOD_DATA_TABS, type FoodDataTab } from './tab-config.js';
 
 function tabBaseClasses(): string {
   return 'inline-flex items-center whitespace-nowrap rounded-md border border-transparent px-3 py-1.5 text-sm font-medium transition-colors';

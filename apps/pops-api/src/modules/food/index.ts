@@ -1,11 +1,17 @@
 /**
  * Food domain — backend module.
  *
- * PRD-122 (data management page) wires six sub-routers under `food.*`:
- * ingredients, variants, aliases, prepStates, substitutions, slugs. PRD-123
- * adds `conversions`; PRD-124 adds `heroImage`. Recipe mutations come later
- * via PRD-119. The shared `slugs.search` procedure is consumed by both the
- * data page and PRD-120's DSL editor.
+ * Mounts the per-domain sub-routers under `food.*`:
+ *
+ *   - `food.heroImage`     — PRD-124 hero image upload + thumbnail pipeline.
+ *   - `food.ingest`        — PRD-125 ingestion API (BullMQ producer +
+ *                            internal `workerComplete` for the worker).
+ *   - `food.ingredients` / `variants` / `aliases` / `prepStates` /
+ *     `substitutions` / `slugs` — PRD-122 part API data-management surface.
+ *   - `food.conversions`   — PRD-123 phase B unit conversions.
+ *
+ * Recipe CRUD lands later via PRD-119. Migration tags owned by this module
+ * are listed in `migrations.ts`.
  *
  * See `docs/themes/07-food/` for the theme spec.
  */
@@ -14,6 +20,7 @@ import { conversionsRouter } from './conversions/router.js';
 import { heroImageRouter } from './hero-image/router.js';
 import { foodMigrations } from './migrations.js';
 import { aliasesRouter } from './routers/aliases.js';
+import { ingestRouter } from './routers/ingest-router.js';
 import { ingredientsRouter } from './routers/ingredients.js';
 import { prepStatesRouter } from './routers/prep-states.js';
 import { slugsRouter } from './routers/slugs.js';
@@ -24,6 +31,7 @@ import type { ModuleManifest } from '@pops/types';
 
 export const foodRouter = router({
   heroImage: heroImageRouter,
+  ingest: ingestRouter,
   ingredients: ingredientsRouter,
   variants: variantsRouter,
   aliases: aliasesRouter,

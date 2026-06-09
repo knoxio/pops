@@ -9,11 +9,11 @@ import { performance } from 'node:perf_hooks';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseRecipeDsl } from '../parser';
-import { printRecipeAst } from '../printer';
-import { ALL_SAMPLES } from './samples';
+import { parseRecipeDsl } from '../parser.js';
+import { printRecipeAst } from '../printer.js';
+import { ALL_SAMPLES } from './samples.js';
 
-import type { RecipeAst } from '../ast';
+import type { RecipeAst } from '../ast.js';
 
 function stripLoc<T>(value: T): T {
   if (Array.isArray(value)) return value.map((v) => stripLoc(v)) as unknown as T;

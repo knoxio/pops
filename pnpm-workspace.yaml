@@ -11,6 +11,7 @@ packages:
   - 'packages/overlay-ego'
   - 'packages/api-client'
   - 'packages/db-types'
+  - 'packages/food-contracts'
   - 'packages/types'
   - 'packages/module-registry'
   - 'packages/navigation'
