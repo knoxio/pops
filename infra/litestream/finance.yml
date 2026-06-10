@@ -11,7 +11,8 @@
 ## environment — leave it as a `${FINANCE_LITESTREAM_REPLICA_URL}` style
 ## placeholder here.
 ##
-## Restore drill (single line — safe to copy/paste during an incident):
+## Restore drill (safe to copy/paste during an incident — the shell
+## continuation joins the two lines into one command):
 ##   litestream restore -o /data/sqlite/finance.db \
 ##     "${FINANCE_LITESTREAM_REPLICA_URL}"
 ## Stop the finance-api container first so it isn't writing concurrently;
