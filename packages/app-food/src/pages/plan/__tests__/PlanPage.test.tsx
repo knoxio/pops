@@ -7,7 +7,7 @@
  * is exercised at the @dnd-kit unit level via library coverage; this
  * test focuses on the wiring + happy paths the PRD calls out.
  */
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -373,5 +373,35 @@ describe('PlanPage (mobile)', () => {
     const sheet = await screen.findByTestId('plan-entry-edit-sheet');
     expect(sheet.getAttribute('data-variant')).toBe('bottom-sheet');
     expect(sheet.className).toContain('bottom-0');
+  });
+
+  it('does not navigate days when the touch gesture starts on a drag handle', () => {
+    renderPage();
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
+    const body = screen.getByTestId('plan-day-swiper-body');
+    const handle = body.querySelector('[data-draghandle="true"]');
+    expect(handle).not.toBeNull();
+    fireEvent.touchStart(body, {
+      target: handle,
+      touches: [{ clientX: 200, clientY: 100 }],
+    });
+    fireEvent.touchEnd(body, {
+      changedTouches: [{ clientX: 40, clientY: 100 }],
+    });
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
+  });
+
+  it('navigates when the swipe starts on empty space inside the day view', () => {
+    renderPage();
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
+    const body = screen.getByTestId('plan-day-swiper-body');
+    fireEvent.touchStart(body, {
+      target: body,
+      touches: [{ clientX: 200, clientY: 100 }],
+    });
+    fireEvent.touchEnd(body, {
+      changedTouches: [{ clientX: 40, clientY: 100 }],
+    });
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('16 Jun');
   });
 });

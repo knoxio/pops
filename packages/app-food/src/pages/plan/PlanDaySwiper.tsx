@@ -141,7 +141,11 @@ function useSwipeNavigation({ onLeft, onRight }: SwipeOptions) {
   return {
     onTouchStart: (e: React.TouchEvent<HTMLDivElement>) => {
       const touch = e.touches[0];
-      startX.current = touch ? touch.clientX : null;
+      if (!touch || touchStartedOnDragHandle(e.target)) {
+        startX.current = null;
+        return;
+      }
+      startX.current = touch.clientX;
     },
     onTouchEnd: (e: React.TouchEvent<HTMLDivElement>) => {
       if (startX.current === null) return;
@@ -157,4 +161,13 @@ function useSwipeNavigation({ onLeft, onRight }: SwipeOptions) {
       else onRight();
     },
   };
+}
+
+function touchStartedOnDragHandle(target: EventTarget): boolean {
+  let node: Element | null = target instanceof Element ? target : null;
+  while (node !== null) {
+    if (node instanceof HTMLElement && node.dataset.draghandle === 'true') return true;
+    node = node.parentElement;
+  }
+  return false;
 }
