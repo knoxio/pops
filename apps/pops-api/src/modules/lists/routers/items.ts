@@ -1,11 +1,19 @@
 /**
  * `lists.items.*` — item-level CRUD procedures (PRD-140).
  *
- * Thin transactional wrappers around the PRD-112 service layer in
- * `@pops/app-lists-db`. The router contributes:
+ * Thin transactional wrappers around the PRD-112 service layer. The router
+ * contributes:
  *   - `reorder` count-mismatch defence (rejects stale-state writes).
  *   - `check` returning a deterministic `checkedAt` ISO timestamp so the
  *     UI's optimistic update can rehydrate without a refetch.
+ *
+ * Track K phase 1 PR 3 cutover: the `list_items` read + check-state surface
+ * (`listItemsForList`, `checkListItem`, `uncheckListItem`,
+ * `uncheckAllListItems`) now resolves through the canonical
+ * `@pops/lists-db` package. The remaining mutations (`addItem`, `bulkAdd`,
+ * `updateItem`, `removeItem`, `reorderItems`, `removeCheckedItems`) stay on
+ * `@pops/app-lists-db` until a follow-up slice migrates the position-
+ * allocation + ref-kind helpers across.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -13,16 +21,13 @@ import { z } from 'zod';
 import {
   addItem,
   bulkAdd,
-  checkItem,
   type ListsDb,
-  listItemsForList,
   removeCheckedItems,
   removeItem,
   reorderItems,
-  uncheckAllItems,
-  uncheckItem,
   updateItem,
 } from '@pops/app-lists-db';
+import { listItemsService } from '@pops/lists-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -74,7 +79,7 @@ const ReorderInputSchema = z.object({
 const ListIdInputSchema = z.object({ listId: z.number().int().positive() });
 
 function currentItemIds(db: ListsDb, listId: number): readonly number[] {
-  return listItemsForList(db, listId).map((r) => r.id);
+  return listItemsService.listItemsForList(db, listId).map((r) => r.id);
 }
 
 export const itemsRouter = router({
@@ -94,7 +99,7 @@ export const itemsRouter = router({
   }),
 
   check: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    const row = runOrMap(() => checkItem(getDrizzle(), input.id));
+    const row = runOrMap(() => listItemsService.checkListItem(getDrizzle(), input.id));
     if (row.checkedAt === null) {
       // PRD-112 enforces `checked_at` is set when `checked=1` — this branch
       // is defensive against a future schema change.
@@ -107,7 +112,7 @@ export const itemsRouter = router({
   }),
 
   uncheck: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    runOrMap(() => uncheckItem(getDrizzle(), input.id));
+    runOrMap(() => listItemsService.uncheckListItem(getDrizzle(), input.id));
     return { ok: true as const };
   }),
 
@@ -150,7 +155,7 @@ export const itemsRouter = router({
    * without a follow-up read.
    */
   uncheckAll: protectedProcedure.input(ListIdInputSchema).mutation(({ input }) => {
-    const count = runOrMap(() => uncheckAllItems(getDrizzle(), input.listId));
+    const count = runOrMap(() => listItemsService.uncheckAllListItems(getDrizzle(), input.listId));
     return { ok: true as const, count };
   }),
 

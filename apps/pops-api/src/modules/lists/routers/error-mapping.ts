@@ -6,18 +6,36 @@
  *   - SQLite `UNIQUE` constraint → tRPC `CONFLICT`
  *   - SQLite `FOREIGN KEY` constraint → tRPC `CONFLICT`
  *   - anything else propagates as-is
+ *
+ * Track K phase 1 PR 3 cutover: `ListItemNotFoundError` is now imported
+ * from the canonical `@pops/lists-db`. Until PR 4 retires the legacy
+ * `@pops/app-lists-db` list-items services, the older package still throws
+ * its own (separate-identity) `ListItemNotFoundError` from `updateItem` —
+ * we alias it as `LegacyListItemNotFoundError` and include both classes in
+ * the `instanceof` guard so the mapping keeps working across the
+ * transition.
  */
 import { TRPCError } from '@trpc/server';
 
-import { ListItemNotFoundError, ListNotFoundError } from '@pops/app-lists-db';
+import {
+  ListItemNotFoundError as LegacyListItemNotFoundError,
+  ListNotFoundError,
+} from '@pops/app-lists-db';
+import { ListItemNotFoundError } from '@pops/lists-db';
 
 import {
   isForeignKeyConstraintError,
   isUniqueConstraintError,
 } from '../../../shared/sqlite-errors.js';
 
-function isTypedNotFound(err: unknown): err is ListNotFoundError | ListItemNotFoundError {
-  return err instanceof ListNotFoundError || err instanceof ListItemNotFoundError;
+function isTypedNotFound(
+  err: unknown
+): err is ListNotFoundError | ListItemNotFoundError | LegacyListItemNotFoundError {
+  return (
+    err instanceof ListNotFoundError ||
+    err instanceof ListItemNotFoundError ||
+    err instanceof LegacyListItemNotFoundError
+  );
 }
 
 export function mapServiceError(err: unknown): never {
