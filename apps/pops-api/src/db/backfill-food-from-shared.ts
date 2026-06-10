@@ -9,11 +9,14 @@
  * find the food copy already populated and become a no-op via the
  * `WHERE id NOT IN (...)` existence filter.
  *
- * Today the slice only covers the `prep_states` table; ingredients +
- * ingredient_variants + ingredient_aliases + slug_registry + recipes +
- * recipe_versions + plan slices add their entries here when their
- * cutovers land. The `prep_states` table has no FK references to
- * other food tables so order is trivial for this PR.
+ * The current scope covers `prep_states` plus the prep-state subset of
+ * `slug_registry` (filtered to `kind='prep_state'`) so the slug
+ * lookups behind the cutover keep resolving. Other food tables —
+ * ingredients + ingredient_variants + ingredient_aliases + the rest of
+ * `slug_registry` + recipes + recipe_versions + plan slices — are
+ * added to the table-copies list when their cutovers land. The
+ * `prep_states` table has no FK references to other food tables so
+ * order is trivial for this PR.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Partial failures
@@ -82,8 +85,11 @@ function tryCopyTable(raw: Database.Database, copy: TableCopy): void {
 }
 
 /**
- * Copy every food-owned table's rows from `pops.db` into `food.db`,
- * idempotent against re-runs.
+ * Copy rows for each table currently listed in `TABLE_COPIES`
+ * (`prep_states` plus the `kind='prep_state'` slice of `slug_registry`
+ * as of Phase 2 PR 3) from `pops.db` into `food.db`, idempotent against
+ * re-runs. Subsequent slice cutovers append to `TABLE_COPIES` so the
+ * coverage grows with each PR rather than landing all at once.
  *
  * Caller is responsible for supplying the food handle (so this module
  * stays decoupled from the lazy singleton in `db/food-handle.ts`).
