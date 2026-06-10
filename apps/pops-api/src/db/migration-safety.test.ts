@@ -663,7 +663,17 @@ describe('migration safety', () => {
 
     function readMigrationSql(): string {
       return readFileSync(
-        join(__dirname, 'drizzle-migrations', '0052_budgets_active_default_zero.sql'),
+        join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          '..',
+          'packages',
+          'finance-db',
+          'migrations',
+          '0052_budgets_active_default_zero.sql'
+        ),
         'utf8'
       );
     }
