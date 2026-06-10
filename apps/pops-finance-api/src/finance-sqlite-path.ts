@@ -6,10 +6,15 @@ import { dirname, join } from 'node:path';
  *
  * Intentionally NOT imported from `apps/pops-api/src/db/finance-sqlite-path.ts`
  * — finance-api is supposed to be runnable without pops-api in the
- * dependency graph. The precedence chain mirrors pops-api's resolver
- * verbatim so the two processes agree on the location of `finance.db`
- * given the same env: a deployer who only sets `SQLITE_PATH`
- * (legacy contract) still ends up with `finance.db` next to `pops.db`.
+ * dependency graph. The precedence chain matches pops-api's resolver
+ * so the two processes agree on the location of `finance.db` given
+ * the same env: a deployer who only sets `SQLITE_PATH` (legacy
+ * contract) still ends up with `finance.db` next to `pops.db`. The
+ * pops-api version emits a `console.warn` on the fallback branch
+ * (its job is to flag dev/test setups that haven't been configured);
+ * here we stay silent because a missing env in a per-pillar container
+ * usually means the deployer set the default deliberately, and the
+ * container has no equivalent dev-time signal to surface.
  *
  * Resolution order:
  *   1. `FINANCE_SQLITE_PATH` (absolute or relative).
