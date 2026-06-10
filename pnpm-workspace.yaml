@@ -19,6 +19,7 @@ packages:
   - 'packages/cerebrum-db'
   - 'packages/food-db'
   - 'packages/food-contracts'
+  - 'packages/lists-db'
   - 'packages/types'
   - 'packages/module-registry'
   - 'packages/navigation'
