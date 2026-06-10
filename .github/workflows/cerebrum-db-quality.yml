@@ -6,8 +6,6 @@ on:
     paths:
       - "packages/cerebrum-db/**"
       - "packages/db-types/**"
-      - "apps/pops-api/src/db/drizzle-migrations/0039_dry_fabian_cortez.sql"
-      - "apps/pops-api/src/db/drizzle-migrations/0044_nudge_log.sql"
       - ".github/workflows/cerebrum-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
@@ -28,36 +26,8 @@ jobs:
             relevant:
               - 'packages/cerebrum-db/**'
               - 'packages/db-types/**'
-              - 'apps/pops-api/src/db/drizzle-migrations/0039_dry_fabian_cortez.sql'
-              - 'apps/pops-api/src/db/drizzle-migrations/0044_nudge_log.sql'
               - '.github/workflows/cerebrum-db-quality.yml'
               - '.github/workflows/_pkg-check.yml'
-
-  migration-drift-guard:
-    name: Migration drift (shared vs cerebrum-db)
-    needs: [changes]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Skip — no relevant changes"
-        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
-        run: echo "Skipping — no relevant changes"
-      - uses: actions/checkout@v6
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-      - name: Diff cerebrum-db copies against shared journal copies
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-        run: |
-          set -euo pipefail
-          for tag in 0039_dry_fabian_cortez 0044_nudge_log; do
-            shared="apps/pops-api/src/db/drizzle-migrations/${tag}.sql"
-            pillar="packages/cerebrum-db/migrations/${tag}.sql"
-            if ! diff -q "$shared" "$pillar"; then
-              echo "::error::Migration drift detected: $shared and $pillar must be byte-identical during the transitional release cycle (cerebrum pillar phase 1)."
-              diff "$shared" "$pillar" || true
-              exit 1
-            fi
-            echo "OK — both ${tag}.sql copies are byte-identical."
-          done
 
   quality:
     needs: [changes]

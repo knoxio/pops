@@ -23,14 +23,10 @@ export const cerebrumMigrationTags: readonly string[] = [
   // conversations + messages + conversation_context (ego persistence;
   // cerebrum owns the schema — ego depends on cerebrum).
   '0038_sturdy_professor_monster',
-  // nudge_log — reflex/nudge audit trail.
-  '0039_dry_fabian_cortez',
   // glia_actions — glia workers audit trail.
   '0040_bumpy_namorita',
   // plexus_adapters — external data-source registry.
   '0041_plexus_adapters',
-  // nudge_log safety re-creation (idempotent, see #2329).
-  '0044_nudge_log',
   // engram_index body_hash safety re-application (#2329).
   '0046_engrams_body_hash',
   // glia_actions safety re-creation (idempotent).
