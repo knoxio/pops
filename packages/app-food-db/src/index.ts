@@ -194,10 +194,12 @@ export type * from './types/index.js';
 export type {
   PlanEntryError,
   PlanEntryMutationResult,
+  PlanEntryRow as WirePlanEntryRow,
   PlanSlotDeleteError,
   PlanSlotDeleteResult,
   PlanSlotError,
   PlanSlotMutationResult,
+  PlanSlotRow as WirePlanSlotRow,
   PlanSlotUpdateError,
   PlanSlotUpdateResult,
   ReorderSlotError,
