@@ -45,8 +45,10 @@ export {
   bulkAdd,
   checkItem,
   listItemsForList,
+  removeCheckedItems,
   removeItem,
   reorderItems,
+  uncheckAllItems,
   uncheckItem,
   updateItem,
 } from './services/list-items.js';

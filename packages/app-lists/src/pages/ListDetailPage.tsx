@@ -4,24 +4,23 @@ import { useParams } from 'react-router';
 
 import { trpc } from '@pops/api-client';
 
-import { ListDeleteDialog } from './detail/ListDeleteDialog.js';
-import { ListDetailHeader } from './detail/ListDetailHeader.js';
-import { ListEditModal } from './detail/ListEditModal.js';
-import { ListItemAddForm } from './detail/ListItemAddForm.js';
-import { ListItemsSection } from './detail/ListItemsSection.js';
-import { useDetailMutations, type DetailMutations } from './detail/useDetailMutations.js';
-import { useItemMutations, type ItemMutations } from './detail/useItemMutations.js';
+import { ShoppingDetailContent } from './components/shopping/ShoppingDetailContent.js';
+import { GenericDetailContent } from './detail/GenericDetailContent.js';
+import { useDetailMutations } from './detail/useDetailMutations.js';
+import { useItemMutations } from './detail/useItemMutations.js';
 
-import type { ListItemRow, ListRow } from './detail/types.js';
+import type { DetailContentProps, DialogState } from './detail/detail-handlers.js';
 
 /**
- * `/lists/:id` — generic list detail page (PRD-140-C).
+ * `/lists/:id` — generic list detail page (PRD-140-C) with PRD-141's
+ * shopping dispatch.
  *
- * Renders any list kind via the kind-agnostic row component. Shopping-only
- * affordances (uncheck-all, clear-checked, sort) land in PRD-141 by
- * swapping the items section when `kind === 'shopping'`. The 60-second
- * background poll picks up concurrent edits from other tabs and from
- * food's "Send to shopping list" action (PRD-142).
+ * The page shell fetches `lists.list.get` (polling every 60s while
+ * visible) and owns the edit + delete dialog state. The body branches
+ * by `list.kind`: `shopping` → `ShoppingDetailContent` (sort dropdown,
+ * uncheck-all / clear-checked, denser rows, swipe-to-delete); every
+ * other kind → `GenericDetailContent`. Future kind-specific paths
+ * (todo, packing) layer in the same way without touching this file.
  */
 export function ListDetailPage(): ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -30,15 +29,6 @@ export function ListDetailPage(): ReactElement {
     return <NotFoundShell />;
   }
   return <ListDetailBody listId={parsed} />;
-}
-
-interface DialogState {
-  editOpen: boolean;
-  deleteOpen: boolean;
-  openEdit: () => void;
-  closeEdit: () => void;
-  openDelete: () => void;
-  closeDelete: () => void;
 }
 
 function useDialogs(): DialogState {
@@ -74,132 +64,15 @@ function ListDetailBody({ listId }: { listId: number }): ReactElement {
     return <Status text={t('detail.error')} variant="error" />;
   }
 
-  return (
-    <DetailContent
-      list={query.data.list}
-      items={query.data.items}
-      detailMx={detailMx}
-      itemMx={itemMx}
-      dialogs={dialogs}
-    />
-  );
-}
-
-interface DetailContentProps {
-  list: ListRow;
-  items: readonly ListItemRow[];
-  detailMx: DetailMutations;
-  itemMx: ItemMutations;
-  dialogs: DialogState;
-}
-
-function useDetailHandlers({ list, detailMx, itemMx, dialogs }: DetailContentProps) {
-  // Each async handler swallows its rejection — failures already surface via
-  // the `detailMx.errorMessage` banner, so re-throwing here would only land
-  // in an unhandled promise rejection (Copilot R1).
-  return {
-    toggleChecked: (id: number, currentlyChecked: boolean) => {
-      if (currentlyChecked) itemMx.uncheck(id);
-      else itemMx.check(id);
-    },
-    archiveToggle: async () => {
-      try {
-        if (list.archivedAt === null) await detailMx.archive(list.id);
-        else await detailMx.unarchive(list.id);
-      } catch {
-        /* surfaced via errorMessage */
-      }
-    },
-    saveEdit: async (patch: { name: string; kind: typeof list.kind }) => {
-      try {
-        const result = await detailMx.update(list.id, patch);
-        if (result.ok) dialogs.closeEdit();
-      } catch {
-        /* surfaced via errorMessage */
-      }
-    },
-    confirmDelete: async () => {
-      try {
-        await detailMx.remove(list.id);
-      } catch {
-        /* surfaced via errorMessage */
-      }
-      dialogs.closeDelete();
-    },
+  const props: DetailContentProps = {
+    list: query.data.list,
+    items: query.data.items,
+    detailMx,
+    itemMx,
+    dialogs,
   };
-}
-
-function DetailContent(props: DetailContentProps): ReactElement {
-  const { list, items, detailMx, itemMx, dialogs } = props;
-  const h = useDetailHandlers(props);
-
-  return (
-    <div className="space-y-4 p-4 sm:p-6">
-      <ListDetailHeader
-        list={list}
-        onRename={dialogs.openEdit}
-        onChangeKind={dialogs.openEdit}
-        onArchiveToggle={() => void h.archiveToggle()}
-        onDelete={dialogs.openDelete}
-      />
-      <ErrorBanners detail={detailMx.errorMessage} item={itemMx.errorMessage} />
-      <ListItemsSection
-        items={items}
-        onToggleChecked={h.toggleChecked}
-        onSaveLabel={(id, label) => itemMx.update(id, { label })}
-        onReorder={itemMx.reorder}
-        onDelete={itemMx.remove}
-      />
-      <ListItemAddForm
-        isPending={itemMx.isAdding}
-        onAdd={async (input) => (await itemMx.add(input)) !== null}
-      />
-      {dialogs.editOpen ? (
-        <ListEditModal
-          list={list}
-          isSaving={detailMx.isUpdating}
-          onCancel={dialogs.closeEdit}
-          onSave={(patch) => void h.saveEdit(patch)}
-          onArchiveToggle={() => {
-            void h.archiveToggle();
-            dialogs.closeEdit();
-          }}
-        />
-      ) : null}
-      {dialogs.deleteOpen ? (
-        <ListDeleteDialog
-          name={list.name}
-          itemCount={items.length}
-          isPending={detailMx.isRemoving}
-          onCancel={dialogs.closeDelete}
-          onConfirm={() => void h.confirmDelete()}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function ErrorBanners({
-  detail,
-  item,
-}: {
-  detail: string | null;
-  item: string | null;
-}): ReactElement {
-  return (
-    <>
-      {detail !== null ? (
-        <p role="alert" className="text-sm text-destructive">
-          {detail}
-        </p>
-      ) : null}
-      {item !== null ? (
-        <p role="alert" className="text-sm text-destructive">
-          {item}
-        </p>
-      ) : null}
-    </>
-  );
+  if (props.list.kind === 'shopping') return <ShoppingDetailContent {...props} />;
+  return <GenericDetailContent {...props} />;
 }
 
 function Status({

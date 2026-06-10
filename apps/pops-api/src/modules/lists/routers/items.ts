@@ -16,8 +16,10 @@ import {
   checkItem,
   type ListsDb,
   listItemsForList,
+  removeCheckedItems,
   removeItem,
   reorderItems,
+  uncheckAllItems,
   uncheckItem,
   updateItem,
 } from '@pops/app-lists-db';
@@ -68,6 +70,8 @@ const ReorderInputSchema = z.object({
   listId: z.number().int().positive(),
   orderedIds: z.array(z.number().int().positive()),
 });
+
+const ListIdInputSchema = z.object({ listId: z.number().int().positive() });
 
 function currentItemIds(db: ListsDb, listId: number): readonly number[] {
   return listItemsForList(db, listId).map((r) => r.id);
@@ -138,5 +142,24 @@ export const itemsRouter = router({
     }
     runOrMap(() => reorderItems(db, input.listId, input.orderedIds));
     return { ok: true as const };
+  }),
+
+  /**
+   * Bulk-uncheck every checked item in a list (PRD-141 amendment). Returns
+   * the affected row count so the UI can surface "Unchecked N items"
+   * without a follow-up read.
+   */
+  uncheckAll: protectedProcedure.input(ListIdInputSchema).mutation(({ input }) => {
+    const count = runOrMap(() => uncheckAllItems(getDrizzle(), input.listId));
+    return { ok: true as const, count };
+  }),
+
+  /**
+   * Hard-delete every checked item in a list (PRD-141 amendment). Returns
+   * the row count removed; unchecked items are untouched.
+   */
+  removeChecked: protectedProcedure.input(ListIdInputSchema).mutation(({ input }) => {
+    const removedCount = runOrMap(() => removeCheckedItems(getDrizzle(), input.listId));
+    return { ok: true as const, removedCount };
   }),
 });
