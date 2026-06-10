@@ -61,8 +61,6 @@ export interface OpenedListsDb {
  *     `packages/lists-db/migrations/meta/_journal.json` is applied via
  *     drizzle's built-in migrator (idempotent — re-running against the
  *     same DB short-circuits on the `__drizzle_migrations` hash check).
- *     Today that's `0062_chemical_donald_blake` (creates `lists` and
- *     `list_items`).
  *
  * If the migration apply throws (corrupt DB, malformed migration,
  * missing folder), the raw handle is closed before the error is
