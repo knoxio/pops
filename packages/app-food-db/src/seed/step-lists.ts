@@ -3,10 +3,15 @@
  *
  * Uses app-lists services so ref_kind / ref_id normalisation flows through
  * the canonical code path. Items checked at fixture-time get an immediate
- * `checkItem` call so `checked_at` is populated, matching prod behaviour.
+ * `checkListItem` call so `checked_at` is populated, matching prod behaviour.
+ *
+ * Track K phase 1 PR 4: the `check` mutation resolves through the canonical
+ * `@pops/lists-db` package (renamed from `checkItem` to `checkListItem`).
+ * The un-migrated `addItem` + `createList` stay on `@pops/app-lists-db`
+ * until subsequent slice PRs migrate them.
  */
-import { type AddItemInput, addItem, checkItem } from '@pops/app-lists-db';
-import { createList, type ListsDb } from '@pops/app-lists-db';
+import { type AddItemInput, addItem, createList, type ListsDb } from '@pops/app-lists-db';
+import { listItemsService } from '@pops/lists-db';
 
 import { LIST_FIXTURES, type ListItemFixture } from './data-lists.js';
 
@@ -69,7 +74,7 @@ export function seedLists(
     for (const item of fixture.items) {
       const inserted = addItem(db, toAddItemInput(item, list.id, foodCtx));
       if (item.checked === true) {
-        checkItem(db, inserted.id);
+        listItemsService.checkListItem(db, inserted.id);
       }
       itemCount += 1;
     }
