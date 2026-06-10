@@ -82,6 +82,41 @@ function numericField(raw: unknown): number | null {
 }
 
 /**
+ * PRD-135 — defensive parser for `recipe_version_proposed_slugs.from_loc_json`.
+ *
+ * The rest of the inspector composer collapses corrupted JSON to a safe
+ * fallback rather than throwing (Copilot R1 — a single malformed row would
+ * tank the entire inspector read otherwise). The fallback returns a 1:1
+ * span pointing at the start of the document so the editor's cursor-move
+ * lands somewhere sensible if a click on the corrupt row reaches the
+ * proposed-slug list.
+ */
+export const FALLBACK_SOURCE_SPAN: SourceSpan = Object.freeze({
+  startLine: 1,
+  startCol: 1,
+  endLine: 1,
+  endCol: 1,
+});
+
+export function safeParseSourceSpan(raw: string): SourceSpan {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return FALLBACK_SOURCE_SPAN;
+    const obj = parsed as Record<string, unknown>;
+    const startLine = numericField(obj.startLine);
+    const startCol = numericField(obj.startCol);
+    const endLine = numericField(obj.endLine);
+    const endCol = numericField(obj.endCol);
+    if (startLine === null || startCol === null || endLine === null || endCol === null) {
+      return FALLBACK_SOURCE_SPAN;
+    }
+    return { startLine, startCol, endLine, endCol };
+  } catch {
+    return FALLBACK_SOURCE_SPAN;
+  }
+}
+
+/**
  * Returns the parsed `ingest_sources.extracted_json` payload. The inspector
  * provenance pane consumes it as opaque `Record<string, unknown>` and
  * narrows per ingest kind in the UI (`url-instagram` reads `stages.stt`,

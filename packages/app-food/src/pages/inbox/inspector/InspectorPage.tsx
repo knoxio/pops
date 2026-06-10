@@ -6,11 +6,13 @@
  * in an error boundary so a malformed `extracted_json` doesn't tank the
  * editor + decision panes.
  *
- * Pane widths are persisted to `localStorage` per the PRD spec; on
- * narrow screens the panes stack (decision first so Approve sits above
- * the fold).
+ * Layout: tailwind `lg:` breakpoint switches between a single stacked
+ * column (decision first so Approve is above the fold on mobile) and the
+ * three-pane horizontal grid (25/45/30). Resizable pane widths + the
+ * `localStorage` persistence the PRD spec describes are deferred — the
+ * Gaps section on the PR tracks that follow-up.
  */
-import { Component, type ReactElement, type ReactNode, useState } from 'react';
+import { Component, type ReactElement, type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
@@ -46,6 +48,11 @@ function InspectorBody({ sourceId, t }: BodyProps): ReactElement {
   const [pendingCursor, setPendingCursor] = useState<
     { line: number; col: number; nonce: number } | undefined
   >(undefined);
+  // Monotonic counter — `Date.now()` can collide on back-to-back clicks
+  // (especially in tests with fake timers); a ref-backed integer always
+  // changes identity so `usePendingCursor` re-runs (Copilot R1). Lives
+  // before the early-return guards to honour the rules of hooks.
+  const nonceRef = useRef(0);
 
   if (inspector.isLoading) return <LoadingState t={t} />;
   if (inspector.isError || inspector.data === undefined) {
@@ -55,10 +62,11 @@ function InspectorBody({ sourceId, t }: BodyProps): ReactElement {
 
   const review = inspector.data.review;
   const handlePickSlug = (row: InspectorProposedSlugRow): void => {
+    nonceRef.current += 1;
     setPendingCursor({
       line: row.fromLoc.startLine,
       col: row.fromLoc.startCol,
-      nonce: Date.now(),
+      nonce: nonceRef.current,
     });
   };
 

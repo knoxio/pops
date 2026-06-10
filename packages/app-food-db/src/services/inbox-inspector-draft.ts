@@ -21,10 +21,9 @@ import {
   recipeVersions,
 } from '../schema.js';
 import { listCreationsForVersion } from './creations.js';
-import { parseCompileErrorJson } from './inbox-inspector-parsers.js';
+import { parseCompileErrorJson, safeParseSourceSpan } from './inbox-inspector-parsers.js';
 import { type FoodDb } from './internal.js';
 
-import type { SourceSpan } from '../dsl/ast.js';
 import type {
   InspectorDraftView,
   InspectorProposedSlugRow,
@@ -106,10 +105,14 @@ function readProposedSlugs(db: FoodDb, versionId: number): InspectorProposedSlug
     .from(recipeVersionProposedSlugs)
     .where(eq(recipeVersionProposedSlugs.recipeVersionId, versionId))
     .all();
+  // Match the rest of the inspector service: malformed JSON returns a safe
+  // fallback span rather than throwing and tanking the whole read (Copilot
+  // R1). Mirrors the resilience pattern in `parseExtractedMeta` /
+  // `parseCompileErrorJson`.
   return rows.map((r) => ({
     slug: r.slug,
     suggestedKind: r.suggestedKind,
-    fromLoc: JSON.parse(r.fromLocJson) as SourceSpan,
+    fromLoc: safeParseSourceSpan(r.fromLocJson),
     createdAt: r.createdAt,
   }));
 }

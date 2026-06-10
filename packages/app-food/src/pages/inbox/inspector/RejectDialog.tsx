@@ -70,9 +70,18 @@ export function RejectDialog({ open, onOpenChange, versionId, onRejected }: Prop
             type="button"
             variant="destructive"
             disabled={mutation.isPending || noteRequired}
-            onClick={() =>
-              mutation.mutate({ versionId, reason, note: note.trim() === '' ? undefined : note })
-            }
+            onClick={() => {
+              // Trim before send so the persisted `note` matches what the
+              // client-side `noteRequired` check evaluated against (Copilot
+              // R1). Empty trimmed strings collapse to `undefined` so the
+              // server doesn't persist a whitespace-only note.
+              const trimmed = note.trim();
+              mutation.mutate({
+                versionId,
+                reason,
+                note: trimmed === '' ? undefined : trimmed,
+              });
+            }}
             data-testid="inspector-reject-confirm"
           >
             {mutation.isPending

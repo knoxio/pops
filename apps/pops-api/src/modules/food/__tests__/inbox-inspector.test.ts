@@ -362,4 +362,30 @@ describe('food.inbox.getForReview — PRD-135', () => {
     await expect(caller.food.inbox.getForReview({ sourceId: 0 })).rejects.toThrow();
     await expect(caller.food.inbox.getForReview({ sourceId: -1 })).rejects.toThrow();
   });
+
+  // Copilot R1: malformed `from_loc_json` must not crash the whole inspector
+  // read. Mirrors the resilience pattern used by `parseExtractedMeta` +
+  // `parseCompileErrorJson` elsewhere in the service.
+  it('survives a malformed recipe_version_proposed_slugs.from_loc_json row', async () => {
+    const seed = seedCompiledDraft({ slug: 'bad-loc' });
+    sqlite
+      .prepare(
+        `INSERT INTO recipe_version_proposed_slugs ` +
+          `(recipe_version_id, slug, suggested_kind, from_loc_json) ` +
+          `VALUES (?, ?, ?, ?)`
+      )
+      .run(seed.draftVersionId, 'broken-slug', 'ingredient', '{not valid json');
+    const result = await caller.food.inbox.getForReview({ sourceId: seed.sourceId });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const slugs = result.review.draft?.proposedSlugs ?? [];
+    const broken = slugs.find((s) => s.slug === 'broken-slug');
+    expect(broken).toBeDefined();
+    expect(broken?.fromLoc).toMatchObject({
+      startLine: 1,
+      startCol: 1,
+      endLine: 1,
+      endCol: 1,
+    });
+  });
 });

@@ -11,7 +11,7 @@
  * Save button; the renderer remains live for archived versions (a
  * frozen view of what was archived).
  */
-import { type ReactElement, useState } from 'react';
+import { type ReactElement, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -35,6 +35,18 @@ export function EditorPane({ draft, onSaved, pendingCursor }: Props): ReactEleme
   const { t } = useTranslation('food');
   const [tab, setTab] = useState<EditorTab>('editor');
   const [body, setBody] = useState(draft.bodyDsl);
+  // Re-sync `body` whenever the inspector query produces a fresh
+  // `draft.bodyDsl` (Save → invalidate, sibling-tab approve, etc.) — without
+  // this, a stale `body` could overwrite the on-server DSL on the next Save.
+  // The `lastSyncedDsl` ref prevents the user's in-flight unsaved edits from
+  // being clobbered by a refetch that returned the same value they last
+  // saved (Copilot R1).
+  const lastSyncedDsl = useRef(draft.bodyDsl);
+  useEffect(() => {
+    if (draft.bodyDsl === lastSyncedDsl.current) return;
+    lastSyncedDsl.current = draft.bodyDsl;
+    setBody(draft.bodyDsl);
+  }, [draft.bodyDsl]);
   const isReadOnly = draft.status === 'archived';
 
   return (
@@ -111,7 +123,7 @@ function EditorTab(props: EditorTabBodyProps): ReactElement {
   return (
     <div className="space-y-2">
       <DslEditor
-        initialValue={draft.bodyDsl}
+        initialValue={body}
         onChange={onChange}
         readOnly={isReadOnly}
         pendingCursor={pendingCursor}

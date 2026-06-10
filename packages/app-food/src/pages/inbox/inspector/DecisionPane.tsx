@@ -47,7 +47,11 @@ export function DecisionPane({ review, onMutated, onPickSlug }: Props): ReactEle
         <PendingControls draft={draft} source={review.source} onMutated={onMutated} />
       )}
       {source.state === 'partial' && (
-        <RerunPipelineButton sourceId={source.id} partialReason={source.partialReason ?? null} />
+        <RerunPipelineButton
+          sourceId={source.id}
+          partialReason={source.partialReason ?? null}
+          onRequeued={onMutated}
+        />
       )}
     </section>
   );
@@ -168,16 +172,25 @@ function ArchivedControls({ draft, onMutated }: ArchivedControlsProps): ReactEle
 function RerunPipelineButton({
   sourceId,
   partialReason,
+  onRequeued,
 }: {
   sourceId: number;
   partialReason: string | null;
+  onRequeued: () => void;
 }): ReactElement {
   const { t } = useTranslation('food');
   // PRD-135 §"Partial-draft retry variant" — `auth-dead` is disabled until
   // the operator refreshes cookies out-of-band (see the IG cookie runbook).
   const isDisabled = partialReason === 'auth-dead';
+  // `partial` is a terminal state, so the inspector's poll stops; without an
+  // explicit invalidate after re-queue the UI sticks on the old partial draft
+  // until the user reloads. Bumping `onRequeued` invalidates the query
+  // (Copilot R1).
   const mutation = trpc.food.ingest.retry.useMutation({
-    onSuccess: () => toast.success(t('inbox.inspector.decision.rerun.success')),
+    onSuccess: () => {
+      toast.success(t('inbox.inspector.decision.rerun.success'));
+      onRequeued();
+    },
     onError: (err) =>
       toast.error(t('inbox.inspector.decision.rerun.error', { message: err.message })),
   });
