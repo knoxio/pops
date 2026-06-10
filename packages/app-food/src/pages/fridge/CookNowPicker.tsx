@@ -7,7 +7,7 @@
  * the cook flow takes over there.
  */
 import { type ReactElement } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
@@ -50,6 +50,7 @@ export function CookNowPicker({
         </DialogHeader>
         <PickerBody
           isLoading={result.isLoading}
+          error={result.error instanceof Error ? result.error : null}
           items={items}
           batchUnit={batchUnit}
           onPick={handleNavigate}
@@ -66,12 +67,20 @@ export function CookNowPicker({
 
 interface PickerBodyProps {
   isLoading: boolean;
+  error: Error | null;
   items: readonly RecipeForCookRow[];
   batchUnit: BatchUnit | null;
   onPick: (slug: string) => void;
 }
 
-function PickerBody({ isLoading, items, batchUnit, onPick }: PickerBodyProps): ReactElement {
+function PickerBody({ isLoading, error, items, batchUnit, onPick }: PickerBodyProps): ReactElement {
+  if (error !== null) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        Couldn&apos;t load matching recipes: {error.message}
+      </p>
+    );
+  }
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
@@ -79,9 +88,9 @@ function PickerBody({ isLoading, items, batchUnit, onPick }: PickerBodyProps): R
     return (
       <p className="text-sm text-muted-foreground">
         No recipes use this batch&apos;s ingredient yet.{' '}
-        <a className="underline" href="/food/recipes/new">
+        <Link className="underline" to="/food/recipes/new">
           Try creating one!
-        </a>
+        </Link>
       </p>
     );
   }

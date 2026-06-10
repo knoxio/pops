@@ -43,7 +43,9 @@ function parseCreateInput(form: AddBatchFormState): CreateBatchInput | string {
   const variantId = Number(form.variantId);
   const qty = Number(form.qty);
   if (!Number.isFinite(variantId) || variantId <= 0) return 'Pick an ingredient variant.';
-  if (!Number.isFinite(qty) || qty < 0) return 'Quantity must be a non-negative number.';
+  // Reject zero — a 0-qty batch is hidden from the default fridge view, so
+  // creating one would look like the modal silently did nothing.
+  if (!Number.isFinite(qty) || qty <= 0) return 'Quantity must be greater than zero.';
   const trimmedNotes = form.notes.trim();
   return {
     variantId,

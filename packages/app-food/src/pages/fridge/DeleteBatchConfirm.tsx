@@ -4,7 +4,7 @@
  * Distinguishes non-empty vs empty batches in the confirm copy. Calls
  * `food.batches.delete` (PRD-145 soft-delete via `deleted_at`).
  */
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 
 import { trpc } from '@pops/api-client';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
@@ -33,6 +33,10 @@ export function DeleteBatchConfirm({
     { enabled: isOpen && batchId !== null }
   );
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) setError(null);
+  }, [isOpen]);
 
   const deleteMutation = trpc.food.batches.delete.useMutation({
     onSuccess: (res) => {

@@ -6,6 +6,14 @@
  * Cook / Delete actions delegate to PRD-145's `food.batches.*`
  * services. The filter / search / show-all controls feed
  * `food.fridge.view`.
+ *
+ * Deferred from v1:
+ *   - URL-driven state (`?showAll=1`, `?add=1`, `?edit=<id>`, `?batch=<id>`
+ *     scroll + highlight). Filter / modal state is local-only for now; a
+ *     follow-up will sync to `useSearchParams` once the deep-link UX is
+ *     designed (auto-expand showAll, auto-scroll target, pulse).
+ *   - Sidebar badge for batches expiring within 3 days.
+ *   - Mobile bottom-sheet modal variants.
  */
 import { useEffect, useState, type ReactElement } from 'react';
 

@@ -5,6 +5,7 @@
  * exposing Edit / Relocate / Adjust / Cook / Delete. The page owns
  * which modal is open; this component only reports the chosen action.
  */
+import { AlertTriangle, CircleAlert, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@pops/ui';
@@ -63,7 +64,7 @@ export function BatchRow({ batch, ingredientName, onAction }: BatchRowProps): Re
           onClick={() => setMenuOpen((v) => !v)}
           disabled={isDeleted}
         >
-          ⋮
+          <MoreVertical className="size-4" aria-hidden="true" />
         </Button>
         {menuOpen && (
           <ActionMenu
@@ -87,9 +88,13 @@ function describeBatch(batch: FridgeBatchRowData, ingredientName: string): strin
   return parts.join(' / ');
 }
 
-function ExpiryIcon({ urgency }: { urgency: ReturnType<typeof urgencyFor> }): ReactElement | null {
-  if (urgency === 'expired') return <span aria-label="Expired">🔴</span>;
-  if (urgency === 'soon') return <span aria-label="Expiring soon">⚠</span>;
+function ExpiryIcon({ urgency }: { urgency: ReturnType<typeof urgencyFor> }): ReactElement {
+  if (urgency === 'expired') {
+    return <CircleAlert className="size-4 text-destructive" aria-label="Expired" />;
+  }
+  if (urgency === 'soon') {
+    return <AlertTriangle className="size-4 text-warning" aria-label="Expiring soon" />;
+  }
   return <span aria-hidden="true" className="inline-block w-4" />;
 }
 

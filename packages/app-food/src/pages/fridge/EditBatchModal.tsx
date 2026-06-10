@@ -72,13 +72,20 @@ function buildEditPatch(
   prepStateId: number | null | undefined;
 } {
   return {
-    expiresAt:
-      form.expiresAt.length === 0
-        ? null
-        : new Date(`${form.expiresAt}T00:00:00.000Z`).toISOString(),
+    expiresAt: toIsoOrNull(form.expiresAt),
     notes: form.notes.trim().length === 0 ? null : form.notes.trim(),
     prepStateId: resolvePrepStateForPatch(form.prepStateId, isFromRun),
   };
+}
+
+function toIsoOrNull(yyyyMmDd: string): string | null {
+  if (yyyyMmDd.length === 0) return null;
+  // `<input type="date">` should always give us YYYY-MM-DD, but typed values
+  // and browser quirks can produce something `new Date()` rejects. Clear
+  // expiry in that case rather than letting `.toISOString()` throw.
+  const d = new Date(`${yyyyMmDd}T00:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
 }
 
 interface EditFieldsProps {

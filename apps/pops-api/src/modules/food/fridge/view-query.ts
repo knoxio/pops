@@ -50,8 +50,8 @@ export interface FlatBatchRow {
   deletedAt: string | null;
 }
 
-export function selectRows(db: FoodDb, input: FridgeViewInput): FlatBatchRow[] {
-  const conds = baseConditions(input);
+export function selectRows(db: FoodDb, input: FridgeViewInput, now: Date): FlatBatchRow[] {
+  const conds = baseConditions(input, now);
   return db
     .select({
       id: batches.id,
@@ -121,7 +121,7 @@ export function resolveRecipeSlugs(db: FoodDb, rows: readonly FlatBatchRow[]): M
   return map;
 }
 
-function baseConditions(input: FridgeViewInput): SQL[] {
+function baseConditions(input: FridgeViewInput, now: Date): SQL[] {
   const conds: SQL[] = [];
   if (input.includeEmpty !== true) conds.push(sql`${batches.qtyRemaining} > 0`);
   if (input.includeDeleted !== true) conds.push(isNull(batches.deletedAt));
@@ -136,7 +136,7 @@ function baseConditions(input: FridgeViewInput): SQL[] {
   }
 
   if (input.expiringSoon === true) {
-    conds.push(buildExpiringSoonCondition());
+    conds.push(buildExpiringSoonCondition(now));
   }
 
   appendSearchCondition(conds, input.search);
@@ -155,8 +155,11 @@ function appendSearchCondition(conds: SQL[], rawSearch: string | undefined): voi
   if (expr !== undefined) conds.push(expr);
 }
 
-function buildExpiringSoonCondition(): SQL {
-  const threshold = new Date(Date.now() + EXPIRING_SOON_DAYS * MS_PER_DAY).toISOString();
+function buildExpiringSoonCondition(now: Date): SQL {
+  // Anchor on the injectable `now` so tests / backfills that pin the clock
+  // see a deterministic threshold (rather than `Date.now()` drifting between
+  // the SELECT and the `daysToExpiry` projection in `view-grouping.ts`).
+  const threshold = new Date(now.getTime() + EXPIRING_SOON_DAYS * MS_PER_DAY).toISOString();
   const expr = and(isNotNull(batches.expiresAt), sql`${batches.expiresAt} <= ${threshold}`);
   if (expr === undefined) throw new Error('expiringSoon condition assembly failed');
   return expr;

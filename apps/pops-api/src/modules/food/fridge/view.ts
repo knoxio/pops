@@ -20,7 +20,7 @@ import type { FoodDb, FridgeView } from '@pops/app-food-db';
 import type { FridgeViewInput } from './inputs.js';
 
 export function fridgeView(db: FoodDb, input: FridgeViewInput, now: Date = new Date()): FridgeView {
-  const rows = selectRows(db, input);
+  const rows = selectRows(db, input, now);
   const recipeSlugByRun = resolveRecipeSlugs(db, rows);
   const sections = groupIntoSections(rows, recipeSlugByRun, toUtcMidnight(now));
   const counts = selectCounts(db, input);

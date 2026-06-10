@@ -8,6 +8,14 @@ import { trpc } from '@pops/api-client';
 
 import type { FridgeView } from '@pops/app-food-db';
 
+/**
+ * PRD-147's overview blurb mentions a prep-state filter, but the spec
+ * body (filter chips, `food.fridge.view` Zod schema) does not enumerate
+ * one. Treating it as a documented deferral for v1 — re-instate by
+ * adding `prepStateId` here, in `FridgeViewInputSchema`, and a SQL
+ * `prep_state_id =` clause in `view-query.ts` once the design picks a
+ * single-select vs multi-select shape.
+ */
 export interface FridgeFilterState {
   search: string;
   locations: ('pantry' | 'fridge' | 'freezer' | 'other')[];
