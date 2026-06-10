@@ -1,20 +1,6 @@
 import { z } from 'zod';
 
-import type { InventoryRow, LocationRow } from '@pops/db-types';
-
-export type { LocationRow };
-
-/** Result shape for the locations list endpoint. */
-export interface LocationListResult {
-  rows: LocationRow[];
-  total: number;
-}
-
-/** Result shape for the items-at-location endpoint. */
-export interface LocationItemsResult {
-  rows: InventoryRow[];
-  total: number;
-}
+import type { LocationRow } from '@pops/db-types';
 
 /** API response shape for a location. */
 export interface Location {
@@ -42,11 +28,6 @@ export const LocationSchema = z.object({
   sortOrder: z.number(),
 });
 
-/** A location with its children for tree responses. */
-export interface LocationTreeNode extends Location {
-  children: LocationTreeNode[];
-}
-
 /** Zod schema for creating a location. */
 export const CreateLocationSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -62,15 +43,3 @@ export const UpdateLocationSchema = z.object({
   sortOrder: z.number().int().nonnegative().optional(),
 });
 export type UpdateLocationInput = z.infer<typeof UpdateLocationSchema>;
-
-/** Stats returned before confirming a delete. */
-export interface DeleteLocationStats {
-  /** Number of direct child locations. */
-  childCount: number;
-  /** Total number of descendant locations (children, grandchildren, etc.). */
-  descendantCount: number;
-  /** Number of inventory items directly in this location. */
-  itemCount: number;
-  /** Number of inventory items in this location and all descendants. */
-  totalItemCount: number;
-}

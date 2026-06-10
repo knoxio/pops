@@ -7,10 +7,10 @@ import { and, count, eq, inArray, isNotNull, like, sql, sum, type SQL } from 'dr
  * SQLite is the source of truth. All operations are local.
  */
 import { homeInventory } from '@pops/db-types';
+import { locationsService } from '@pops/inventory-db';
 
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
-import { getDescendantLocationIds } from '../locations/service.js';
 import { buildInventoryUpdate } from './update-builder.js';
 
 import type { CreateInventoryItemInput, InventoryRow, UpdateInventoryItemInput } from './types.js';
@@ -57,11 +57,9 @@ function buildInventoryConditions(opts: ListInventoryItemsOptions): SQL[] {
 }
 
 function buildLocationCondition(locationId: string, includeChildren: boolean | undefined): SQL {
-  if (includeChildren) {
-    const ids = [locationId, ...getDescendantLocationIds(locationId)];
-    return inArray(homeInventory.locationId, ids);
-  }
-  return eq(homeInventory.locationId, locationId);
+  if (!includeChildren) return eq(homeInventory.locationId, locationId);
+  const descendants = locationsService.getDescendantLocationIds(getDrizzle(), locationId);
+  return inArray(homeInventory.locationId, [locationId, ...descendants]);
 }
 
 function combineConditions(conditions: SQL[]): SQL | undefined {
