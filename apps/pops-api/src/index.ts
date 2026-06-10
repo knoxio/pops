@@ -7,6 +7,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 
 import { createApp } from './app.js';
 import { backfillCoreFromShared, closeDb, getCoreDrizzle } from './db.js';
+import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
 import {
@@ -46,6 +47,20 @@ try {
   backfillCoreFromShared();
 } catch (err) {
   console.error('[db] Failed to bootstrap the core pillar SQLite:', err);
+  throw err;
+}
+
+// Eagerly open the inventory pillar's SQLite + apply its journal at
+// boot. Phase 2 PR 2 of the inventory pillar: the handle is opened so
+// the per-pillar migrations land before any request hits the API, but
+// no production traffic flips over yet — PR 3 of phase 2 cuts over
+// locations + items + uri-handler with a single `getDrizzle()` →
+// `getInventoryDrizzle()` swap and adds the one-shot ATTACH-based
+// backfill from the legacy shared pops.db.
+try {
+  getInventoryDrizzle();
+} catch (err) {
+  console.error('[db] Failed to bootstrap the inventory pillar SQLite:', err);
   throw err;
 }
 

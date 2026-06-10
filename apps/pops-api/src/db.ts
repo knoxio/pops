@@ -8,6 +8,7 @@ import { openCoreDb, type CoreDb, type OpenedCoreDb } from '@pops/core-db';
 
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
+import { closeInventoryDb } from './db/inventory-handle.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
 import { migrationOwners } from './db/migration-ownership.js';
 import {
@@ -232,6 +233,7 @@ export function closeDb(): void {
     prodDb = null;
   }
   closeCoreDb();
+  closeInventoryDb();
 }
 
 /**
