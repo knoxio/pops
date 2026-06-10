@@ -6,7 +6,7 @@ config(); // loads apps/pops-api/.env if it exists
 config({ path: '../../.env', override: false }); // loads root .env without overriding
 
 import { createApp } from './app.js';
-import { closeDb, getCoreDrizzle } from './db.js';
+import { backfillCoreFromShared, closeDb, getCoreDrizzle } from './db.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
 import {
@@ -36,13 +36,16 @@ const port = Number(process.env['PORT'] ?? 3000);
 const app = createApp();
 
 // Eagerly open the core pillar's SQLite + apply its journal at boot so
-// the per-pillar migrations land before any request hits the API. The
-// handle itself is not yet consumed for production traffic — PR 3 of
-// phase 2 flips service-accounts callers to `getCoreDrizzle()`.
+// the per-pillar migrations land before any request hits the API.
+// service-accounts traffic now reads/writes against this handle (phase 2
+// PR 3); the one-shot `backfillCoreFromShared` carries any rows that
+// still live in the legacy pops.db across. The backfill is idempotent
+// and non-fatal — partial failure logs and continues.
 try {
   getCoreDrizzle();
+  backfillCoreFromShared();
 } catch (err) {
-  console.error('[db] Failed to open the core pillar SQLite:', err);
+  console.error('[db] Failed to bootstrap the core pillar SQLite:', err);
   throw err;
 }
 

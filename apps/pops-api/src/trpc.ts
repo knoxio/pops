@@ -10,7 +10,7 @@ import {
   serviceAccountsService,
 } from '@pops/core-db';
 
-import { getDrizzle } from './db.js';
+import { getCoreDrizzle } from './db.js';
 import { verifyCloudflareJWT } from './middleware/cloudflare-jwt.js';
 import { KNOWN_APPS, KNOWN_OVERLAYS, readInstalledModules } from './modules/env-modules.js';
 
@@ -60,7 +60,7 @@ async function tryServiceAccountAuth(
   const parsed = serviceAccountKeys.parseApiKey(header);
   if (!parsed) return null;
   return serviceAccountsService.authenticateServiceAccount(
-    getDrizzle(),
+    getCoreDrizzle(),
     parsed.prefix,
     parsed.secret
   );
