@@ -9,6 +9,7 @@ on:
       - "apps/pops-shell/**"
       - "apps/pops-mcp/**"
       - "apps/pops-core-api/**"
+      - "apps/pops-finance-api/**"
       - "apps/pops-inventory-api/**"
       - "apps/pops-media-api/**"
       - "packages/**"
@@ -36,6 +37,7 @@ jobs:
               - 'apps/pops-shell/**'
               - 'apps/pops-mcp/**'
               - 'apps/pops-core-api/**'
+              - 'apps/pops-finance-api/**'
               - 'apps/pops-inventory-api/**'
               - 'apps/pops-media-api/**'
               - 'packages/**'
@@ -82,6 +84,10 @@ jobs:
       - name: Build pops-media-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-media-api/Dockerfile .
+
+      - name: Build pops-finance-api (builder stage)
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: docker build --target builder -f apps/pops-finance-api/Dockerfile .
 
   compose-validate:
     name: Validate docker-compose
