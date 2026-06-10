@@ -266,6 +266,7 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 - **Chat:** Moltbot (Telegram)
 - **Backup:** Backblaze B2 via rclone (encrypted)
 - **Litestream exclusions:** `MEDIA_IMAGES_DIR` and `FOOD_INGEST_DIR` are regeneratable media trees and must be excluded from Litestream replication in the homelab-infra repo's Litestream config. The SQLite rows that reference these paths stay backed up; only the bytes are skipped.
+- **Per-pillar SQLite (ADR-026):** each pillar's database streams independently. The core pillar's reference config lives at `infra/litestream/core.yml`; the deployer mirrors it into the homelab-infra Litestream config alongside the existing `pops.db` stream. As subsequent pillars (finance, media, …) extract their own SQLite files, each adds a sibling YAML next to `core.yml`.
 
 ## Import Pipeline
 
