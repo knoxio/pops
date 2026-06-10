@@ -14,8 +14,11 @@
  * synthetic transaction directly via the EditorView attached to the
  * DOM. This is the same approach @codemirror/view's own test suite uses.
  */
+import { startCompletion } from '@codemirror/autocomplete';
 import { EditorView } from '@codemirror/view';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { createInstance as i18nCreateInstance } from 'i18next';
+import { I18nextProvider, initReactI18next as i18nReactInit } from 'react-i18next';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { issuesField } from '../dsl-editor/issues-state';
@@ -505,20 +508,34 @@ describe('DslEditor — PRD-120 part F (read-only autocomplete + mobile drawer +
     };
   }
 
-  it('does not surface an autocomplete tooltip when the editor is read-only', () => {
+  it('does not surface an autocomplete tooltip when the editor is read-only', async () => {
+    const sources = makeSources();
     render(
       <DslEditor
         initialValue='@recipe(slug="x")'
         readOnly
         onChange={() => {}}
-        autocompleteSources={makeSources()}
+        autocompleteSources={sources}
       />
     );
     // CodeMirror only mounts a `.cm-tooltip-autocomplete` node when the
     // configured source returns a non-null result. The part F source gate
     // returns `null` whenever `state.readOnly` is true, so the popup must
-    // never enter the DOM.
+    // never enter the DOM — including under an explicit Ctrl-Space
+    // (`startCompletion`) request, which would otherwise bypass the
+    // implicit-typing path.
+    const view = getEditorView();
+    await act(async () => {
+      startCompletion(view);
+      // Let microtasks settle so any source promises resolve before the
+      // assertion. The source short-circuits synchronously, so this is a
+      // belt-and-braces wait.
+      await Promise.resolve();
+    });
     expect(document.querySelector('.cm-tooltip-autocomplete')).toBeNull();
+    expect(sources.searchSlugs).not.toHaveBeenCalled();
+    expect(sources.listVariantsForIngredient).not.toHaveBeenCalled();
+    expect(sources.listPrepStates).not.toHaveBeenCalled();
   });
 
   it('emits the mobile-drawer base theme into the document so CSS positions the popup at the viewport floor', () => {
@@ -549,5 +566,35 @@ describe('DslEditor — PRD-120 part F (read-only autocomplete + mobile drawer +
     const content = screen.getByTestId('dsl-editor-surface').querySelector('.cm-content');
     expect(content).not.toBeNull();
     expect(content?.getAttribute('aria-label')?.length).toBeGreaterThan(0);
+  });
+
+  it('re-dispatches contentAttributes when the i18n locale switches mid-session', async () => {
+    const instance = i18nCreateInstance();
+    await instance.use(i18nReactInit).init({
+      lng: 'en',
+      fallbackLng: 'en',
+      ns: ['food'],
+      defaultNS: 'food',
+      interpolation: { escapeValue: false },
+      resources: {
+        en: { food: { 'editor.ariaLabel': 'Recipe DSL editor' } },
+        xx: { food: { 'editor.ariaLabel': 'Receta DSL editor' } },
+      },
+    });
+
+    render(
+      <I18nextProvider i18n={instance}>
+        <DslEditor initialValue="hello" onChange={() => {}} />
+      </I18nextProvider>
+    );
+
+    const content = screen.getByTestId('dsl-editor-surface').querySelector('.cm-content');
+    expect(content?.getAttribute('aria-label')).toBe('Recipe DSL editor');
+
+    await act(async () => {
+      await instance.changeLanguage('xx');
+    });
+
+    expect(content?.getAttribute('aria-label')).toBe('Receta DSL editor');
   });
 });

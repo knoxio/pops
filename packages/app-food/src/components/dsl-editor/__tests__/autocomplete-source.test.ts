@@ -15,7 +15,10 @@ import { buildDslCompletionSource } from '../autocomplete-source';
 
 import type { DslAutocompleteSources, SlugKind } from '../autocomplete-types';
 
-function makeContext(text: string, { readOnly = false }: { readOnly?: boolean } = {}) {
+function makeContext(
+  text: string,
+  { readOnly = false, explicit = false }: { readOnly?: boolean; explicit?: boolean } = {}
+) {
   const cursor = text.indexOf('|');
   if (cursor === -1) throw new Error('fixture missing | marker');
   const docText = text.slice(0, cursor) + text.slice(cursor + 1);
@@ -30,7 +33,7 @@ function makeContext(text: string, { readOnly = false }: { readOnly?: boolean } 
   return {
     state,
     pos: cursor,
-    explicit: false,
+    explicit,
     aborted: false,
     addEventListener: () => {},
     tokenBefore: () => null,
@@ -175,6 +178,27 @@ describe('dslCompletionSource', () => {
       const source = buildDslCompletionSource(sources);
       const result = await source(
         makeContext('@ingredient(1, banana, 100:g)\n@step("Mash @|")', { readOnly: true })
+      );
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null on explicit (Ctrl-Space) invocation in a function-name slot', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(makeContext('@|', { readOnly: true, explicit: true }));
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null on explicit invocation inside descriptor-slug (Ctrl-Space at empty query)', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      // Without read-only, the explicit + empty-query combo would surface
+      // the "Create new ingredient" affordance (see the implicit suite
+      // above); the read-only gate must override that path too.
+      const result = await source(
+        makeContext('@ingredient(1, |', { readOnly: true, explicit: true })
       );
       expect(result).toBeNull();
       expect(searchSpy).not.toHaveBeenCalled();

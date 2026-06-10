@@ -1,24 +1,10 @@
 /**
  * Owns the imperative CodeMirror 6 lifecycle for the DSL editor:
- *
- *   - Mounts a single `EditorView` into the host div on first render and
- *     tears it down on unmount.
- *   - Toggles `EditorState.readOnly` + `EditorView.editable` via a
- *     `Compartment.reconfigure` so the swap doesn't blow away undo
- *     history or cursor position.
- *   - Re-syncs the document when `initialValue` changes from outside.
- *     One-way only — the parent owns the canonical value via the
- *     debounced `onChange`.
- *   - Watches `window.matchMedia('(max-width: 767px)')` and reconfigures
- *     the chip-widgets compartment between desktop (widget-replace) and
- *     mobile (inline-mark) renderings.
- *   - Reads autocomplete lookups through a ref-backed proxy so the
- *     extension picks up source swaps without re-mounting the EditorView.
- *
- * The hook deliberately doesn't return the `EditorView`; callers that need
- * it (tests, autocomplete plumbing) reach for
- * `EditorView.findFromDOM(host.querySelector('.cm-editor'))` instead, so
- * the React render path stays immune to the imperative view's mutations.
+ * mounts a single `EditorView`, swaps `readOnly` / `ariaLabel` /
+ * chip-widgets via `Compartment.reconfigure` (so undo + cursor survive),
+ * pipes the document back through a 250 ms debounce, and lets the
+ * autocomplete extension read the latest sources via a ref proxy. Reach
+ * for `EditorView.findFromDOM` from tests instead of returning the view.
  */
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { bracketMatching, defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language';
@@ -60,6 +46,7 @@ export interface UseDslEditorViewOptions {
 interface ViewCompartments {
   readOnly: Compartment;
   chips: Compartment;
+  ariaLabel: Compartment;
 }
 
 export function useDslEditorView(
@@ -70,6 +57,7 @@ export function useDslEditorView(
   const compartmentsRef = useRef<ViewCompartments>({
     readOnly: new Compartment(),
     chips: new Compartment(),
+    ariaLabel: new Compartment(),
   });
   const onChangeRef = useRef(options.onChange);
   // Sources are stashed in a ref so the autocomplete extension — which
@@ -122,6 +110,16 @@ export function useDslEditorView(
     });
   }, [options.readOnly]);
 
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: compartmentsRef.current.ariaLabel.reconfigure(
+        buildAriaLabelExtension(options.ariaLabel)
+      ),
+    });
+  }, [options.ariaLabel]);
+
   useSyncEffects(viewRef, options);
 }
 
@@ -145,13 +143,15 @@ function useSyncEffects(
   }, [options.issues, viewRef]);
 }
 
-function buildReadOnlyExtension(
-  readOnly: boolean
-): readonly [
-  ReturnType<typeof EditorState.readOnly.of>,
-  ReturnType<typeof EditorView.editable.of>,
-] {
+function buildReadOnlyExtension(readOnly: boolean) {
   return [EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)];
+}
+
+/** Wraps the editor's accessible name in a `contentAttributes` facet so a
+ *  locale switch (i18n.changeLanguage) re-dispatches into the same
+ *  compartment and the role=textbox node tracks the active language. */
+function buildAriaLabelExtension(ariaLabel: string | undefined) {
+  return ariaLabel ? EditorView.contentAttributes.of({ 'aria-label': ariaLabel }) : [];
 }
 
 function detectCompactInitial(): boolean {
@@ -185,11 +185,6 @@ interface MountEditorViewArgs extends CreateEditorViewArgs {
   debounceRef: MutableRefObject<ReturnType<typeof setTimeout> | null>;
 }
 
-/** Mount the EditorView for the lifetime of the host effect and return
- *  the React-style cleanup. Pulled out of `useDslEditorView` so that
- *  hook stays under the per-function line cap once the compartment +
- *  mobile-query + autocomplete plumbing all land in the same mount
- *  callback. */
 function mountEditorView(args: MountEditorViewArgs): () => void {
   const { host, options, compartments, emit, sourcesRef, viewRef, debounceRef } = args;
   const view = createEditorView(host, { options, compartments, emit, sourcesRef });
@@ -208,9 +203,8 @@ function mountEditorView(args: MountEditorViewArgs): () => void {
 
 function createEditorView(host: HTMLDivElement, args: CreateEditorViewArgs): EditorView {
   const { options, compartments, emit, sourcesRef } = args;
-  // Initial `options.issues` is seeded by the `useEffect(..., [options.issues])`
-  // block in `useSyncEffects`, which fires once after mount — dispatching
-  // here would double-render (PR #2716 review feedback).
+  // Initial `options.issues` is seeded by `useSyncEffects` (one dispatch
+  // post-mount); seeding here would double-render — see PR #2716.
   const compact = detectCompactInitial();
   return new EditorView({
     state: EditorState.create({
@@ -226,9 +220,7 @@ function createEditorView(host: HTMLDivElement, args: CreateEditorViewArgs): Edi
         compartments.readOnly.of(buildReadOnlyExtension(options.readOnly)),
         compartments.chips.of(chipWidgetsExtension({ compact })),
         dslAutocompletion(buildSourcesProxy(sourcesRef)),
-        ...(options.ariaLabel
-          ? [EditorView.contentAttributes.of({ 'aria-label': options.ariaLabel })]
-          : []),
+        compartments.ariaLabel.of(buildAriaLabelExtension(options.ariaLabel)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) emit(update.state.doc.toString());
         }),
@@ -238,10 +230,6 @@ function createEditorView(host: HTMLDivElement, args: CreateEditorViewArgs): Edi
   });
 }
 
-/** Indirect every lookup through the ref so the autocomplete extension
- *  observes the latest sources without forcing a re-mount. When the
- *  caller hasn't provided sources the proxy returns empty lists,
- *  which the CodeMirror source folds into a `null` result. */
 function buildSourcesProxy(
   ref: MutableRefObject<DslAutocompleteSources | null>
 ): DslAutocompleteSources {

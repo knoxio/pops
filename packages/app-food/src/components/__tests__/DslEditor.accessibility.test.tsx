@@ -3,9 +3,11 @@
  *
  * The editor wraps an imperative CodeMirror EditorView, so a single
  * axe-core pass over the React-rendered container covers both the
- * read-only banner and the editable surface (which gets the
- * `aria-label` carried by the surface div). The reorder panel is
- * triggered via the toolbar button and exercised in its open state.
+ * read-only banner and the editable surface. The accessible name lives
+ * on `.cm-content` (role=textbox) via `EditorView.contentAttributes`,
+ * threaded through `useDslEditorView`'s `ariaLabel` option — the
+ * wrapper `<div>` deliberately carries no `aria-label` because
+ * `aria-prohibited-attr` would flag it on the generic role.
  */
 import { render } from '@testing-library/react';
 import axeCore from 'axe-core';
