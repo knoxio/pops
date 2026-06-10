@@ -61,9 +61,6 @@ export interface OpenedFoodDb {
  *     `packages/food-db/migrations/meta/_journal.json` is applied via
  *     drizzle's built-in migrator (idempotent — re-running against the
  *     same DB short-circuits on the `__drizzle_migrations` hash check).
- *     Today that's `0058_high_sentinel`, which creates the food slice's
- *     foundational tables (ingredients, ingredient_variants,
- *     ingredient_aliases, prep_states, slug_registry).
  *
  * If the migration apply throws (corrupt DB, malformed migration,
  * missing folder), the raw handle is closed before the error is
