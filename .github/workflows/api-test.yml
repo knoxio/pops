@@ -3,6 +3,15 @@ name: API Tests
 on:
   push:
     branches: [main, develop]
+    paths:
+      - "apps/pops-api/**"
+      - "packages/cerebrum-db/**"
+      - "packages/db-types/**"
+      - "packages/finance-db/**"
+      - "packages/inventory-db/**"
+      - "packages/types/**"
+      - "packages/auth/**"
+      - ".github/workflows/api-test.yml"
   pull_request:
 
 jobs:
