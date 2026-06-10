@@ -34,7 +34,11 @@ export const homeInventory = sqliteTable(
     }),
     purchasedFromName: text('purchased_from_name'),
     purchasePrice: real('purchase_price'),
-    assetId: text('asset_id').unique(),
+    // Uniqueness is enforced via the explicit `idx_inventory_asset_id`
+    // unique index below — `.unique()` here would produce a second,
+    // redundant unique index (`home_inventory_asset_id_unique`) that
+    // doubles write cost and on-disk footprint for zero functional gain.
+    assetId: text('asset_id'),
     notes: text('notes'),
     locationId: text('location_id').references(() => locations.id, {
       onDelete: 'set null',
