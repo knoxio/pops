@@ -16,6 +16,8 @@ export * from './schema.js';
 
 export type { FinanceDb } from './services/internal.js';
 
+export { openFinanceDb, type OpenedFinanceDb } from './open-finance-db.js';
+
 export * as wishListService from './services/wishlist.js';
 
 export {
