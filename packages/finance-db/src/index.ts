@@ -63,7 +63,7 @@ export type {
   ImportTransactionRow,
   CreateImportEntityResult,
 } from './services/imports.js';
-<<<<<<< HEAD
+
 export * as budgetsService from './services/budgets.js';
 
 export type {
@@ -74,8 +74,7 @@ export type {
   UpdateBudgetInput,
   ListBudgetsOptions,
 } from './services/budgets.js';
-||||||| parent of 3d22937f (feat(finance-db): scaffold transaction_corrections slice (Track N3 phase 1 PR 1))
-=======
+
 export * as transactionCorrectionsService from './services/transaction-corrections.js';
 
 export {
@@ -87,4 +86,3 @@ export {
   type TransactionCorrectionListResult,
   type TransactionCorrectionListQuery,
 } from './services/transaction-corrections.js';
->>>>>>> 3d22937f (feat(finance-db): scaffold transaction_corrections slice (Track N3 phase 1 PR 1))
