@@ -32,6 +32,7 @@ type IconName =
   | 'Layers'
   | 'LayoutDashboard'
   | 'Library'
+  | 'ListChecks'
   | 'MapPin'
   | 'MessageSquare'
   | 'Network'
@@ -104,6 +105,9 @@ const PlanPage = lazy(() => import('./pages/plan/PlanPage').then((m) => ({ defau
 const FridgePage = lazy(() =>
   import('./pages/fridge/FridgePage').then((m) => ({ default: m.FridgePage }))
 );
+const FromPlanPage = lazy(() =>
+  import('./pages/shopping/FromPlanPage').then((m) => ({ default: m.FromPlanPage }))
+);
 const InboxPage = lazy(() =>
   import('./pages/inbox/InboxPage').then((m) => ({ default: m.InboxPage }))
 );
@@ -135,6 +139,12 @@ export const navConfig = {
     { path: '/inbox', label: 'Inbox', labelKey: 'food.inbox', icon: 'Bell' },
     { path: '/plan', label: 'Plan', labelKey: 'food.plan', icon: 'Clock' },
     { path: '/fridge', label: 'Fridge', labelKey: 'food.fridge', icon: 'Package' },
+    {
+      path: '/shopping/from-plan',
+      label: 'Shopping',
+      labelKey: 'food.shopping',
+      icon: 'ListChecks',
+    },
     { path: '/data', label: 'Manage data', labelKey: 'food.data', icon: 'Database' },
     { path: '/prompts', label: 'Prompts', labelKey: 'food.prompts', icon: 'FileText' },
   ],
@@ -179,6 +189,8 @@ export const routes: RouteObject[] = [
   // up-front so navConfig links + cross-PRD imports resolve today.
   { path: 'plan', element: <PlanPage /> },
   { path: 'fridge', element: <FridgePage /> },
+  // PRD-152 — plan-derived shopping list generator.
+  { path: 'shopping/from-plan', element: <FromPlanPage /> },
   // PRD-134 — review queue page. PRD-135 — `:sourceId` per-draft inspector
   // (three-pane provenance / editor / decision view).
   { path: 'inbox', element: <InboxPage /> },
