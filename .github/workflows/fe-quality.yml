@@ -7,6 +7,7 @@ on:
       - "apps/pops-shell/**"
       - "packages/app-*/**"
       - "packages/db-types/**"
+      - "packages/inventory-db/**"
       - "packages/ui/**"
       - "packages/api-client/**"
       - "packages/widgets/**"
@@ -32,6 +33,7 @@ jobs:
               - 'apps/pops-shell/**'
               - 'packages/app-*/**'
               - 'packages/db-types/**'
+              - 'packages/inventory-db/**'
               - 'packages/ui/**'
               - 'packages/api-client/**'
               - 'packages/widgets/**'
