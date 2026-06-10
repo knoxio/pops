@@ -68,7 +68,7 @@ All routes under `inventory.fixtures.*` via `protectedProcedure`:
 
 ## Migration
 
-Migration `0057_slimy_phalanx` — creates both tables and all indexes. Owned by `inventory` module.
+Migration `0057_slimy_phalanx` — creates both tables and all indexes. Owned by `inventory` module; lives at `packages/inventory-db/migrations/0057_slimy_phalanx.sql` and is applied by the per-pillar runner.
 
 ## User Stories
 

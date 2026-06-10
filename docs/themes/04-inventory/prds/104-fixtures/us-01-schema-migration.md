@@ -13,6 +13,6 @@ Define the `fixtures` and `item_fixture_connections` Drizzle schema tables, expo
 - [x] `packages/db-types/src/schema/item-fixture-connections.ts` — `itemFixtureConnections` table with auto-increment PK, `itemId` (FK → homeInventory, CASCADE), `fixtureId` (FK → fixtures, CASCADE), `createdAt`; unique on `(itemId, fixtureId)`; indexes on both FK columns
 - [x] Both tables exported from `packages/db-types/src/schema/index.ts`
 - [x] `FixtureRow`, `FixtureInsert`, `ItemFixtureConnectionRow` type aliases exported from `packages/db-types/src/index.ts`
-- [x] Migration `apps/pops-api/src/db/drizzle-migrations/0057_slimy_phalanx.sql` generated and committed
-- [x] Migration registered in `migration-ownership.ts` (owner: `inventory`) and `modules/inventory/migrations.ts`
+- [x] Migration `packages/inventory-db/migrations/0057_slimy_phalanx.sql` generated and committed (canonical inventory journal)
+- [x] Migration applied by the per-pillar runner via `packages/inventory-db/migrations/meta/_journal.json`
 - [x] All existing tests pass after schema addition
