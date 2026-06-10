@@ -92,6 +92,58 @@ describe('useCookResolution', () => {
     expect(result.current.unresolvedShortfallCount).toBe(0);
   });
 
+  it('keeps a batch-override unresolved when consumeQty < needed (qty-aware gate)', () => {
+    const needs: LineConsumeNeed[] = [makeNeed({ lineIndex: 1 })];
+    const shortfalls: LineShortfall[] = [
+      makeShortfall({ lineIndex: 1, needed: 100, available: 0 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useCookResolution({ lineNeeds: needs, shortfalls, scaleFactor: 1 })
+    );
+
+    act(() =>
+      result.current.setResolution(1, { kind: 'batch-override', batchId: 9, consumeQty: 50 })
+    );
+    expect(result.current.unresolvedShortfallCount).toBe(1);
+
+    act(() =>
+      result.current.setResolution(1, { kind: 'batch-override', batchId: 9, consumeQty: 100 })
+    );
+    expect(result.current.unresolvedShortfallCount).toBe(0);
+  });
+
+  it('keeps a partial resolution unresolved when consumeQty + externalQty < needed', () => {
+    const needs: LineConsumeNeed[] = [makeNeed({ lineIndex: 1 })];
+    const shortfalls: LineShortfall[] = [
+      makeShortfall({ lineIndex: 1, needed: 100, available: 30 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useCookResolution({ lineNeeds: needs, shortfalls, scaleFactor: 1 })
+    );
+
+    act(() =>
+      result.current.setResolution(1, {
+        kind: 'partial',
+        batchId: 5,
+        consumeQty: 30,
+        externalQty: 40,
+      })
+    );
+    expect(result.current.unresolvedShortfallCount).toBe(1);
+
+    act(() =>
+      result.current.setResolution(1, {
+        kind: 'partial',
+        batchId: 5,
+        consumeQty: 30,
+        externalQty: 70,
+      })
+    );
+    expect(result.current.unresolvedShortfallCount).toBe(0);
+  });
+
   it('skips optional shortfalls per PRD-108 silent-skip contract', () => {
     const needs: LineConsumeNeed[] = [makeNeed({ lineIndex: 1, optional: true })];
     const shortfalls: LineShortfall[] = [makeShortfall({ lineIndex: 1 })];

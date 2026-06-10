@@ -61,6 +61,25 @@ function seedResolutionMap(
   return map;
 }
 
+/**
+ * A resolution covers a shortfall when the user-selected quantities meet or
+ * exceed `shortfall.needed`. `fifo` never covers a real shortfall (that's
+ * why it surfaced as unresolved in the first place); `external` always does
+ * (the user is asserting the need is met outside the batch system).
+ */
+function isQtyCovered(resolution: LineResolution, shortfall: LineShortfall): boolean {
+  switch (resolution.kind) {
+    case 'fifo':
+      return false;
+    case 'external':
+      return true;
+    case 'batch-override':
+      return resolution.consumeQty >= shortfall.needed;
+    case 'partial':
+      return resolution.consumeQty + resolution.externalQty >= shortfall.needed;
+  }
+}
+
 function countUnresolvedShortfalls(
   shortfalls: ReadonlyMap<number, LineShortfall>,
   resolutionMap: ReadonlyMap<number, LineResolution>,
@@ -72,7 +91,7 @@ function countUnresolvedShortfalls(
     if (need?.optional === true) continue;
     if (shortfall.available >= shortfall.needed) continue;
     const resolution = resolutionMap.get(lineIndex);
-    if (resolution === undefined || resolution.kind === 'fifo') {
+    if (resolution === undefined || !isQtyCovered(resolution, shortfall)) {
       count += 1;
     }
   }
@@ -86,7 +105,7 @@ export function useCookResolution(args: UseCookResolutionArgs): UseCookResolutio
   const needsByLine = useMemo(() => needsByLineMap(lineNeeds), [lineNeeds]);
 
   const seedKey = useMemo(
-    () => `${scaleFactor.toFixed(6)}|${lineNeeds.map((n) => n.lineIndex).join(',')}`,
+    () => `${String(scaleFactor)}|${lineNeeds.map((n) => n.lineIndex).join(',')}`,
     [scaleFactor, lineNeeds]
   );
   const seedKeyRef = useRef<string>(seedKey);
