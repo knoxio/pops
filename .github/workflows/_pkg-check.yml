@@ -50,6 +50,7 @@ jobs:
           pnpm --filter @pops/finance-db build
           pnpm --filter @pops/inventory-db build
           pnpm --filter @pops/media-db build
+          pnpm --filter @pops/cerebrum-db build
           pnpm --filter @pops/app-lists-db build
           pnpm --filter @pops/app-food-db build
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
@@ -85,6 +86,7 @@ jobs:
           pnpm --filter @pops/finance-db build
           pnpm --filter @pops/inventory-db build
           pnpm --filter @pops/media-db build
+          pnpm --filter @pops/cerebrum-db build
           pnpm --filter @pops/app-lists-db build
           pnpm --filter @pops/app-food-db build
       - name: Run tests (with coverage if configured)

@@ -16,6 +16,7 @@ packages:
   - 'packages/db-types'
   - 'packages/inventory-db'
   - 'packages/media-db'
+  - 'packages/cerebrum-db'
   - 'packages/food-contracts'
   - 'packages/types'
   - 'packages/module-registry'
