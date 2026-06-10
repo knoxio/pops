@@ -18,6 +18,45 @@ services:
 
   # ── BACKEND ──────────────────────────────────────────────────────
 
+  # Core pillar API (ADR-026, Phase 3 PR 3). Sibling pillars treat the
+  # core container as the authoritative pillar registry: `GET /pillars`
+  # returns a snapshot derived from the `POPS_PILLARS` env plus a
+  # synthetic `core` entry — there is no dynamic register-on-boot step.
+  # Startup ordering is enforced by `depends_on: core-api` (below) so
+  # consumers can rely on the snapshot being available when they boot.
+  # Today the container only exposes /health + /pillars; subsequent
+  # pillar splits move settings, AI Ops, and URI dispatch behind it.
+  core-api:
+    image: ghcr.io/knoxio/pops-core-api:${POPS_IMAGE_TAG:-main}
+    container_name: pops-core-api
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      NODE_ENV: production
+      PORT: '3001'
+      CORE_SQLITE_PATH: /data/sqlite/core.db
+      CORE_SELF_BASE_URL: http://core-api:3001
+      POPS_PILLARS: ${POPS_PILLARS:-}
+    expose:
+      - '3001'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3001/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   pops-api:
     image: ghcr.io/knoxio/pops-api:${POPS_IMAGE_TAG:-main}
     container_name: pops-api
@@ -51,10 +90,15 @@ services:
       # (ai surfaces are mounted under /cerebrum/admin/*, not as a separate app.)
       POPS_APPS: ${POPS_APPS:-}
       POPS_OVERLAYS: ${POPS_OVERLAYS:-}
+      # Cross-pillar registry (ADR-026 Phase 3 PR 3). pops-api routes
+      # outbound `pops:core/...` traffic to the core-api container.
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
     expose:
       - '3000'
     depends_on:
       pops-redis:
+        condition: service_healthy
+      core-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -95,8 +139,11 @@ services:
       # PRD-100 — same module set as the api so worker jobs scope correctly.
       POPS_APPS: ${POPS_APPS:-}
       POPS_OVERLAYS: ${POPS_OVERLAYS:-}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
     depends_on:
       pops-redis:
+        condition: service_healthy
+      core-api:
         condition: service_healthy
 
   # ── FOOD INGEST WORKER ───────────────────────────────────────────

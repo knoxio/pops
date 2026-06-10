@@ -18,6 +18,49 @@ services:
 
   # ── BACKEND ──────────────────────────────────────────────────────
 
+  # Core pillar API (ADR-026, Phase 3 PR 3). Sibling pillars treat the
+  # core container as the authoritative pillar registry: `GET /pillars`
+  # returns a snapshot derived from the `POPS_PILLARS` env plus a
+  # synthetic `core` entry — there is no dynamic register-on-boot step.
+  # Startup ordering is enforced by `depends_on: core-api` (below) so
+  # consumers can rely on the snapshot being available when they boot.
+  # Today the container only exposes /health + /pillars; subsequent
+  # pillar splits move settings, AI Ops, and URI dispatch behind it.
+  core-api:
+    build:
+      context: ..
+      dockerfile: apps/pops-core-api/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-core-api
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      NODE_ENV: production
+      PORT: '3001'
+      CORE_SQLITE_PATH: /data/sqlite/core.db
+      CORE_SELF_BASE_URL: http://core-api:3001
+      # Cross-pillar registry. Today's deployment only runs core; sibling
+      # pillars get appended (id:baseUrl,...) as they extract.
+      POPS_PILLARS: ${POPS_PILLARS:-}
+    expose:
+      - '3001'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3001/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   pops-api:
     build:
       context: ..
@@ -45,6 +88,11 @@ services:
       PORT: '3000'
       REDIS_HOST: pops-redis
       REDIS_PORT: '6379'
+      # Cross-pillar registry (ADR-026 Phase 3 PR 3). Names core-api by
+      # its compose hostname so pops-api's URI dispatcher can route
+      # outbound `pops:core/...` traffic to the new container. Deployers
+      # override POPS_PILLARS to extend with sibling pillars.
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
       # Paperless-ngx integration (optional — leave unset to disable)
       PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
       PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
@@ -52,6 +100,8 @@ services:
       - '3000'
     depends_on:
       pops-redis:
+        condition: service_healthy
+      core-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -91,8 +141,11 @@ services:
       SQLITE_PATH: /data/sqlite/pops.db
       REDIS_HOST: pops-redis
       REDIS_PORT: '6379'
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
     depends_on:
       pops-redis:
+        condition: service_healthy
+      core-api:
         condition: service_healthy
 
   # ── FRONTEND ─────────────────────────────────────────────────────
