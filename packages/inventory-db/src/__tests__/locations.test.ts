@@ -7,9 +7,9 @@
  * (until the cutover PR routes it through this package).
  *
  * The locations CREATE TABLE is read from the package's own journal at
- * `packages/inventory-db/migrations/0005_fancy_crystal.sql`. A drift
- * guard in `inventory-db-quality.yml` keeps that file byte-identical to
- * the shared journal copy until the deletion PR retires the shared one.
+ * `packages/inventory-db/migrations/0005_fancy_crystal.sql`, which is
+ * now the sole source of truth for this tag (the shared-journal copy
+ * was retired in roadmap row L4 — see `.claude/pillar-migration-roadmap.md`).
  * `home_inventory` is inlined with the columns this slice exercises
  * because its canonical migration (`0000_naive_chameleon`) bundles
  * unrelated FK tables — the items slice will read its own SQL file when
