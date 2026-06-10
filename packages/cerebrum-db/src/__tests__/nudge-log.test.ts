@@ -8,12 +8,13 @@
  *
  * The nudge_log CREATE TABLE is read from the package-local migration
  * copy at `packages/cerebrum-db/migrations/0039_dry_fabian_cortez.sql`.
- * A drift guard in `cerebrum-db-quality.yml` keeps that file
- * byte-identical to the shared journal copy at
- * `apps/pops-api/src/db/drizzle-migrations/0039_dry_fabian_cortez.sql`
- * until the deletion PR retires the shared one. The safety re-creation
- * tag (`0044_nudge_log`) does not need to be applied here — it would be
- * idempotent against an already-seeded DB and adds no schema state.
+ * The package-local journal now owns both this tag and the safety
+ * re-creation `0044_nudge_log.sql` (which carries a defensive CREATE
+ * TABLE IF NOT EXISTS + index); both files together describe the
+ * authoritative schema since the shared-journal copies were retired in
+ * Track L5 of the pillar-migration roadmap. This test only seeds from
+ * 0039 because 0044 is idempotent against an already-seeded DB and adds
+ * no further schema state.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
