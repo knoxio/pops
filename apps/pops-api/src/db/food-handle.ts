@@ -19,6 +19,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openFoodDb, type FoodDb, type OpenedFoodDb } from '@pops/food-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
+import { backfillFoodFromShared } from './backfill-food-from-shared.js';
 import { resolveFoodSqlitePath } from './food-sqlite-path.js';
 
 let foodDb: OpenedFoodDb | null = null;
@@ -84,4 +85,16 @@ export function setFoodDb(next: OpenedFoodDb | null): OpenedFoodDb | null {
   const prev = foodDb;
   foodDb = next;
   return prev;
+}
+
+/**
+ * Run the one-shot ATTACH backfill from the legacy shared pops.db into
+ * the food pillar's food.db. No-op if the food handle isn't open (e.g.
+ * boot still resolving). Idempotent against repeated boots via
+ * per-table `WHERE id NOT IN (...)` filters. See
+ * `backfill-food-from-shared.ts` for the table-by-table behaviour.
+ */
+export function backfillFoodFromSharedDb(sharedPath: string): void {
+  if (!foodDb) return;
+  backfillFoodFromShared(foodDb, sharedPath);
 }
