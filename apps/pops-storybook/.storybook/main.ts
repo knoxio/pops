@@ -33,8 +33,12 @@ const config: StorybookConfig = {
           },
           { find: '@pops/ui', replacement: path.resolve(__dirname, '../../../packages/ui/src') },
           {
-            find: '@pops/app-media',
-            replacement: path.resolve(__dirname, '../../../packages/app-media/src'),
+            find: '@pops/app-ai',
+            replacement: path.resolve(__dirname, '../../../packages/app-ai/src'),
+          },
+          {
+            find: '@pops/app-cerebrum',
+            replacement: path.resolve(__dirname, '../../../packages/app-cerebrum/src'),
           },
           {
             find: '@pops/app-finance',
@@ -47,6 +51,14 @@ const config: StorybookConfig = {
           {
             find: '@pops/app-inventory',
             replacement: path.resolve(__dirname, '../../../packages/app-inventory/src'),
+          },
+          {
+            find: '@pops/app-lists',
+            replacement: path.resolve(__dirname, '../../../packages/app-lists/src'),
+          },
+          {
+            find: '@pops/app-media',
+            replacement: path.resolve(__dirname, '../../../packages/app-media/src'),
           },
         ],
       },

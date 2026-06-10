@@ -597,6 +597,12 @@ importers:
       '@lezer/lr':
         specifier: ^1.4.10
         version: 1.4.10
+      '@pops/app-ai':
+        specifier: workspace:*
+        version: link:../../packages/app-ai
+      '@pops/app-cerebrum':
+        specifier: workspace:*
+        version: link:../../packages/app-cerebrum
       '@pops/app-finance':
         specifier: workspace:*
         version: link:../../packages/app-finance
@@ -606,6 +612,9 @@ importers:
       '@pops/app-inventory':
         specifier: workspace:*
         version: link:../../packages/app-inventory
+      '@pops/app-lists':
+        specifier: workspace:*
+        version: link:../../packages/app-lists
       '@pops/app-media':
         specifier: workspace:*
         version: link:../../packages/app-media
