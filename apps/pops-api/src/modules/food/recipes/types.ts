@@ -26,6 +26,7 @@ export const SortOrderSchema = z.enum(['createdAtDesc', 'titleAsc', 'recentlyCoo
 export type SortOrder = z.infer<typeof SortOrderSchema>;
 
 export interface RecipeListItem {
+  id: number;
   slug: string;
   title: string | null;
   recipeType: RecipeType;

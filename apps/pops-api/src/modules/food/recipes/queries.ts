@@ -70,6 +70,7 @@ export function listRecipes(db: FoodDb, filter: ListRecipesFilter): ListRecipesR
   const trimmed = rows.slice(0, filter.limit);
   const items = trimmed.map(
     (r): RecipeListItem => ({
+      id: r.id,
       slug: r.slug,
       title: r.title,
       recipeType: r.recipeType as RecipeType,
