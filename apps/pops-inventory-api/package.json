@@ -14,8 +14,7 @@
   "dependencies": {
     "@pops/inventory-db": "workspace:*",
     "@pops/types": "workspace:*",
-    "express": "^5.1.0",
-    "pino": "^10.3.1"
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.4",
