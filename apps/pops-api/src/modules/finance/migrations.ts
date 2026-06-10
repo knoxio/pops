@@ -1,11 +1,14 @@
 /**
  * Migration tags owned by the `finance` module.
  *
- * Most finance tables (transactions, budgets, transaction_corrections,
- * transaction_tag_rules) are created in the pre-modular baseline owned by
- * core. The four mid-history finance ALTERs (0025/0026/0027/0052) were
- * retired from the shared journal under Track L2 once `@pops/finance-db`
- * became the sole source of truth.
+ * The finance tables `transactions`, `budgets`, and `transaction_corrections`
+ * are created in the pre-modular baseline `0000_naive_chameleon.sql` owned by
+ * core; that baseline split is tracked separately (see Track E narrative).
+ *
+ * The four mid-history finance ALTER/recreate migrations
+ * (0025/0026/0027/0052) were retired from the shared journal under Track L2
+ * (#2861) once `@pops/finance-db` became the sole source of truth — hence the
+ * empty tag list below.
  *
  * See PRD-101 US-09 for the runtime filter contract.
  */
