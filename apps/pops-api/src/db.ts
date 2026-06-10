@@ -10,6 +10,7 @@ import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { closeInventoryDb } from './db/inventory-handle.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
+import { closeMediaDb } from './db/media-db-handle.js';
 import { migrationOwners } from './db/migration-ownership.js';
 import {
   getPendingMigrations,
@@ -234,6 +235,7 @@ export function closeDb(): void {
   }
   closeCoreDb();
   closeInventoryDb();
+  closeMediaDb();
 }
 
 /**
@@ -272,6 +274,11 @@ export function setCoreDb(next: OpenedCoreDb | null): OpenedCoreDb | null {
   coreDb = next;
   return prev;
 }
+
+// `getMediaDrizzle` / `closeMediaDb` / `setMediaDb` live in
+// `./db/media-db-handle.ts` so this file stays under the eslint(max-lines)
+// cap. `closeDb` calls the close helper at shutdown; the rest are imported
+// directly by their consumers.
 
 /**
  * One-shot backfill copying service-account rows from the shared
