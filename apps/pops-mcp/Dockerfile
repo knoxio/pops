@@ -14,6 +14,7 @@ COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
+COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 COPY apps/pops-mcp/package.json ./apps/pops-mcp/
 
@@ -40,6 +41,9 @@ COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/food-contracts/src ./packages/food-contracts/src
 COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
+COPY packages/inventory-db/src ./packages/inventory-db/src
+COPY packages/inventory-db/tsconfig.json ./packages/inventory-db/
+COPY packages/inventory-db/migrations ./packages/inventory-db/migrations
 
 # Copy pops-api source (needed only for AppRouter type resolution at compile time)
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
@@ -60,6 +64,8 @@ RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/core-db
+RUN pnpm build
+WORKDIR /app/packages/inventory-db
 RUN pnpm build
 WORKDIR /app/packages/media-db
 RUN pnpm build

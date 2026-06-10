@@ -1,8 +1,20 @@
 import { z } from 'zod';
 
-import type { LocationRow } from '@pops/db-types';
+import type { InventoryRow, LocationRow } from '@pops/db-types';
 
 export type { LocationRow };
+
+/** Result shape for the locations list endpoint. */
+export interface LocationListResult {
+  rows: LocationRow[];
+  total: number;
+}
+
+/** Result shape for the items-at-location endpoint. */
+export interface LocationItemsResult {
+  rows: InventoryRow[];
+  total: number;
+}
 
 /** API response shape for a location. */
 export interface Location {
