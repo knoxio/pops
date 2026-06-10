@@ -41,10 +41,14 @@ export interface CreateTransactionTagRuleInput {
   priority?: number;
 }
 
-/** PATCH-style update — every field optional, `tags` still in parsed form. */
+/**
+ * PATCH-style update. Mirrors the legacy in-tree `TagRuleUpdateSchema`
+ * (`apps/pops-api/src/modules/core/tag-rules/types.ts`) which deliberately
+ * omits `descriptionPattern` and `matchType` — those fields define the
+ * rule's identity and are immutable post-create. To replace a pattern the
+ * caller deletes the old rule and creates a new one.
+ */
 export interface UpdateTransactionTagRuleInput {
-  descriptionPattern?: string;
-  matchType?: TagRuleMatchType;
   entityId?: string | null;
   tags?: string[];
   confidence?: number;
@@ -105,8 +109,6 @@ function buildTagRuleUpdates(
   input: UpdateTransactionTagRuleInput
 ): Partial<typeof transactionTagRules.$inferInsert> {
   const updates: Partial<typeof transactionTagRules.$inferInsert> = {};
-  if (input.descriptionPattern !== undefined) updates.descriptionPattern = input.descriptionPattern;
-  if (input.matchType !== undefined) updates.matchType = input.matchType;
   if (input.entityId !== undefined) updates.entityId = input.entityId ?? null;
   if (input.tags !== undefined) updates.tags = JSON.stringify(input.tags);
   if (input.confidence !== undefined) updates.confidence = input.confidence;
