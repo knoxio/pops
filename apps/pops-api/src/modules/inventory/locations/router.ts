@@ -18,7 +18,7 @@ import {
   locationsService,
 } from '@pops/inventory-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -44,7 +44,7 @@ function translateLocationError(err: unknown): never {
 export const locationsRouter = router({
   /** Get the full location tree as nested nodes. */
   tree: protectedProcedure.query(() => {
-    return { data: locationsService.getLocationTree(getDrizzle()) };
+    return { data: locationsService.getLocationTree(getInventoryDrizzle()) };
   }),
 
   /** List all locations (flat). */
@@ -59,7 +59,7 @@ export const locationsRouter = router({
     })
     .output(z.object({ data: z.array(LocationSchema), total: z.number() }))
     .query(() => {
-      const { rows, total } = locationsService.listLocations(getDrizzle());
+      const { rows, total } = locationsService.listLocations(getInventoryDrizzle());
       return {
         data: rows.map(toLocation),
         total,
@@ -70,7 +70,7 @@ export const locationsRouter = router({
   get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
     mapDomainErrors(() => {
       try {
-        const row = locationsService.getLocation(getDrizzle(), input.id);
+        const row = locationsService.getLocation(getInventoryDrizzle(), input.id);
         return { data: toLocation(row) };
       } catch (err) {
         translateLocationError(err);
@@ -82,7 +82,7 @@ export const locationsRouter = router({
   getPath: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
     mapDomainErrors(() => {
       try {
-        const rows = locationsService.getLocationPath(getDrizzle(), input.id);
+        const rows = locationsService.getLocationPath(getInventoryDrizzle(), input.id);
         return { data: rows.map(toLocation) };
       } catch (err) {
         translateLocationError(err);
@@ -103,7 +103,7 @@ export const locationsRouter = router({
     .query(({ input }) =>
       mapDomainErrors(() => {
         try {
-          const { rows, total } = locationsService.getLocationItems(getDrizzle(), input);
+          const { rows, total } = locationsService.getLocationItems(getInventoryDrizzle(), input);
           return {
             data: rows.map(toInventoryItem),
             total,
@@ -116,7 +116,7 @@ export const locationsRouter = router({
 
   /** Get children of a location (one level deep). */
   children: protectedProcedure.input(z.object({ parentId: z.string() })).query(({ input }) => {
-    const rows = locationsService.getChildren(getDrizzle(), input.parentId);
+    const rows = locationsService.getChildren(getInventoryDrizzle(), input.parentId);
     return { data: rows.map(toLocation) };
   }),
 
@@ -124,7 +124,7 @@ export const locationsRouter = router({
   create: protectedProcedure.input(CreateLocationSchema).mutation(({ input }) =>
     mapDomainErrors(() => {
       try {
-        const row = locationsService.createLocation(getDrizzle(), input);
+        const row = locationsService.createLocation(getInventoryDrizzle(), input);
         return {
           data: toLocation(row),
           message: 'Location created',
@@ -146,7 +146,7 @@ export const locationsRouter = router({
     .mutation(({ input }) =>
       mapDomainErrors(() => {
         try {
-          const row = locationsService.updateLocation(getDrizzle(), input.id, input.data);
+          const row = locationsService.updateLocation(getInventoryDrizzle(), input.id, input.data);
           return {
             data: toLocation(row),
             message: 'Location updated',
@@ -161,7 +161,7 @@ export const locationsRouter = router({
   deleteStats: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
     mapDomainErrors(() => {
       try {
-        const stats = locationsService.getDeleteStats(getDrizzle(), input.id);
+        const stats = locationsService.getDeleteStats(getInventoryDrizzle(), input.id);
         return { data: stats };
       } catch (err) {
         translateLocationError(err);
@@ -177,12 +177,12 @@ export const locationsRouter = router({
         try {
           // If not forced, check if location has contents and require confirmation
           if (!input.force) {
-            const stats = locationsService.getDeleteStats(getDrizzle(), input.id);
+            const stats = locationsService.getDeleteStats(getInventoryDrizzle(), input.id);
             if (stats.childCount > 0 || stats.itemCount > 0) {
               return { requiresConfirmation: true, stats };
             }
           }
-          locationsService.deleteLocation(getDrizzle(), input.id);
+          locationsService.deleteLocation(getInventoryDrizzle(), input.id);
           return { message: 'Location deleted' };
         } catch (err) {
           translateLocationError(err);

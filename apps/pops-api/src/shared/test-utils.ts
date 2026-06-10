@@ -2,6 +2,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { closeDb, setCoreDb, setDb } from '../db.js';
+import { setInventoryDb } from '../db/inventory-handle.js';
 import { setMediaDb } from '../db/media-db-handle.js';
 import { appRouter } from '../router.js';
 import { TAG_VOCABULARY_V1 } from './tag-vocabulary.js';
@@ -1483,11 +1484,18 @@ export function setupTestContext() {
     setCoreDb({ db: drizzle(db), raw: db });
     setMediaDb({ db: drizzle(db), raw: db });
 
+    // Same for the inventory pillar handle (phase 2 PR 3): every
+    // inventory module read/write now resolves getInventoryDrizzle(),
+    // so the test fixture has to surface its tables (locations,
+    // home_inventory, fixtures, item_*) on the inventory handle too.
+    setInventoryDb({ db: drizzle(db), raw: db });
+
     return { db, caller: createCaller(true) };
   }
 
   function teardown() {
     setCoreDb(null);
+    setInventoryDb(null);
     setMediaDb(null);
     closeDb();
   }

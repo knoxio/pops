@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 
 import { homeInventory } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 
@@ -29,7 +29,7 @@ function rowToData(row: Row): InventoryItemHitData {
 }
 
 function searchAssetExact(lowerText: string, hits: SearchHit<InventoryItemHitData>[]): void {
-  const rows = getDrizzle()
+  const rows = getInventoryDrizzle()
     .select()
     .from(homeInventory)
     .where(sql`lower(${homeInventory.assetId}) = ${lowerText}`)
@@ -50,7 +50,7 @@ function searchAssetPrefix(
   limit: number,
   hits: SearchHit<InventoryItemHitData>[]
 ): void {
-  const rows = getDrizzle()
+  const rows = getInventoryDrizzle()
     .select()
     .from(homeInventory)
     .where(
@@ -84,7 +84,7 @@ function searchByName(
   seenIds: Set<string>,
   hits: SearchHit<InventoryItemHitData>[]
 ): void {
-  const rows = getDrizzle()
+  const rows = getInventoryDrizzle()
     .select()
     .from(homeInventory)
     .where(sql`lower(${homeInventory.itemName}) like ${'%' + lowerText + '%'}`)

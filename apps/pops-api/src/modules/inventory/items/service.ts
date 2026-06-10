@@ -9,7 +9,7 @@ import { and, count, eq, inArray, isNotNull, like, sql, sum, type SQL } from 'dr
 import { homeInventory } from '@pops/db-types';
 import { locationsService } from '@pops/inventory-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildInventoryUpdate } from './update-builder.js';
 
@@ -58,7 +58,7 @@ function buildInventoryConditions(opts: ListInventoryItemsOptions): SQL[] {
 
 function buildLocationCondition(locationId: string, includeChildren: boolean | undefined): SQL {
   if (!includeChildren) return eq(homeInventory.locationId, locationId);
-  const descendants = locationsService.getDescendantLocationIds(getDrizzle(), locationId);
+  const descendants = locationsService.getDescendantLocationIds(getInventoryDrizzle(), locationId);
   return inArray(homeInventory.locationId, [locationId, ...descendants]);
 }
 
@@ -70,7 +70,7 @@ function combineConditions(conditions: SQL[]): SQL | undefined {
 
 /** List inventory items with optional filters. */
 export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryListResult {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   let query = db.select().from(homeInventory).$dynamic();
   let countQuery = db.select({ total: count() }).from(homeInventory).$dynamic();
@@ -106,7 +106,7 @@ export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryLi
  * Returns the item or null if not found.
  */
 export function searchByAssetId(assetId: string): InventoryRow | null {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [row] = db
     .select()
     .from(homeInventory)
@@ -119,7 +119,7 @@ export function searchByAssetId(assetId: string): InventoryRow | null {
  * Count inventory items whose assetId starts with the given prefix (case-insensitive).
  */
 export function countByAssetPrefix(prefix: string): number {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [result] = db
     .select({ count: sql<number>`COUNT(*)` })
     .from(homeInventory)
@@ -130,7 +130,7 @@ export function countByAssetPrefix(prefix: string): number {
 
 /** Return distinct item types that exist in the database. */
 export function getDistinctTypes(): string[] {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const rows = db
     .selectDistinct({ type: homeInventory.type })
     .from(homeInventory)
@@ -142,7 +142,7 @@ export function getDistinctTypes(): string[] {
 
 /** Get a single inventory item by id. Throws NotFoundError if missing. */
 export function getInventoryItem(id: string): InventoryRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [row] = db.select().from(homeInventory).where(eq(homeInventory.id, id)).all();
 
   if (!row) throw new NotFoundError('Inventory item', id);
@@ -217,7 +217,7 @@ function nullableNumbersFromInput(
  * Generates a local UUID and inserts directly into SQLite.
  */
 export function createInventoryItem(input: CreateInventoryItemInput): InventoryRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
@@ -237,7 +237,7 @@ export function updateInventoryItem(id: string, input: UpdateInventoryItemInput)
 
   const updates = buildInventoryUpdate(input);
   if (updates) {
-    const db = getDrizzle();
+    const db = getInventoryDrizzle();
     db.update(homeInventory).set(updates).where(eq(homeInventory.id, id)).run();
   }
 
@@ -251,7 +251,7 @@ export function updateInventoryItem(id: string, input: UpdateInventoryItemInput)
 export function deleteInventoryItem(id: string): void {
   getInventoryItem(id);
 
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const result = db.delete(homeInventory).where(eq(homeInventory.id, id)).run();
   if (result.changes === 0) throw new NotFoundError('Inventory item', id);
 }
