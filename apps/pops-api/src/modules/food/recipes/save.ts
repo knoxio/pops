@@ -35,8 +35,11 @@ export function saveDraft(db: FoodDb, versionId: number, dsl: string): SaveDraft
 
 export function promote(db: FoodDb, versionId: number): PromoteResult {
   try {
-    const promoted = promoteVersion(db, versionId);
-    return { ok: true, versionId: promoted.id };
+    const result = promoteVersion(db, versionId);
+    if (!result.ok) {
+      return { ok: false, reason: result.reason };
+    }
+    return { ok: true, versionId: result.row.id };
   } catch (err) {
     return mapPromoteError(err);
   }

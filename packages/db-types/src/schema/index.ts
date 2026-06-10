@@ -42,6 +42,7 @@ export {
   recipeSteps,
   recipeTags,
   recipeVersionProposedSlugs,
+  recipeVersionRejections,
   recipeVersions,
   slugRegistry,
   unitConversions,

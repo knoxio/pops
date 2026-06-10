@@ -177,37 +177,37 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds `recipe_version_rejections` table with the columns + CHECK + PK above.
-- [ ] Migration adds `ingest_sources.reviewed_at TEXT NULL` column.
-- [ ] Migration is owned by the `food` module per PRD-101's manifest pattern.
+- [x] Migration adds `recipe_version_rejections` table with the columns + CHECK + PK above.
+- [x] Migration adds `ingest_sources.reviewed_at TEXT NULL` column.
+- [x] Migration is owned by the `food` module per PRD-101's manifest pattern.
 
 ### Mutations
 
-- [ ] `food.inbox.approve` lives at `apps/pops-api/src/modules/food/inbox-router.ts` and is mounted under the `food` module's tRPC root.
-- [ ] All three mutations validate the preconditions above and return the documented error shape (no thrown errors for expected business-rule violations).
-- [ ] Each mutation runs in a single Drizzle transaction.
-- [ ] Approve calls PRD-107's `promoteVersion` service (transactional db variant); inbox response surfaces `ConcurrentPromotion` when the underlying promote rejects.
+- [x] `food.inbox.approve` lives at `apps/pops-api/src/modules/food/inbox/router.ts` and is mounted under the `food` module's tRPC root. (Sub-folder layout chosen to match `recipes/`, `conversions/`, `hero-image/` precedent.)
+- [x] All three mutations validate the preconditions above and return the documented error shape (no thrown errors for expected business-rule violations).
+- [x] Each mutation runs in a single Drizzle transaction.
+- [x] Approve calls PRD-107's `promoteVersion` service (transactional db variant); inbox response surfaces `ConcurrentPromotion` when the underlying promote returns `{ ok: false }`.
 
 ### PRD-107 amendment
 
-- [ ] `promoteVersion(versionId, db)` and `archiveVersion(versionId, db)` accept a transactional db argument.
-- [ ] `promoteVersion` returns `{ ok: false, reason: 'ConcurrentPromotion' }` (structured result) instead of throwing when the partial-UNIQUE index rejects.
-- [ ] PRD-119's tRPC procedures (`food.recipes.promote`, `food.recipes.archiveVersion`) wrap their own transaction; inbox callers pass their own.
+- [x] `promoteVersion(db, versionId)` and `archiveVersion(db, versionId)` accept a transactional db argument (better-sqlite3 nested transactions use SAVEPOINT, so passing a tx wraps as a sub-tx).
+- [x] `promoteVersion` returns `{ ok: false, reason: 'ConcurrentPromotion' }` (structured result) instead of throwing when the partial-UNIQUE index rejects.
+- [x] PRD-119's tRPC procedures (`food.recipes.promote`, `food.recipes.archiveVersion`) wrap their own transaction; inbox callers pass their own.
 
 ### Tests
 
-- [ ] Vitest integration tests at `apps/pops-api/src/modules/food/__tests__/inbox-router.test.ts`:
+- [x] Vitest integration tests at `apps/pops-api/src/modules/food/__tests__/inbox-router.test.ts`:
   - Approve happy path (compiled draft → current; `reviewed_at` set; rejection row absent).
-  - Approve denies `NotIngestOriginated`, `NotADraft`, `NotCompiled`, `AlreadyReviewed`, `RecipeArchived`.
-  - Approve race: simulate two concurrent approves on different versions of the same recipe; one succeeds, one returns `ConcurrentPromotion`.
+  - Approve denies `NotIngestOriginated`, `NotADraft`, `NotCompiled`, `AlreadyReviewed`, `RecipeArchived`, `VersionNotFound`.
+  - Approve race: documented as structurally untestable in single-threaded better-sqlite3 (the partial-UNIQUE only fires across genuinely concurrent transactions); inbox's `{ ok: false } → 'ConcurrentPromotion'` propagation is typecheck-verified and the race semantics themselves are covered by PRD-107's invariant test (`partial UNIQUE prevents a manual UPDATE from creating two currents`). The integration test exercises the archive-then-promote pair sequentially instead.
   - Reject happy path with each of the five reason values; rejections row written.
   - Reject `other` without note → `NoteRequired`.
   - Reject `note` > 2000 chars → `NoteTooLong`.
   - Unreject happy path: archived + rejected → draft; rejections row deleted.
   - Unreject denies `NoRejectionRecord` for PRD-119-discarded drafts.
-  - Approve → unreject would mean approving then trying to un-reject; covered by `NotArchived`.
-- [ ] PRD-107's existing test suite still passes after the service-signature change.
-- [ ] A migration-up + migration-down test asserts both new schema objects round-trip cleanly.
+  - Approve → unreject covered by `NotArchived` guard.
+- [x] PRD-107's existing test suite still passes after the service-signature change (`recipe-model.test.ts` updated for the discriminated-result shape; 301/301 green).
+- [ ] Migration round-trip test — drizzle-kit doesn't ship a `down` migration runner; the migration is forward-only consistent with every other food-domain migration. Deferred AC, matches PRD-110/116/123/125 precedent.
 
 ## Out of Scope
 

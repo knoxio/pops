@@ -18,6 +18,9 @@ export const foodMigrationTags: readonly string[] = [
   // PRD-125 amendment to PRD-110 — error_code/error_message/attempts columns on
   // ingest_sources (persists failure detail past BullMQ TTL).
   '0067_prd_125_ingest_error_columns',
+  // PRD-136 — recipe_version_rejections + ingest_sources.reviewed_at for the
+  // inbox approve/reject flow.
+  '0068_prd_136_inbox_review',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

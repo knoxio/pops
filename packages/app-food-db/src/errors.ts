@@ -75,16 +75,6 @@ export class CannotEditPublishedVersion extends Error {
   }
 }
 
-export class ConcurrentPromotion extends Error {
-  readonly recipeId: number;
-
-  constructor(recipeId: number) {
-    super(`Concurrent promotion on recipe #${recipeId} — another version was promoted first.`);
-    this.name = 'ConcurrentPromotion';
-    this.recipeId = recipeId;
-  }
-}
-
 // ── Batch / cook-run errors ─────────────────────────────────────────────
 
 export class CannotCookUncompiledRecipe extends Error {

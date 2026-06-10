@@ -25,6 +25,7 @@ export * as aliasesService from './services/aliases.js';
 export * as aliasesQueries from './services/aliases-queries.js';
 export * as batchesService from './services/batches.js';
 export * as ingestSourcesService from './services/ingest-sources.js';
+export * as inboxService from './services/inbox.js';
 export * as ingredientsService from './services/ingredients.js';
 export * as ingredientsQueries from './services/ingredients-queries.js';
 export * as planService from './services/plan.js';
@@ -57,6 +58,19 @@ export type {
   BulkApproveAliasesResult,
   MergeAliasesResult,
 } from './services/aliases.js';
+export type {
+  ApproveRejectError,
+  ApproveRejectFailure,
+  ApproveResult,
+  ApproveSuccess,
+  RejectInput,
+  RejectResult,
+  RejectSuccess,
+  RejectionReason,
+  UnrejectResult,
+  UnrejectSuccess,
+} from './services/inbox.js';
+export type { PromoteVersionResult } from './services/recipe-versions.js';
 export type {
   DeleteBlockerSummary,
   RecipeRefRow,

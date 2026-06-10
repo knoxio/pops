@@ -1,6 +1,7 @@
 import { router } from '../../trpc.js';
 import { conversionsRouter } from './conversions/router.js';
 import { heroImageRouter } from './hero-image/router.js';
+import { inboxRouter } from './inbox/router.js';
 import { foodMigrations } from './migrations.js';
 import { recipesRouter } from './recipes/router.js';
 import { aiRouter } from './routers/ai.js';
@@ -26,6 +27,7 @@ export const foodRouter = router({
   conversions: conversionsRouter,
   ai: aiRouter,
   recipes: recipesRouter,
+  inbox: inboxRouter,
 });
 
 export const manifest: ModuleManifest<typeof foodRouter> = {
