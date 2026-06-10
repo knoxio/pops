@@ -15,4 +15,6 @@ export * from './schema.js';
 
 export type { MediaDb } from './services/internal.js';
 
+export { openMediaDb, type OpenedMediaDb } from './open-media-db.js';
+
 export * as shelfImpressionsService from './services/shelf-impressions.js';
