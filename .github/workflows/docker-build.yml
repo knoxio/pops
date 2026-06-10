@@ -9,6 +9,7 @@ on:
       - "apps/pops-shell/**"
       - "apps/pops-mcp/**"
       - "apps/pops-core-api/**"
+      - "apps/pops-inventory-api/**"
       - "packages/**"
       - "infra/docker-compose*.yml"
       - "pnpm-lock.yaml"
@@ -34,6 +35,7 @@ jobs:
               - 'apps/pops-shell/**'
               - 'apps/pops-mcp/**'
               - 'apps/pops-core-api/**'
+              - 'apps/pops-inventory-api/**'
               - 'packages/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
@@ -70,6 +72,10 @@ jobs:
       - name: Build pops-core-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-core-api/Dockerfile .
+
+      - name: Build pops-inventory-api (builder stage)
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: docker build --target builder -f apps/pops-inventory-api/Dockerfile .
 
   compose-validate:
     name: Validate docker-compose

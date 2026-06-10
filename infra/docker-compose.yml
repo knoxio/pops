@@ -57,6 +57,45 @@ services:
       timeout: 5s
       retries: 3
 
+  # Inventory pillar API (ADR-026, Phase 3 PR 2 of the inventory track).
+  # Hosts inventory.db reads/writes for locations, home_inventory,
+  # fixtures, item_connections, item_documents, item_photos,
+  # item_uploaded_files, and item_fixture_connections. Subsequent PRs
+  # move the tRPC routers + URI dispatcher behind it.
+  inventory-api:
+    image: ghcr.io/knoxio/pops-inventory-api:${POPS_IMAGE_TAG:-main}
+    container_name: pops-inventory-api
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      NODE_ENV: production
+      PORT: '3002'
+      INVENTORY_SQLITE_PATH: /data/sqlite/inventory.db
+      INVENTORY_SELF_BASE_URL: http://inventory-api:3002
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002}
+    expose:
+      - '3002'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3002/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   pops-api:
     image: ghcr.io/knoxio/pops-api:${POPS_IMAGE_TAG:-main}
     container_name: pops-api
@@ -92,13 +131,15 @@ services:
       POPS_OVERLAYS: ${POPS_OVERLAYS:-}
       # Cross-pillar registry (ADR-026 Phase 3 PR 3). pops-api routes
       # outbound `pops:core/...` traffic to the core-api container.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002}
     expose:
       - '3000'
     depends_on:
       pops-redis:
         condition: service_healthy
       core-api:
+        condition: service_healthy
+      inventory-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -139,11 +180,13 @@ services:
       # PRD-100 — same module set as the api so worker jobs scope correctly.
       POPS_APPS: ${POPS_APPS:-}
       POPS_OVERLAYS: ${POPS_OVERLAYS:-}
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002}
     depends_on:
       pops-redis:
         condition: service_healthy
       core-api:
+        condition: service_healthy
+      inventory-api:
         condition: service_healthy
 
   # ── FOOD INGEST WORKER ───────────────────────────────────────────
