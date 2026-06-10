@@ -298,10 +298,20 @@ export function backfillCoreFromShared(): void {
         .prepare("SELECT 1 FROM pops.sqlite_master WHERE type='table' AND name='service_accounts'")
         .get();
       if (hasTable) {
+        // Enumerate columns explicitly so a future migration that
+        // widens the core table won't break the backfill against a
+        // stale on-disk pops.db that still has the older shape. Order
+        // matches the 0054_service_accounts.sql DDL byte-for-byte.
         coreDb.raw.exec(`
-          INSERT INTO service_accounts
-            SELECT * FROM pops.service_accounts
-            WHERE id NOT IN (SELECT id FROM service_accounts)
+          INSERT INTO service_accounts (
+            id, name, key_prefix, key_hash, scopes,
+            created_at, last_used_at, revoked_at, created_by
+          )
+          SELECT
+            id, name, key_prefix, key_hash, scopes,
+            created_at, last_used_at, revoked_at, created_by
+          FROM pops.service_accounts
+          WHERE id NOT IN (SELECT id FROM service_accounts)
         `);
       }
     } finally {
