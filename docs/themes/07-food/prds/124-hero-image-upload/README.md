@@ -206,7 +206,7 @@ Inline per theme protocol.
 - [x] Replace and Remove buttons work.
 - [x] Progress indicator during upload.
 - [x] Mobile-friendly tap targets (44px min).
-- [ ] PRD-119's edit page mounts this component in a side panel. — _Deferred: PRD-119 is not yet implemented; the component is ready and `HeroImageUploader` is exported from `@pops/app-food` for PRD-119 to mount._
+- [x] PRD-119's edit page mounts this component. Mounted in `RecipeEditShell` between the auto-created banner and the DSL editor. Upload and remove callbacks invalidate `food.recipes.getForRendering` (keyed on slug + versionNo) and `food.recipes.list` so the edit shell sees the new `heroImagePath` immediately. The original wording said "side panel"; the implemented layout is an inline column section because PRD-119's recipe edit page is a stacked layout rather than a split pane.
 
 ### Remove
 

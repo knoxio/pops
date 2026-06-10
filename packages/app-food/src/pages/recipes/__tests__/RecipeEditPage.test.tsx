@@ -163,7 +163,7 @@ describe('PRD-124 follow-up — RecipeEditPage hero uploader mount', () => {
     heroUploaderProps?.onUploaded('42/hero.png');
     heroUploaderProps?.onRemoved();
     expect(getForRenderingInvalidate).toHaveBeenCalledTimes(2);
-    expect(getForRenderingInvalidate).toHaveBeenCalledWith({ slug: 'pancakes' });
+    expect(getForRenderingInvalidate).toHaveBeenCalledWith({ slug: 'pancakes', versionNo: 3 });
     expect(listInvalidate).toHaveBeenCalledTimes(2);
   });
 

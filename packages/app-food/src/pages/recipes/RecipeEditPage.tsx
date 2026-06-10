@@ -94,7 +94,10 @@ export function RecipeEditShell({
 
   const recipe = renderingQuery.data.recipe;
   const refreshHero = (): void => {
-    void utils.food.recipes.getForRendering.invalidate({ slug });
+    void utils.food.recipes.getForRendering.invalidate({
+      slug,
+      versionNo: versionNo ?? undefined,
+    });
     void utils.food.recipes.list.invalidate();
   };
 
