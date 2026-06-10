@@ -16,8 +16,7 @@ export * from './slug.js';
 
 // Drizzle handle type — re-exported so consumers don't have to reach
 // into the internal services module.
-export type { FoodDb } from './services/internal.js';
-export { MAX_INGREDIENT_DEPTH } from './services/internal.js';
+export { MAX_INGREDIENT_DEPTH, type FoodDb } from './services/internal.js';
 
 // Service namespaces — each module's free functions are exposed as a
 // namespace so the API router code stays self-documenting at call sites.
@@ -195,55 +194,20 @@ export type {
   RecipeVersionWithCompiledData,
 } from './recipe-renderer-types.js';
 
-// Cross-PRD type contracts for the cook / plan / fridge feature set
-// (PRDs 143-147). Split by domain so each downstream PRD owns one file.
-// PRD-146 shares `batches.ts` with PRD-145.
-export type {
-  ConsumptionNeed,
-  ConsumptionOverride,
-  CookPreparation,
-  CookYieldDefault,
-  CookYieldInput,
-  MarkCookedError,
-  MarkCookedResult,
-  Shortfall,
-} from './types/cook.js';
+// Cross-PRD type contracts for cook / batches / fridge (PRDs 143-147).
+// Plan types live in `./types/plan.js` but the row aliases collide
+// with `schema.js`, so they are explicitly named below.
+export type * from './types/index.js';
 export type {
   PlanEntryError,
   PlanEntryMutationResult,
-  PlanEntryRow,
   PlanSlotDeleteError,
   PlanSlotDeleteResult,
   PlanSlotError,
   PlanSlotMutationResult,
-  PlanSlotRow,
   PlanSlotUpdateError,
   PlanSlotUpdateResult,
   ReorderSlotError,
   ReorderSlotResult,
   WeekView,
 } from './types/plan.js';
-export type {
-  BatchAdjustReason,
-  BatchAdjustResult,
-  BatchDetail,
-  BatchEditPatch,
-  BatchError,
-  BatchForConsumeRow,
-  BatchLocation,
-  BatchMutationResult,
-  BatchSourceType,
-  BatchUnit,
-  LineResolution,
-  ManualBatchInput,
-  ManualBatchSourceType,
-  YieldArgs,
-} from './types/batches.js';
-export type {
-  FridgeBatchRow,
-  FridgeIngredientGroup,
-  FridgeLocationSection,
-  FridgeView,
-  FridgeViewCounts,
-  RecipeForCookRow,
-} from './types/fridge.js';
