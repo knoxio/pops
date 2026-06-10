@@ -70,6 +70,7 @@ jobs:
           cd ../module-registry && pnpm build
           cd ../food-contracts && pnpm build
           cd ../core-db && pnpm build
+          cd ../finance-db && pnpm build
           cd ../inventory-db && pnpm build
           cd ../media-db && pnpm build
           cd ../app-lists-db && pnpm build

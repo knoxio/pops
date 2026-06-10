@@ -54,6 +54,9 @@ importers:
       '@pops/db-types':
         specifier: workspace:*
         version: link:../../packages/db-types
+      '@pops/finance-db':
+        specifier: workspace:*
+        version: link:../../packages/finance-db
       '@pops/food-contracts':
         specifier: workspace:*
         version: link:../../packages/food-contracts
