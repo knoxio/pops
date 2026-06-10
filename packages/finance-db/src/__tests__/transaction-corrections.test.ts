@@ -233,6 +233,21 @@ describe('createOrUpdateTransactionCorrection — conflict path', () => {
     expect(after.confidence).toBe(1.0);
   });
 
+  it('overwrites tags with [] on the conflict path when input.tags is omitted (in-tree fidelity)', () => {
+    const id = seedCorrection(harness.raw, {
+      descriptionPattern: 'COFFEE',
+      matchType: 'exact',
+      tags: JSON.stringify(['old-tag']),
+    });
+
+    const after = createOrUpdateTransactionCorrection(harness.db, {
+      descriptionPattern: 'coffee',
+      matchType: 'exact',
+    });
+    expect(after.id).toBe(id);
+    expect(after.tags).toBe('[]');
+  });
+
   it('preserves existing entity fields when input fields are undefined', () => {
     const id = seedCorrection(harness.raw, {
       descriptionPattern: 'COFFEE',

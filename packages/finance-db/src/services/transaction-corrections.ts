@@ -147,8 +147,15 @@ function insertNewCorrection(
  * Upsert a correction keyed on `(normalized descriptionPattern, matchType)`.
  *
  * On hit, the row is "reinforced" — confidence is bumped by 0.1 (capped at 1.0),
- * `timesApplied` is incremented, `lastUsedAt` is stamped, optional fields are
- * overlaid with non-null values from `input`, and `isActive` is reset to true.
+ * `timesApplied` is incremented, `lastUsedAt` is stamped, `isActive` is reset
+ * to true, the `entityId` / `entityName` / `location` / `transactionType` /
+ * `priority` fields are overlaid with the input only when the input value is
+ * non-null (a `null` keeps the existing value), and `tags` is always
+ * overwritten by `input.tags ?? []`. The last item is intentional and
+ * matches the in-tree behaviour the cutover (PR 3) preserves — omitting
+ * `tags` from a reinforcement clears them. Pass the existing tags through
+ * explicitly if you want to keep them.
+ *
  * On miss, a new row is inserted with confidence + timesApplied left at the
  * schema defaults (0.5 and 0 respectively).
  */
