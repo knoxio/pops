@@ -12,8 +12,14 @@ import { shelfImpressionsService } from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
 
-/** Insert one impression row per shelf id shown in a session. */
+/** Insert one impression row per shelf id shown in a session.
+ *
+ * Short-circuits on empty input so a no-op call doesn't pay the cost of
+ * resolving the singleton drizzle handle (which lazily opens + configures
+ * the SQLite connection the first time it's called).
+ */
 export function recordImpressions(shelfIds: string[]): void {
+  if (shelfIds.length === 0) return;
   shelfImpressionsService.recordImpressions(getDrizzle(), shelfIds);
 }
 

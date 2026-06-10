@@ -45,16 +45,18 @@ beforeEach(() => {
 describe('recordImpressions', () => {
   it('forwards the resolved db and shelf ids', () => {
     recordImpressions(['trending', 'because-you-watched:42']);
-    expect(mockGetDrizzle).toHaveBeenCalledTimes(1);
-    expect(mockService.recordImpressions).toHaveBeenCalledExactlyOnceWith(FAKE_DB, [
+    expect(mockGetDrizzle).toHaveBeenCalledOnce();
+    expect(mockService.recordImpressions).toHaveBeenCalledOnce();
+    expect(mockService.recordImpressions).toHaveBeenCalledWith(FAKE_DB, [
       'trending',
       'because-you-watched:42',
     ]);
   });
 
-  it('forwards an empty list verbatim (package handles the no-op)', () => {
+  it('short-circuits on empty input — neither resolves the db nor calls the package', () => {
     recordImpressions([]);
-    expect(mockService.recordImpressions).toHaveBeenCalledExactlyOnceWith(FAKE_DB, []);
+    expect(mockGetDrizzle).not.toHaveBeenCalled();
+    expect(mockService.recordImpressions).not.toHaveBeenCalled();
   });
 });
 
@@ -64,7 +66,8 @@ describe('getRecentImpressions', () => {
     mockService.getRecentImpressions.mockReturnValue(returned);
 
     const result = getRecentImpressions(7);
-    expect(mockService.getRecentImpressions).toHaveBeenCalledExactlyOnceWith(FAKE_DB, 7);
+    expect(mockService.getRecentImpressions).toHaveBeenCalledOnce();
+    expect(mockService.getRecentImpressions).toHaveBeenCalledWith(FAKE_DB, 7);
     expect(result).toBe(returned);
   });
 });
@@ -74,7 +77,8 @@ describe('getShelfFreshness', () => {
     mockService.getShelfFreshness.mockReturnValue(0.5);
 
     const result = getShelfFreshness(1);
-    expect(mockService.getShelfFreshness).toHaveBeenCalledExactlyOnceWith(1);
+    expect(mockService.getShelfFreshness).toHaveBeenCalledOnce();
+    expect(mockService.getShelfFreshness).toHaveBeenCalledWith(1);
     expect(mockGetDrizzle).not.toHaveBeenCalled();
     expect(result).toBe(0.5);
   });
@@ -83,15 +87,17 @@ describe('getShelfFreshness', () => {
 describe('cleanupOldImpressions', () => {
   it('forwards the resolved db handle', () => {
     cleanupOldImpressions();
-    expect(mockGetDrizzle).toHaveBeenCalledTimes(1);
-    expect(mockService.cleanupOldImpressions).toHaveBeenCalledExactlyOnceWith(FAKE_DB);
+    expect(mockGetDrizzle).toHaveBeenCalledOnce();
+    expect(mockService.cleanupOldImpressions).toHaveBeenCalledOnce();
+    expect(mockService.cleanupOldImpressions).toHaveBeenCalledWith(FAKE_DB);
   });
 });
 
 describe('initImpressionsService', () => {
   it('forwards the resolved db handle', () => {
     initImpressionsService();
-    expect(mockGetDrizzle).toHaveBeenCalledTimes(1);
-    expect(mockService.initImpressionsService).toHaveBeenCalledExactlyOnceWith(FAKE_DB);
+    expect(mockGetDrizzle).toHaveBeenCalledOnce();
+    expect(mockService.initImpressionsService).toHaveBeenCalledOnce();
+    expect(mockService.initImpressionsService).toHaveBeenCalledWith(FAKE_DB);
   });
 });
