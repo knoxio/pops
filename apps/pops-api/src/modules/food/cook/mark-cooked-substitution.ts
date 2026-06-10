@@ -24,6 +24,9 @@ export interface LineDescriptor {
   position: number;
   variantId: number | null;
   prepStateId: number | null;
+  optional: boolean;
+  needQty: number;
+  canonicalUnit: 'g' | 'ml' | 'count';
 }
 
 export interface SubstitutionContextArgs {

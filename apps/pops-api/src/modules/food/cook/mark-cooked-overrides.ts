@@ -124,8 +124,6 @@ const EMPTY_SET: ReadonlySet<number> = new Set<number>();
 // without admitting a meaningful shortfall.
 const QTY_EPSILON = 1e-6;
 
-const EMPTY_SET: ReadonlySet<number> = new Set<number>();
-
 function buildLineIndex(tx: FoodDb, versionId: number): Map<number, LineDescriptor> {
   const rows = tx
     .select({
