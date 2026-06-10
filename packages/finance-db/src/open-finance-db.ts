@@ -65,14 +65,13 @@ export interface OpenedFinanceDb {
  * missing folder), the raw handle is closed before the error is
  * re-thrown so the caller can't leak a locked file descriptor.
  *
- * Note: every finance migration in the package's journal so far
- * (0025/0026/0027/0052) ALTERs or recreates tables created in the
- * pre-modular baseline (`0000_naive_chameleon.sql`). The opener does
- * not apply that baseline — callers that need a fresh, fully-seeded
- * finance.db must run the shared journal first OR include the relevant
- * baseline DDL out of band (the existing tests inline the
- * `wish_list` DDL for this reason). Once the baseline split lands,
- * the package's journal will be self-sufficient.
+ * The package journal is self-bootstrapping: idx 0 is
+ * `0053_finance_pillar_baseline` which CREATEs the four tables the
+ * existing 0025/0026/0027/0052 entries ALTER/recreate (mirrors
+ * inventory's `0006_inventory_pillar_baseline`). Against a fresh
+ * finance.db the baseline runs first; against the legacy shared
+ * pops.db the per-pillar runner backfills the no-op via
+ * `isAlreadyAppliedError`.
  */
 export function openFinanceDb(path: string): OpenedFinanceDb {
   mkdirSync(dirname(path), { recursive: true });
