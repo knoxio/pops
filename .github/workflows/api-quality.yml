@@ -8,6 +8,7 @@ on:
     paths:
       - "apps/pops-api/**"
       - "packages/db-types/**"
+      - "packages/finance-db/**"
       - "packages/inventory-db/**"
       - "packages/types/**"
       - ".github/workflows/api-quality.yml"
@@ -28,6 +29,7 @@ jobs:
             api:
               - 'apps/pops-api/**'
               - 'packages/db-types/**'
+              - 'packages/finance-db/**'
               - 'packages/inventory-db/**'
               - 'packages/types/**'
               - '.github/workflows/api-quality.yml'
@@ -70,6 +72,7 @@ jobs:
           cd ../module-registry && pnpm build
           cd ../food-contracts && pnpm build
           cd ../core-db && pnpm build
+          cd ../finance-db && pnpm build
           cd ../inventory-db && pnpm build
           cd ../media-db && pnpm build
           cd ../app-lists-db && pnpm build

@@ -12,6 +12,7 @@ COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
+COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
@@ -35,6 +36,9 @@ COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/tsconfig.json ./packages/core-db/
 COPY packages/core-db/migrations ./packages/core-db/migrations
+COPY packages/finance-db/src ./packages/finance-db/src
+COPY packages/finance-db/tsconfig.json ./packages/finance-db/
+COPY packages/finance-db/migrations ./packages/finance-db/migrations
 COPY packages/media-db/src ./packages/media-db/src
 COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
@@ -56,6 +60,8 @@ RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/core-db
+RUN pnpm build
+WORKDIR /app/packages/finance-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db
 RUN pnpm build
@@ -101,6 +107,9 @@ COPY --from=builder /app/packages/app-lists-db/package.json ./node_modules/@pops
 COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
 COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
 COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations
+COPY --from=builder /app/packages/finance-db/dist ./node_modules/@pops/finance-db/dist
+COPY --from=builder /app/packages/finance-db/package.json ./node_modules/@pops/finance-db/
+COPY --from=builder /app/packages/finance-db/migrations ./node_modules/@pops/finance-db/migrations
 COPY --from=builder /app/packages/inventory-db/dist ./node_modules/@pops/inventory-db/dist
 COPY --from=builder /app/packages/inventory-db/package.json ./node_modules/@pops/inventory-db/
 COPY --from=builder /app/packages/inventory-db/migrations ./node_modules/@pops/inventory-db/migrations

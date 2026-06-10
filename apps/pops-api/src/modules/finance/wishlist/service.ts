@@ -1,127 +1,98 @@
-import { and, asc, count, eq, like } from 'drizzle-orm';
-
 /**
- * Wish list service — CRUD operations against SQLite via Drizzle ORM.
- * SQLite is the source of truth. All operations are local.
+ * Thin wrapper around `@pops/finance-db`'s wish-list service.
+ *
+ * Resolves the singleton `getDrizzle()` handle and forwards. Translates
+ * the package's typed errors to the HTTP-layer error variants the rest
+ * of pops-api still expects (`NotFoundError`) so the global error handler
+ * keeps producing the same status codes and i18n keys it did before the
+ * finance pillar Phase 1 split.
+ *
+ * This shim is deleted in Phase 1 PR 4. Existing callers (`router.ts`,
+ * `wishlist.test.ts`) keep importing from here unchanged; the deletion
+ * PR also flips them to the package directly and drops this file.
  */
-import { wishList } from '@pops/db-types';
+import {
+  wishListService,
+  WishListItemNotFoundError,
+  type WishListPriority,
+  WISH_LIST_PRIORITIES,
+} from '@pops/finance-db';
 
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
 
-import type { CreateWishListItemInput, UpdateWishListItemInput, WishListRow } from './types.js';
+import type {
+  CreateWishListItemInput,
+  UpdateWishListItemInput,
+  WishListListResult,
+  WishListRow,
+} from '@pops/finance-db';
 
-/** Count + rows for a paginated list. */
-export interface WishListListResult {
-  rows: WishListRow[];
-  total: number;
+export type { WishListListResult, WishListRow };
+
+const PRIORITY_LOOKUP: ReadonlySet<string> = new Set(WISH_LIST_PRIORITIES);
+
+/** Type-guard: turn an opaque string filter into the package's typed priority. */
+function asPriority(value: string | undefined): WishListPriority | undefined {
+  if (value === undefined || !PRIORITY_LOOKUP.has(value)) return undefined;
+  return value as WishListPriority;
 }
 
-/** List wish list items with optional search and priority filters. */
 export function listWishListItems(
   search: string | undefined,
   priority: string | undefined,
   limit: number,
   offset: number
 ): WishListListResult {
-  const db = getDrizzle();
-  const conditions = [];
-
-  if (search) {
-    conditions.push(like(wishList.item, `%${search}%`));
+  // Preserve pre-cutover wire semantics: the original SQL filter applied
+  // an `eq(priority, <any-string>)` for any non-empty value, so an
+  // unknown priority matched zero rows. The package's typed query drops
+  // invalid values entirely, which would return ALL rows — a silent
+  // behaviour change. Short-circuit here to keep the empty-page result.
+  if (priority !== undefined && priority !== '' && !PRIORITY_LOOKUP.has(priority)) {
+    return { rows: [], total: 0 };
   }
-  if (priority) {
-    conditions.push(eq(wishList.priority, priority));
-  }
-
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const rows = db
-    .select()
-    .from(wishList)
-    .where(where)
-    .orderBy(asc(wishList.item))
-    .limit(limit)
-    .offset(offset)
-    .all();
-  const countRow = db.select({ total: count() }).from(wishList).where(where).all()[0];
-  const total = countRow?.total ?? 0;
-
-  return { rows, total };
+  return wishListService.listWishListItems(getDrizzle(), {
+    search,
+    priority: asPriority(priority),
+    limit,
+    offset,
+  });
 }
 
-/** Get a single wish list item by id. Throws NotFoundError if missing. */
 export function getWishListItem(id: string): WishListRow {
-  const db = getDrizzle();
-  const row = db.select().from(wishList).where(eq(wishList.id, id)).get();
-
-  if (!row) throw new NotFoundError('Wish list item', id);
-  return row;
+  try {
+    return wishListService.getWishListItem(getDrizzle(), id);
+  } catch (err) {
+    if (err instanceof WishListItemNotFoundError) {
+      throw new NotFoundError('Wish list item', id);
+    }
+    throw err;
+  }
 }
 
-/**
- * Create a new wish list item. Returns the created row.
- * Generates a local UUID and inserts directly into SQLite.
- */
 export function createWishListItem(input: CreateWishListItemInput): WishListRow {
-  const db = getDrizzle();
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-
-  db.insert(wishList)
-    .values({
-      id,
-      item: input.item,
-      targetAmount: input.targetAmount ?? null,
-      saved: input.saved ?? null,
-      priority: input.priority ?? null,
-      url: input.url ?? null,
-      notes: input.notes ?? null,
-      lastEditedTime: now,
-    })
-    .run();
-
-  return getWishListItem(id);
-}
-
-/**
- * Update an existing wish list item. Returns the updated row.
- * Updates directly in SQLite.
- */
-function buildWishListUpdates(
-  input: UpdateWishListItemInput
-): Partial<typeof wishList.$inferInsert> {
-  const updates: Partial<typeof wishList.$inferInsert> = {};
-  if (input.item !== undefined) updates.item = input.item;
-  if (input.targetAmount !== undefined) updates.targetAmount = input.targetAmount ?? null;
-  if (input.saved !== undefined) updates.saved = input.saved ?? null;
-  if (input.priority !== undefined) updates.priority = input.priority ?? null;
-  if (input.url !== undefined) updates.url = input.url ?? null;
-  if (input.notes !== undefined) updates.notes = input.notes ?? null;
-  return updates;
+  return wishListService.createWishListItem(getDrizzle(), input);
 }
 
 export function updateWishListItem(id: string, input: UpdateWishListItemInput): WishListRow {
-  getWishListItem(id);
-
-  const updates = buildWishListUpdates(input);
-  if (Object.keys(updates).length > 0) {
-    updates.lastEditedTime = new Date().toISOString();
-    getDrizzle().update(wishList).set(updates).where(eq(wishList.id, id)).run();
+  try {
+    return wishListService.updateWishListItem(getDrizzle(), id, input);
+  } catch (err) {
+    if (err instanceof WishListItemNotFoundError) {
+      throw new NotFoundError('Wish list item', id);
+    }
+    throw err;
   }
-
-  return getWishListItem(id);
 }
 
-/**
- * Delete a wish list item by ID. Throws NotFoundError if missing.
- * Deletes directly from SQLite.
- */
 export function deleteWishListItem(id: string): void {
-  // Verify it exists first
-  getWishListItem(id);
-
-  const db = getDrizzle();
-  const result = db.delete(wishList).where(eq(wishList.id, id)).run();
-  if (result.changes === 0) throw new NotFoundError('Wish list item', id);
+  try {
+    wishListService.deleteWishListItem(getDrizzle(), id);
+  } catch (err) {
+    if (err instanceof WishListItemNotFoundError) {
+      throw new NotFoundError('Wish list item', id);
+    }
+    throw err;
+  }
 }
