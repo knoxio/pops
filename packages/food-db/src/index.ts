@@ -19,4 +19,6 @@ export * from './schema.js';
 
 export type { FoodDb } from './services/internal.js';
 
+export { openFoodDb, type OpenedFoodDb } from './open-food-db.js';
+
 export * as prepStatesService from './services/prep-states.js';
