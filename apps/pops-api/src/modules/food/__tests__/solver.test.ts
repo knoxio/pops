@@ -512,6 +512,23 @@ describe('food.solver router — PRD-150', () => {
     expect(slugs).not.toContain('untagged-cookies');
   });
 
+  it('fails closed when a required line has an unresolved canonical qty', async () => {
+    const tomato = makeIngredientWithVariant('tomato', 'diced');
+    const recipe = makeCompiledRecipe('mystery-quantity');
+    // Insert a line with NO qty_g / qty_ml / qty_count — compile failed
+    // to resolve the conversion. The solver must not assume "0 needed".
+    addLine(recipe.recipeVersionId, {
+      position: 1,
+      ingredientId: tomato.ingredientId,
+      variantId: tomato.variantId,
+      canonicalUnit: 'g',
+    });
+    await addBatch(caller, { variantId: tomato.variantId, qty: 500, unit: 'g' });
+    const result = await caller.food.solver.canICook({});
+    expect(result.totalCandidates).toBe(1);
+    expect(result.cookableCount).toBe(0);
+  });
+
   it('reports cookable for a compiled recipe with zero ingredient lines', async () => {
     const recipe = makeCompiledRecipe('empty-recipe');
     const result = await caller.food.solver.canICook({});

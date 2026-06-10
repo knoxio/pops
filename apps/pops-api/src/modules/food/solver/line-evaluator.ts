@@ -68,7 +68,11 @@ export interface EvaluateLinesArgs {
   names: NameLookup;
 }
 
-function tryEvaluateLine(line: SolverLine, args: EvaluateLinesArgs): SolveSubBreakdown | null {
+function tryEvaluateLine(
+  line: SolverLine,
+  needed: number,
+  args: EvaluateLinesArgs
+): SolveSubBreakdown | null {
   const candidates = resolveCandidatesForLine(args.subIndex, {
     recipeId: args.recipeId,
     ingredientId: line.ingredientId,
@@ -81,7 +85,7 @@ function tryEvaluateLine(line: SolverLine, args: EvaluateLinesArgs): SolveSubBre
       candidate.toVariantId,
       line.prepStateId
     );
-    if (available * candidate.ratio >= line.qty) {
+    if (available * candidate.ratio >= needed) {
       return {
         lineIndex: line.position,
         fromIngredientName: line.ingredientName,
@@ -101,9 +105,14 @@ function tryEvaluateLine(line: SolverLine, args: EvaluateLinesArgs): SolveSubBre
 export function evaluateRecipeLines(args: EvaluateLinesArgs): LineEvaluation {
   const subs: SolveSubBreakdown[] = [];
   for (const line of args.lines) {
+    // Lines with an unresolved canonical qty (compile couldn't pin
+    // grams/ml/count) fail closed — we don't know how much is needed,
+    // so we can't declare the recipe cookable.
+    if (line.qty === null) return { cookable: false, subsNeeded: 0, subs: [] };
+    const needed = line.qty;
     const fifoQty = lineFifoCoverage(line, args.inventory);
-    if (fifoQty >= line.qty) continue;
-    const breakdown = tryEvaluateLine(line, args);
+    if (fifoQty >= needed) continue;
+    const breakdown = tryEvaluateLine(line, needed, args);
     if (breakdown === null) {
       return { cookable: false, subsNeeded: 0, subs: [] };
     }

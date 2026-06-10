@@ -106,9 +106,9 @@ export function SolveRecipeCard({ recipe, now }: SolveRecipeCardProps): ReactEle
         </div>
       )}
       <div className="mt-3">
-        <Link to={target}>
-          <Button size="sm">{t('solve.card.cookThis')}</Button>
-        </Link>
+        <Button size="sm" asChild>
+          <Link to={target}>{t('solve.card.cookThis')}</Link>
+        </Button>
       </div>
     </article>
   );

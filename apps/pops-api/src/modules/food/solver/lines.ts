@@ -21,8 +21,15 @@ export interface SolverLine {
   variantName: string | null;
   prepStateId: number | null;
   canonicalUnit: CanonicalUnit;
-  /** Resolved canonical-unit qty for the line. */
-  qty: number;
+  /**
+   * Resolved canonical-unit qty for the line. `null` means the compile
+   * stage couldn't resolve the canonical quantity (e.g. a missing
+   * conversion). The line-evaluator treats that as a fail-closed
+   * shortfall — a recipe with any unresolved line is never declared
+   * cookable, otherwise the solver would silently approve recipes
+   * with unknown demand.
+   */
+  qty: number | null;
 }
 
 function canonicalQty(
@@ -30,14 +37,14 @@ function canonicalQty(
   qtyMl: number | null,
   qtyCount: number | null,
   unit: CanonicalUnit
-): number {
+): number | null {
   switch (unit) {
     case 'g':
-      return qtyG ?? 0;
+      return qtyG;
     case 'ml':
-      return qtyMl ?? 0;
+      return qtyMl;
     case 'count':
-      return qtyCount ?? 0;
+      return qtyCount;
   }
 }
 

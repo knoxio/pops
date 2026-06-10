@@ -73,9 +73,9 @@ export function FridgePage(): ReactElement {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Fridge</h1>
         <div className="flex items-center gap-2">
-          <Link to="/food/solve">
-            <Button variant="outline">What can I cook?</Button>
-          </Link>
+          <Button variant="outline" asChild>
+            <Link to="/food/solve">What can I cook?</Link>
+          </Button>
           <Button onClick={() => setAddOpen(true)}>+ Add batch</Button>
         </div>
       </header>

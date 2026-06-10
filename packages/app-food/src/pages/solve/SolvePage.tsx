@@ -109,11 +109,9 @@ function EmptyState({ filters, onResetFilters }: EmptyStateProps): ReactElement 
           </Button>
         )}
         {!hasFilters && (
-          <Link to="/food/fridge">
-            <Button size="sm" variant="outline">
-              {t('solve.empty.openFridge')}
-            </Button>
-          </Link>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/food/fridge">{t('solve.empty.openFridge')}</Link>
+          </Button>
         )}
       </div>
     </div>

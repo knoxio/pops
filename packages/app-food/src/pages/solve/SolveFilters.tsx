@@ -90,19 +90,29 @@ function RecipeTypeChips({ filters, onChange }: SolveFiltersProps): ReactElement
 function TagsInput({ filters, onChange }: SolveFiltersProps): ReactElement {
   const { t } = useTranslation('food');
   function commit(raw: string): void {
-    const tags = raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    const seen = new Set<string>();
+    const tags: string[] = [];
+    for (const part of raw.split(',')) {
+      const tag = part.trim();
+      if (tag.length === 0) continue;
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+      tags.push(tag);
+    }
     onChange({ ...filters, tags });
   }
+  // The `key` forces React to remount the uncontrolled input whenever
+  // the canonical filter value changes (e.g. via "Clear filters") so a
+  // stale `defaultValue` can't shadow the reset state.
+  const value = filters.tags.join(', ');
   return (
     <label className="flex items-center gap-2 text-sm">
       <span>{t('solve.filters.tags')}</span>
       <input
+        key={value}
         type="text"
         placeholder={t('solve.filters.tagsPlaceholder')}
-        defaultValue={filters.tags.join(', ')}
+        defaultValue={value}
         onBlur={(e) => commit(e.target.value)}
         className="rounded border px-2 py-1 text-sm"
       />

@@ -20,176 +20,39 @@
  *
  * The public surface is split into three layers:
  *
- *   - `loadSubstitutionsIndex(db, recipeIds?)` — one-shot bulk load of
- *     every global sub + every recipe-scoped sub for the given recipe
- *     IDs (omit = every recipe-scoped sub in the table). The solver
- *     calls this once per request and walks every line through the
- *     in-memory index; PRD-149's per-line procedure passes a single
- *     recipe ID.
- *   - `resolveCandidatesForLine(index, ctx)` — pure function that takes
- *     the prebuilt index plus a line context and returns the ordered
- *     candidate set after scope override + context-tag filtering.
+ *   - `loadSubstitutionsIndex(db, recipeIds?)` — one-shot bulk load
+ *     scoped via SQL to global edges + recipe-scoped edges for the
+ *     given recipe IDs (omit = every edge in the table).
+ *   - `resolveCandidatesForLine(index, ctx)` — pure function that
+ *     filters the prebuilt index for one line context.
  *   - `loadBatchInventory(db)` — bulk pantry snapshot keyed by
- *     `(variantId, prepStateId|null)` so callers can score candidates
- *     without re-querying `batches` per line.
+ *     `(variantId, prepStateId|null)`.
+ *
+ * SQL + type plumbing lives in sibling files (`-loaders.ts`,
+ * `-types.ts`) so each file stays under the per-file lint cap.
  */
-import { and, isNull, sql } from 'drizzle-orm';
+export {
+  buildInventoryKey,
+  loadBatchInventory,
+  loadSubstitutionsIndex,
+  parseContextTags,
+} from './substitutions-resolve-loaders.js';
+export type {
+  BatchInventory,
+  BatchInventoryEntry,
+  LineCtx,
+  SubstitutionCandidate,
+  SubstitutionEdge,
+  SubstitutionScope,
+  SubstitutionsIndex,
+} from './substitutions-resolve-types.js';
 
-import { batches, substitutions, type FoodDb } from '@pops/app-food-db';
-
-export type SubstitutionScope = 'global' | 'recipe';
-
-/** Bucket of pantry batches for one `(variantId, prepStateId|null)` key. */
-export interface BatchInventoryEntry {
-  /** Sum of `qty_remaining` across every non-deleted, non-empty batch. */
-  totalQty: number;
-  unit: 'g' | 'ml' | 'count';
-}
-
-/** Snapshot of every active batch indexed by `(variantId, prepStateId|null)`. */
-export interface BatchInventory {
-  byVariantPrep: ReadonlyMap<string, BatchInventoryEntry>;
-}
-
-export interface SubstitutionEdge {
-  id: number;
-  fromIngredientId: number | null;
-  fromVariantId: number | null;
-  toIngredientId: number | null;
-  toVariantId: number | null;
-  ratio: number;
-  contextTags: readonly string[];
-  scope: SubstitutionScope;
-  recipeId: number | null;
-}
-
-/** Bulk-loaded edge index — global + per-recipe scoped. */
-export interface SubstitutionsIndex {
-  global: readonly SubstitutionEdge[];
-  byRecipe: ReadonlyMap<number, readonly SubstitutionEdge[]>;
-}
-
-/** Inputs to the per-line resolver. */
-export interface LineCtx {
-  recipeId: number;
-  ingredientId: number;
-  variantId: number | null;
-  recipeTags: readonly string[];
-}
-
-/** One candidate edge after override + context-tag filtering. */
-export interface SubstitutionCandidate {
-  edgeId: number;
-  ratio: number;
-  toIngredientId: number | null;
-  toVariantId: number | null;
-  scope: SubstitutionScope;
-}
-
-function inventoryKey(variantId: number, prepStateId: number | null): string {
-  return prepStateId === null ? `${variantId}|*` : `${variantId}|${prepStateId}`;
-}
-
-export function buildInventoryKey(variantId: number, prepStateId: number | null): string {
-  return inventoryKey(variantId, prepStateId);
-}
-
-export function loadBatchInventory(db: FoodDb): BatchInventory {
-  const rows = db
-    .select({
-      variantId: batches.variantId,
-      prepStateId: batches.prepStateId,
-      qtyRemaining: batches.qtyRemaining,
-      unit: batches.unit,
-    })
-    .from(batches)
-    .where(and(sql`${batches.qtyRemaining} > 0`, isNull(batches.deletedAt)))
-    .all();
-  const map = new Map<string, BatchInventoryEntry>();
-  for (const row of rows) {
-    const key = inventoryKey(row.variantId, row.prepStateId);
-    const existing = map.get(key);
-    if (existing === undefined) {
-      map.set(key, { totalQty: row.qtyRemaining, unit: row.unit });
-    } else {
-      existing.totalQty += row.qtyRemaining;
-    }
-  }
-  return { byVariantPrep: map };
-}
-
-function parseContextTags(raw: string): readonly string[] {
-  const parsed: unknown = JSON.parse(raw);
-  if (!Array.isArray(parsed)) return [];
-  const out: string[] = [];
-  for (const value of parsed) {
-    if (typeof value === 'string') out.push(value);
-  }
-  return out;
-}
-
-function rowToEdge(row: {
-  id: number;
-  fromIngredientId: number | null;
-  fromVariantId: number | null;
-  toIngredientId: number | null;
-  toVariantId: number | null;
-  ratio: number;
-  contextTags: string;
-  scope: SubstitutionScope;
-  recipeId: number | null;
-}): SubstitutionEdge {
-  return {
-    id: row.id,
-    fromIngredientId: row.fromIngredientId,
-    fromVariantId: row.fromVariantId,
-    toIngredientId: row.toIngredientId,
-    toVariantId: row.toVariantId,
-    ratio: row.ratio,
-    contextTags: parseContextTags(row.contextTags),
-    scope: row.scope,
-    recipeId: row.recipeId,
-  };
-}
-
-export function loadSubstitutionsIndex(
-  db: FoodDb,
-  recipeIds?: readonly number[]
-): SubstitutionsIndex {
-  const rows = db
-    .select({
-      id: substitutions.id,
-      fromIngredientId: substitutions.fromIngredientId,
-      fromVariantId: substitutions.fromVariantId,
-      toIngredientId: substitutions.toIngredientId,
-      toVariantId: substitutions.toVariantId,
-      ratio: substitutions.ratio,
-      contextTags: substitutions.contextTags,
-      scope: substitutions.scope,
-      recipeId: substitutions.recipeId,
-    })
-    .from(substitutions)
-    .all();
-  const recipeFilter = recipeIds === undefined ? null : new Set<number>(recipeIds);
-  const global: SubstitutionEdge[] = [];
-  const byRecipe = new Map<number, SubstitutionEdge[]>();
-  for (const row of rows) {
-    const edge = rowToEdge(row);
-    if (edge.scope === 'global') {
-      global.push(edge);
-      continue;
-    }
-    if (edge.recipeId === null) continue;
-    if (recipeFilter !== null && !recipeFilter.has(edge.recipeId)) continue;
-    const bucket = byRecipe.get(edge.recipeId);
-    if (bucket === undefined) {
-      byRecipe.set(edge.recipeId, [edge]);
-    } else {
-      bucket.push(edge);
-    }
-  }
-  return { global, byRecipe };
-}
+import type {
+  LineCtx,
+  SubstitutionCandidate,
+  SubstitutionEdge,
+  SubstitutionsIndex,
+} from './substitutions-resolve-types.js';
 
 function edgeMatchesFromSide(edge: SubstitutionEdge, ctx: LineCtx): boolean {
   if (edge.fromVariantId !== null) {
