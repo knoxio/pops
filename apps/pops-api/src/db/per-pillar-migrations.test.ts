@@ -202,18 +202,22 @@ describe('runPerPillarMigrations', () => {
   it('falls back to the real repo root when no override is supplied', async () => {
     // Smoke check: importing the runner under the real layout exercises
     // the workspace fallback path against an actual on-disk pillar dir.
-    // `core` now owns its journal at `packages/core-db/migrations/` (core
-    // pillar Phase 1 PR 2) so the runner discovers + applies the
-    // 0054_service_accounts entry. Pillars without their own journal yet
-    // still skip cleanly.
+    // `core` owns `packages/core-db/migrations/` with 0054_service_accounts
+    // (core pillar Phase 1 PR 2) and `media` owns `packages/media-db/migrations/`
+    // with 0021_spooky_lockheed (media pillar Phase 1 PR 2). Pillars without
+    // their own journal yet still skip cleanly.
     await withDb((db) => {
       const realPillars: PillarDescriptor[] = [
         { id: 'core', dbPackageDir: 'packages/core-db' },
+        { id: 'media', dbPackageDir: 'packages/media-db' },
         { id: 'unmigrated', dbPackageDir: 'packages/this-dir-does-not-exist-db' },
       ];
       const result = runPerPillarMigrations(db, realPillars);
-      expect(result.applied).toEqual(['0054_service_accounts']);
-      expect(result.pillarsApplied).toEqual(['core']);
+      expect([...result.applied].toSorted()).toEqual([
+        '0021_spooky_lockheed',
+        '0054_service_accounts',
+      ]);
+      expect([...result.pillarsApplied].toSorted()).toEqual(['core', 'media']);
       expect(result.pillarsSkipped).toEqual(['unmigrated']);
     });
   });
