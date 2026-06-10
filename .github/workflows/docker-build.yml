@@ -13,6 +13,7 @@ on:
       - "apps/pops-inventory-api/**"
       - "apps/pops-media-api/**"
       - "apps/pops-cerebrum-api/**"
+      - "apps/pops-food-api/**"
       - "packages/**"
       - "infra/docker-compose*.yml"
       - "pnpm-lock.yaml"
@@ -42,6 +43,7 @@ jobs:
               - 'apps/pops-inventory-api/**'
               - 'apps/pops-media-api/**'
               - 'apps/pops-cerebrum-api/**'
+              - 'apps/pops-food-api/**'
               - 'packages/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
@@ -94,6 +96,10 @@ jobs:
       - name: Build pops-cerebrum-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-cerebrum-api/Dockerfile .
+
+      - name: Build pops-food-api (builder stage)
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: docker build --target builder -f apps/pops-food-api/Dockerfile .
 
   compose-validate:
     name: Validate docker-compose
