@@ -14,9 +14,12 @@
 -- recorded — same backfill mechanic inventory's `0006_inventory_pillar_baseline`
 -- relies on (#2792).
 --
--- DDL copied byte-for-byte from
--- `apps/pops-api/src/db/drizzle-migrations/0000_naive_chameleon.sql`
--- so the resulting schema is identical to the shared baseline.
+-- Statements are sourced from
+-- `apps/pops-api/src/db/drizzle-migrations/0000_naive_chameleon.sql`.
+-- File-level layout differs (statement-breakpoint placement, table
+-- ordering scoped to the finance-owned set) but each CREATE TABLE /
+-- CREATE INDEX body matches the shared baseline so the resulting
+-- schema is identical.
 
 CREATE TABLE `entities` (
 	`id` text PRIMARY KEY NOT NULL,
