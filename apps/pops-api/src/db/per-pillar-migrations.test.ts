@@ -203,21 +203,25 @@ describe('runPerPillarMigrations', () => {
     // Smoke check: importing the runner under the real layout exercises
     // the workspace fallback path against an actual on-disk pillar dir.
     // `core` owns `packages/core-db/migrations/` with 0054_service_accounts
-    // (core pillar Phase 1 PR 2) and `media` owns `packages/media-db/migrations/`
-    // with 0021_spooky_lockheed (media pillar Phase 1 PR 2). Pillars without
-    // their own journal yet still skip cleanly.
+    // (core pillar Phase 1 PR 2), `media` owns `packages/media-db/migrations/`
+    // with 0021_spooky_lockheed (media pillar Phase 1 PR 2), and `inventory`
+    // owns `packages/inventory-db/migrations/` with 0005_fancy_crystal
+    // (inventory pillar Phase 1 PR 2). Pillars without their own journal
+    // yet still skip cleanly.
     await withDb((db) => {
       const realPillars: PillarDescriptor[] = [
         { id: 'core', dbPackageDir: 'packages/core-db' },
         { id: 'media', dbPackageDir: 'packages/media-db' },
+        { id: 'inventory', dbPackageDir: 'packages/inventory-db' },
         { id: 'unmigrated', dbPackageDir: 'packages/this-dir-does-not-exist-db' },
       ];
       const result = runPerPillarMigrations(db, realPillars);
       expect([...result.applied].toSorted()).toEqual([
+        '0005_fancy_crystal',
         '0021_spooky_lockheed',
         '0054_service_accounts',
       ]);
-      expect([...result.pillarsApplied].toSorted()).toEqual(['core', 'media']);
+      expect([...result.pillarsApplied].toSorted()).toEqual(['core', 'inventory', 'media']);
       expect(result.pillarsSkipped).toEqual(['unmigrated']);
     });
   });

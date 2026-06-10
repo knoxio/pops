@@ -31,6 +31,30 @@ jobs:
               - '.github/workflows/inventory-db-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
+  migration-drift-guard:
+    name: Migration drift (shared vs inventory-db)
+    needs: [changes]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Skip — no relevant changes"
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
+        run: echo "Skipping — no relevant changes"
+      - uses: actions/checkout@v6
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
+      - name: Diff inventory-db copy against shared journal copy
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
+        run: |
+          set -euo pipefail
+          shared='apps/pops-api/src/db/drizzle-migrations/0005_fancy_crystal.sql'
+          pillar='packages/inventory-db/migrations/0005_fancy_crystal.sql'
+          if ! diff -q "$shared" "$pillar"; then
+            echo "::error::Migration drift detected: $shared and $pillar must be byte-identical during the transitional release cycle (inventory pillar phase 1)."
+            diff "$shared" "$pillar" || true
+            exit 1
+          fi
+          echo "OK — both 0005_fancy_crystal.sql copies are byte-identical."
+
   quality:
     needs: [changes]
     if: always()

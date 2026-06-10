@@ -6,12 +6,14 @@
  * Higher-level tRPC coverage lives in pops-api's own integration suite
  * (until the cutover PR routes it through this package).
  *
- * The locations CREATE TABLE is read from the shared drizzle journal so
- * the test catches drift between the production migration and the
- * schema; `home_inventory` is inlined with just the columns this slice
- * exercises (`id`, `item_name`, `location_id`) because its canonical
- * migration (`0000_naive_chameleon`) bundles unrelated FK tables — the
- * items slice will read its own SQL file when it lands.
+ * The locations CREATE TABLE is read from the package's own journal at
+ * `packages/inventory-db/migrations/0005_fancy_crystal.sql`. A drift
+ * guard in `inventory-db-quality.yml` keeps that file byte-identical to
+ * the shared journal copy until the deletion PR retires the shared one.
+ * `home_inventory` is inlined with the columns this slice exercises
+ * because its canonical migration (`0000_naive_chameleon`) bundles
+ * unrelated FK tables — the items slice will read its own SQL file when
+ * it lands.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -45,10 +47,7 @@ import {
 
 import type { InventoryDb } from '../services/internal.js';
 
-const LOCATIONS_MIGRATION = join(
-  __dirname,
-  '../../../../apps/pops-api/src/db/drizzle-migrations/0005_fancy_crystal.sql'
-);
+const LOCATIONS_MIGRATION = join(__dirname, '../../migrations/0005_fancy_crystal.sql');
 
 const HOME_INVENTORY_DDL = `
 CREATE TABLE home_inventory (
