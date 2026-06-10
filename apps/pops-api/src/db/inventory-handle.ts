@@ -13,8 +13,11 @@
  * `core-handle.ts` / `media-handle.ts` / ... once those pillars start
  * pulling their wiring out of the central file.
  */
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+
 import { openInventoryDb, type InventoryDb, type OpenedInventoryDb } from '@pops/inventory-db';
 
+import { getDb, isNamedEnvContext } from '../db.js';
 import { backfillInventoryFromShared } from './backfill-inventory-from-shared.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
 
@@ -23,13 +26,21 @@ let inventoryDb: OpenedInventoryDb | null = null;
 /**
  * Resolve (and lazily open) the inventory pillar's drizzle handle.
  *
- * The handle is opened here on first call so the per-pillar migrations
- * apply at boot. Phase 2 PR 2 does NOT yet route any production traffic
- * through it — the existing shared singleton continues to serve every
- * read/write. The handle is here so PR 3 can flip locations + items +
- * uri-handler callers over with a one-line edit.
+ * **Env-aware**: inside a `withEnvDb()` scope (PRD-101 named environments —
+ * each E2E test fixture creates a per-test pops.db with its own seeded
+ * inventory tables) the env DB takes precedence. The env DB already
+ * contains every inventory-owned table because `seedDatabase()` writes
+ * them there, so a single fixture stays self-contained without a
+ * background backfill into the global `inventory.db`. Outside an env
+ * scope (real production boot, dev), the pillar's `inventory.db` is
+ * resolved + lazily opened so the in-package migrations apply.
+ *
+ * The handle is opened on first call so per-pillar migrations land
+ * before any request hits the API. Phase 2 PR 3 routes every inventory
+ * module read/write through this getter.
  */
 export function getInventoryDrizzle(): InventoryDb {
+  if (isNamedEnvContext()) return drizzle(getDb()) as InventoryDb;
   if (!inventoryDb) {
     inventoryDb = openInventoryDb(resolveInventorySqlitePath());
   }
@@ -38,14 +49,15 @@ export function getInventoryDrizzle(): InventoryDb {
 
 /**
  * Resolve the inventory pillar's raw better-sqlite3 handle. Same lazy
- * open as `getInventoryDrizzle()` — the underlying connection is the
- * same; the drizzle wrapper hides `.transaction()` / `.prepare()` /
- * `.pragma()` which a handful of inventory module call sites still
- * need (e.g. `photos.reorderPhotos` wraps a batch update in a
- * better-sqlite3 transaction). Prefer `getInventoryDrizzle()` for
- * everything that doesn't need that lower-level API.
+ * open + env-aware behaviour as `getInventoryDrizzle()` — the drizzle
+ * wrapper hides `.transaction()` / `.prepare()` / `.pragma()` which a
+ * handful of inventory module call sites still need (e.g.
+ * `photos.reorderPhotos` wraps a batch update in a better-sqlite3
+ * transaction). Prefer `getInventoryDrizzle()` for everything that
+ * doesn't need that lower-level API.
  */
 export function getInventoryRawDb(): OpenedInventoryDb['raw'] {
+  if (isNamedEnvContext()) return getDb();
   if (!inventoryDb) {
     inventoryDb = openInventoryDb(resolveInventorySqlitePath());
   }
