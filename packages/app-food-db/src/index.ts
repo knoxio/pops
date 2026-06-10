@@ -30,6 +30,7 @@ export * as inboxService from './services/inbox.js';
 export * as inboxQueries from './services/inbox-queries.js';
 export * as ingredientsService from './services/ingredients.js';
 export * as ingredientsQueries from './services/ingredients-queries.js';
+export * as ingredientTagsService from './services/ingredient-tags.js';
 export * as planService from './services/plan.js';
 export * as prepStatesService from './services/prep-states.js';
 export * as recipeRunsService from './services/recipe-runs.js';
@@ -112,6 +113,12 @@ export type {
   RecipeRefRow,
   RecipeRefsSummary,
 } from './services/ingredients-queries.js';
+export type {
+  IngredientSummary,
+  TagDistinctRow,
+  TagErrorCode,
+  TagOpResult,
+} from './services/ingredient-tags.js';
 export type { SlugMatch } from './services/slug-search.js';
 export type { SubstitutionScope, SubstitutionView } from './services/substitutions-queries.js';
 export type {

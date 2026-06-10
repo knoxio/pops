@@ -51,6 +51,7 @@ function renderAt(initialPath: string) {
           { path: 'prep-states', element: <StubTabContent slug="prep-states" /> },
           { path: 'substitutions', element: <StubTabContent slug="substitutions" /> },
           { path: 'conversions', element: <StubTabContent slug="conversions" /> },
+          { path: 'tags', element: <StubTabContent slug="tags" /> },
         ],
       },
     ],
@@ -89,7 +90,7 @@ describe('PRD-122 — /food/data shell', () => {
     renderAt('/food/data/ingredients');
     const tablist = await screen.findByRole('tablist', { name: /data tabs/i }, { timeout: 5000 });
     const tabs = tablist.querySelectorAll('a[role="tab"]');
-    expect(tabs).toHaveLength(5);
+    expect(tabs).toHaveLength(6);
   });
 
   it('marks the active tab via aria-selected + tabIndex', async () => {
@@ -128,7 +129,7 @@ describe('PRD-122 — /food/data shell', () => {
       { timeout: 5000 }
     );
     const options = dropdown.querySelectorAll('option');
-    expect(options).toHaveLength(5);
+    expect(options).toHaveLength(6);
     expect((dropdown as HTMLSelectElement).value).toBe('ingredients');
   });
 });

@@ -14,7 +14,7 @@ This epic closes the food theme's value loop: ingest → recipes → plan → co
 
 | #   | PRD                                                                                   | Summary                                                                                                         | Status      |
 | --- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------- |
-| 151 | [Store-Section Taxonomy](../prds/151-store-section-taxonomy/README.md)                | `ingredient_tags(ingredient_id, tag)` many-to-many; `store-section:*` namespaced tags; CRUD addition to PRD-122 | Not started |
+| 151 | [Store-Section Taxonomy](../prds/151-store-section-taxonomy/README.md)                | `ingredient_tags(ingredient_id, tag)` many-to-many; `store-section:*` namespaced tags; CRUD addition to PRD-122 | Done        |
 | 152 | [Plan-Derived Shopping List Generator](../prds/152-plan-shopping-generator/README.md) | `/food/shopping/from-plan` + plan-grid button; strict pantry subtraction; section-sorted output                 | Not started |
 
 ### Build order

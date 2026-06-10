@@ -36,6 +36,16 @@ const mockRecipeRefsQuery = vi.fn(() => ({ data: { count: 0, recipes: [] }, isLo
 const mockInvalidateList = vi.fn();
 const mockInvalidateGet = vi.fn();
 const mockInvalidateBlockers = vi.fn();
+const mockInvalidateTagsList = vi.fn();
+const mockInvalidateTagsDistinct = vi.fn();
+// Stable references avoid an infinite-render loop in IngredientTagsEditor's
+// `useEffect`-on-remote-tags, which compares the array via the cached
+// useQuery result. A fresh literal per call kept changing identity → loop.
+const TAGS_LIST_RESULT = { data: { tags: [] as string[] }, isLoading: false };
+const TAGS_DISTINCT_RESULT = {
+  data: { tags: [] as Array<{ tag: string; ingredientCount: number; firstSeenAt: string }> },
+  isLoading: false,
+};
 
 const stubs: Record<string, CallStub> = {};
 function makeStub(): CallStub {
@@ -50,6 +60,7 @@ function resetStubs() {
     'createVariant',
     'updateVariant',
     'deleteVariant',
+    'setTags',
   ]) {
     stubs[key] = makeStub();
   }
@@ -76,6 +87,14 @@ vi.mock('@pops/api-client', () => ({
         rename: { useMutation: buildUseMutation('renameIngredient') },
         changeParent: { useMutation: buildUseMutation('changeParent') },
         delete: { useMutation: buildUseMutation('deleteIngredient') },
+        // PRD-151 — detail-panel renders IngredientTagsEditor which calls into
+        // these. Stable references (NOT a fresh literal per call) avoid an
+        // infinite render loop in the editor's `useEffect`-on-remote-tags.
+        tags: {
+          list: { useQuery: () => TAGS_LIST_RESULT },
+          distinct: { useQuery: () => TAGS_DISTINCT_RESULT },
+          set: { useMutation: buildUseMutation('setTags') },
+        },
       },
       variants: {
         create: { useMutation: buildUseMutation('createVariant') },
@@ -89,6 +108,10 @@ vi.mock('@pops/api-client', () => ({
           list: { invalidate: mockInvalidateList },
           get: { invalidate: mockInvalidateGet },
           blockers: { invalidate: mockInvalidateBlockers },
+          tags: {
+            list: { invalidate: mockInvalidateTagsList },
+            distinct: { invalidate: mockInvalidateTagsDistinct },
+          },
         },
       },
     }),

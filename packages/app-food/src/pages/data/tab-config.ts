@@ -6,7 +6,7 @@
  * i18n key under the `food` namespace.
  */
 export interface FoodDataTab {
-  slug: 'ingredients' | 'aliases' | 'prep-states' | 'substitutions' | 'conversions';
+  slug: 'ingredients' | 'aliases' | 'prep-states' | 'substitutions' | 'conversions' | 'tags';
   labelKey: string;
 }
 
@@ -16,6 +16,9 @@ export const FOOD_DATA_TABS: readonly FoodDataTab[] = [
   { slug: 'prep-states', labelKey: 'data.tabs.prepStates' },
   { slug: 'substitutions', labelKey: 'data.tabs.substitutions' },
   { slug: 'conversions', labelKey: 'data.tabs.conversions' },
+  // PRD-151 — read-only vocabulary view; per-ingredient editing lives on the
+  // Ingredients tab's detail panel.
+  { slug: 'tags', labelKey: 'data.tabs.tags' },
 ];
 
 export const DEFAULT_TAB_SLUG: FoodDataTab['slug'] = 'ingredients';

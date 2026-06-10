@@ -114,6 +114,10 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   // PRD-145 — batches.deleted_at soft-delete column (service-enforced invariant
   // deleted_at IS NOT NULL → qty_remaining = 0).
   '0069_prd_145_batches_deleted_at': 'food',
+  // PRD-151 — ingredient_tags many-to-many table + NOCASE + namespace
+  // expression index. Powers PRD-122's tag editor + PRD-152's plan-derived
+  // shopping list generator.
+  '0070_prd_151_ingredient_tags': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

@@ -11,6 +11,7 @@ import {
   check,
   index,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
@@ -108,5 +109,28 @@ export const ingredientAliases = sqliteTable(
     unique('uq_aliases_alias_target').on(t.alias, t.ingredientId, t.variantId),
     // Case-insensitive alias index — migration hand-edited for COLLATE NOCASE.
     index('idx_aliases_alias').on(t.alias),
+  ]
+);
+
+export const ingredientTags = sqliteTable(
+  'ingredient_tags',
+  {
+    ingredientId: integer('ingredient_id')
+      .notNull()
+      .references(() => ingredients.id, { onDelete: 'cascade' }),
+    tag: text('tag').notNull(),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => [
+    primaryKey({ columns: [t.ingredientId, t.tag] }),
+    // Case-insensitive tag index — migration hand-edited for COLLATE NOCASE so
+    // the autocomplete lookup matches case-insensitively without scanning.
+    index('idx_ingredient_tags_tag').on(t.tag),
+    // Namespace expression index added by hand in the migration —
+    // ON ingredient_tags(SUBSTR(tag, 1, INSTR(tag || ':', ':') - 1))
+    //   WHERE INSTR(tag, ':') > 0
+    // supports PRD-152's `WHERE tag LIKE 'store-section:%'` lookups.
   ]
 );

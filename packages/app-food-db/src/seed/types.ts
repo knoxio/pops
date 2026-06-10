@@ -37,6 +37,7 @@ export interface StepCounts {
   ingestSources: number;
   unitConversions: number;
   ingredientWeights: number;
+  ingredientTags: number;
 }
 
 /** Final summary returned by `seedFood`. */
@@ -63,6 +64,7 @@ export const ZERO_COUNTS: StepCounts = {
   ingestSources: 0,
   unitConversions: 0,
   ingredientWeights: 0,
+  ingredientTags: 0,
 };
 
 /**

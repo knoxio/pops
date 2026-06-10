@@ -12,6 +12,7 @@ import {
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { ingredientTagsRouter } from './ingredient-tags.js';
 
 const UNIT_ENUM = z.enum(['g', 'ml', 'count']);
 
@@ -63,6 +64,8 @@ const UPDATE_INPUT = z
   });
 
 export const ingredientsRouter = router({
+  tags: ingredientTagsRouter,
+
   list: protectedProcedure
     .input(z.object({ search: z.string().optional(), parentId: z.number().nullable().optional() }))
     .query(({ input }) => {

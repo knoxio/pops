@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@pops/ui';
 
+import { IngredientTagsEditor } from './IngredientTagsEditor';
 import { RecipeRefsSection } from './RecipeRefsSection';
 import { VariantsTable } from './VariantsTable';
 
@@ -54,6 +55,7 @@ export function IngredientDetailPanel(props: Props) {
           onDelete={props.variantsApi.onDelete}
         />
       </section>
+      <IngredientTagsEditor ingredientId={props.ingredient.id} />
       <RecipeRefsSection ingredientId={props.ingredient.id} />
     </article>
   );

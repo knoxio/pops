@@ -31,6 +31,7 @@ export {
   ingestSources,
   ingredientAliases,
   ingredients,
+  ingredientTags,
   ingredientVariants,
   ingredientWeights,
   planEntries,
