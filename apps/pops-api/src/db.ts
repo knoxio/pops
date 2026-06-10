@@ -14,6 +14,7 @@ import { closeFinanceDb } from './db/finance-handle.js';
 import { closeFoodDb } from './db/food-handle.js';
 import { closeInventoryDb } from './db/inventory-handle.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
+import { closeListsDb } from './db/lists-handle.js';
 import { closeMediaDb } from './db/media-db-handle.js';
 import { migrationOwners } from './db/migration-ownership.js';
 import {
@@ -243,6 +244,7 @@ export function closeDb(): void {
   closeMediaDb();
   closeCerebrumDb();
   closeFoodDb();
+  closeListsDb();
 }
 
 /**
