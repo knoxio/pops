@@ -7,10 +7,10 @@
  * following the core pilot, per ADR-026.
  *
  * Per the CI-never-breaks pattern the migration is incremental. The
- * shipped slices so far are wish-list, tag-vocabulary, and
- * transaction-tag-rules (all scaffolded — cutover lands in later PRs).
- * The remaining slices (budgets, transactions, transaction_corrections,
- * imports, URI dispatcher) follow in subsequent PRs.
+ * shipped slices so far are wish-list, tag-vocabulary, transaction-tag-rules,
+ * and transaction-corrections (all scaffolded — cutover lands in later PRs).
+ * The remaining slices (budgets, transactions, imports, URI dispatcher)
+ * follow in subsequent PRs.
  */
 export * from './errors.js';
 export * from './schema.js';
@@ -63,6 +63,7 @@ export type {
   ImportTransactionRow,
   CreateImportEntityResult,
 } from './services/imports.js';
+<<<<<<< HEAD
 export * as budgetsService from './services/budgets.js';
 
 export type {
@@ -73,3 +74,17 @@ export type {
   UpdateBudgetInput,
   ListBudgetsOptions,
 } from './services/budgets.js';
+||||||| parent of 3d22937f (feat(finance-db): scaffold transaction_corrections slice (Track N3 phase 1 PR 1))
+=======
+export * as transactionCorrectionsService from './services/transaction-corrections.js';
+
+export {
+  type TransactionCorrectionRow,
+  type TransactionCorrectionMatchType,
+  type TransactionCorrectionTransactionType,
+  type CreateTransactionCorrectionInput,
+  type UpdateTransactionCorrectionInput,
+  type TransactionCorrectionListResult,
+  type TransactionCorrectionListQuery,
+} from './services/transaction-corrections.js';
+>>>>>>> 3d22937f (feat(finance-db): scaffold transaction_corrections slice (Track N3 phase 1 PR 1))
