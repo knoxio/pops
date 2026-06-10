@@ -27,3 +27,5 @@ export * from './schema.js';
 export type { ListsDb } from './services/internal.js';
 
 export * as listItemsService from './services/list-items.js';
+
+export { openListsDb, type OpenedListsDb } from './open-lists-db.js';
