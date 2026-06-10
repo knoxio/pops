@@ -48,7 +48,10 @@ export function InboxLayout({
               type="button"
               role="tab"
               aria-selected={isActive}
-              aria-controls={`inbox-panel-${tab.key}`}
+              // Single tabpanel that swaps content per tab; every tab points
+              // at the same stable id so screen readers don't break on the
+              // inactive tabs referencing a non-existent element.
+              aria-controls="inbox-panel"
               onClick={() => onTabChange(tab.key)}
               className={`px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
@@ -67,7 +70,7 @@ export function InboxLayout({
           );
         })}
       </nav>
-      <div role="tabpanel" id={`inbox-panel-${activeTab}`}>
+      <div role="tabpanel" id="inbox-panel">
         {children}
       </div>
     </div>

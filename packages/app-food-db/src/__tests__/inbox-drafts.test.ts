@@ -240,6 +240,23 @@ describe('PRD-134 — filter + sort + pagination behaviour', () => {
     expect(blockedOnly.items.length).toBeGreaterThan(0);
   });
 
+  it('returns no rows when bands is explicitly empty (UI toggled every chip off)', () => {
+    // Regression: previously `bands.length > 0` collapsed the empty array to
+    // "no band filter applied", which is the opposite of what the UI means.
+    // Toggling every chip off must surface zero matches, not the full set.
+    const all = listDrafts(env.db, { limit: 20 });
+    expect(all.items.length).toBeGreaterThan(0);
+    const empty = listDrafts(env.db, { bands: [], limit: 20 });
+    expect(empty.items).toHaveLength(0);
+  });
+
+  it('returns no rows when partialReasons is explicitly empty', () => {
+    // Same shape as the bands regression — an explicit empty array means
+    // "no row qualifies on this axis", not "no filter".
+    const empty = listDrafts(env.db, { partialReasons: [], limit: 20 });
+    expect(empty.items).toHaveLength(0);
+  });
+
   it('filters by kind (SQL-pushed)', () => {
     const igOnly = listDrafts(env.db, { kinds: ['url-instagram'], limit: 20 });
     expect(igOnly.items.every((r) => r.ingestKind === 'url-instagram')).toBe(true);

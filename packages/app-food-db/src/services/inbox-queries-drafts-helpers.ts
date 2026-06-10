@@ -24,8 +24,11 @@ import type { IngestSourceKind } from '@pops/db-types';
  *
  * Pagination cursor encodes `(score, ingestedAt, versionId)` so identical
  * scores break by recency and identical `(score, ingestedAt)` break by
- * versionId DESC. Same cursor shape across every sort order; the sort key
- * just changes which field drives the primary compare.
+ * versionId. Tie-break direction matches the sort: `oldest` breaks ties
+ * by versionId ASC (oldest version-id first within a same-instant batch);
+ * the other three orders break ties by versionId DESC (newest first).
+ * Same cursor shape across every sort order; the sort key just changes
+ * which field drives the primary compare.
  */
 import type { gatherQualityInputsForVersions } from '../inbox/gather-quality-inputs.js';
 import type { ListPage } from './inbox-queries-shared.js';
@@ -70,8 +73,12 @@ function passesFilters(
   qi: NonNullable<ReturnType<ReturnType<typeof gatherQualityInputsForVersions>['get']>>,
   filter: ListDraftsFilter
 ): boolean {
-  if (filter.bands && filter.bands.length > 0 && !filter.bands.includes(band)) return false;
-  if (filter.partialReasons && filter.partialReasons.length > 0) {
+  // Treat a present array as the explicit allowed set — including the empty
+  // one. The UI can reach `bands: []` by toggling every chip off; an empty
+  // array means "no band matches", not "no filter applied". Same shape for
+  // `partialReasons`.
+  if (Array.isArray(filter.bands) && !filter.bands.includes(band)) return false;
+  if (Array.isArray(filter.partialReasons)) {
     if (qi.partialReason === undefined) return false;
     if (!filter.partialReasons.includes(qi.partialReason)) return false;
   }

@@ -16,7 +16,7 @@
  * and the shapes live in `inbox-queries-drafts-types` — the split keeps
  * each module under the per-file lint cap.
  */
-import { and, eq, inArray, isNull, type SQL } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull, type SQL } from 'drizzle-orm';
 
 import { gatherQualityInputsForVersions } from '../inbox/gather-quality-inputs.js';
 import { ingestSources, recipes, recipeVersions } from '../schema.js';
@@ -66,13 +66,13 @@ export function listDrafts(
  */
 export function countPendingDrafts(db: FoodDb): number {
   const rows = db
-    .select({ id: recipeVersions.id })
+    .select({ n: count() })
     .from(recipeVersions)
     .innerJoin(ingestSources, eq(ingestSources.id, recipeVersions.sourceId))
     .innerJoin(recipes, eq(recipes.id, recipeVersions.recipeId))
     .where(pendingDraftsPredicate(undefined))
     .all();
-  return rows.length;
+  return rows[0]?.n ?? 0;
 }
 
 function selectPendingDraftRows(
