@@ -14,12 +14,6 @@ export * from './errors.js';
 export * from './schema.js';
 export * from './slug.js';
 
-// Re-export from `@pops/food-db` for the slices that have moved to the
-// pillar package as part of Track J phase 1. Existing imports from
-// `@pops/app-food-db` keep resolving — the shim narrows over time as more
-// slices migrate, and disappears entirely in Track J phase 1 PR 4.
-export { PrepStateNotFoundError } from '@pops/food-db';
-
 // Drizzle handle type — re-exported so consumers don't have to reach
 // into the internal services module.
 export { MAX_INGREDIENT_DEPTH, type FoodDb } from './services/internal.js';
