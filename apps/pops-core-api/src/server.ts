@@ -27,9 +27,10 @@ function resolvePort(): number {
 
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
+const selfBaseUrl = process.env['CORE_SELF_BASE_URL'] ?? `http://localhost:${port}`;
 
 const coreDb = openCoreDb(resolveCoreSqlitePath());
-const app = createCoreApiApp({ coreDb, version });
+const app = createCoreApiApp({ coreDb, version, selfBaseUrl });
 
 const server = app.listen(port, () => {
   console.warn(`[core-api] Listening on port ${port}`);
