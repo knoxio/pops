@@ -16,6 +16,7 @@ COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/app-lists/package.json ./packages/app-lists/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
+COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
@@ -41,6 +42,7 @@ COPY packages/app-lists/ ./packages/app-lists/
 COPY packages/app-lists-db/ ./packages/app-lists-db/
 COPY packages/app-food-db/ ./packages/app-food-db/
 COPY packages/core-db/ ./packages/core-db/
+COPY packages/media-db/ ./packages/media-db/
 COPY packages/food-contracts/ ./packages/food-contracts/
 WORKDIR /app/packages/db-types
 RUN pnpm build
@@ -51,6 +53,8 @@ RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/core-db
+RUN pnpm build
+WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
