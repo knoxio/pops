@@ -14,6 +14,7 @@ packages:
   - 'packages/core-db'
   - 'packages/finance-db'
   - 'packages/db-types'
+  - 'packages/inventory-db'
   - 'packages/media-db'
   - 'packages/food-contracts'
   - 'packages/types'
