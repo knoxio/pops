@@ -31,6 +31,10 @@ export function buildDslCompletionSource(sources: DslAutocompleteSources) {
   return async function dslCompletionSource(
     context: CompletionContext
   ): Promise<CompletionResult | null> {
+    // Published versions render in read-only mode (PRD-107); the popup
+    // must not open even for explicit Ctrl-Space requests since the user
+    // can't apply a suggestion to a frozen document anyway.
+    if (context.state.readOnly) return null;
     const text = context.state.doc.toString();
     const ctx = classifyCursor(text, context.pos);
     if (ctx.kind === 'none') {

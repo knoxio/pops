@@ -63,6 +63,7 @@ export function DslEditor(props: DslEditorProps) {
     readOnly,
     issues,
     autocompleteSources: props.autocompleteSources ?? null,
+    ariaLabel: t('editor.ariaLabel'),
   });
 
   const getView = useCallback((): EditorView | null => {
@@ -77,12 +78,7 @@ export function DslEditor(props: DslEditorProps) {
   return (
     <div className={wrapperClass} data-testid="dsl-editor">
       <DslEditorHeader readOnly={readOnly} onOpenReorder={() => reorder.setOpen(true)} />
-      <div
-        ref={hostRef}
-        className="dsl-editor__surface"
-        data-testid="dsl-editor-surface"
-        aria-label={t('editor.ariaLabel')}
-      />
+      <div ref={hostRef} className="dsl-editor__surface" data-testid="dsl-editor-surface" />
       <ReorderIngredientsPanel
         open={reorder.open}
         onOpenChange={reorder.setOpen}

@@ -15,11 +15,17 @@ import { buildDslCompletionSource } from '../autocomplete-source';
 
 import type { DslAutocompleteSources, SlugKind } from '../autocomplete-types';
 
-function makeContext(text: string) {
+function makeContext(
+  text: string,
+  { readOnly = false, explicit = false }: { readOnly?: boolean; explicit?: boolean } = {}
+) {
   const cursor = text.indexOf('|');
   if (cursor === -1) throw new Error('fixture missing | marker');
   const docText = text.slice(0, cursor) + text.slice(cursor + 1);
-  const state = EditorState.create({ doc: docText });
+  const state = EditorState.create({
+    doc: docText,
+    extensions: readOnly ? [EditorState.readOnly.of(true)] : [],
+  });
   // CodeMirror's CompletionContext type carries a few private fields
   // (`abortListeners`, `parent`) we don't care about here. The source
   // only reads `state`, `pos`, and `explicit`, plus calls `matchBefore`
@@ -27,7 +33,7 @@ function makeContext(text: string) {
   return {
     state,
     pos: cursor,
-    explicit: false,
+    explicit,
     aborted: false,
     addEventListener: () => {},
     tokenBefore: () => null,
@@ -148,5 +154,54 @@ describe('dslCompletionSource', () => {
     const source = buildDslCompletionSource(empty);
     const result = await source(makeContext('@ingredient(1, |'));
     expect(result).toBeNull();
+  });
+
+  describe('read-only mode (PRD-120 part F)', () => {
+    it('returns null at @ even when the cursor is in a function-name context', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(makeContext('@|', { readOnly: true }));
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null inside descriptor-slug context without ever calling searchSlugs', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(makeContext('@ingredient(1, bana|', { readOnly: true }));
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null inside step-ref context without ever calling searchSlugs', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(
+        makeContext('@ingredient(1, banana, 100:g)\n@step("Mash @|")', { readOnly: true })
+      );
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null on explicit (Ctrl-Space) invocation in a function-name slot', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(makeContext('@|', { readOnly: true, explicit: true }));
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null on explicit invocation inside descriptor-slug (Ctrl-Space at empty query)', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      // Without read-only, the explicit + empty-query combo would surface
+      // the "Create new ingredient" affordance (see the implicit suite
+      // above); the read-only gate must override that path too.
+      const result = await source(
+        makeContext('@ingredient(1, |', { readOnly: true, explicit: true })
+      );
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
   });
 });

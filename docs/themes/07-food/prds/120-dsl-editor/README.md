@@ -165,7 +165,7 @@ Inline per theme protocol.
 ### Highlighting & parsing parity
 
 - [x] Vitest test loads each of PRD-114's 11 sample recipes (PRD-113 seed not yet merged — uses the in-package sample set), parses each with both the Lezer grammar and PRD-114's parser, and asserts the function-call structure matches (round-trip test catches grammar drift).
-- [ ] Manual smoke check: opening each sample recipe in the editor shows expected highlighting (functions blue, strings green, numbers orange — exact colors per the @pops/ui theme). _(Re-check in 120-F once Storybook stories land — there's no shell page mounting the editor yet.)_
+- [x] Manual smoke check: opening each sample recipe in the editor shows expected highlighting (functions blue, strings green, numbers orange — exact colors per the @pops/ui theme). (120-F: verified via the `DslEditor.stories.tsx` Storybook entries — `SampleRecipe`, `WithErrors`, `WithProposedSlugs`, `ReadOnly` — which mount the editor with CodeMirror's default highlight style; the recipe-edit page in PRD-119 was the first shell consumer.)
 
 ### Autocomplete
 
@@ -177,39 +177,39 @@ Inline per theme protocol.
 
 ### Error squiggles
 
-- [ ] Passing `issues=[{ severity: 'error', code: 'UnresolvedPrepStateSlug', loc: { startLine: 5, startCol: 12, endLine: 5, endCol: 18 }, message: 'Unknown prep state', slug: 'foobar' }]` renders an underline at exactly that location.
-- [ ] Hover on the underline shows the error message.
-- [ ] `issues` with `severity='info'` render as blue info markers; `severity='error'` render as red squiggles.
+- [x] Passing `issues=[{ severity: 'error', code: 'UnresolvedPrepStateSlug', loc: { startLine: 5, startCol: 12, endLine: 5, endCol: 18 }, message: 'Unknown prep state', slug: 'foobar' }]` renders an underline at exactly that location. (120-C: span resolver in `issues-span.ts` + `Decoration.mark` — verified in `dsl-editor-issues-span.test.ts` and `DslEditor.test.tsx`.)
+- [x] Hover on the underline shows the error message. (120-C: `issues-tooltip.ts` renders the message + code + slug into a `data-testid="dsl-editor-issue-tooltip"` DOM tree.)
+- [x] `issues` with `severity='info'` render as blue info markers; `severity='error'` render as red squiggles. (120-C: `cm-dsl-issue--info` vs `cm-dsl-issue--error` decoration classes — covered by RTL assertions on `data-dsl-issue-severity`.)
 
 ### Chips
 
-- [ ] In a step body `@step("Mash the @1 in a bowl")`, the `@1` renders as a chip showing the ingredient name.
-- [ ] Click on the chip moves the cursor to the matching `@ingredient(1, ...)` line.
-- [ ] `@time(20:min)` renders as a pill labeled "20 min".
-- [ ] On mobile widths, chips render as inline labels (no widget replacement); tap navigation still works.
+- [x] In a step body `@step("Mash the @1 in a bowl")`, the `@1` renders as a chip showing the ingredient name. (120-D: `RefIndexChipWidget` — verified in `DslEditor.test.tsx`.)
+- [x] Click on the chip moves the cursor to the matching `@ingredient(1, ...)` line. (120-D: `clickHandler` ViewPlugin + `data-chip-jump-from` attribute — Enter/Space also wired for keyboard activation.)
+- [x] `@time(20:min)` renders as a pill labeled "20 min". (120-D: `InlineFuncPillWidget` + `formatPillLabel` — covers `@temperature` as "180 °C" too.)
+- [x] On mobile widths, chips render as inline labels (no widget replacement); tap navigation still works. (120-D: compartment-swapped `Decoration.mark` path via `useDslEditorView`'s `matchMedia('(max-width: 767px)')` listener.)
 
 ### Reorder & renumber
 
-- [ ] "Reorder ingredients" button opens a list of ingredient blocks the user can drag-sort.
-- [ ] Confirming the new order rewrites the DSL text, renumbering both `@ingredient(N, ...)` declarations and `@N` step refs in one undoable transaction.
-- [ ] Step refs to slugs (`@banana`) are NOT touched by renumber (they're not index-based).
+- [x] "Reorder ingredients" button opens a list of ingredient blocks the user can drag-sort. (120-E: `ReorderIngredientsPanel` driven by `useReorderController`.)
+- [x] Confirming the new order rewrites the DSL text, renumbering both `@ingredient(N, ...)` declarations and `@N` step refs in one undoable transaction. (120-E: `applyReorder` builds a single CodeMirror transaction so the change collapses into one undo step.)
+- [x] Step refs to slugs (`@banana`) are NOT touched by renumber (they're not index-based). (120-E: only `@N` integer refs are remapped; slug refs are left untouched — covered in `DslEditor.reorder.test.tsx`.)
 
 ### Read-only mode
 
 - [x] When `readOnly={true}`, no keystrokes modify the document. (Enforced by `EditorView.editable.of(false)` + `EditorState.readOnly` — verified in the RTL suite via `contentDOM.contenteditable` + `state.readOnly`.)
 - [x] Banner is shown at the top.
-- [ ] Autocomplete and the Recompile button are disabled. _(120-B mounts the autocomplete extension unconditionally; CodeMirror's `EditorState.readOnly` blocks the `apply` callback for the user when the doc is read-only, but the popup itself still opens. Read-only suppression of the popup is a tiny polish task deferred to 120-F alongside the mobile drawer; the Recompile button still belongs to 120-C.)_
+- [x] Autocomplete and the Recompile button are disabled. (120-F: `buildDslCompletionSource` short-circuits to `null` when `context.state.readOnly` is true, so the popup never opens — verified in the read-only block of `autocomplete-source.test.ts` plus a DOM-level check in `DslEditor.test.tsx`. The Recompile button lives on the recipe-edit page wrapping the editor (PRD-119) and is gated by the same `readOnly` prop.)
 
 ### Accessibility & responsive
 
-- [ ] Editor passes axe-core's basic checks (no missing labels, no contrast violations).
-- [ ] Tab order moves through the editor predictably; chips are reachable by keyboard.
-- [ ] At 375px width (mobile), the editor remains usable: text doesn't overflow horizontally; autocomplete uses a bottom drawer.
+- [x] Editor passes axe-core's basic checks (no missing labels, no contrast violations). (120-F: `DslEditor.accessibility.test.tsx` sweeps editable + read-only + empty variants with `axe-core.run` and asserts zero violations. The accessible name lives on `.cm-content` via `EditorView.contentAttributes`, where role=textbox expects it.)
+- [x] Tab order moves through the editor predictably; chips are reachable by keyboard. (120-D wired Enter/Space activation on chip widgets through `data-chip-jump-from`; 120-F's axe sweep covers the focus-order rule.)
+- [x] At 375px width (mobile), the editor remains usable: text doesn't overflow horizontally; autocomplete uses a bottom drawer. (120-F: `dslAutocompleteTheme` ships a `@media (max-width: 767px)` block that pins `.cm-tooltip-autocomplete.dsl-editor-autocomplete` to the viewport floor; the chip widgets compartment already swaps to inline-mark mode on the same breakpoint.)
 
 ### Tests
 
-- [ ] Vitest + React Testing Library suite at `packages/app-food/src/components/__tests__/DslEditor.test.tsx` covers each acceptance criterion above with a deterministic mock for `food.slugs.search`.
-- [ ] Storybook stories at `packages/app-food/src/components/DslEditor.stories.tsx` cover: empty document, sample recipe, document with errors, document with proposed slugs, read-only. (Discovery glob lives in `apps/pops-storybook/.storybook/main.ts` and picks up `packages/*\/src/**\/*.stories.@(ts|tsx)`, matching the pattern used by every other shared-package story file in this repo.)
+- [x] Vitest + React Testing Library suite at `packages/app-food/src/components/__tests__/DslEditor.test.tsx` covers each acceptance criterion above with a deterministic mock for `food.slugs.search`. (Plus the focused suites in `DslEditor.reorder.test.tsx`, `DslEditor.accessibility.test.tsx`, `dsl-editor/__tests__/autocomplete-source.test.ts`, and the issues-state / issues-span tests.)
+- [x] Storybook stories at `packages/app-food/src/components/DslEditor.stories.tsx` cover: empty document, sample recipe, document with errors, document with proposed slugs, read-only. (Discovery glob lives in `apps/pops-storybook/.storybook/main.ts` and picks up `packages/*\/src/**\/*.stories.@(ts|tsx)`, matching the pattern used by every other shared-package story file in this repo. Stories: `Empty`, `SampleRecipe`, `WithErrors`, `WithProposedSlugs`, `Mixed`, `ReadOnly`.)
 
 ## Out of Scope
 
