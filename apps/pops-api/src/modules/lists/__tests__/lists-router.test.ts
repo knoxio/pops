@@ -24,9 +24,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import BetterSqlite3, { type Database } from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { closeDb, setDb } from '../../../db.js';
+import { setListsDb } from '../../../db/lists-handle.js';
 import { createCaller } from '../../../shared/test-utils.js';
 
 const MIGRATION_FILES = ['0062_chemical_donald_blake.sql'];
@@ -53,11 +55,17 @@ describe('PRD-140 lists router', () => {
   beforeEach(() => {
     raw = createListsTestDb();
     setDb(raw);
+    // Track K phase 2 PR 3 cutover: every lists router call site now
+    // resolves through `getListsDrizzle()` instead of `getDrizzle()`,
+    // so the test fixture has to inject the same in-memory DB into the
+    // lists handle. Without this the singleton would lazy-open
+    // `data/lists.db` mid-suite.
+    setListsDb({ db: drizzle(raw), raw });
   });
 
   afterEach(() => {
+    setListsDb(null);
     closeDb();
-    raw.close();
   });
 
   describe('list.create', () => {
