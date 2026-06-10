@@ -61,6 +61,49 @@ services:
       timeout: 5s
       retries: 3
 
+  # Inventory pillar API (ADR-026, Phase 3 PR 2 of the inventory track).
+  # Hosts inventory.db reads/writes for locations, home_inventory,
+  # fixtures, item_connections, item_documents, item_photos,
+  # item_uploaded_files, and item_fixture_connections. Subsequent PRs
+  # move the tRPC routers + URI dispatcher behind it.
+  inventory-api:
+    build:
+      context: ..
+      dockerfile: apps/pops-inventory-api/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-inventory-api
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      NODE_ENV: production
+      PORT: '3002'
+      INVENTORY_SQLITE_PATH: /data/sqlite/inventory.db
+      INVENTORY_SELF_BASE_URL: http://inventory-api:3002
+      # Cross-pillar registry. Includes core-api by default so /pillars
+      # surfaces both host pillars on the synthetic-entry list.
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002}
+    expose:
+      - '3002'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3002/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   pops-api:
     build:
       context: ..
@@ -92,7 +135,7 @@ services:
       # its compose hostname so pops-api's URI dispatcher can route
       # outbound `pops:core/...` traffic to the new container. Deployers
       # override POPS_PILLARS to extend with sibling pillars.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002}
       # Paperless-ngx integration (optional — leave unset to disable)
       PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
       PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
@@ -102,6 +145,8 @@ services:
       pops-redis:
         condition: service_healthy
       core-api:
+        condition: service_healthy
+      inventory-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -141,11 +186,13 @@ services:
       SQLITE_PATH: /data/sqlite/pops.db
       REDIS_HOST: pops-redis
       REDIS_PORT: '6379'
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002}
     depends_on:
       pops-redis:
         condition: service_healthy
       core-api:
+        condition: service_healthy
+      inventory-api:
         condition: service_healthy
 
   # ── FRONTEND ─────────────────────────────────────────────────────
