@@ -3,8 +3,8 @@
  *
  * Reads `?week=…` from the URL (defaulting to current ISO week), drives
  * navigation buttons, and renders the grid + add modal + edit sheet +
- * slot drawer. Mobile day-swiper is a follow-up — narrow viewports
- * currently use horizontal scroll on the desktop grid.
+ * slot drawer. At `<768px` (the PRD's mobile breakpoint) the week grid
+ * swaps for a day-at-a-time swiper.
  */
 import { useCallback, useState, type ReactElement } from 'react';
 import { useSearchParams } from 'react-router';
@@ -13,9 +13,11 @@ import { Button } from '@pops/ui';
 
 import { AddPlanEntryModal } from './AddPlanEntryModal.js';
 import { addDays, formatLocalDate, formatWeekLabel, toIsoMonday } from './iso-week.js';
+import { PlanDaySwiper } from './PlanDaySwiper.js';
 import { PlanEntryEditSheet } from './PlanEntryEditSheet.js';
 import { PlanWeekGrid } from './PlanWeekGrid.js';
 import { SlotManagementDrawer } from './SlotManagementDrawer.js';
+import { useIsMobile } from './useIsMobile.js';
 import { usePlanPage } from './usePlanPage.js';
 
 interface AddTarget {
@@ -84,6 +86,7 @@ interface BodyProps {
 }
 
 function Body({ weekQuery, slotsQuery, onEdit, onAdd }: BodyProps): ReactElement {
+  const isMobile = useIsMobile();
   if (weekQuery.isLoading || slotsQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading week…</p>;
   }
@@ -102,8 +105,9 @@ function Body({ weekQuery, slotsQuery, onEdit, onAdd }: BodyProps): ReactElement
     );
   }
   if (!weekQuery.data || !slotsQuery.data) return <></>;
+  const View = isMobile ? PlanDaySwiper : PlanWeekGrid;
   return (
-    <PlanWeekGrid
+    <View
       weekStart={weekQuery.data.weekStart}
       slots={slotsQuery.data.slots}
       entries={weekQuery.data.entries}

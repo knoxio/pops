@@ -276,7 +276,7 @@ Inline per theme protocol.
 ### Grid
 
 - [x] Desktop (≥768px) renders the 7-col × N-slot grid with `display_order` row sort.
-- [ ] Mobile (<768px) renders a day-at-a-time swiper. _(Gap — narrow viewports currently fall back to horizontal scroll on the desktop grid.)_
+- [x] Mobile (<768px) renders a day-at-a-time swiper.
 - [x] Plan entry cells show title (truncated), status chip, servings badge.
 - [x] `[+]` button per cell opens the Add modal pre-filled with `(date, slot)`.
 - [x] Past-date cells render desaturated; entries interactive.
@@ -322,9 +322,9 @@ Inline per theme protocol.
 
 ### Mobile
 
-- [ ] Day swiper readable at 375px. _(Gap — see note above.)_
+- [x] Day swiper readable at 375px.
 - [x] Long-press drag works on touch.
-- [ ] Edit sheet renders as a bottom-sheet. _(Currently full-width right drawer at all sizes — follow-up.)_
+- [x] Edit sheet renders as a bottom-sheet.
 
 ## Out of Scope
 

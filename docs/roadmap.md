@@ -176,11 +176,11 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Phase 4 — Expansion Apps
 
-| Theme           | Status      | Notes                                                                                                                                                                                      |
-| --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Travel planner  | Not started |                                                                                                                                                                                            |
-| Books / Reading | Not started |                                                                                                                                                                                            |
-| Food (theme 07) | In progress | Epic 00 (schema) underway; Epic 01 (recipe management) + Epic 03 (review queue) + Epic 05 (meal planning, PRD-143 partial) in flight. See [docs/themes/07-food/](themes/07-food/README.md) |
+| Theme           | Status      | Notes                                                                                                                                                                                                               |
+| --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Travel planner  | Not started |                                                                                                                                                                                                                     |
+| Books / Reading | Not started |                                                                                                                                                                                                                     |
+| Food (theme 07) | In progress | Epic 00 (schema) underway; Epic 01 (recipe management) + Epic 03 (review queue) + Epic 05 (meal planning, PRD-143 done bar deferred Playwright E2E) in flight. See [docs/themes/07-food/](themes/07-food/README.md) |
 
 ### Phase 5 — Mobile & Hardware
 
