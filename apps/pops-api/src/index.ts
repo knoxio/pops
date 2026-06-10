@@ -11,6 +11,7 @@ import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-
 import { backfillFinanceFromSharedDb, getFinanceDrizzle } from './db/finance-handle.js';
 import { backfillFoodFromSharedDb, getFoodDrizzle } from './db/food-handle.js';
 import { backfillInventoryFromSharedDb, getInventoryDrizzle } from './db/inventory-handle.js';
+import { getListsDrizzle } from './db/lists-handle.js';
 import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { closeQueues } from './jobs/queues.js';
@@ -122,6 +123,22 @@ try {
   backfillFoodFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the food pillar SQLite:', err);
+  throw err;
+}
+
+// Eagerly open the lists pillar's SQLite + apply its journal at boot so
+// the in-package migrations land before any request hits the API. Phase
+// 2 PR 2 only opens the handle — no production traffic is routed
+// through it yet; the list_items slice still reads/writes against the
+// shared pops.db. Phase 2 PR 3 flips the list_items slice over with an
+// ATTACH-based backfill from pops.db (matching the inventory / finance
+// / media / core / cerebrum / food PR-3 pattern); PR 4 adds the
+// Litestream config. Opening early surfaces migration failures during
+// boot rather than on first lists-route request.
+try {
+  getListsDrizzle();
+} catch (err) {
+  console.error('[db] Failed to bootstrap the lists pillar SQLite:', err);
   throw err;
 }
 

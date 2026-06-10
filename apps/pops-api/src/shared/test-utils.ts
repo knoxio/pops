@@ -6,6 +6,7 @@ import { setCerebrumDb } from '../db/cerebrum-handle.js';
 import { setFinanceDb } from '../db/finance-handle.js';
 import { setFoodDb } from '../db/food-handle.js';
 import { setInventoryDb } from '../db/inventory-handle.js';
+import { setListsDb } from '../db/lists-handle.js';
 import { setMediaDb } from '../db/media-db-handle.js';
 import { appRouter } from '../router.js';
 import { TAG_VOCABULARY_V1 } from './tag-vocabulary.js';
@@ -1511,6 +1512,14 @@ export function setupTestContext() {
     // `data/food.db` mid-suite.
     setFoodDb({ db: drizzle(db), raw: db });
 
+    // Same for the lists pillar handle (phase 2 PR 2): the handle is
+    // opened at boot but no router has cut over yet. The injection is
+    // forward-looking — once PR 3 routes list_items (and subsequent
+    // slices) through getListsDrizzle() the fixture will already be
+    // pointed at the in-memory DB and won't try to open
+    // `data/lists.db` mid-suite.
+    setListsDb({ db: drizzle(db), raw: db });
+
     return { db, caller: createCaller(true) };
   }
 
@@ -1521,6 +1530,7 @@ export function setupTestContext() {
     setMediaDb(null);
     setCerebrumDb(null);
     setFoodDb(null);
+    setListsDb(null);
     closeDb();
   }
 
