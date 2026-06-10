@@ -1,0 +1,117 @@
+/**
+ * PRD-138 — `food.inbox.listFailed` + `food.inbox.failedErrorCodes`.
+ *
+ * Drives the Failed-ingests tab in `/food/inbox`. The "no successful retry"
+ * rule reduces to `WHERE error_code IS NOT NULL` because PRD-125's
+ * `workerComplete` nulls those columns on the next success — see the PRD-125
+ * amendment carried in `0067_prd_125_ingest_error_columns.sql`.
+ *
+ * Auth-dead Instagram reels never reach this tab: PRD-130 emits
+ * `ok: true, partialReason: 'auth-dead'` so the worker writes a placeholder
+ * draft and never sets `error_code`. The Drafts tab + PRD-137's
+ * `PARTIAL_AUTH_DEAD` signal handle that surface.
+ *
+ * Pagination cursor: `(ingested_at DESC, id DESC)`.
+ */
+import { and, desc, eq, inArray, isNotNull, lt, or, sql, type SQL } from 'drizzle-orm';
+
+import { ingestSources } from '../schema.js';
+import {
+  encodeCursor,
+  type FailedRow,
+  type ListFailedFilter,
+  type ListPage,
+  sinceDaysAgoIso,
+} from './inbox-queries-shared.js';
+import { type FoodDb } from './internal.js';
+
+export function listFailedSources(db: FoodDb, filter: ListFailedFilter): ListPage<FailedRow> {
+  const rows = selectFailedRows(db, filter);
+  const trimmed = rows.slice(0, filter.limit);
+  const items = trimmed.map(
+    (r): FailedRow => ({
+      sourceId: r.sourceId,
+      ingestKind: r.ingestKind,
+      sourceUrl: r.sourceUrl,
+      errorCode: r.errorCode,
+      errorMessage: r.errorMessage ?? '',
+      ingestedAt: r.ingestedAt,
+      attempts: r.attempts,
+    })
+  );
+  const last = trimmed[trimmed.length - 1];
+  const nextCursor =
+    rows.length > filter.limit && last !== undefined
+      ? encodeCursor(last.ingestedAt, last.sourceId)
+      : null;
+  return { items, nextCursor };
+}
+
+interface JoinedFailedRow {
+  sourceId: number;
+  ingestKind: FailedRow['ingestKind'];
+  sourceUrl: string | null;
+  errorCode: string;
+  errorMessage: string | null;
+  ingestedAt: string;
+  attempts: number;
+}
+
+function selectFailedRows(db: FoodDb, filter: ListFailedFilter): JoinedFailedRow[] {
+  return db
+    .select({
+      sourceId: ingestSources.id,
+      ingestKind: ingestSources.kind,
+      sourceUrl: ingestSources.url,
+      errorCode: sql<string>`${ingestSources.errorCode}`,
+      errorMessage: ingestSources.errorMessage,
+      ingestedAt: ingestSources.ingestedAt,
+      attempts: ingestSources.attempts,
+    })
+    .from(ingestSources)
+    .where(buildWhere(filter))
+    .orderBy(desc(ingestSources.ingestedAt), desc(ingestSources.id))
+    .limit(filter.limit + 1)
+    .all();
+}
+
+function buildWhere(filter: ListFailedFilter): SQL | undefined {
+  const clauses: SQL[] = [isNotNull(ingestSources.errorCode)];
+  if (filter.errorCodes && filter.errorCodes.length > 0) {
+    clauses.push(inArray(ingestSources.errorCode, filter.errorCodes));
+  }
+  if (filter.kinds && filter.kinds.length > 0) {
+    clauses.push(inArray(ingestSources.kind, filter.kinds));
+  }
+  const sinceIso = sinceDaysAgoIso(filter.sinceDays);
+  if (sinceIso !== null) {
+    clauses.push(sql`${ingestSources.ingestedAt} >= ${sinceIso}`);
+  }
+  if (filter.cursor) {
+    const cursorClause = or(
+      lt(ingestSources.ingestedAt, filter.cursor.sortKey),
+      and(
+        eq(ingestSources.ingestedAt, filter.cursor.sortKey),
+        lt(ingestSources.id, filter.cursor.id)
+      )
+    );
+    if (cursorClause !== undefined) clauses.push(cursorClause);
+  }
+  return and(...clauses);
+}
+
+/**
+ * `SELECT DISTINCT error_code FROM ingest_sources WHERE error_code IS NOT NULL`.
+ * Drives the Error-code filter chip — known v1 codes are well-defined in the
+ * PRD-138 §"Failed ingests" tab but the chip auto-populates so newly emitted
+ * codes from future handler PRDs surface without a UI change.
+ */
+export function listFailedErrorCodes(db: FoodDb): string[] {
+  const rows = db
+    .selectDistinct({ errorCode: ingestSources.errorCode })
+    .from(ingestSources)
+    .where(isNotNull(ingestSources.errorCode))
+    .orderBy(ingestSources.errorCode)
+    .all();
+  return rows.map((r) => r.errorCode).filter((c): c is string => c !== null);
+}
