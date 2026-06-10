@@ -48,45 +48,95 @@ export function applyConsumptionOverrides(
   for (const o of args.overrides) {
     const line = lineIndex.get(o.lineIndex);
     if (line === undefined) continue; // line position not in this version — silently skip
-    if (o.kind === 'batch-override' || o.kind === 'partial') {
-      // Reject a zero-qty batch draw outright (Copilot R1): without this
-      // gate, a client could send `consumeQty: 0` to mark a line as
-      // covered and skip FIFO consumption entirely.
-      if (o.consumeQty <= 0) return { ok: false, reason: 'ShortfallUnresolved' };
-      const draw = drawFromBatch({
-        tx,
-        runId: args.runId,
-        batchId: o.batchId,
-        qty: o.consumeQty,
-        unit: o.unit,
-        expectedVariantId: line.variantId,
-        expectedPrepStateId: line.prepStateId,
-      });
-      if (!draw.ok) return { ok: false, reason: 'ShortfallUnresolved' };
-    }
-    if (o.kind === 'external' && o.externalQty <= 0) {
-      // External overrides must report a positive qty too, else they're
-      // a no-op that hides the line from FIFO.
+    // PRD-146 §"Integration with PRD-144's cook mutation": optional
+    // lines never reach FIFO (see `computeRemainingNeeds` filter) so any
+    // override the modal sent for one is silently dropped. Without this
+    // guard a batch-override on an optional line would write a stray
+    // `batch_consumptions` row that no longer maps to a tracked need.
+    if (line.optional) continue;
+    // Refuse to mark a line "covered" unless the override accounts for
+    // the full scaled need (Copilot R2). Without this gate a client can
+    // send `consumeQty: 1` on a 200g line, get added to `coveredLineIndices`,
+    // and silently bypass FIFO for the remaining 199g.
+    if (!overrideCoversLine(o, line, args.scaleFactor)) {
       return { ok: false, reason: 'ShortfallUnresolved' };
     }
+    const outcome = processOverride(tx, args.runId, o, line);
+    if (!outcome.ok) return { ok: false, reason: outcome.reason };
     covered.add(o.lineIndex);
-    if (o.kind === 'external') {
-      auditLines.push(formatExternalNote(o.lineIndex, o.externalQty, o.externalUnit));
-    }
-    if (o.kind === 'partial') {
-      auditLines.push(formatExternalNote(o.lineIndex, o.externalQty, o.unit));
-    }
+    if (outcome.auditLine !== null) auditLines.push(outcome.auditLine);
   }
 
   return { ok: true, coveredLineIndices: covered, auditLines };
 }
 
+type OverrideOutcome =
+  | { ok: true; auditLine: string | null }
+  | { ok: false; reason: MarkCookedError };
+
+function processOverride(
+  tx: FoodDb,
+  runId: number,
+  override: ConsumptionOverride,
+  line: LineDescriptor
+): OverrideOutcome {
+  if (override.kind === 'external') return processExternal(override);
+  return processBatchDraw(tx, runId, override, line);
+}
+
+function processExternal(
+  override: Extract<ConsumptionOverride, { kind: 'external' }>
+): OverrideOutcome {
+  // External overrides must report a positive qty too, else they're a
+  // no-op that hides the line from FIFO.
+  if (override.externalQty <= 0) return { ok: false, reason: 'ShortfallUnresolved' };
+  return {
+    ok: true,
+    auditLine: formatExternalNote(override.lineIndex, override.externalQty, override.externalUnit),
+  };
+}
+
+function processBatchDraw(
+  tx: FoodDb,
+  runId: number,
+  override: Extract<ConsumptionOverride, { kind: 'batch-override' | 'partial' }>,
+  line: LineDescriptor
+): OverrideOutcome {
+  // Reject a zero-qty batch draw outright (Copilot R1): without this
+  // gate, a client could send `consumeQty: 0` to mark a line as covered
+  // and skip FIFO consumption entirely.
+  if (override.consumeQty <= 0) return { ok: false, reason: 'ShortfallUnresolved' };
+  const draw = drawFromBatch({
+    tx,
+    runId,
+    batchId: override.batchId,
+    qty: override.consumeQty,
+    unit: override.unit,
+    expectedVariantId: line.variantId,
+    expectedPrepStateId: line.prepStateId,
+  });
+  if (!draw.ok) return { ok: false, reason: 'ShortfallUnresolved' };
+  if (override.kind === 'batch-override') return { ok: true, auditLine: null };
+  return {
+    ok: true,
+    auditLine: formatExternalNote(override.lineIndex, override.externalQty, override.unit),
+  };
+}
+
 const EMPTY_SET: ReadonlySet<number> = new Set<number>();
+
+// Float-comparison tolerance for override qty validation. SQLite stores
+// qty columns as REAL so a 1e-6 epsilon keeps us off the rounding edge
+// without admitting a meaningful shortfall.
+const QTY_EPSILON = 1e-6;
 
 interface LineDescriptor {
   position: number;
   variantId: number | null;
   prepStateId: number | null;
+  optional: boolean;
+  needQty: number;
+  canonicalUnit: 'g' | 'ml' | 'count';
 }
 
 function buildLineIndex(tx: FoodDb, versionId: number): Map<number, LineDescriptor> {
@@ -95,19 +145,56 @@ function buildLineIndex(tx: FoodDb, versionId: number): Map<number, LineDescript
       position: recipeLines.position,
       variantId: recipeLines.variantId,
       prepStateId: recipeLines.prepStateId,
+      optional: recipeLines.optional,
+      qtyG: recipeLines.qtyG,
+      qtyMl: recipeLines.qtyMl,
+      qtyCount: recipeLines.qtyCount,
+      canonicalUnit: recipeLines.canonicalUnit,
     })
     .from(recipeLines)
     .where(eq(recipeLines.recipeVersionId, versionId))
     .all();
   const map = new Map<number, LineDescriptor>();
   for (const r of rows) {
+    const need = canonicalQty(r);
     map.set(r.position, {
       position: r.position,
       variantId: r.variantId ?? null,
       prepStateId: r.prepStateId ?? null,
+      optional: r.optional === 1,
+      needQty: need,
+      canonicalUnit: r.canonicalUnit,
     });
   }
   return map;
+}
+
+function canonicalQty(row: {
+  qtyG: number | null;
+  qtyMl: number | null;
+  qtyCount: number | null;
+  canonicalUnit: 'g' | 'ml' | 'count';
+}): number {
+  if (row.canonicalUnit === 'g') return row.qtyG ?? 0;
+  if (row.canonicalUnit === 'ml') return row.qtyMl ?? 0;
+  return row.qtyCount ?? 0;
+}
+
+function overrideCoversLine(
+  override: ConsumptionOverride,
+  line: LineDescriptor,
+  scaleFactor: number
+): boolean {
+  const required = line.needQty * scaleFactor;
+  if (required <= 0) return true; // nothing to cover — treat as covered.
+  if (override.kind === 'external') {
+    if (override.externalUnit !== line.canonicalUnit) return false;
+    return Math.abs(override.externalQty - required) <= QTY_EPSILON;
+  }
+  if (override.unit !== line.canonicalUnit) return false;
+  const supplied =
+    override.kind === 'partial' ? override.consumeQty + override.externalQty : override.consumeQty;
+  return Math.abs(supplied - required) <= QTY_EPSILON;
 }
 
 interface DrawArgs {
