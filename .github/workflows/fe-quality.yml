@@ -6,6 +6,7 @@ on:
     paths:
       - "apps/pops-shell/**"
       - "packages/app-*/**"
+      - "packages/cerebrum-db/**"
       - "packages/db-types/**"
       - "packages/inventory-db/**"
       - "packages/ui/**"
@@ -32,6 +33,7 @@ jobs:
             shell:
               - 'apps/pops-shell/**'
               - 'packages/app-*/**'
+              - 'packages/cerebrum-db/**'
               - 'packages/db-types/**'
               - 'packages/inventory-db/**'
               - 'packages/ui/**'
@@ -79,6 +81,7 @@ jobs:
           cd ../finance-db && pnpm build
           cd ../inventory-db && pnpm build
           cd ../media-db && pnpm build
+          cd ../cerebrum-db && pnpm build
           cd ../app-lists-db && pnpm build
           cd ../app-food-db && pnpm build
 

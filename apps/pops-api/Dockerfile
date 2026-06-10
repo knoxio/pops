@@ -16,6 +16,7 @@ COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
+COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -47,6 +48,9 @@ COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 COPY packages/inventory-db/src ./packages/inventory-db/src
 COPY packages/inventory-db/tsconfig.json ./packages/inventory-db/
 COPY packages/inventory-db/migrations ./packages/inventory-db/migrations
+COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
+COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
+COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
@@ -66,6 +70,8 @@ RUN pnpm build
 WORKDIR /app/packages/inventory-db
 RUN pnpm build
 WORKDIR /app/packages/media-db
+RUN pnpm build
+WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
@@ -116,6 +122,9 @@ COPY --from=builder /app/packages/inventory-db/migrations ./node_modules/@pops/i
 COPY --from=builder /app/packages/media-db/dist ./node_modules/@pops/media-db/dist
 COPY --from=builder /app/packages/media-db/package.json ./node_modules/@pops/media-db/
 COPY --from=builder /app/packages/media-db/migrations ./node_modules/@pops/media-db/migrations
+COPY --from=builder /app/packages/cerebrum-db/dist ./node_modules/@pops/cerebrum-db/dist
+COPY --from=builder /app/packages/cerebrum-db/package.json ./node_modules/@pops/cerebrum-db/
+COPY --from=builder /app/packages/cerebrum-db/migrations ./node_modules/@pops/cerebrum-db/migrations
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src

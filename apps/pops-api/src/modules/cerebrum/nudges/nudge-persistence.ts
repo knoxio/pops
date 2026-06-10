@@ -1,23 +1,24 @@
 /**
- * Nudge persistence helpers — extracted from NudgeService to stay under
- * the max-lines lint rule.
+ * Cross-table read helper for the nudge subsystem.
+ *
+ * Loads the active engram summaries that detectors scan over. Stays in
+ * pops-api for now — it reads `engram_index` / `engram_scopes` /
+ * `engram_tags`, all cerebrum-owned tables that move when the engrams
+ * slice migrates into `@pops/cerebrum-db` in a later PR.
+ *
+ * The nudge_log persistence functions (`persistCandidates`,
+ * `listContradictions`, `enforcePendingCap`) used to live here too;
+ * they moved to `@pops/cerebrum-db` in Phase 1 PR 1 (#2797) and the
+ * NudgeService consumes them from the package directly as of this
+ * cutover PR.
  */
-import { and, count, eq, inArray, sql } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 
-import { engramIndex, engramScopes, engramTags, nudgeLog } from '@pops/db-types';
-
-import { logger } from '../../../lib/logger.js';
-import { generateNudgeId, rowToNudge } from './nudge-helpers.js';
+import { engramIndex, engramScopes, engramTags } from '@pops/db-types';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
-import type {
-  EngramSummary,
-  Nudge,
-  NudgeCandidate,
-  NudgeStatus,
-  NudgeThresholds,
-} from './types.js';
+import type { EngramSummary } from './types.js';
 
 /** Group rows by engramId into a multi-value map. */
 function buildLookup(rows: { engramId: string; val: string }[]): Map<string, string[]> {
@@ -65,138 +66,4 @@ export function loadActiveEngrams(db: BetterSQLite3Database): EngramSummary[] {
     createdAt: r.createdAt,
     modifiedAt: r.modifiedAt,
   }));
-}
-
-/** Persist nudge candidates, enforcing cooldown dedup. */
-export function persistCandidates(
-  db: BetterSQLite3Database,
-  candidates: NudgeCandidate[],
-  thresholds: NudgeThresholds,
-  now: () => Date
-): number {
-  let created = 0;
-  for (const candidate of candidates) {
-    if (isInCooldown(db, candidate, thresholds, now)) continue;
-    db.insert(nudgeLog)
-      .values({
-        id: generateNudgeId(candidate.type, now()),
-        type: candidate.type,
-        title: candidate.title,
-        body: candidate.body,
-        engramIds: JSON.stringify(candidate.engramIds),
-        priority: candidate.priority,
-        status: 'pending',
-        createdAt: now().toISOString(),
-        expiresAt: candidate.expiresAt,
-        actionType: candidate.action?.type ?? null,
-        actionLabel: candidate.action?.label ?? null,
-        actionParams: candidate.action ? JSON.stringify(candidate.action.params) : null,
-      })
-      .run();
-    created++;
-  }
-  return created;
-}
-
-/** Check cooldown: same type + same engram IDs within the cooldown window. */
-function isInCooldown(
-  db: BetterSQLite3Database,
-  candidate: NudgeCandidate,
-  thresholds: NudgeThresholds,
-  now: () => Date
-): boolean {
-  const cooldownMs = thresholds.nudgeCooldownHours * 60 * 60 * 1000;
-  const cutoff = new Date(now().getTime() - cooldownMs).toISOString();
-  const sortedIds = JSON.stringify([...candidate.engramIds].toSorted());
-
-  const recent = db
-    .select({ engramIds: nudgeLog.engramIds })
-    .from(nudgeLog)
-    .where(and(eq(nudgeLog.type, candidate.type), sql`${nudgeLog.createdAt} >= ${cutoff}`))
-    .all();
-
-  return recent.some((row) => {
-    const existing = JSON.stringify((JSON.parse(row.engramIds) as string[]).toSorted());
-    return existing === sortedIds;
-  });
-}
-
-/**
- * List contradiction pattern nudges (PRD-084 US-03).
- *
- * Filters at the SQL layer with a `json_extract` predicate on
- * `action_params` so non-contradiction pattern nudges (recurring,
- * emerging) cannot consume page slots or inflate `total`. Pagination
- * applies after the filter, which is what makes it honest.
- */
-export function listContradictions(
-  db: BetterSQLite3Database,
-  opts: { status?: NudgeStatus | null; limit?: number; offset?: number } = {}
-): { nudges: Nudge[]; total: number } {
-  const conditions = [eq(nudgeLog.type, 'pattern')];
-  if (opts.status !== null && opts.status !== undefined) {
-    conditions.push(eq(nudgeLog.status, opts.status));
-  }
-  // Require every field that the UI projection needs so total === rows after pagination.
-  conditions.push(
-    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.engramA') IS NOT NULL`,
-    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.engramB') IS NOT NULL`,
-    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.excerptA') IS NOT NULL`,
-    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.excerptB') IS NOT NULL`,
-    sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.conflict') IS NOT NULL`
-  );
-
-  const where = and(...conditions);
-  const limit = opts.limit ?? 50;
-  const offset = opts.offset ?? 0;
-
-  const rows = db
-    .select()
-    .from(nudgeLog)
-    .where(where)
-    .orderBy(sql`${nudgeLog.createdAt} desc`)
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  const [totalRow] = db.select({ total: count() }).from(nudgeLog).where(where).all();
-
-  return {
-    nudges: rows.map((r) => rowToNudge(r)),
-    total: totalRow?.total ?? 0,
-  };
-}
-
-/** Enforce the max pending nudges cap by expiring oldest. */
-export function enforcePendingCap(db: BetterSQLite3Database, maxPending: number): void {
-  const [countRow] = db
-    .select({ total: count() })
-    .from(nudgeLog)
-    .where(eq(nudgeLog.status, 'pending'))
-    .all();
-
-  const pendingCount = countRow?.total ?? 0;
-  if (pendingCount <= maxPending) return;
-
-  const excess = pendingCount - maxPending;
-  const oldest = db
-    .select({ id: nudgeLog.id })
-    .from(nudgeLog)
-    .where(eq(nudgeLog.status, 'pending'))
-    .orderBy(nudgeLog.createdAt)
-    .limit(excess)
-    .all();
-
-  if (oldest.length > 0) {
-    db.update(nudgeLog)
-      .set({ status: 'expired' })
-      .where(
-        inArray(
-          nudgeLog.id,
-          oldest.map((r) => r.id)
-        )
-      )
-      .run();
-    logger.info({ expired: oldest.length }, '[NudgeService] Expired oldest pending nudges');
-  }
 }

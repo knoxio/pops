@@ -78,6 +78,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@pops/app-food-db": "workspace:*",
     "@pops/app-lists-db": "workspace:*",
+    "@pops/cerebrum-db": "workspace:*",
     "@pops/core-db": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/finance-db": "workspace:*",

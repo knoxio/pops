@@ -3,6 +3,15 @@ name: API Tests
 on:
   push:
     branches: [main, develop]
+    paths:
+      - "apps/pops-api/**"
+      - "packages/cerebrum-db/**"
+      - "packages/db-types/**"
+      - "packages/finance-db/**"
+      - "packages/inventory-db/**"
+      - "packages/types/**"
+      - "packages/auth/**"
+      - ".github/workflows/api-test.yml"
   pull_request:
 
 jobs:
@@ -20,6 +29,7 @@ jobs:
           filters: |
             backend:
               - 'apps/pops-api/**'
+              - 'packages/cerebrum-db/**'
               - 'packages/db-types/**'
               - 'packages/finance-db/**'
               - 'packages/inventory-db/**'
@@ -68,6 +78,7 @@ jobs:
           cd ../finance-db && pnpm build
           cd ../inventory-db && pnpm build
           cd ../media-db && pnpm build
+          cd ../cerebrum-db && pnpm build
           cd ../app-lists-db && pnpm build
           cd ../app-food-db && pnpm build
 

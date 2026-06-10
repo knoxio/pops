@@ -7,17 +7,13 @@
  */
 import { and, count, eq, sql } from 'drizzle-orm';
 
+import { nudgeLogService } from '@pops/cerebrum-db';
 import { nudgeLog } from '@pops/db-types';
 
 import { logger } from '../../../lib/logger.js';
 import { ConcatenationSynthesizer, executeConsolidationAct } from './consolidation-act.js';
 import { rowToNudge } from './nudge-helpers.js';
-import {
-  enforcePendingCap,
-  listContradictions,
-  loadActiveEngrams,
-  persistCandidates,
-} from './nudge-persistence.js';
+import { loadActiveEngrams } from './nudge-persistence.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
@@ -82,7 +78,7 @@ export class NudgeService {
     let totalCreated = 0;
 
     if (!type || type === 'consolidation') {
-      totalCreated += persistCandidates(
+      totalCreated += nudgeLogService.persistCandidates(
         this.db,
         (await this.consolidationDetector.detect(engrams)).nudges,
         this.thresholds,
@@ -90,7 +86,7 @@ export class NudgeService {
       );
     }
     if (!type || type === 'staleness') {
-      totalCreated += persistCandidates(
+      totalCreated += nudgeLogService.persistCandidates(
         this.db,
         this.stalenessDetector.detect(engrams).nudges,
         this.thresholds,
@@ -98,7 +94,7 @@ export class NudgeService {
       );
     }
     if (!type || type === 'pattern') {
-      totalCreated += persistCandidates(
+      totalCreated += nudgeLogService.persistCandidates(
         this.db,
         (await this.patternDetector.detect(engrams)).nudges,
         this.thresholds,
@@ -106,7 +102,10 @@ export class NudgeService {
       );
     }
 
-    enforcePendingCap(this.db, this.thresholds.maxPendingNudges);
+    const expired = nudgeLogService.enforcePendingCap(this.db, this.thresholds.maxPendingNudges);
+    if (expired > 0) {
+      logger.info({ expired }, '[NudgeService] Expired oldest pending nudges');
+    }
     logger.info({ created: totalCreated, type: type ?? 'all' }, '[NudgeService] Scan complete');
     return { created: totalCreated };
   }
@@ -143,7 +142,7 @@ export class NudgeService {
     nudges: Nudge[];
     total: number;
   } {
-    return listContradictions(this.db, opts);
+    return nudgeLogService.listContradictions(this.db, opts);
   }
 
   /** Get a single nudge by ID. */
