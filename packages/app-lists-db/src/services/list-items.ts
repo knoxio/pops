@@ -187,3 +187,39 @@ export function listItemsForList(db: ListsDb, listId: number): readonly ListItem
     .orderBy(asc(listItems.position), asc(listItems.id))
     .all();
 }
+
+/**
+ * Bulk-uncheck every currently-checked item in a list (PRD-141 amendment).
+ *
+ * Single UPDATE inside a transaction. Returns the row count affected so the
+ * UI can show "Unchecked N items" without a follow-up read. No-op (returns
+ * 0) when nothing was checked.
+ */
+export function uncheckAllItems(db: ListsDb, listId: number): number {
+  return db.transaction((tx) => {
+    const rows = tx
+      .update(listItems)
+      .set({ checked: 0, checkedAt: null })
+      .where(and(eq(listItems.listId, listId), eq(listItems.checked, 1)))
+      .returning({ id: listItems.id })
+      .all();
+    return rows.length;
+  });
+}
+
+/**
+ * Hard-delete every currently-checked item in a list (PRD-141 amendment).
+ *
+ * Single DELETE inside a transaction. Returns the row count removed.
+ * Unchecked items are untouched.
+ */
+export function removeCheckedItems(db: ListsDb, listId: number): number {
+  return db.transaction((tx) => {
+    const rows = tx
+      .delete(listItems)
+      .where(and(eq(listItems.listId, listId), eq(listItems.checked, 1)))
+      .returning({ id: listItems.id })
+      .all();
+    return rows.length;
+  });
+}

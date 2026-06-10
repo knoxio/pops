@@ -75,5 +75,57 @@
         "delete": "Excluir"
       }
     }
+  },
+  "shopping": {
+    "empty": "Nada na lista ainda. Adicione um item abaixo para começar.",
+    "header": {
+      "sort": {
+        "label": "Ordenar",
+        "options": {
+          "manual": "Manual",
+          "unchecked-first": "Não marcados primeiro",
+          "recent-check": "Marcados recentemente"
+        }
+      },
+      "uncheckAll": {
+        "button": "Desmarcar tudo",
+        "empty": "Nenhum item para desmarcar"
+      },
+      "clearChecked": {
+        "button": "Limpar marcados",
+        "empty": "Nenhum item marcado para limpar"
+      },
+      "caption": "{{total}} itens · {{checked}} marcados"
+    },
+    "uncheckAll": {
+      "title": "Desmarcar todos os itens?",
+      "body": "Isso reseta o estado de marcado de {{count}} item(ns). A lista em si não é modificada.",
+      "cancel": "Cancelar",
+      "confirm": "Desmarcar tudo",
+      "pending": "Desmarcando…"
+    },
+    "clearChecked": {
+      "title": "Remover todos os itens marcados?",
+      "body": "Isso exclui permanentemente {{count}} item(ns) desta lista. Os não marcados continuam.",
+      "cancel": "Cancelar",
+      "confirm": "Remover marcados",
+      "pending": "Removendo…"
+    },
+    "add": {
+      "qty": "Qtd",
+      "unit": "Unid.",
+      "label": "Item",
+      "submit": "Adicionar"
+    },
+    "item": {
+      "checkbox": "Alternar concluído para {{label}}",
+      "editLabel": "Editar rótulo do item",
+      "dragHandle": "Arrastar para reordenar",
+      "dragDisabled": "Mude para ordenação Manual para reordenar",
+      "swipe": {
+        "cancel": "Cancelar",
+        "delete": "Excluir"
+      }
+    }
   }
 }

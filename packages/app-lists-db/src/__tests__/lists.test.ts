@@ -18,8 +18,10 @@ import {
   bulkAdd,
   checkItem,
   listItemsForList,
+  removeCheckedItems,
   removeItem,
   reorderItems,
+  uncheckAllItems,
   uncheckItem,
   updateItem,
 } from '../services/list-items.js';
@@ -424,6 +426,73 @@ describe('PRD-112 — lists schema + service layer', () => {
       const row = listItemsForList(db, list.id)[0];
       expect(row?.refKind).toBe('ingredient');
       expect(row?.refId).toBeNull();
+    });
+  });
+
+  describe('PRD-141 bulk mutations', () => {
+    it('uncheckAllItems flips every checked row + returns the count', () => {
+      const list = createList(db, { name: 'Shop', kind: 'shopping', ownerApp: 'food' });
+      const a = addItem(db, { listId: list.id, label: 'a' });
+      const b = addItem(db, { listId: list.id, label: 'b' });
+      const c = addItem(db, { listId: list.id, label: 'c' });
+      checkItem(db, a.id);
+      checkItem(db, b.id);
+      const count = uncheckAllItems(db, list.id);
+      expect(count).toBe(2);
+      const rows = listItemsForList(db, list.id);
+      expect(rows.every((r) => r.checked === 0)).toBe(true);
+      expect(rows.every((r) => r.checkedAt === null)).toBe(true);
+      expect(rows.find((r) => r.id === c.id)?.checked).toBe(0);
+    });
+
+    it('uncheckAllItems returns 0 when nothing is checked', () => {
+      const list = createList(db, { name: 'Shop', kind: 'shopping', ownerApp: 'food' });
+      addItem(db, { listId: list.id, label: 'a' });
+      addItem(db, { listId: list.id, label: 'b' });
+      expect(uncheckAllItems(db, list.id)).toBe(0);
+    });
+
+    it('uncheckAllItems is scoped to the target list', () => {
+      const a = createList(db, { name: 'A', kind: 'shopping', ownerApp: 'food' });
+      const b = createList(db, { name: 'B', kind: 'shopping', ownerApp: 'food' });
+      const aRow = addItem(db, { listId: a.id, label: 'a' });
+      const bRow = addItem(db, { listId: b.id, label: 'b' });
+      checkItem(db, aRow.id);
+      checkItem(db, bRow.id);
+      expect(uncheckAllItems(db, a.id)).toBe(1);
+      const refreshed = listItemsForList(db, b.id)[0];
+      expect(refreshed?.checked).toBe(1);
+    });
+
+    it('removeCheckedItems deletes every checked row + returns the count', () => {
+      const list = createList(db, { name: 'Shop', kind: 'shopping', ownerApp: 'food' });
+      const a = addItem(db, { listId: list.id, label: 'a' });
+      const b = addItem(db, { listId: list.id, label: 'b' });
+      const c = addItem(db, { listId: list.id, label: 'c' });
+      checkItem(db, a.id);
+      checkItem(db, c.id);
+      const removed = removeCheckedItems(db, list.id);
+      expect(removed).toBe(2);
+      const remaining = listItemsForList(db, list.id);
+      expect(remaining.map((r) => r.id)).toEqual([b.id]);
+    });
+
+    it('removeCheckedItems returns 0 when nothing is checked', () => {
+      const list = createList(db, { name: 'Shop', kind: 'shopping', ownerApp: 'food' });
+      addItem(db, { listId: list.id, label: 'a' });
+      expect(removeCheckedItems(db, list.id)).toBe(0);
+      expect(listItemsForList(db, list.id).length).toBe(1);
+    });
+
+    it('removeCheckedItems is scoped to the target list', () => {
+      const a = createList(db, { name: 'A', kind: 'shopping', ownerApp: 'food' });
+      const b = createList(db, { name: 'B', kind: 'shopping', ownerApp: 'food' });
+      const aRow = addItem(db, { listId: a.id, label: 'a' });
+      const bRow = addItem(db, { listId: b.id, label: 'b' });
+      checkItem(db, aRow.id);
+      checkItem(db, bRow.id);
+      expect(removeCheckedItems(db, a.id)).toBe(1);
+      expect(listItemsForList(db, b.id).length).toBe(1);
     });
   });
 });

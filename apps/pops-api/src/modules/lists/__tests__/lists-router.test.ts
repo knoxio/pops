@@ -415,4 +415,79 @@ describe('PRD-140 lists router', () => {
       expect(result).toEqual({ ok: false, reason: 'BadIds' });
     });
   });
+
+  describe('items.uncheckAll (PRD-141)', () => {
+    it('unchecks every checked item and returns the count', async () => {
+      const caller = createCaller();
+      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
+      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
+      const { id: b } = await caller.lists.items.add({ listId, label: 'b' });
+      await caller.lists.items.add({ listId, label: 'c' });
+      await caller.lists.items.check({ id: a });
+      await caller.lists.items.check({ id: b });
+      const result = await caller.lists.items.uncheckAll({ listId });
+      expect(result).toEqual({ ok: true, count: 2 });
+      const detail = await caller.lists.list.get({ id: listId });
+      expect(detail?.items.every((row) => row.checked === 0)).toBe(true);
+    });
+
+    it('returns count=0 when nothing is checked', async () => {
+      const caller = createCaller();
+      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
+      await caller.lists.items.add({ listId, label: 'a' });
+      expect(await caller.lists.items.uncheckAll({ listId })).toEqual({ ok: true, count: 0 });
+    });
+
+    it('is scoped to the target list', async () => {
+      const caller = createCaller();
+      const { id: listA } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });
+      const { id: listB } = await caller.lists.list.create({ name: 'B', kind: 'shopping' });
+      const { id: a } = await caller.lists.items.add({ listId: listA, label: 'a' });
+      const { id: b } = await caller.lists.items.add({ listId: listB, label: 'b' });
+      await caller.lists.items.check({ id: a });
+      await caller.lists.items.check({ id: b });
+      await caller.lists.items.uncheckAll({ listId: listA });
+      const detailB = await caller.lists.list.get({ id: listB });
+      expect(detailB?.items[0]?.checked).toBe(1);
+    });
+  });
+
+  describe('items.removeChecked (PRD-141)', () => {
+    it('removes every checked item and returns the count', async () => {
+      const caller = createCaller();
+      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
+      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
+      await caller.lists.items.add({ listId, label: 'b' });
+      const { id: c } = await caller.lists.items.add({ listId, label: 'c' });
+      await caller.lists.items.check({ id: a });
+      await caller.lists.items.check({ id: c });
+      const result = await caller.lists.items.removeChecked({ listId });
+      expect(result).toEqual({ ok: true, removedCount: 2 });
+      const detail = await caller.lists.list.get({ id: listId });
+      expect(detail?.items.map((row) => row.label)).toEqual(['b']);
+    });
+
+    it('returns removedCount=0 when nothing is checked', async () => {
+      const caller = createCaller();
+      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
+      await caller.lists.items.add({ listId, label: 'a' });
+      expect(await caller.lists.items.removeChecked({ listId })).toEqual({
+        ok: true,
+        removedCount: 0,
+      });
+    });
+
+    it('is scoped to the target list', async () => {
+      const caller = createCaller();
+      const { id: listA } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });
+      const { id: listB } = await caller.lists.list.create({ name: 'B', kind: 'shopping' });
+      const { id: a } = await caller.lists.items.add({ listId: listA, label: 'a' });
+      const { id: b } = await caller.lists.items.add({ listId: listB, label: 'b' });
+      await caller.lists.items.check({ id: a });
+      await caller.lists.items.check({ id: b });
+      await caller.lists.items.removeChecked({ listId: listA });
+      const detailB = await caller.lists.list.get({ id: listB });
+      expect(detailB?.items.length).toBe(1);
+    });
+  });
 });

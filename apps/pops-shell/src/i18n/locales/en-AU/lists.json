@@ -75,5 +75,57 @@
         "delete": "Delete"
       }
     }
+  },
+  "shopping": {
+    "empty": "Nothing on the list yet. Add an item below to get started.",
+    "header": {
+      "sort": {
+        "label": "Sort",
+        "options": {
+          "manual": "Manual",
+          "unchecked-first": "Unchecked first",
+          "recent-check": "Recently checked"
+        }
+      },
+      "uncheckAll": {
+        "button": "Uncheck all",
+        "empty": "No items to uncheck"
+      },
+      "clearChecked": {
+        "button": "Clear checked",
+        "empty": "No checked items to clear"
+      },
+      "caption": "{{total}} items · {{checked}} checked"
+    },
+    "uncheckAll": {
+      "title": "Uncheck all items?",
+      "body": "This resets the checked state for {{count}} item(s). The list itself isn't modified.",
+      "cancel": "Cancel",
+      "confirm": "Uncheck all",
+      "pending": "Unchecking…"
+    },
+    "clearChecked": {
+      "title": "Remove all checked items?",
+      "body": "This permanently deletes {{count}} item(s) from this list. The unchecked items stay.",
+      "cancel": "Cancel",
+      "confirm": "Remove checked",
+      "pending": "Removing…"
+    },
+    "add": {
+      "qty": "Qty",
+      "unit": "Unit",
+      "label": "Item",
+      "submit": "Add"
+    },
+    "item": {
+      "checkbox": "Toggle done for {{label}}",
+      "editLabel": "Edit item label",
+      "dragHandle": "Drag to reorder",
+      "dragDisabled": "Switch to Manual sort to reorder",
+      "swipe": {
+        "cancel": "Cancel",
+        "delete": "Delete"
+      }
+    }
   }
 }

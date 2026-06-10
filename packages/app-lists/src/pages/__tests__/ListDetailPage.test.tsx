@@ -121,7 +121,11 @@ function makeList(overrides: Partial<ListRow> = {}): ListRow {
   return {
     id: 7,
     name: 'Weekend shop',
-    kind: 'shopping',
+    // PRD-141 dispatches `shopping` to the specialised body; the generic-path
+    // test suite uses `todo` so it keeps exercising `GenericDetailContent`.
+    // ShoppingDetailContent has its own RTL coverage in
+    // `components/shopping/__tests__/ShoppingDetailContent.test.tsx`.
+    kind: 'todo',
     ownerApp: 'user',
     archivedAt: null,
     createdAt: '2026-06-01T00:00:00Z',
@@ -192,7 +196,7 @@ describe('PRD-140-C — ListDetailPage', () => {
     });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
     expect(screen.getByRole('heading', { name: 'Weekend shop' })).toBeInTheDocument();
-    expect(screen.getByTestId('list-kind-chip')).toHaveTextContent('Shopping');
+    expect(screen.getByTestId('list-kind-chip')).toHaveTextContent('Todo');
     expect(screen.getByTestId('list-item-1')).toBeInTheDocument();
     expect(screen.getByTestId('list-item-2')).toBeInTheDocument();
   });
@@ -282,7 +286,7 @@ describe('PRD-140-C — ListDetailPage', () => {
     await userEvent.type(nameInput, 'Sunday shop');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(calls.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 7, name: 'Sunday shop', kind: 'shopping' })
+      expect.objectContaining({ id: 7, name: 'Sunday shop', kind: 'todo' })
     );
     expect(dialog).not.toBeInTheDocument();
   });
