@@ -7,9 +7,11 @@
  * `migrations/0026_little_frank_castle.sql` because that file mixes the
  * `tag_vocabulary` CREATE with the `transaction_tag_rules` CREATE +
  * seed inserts — the test owns its own fixtures so it can exercise the
- * service contract in isolation. Drift between the test DDL and the
- * shipped migration is caught at integration level by
- * `open-finance-db.test.ts`, which applies the real package journal.
+ * service contract in isolation. `open-finance-db.test.ts` currently
+ * only asserts that `tag_vocabulary` exists after migrations run, so it
+ * does NOT catch DDL drift between this inlined schema and the shipped
+ * migration. A schema-level assertion (column types, defaults) is left
+ * as a follow-up.
  */
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
