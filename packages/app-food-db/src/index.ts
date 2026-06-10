@@ -40,6 +40,32 @@ export * as substitutionsHydrate from './services/substitutions-hydrate.js';
 export * as variantsService from './services/variants.js';
 export * as conversionsService from './services/conversions.js';
 export * as conversionsQueries from './services/conversions-queries.js';
+export * as creationsService from './services/creations.js';
+
+// PRD-137 — Review quality heuristic (pure function) + batched input
+// gatherer. Top-level re-exports because PRD-134 / PRD-135 consume these
+// directly from the barrel.
+export {
+  scoreDraft,
+  SIGNAL_WEIGHTS,
+  type CompileStatus,
+  type IngestKind as QualityIngestKind,
+  type IngestState as QualityIngestState,
+  type QualityBand,
+  type QualityInputs,
+  type QualityResult,
+  type QualitySignal,
+  type QualitySignalCode,
+} from './inbox/quality.js';
+export { gatherQualityInputsForVersions } from './inbox/gather-quality-inputs.js';
+export { extractPartialReasonFromExtractedJson } from './inbox/partial-reason.js';
+export {
+  DEFAULT_CREATION_WINDOW_SECONDS,
+  countCreationsForVersion,
+  listCreationsForVersion,
+  type CreationRow,
+  type ListCreationsOptions,
+} from './services/creations.js';
 
 // NOTE: `seedFood` is NOT re-exported here. It lives at the
 // `@pops/app-food-db/seed` subpath because the seed module pulls in
