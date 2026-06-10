@@ -18,6 +18,7 @@ COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY packages/food-db/package.json ./packages/food-db/
+COPY packages/lists-db/package.json ./packages/lists-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 COPY apps/pops-mcp/package.json ./apps/pops-mcp/
 
@@ -56,6 +57,9 @@ COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
 COPY packages/food-db/src ./packages/food-db/src
 COPY packages/food-db/tsconfig.json ./packages/food-db/
 COPY packages/food-db/migrations ./packages/food-db/migrations
+COPY packages/lists-db/src ./packages/lists-db/src
+COPY packages/lists-db/tsconfig.json ./packages/lists-db/
+COPY packages/lists-db/migrations ./packages/lists-db/migrations
 
 # Copy pops-api source (needed only for AppRouter type resolution at compile time)
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
@@ -86,6 +90,8 @@ RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
 WORKDIR /app/packages/food-db
+RUN pnpm build
+WORKDIR /app/packages/lists-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build

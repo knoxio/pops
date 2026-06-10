@@ -21,6 +21,7 @@ COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY packages/food-db/package.json ./packages/food-db/
+COPY packages/lists-db/package.json ./packages/lists-db/
 COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
@@ -51,6 +52,7 @@ COPY packages/inventory-db/ ./packages/inventory-db/
 COPY packages/media-db/ ./packages/media-db/
 COPY packages/cerebrum-db/ ./packages/cerebrum-db/
 COPY packages/food-db/ ./packages/food-db/
+COPY packages/lists-db/ ./packages/lists-db/
 COPY packages/food-contracts/ ./packages/food-contracts/
 WORKDIR /app/packages/db-types
 RUN pnpm build
@@ -71,6 +73,8 @@ RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
 WORKDIR /app/packages/food-db
+RUN pnpm build
+WORKDIR /app/packages/lists-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build

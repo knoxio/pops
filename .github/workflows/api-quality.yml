@@ -12,6 +12,7 @@ on:
       - "packages/finance-db/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
+      - "packages/lists-db/**"
       - "packages/types/**"
       - ".github/workflows/api-quality.yml"
 
@@ -35,6 +36,7 @@ jobs:
               - 'packages/finance-db/**'
               - 'packages/food-db/**'
               - 'packages/inventory-db/**'
+              - 'packages/lists-db/**'
               - 'packages/types/**'
               - '.github/workflows/api-quality.yml'
 
@@ -81,6 +83,7 @@ jobs:
           cd ../media-db && pnpm build
           cd ../cerebrum-db && pnpm build
           cd ../food-db && pnpm build
+          cd ../lists-db && pnpm build
           cd ../app-lists-db && pnpm build
           cd ../app-food-db && pnpm build
 
