@@ -176,11 +176,11 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Phase 4 — Expansion Apps
 
-| Theme           | Status      | Notes                                                                           |
-| --------------- | ----------- | ------------------------------------------------------------------------------- |
-| Travel planner  | Not started |                                                                                 |
-| Books / Reading | Not started |                                                                                 |
-| Food (theme 07) | In progress | Epic 00 (schema) underway. See [docs/themes/07-food/](themes/07-food/README.md) |
+| Theme           | Status      | Notes                                                                                                                                                                                                                                   |
+| --------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Travel planner  | Not started |                                                                                                                                                                                                                                         |
+| Books / Reading | Not started |                                                                                                                                                                                                                                         |
+| Food (theme 07) | In progress | Epic 00 (schema) underway; Epic 03 (Draft Review) opened — PRD-136 server flow shipped (approve/reject/unreject) and PRD-138 part A adds `food.inbox.listRejected` + `listFailed`. See [docs/themes/07-food/](themes/07-food/README.md) |
 
 ### Phase 5 — Mobile & Hardware
 

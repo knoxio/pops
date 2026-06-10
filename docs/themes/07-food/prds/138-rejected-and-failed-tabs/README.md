@@ -1,6 +1,8 @@
 # PRD-138: Rejected & Failed Ingest Tabs
 
 > Epic: [03 — Draft Review & Approval](../../epics/03-draft-review.md)
+>
+> Status: In progress — server-side queries (part A) ship `food.inbox.listRejected` and `food.inbox.listFailed`. UI tabs (`RejectedTab.tsx`, `FailedTab.tsx`, `ViewSourceDialog.tsx`) land in part B once PRD-134's `/food/inbox` shell exists. The PRD-136 schema delta + `food.inbox.unreject` shipped with PRD-136 itself.
 
 ## Overview
 
