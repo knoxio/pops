@@ -19,6 +19,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openCerebrumDb, type CerebrumDb, type OpenedCerebrumDb } from '@pops/cerebrum-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
+import { backfillCerebrumFromShared } from './backfill-cerebrum-from-shared.js';
 import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
 
 let cerebrumDb: OpenedCerebrumDb | null = null;
@@ -85,4 +86,16 @@ export function setCerebrumDb(next: OpenedCerebrumDb | null): OpenedCerebrumDb |
   const prev = cerebrumDb;
   cerebrumDb = next;
   return prev;
+}
+
+/**
+ * Run the one-shot ATTACH backfill from the legacy shared pops.db into
+ * the cerebrum pillar's cerebrum.db. No-op if the cerebrum handle isn't
+ * open (e.g. boot still resolving). Idempotent against repeated boots
+ * via per-table `WHERE id NOT IN (...)` filters. See
+ * `backfill-cerebrum-from-shared.ts` for the table-by-table behaviour.
+ */
+export function backfillCerebrumFromSharedDb(sharedPath: string): void {
+  if (!cerebrumDb) return;
+  backfillCerebrumFromShared(cerebrumDb, sharedPath);
 }

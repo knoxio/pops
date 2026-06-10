@@ -2,6 +2,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { closeDb, setCoreDb, setDb } from '../db.js';
+import { setCerebrumDb } from '../db/cerebrum-handle.js';
 import { setFinanceDb } from '../db/finance-handle.js';
 import { setInventoryDb } from '../db/inventory-handle.js';
 import { setMediaDb } from '../db/media-db-handle.js';
@@ -1496,6 +1497,11 @@ export function setupTestContext() {
     // test fixture has to surface its tables on the finance handle.
     setFinanceDb({ db: drizzle(db), raw: db });
 
+    // Same for the cerebrum pillar handle (phase 2 PR 3): nudge_log
+    // reads/writes now resolve getCerebrumDrizzle(), so the test
+    // fixture has to surface that table on the cerebrum handle too.
+    setCerebrumDb({ db: drizzle(db), raw: db });
+
     return { db, caller: createCaller(true) };
   }
 
@@ -1504,6 +1510,7 @@ export function setupTestContext() {
     setFinanceDb(null);
     setInventoryDb(null);
     setMediaDb(null);
+    setCerebrumDb(null);
     closeDb();
   }
 

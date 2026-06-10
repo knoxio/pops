@@ -7,7 +7,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 
 import { createApp } from './app.js';
 import { backfillCoreFromShared, closeDb, getCoreDrizzle } from './db.js';
-import { getCerebrumDrizzle } from './db/cerebrum-handle.js';
+import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
 import { backfillFinanceFromSharedDb, getFinanceDrizzle } from './db/finance-handle.js';
 import { backfillInventoryFromSharedDb, getInventoryDrizzle } from './db/inventory-handle.js';
 import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
@@ -97,16 +97,14 @@ try {
 }
 
 // Eagerly open the cerebrum pillar's SQLite + apply its journal at
-// boot so the in-package migrations land before any request hits the
-// API. Phase 2 PR 2 only opens the handle — no production traffic is
-// routed through it yet; the nudge_log slice still reads/writes against
-// the shared pops.db. Phase 2 PR 3 flips the nudge_log slice over with
-// an ATTACH-based backfill from pops.db (matching the inventory /
-// finance / media / core PR-3 pattern); PR 4 adds the Litestream
-// config. Opening early surfaces migration failures during boot rather
-// than on first nudge-log write.
+// boot. The nudge_log slice now reads/writes against this handle
+// (phase 2 PR 3); the one-shot `backfillCerebrumFromSharedDb` carries
+// any rows that still live in the legacy pops.db across. The backfill
+// is idempotent (per-table `WHERE id NOT IN (...)` filters) and
+// non-fatal (partial failure logs + continues).
 try {
   getCerebrumDrizzle();
+  backfillCerebrumFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the cerebrum pillar SQLite:', err);
   throw err;

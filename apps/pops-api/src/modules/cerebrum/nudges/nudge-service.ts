@@ -7,14 +7,12 @@
  */
 import { and, count, eq, sql } from 'drizzle-orm';
 
-import { nudgeLogService, rowToNudge } from '@pops/cerebrum-db';
+import { nudgeLogService, rowToNudge, type CerebrumDb } from '@pops/cerebrum-db';
 import { nudgeLog } from '@pops/db-types';
 
 import { logger } from '../../../lib/logger.js';
 import { ConcatenationSynthesizer, executeConsolidationAct } from './consolidation-act.js';
 import { loadActiveEngrams } from './nudge-persistence.js';
-
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { EngramService } from '../engrams/service.js';
 import type { HybridSearchService } from '../retrieval/hybrid-search.js';
@@ -25,7 +23,25 @@ import type { StalenessDetector } from './detectors/staleness.js';
 import type { Nudge, NudgeStatus, NudgeThresholds, NudgeType } from './types.js';
 
 export interface NudgeServiceDeps {
-  db: BetterSQLite3Database;
+  /**
+   * Cerebrum pillar drizzle handle. Owns `nudge_log` reads/writes after
+   * the Phase 2 PR 3 cutover. The shared pops.db copy stays populated
+   * during the transitional release cycle (the drift guard + the
+   * idempotent boot-time backfill keep both in lockstep) until the
+   * deletion PR retires the cerebrum-owned tags from the shared journal.
+   */
+  db: CerebrumDb;
+  /**
+   * Engrams-source drizzle handle. Today this is the shared pops.db
+   * because `loadActiveEngrams` reads `engram_index` / `engram_scopes` /
+   * `engram_tags` — cerebrum-owned tables that have not yet migrated to
+   * `cerebrum.db`. When the engrams slice migrates this collapses back
+   * to a single handle and this field is removed.
+   *
+   * Defaults to `db` so callers that do not split (tests, single-DB
+   * fixtures) keep working without code changes.
+   */
+  engramsDb?: CerebrumDb;
   searchService: HybridSearchService;
   consolidationDetector: ConsolidationDetector;
   stalenessDetector: StalenessDetector;
@@ -51,7 +67,8 @@ export interface ListNudgesOptions {
 }
 
 export class NudgeService {
-  private readonly db: BetterSQLite3Database;
+  private readonly db: CerebrumDb;
+  private readonly engramsDb: CerebrumDb;
   private readonly consolidationDetector: ConsolidationDetector;
   private readonly stalenessDetector: StalenessDetector;
   private readonly patternDetector: PatternDetector;
@@ -62,6 +79,7 @@ export class NudgeService {
 
   constructor(deps: NudgeServiceDeps) {
     this.db = deps.db;
+    this.engramsDb = deps.engramsDb ?? deps.db;
     this.consolidationDetector = deps.consolidationDetector;
     this.stalenessDetector = deps.stalenessDetector;
     this.patternDetector = deps.patternDetector;
@@ -73,7 +91,7 @@ export class NudgeService {
 
   /** Run a full nudge scan, optionally filtered by type. */
   async scan(type?: NudgeType): Promise<{ created: number }> {
-    const engrams = loadActiveEngrams(this.db);
+    const engrams = loadActiveEngrams(this.engramsDb);
     let totalCreated = 0;
 
     if (!type || type === 'consolidation') {

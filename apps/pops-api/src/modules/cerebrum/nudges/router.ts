@@ -12,6 +12,7 @@
 import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { logger } from '../../../lib/logger.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -31,8 +32,13 @@ let activeThresholds: NudgeThresholds = getDefaultNudgeThresholds();
 
 /** Build a NudgeService for the current request context. */
 function getService(): NudgeService {
-  const db = getDrizzle();
-  const searchService = new HybridSearchService(db);
+  // Post-cutover (Phase 2 PR 3): nudge_log lives on the cerebrum pillar
+  // handle; engrams reads still come from the shared pops.db until the
+  // engrams slice migrates. `searchService` reads against the shared DB
+  // (same engrams source) so it stays on `getDrizzle()`.
+  const db = getCerebrumDrizzle();
+  const engramsDb = getDrizzle();
+  const searchService = new HybridSearchService(engramsDb);
   const engramService = getEngramService();
   const patternDetector = new PatternDetector({
     thresholds: activeThresholds,
@@ -52,6 +58,7 @@ function getService(): NudgeService {
   });
   return new NudgeService({
     db,
+    engramsDb,
     searchService,
     consolidationDetector: new ConsolidationDetector(searchService, activeThresholds),
     stalenessDetector: new StalenessDetector(activeThresholds),
