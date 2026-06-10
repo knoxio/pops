@@ -154,7 +154,9 @@ The audit found **zero** cross-domain FKs in the schema today that we'd lose by 
 
 ### Migration
 
-Domain-by-domain. Pilot = food (PRD-122-API's in-flight `@pops/app-food-db` extraction folds into the wider 4-package split). Order: prepare (drizzle-zod adoption, drizzle-kit per-pillar config, pillar registry + URI dispatcher, pops-shell pillar boot, container template) → food → core → finance → media → inventory → cerebrum → lists (pairs with PRD-139 landing the lists frontend) → ai (may fold into core; decide when its turn arrives).
+Domain-by-domain. Pilot = food (PRD-122-API's in-flight `@pops/app-food-db` extraction folds into the wider 4-package split). Order: prepare (drizzle-zod adoption, drizzle-kit per-pillar config, pillar registry + URI dispatcher, pops-shell pillar boot, container template) → food → core → finance → media → inventory → cerebrum → lists (pairs with PRD-139 landing the lists frontend).
+
+`ai` does not appear as a separate pillar. AI Ops is owned by the `core` pillar: every AI migration (`0034_ai_observability` through `0056_ai_observability_repair`) was authored against core's shared journal, and all AI backend services already live under `apps/pops-api/src/modules/core/{ai-budgets,ai-observability,ai-alerts,ai-usage,ai-providers}`. The `packages/app-ai/` module is a UI shell over core's tRPC and remains as such; no `packages/ai-db/` or `pops-ai-api` will ever exist. Track I in the migration roadmap formalises this decision.
 
 The migration plan lives in the private `.claude/pillar-migration-roadmap.md` (gitignored, symlinked across pops\* sibling workspaces). Sibling agents check that file for status, ordering, and per-pillar coordination notes.
 

@@ -3,9 +3,9 @@
  *
  * Today the entire backend is the `core` pillar: every module manifest's
  * routes resolve against `pops-api`'s tRPC. As mature pillars migrate
- * (Track E/F/G/H in `pillar-migration-roadmap.md`), the corresponding
- * module's mapping flips to the pillar's id and routes start observing
- * its health.
+ * (Track E/F/G/H in `.claude/pillar-migration-roadmap.md`), the
+ * corresponding module's mapping flips to the pillar's id and routes
+ * start observing its health.
  *
  * **`ai` is a permanent exception** — it folded into core during Phase γ
  * (Track I, 2026-06-10). `packages/app-ai/` is a UI shell whose backend
