@@ -83,16 +83,20 @@ function numericField(raw: unknown): number | null {
 
 /**
  * Returns the parsed `ingest_sources.extracted_json` payload. The inspector
- * provenance pane consumes it as opaque `unknown` and narrows per ingest
- * kind in the UI (`url-instagram` reads `stages.stt`, etc.). Returning the
- * raw parsed tree keeps the service generic and the wire surface stable
- * across handler-PRD additions.
+ * provenance pane consumes it as opaque `Record<string, unknown>` and
+ * narrows per ingest kind in the UI (`url-instagram` reads `stages.stt`,
+ * etc.). Returns `null` for any input that isn't a parseable JSON object —
+ * primitives, arrays, and malformed strings all collapse to `null` so the
+ * UI's `meta !== null` guard reliably gates the per-kind narrowing.
  */
-export function parseExtractedMeta(raw: string | null): unknown {
+export function parseExtractedMeta(raw: string | null): Record<string, unknown> | null {
   if (raw === null) return null;
+  let parsed: unknown;
   try {
-    return JSON.parse(raw);
+    parsed = JSON.parse(raw);
   } catch {
     return null;
   }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+  return parsed as Record<string, unknown>;
 }

@@ -45,6 +45,14 @@ export interface DslEditorProps {
    * + React Query.
    */
   autocompleteSources?: DslAutocompleteSources;
+  /**
+   * PRD-135 — imperative cursor move target. The DecisionPane sets this
+   * when the user clicks a proposed-slug entry; the editor scrolls + sets
+   * the selection at `{ line, col }` and focuses. `nonce` lets callers
+   * re-trigger the move with the same coordinates (e.g. clicking the same
+   * entry twice). `line` + `col` are 1-indexed to match `SourceSpan`.
+   */
+  pendingCursor?: { line: number; col: number; nonce: number };
 }
 
 const EMPTY_ISSUES: readonly CompileEditorIssue[] = Object.freeze([]);
@@ -64,6 +72,7 @@ export function DslEditor(props: DslEditorProps) {
     issues,
     autocompleteSources: props.autocompleteSources ?? null,
     ariaLabel: t('editor.ariaLabel'),
+    pendingCursor: props.pendingCursor,
   });
 
   const getView = useCallback((): EditorView | null => {

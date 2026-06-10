@@ -107,8 +107,8 @@ const FridgePage = lazy(() =>
 const InboxPage = lazy(() =>
   import('./pages/inbox/InboxPage').then((m) => ({ default: m.InboxPage }))
 );
-const InspectorStubPage = lazy(() =>
-  import('./pages/inbox/InboxPage').then((m) => ({ default: m.InspectorStubPage }))
+const InspectorPage = lazy(() =>
+  import('./pages/inbox/inspector/InspectorPage').then((m) => ({ default: m.InspectorPage }))
 );
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
@@ -179,9 +179,8 @@ export const routes: RouteObject[] = [
   // up-front so navConfig links + cross-PRD imports resolve today.
   { path: 'plan', element: <PlanPage /> },
   { path: 'fridge', element: <FridgePage /> },
-  // PRD-134 — review queue page. The `/food/inbox/:sourceId` stub belongs
-  // to PRD-135 (per-draft inspector); we ship a placeholder here so the
-  // row → inspector flow is integration-testable before PRD-135 lands.
+  // PRD-134 — review queue page. PRD-135 — `:sourceId` per-draft inspector
+  // (three-pane provenance / editor / decision view).
   { path: 'inbox', element: <InboxPage /> },
-  { path: 'inbox/:sourceId', element: <InspectorStubPage /> },
+  { path: 'inbox/:sourceId', element: <InspectorPage /> },
 ];

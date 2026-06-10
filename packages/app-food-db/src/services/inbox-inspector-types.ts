@@ -57,7 +57,7 @@ export interface InspectorSourceView {
   errorMessage: string | null;
   attempts: number;
   /** Full PRD-125 stages JSON (parsed). `null` when `extracted_json` is null or unparseable. */
-  meta: unknown;
+  meta: Record<string, unknown> | null;
   /** PRD-133 rows where `context_id = 'ingest_source:' || sourceId`. */
   inferenceLogs: InspectorAiInferenceLogRow[];
   totalCostUsd: number;
