@@ -45,13 +45,42 @@ export function deriveAutoDefaultExpiry(
 }
 
 /**
- * Add whole days to an ISO timestamp. Uses UTC arithmetic so the
- * midnight-boundary tests pin deterministically across timezones.
+ * Add whole days to an ISO timestamp. UTC arithmetic — the service
+ * trades in instants, not local-zone calendar dates; the UI is
+ * responsible for any presentation-time zone conversion. Pinned by
+ * the midnight-UTC boundary test in `batches-lifecycle.test.ts`.
+ *
+ * (PRD-145 originally mentioned `date-fns` + local-zone math; the
+ * implementation follows PRD-108's existing UTC contract so all
+ * shelf-life-derived expiries stay consistent across services.)
  */
 function addDays(iso: string, days: number): string {
   const base = new Date(iso);
   base.setUTCDate(base.getUTCDate() + days);
   return base.toISOString();
+}
+
+/**
+ * `a < b` for two ISO datetime strings. Parsing through `Date.parse`
+ * avoids the lexicographic-comparison footgun when one side carries
+ * milliseconds / a different offset and the other doesn't (e.g.
+ * `'2026-06-01T00:00:00Z' < '2026-06-01T00:00:00.000Z'` is true as
+ * strings but false as instants).
+ */
+export function isBefore(a: string, b: string): boolean {
+  return Date.parse(a) < Date.parse(b);
+}
+
+/**
+ * Strict-equal-as-instants. Both nulls match; one null and one ISO do
+ * not. Used by `relocateBatch` to detect a user-overridden expiry vs
+ * an auto-default value (different ISO formatting must not look like
+ * an override).
+ */
+export function isSameInstant(a: string | null, b: string | null): boolean {
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  return Date.parse(a) === Date.parse(b);
 }
 
 /**

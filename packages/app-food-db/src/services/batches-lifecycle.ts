@@ -11,6 +11,8 @@ import {
   appendAuditNote,
   deriveAutoDefaultExpiry,
   describeAdjust,
+  isBefore,
+  isSameInstant,
   today,
 } from './batches-lifecycle-helpers.js';
 import { type FoodDb, expectRow } from './internal.js';
@@ -59,7 +61,7 @@ export function createBatchManual(
     input.expiresAt !== undefined
       ? input.expiresAt
       : deriveAutoDefaultExpiry(db, input.variantId, input.location, producedAt);
-  if (expiresAt !== null && expiresAt < producedAt) {
+  if (expiresAt !== null && isBefore(expiresAt, producedAt)) {
     return { ok: false, reason: 'BadExpiry' };
   }
   const rows = db
@@ -91,49 +93,52 @@ export function relocateBatch(
   batchId: number,
   newLocation: BatchLocation
 ): BatchMutationResult {
-  const batch = loadBatch(db, batchId);
-  if (batch === null) return { ok: false, reason: 'BatchNotFound' };
-  if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
+  return db.transaction((tx) => {
+    const batch = loadBatch(tx, batchId);
+    if (batch === null) return { ok: false, reason: 'BatchNotFound' };
+    if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
 
-  const previousAutoExpiry = deriveAutoDefaultExpiry(
-    db,
-    batch.variantId,
-    batch.location,
-    batch.producedAt
-  );
-  const nextExpiry =
-    batch.expiresAt === previousAutoExpiry
-      ? deriveAutoDefaultExpiry(db, batch.variantId, newLocation, batch.producedAt)
+    const previousAutoExpiry = deriveAutoDefaultExpiry(
+      tx,
+      batch.variantId,
+      batch.location,
+      batch.producedAt
+    );
+    const nextExpiry = isSameInstant(batch.expiresAt, previousAutoExpiry)
+      ? deriveAutoDefaultExpiry(tx, batch.variantId, newLocation, batch.producedAt)
       : batch.expiresAt;
-  const nextNotes = appendAuditNote(batch.notes, `Moved to ${newLocation} on ${today()}`);
+    const nextNotes = appendAuditNote(batch.notes, `Moved to ${newLocation} on ${today()}`);
 
-  db.update(batches)
-    .set({ location: newLocation, expiresAt: nextExpiry, notes: nextNotes })
-    .where(eq(batches.id, batchId))
-    .run();
-  return { ok: true };
+    tx.update(batches)
+      .set({ location: newLocation, expiresAt: nextExpiry, notes: nextNotes })
+      .where(eq(batches.id, batchId))
+      .run();
+    return { ok: true };
+  });
 }
 
 /** `prep_state_id` is forbidden on cook-yielded batches (pinned to recipe yield). */
 export function editBatch(db: FoodDb, batchId: number, patch: BatchEditPatch): BatchMutationResult {
-  const batch = loadBatch(db, batchId);
-  if (batch === null) return { ok: false, reason: 'BatchNotFound' };
-  if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
-  if (patch.prepStateId !== undefined && batch.sourceType === 'recipe_run') {
-    return { ok: false, reason: 'CannotEditFromRun' };
-  }
-  if (
-    patch.expiresAt !== undefined &&
-    patch.expiresAt !== null &&
-    patch.expiresAt < batch.producedAt
-  ) {
-    return { ok: false, reason: 'BadExpiry' };
-  }
+  return db.transaction((tx) => {
+    const batch = loadBatch(tx, batchId);
+    if (batch === null) return { ok: false, reason: 'BatchNotFound' };
+    if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
+    if (patch.prepStateId !== undefined && batch.sourceType === 'recipe_run') {
+      return { ok: false, reason: 'CannotEditFromRun' };
+    }
+    if (
+      patch.expiresAt !== undefined &&
+      patch.expiresAt !== null &&
+      isBefore(patch.expiresAt, batch.producedAt)
+    ) {
+      return { ok: false, reason: 'BadExpiry' };
+    }
 
-  const updates = buildEditUpdates(patch);
-  if (Object.keys(updates).length === 0) return { ok: true };
-  db.update(batches).set(updates).where(eq(batches.id, batchId)).run();
-  return { ok: true };
+    const updates = buildEditUpdates(patch);
+    if (Object.keys(updates).length === 0) return { ok: true };
+    tx.update(batches).set(updates).where(eq(batches.id, batchId)).run();
+    return { ok: true };
+  });
 }
 
 function buildEditUpdates(patch: BatchEditPatch): Partial<{
@@ -162,22 +167,24 @@ export function adjustBatchQty(
   delta: number,
   reason: BatchAdjustReason
 ): BatchAdjustResult {
-  const batch = loadBatch(db, batchId);
-  if (batch === null) return { ok: false, reason: 'BatchNotFound' };
-  if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
-  if ((reason === 'spoiled' || reason === 'wasted') && delta >= 0) {
-    return { ok: false, reason: 'BadAdjustment' };
-  }
-  const newQty = batch.qtyRemaining + delta;
-  if (newQty < 0) return { ok: false, reason: 'NegativeQty' };
-  if (delta === 0) return { ok: true, newQty: batch.qtyRemaining };
+  return db.transaction((tx) => {
+    const batch = loadBatch(tx, batchId);
+    if (batch === null) return { ok: false, reason: 'BatchNotFound' };
+    if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
+    if ((reason === 'spoiled' || reason === 'wasted') && delta >= 0) {
+      return { ok: false, reason: 'BadAdjustment' };
+    }
+    const newQty = batch.qtyRemaining + delta;
+    if (newQty < 0) return { ok: false, reason: 'NegativeQty' };
+    if (delta === 0) return { ok: true, newQty: batch.qtyRemaining };
 
-  const nextNotes = appendAuditNote(batch.notes, describeAdjust(reason, delta, batch.unit));
-  db.update(batches)
-    .set({ qtyRemaining: newQty, notes: nextNotes })
-    .where(eq(batches.id, batchId))
-    .run();
-  return { ok: true, newQty };
+    const nextNotes = appendAuditNote(batch.notes, describeAdjust(reason, delta, batch.unit));
+    tx.update(batches)
+      .set({ qtyRemaining: newQty, notes: nextNotes })
+      .where(eq(batches.id, batchId))
+      .run();
+    return { ok: true, newQty };
+  });
 }
 
 /**
@@ -185,14 +192,16 @@ export function adjustBatchQty(
  * holds at every observable point. Hard delete is never exposed.
  */
 export function deleteBatch(db: FoodDb, batchId: number): BatchMutationResult {
-  const batch = loadBatch(db, batchId);
-  if (batch === null) return { ok: false, reason: 'BatchNotFound' };
-  if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
-  db.update(batches)
-    .set({ qtyRemaining: 0, deletedAt: new Date().toISOString() })
-    .where(eq(batches.id, batchId))
-    .run();
-  return { ok: true };
+  return db.transaction((tx) => {
+    const batch = loadBatch(tx, batchId);
+    if (batch === null) return { ok: false, reason: 'BatchNotFound' };
+    if (batch.deletedAt !== null) return { ok: false, reason: 'BatchDeleted' };
+    tx.update(batches)
+      .set({ qtyRemaining: 0, deletedAt: new Date().toISOString() })
+      .where(eq(batches.id, batchId))
+      .run();
+    return { ok: true };
+  });
 }
 
 function loadBatch(db: FoodDb, batchId: number): BatchRow | null {
