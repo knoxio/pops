@@ -28,14 +28,16 @@ export * as listItemsService from './services/list-items.js';
 export type { CreateListInput, ListListsFilter, UpdateListInput } from './services/lists.js';
 export type { AddItemInput, UpdateItemInput } from './services/list-items.js';
 
-// Backwards-compatible flat re-exports of every service free function.
-// New code should prefer the namespace forms above (`listsService.createList`)
-// — these keep the `/db` subpath shim a one-line passthrough.
+// Backwards-compatible flat re-exports of the service free functions that
+// HAVE NOT yet migrated to the canonical pillar packages. New code should
+// prefer the namespace forms above (`listsService.createList`) — these flat
+// re-exports keep the `/db` subpath shim a one-line passthrough during the
+// migration window.
 //
 // Track K phase 1 PR 4: the `list_items` read + check-state surface
-// (`listItemsForList`, `checkItem`, `uncheckItem`, `uncheckAllItems`)
-// no longer ships through this barrel — every consumer flipped to
-// `@pops/lists-db`'s `listItemsService.{listItemsForList, checkListItem,
+// (`listItemsForList`, `checkItem`, `uncheckItem`, `uncheckAllItems`) used
+// to be flat-exported here but has been retired — every consumer flipped
+// to `@pops/lists-db`'s `listItemsService.{listItemsForList, checkListItem,
 // uncheckListItem, uncheckAllListItems}` in PR 3 (#2879). The
 // implementations still live in `./services/list-items.js` because the
 // remaining un-migrated mutations (`addItem`, `bulkAdd`, `updateItem`,
