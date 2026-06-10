@@ -55,3 +55,26 @@ export class ImportTransactionPersistError extends Error {
     this.id = id;
   }
 }
+
+export class BudgetNotFoundError extends Error {
+  override readonly name = 'BudgetNotFoundError' as const;
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`Budget '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class BudgetConflictError extends Error {
+  override readonly name = 'BudgetConflictError' as const;
+  readonly category: string;
+  readonly period: string | null;
+
+  constructor(category: string, period: string | null) {
+    const periodDesc = period === null ? 'null' : `'${period}'`;
+    super(`Budget with category '${category}' and period ${periodDesc} already exists`);
+    this.category = category;
+    this.period = period;
+  }
+}
