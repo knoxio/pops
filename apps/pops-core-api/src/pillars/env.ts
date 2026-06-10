@@ -84,15 +84,32 @@ function parsePillarEntry(rawPair: string, seenIds: ReadonlySet<string>): Pillar
   if (baseUrlRaw.length === 0) {
     throw new PillarsEnvParseError(`entry "${pair}" is missing the baseUrl half`);
   }
+  return { id, baseUrl: parseBareOrigin(`pillar '${id}'`, baseUrlRaw) };
+}
+
+/**
+ * Parse `raw` as a bare http(s) origin. Throws if it carries a path,
+ * query, or fragment so consumers can append URL paths cleanly without
+ * silently routing through a prefix. Reused by `selfBaseUrl` validation
+ * and the per-entry parser above so both surfaces enforce the same
+ * `PillarRegistryEntry.baseUrl` contract.
+ */
+export function parseBareOrigin(label: string, raw: string): string {
   let url: URL;
   try {
-    url = new URL(baseUrlRaw);
+    url = new URL(raw);
   } catch {
-    throw new PillarsEnvParseError(`baseUrl "${baseUrlRaw}" is not a valid URL`);
+    throw new PillarsEnvParseError(`${label} baseUrl "${raw}" is not a valid URL`);
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new PillarsEnvParseError(`baseUrl "${baseUrlRaw}" must use http(s); got ${url.protocol}`);
+    throw new PillarsEnvParseError(
+      `${label} baseUrl "${raw}" must use http or https; got ${url.protocol}`
+    );
   }
-  const baseUrl = `${url.origin}${url.pathname === '/' ? '' : url.pathname.replace(/\/$/, '')}`;
-  return { id, baseUrl };
+  if ((url.pathname !== '/' && url.pathname !== '') || url.search !== '' || url.hash !== '') {
+    throw new PillarsEnvParseError(
+      `${label} baseUrl "${raw}" must be a bare origin (no path, query, or fragment)`
+    );
+  }
+  return url.origin;
 }

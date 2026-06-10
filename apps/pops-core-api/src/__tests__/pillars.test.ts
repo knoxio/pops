@@ -82,4 +82,20 @@ describe('GET /pillars', () => {
     const res = await request(makeApp()).get('/pillars');
     expect(res.status).toBe(500);
   });
+
+  it('rejects a POPS_PILLARS entry with a path/query/fragment', async () => {
+    process.env['POPS_PILLARS'] = 'food:http://food-api:3000/api';
+    const res = await request(makeApp()).get('/pillars');
+    expect(res.status).toBe(500);
+  });
+
+  it('strips a trailing slash from a clean origin', async () => {
+    process.env['POPS_PILLARS'] = 'food:http://food-api:3000/';
+    const res = await request(makeApp()).get('/pillars');
+    expect(res.status).toBe(200);
+    expect(res.body.pillars).toContainEqual({
+      id: 'food',
+      baseUrl: 'http://food-api:3000',
+    });
+  });
 });
