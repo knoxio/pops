@@ -31,6 +31,8 @@ const MIGRATIONS = [
   '0067_prd_125_ingest_error_columns.sql',
   // PRD-136 amendment — reviewed_at column on ingest_sources.
   '0068_prd_136_inbox_review.sql',
+  // PRD-145 — batches.deleted_at soft-delete column.
+  '0069_prd_145_batches_deleted_at.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),

@@ -51,6 +51,7 @@ const MIGRATIONS = [
   '0066_prd_123_conversions.sql', // PRD-123 unit_conversions + ingredient_weights
   '0067_prd_125_ingest_error_columns.sql', // PRD-125 error_code/message/attempts on ingest_sources
   '0068_prd_136_inbox_review.sql', // PRD-136 recipe_version_rejections + ingest_sources.reviewed_at
+  '0069_prd_145_batches_deleted_at.sql', // PRD-145 batches.deleted_at soft-delete column
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );

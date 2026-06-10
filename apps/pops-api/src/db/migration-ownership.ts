@@ -111,6 +111,9 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   // PRD-136 — recipe_version_rejections + ingest_sources.reviewed_at for the
   // inbox approve/reject flow.
   '0068_prd_136_inbox_review': 'food',
+  // PRD-145 — batches.deleted_at soft-delete column (service-enforced invariant
+  // deleted_at IS NOT NULL → qty_remaining = 0).
+  '0069_prd_145_batches_deleted_at': 'food',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */

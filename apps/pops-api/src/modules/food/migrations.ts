@@ -21,6 +21,8 @@ export const foodMigrationTags: readonly string[] = [
   // PRD-136 — recipe_version_rejections + ingest_sources.reviewed_at for the
   // inbox approve/reject flow.
   '0068_prd_136_inbox_review',
+  // PRD-145 — batches.deleted_at soft-delete column.
+  '0069_prd_145_batches_deleted_at',
 ];
 
 export const foodMigrations: readonly MigrationDescriptor[] = drizzleMigrations(foodMigrationTags);

@@ -73,6 +73,7 @@ const FOOD_MIGRATIONS = [
   '0066_prd_123_conversions.sql',
   '0067_prd_125_ingest_error_columns.sql',
   '0068_prd_136_inbox_review.sql',
+  '0069_prd_145_batches_deleted_at.sql',
 ];
 
 function applyMigrations(db: Database): void {

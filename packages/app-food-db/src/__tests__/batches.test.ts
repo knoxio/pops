@@ -25,6 +25,7 @@ const MIGRATIONS = [
   '0058_high_sentinel.sql',
   '0059_useful_hiroim.sql',
   '0060_familiar_leo.sql',
+  '0069_prd_145_batches_deleted_at.sql',
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );
