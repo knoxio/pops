@@ -29,3 +29,7 @@ export {
   type WishListListResult,
   type WishListQuery,
 } from './services/wishlist.js';
+
+export * as tagVocabularyService from './services/tag-vocabulary.js';
+
+export { type TagVocabularyRow, type TagVocabularySource } from './services/tag-vocabulary.js';
