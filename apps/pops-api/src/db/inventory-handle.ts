@@ -48,9 +48,10 @@ export function closeInventoryDb(): void {
 }
 
 /**
- * Test-only: swap the inventory pillar handle. Used by
- * `setupTestContext` to inject an in-memory DB so test suites don't
- * write to the dev `data/inventory.db` file. Returns the previous
+ * Test-only: swap the inventory pillar handle. Phase 2 PR 3 of this
+ * pillar wires `setupTestContext` (in `shared/test-utils.ts`) up to
+ * call this hook so test suites can inject an in-memory DB and avoid
+ * writing to the dev `data/inventory.db` file. Returns the previous
  * handle (or null).
  */
 export function setInventoryDb(next: OpenedInventoryDb | null): OpenedInventoryDb | null {

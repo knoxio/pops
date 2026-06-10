@@ -55,8 +55,8 @@ try {
 // the per-pillar migrations land before any request hits the API, but
 // no production traffic flips over yet — PR 3 of phase 2 cuts over
 // locations + items + uri-handler with a single `getDrizzle()` →
-// `getInventoryDrizzle()` swap and adds the one-shot
-// `backfillInventoryFromShared` call below.
+// `getInventoryDrizzle()` swap and adds the one-shot ATTACH-based
+// backfill from the legacy shared pops.db.
 try {
   getInventoryDrizzle();
 } catch (err) {
