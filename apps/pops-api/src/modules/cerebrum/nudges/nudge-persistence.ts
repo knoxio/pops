@@ -20,6 +20,16 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { EngramSummary } from './types.js';
 
+/**
+ * Engrams source handle. Today this is the shared pops.db until the
+ * engrams slice migrates into `@pops/cerebrum-db`. Widened to
+ * `Record<string, unknown>` so the same type works for both the bare
+ * pops.db handle (`getDrizzle()`) and the pillar handles
+ * (`getCerebrumDrizzle()`) — the runtime is a no-op but TS's invariant
+ * default schema parameter forces this dance.
+ */
+type EngramsDb = BetterSQLite3Database<Record<string, unknown>>;
+
 /** Group rows by engramId into a multi-value map. */
 function buildLookup(rows: { engramId: string; val: string }[]): Map<string, string[]> {
   const map = new Map<string, string[]>();
@@ -32,7 +42,7 @@ function buildLookup(rows: { engramId: string; val: string }[]): Map<string, str
 }
 
 /** Load active engrams from the index for detector input. */
-export function loadActiveEngrams(db: BetterSQLite3Database): EngramSummary[] {
+export function loadActiveEngrams(db: EngramsDb): EngramSummary[] {
   const rows = db
     .select()
     .from(engramIndex)
