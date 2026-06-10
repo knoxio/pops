@@ -17,6 +17,7 @@ COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
+COPY packages/food-db/package.json ./packages/food-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -51,6 +52,9 @@ COPY packages/inventory-db/migrations ./packages/inventory-db/migrations
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
+COPY packages/food-db/src ./packages/food-db/src
+COPY packages/food-db/tsconfig.json ./packages/food-db/
+COPY packages/food-db/migrations ./packages/food-db/migrations
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
@@ -72,6 +76,8 @@ RUN pnpm build
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
+RUN pnpm build
+WORKDIR /app/packages/food-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
@@ -125,6 +131,9 @@ COPY --from=builder /app/packages/media-db/migrations ./node_modules/@pops/media
 COPY --from=builder /app/packages/cerebrum-db/dist ./node_modules/@pops/cerebrum-db/dist
 COPY --from=builder /app/packages/cerebrum-db/package.json ./node_modules/@pops/cerebrum-db/
 COPY --from=builder /app/packages/cerebrum-db/migrations ./node_modules/@pops/cerebrum-db/migrations
+COPY --from=builder /app/packages/food-db/dist ./node_modules/@pops/food-db/dist
+COPY --from=builder /app/packages/food-db/package.json ./node_modules/@pops/food-db/
+COPY --from=builder /app/packages/food-db/migrations ./node_modules/@pops/food-db/migrations
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src
