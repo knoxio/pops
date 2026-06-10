@@ -21,12 +21,17 @@
  * See `docs/themes/07-food/prds/136-approve-reject-flow/README.md` and
  * `docs/themes/07-food/prds/138-rejected-and-failed-tabs/README.md`.
  */
-import { inboxQueries, inboxService } from '@pops/app-food-db';
+import { inboxInspectorService, inboxQueries, inboxService } from '@pops/app-food-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { ListDraftsInputSchema } from './drafts-inputs.js';
-import { ApproveInputSchema, RejectInputSchema, UnrejectInputSchema } from './inputs.js';
+import {
+  ApproveInputSchema,
+  GetForReviewInputSchema,
+  RejectInputSchema,
+  UnrejectInputSchema,
+} from './inputs.js';
 import {
   DEFAULT_INBOX_LIST_LIMIT,
   ListFailedInputSchema,
@@ -92,6 +97,13 @@ export const inboxRouter = router({
 
   pendingCount: protectedProcedure.query(() => {
     return { count: inboxQueries.countPendingDrafts(getDrizzle()) };
+  }),
+
+  // PRD-135 — per-draft inspector composer. One round-trip; the result is a
+  // discriminated `{ ok: true, review } | { ok: false, reason: 'SourceNotFound' }`
+  // so the UI handles the 404 path without a TRPCError translation.
+  getForReview: protectedProcedure.input(GetForReviewInputSchema).query(({ input }) => {
+    return inboxInspectorService.getInspectorView(getDrizzle(), input.sourceId);
   }),
 });
 

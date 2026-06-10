@@ -66,16 +66,6 @@ export function InboxPage({ now }: Props = {}): ReactElement {
   );
 }
 
-/** PRD-134 stub inspector — replaced by PRD-135. */
-export function InspectorStubPage(): ReactElement {
-  const { t } = useTranslation('food');
-  return (
-    <div className="rounded-md border bg-card p-6 text-sm text-muted-foreground">
-      {t('inbox.inspectorStub')}
-    </div>
-  );
-}
-
 function usePendingCount(): number | null {
   const query = trpc.food.inbox.pendingCount.useQuery(undefined, {
     refetchInterval: 60_000,

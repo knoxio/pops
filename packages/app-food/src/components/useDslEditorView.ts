@@ -16,6 +16,7 @@ import { recipeDsl } from '../dsl/codemirror';
 import { dslAutocompletion } from './dsl-editor/autocomplete-extension';
 import { chipWidgetsExtension } from './dsl-editor/chip-widgets-extension';
 import { issuesExtension, setIssuesEffect } from './dsl-editor/issues-extension';
+import { usePendingCursor } from './useDslEditorPendingCursor.js';
 
 import type { DslAutocompleteSources } from './dsl-editor/autocomplete-types';
 import type { CompileEditorIssue } from './dsl-editor/issues-types';
@@ -41,6 +42,15 @@ export interface UseDslEditorViewOptions {
    * rather than the wrapper div (PRD-120 part F).
    */
   ariaLabel?: string;
+  /**
+   * Imperative cursor move target — set by PRD-135's decision pane when the
+   * user clicks a proposed-slug entry. The hook watches the entire object
+   * identity, so callers should provide a stable reference and bump the
+   * `nonce` (or supply a fresh object) when they want the cursor to move.
+   * `line` is 1-indexed; `col` is 1-indexed inside the line, matching the
+   * `SourceSpan` shape PRD-114 emits.
+   */
+  pendingCursor?: { line: number; col: number; nonce: number };
 }
 
 interface ViewCompartments {
@@ -141,6 +151,8 @@ function useSyncEffects(
     if (!view) return;
     view.dispatch({ effects: setIssuesEffect.of([...options.issues]) });
   }, [options.issues, viewRef]);
+
+  usePendingCursor(viewRef, options.pendingCursor);
 }
 
 function buildReadOnlyExtension(readOnly: boolean) {

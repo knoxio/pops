@@ -165,6 +165,34 @@ describe('DslEditor — PRD-120 part A', () => {
     expect(screen.queryByTestId('dsl-editor-readonly-banner')).toBeNull();
   });
 
+  it('moves the cursor to pendingCursor.{line,col} and focuses (PRD-135 amendment)', () => {
+    const dsl = ['line one', 'line two', 'line three'].join('\n');
+    const { rerender } = render(<DslEditor initialValue={dsl} onChange={() => {}} />);
+    const view = getEditorView();
+    // The fresh editor anchors selection at offset 0.
+    expect(view.state.selection.main.head).toBe(0);
+    rerender(
+      <DslEditor
+        initialValue={dsl}
+        onChange={() => {}}
+        pendingCursor={{ line: 2, col: 4, nonce: 1 }}
+      />
+    );
+    // Line 2 starts after "line one\n" (9 chars); col=4 -> offset 9+3 = 12.
+    expect(view.state.selection.main.head).toBe(12);
+
+    // Bumping the nonce with new coords moves the cursor again, even though
+    // the prop object identity didn't reuse the same reference.
+    rerender(
+      <DslEditor
+        initialValue={dsl}
+        onChange={() => {}}
+        pendingCursor={{ line: 3, col: 1, nonce: 2 }}
+      />
+    );
+    expect(view.state.selection.main.head).toBe(18);
+  });
+
   it('toggles read-only at runtime without losing document state', () => {
     const { rerender } = render(
       <DslEditor initialValue="hello" onChange={() => {}} readOnly={false} />
