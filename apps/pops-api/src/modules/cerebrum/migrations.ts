@@ -2,8 +2,11 @@
  * Migration tags owned by the `cerebrum` module.
  *
  * Covers engram_index, embeddings (including the sqlite-vec virtual table),
- * nudge_log, glia_actions, plexus_adapters, and the conversation
- * persistence tables (which ego shares but cerebrum owns the schema).
+ * glia_actions, plexus_adapters, and the conversation persistence tables
+ * (which ego shares but cerebrum owns the schema). The `nudge_log` tags
+ * `0039_dry_fabian_cortez` and `0044_nudge_log` were retired from the
+ * shared drizzle journal under Track L5 once cerebrum-db's own journal
+ * became authoritative; nudge_log persistence runs there now.
  *
  * See PRD-101 US-09 for the runtime filter contract.
  */

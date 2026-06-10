@@ -7,12 +7,14 @@
  * (until the cutover PR routes it through this package).
  *
  * The nudge_log CREATE TABLE is read from the package-local migration
- * copy at `packages/cerebrum-db/migrations/0039_dry_fabian_cortez.sql`,
- * which is now the sole source of the schema — the shared-journal copy
- * was retired in Track L5 of the pillar-migration roadmap. The safety
- * re-creation tag (`0044_nudge_log`) does not need to be applied here —
- * it would be idempotent against an already-seeded DB and adds no
- * schema state.
+ * copy at `packages/cerebrum-db/migrations/0039_dry_fabian_cortez.sql`.
+ * The package-local journal now owns both this tag and the safety
+ * re-creation `0044_nudge_log.sql` (which carries a defensive CREATE
+ * TABLE IF NOT EXISTS + index); both files together describe the
+ * authoritative schema since the shared-journal copies were retired in
+ * Track L5 of the pillar-migration roadmap. This test only seeds from
+ * 0039 because 0044 is idempotent against an already-seeded DB and adds
+ * no further schema state.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
