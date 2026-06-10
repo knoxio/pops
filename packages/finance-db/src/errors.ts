@@ -78,3 +78,13 @@ export class BudgetConflictError extends Error {
     this.period = period;
   }
 }
+
+export class TransactionCorrectionNotFoundError extends Error {
+  override readonly name = 'TransactionCorrectionNotFoundError' as const;
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`Transaction correction '${id}' not found`);
+    this.id = id;
+  }
+}
