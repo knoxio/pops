@@ -11,6 +11,12 @@
  * header surface (createList / getList / updateList / etc.) and the
  * `ListNotFoundError` typed error stay on `@pops/app-lists-db` until the
  * next slice migrates the `lists` CRUD services across.
+ *
+ * Track K phase 2 PR 3 cutover: the DB handle now comes from
+ * `getListsDrizzle()` (the lists pillar's `lists.db`) instead of the
+ * shared `getDrizzle()` core handle. The boot-time
+ * `backfillListsFromSharedDb` carries the existing `lists` + `list_items`
+ * rows across so the cutover is transparent on first deploy.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -26,7 +32,7 @@ import {
 } from '@pops/app-lists-db';
 import { listItemsService } from '@pops/lists-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getListsDrizzle } from '../../../db/lists-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { selectListAggregate } from '../services/aggregate.js';
 import { runOrMap } from './error-mapping.js';
@@ -65,7 +71,7 @@ const IdInputSchema = z.object({ id: z.number().int().positive() });
 export const listRouter = router({
   /** Aggregate list query for the /lists index page. */
   list: protectedProcedure.input(ListInputSchema).query(({ input }) => {
-    const items = selectListAggregate(getDrizzle(), input ?? {});
+    const items = selectListAggregate(getListsDrizzle(), input ?? {});
     return { items };
   }),
 
@@ -77,7 +83,7 @@ export const listRouter = router({
    * a generic error toast instead.
    */
   get: protectedProcedure.input(GetInputSchema).query(({ input }) => {
-    const db = getDrizzle();
+    const db = getListsDrizzle();
     const list = getList(db, input.id);
     if (list === null) return null;
     const items = listItemsService.listItemsForList(db, input.id);
@@ -86,7 +92,7 @@ export const listRouter = router({
 
   create: protectedProcedure.input(CreateInputSchema).mutation(({ input }) => {
     const row = runOrMap(() =>
-      createList(getDrizzle(), {
+      createList(getListsDrizzle(), {
         name: input.name,
         kind: input.kind,
         ownerApp: input.ownerApp ?? 'user',
@@ -102,7 +108,7 @@ export const listRouter = router({
    */
   update: protectedProcedure.input(UpdateInputSchema).mutation(({ input }) => {
     try {
-      updateList(getDrizzle(), input.id, { name: input.name, kind: input.kind });
+      updateList(getListsDrizzle(), input.id, { name: input.name, kind: input.kind });
       return { ok: true as const };
     } catch (err) {
       if (err instanceof ListNotFoundError) {
@@ -113,17 +119,17 @@ export const listRouter = router({
   }),
 
   archive: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    runOrMap(() => archiveList(getDrizzle(), input.id));
+    runOrMap(() => archiveList(getListsDrizzle(), input.id));
     return { ok: true as const };
   }),
 
   unarchive: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    runOrMap(() => unarchiveList(getDrizzle(), input.id));
+    runOrMap(() => unarchiveList(getListsDrizzle(), input.id));
     return { ok: true as const };
   }),
 
   delete: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    const db = getDrizzle();
+    const db = getListsDrizzle();
     // PRD-140 line 213: cascade items via PRD-112's `deleteList` (one
     // transaction). The service is intentionally idempotent on unknown id,
     // but we throw NOT_FOUND if the row was never there so the UI can show

@@ -20,6 +20,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openListsDb, type ListsDb, type OpenedListsDb } from '@pops/lists-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
+import { backfillListsFromShared } from './backfill-lists-from-shared.js';
 import { resolveListsSqlitePath } from './lists-sqlite-path.js';
 
 let listsDb: OpenedListsDb | null = null;
@@ -85,4 +86,16 @@ export function setListsDb(next: OpenedListsDb | null): OpenedListsDb | null {
   const prev = listsDb;
   listsDb = next;
   return prev;
+}
+
+/**
+ * Run the one-shot ATTACH backfill from the legacy shared pops.db into
+ * the lists pillar's lists.db. No-op if the lists handle isn't open
+ * (e.g. boot still resolving). Idempotent against repeated boots via
+ * per-table `WHERE id NOT IN (...)` filters. See
+ * `backfill-lists-from-shared.ts` for the table-by-table behaviour.
+ */
+export function backfillListsFromSharedDb(sharedPath: string): void {
+  if (!listsDb) return;
+  backfillListsFromShared(listsDb, sharedPath);
 }

@@ -1512,12 +1512,16 @@ export function setupTestContext() {
     // `data/food.db` mid-suite.
     setFoodDb({ db: drizzle(db), raw: db });
 
-    // Same for the lists pillar handle (phase 2 PR 2): the handle is
-    // opened at boot but no router has cut over yet. The injection is
-    // forward-looking — once PR 3 routes list_items (and subsequent
-    // slices) through getListsDrizzle() the fixture will already be
-    // pointed at the in-memory DB and won't try to open
-    // `data/lists.db` mid-suite.
+    // Same for the lists pillar handle (phase 2 PR 3): every lists
+    // module read + write now resolves getListsDrizzle(), so the test
+    // fixture has to surface its tables (lists, list_items) on the
+    // lists handle too. The shared in-memory DB created by
+    // createTestDb() doesn't seed lists tables on its own — suites
+    // that exercise the lists routers (e.g.
+    // `modules/lists/__tests__/lists-router.test.ts`) apply the
+    // package-local 0062 migration and call `setListsDb(...)`
+    // explicitly with their own raw handle. The injection here keeps
+    // unrelated suites from lazy-opening `data/lists.db` mid-test.
     setListsDb({ db: drizzle(db), raw: db });
 
     return { db, caller: createCaller(true) };
