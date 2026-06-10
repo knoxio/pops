@@ -942,6 +942,9 @@ importers:
       '@pops/db-types':
         specifier: workspace:*
         version: link:../db-types
+      '@pops/food-contracts':
+        specifier: workspace:*
+        version: link:../food-contracts
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
