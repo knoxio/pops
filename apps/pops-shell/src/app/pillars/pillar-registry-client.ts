@@ -10,8 +10,15 @@ import { CORE_PILLAR_ID } from './manifest-pillar';
  *   GET /pillars/health  → `{ health: Record<id, 'healthy' | 'unavailable'> }`
  *
  * Pillar `baseUrl`s are container-network addresses and are not
- * reachable from the browser; the aggregator on core-api does the
- * per-pillar HTTP fan-out. The shell consumes only the aggregated map.
+ * reachable from the browser; the aggregator does the per-pillar HTTP
+ * fan-out. The shell consumes only the aggregated map.
+ *
+ * Routing (apps/pops-shell/nginx.conf):
+ *   - `/pillars` proxies to core-api (the authoritative snapshot;
+ *     core pillar phase 3 PR 4).
+ *   - `/pillars/health` still proxies to pops-api because the
+ *     aggregator's outbound probe loop currently lives there; that
+ *     endpoint follows when the URI dispatcher migrates.
  *
  * Failures are intentionally soft. A registry fetch that errors,
  * parses to the wrong shape, or returns an empty list collapses to
