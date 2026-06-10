@@ -44,9 +44,11 @@ services:
       PORT: '3001'
       CORE_SQLITE_PATH: /data/sqlite/core.db
       CORE_SELF_BASE_URL: http://core-api:3001
-      # Cross-pillar registry. Today's deployment only runs core; sibling
-      # pillars get appended (id:baseUrl,...) as they extract.
-      POPS_PILLARS: ${POPS_PILLARS:-}
+      # Cross-pillar registry — core-api hosts the authoritative
+      # `/pillars` snapshot that the shell's nginx proxy fans out to,
+      # so it MUST default to the full sibling list rather than empty.
+      # Sibling pillars get appended (id:baseUrl,...) as they extract.
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003}
     expose:
       - '3001'
     healthcheck:
