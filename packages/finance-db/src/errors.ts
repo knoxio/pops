@@ -25,3 +25,23 @@ export class TransactionTagRuleNotFoundError extends Error {
     this.id = id;
   }
 }
+
+export class TransactionNotFoundError extends Error {
+  override readonly name = 'TransactionNotFoundError' as const;
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`Transaction '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class TransactionAlreadyExistsError extends Error {
+  override readonly name = 'TransactionAlreadyExistsError' as const;
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`Transaction '${id}' already exists`);
+    this.id = id;
+  }
+}

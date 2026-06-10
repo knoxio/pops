@@ -43,3 +43,13 @@ export {
   type CreateTransactionTagRuleInput,
   type UpdateTransactionTagRuleInput,
 } from './services/transaction-tag-rules.js';
+
+export * as transactionsService from './services/transactions.js';
+
+export {
+  type CreateTransactionInput,
+  type TransactionFilters,
+  type TransactionListResult,
+  type TransactionRow,
+  type UpdateTransactionInput,
+} from './services/transactions.js';
