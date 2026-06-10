@@ -11,10 +11,10 @@
 ## environment — leave it as a `${CORE_LITESTREAM_REPLICA_URL}` style
 ## placeholder here.
 ##
-## Restore drill: stop the core-api container, point `core.db` at an
-## empty path, and run `litestream restore -o /data/sqlite/core.db
-## ${CORE_LITESTREAM_REPLICA_URL}`. The drill is exercised in Phase 4
-## verification.
+## Restore drill (single line — safe to copy/paste during an incident):
+##   litestream restore -o /data/sqlite/core.db "${CORE_LITESTREAM_REPLICA_URL}"
+## Stop the core-api container first so it isn't writing concurrently;
+## the drill is exercised in Phase 4 verification.
 
 dbs:
   - path: /data/sqlite/core.db
