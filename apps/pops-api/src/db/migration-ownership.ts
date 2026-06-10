@@ -34,10 +34,6 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0002_magical_kid_colt': 'media',
   '0003_small_shotgun': 'media',
   '0004_tearful_mongu': 'media',
-  '0005_fancy_crystal': 'inventory',
-  '0006_motionless_speed_demon': 'inventory',
-  '0007_broad_arclight': 'inventory',
-  '0008_tough_nick_fury': 'inventory',
   '0009_red_quasimodo': 'core',
   '0010_gifted_firestar': 'core',
   '0011_natural_caretaker': 'media',
@@ -66,7 +62,6 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0034_ai_observability': 'core',
   '0035_ai_inference_log_drop_legacy_columns': 'core',
   '0036_body_hash_engram_index': 'cerebrum',
-  '0037_item_uploaded_files': 'inventory',
   '0038_sturdy_professor_monster': 'cerebrum',
   '0039_dry_fabian_cortez': 'cerebrum',
   '0040_bumpy_namorita': 'cerebrum',
@@ -86,7 +81,6 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0054_service_accounts': 'core',
   '0055_ai_alert_rules': 'core',
   '0056_ai_observability_repair': 'core',
-  '0057_slimy_phalanx': 'inventory',
   // PRD-106 — food slug_registry + ingredients + variants + prep_states + aliases.
   '0058_high_sentinel': 'food',
   // PRD-107 — food recipes + recipe_versions + recipe_tags.

@@ -12,7 +12,6 @@ import { fixturesRouter } from './fixtures/index.js';
 import { inventoryRouter as itemsRouter } from './items/router.js';
 import { inventoryItemsSearchAdapter } from './items/search-adapter.js';
 import { locationsRouter } from './locations/router.js';
-import { inventoryMigrations } from './migrations.js';
 import { paperlessRouter } from './paperless/router.js';
 import { photosRouter } from './photos/index.js';
 import { reportsRouter } from './reports/index.js';
@@ -39,7 +38,7 @@ export const manifest: ModuleManifest<typeof inventoryRouter> = {
   version: '0.1.0',
   surfaces: ['app'],
   description: 'Home items, locations, connections, warranties, and documents.',
-  backend: { router: inventoryRouter, migrations: inventoryMigrations },
+  backend: { router: inventoryRouter },
   settings: [inventoryManifest],
   features: [inventoryFeaturesManifest],
   search: [inventoryItemsSearchAdapter],

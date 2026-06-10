@@ -38,34 +38,6 @@
       "breakpoints": true
     },
     {
-      "idx": 5,
-      "version": "6",
-      "when": 1773997925421,
-      "tag": "0005_fancy_crystal",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1773998093484,
-      "tag": "0006_motionless_speed_demon",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1773998245185,
-      "tag": "0007_broad_arclight",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "6",
-      "when": 1774158551720,
-      "tag": "0008_tough_nick_fury",
-      "breakpoints": true
-    },
-    {
       "idx": 9,
       "version": "6",
       "when": 1774853312000,
@@ -262,13 +234,6 @@
       "breakpoints": true
     },
     {
-      "idx": 37,
-      "version": "6",
-      "when": 1777456800000,
-      "tag": "0037_item_uploaded_files",
-      "breakpoints": true
-    },
-    {
       "idx": 38,
       "version": "6",
       "when": 1777303315206,
@@ -399,13 +364,6 @@
       "version": "7",
       "when": 1778485800000,
       "tag": "0056_ai_observability_repair",
-      "breakpoints": true
-    },
-    {
-      "idx": 57,
-      "version": "6",
-      "when": 1779607821357,
-      "tag": "0057_slimy_phalanx",
       "breakpoints": true
     },
     {
