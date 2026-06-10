@@ -8,7 +8,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 import { createApp } from './app.js';
 import { backfillCoreFromShared, closeDb, getCoreDrizzle } from './db.js';
 import { backfillInventoryFromSharedDb, getInventoryDrizzle } from './db/inventory-handle.js';
-import { getMediaDrizzle } from './db/media-db-handle.js';
+import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
@@ -67,12 +67,14 @@ try {
 }
 
 // Eagerly open the media pillar's SQLite + apply its journal at boot so
-// the per-pillar migrations land before any request hits the API. Phase 2
-// PR 2 only opens the handle — no production traffic routes here yet.
-// PR 3 of phase 2 adds `backfillMediaFromShared()` and flips
-// shelf-impressions traffic over.
+// the per-pillar migrations land before any request hits the API.
+// shelf-impressions traffic now reads/writes against this handle (phase 2
+// PR 3); the one-shot `backfillMediaFromShared` carries any rows that
+// still live in the legacy pops.db across. The backfill is idempotent
+// and non-fatal — partial failure logs and continues.
 try {
   getMediaDrizzle();
+  backfillMediaFromShared();
 } catch (err) {
   console.error('[db] Failed to bootstrap the media pillar SQLite:', err);
   throw err;
