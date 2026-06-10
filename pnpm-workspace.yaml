@@ -13,6 +13,7 @@ packages:
   - 'packages/api-client'
   - 'packages/core-db'
   - 'packages/db-types'
+  - 'packages/media-db'
   - 'packages/food-contracts'
   - 'packages/types'
   - 'packages/module-registry'
