@@ -89,6 +89,9 @@ function ViewSourceBody({
         src={row.sourceUrl}
         title={t('inbox.failed.viewSource.iframeTitle')}
         sandbox="allow-same-origin"
+        // `no-referrer` so the external site can't see internal POPS URLs
+        // like `/food/inbox/<id>` in its access logs.
+        referrerPolicy="no-referrer"
         className="h-[50vh] w-full rounded border bg-background"
       />
     </div>

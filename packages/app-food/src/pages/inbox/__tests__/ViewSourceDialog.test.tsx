@@ -18,12 +18,9 @@ import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/f
 import { type FailedRow } from '../inbox-types.js';
 import { ViewSourceDialog } from '../ViewSourceDialog.js';
 
-(globalThis as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver =
-  class ResizeObserverPolyfill {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver;
+// ResizeObserver polyfill lives in `src/test-setup.ts` (guarded behind
+// `typeof === 'undefined'` so a future jsdom update with a real
+// implementation isn't masked here).
 
 function row(over: Partial<FailedRow>): FailedRow {
   return {

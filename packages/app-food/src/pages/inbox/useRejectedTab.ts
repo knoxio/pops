@@ -49,9 +49,11 @@ export function useRejectedTab({ filters, t }: UseRejectedTabOpts) {
         toast.success(t('inbox.rejected.undo.success'));
       } else {
         toast.error(t(`inbox.rejected.undo.failure.${result.reason}` as const));
-        void utils.food.inbox.listRejected.invalidate();
       }
     },
+    // Single invalidation in onSettled covers both branches — onSuccess +
+    // onError both end here, so doing it twice on the `{ ok: false }` path
+    // would trigger a redundant refetch.
     onSettled: () => {
       void utils.food.inbox.listRejected.invalidate();
     },

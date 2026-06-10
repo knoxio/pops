@@ -76,13 +76,6 @@ vi.mock('@pops/api-client', () => ({
   },
 }));
 
-(globalThis as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver =
-  class ResizeObserverPolyfill {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver;
-
 import { FailedTab } from '../FailedTab.js';
 
 function makeRow(over: Partial<FailedRow> = {}): FailedRow {

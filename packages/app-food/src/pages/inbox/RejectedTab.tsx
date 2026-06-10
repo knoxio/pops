@@ -2,9 +2,9 @@
  * PRD-138 — Rejected tab body.
  *
  * Self-contained component: mounts when PRD-134's tab shell selects the
- * `rejected` tab. Owns its own filter state (synchronised to the URL
- * hash by callers via `value` + `onFiltersChange`) and renders the row
- * list / loading / error / empty states.
+ * `rejected` tab. Owns its own filter state internally; callers pass an
+ * `initialFilters` prop (typically derived from a URL hash by PRD-134's
+ * shell) so the URL→state plumbing belongs to whoever mounts this tab.
  */
 import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';

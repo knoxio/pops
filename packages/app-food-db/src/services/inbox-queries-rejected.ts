@@ -12,9 +12,13 @@
  *                         can't reject manually-authored drafts)
  *   recipes              (slug for inspector navigation)
  *
- * `ai_inference_log` is left-joined and aggregated by `context_id` to sum
- * the per-source cost in USD. PRD-133 uses string-namespaced context ids
- * (`'ingest_source:<id>'`), so the join key is built with concatenation.
+ * `ai_inference_log` cost is read via a correlated subquery in the SELECT
+ * list — `SUM(cost_usd) WHERE context_id = 'ingest_source:<id>'` per row.
+ * A LEFT JOIN + GROUP BY would force a group-by-every-other-column shape
+ * to keep the rest of the row scalar; the correlated subquery is simpler
+ * and the per-row cost is bounded by the SQLite index on `context_id`.
+ * PRD-133 uses string-namespaced context ids so the predicate is built
+ * with concatenation rather than a numeric FK.
  *
  * Pagination cursor: `(rejected_at DESC, version_id DESC)` — the rejected_at
  * default expression is `datetime('now')` which is unique per insert under

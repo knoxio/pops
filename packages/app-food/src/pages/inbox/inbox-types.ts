@@ -44,18 +44,23 @@ export function truncate(s: string | null | undefined, max: number): string {
 }
 
 export function relativeTimeFrom(iso: string, now: Date): string {
-  const ms = now.getTime() - new Date(iso).getTime();
-  const sec = Math.round(ms / 1000);
+  // Clamp at 0 so client/server clock skew (or a future-dated timestamp)
+  // never renders "-5s ago". Use floor on every unit boundary so 59s
+  // doesn't round up to "1m ago" — the displayed unit always matches the
+  // SI definition of "elapsed whole units".
+  const rawMs = now.getTime() - new Date(iso).getTime();
+  const ms = Math.max(0, rawMs);
+  const sec = Math.floor(ms / 1000);
   if (sec < 60) return `${sec}s ago`;
-  const min = Math.round(sec / 60);
+  const min = Math.floor(sec / 60);
   if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
+  const hr = Math.floor(min / 60);
   if (hr < 24) return `${hr}h ago`;
-  const days = Math.round(hr / 24);
+  const days = Math.floor(hr / 24);
   if (days < 30) return `${days}d ago`;
-  const months = Math.round(days / 30);
+  const months = Math.floor(days / 30);
   if (months < 12) return `${months}mo ago`;
-  return `${Math.round(months / 12)}y ago`;
+  return `${Math.floor(months / 12)}y ago`;
 }
 
 /**
