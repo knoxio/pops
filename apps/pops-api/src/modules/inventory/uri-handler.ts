@@ -5,9 +5,11 @@
  * tables use string UUID primary keys, so the id segment is passed through
  * verbatim to the service layer.
  */
+import { LocationNotFoundError, locationsService } from '@pops/inventory-db';
+
+import { getDrizzle } from '../../db.js';
 import { NotFoundError } from '../../shared/errors.js';
 import { getInventoryItem } from './items/service.js';
-import { getLocation } from './locations/service.js';
 
 import type { UriHandlerDescriptor, UriResolution } from '@pops/types';
 
@@ -17,7 +19,7 @@ async function tryGet<TData>(get: () => TData | Promise<TData>): Promise<UriReso
   try {
     return { kind: 'object', data: await get() };
   } catch (error) {
-    if (error instanceof NotFoundError) {
+    if (error instanceof NotFoundError || error instanceof LocationNotFoundError) {
       return { kind: 'not-found' };
     }
     throw error;
@@ -31,7 +33,7 @@ export const inventoryUriHandler: UriHandlerDescriptor = {
       case 'item':
         return tryGet(() => getInventoryItem(id));
       case 'location':
-        return tryGet(() => getLocation(id));
+        return tryGet(() => locationsService.getLocation(getDrizzle(), id));
       default:
         return { kind: 'not-found' };
     }

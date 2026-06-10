@@ -1,19 +1,50 @@
-/**
- * Locations tRPC router — CRUD procedures for the location tree.
- */
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+/**
+ * Locations tRPC router — CRUD procedures for the location tree.
+ *
+ * Domain errors from `@pops/inventory-db` are translated to `HttpError`
+ * subclasses inside the handler and then routed through `mapDomainErrors`
+ * so the tRPC layer sees a proper `TRPCError` with the right wire-level
+ * code (`NOT_FOUND` / `CONFLICT`). Throwing `HttpError` directly out of
+ * a tRPC handler surfaces as `INTERNAL_SERVER_ERROR` at the OpenAPI
+ * boundary, so the wrapper is load-bearing.
+ */
+import {
+  LocationCycleError,
+  LocationNotFoundError,
+  LocationSelfParentError,
+  ParentLocationNotFoundError,
+  locationsService,
+} from '@pops/inventory-db';
+
+import { getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { toInventoryItem } from '../items/types.js';
-import * as service from './service.js';
 import { CreateLocationSchema, LocationSchema, toLocation, UpdateLocationSchema } from './types.js';
+
+function translateLocationError(err: unknown): never {
+  if (err instanceof LocationNotFoundError) {
+    throw new NotFoundError('Location', err.id);
+  }
+  if (err instanceof ParentLocationNotFoundError) {
+    throw new NotFoundError('Parent location', err.id);
+  }
+  if (err instanceof LocationCycleError) {
+    throw new ConflictError('Moving this location would create a circular reference');
+  }
+  if (err instanceof LocationSelfParentError) {
+    throw new ConflictError('A location cannot be its own parent');
+  }
+  throw err;
+}
 
 export const locationsRouter = router({
   /** Get the full location tree as nested nodes. */
   tree: protectedProcedure.query(() => {
-    return { data: service.getLocationTree() };
+    return { data: locationsService.getLocationTree(getDrizzle()) };
   }),
 
   /** List all locations (flat). */
@@ -28,7 +59,7 @@ export const locationsRouter = router({
     })
     .output(z.object({ data: z.array(LocationSchema), total: z.number() }))
     .query(() => {
-      const { rows, total } = service.listLocations();
+      const { rows, total } = locationsService.listLocations(getDrizzle());
       return {
         data: rows.map(toLocation),
         total,
@@ -36,30 +67,28 @@ export const locationsRouter = router({
     }),
 
   /** Get a single location by ID. */
-  get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
-    try {
-      const row = service.getLocation(input.id);
-      return { data: toLocation(row) };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
+    mapDomainErrors(() => {
+      try {
+        const row = locationsService.getLocation(getDrizzle(), input.id);
+        return { data: toLocation(row) };
+      } catch (err) {
+        translateLocationError(err);
       }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   /** Get breadcrumb path from root to specified location (root-first). */
-  getPath: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
-    try {
-      const rows = service.getLocationPath(input.id);
-      return { data: rows.map(toLocation) };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  getPath: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
+    mapDomainErrors(() => {
+      try {
+        const rows = locationsService.getLocationPath(getDrizzle(), input.id);
+        return { data: rows.map(toLocation) };
+      } catch (err) {
+        translateLocationError(err);
       }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   /** Get items at a location, optionally including descendant locations. */
   getItems: protectedProcedure
@@ -71,47 +100,40 @@ export const locationsRouter = router({
         offset: z.coerce.number().nonnegative().optional().default(0),
       })
     )
-    .query(({ input }) => {
-      try {
-        const { rows, total } = service.getLocationItems(
-          input.locationId,
-          input.includeChildren,
-          input.limit,
-          input.offset
-        );
-        return {
-          data: rows.map(toInventoryItem),
-          total,
-        };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+    .query(({ input }) =>
+      mapDomainErrors(() => {
+        try {
+          const { rows, total } = locationsService.getLocationItems(getDrizzle(), input);
+          return {
+            data: rows.map(toInventoryItem),
+            total,
+          };
+        } catch (err) {
+          translateLocationError(err);
         }
-        throw err;
-      }
-    }),
+      })
+    ),
 
   /** Get children of a location (one level deep). */
   children: protectedProcedure.input(z.object({ parentId: z.string() })).query(({ input }) => {
-    const rows = service.getChildren(input.parentId);
+    const rows = locationsService.getChildren(getDrizzle(), input.parentId);
     return { data: rows.map(toLocation) };
   }),
 
   /** Create a new location. */
-  create: protectedProcedure.input(CreateLocationSchema).mutation(({ input }) => {
-    try {
-      const row = service.createLocation(input);
-      return {
-        data: toLocation(row),
-        message: 'Location created',
-      };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  create: protectedProcedure.input(CreateLocationSchema).mutation(({ input }) =>
+    mapDomainErrors(() => {
+      try {
+        const row = locationsService.createLocation(getDrizzle(), input);
+        return {
+          data: toLocation(row),
+          message: 'Location created',
+        };
+      } catch (err) {
+        translateLocationError(err);
       }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   /** Update an existing location (rename, move, reorder). */
   update: protectedProcedure
@@ -121,56 +143,50 @@ export const locationsRouter = router({
         data: UpdateLocationSchema,
       })
     )
-    .mutation(({ input }) => {
-      try {
-        const row = service.updateLocation(input.id, input.data);
-        return {
-          data: toLocation(row),
-          message: 'Location updated',
-        };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+    .mutation(({ input }) =>
+      mapDomainErrors(() => {
+        try {
+          const row = locationsService.updateLocation(getDrizzle(), input.id, input.data);
+          return {
+            data: toLocation(row),
+            message: 'Location updated',
+          };
+        } catch (err) {
+          translateLocationError(err);
         }
-        if (err instanceof ConflictError) {
-          throw new TRPCError({ code: 'CONFLICT', message: err.message });
-        }
-        throw err;
-      }
-    }),
+      })
+    ),
 
   /** Get stats about what will be affected by deleting a location. */
-  deleteStats: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
-    try {
-      const stats = service.getDeleteStats(input.id);
-      return { data: stats };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  deleteStats: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
+    mapDomainErrors(() => {
+      try {
+        const stats = locationsService.getDeleteStats(getDrizzle(), input.id);
+        return { data: stats };
+      } catch (err) {
+        translateLocationError(err);
       }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   /** Delete a location (cascade deletes children, items become unlocated). */
   delete: protectedProcedure
     .input(z.object({ id: z.string(), force: z.boolean().optional().default(false) }))
-    .mutation(({ input }) => {
-      try {
-        // If not forced, check if location has contents and require confirmation
-        if (!input.force) {
-          const stats = service.getDeleteStats(input.id);
-          if (stats.childCount > 0 || stats.itemCount > 0) {
-            return { requiresConfirmation: true, stats };
+    .mutation(({ input }) =>
+      mapDomainErrors(() => {
+        try {
+          // If not forced, check if location has contents and require confirmation
+          if (!input.force) {
+            const stats = locationsService.getDeleteStats(getDrizzle(), input.id);
+            if (stats.childCount > 0 || stats.itemCount > 0) {
+              return { requiresConfirmation: true, stats };
+            }
           }
+          locationsService.deleteLocation(getDrizzle(), input.id);
+          return { message: 'Location deleted' };
+        } catch (err) {
+          translateLocationError(err);
         }
-        service.deleteLocation(input.id);
-        return { message: 'Location deleted' };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
-      }
-    }),
+      })
+    ),
 });
