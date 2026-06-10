@@ -53,3 +53,13 @@ export {
   type TransactionRow,
   type UpdateTransactionInput,
 } from './services/transactions.js';
+
+export * as importsService from './services/imports.js';
+
+export type {
+  EntityLookupEntry,
+  EntityMaps,
+  InsertImportTransactionInput,
+  ImportTransactionRow,
+  CreateImportEntityResult,
+} from './services/imports.js';

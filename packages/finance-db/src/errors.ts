@@ -45,3 +45,13 @@ export class TransactionAlreadyExistsError extends Error {
     this.id = id;
   }
 }
+
+export class ImportTransactionPersistError extends Error {
+  override readonly name = 'ImportTransactionPersistError' as const;
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`Import transaction insert succeeded but row not found: ${id}`);
+    this.id = id;
+  }
+}
