@@ -57,6 +57,9 @@ importers:
       '@pops/food-contracts':
         specifier: workspace:*
         version: link:../../packages/food-contracts
+      '@pops/media-db':
+        specifier: workspace:*
+        version: link:../../packages/media-db
       '@pops/module-registry':
         specifier: workspace:*
         version: link:../../packages/module-registry

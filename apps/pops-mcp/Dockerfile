@@ -12,6 +12,7 @@ COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
+COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY apps/pops-api/package.json ./apps/pops-api/
 COPY apps/pops-mcp/package.json ./apps/pops-mcp/
@@ -34,6 +35,9 @@ COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/tsconfig.json ./packages/core-db/
 COPY packages/core-db/migrations ./packages/core-db/migrations
+COPY packages/media-db/src ./packages/media-db/src
+COPY packages/media-db/tsconfig.json ./packages/media-db/
+COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/food-contracts/src ./packages/food-contracts/src
 COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 
@@ -56,6 +60,8 @@ RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/core-db
+RUN pnpm build
+WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
