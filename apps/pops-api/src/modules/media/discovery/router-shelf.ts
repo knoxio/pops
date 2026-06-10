@@ -62,17 +62,18 @@ export const sessionAndShelfProcedures = {
    */
   assembleSession: protectedProcedure.query(async () => {
     return withTrpcInternalError('Unknown error assembling discover session', async () => {
+      const db = getDrizzle();
       const profile = service.getPreferenceProfile();
-      const impressions = shelfImpressionsService.getRecentImpressions(getDrizzle(), 7);
+      const impressions = shelfImpressionsService.getRecentImpressions(db, 7);
       const selectedShelves = assembleSession(profile, impressions);
       const shelfResults = await buildShelfResults(selectedShelves);
       const nonEmpty = shelfResults.filter((s) =>
         s.pinned ? s.items.length >= 1 : s.items.length >= 3
       );
-      const shelfIds = nonEmpty.map((s) => s.shelfId);
-      if (shelfIds.length > 0) {
-        shelfImpressionsService.recordImpressions(getDrizzle(), shelfIds);
-      }
+      shelfImpressionsService.recordImpressions(
+        db,
+        nonEmpty.map((s) => s.shelfId)
+      );
       return { shelves: nonEmpty };
     });
   }),
