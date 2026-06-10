@@ -52,6 +52,6 @@ COPY --from=builder --chown=node:node /app/apps/pops-media-api/dist ./dist
 ARG BUILD_VERSION=dev
 ENV BUILD_VERSION=$BUILD_VERSION
 
-EXPOSE 3002
+EXPOSE 3003
 USER node
 CMD ["node", "dist/server.js"]

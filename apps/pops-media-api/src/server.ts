@@ -16,8 +16,9 @@ import { createMediaApiApp } from './app.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
 
 function resolvePort(): number {
+  // 3001 is core-api, 3002 is inventory-api, 3003 is media-api.
   const raw = process.env['PORT'];
-  if (raw === undefined || raw === '') return 3002;
+  if (raw === undefined || raw === '') return 3003;
   const parsed = Number(raw);
   if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
     throw new Error(`[media-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
