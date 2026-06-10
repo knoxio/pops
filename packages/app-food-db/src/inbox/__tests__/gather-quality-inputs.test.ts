@@ -29,6 +29,10 @@ const MIGRATIONS = [
   '0065_prd_116_recipe_compile.sql',
   '0066_prd_123_conversions.sql',
   '0067_prd_125_ingest_error_columns.sql',
+  // PRD-136 adds `ingest_sources.reviewed_at` and the `recipe_version_rejections`
+  // table. PRD-137's gather helper reads `reviewed_at` so the migration must
+  // apply here too — without it the schema is missing the column.
+  '0068_prd_136_inbox_review.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
