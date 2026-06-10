@@ -15,7 +15,17 @@ import { openCoreDb } from '@pops/core-db';
 import { createCoreApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 
-const port = Number(process.env['PORT'] ?? 3001);
+function resolvePort(): number {
+  const raw = process.env['PORT'];
+  if (raw === undefined || raw === '') return 3001;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) {
+    throw new Error(`[core-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
+  }
+  return parsed;
+}
+
+const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
 
 const coreDb = openCoreDb(resolveCoreSqlitePath());
@@ -25,8 +35,11 @@ const server = app.listen(port, () => {
   console.warn(`[core-api] Listening on port ${port}`);
 });
 
-function shutdown(): void {
-  console.warn('[core-api] Shutting down');
+let shuttingDown = false;
+function shutdown(signal: NodeJS.Signals): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.warn(`[core-api] Shutting down (${signal})`);
   server.close(() => {
     coreDb.raw.close();
   });

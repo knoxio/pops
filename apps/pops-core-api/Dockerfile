@@ -46,11 +46,12 @@ FROM node:22-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/deploy ./
-COPY --from=builder /app/apps/pops-core-api/dist ./dist
+COPY --from=builder --chown=node:node /app/deploy ./
+COPY --from=builder --chown=node:node /app/apps/pops-core-api/dist ./dist
 
 ARG BUILD_VERSION=dev
 ENV BUILD_VERSION=$BUILD_VERSION
 
 EXPOSE 3001
+USER node
 CMD ["node", "dist/server.js"]

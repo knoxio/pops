@@ -15,8 +15,12 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
   const app = express();
   app.disable('x-powered-by');
 
+  // Build the handler shape once at factory time so static deps don't
+  // get re-allocated on every request.
+  const handlers = makeRequestHandler(deps);
+
   app.get('/health', (_req: Request, res: Response) => {
-    res.json(makeRequestHandler(deps).health());
+    res.json(handlers.health());
   });
 
   return app;

@@ -1,8 +1,8 @@
 /**
  * Smoke tests for the core-api Express app + health probe.
  *
- * Boots the app against an in-memory core.db so the suite doesn't
- * write to disk and confirms the `/health` route returns the agreed
+ * Boots the app against a per-test temp-dir core.db (mkdtemp + cleanup
+ * in afterEach) and confirms the `/health` route returns the agreed
  * `{ ok, pillar, version }` shape.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
