@@ -9,6 +9,8 @@
  * Read helpers live in `locations-queries.ts` so the mutating CRUD layer
  * stays small and the read surface can be shared with downstream slices.
  */
+import { randomUUID } from 'node:crypto';
+
 import { asc, eq } from 'drizzle-orm';
 
 import {
@@ -133,9 +135,11 @@ function assertParentExists(db: InventoryDb, parentId: string): void {
 }
 
 export function createLocation(db: InventoryDb, input: CreateLocationInput): LocationRow {
-  if (input.parentId) assertParentExists(db, input.parentId);
+  if (input.parentId !== undefined && input.parentId !== null) {
+    assertParentExists(db, input.parentId);
+  }
 
-  const id = crypto.randomUUID();
+  const id = randomUUID();
   const now = new Date().toISOString();
 
   db.insert(locations)
