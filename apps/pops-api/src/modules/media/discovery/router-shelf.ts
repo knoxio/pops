@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { shelfImpressionsService } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { protectedProcedure } from '../../../trpc.js';
 import { withTrpcInternalError } from './router-helpers.js';
 import * as service from './service.js';
@@ -62,7 +62,7 @@ export const sessionAndShelfProcedures = {
    */
   assembleSession: protectedProcedure.query(async () => {
     return withTrpcInternalError('Unknown error assembling discover session', async () => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       const profile = service.getPreferenceProfile();
       const impressions = shelfImpressionsService.getRecentImpressions(db, 7);
       const selectedShelves = assembleSession(profile, impressions);
