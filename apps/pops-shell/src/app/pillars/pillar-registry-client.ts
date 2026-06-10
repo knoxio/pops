@@ -9,9 +9,12 @@ import { CORE_PILLAR_ID } from './manifest-pillar';
  *   GET /pillars         → `{ pillars: PillarRegistryEntry[] }`
  *   GET /pillars/health  → `{ health: Record<id, 'healthy' | 'unavailable'> }`
  *
- * Pillar `baseUrl`s are container-network addresses and are not
- * reachable from the browser; the aggregator does the per-pillar HTTP
- * fan-out. The shell consumes only the aggregated map.
+ * Pillar `baseUrl`s in the registry are container-network addresses
+ * (e.g. `http://core-api:3001`) and are NOT reachable from the
+ * browser. The shell stores them in the boot snapshot for downstream
+ * UI (status badges, ops surfaces) but never opens a browser-to-pillar
+ * connection itself; cross-pillar HTTP fan-out runs on `/pillars/health`
+ * aggregator instead.
  *
  * Routing (apps/pops-shell/nginx.conf):
  *   - `/pillars` proxies to core-api (the authoritative snapshot;
