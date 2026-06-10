@@ -1,0 +1,30 @@
+## Litestream replication config — lists pillar SQLite.
+##
+## Phase 2 PR 4 of the lists pillar migration (ADR-026). Mirrors
+## the per-pillar pattern so each pillar's database streams
+## independently of the shared pops.db.
+##
+## Production deployment lives in the homelab-infra repo (see AGENTS.md
+## for the deployment model); this file is the canonical reference the
+## deployer copies into its own Litestream config. The replica target
+## (S3 bucket name, region, credentials) is provided by the deployer's
+## environment — leave it as a `${LISTS_LITESTREAM_REPLICA_URL}`
+## style placeholder here.
+##
+## Restore drill (single line — safe to copy/paste during an incident):
+##   litestream restore -o /data/sqlite/lists.db "${LISTS_LITESTREAM_REPLICA_URL}"
+## Stop the lists-api container first so it isn't writing
+## concurrently; the drill is exercised in Phase 4 verification.
+
+dbs:
+  - path: /data/sqlite/lists.db
+    replicas:
+      - url: ${LISTS_LITESTREAM_REPLICA_URL}
+        # Per-pillar config so a single-pillar restore doesn't pull in
+        # the whole pops.db blob. Sync interval matches the shared
+        # singleton's existing replica config (1s by default — see
+        # homelab-infra).
+        sync-interval: 1s
+        retention: 24h
+        snapshot-interval: 1h
+        validation-interval: 12h
