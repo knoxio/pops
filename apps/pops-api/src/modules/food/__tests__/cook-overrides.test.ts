@@ -4,13 +4,11 @@
  *
  * Mirrors the spec in [PRD-146 §"Integration with PRD-144's cook
  * mutation"](docs/themes/07-food/prds/146-fifo-consumption-ui/README.md):
- * one test per row in the contract table — `batch-override`, `external`,
- * `partial`, optional-line silent skip, and the depleted-batch shortfall
- * roll-back.
- *
- * Reject-shape assertions (zero-qty bypass, wrong-variant guard) live in
- * `cook-router.test.ts` alongside the broader `MarkCookedError` matrix —
- * keeping this file focused on the happy-path persistence contract.
+ * the happy-path persistence contract (one test per row of the override
+ * matrix: `batch-override`, `external`, `partial`, optional-line silent
+ * skip, depleted-batch shortfall) plus the reject guards that stop
+ * overrides from bypassing FIFO (zero-qty, wrong variant, qty mismatch
+ * vs the scaled line need).
  */
 import { type Database } from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
@@ -239,5 +237,99 @@ describe('food.cook.markCooked — PRD-146 consumption overrides', () => {
     expect(depleted?.qtyRemaining).toBe(50);
     const consumptions = db.select().from(batchConsumptions).all();
     expect(consumptions).toEqual([]);
+  });
+
+  it('rejects a zero-qty batch-override so it cannot mask the line from FIFO', async () => {
+    const seed = seedCompiledRecipe('override-zero-qty');
+    seedBatch(seed.variantId, 1000);
+    const overrideBatchId = seedBatch(seed.variantId, 500);
+    const result = await caller.food.cook.markCooked({
+      recipeVersionId: seed.versionId,
+      scaleFactor: 1,
+      yield: { qty: 800, unit: 'g', location: 'fridge' },
+      consumptionOverrides: [
+        {
+          lineIndex: 1,
+          kind: 'batch-override',
+          batchId: overrideBatchId,
+          consumeQty: 0,
+          unit: 'g',
+        },
+      ],
+    });
+    expect(result).toMatchObject({ ok: false, reason: 'ShortfallUnresolved' });
+  });
+
+  it('rejects a batch-override pointing at a batch with a different variant', async () => {
+    const seed = seedCompiledRecipe('override-wrong-variant');
+    seedBatch(seed.variantId, 1000);
+    // Seed a batch on the yield-side variant (unrelated to the recipe line).
+    const wrongBatchId = seedBatch(seed.yieldVariantId, 500);
+    const result = await caller.food.cook.markCooked({
+      recipeVersionId: seed.versionId,
+      scaleFactor: 1,
+      yield: { qty: 800, unit: 'g', location: 'fridge' },
+      consumptionOverrides: [
+        {
+          lineIndex: 1,
+          kind: 'batch-override',
+          batchId: wrongBatchId,
+          consumeQty: 200,
+          unit: 'g',
+        },
+      ],
+    });
+    expect(result).toMatchObject({ ok: false, reason: 'ShortfallUnresolved' });
+  });
+
+  it('rejects an override whose qty does not cover the full scaled line need', async () => {
+    // The line needs 200g × 1.5 = 300g. A `consumeQty: 100` override
+    // would otherwise mark the line "covered" and silently skip FIFO
+    // for the remaining 200g — that is the bug the qty-coverage guard
+    // exists to stop.
+    const seed = seedCompiledRecipe('override-qty-mismatch');
+    seedBatch(seed.variantId, 1000);
+    const overrideBatchId = seedBatch(seed.variantId, 1000);
+    const result = await caller.food.cook.markCooked({
+      recipeVersionId: seed.versionId,
+      scaleFactor: 1.5,
+      yield: { qty: 800, unit: 'g', location: 'fridge' },
+      consumptionOverrides: [
+        {
+          lineIndex: 1,
+          kind: 'batch-override',
+          batchId: overrideBatchId,
+          consumeQty: 100,
+          unit: 'g',
+        },
+      ],
+    });
+    expect(result).toMatchObject({ ok: false, reason: 'ShortfallUnresolved' });
+
+    // Roll-back invariant: no partial draw should have landed.
+    const db = getDrizzle();
+    const override = db.select().from(batches).where(eq(batches.id, overrideBatchId)).all()[0];
+    expect(override?.qtyRemaining).toBe(1000);
+    const consumptions = db.select().from(batchConsumptions).all();
+    expect(consumptions).toEqual([]);
+  });
+
+  it('rejects an external override whose unit does not match the line canonical unit', async () => {
+    const seed = seedCompiledRecipe('override-unit-mismatch');
+    seedBatch(seed.variantId, 1000);
+    const result = await caller.food.cook.markCooked({
+      recipeVersionId: seed.versionId,
+      scaleFactor: 1,
+      yield: { qty: 800, unit: 'g', location: 'fridge' },
+      consumptionOverrides: [
+        {
+          lineIndex: 1,
+          kind: 'external',
+          externalQty: 200,
+          externalUnit: 'ml',
+        },
+      ],
+    });
+    expect(result).toMatchObject({ ok: false, reason: 'ShortfallUnresolved' });
   });
 });

@@ -26,6 +26,7 @@ export interface SeededRecipe {
   versionId: number;
   ingredientId: number;
   variantId: number;
+  yieldIngredientId: number;
   yieldVariantId: number;
 }
 
@@ -49,7 +50,7 @@ function seedTomatoVariant(slug: string): { ingredientId: number; variantId: num
   return { ingredientId: ing.id, variantId: variant.id };
 }
 
-function seedYieldVariant(slug: string): number {
+function seedYieldVariant(slug: string): { ingredientId: number; variantId: number } {
   const db = getDrizzle();
   const yieldIng = ingredientsService.createIngredient(db, {
     name: 'Sauce',
@@ -66,19 +67,24 @@ function seedYieldVariant(slug: string): number {
     .set({ defaultShelfLifeDaysFridge: 3, defaultShelfLifeDaysFreezer: 60 })
     .where(eq(ingredientVariants.id, yieldVar.id))
     .run();
-  return yieldVar.id;
+  return { ingredientId: yieldIng.id, variantId: yieldVar.id };
 }
 
-function finaliseRecipeVersion(versionId: number, yieldVariantId: number | null): void {
-  const db = getDrizzle();
-  const yields = yieldVariantId !== null;
-  db.update(recipeVersions)
+interface YieldShape {
+  ingredientId: number;
+  variantId: number;
+}
+
+function finaliseRecipeVersion(versionId: number, yieldShape: YieldShape | null): void {
+  const yields = yieldShape !== null;
+  getDrizzle()
+    .update(recipeVersions)
     .set({
       compileStatus: 'compiled',
       compiledAt: new Date().toISOString(),
       servings: 4,
-      yieldIngredientId: yields ? yieldVariantId : null,
-      yieldVariantId: yields ? yieldVariantId : null,
+      yieldIngredientId: yields ? yieldShape.ingredientId : null,
+      yieldVariantId: yields ? yieldShape.variantId : null,
       yieldQty: yields ? 800 : null,
       yieldUnit: yields ? 'g' : null,
     })
@@ -90,12 +96,12 @@ export function seedCompiledRecipe(slug: string, opts: { yields?: boolean } = {}
   const db = getDrizzle();
   const yields = opts.yields ?? true;
   const tomato = seedTomatoVariant(slug);
-  const yieldVariantId = yields ? seedYieldVariant(slug) : tomato.variantId;
+  const yieldShape = yields ? seedYieldVariant(slug) : tomato;
   const { version } = recipesService.createRecipe(db, {
     slug,
     firstVersion: { title: `Test ${slug}`, bodyDsl: `@recipe(slug="${slug}", title="Test")` },
   });
-  finaliseRecipeVersion(version.id, yields ? yieldVariantId : null);
+  finaliseRecipeVersion(version.id, yields ? yieldShape : null);
   seedRecipeLine({
     versionId: version.id,
     position: 1,
@@ -108,17 +114,18 @@ export function seedCompiledRecipe(slug: string, opts: { yields?: boolean } = {}
     versionId: version.id,
     ingredientId: tomato.ingredientId,
     variantId: tomato.variantId,
-    yieldVariantId,
+    yieldIngredientId: yieldShape.ingredientId,
+    yieldVariantId: yieldShape.variantId,
   };
 }
 
 export interface ExtraLineArgs {
   versionId: number;
   position: number;
+  ingredientId: number;
   variantId: number;
   qtyG: number;
   optional?: boolean;
-  ingredientId?: number;
 }
 
 export function seedRecipeLine(args: ExtraLineArgs): void {
@@ -127,7 +134,7 @@ export function seedRecipeLine(args: ExtraLineArgs): void {
     .values({
       recipeVersionId: args.versionId,
       position: args.position,
-      ingredientId: args.ingredientId ?? args.variantId,
+      ingredientId: args.ingredientId,
       variantId: args.variantId,
       prepStateId: null,
       isRecipeRef: 0,

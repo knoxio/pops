@@ -54,6 +54,13 @@ export function applyConsumptionOverrides(
     // guard a batch-override on an optional line would write a stray
     // `batch_consumptions` row that no longer maps to a tracked need.
     if (line.optional) continue;
+    // Refuse to mark a line "covered" unless the override accounts for
+    // the full scaled need (Copilot R2). Without this gate a client can
+    // send `consumeQty: 1` on a 200g line, get added to `coveredLineIndices`,
+    // and silently bypass FIFO for the remaining 199g.
+    if (!overrideCoversLine(o, line, args.scaleFactor)) {
+      return { ok: false, reason: 'ShortfallUnresolved' };
+    }
     const outcome = processOverride(tx, args.runId, o, line);
     if (!outcome.ok) return { ok: false, reason: outcome.reason };
     covered.add(o.lineIndex);
@@ -118,11 +125,18 @@ function processBatchDraw(
 
 const EMPTY_SET: ReadonlySet<number> = new Set<number>();
 
+// Float-comparison tolerance for override qty validation. SQLite stores
+// qty columns as REAL so a 1e-6 epsilon keeps us off the rounding edge
+// without admitting a meaningful shortfall.
+const QTY_EPSILON = 1e-6;
+
 interface LineDescriptor {
   position: number;
   variantId: number | null;
   prepStateId: number | null;
   optional: boolean;
+  needQty: number;
+  canonicalUnit: 'g' | 'ml' | 'count';
 }
 
 function buildLineIndex(tx: FoodDb, versionId: number): Map<number, LineDescriptor> {
@@ -132,20 +146,55 @@ function buildLineIndex(tx: FoodDb, versionId: number): Map<number, LineDescript
       variantId: recipeLines.variantId,
       prepStateId: recipeLines.prepStateId,
       optional: recipeLines.optional,
+      qtyG: recipeLines.qtyG,
+      qtyMl: recipeLines.qtyMl,
+      qtyCount: recipeLines.qtyCount,
+      canonicalUnit: recipeLines.canonicalUnit,
     })
     .from(recipeLines)
     .where(eq(recipeLines.recipeVersionId, versionId))
     .all();
   const map = new Map<number, LineDescriptor>();
   for (const r of rows) {
+    const need = canonicalQty(r);
     map.set(r.position, {
       position: r.position,
       variantId: r.variantId ?? null,
       prepStateId: r.prepStateId ?? null,
       optional: r.optional === 1,
+      needQty: need,
+      canonicalUnit: r.canonicalUnit,
     });
   }
   return map;
+}
+
+function canonicalQty(row: {
+  qtyG: number | null;
+  qtyMl: number | null;
+  qtyCount: number | null;
+  canonicalUnit: 'g' | 'ml' | 'count';
+}): number {
+  if (row.canonicalUnit === 'g') return row.qtyG ?? 0;
+  if (row.canonicalUnit === 'ml') return row.qtyMl ?? 0;
+  return row.qtyCount ?? 0;
+}
+
+function overrideCoversLine(
+  override: ConsumptionOverride,
+  line: LineDescriptor,
+  scaleFactor: number
+): boolean {
+  const required = line.needQty * scaleFactor;
+  if (required <= 0) return true; // nothing to cover — treat as covered.
+  if (override.kind === 'external') {
+    if (override.externalUnit !== line.canonicalUnit) return false;
+    return Math.abs(override.externalQty - required) <= QTY_EPSILON;
+  }
+  if (override.unit !== line.canonicalUnit) return false;
+  const supplied =
+    override.kind === 'partial' ? override.consumeQty + override.externalQty : override.consumeQty;
+  return Math.abs(supplied - required) <= QTY_EPSILON;
 }
 
 interface DrawArgs {
