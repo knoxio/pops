@@ -88,6 +88,9 @@ function toCandidate(edge: SubstitutionEdge): SubstitutionCandidate {
     toIngredientId: edge.toIngredientId,
     toVariantId: edge.toVariantId,
     scope: edge.scope,
+    contextTags: edge.contextTags,
+    recipeId: edge.recipeId,
+    notes: edge.notes,
   };
 }
 

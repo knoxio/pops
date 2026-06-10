@@ -156,11 +156,23 @@ export interface LineShortfall {
  */
 export type LineResolution =
   | { kind: 'fifo' }
-  | { kind: 'batch-override'; batchId: number; consumeQty: number }
+  | {
+      kind: 'batch-override';
+      batchId: number;
+      consumeQty: number;
+      /**
+       * PRD-149 — set when the override came from the Substitutions section
+       * of `BatchOverridePicker`. Carried through to `food.cook.markCooked`
+       * so the server can validate the edge + append an audit note.
+       */
+      substitutionEdgeId?: number;
+    }
   | { kind: 'external'; reasonNote?: string }
   | {
       kind: 'partial';
       batchId: number;
       consumeQty: number;
       externalQty: number;
+      /** PRD-149 — see `batch-override` variant. */
+      substitutionEdgeId?: number;
     };

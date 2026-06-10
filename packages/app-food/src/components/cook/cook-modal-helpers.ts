@@ -6,7 +6,13 @@
  * mutates fields freely. `buildSubmitInput` snaps the form into the
  * `food.cook.markCooked` wire shape.
  */
-import type { CookPreparation, CookYieldDefault } from '@pops/app-food-db';
+import type {
+  ConsumptionOverride,
+  CookPreparation,
+  CookYieldDefault,
+  LineConsumeNeed,
+  LineResolution,
+} from '@pops/app-food-db';
 
 import type { MarkCookedInput } from './cook-modal-types.js';
 
@@ -62,6 +68,8 @@ export interface BuildSubmitArgs {
   planEntryId: number | undefined;
   prep: CookPreparation;
   form: CookFormState;
+  resolutionMap?: ReadonlyMap<number, LineResolution>;
+  needsByLine?: ReadonlyMap<number, LineConsumeNeed>;
 }
 
 export function buildSubmitInput(args: BuildSubmitArgs): MarkCookedInput {
@@ -84,7 +92,65 @@ export function buildSubmitInput(args: BuildSubmitArgs): MarkCookedInput {
     }
     input.yield = yieldInput;
   }
+  const overrides = collectOverrides(args.resolutionMap, args.needsByLine);
+  if (overrides.length > 0) input.consumptionOverrides = overrides;
   return input;
+}
+
+function collectOverrides(
+  resolutionMap: ReadonlyMap<number, LineResolution> | undefined,
+  needsByLine: ReadonlyMap<number, LineConsumeNeed> | undefined
+): ConsumptionOverride[] {
+  if (resolutionMap === undefined || needsByLine === undefined) return [];
+  const out: ConsumptionOverride[] = [];
+  for (const [lineIndex, resolution] of resolutionMap) {
+    const need = needsByLine.get(lineIndex);
+    if (need === undefined) continue;
+    const o = resolutionToOverride(lineIndex, resolution, need);
+    if (o !== null) out.push(o);
+  }
+  return out;
+}
+
+function resolutionToOverride(
+  lineIndex: number,
+  resolution: LineResolution,
+  need: LineConsumeNeed
+): ConsumptionOverride | null {
+  if (resolution.kind === 'fifo') return null;
+  if (resolution.kind === 'batch-override') {
+    const override: ConsumptionOverride = {
+      lineIndex,
+      kind: 'batch-override',
+      batchId: resolution.batchId,
+      consumeQty: resolution.consumeQty,
+      unit: need.canonicalUnit,
+    };
+    if (resolution.substitutionEdgeId !== undefined) {
+      override.substitutionEdgeId = resolution.substitutionEdgeId;
+    }
+    return override;
+  }
+  if (resolution.kind === 'external') {
+    return {
+      lineIndex,
+      kind: 'external',
+      externalQty: need.qty,
+      externalUnit: need.canonicalUnit,
+    };
+  }
+  const partial: ConsumptionOverride = {
+    lineIndex,
+    kind: 'partial',
+    batchId: resolution.batchId,
+    consumeQty: resolution.consumeQty,
+    externalQty: resolution.externalQty,
+    unit: need.canonicalUnit,
+  };
+  if (resolution.substitutionEdgeId !== undefined) {
+    partial.substitutionEdgeId = resolution.substitutionEdgeId;
+  }
+  return partial;
 }
 
 export function deriveAutoExpires(

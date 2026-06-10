@@ -77,6 +77,7 @@ interface SubstitutionRow {
   contextTags: string;
   scope: SubstitutionScope;
   recipeId: number | null;
+  notes: string | null;
 }
 
 function rowToEdge(row: SubstitutionRow): SubstitutionEdge {
@@ -90,6 +91,7 @@ function rowToEdge(row: SubstitutionRow): SubstitutionEdge {
     contextTags: parseContextTags(row.contextTags),
     scope: row.scope,
     recipeId: row.recipeId,
+    notes: row.notes,
   };
 }
 
@@ -138,6 +140,7 @@ export function loadSubstitutionsIndex(
       contextTags: substitutions.contextTags,
       scope: substitutions.scope,
       recipeId: substitutions.recipeId,
+      notes: substitutions.notes,
     })
     .from(substitutions)
     .where(buildScopeFilter(recipeIds))

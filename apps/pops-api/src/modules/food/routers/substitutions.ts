@@ -7,81 +7,19 @@ import {
   substitutionsHydrate,
   substitutionsQueries,
   substitutionsService,
-  type GraphViewEdgeRow,
-  type GraphViewSide,
 } from '@pops/app-food-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveForLine, type SubResolution } from '../services/substitutions-resolve-line.js';
+import {
+  deriveNodes,
+  sideToNodeId,
+  type GraphView,
+  type GraphViewEdge,
+} from './substitutions-graph-view.js';
 
-/**
- * Graph-view composite id. Encodes the side as `ingredient:<id>` or
- * `variant:<id>` so the client can dedupe nodes across edges without
- * doing any schema reasoning. Throws on a malformed side (`kind='variant'`
- * without a `variantId`) rather than silently coercing to `variant:0`,
- * which would collide across edges and hide a schema-drift bug.
- */
-function sideToNodeId(side: GraphViewSide): string {
-  if (side.kind === 'variant') {
-    if (side.variantId === null) {
-      throw new Error(
-        `graphView: variant side missing variantId (CHECK drift on ingredient ${side.ingredientId})`
-      );
-    }
-    return `variant:${side.variantId}`;
-  }
-  return `ingredient:${side.ingredientId}`;
-}
-
-/** Compose the minimum spanning subgraph of nodes that any edge touches. */
-function deriveNodes(edges: GraphViewEdgeRow[]): GraphViewNode[] {
-  const byId = new Map<string, GraphViewNode>();
-  for (const edge of edges) {
-    for (const side of [edge.fromSide, edge.toSide]) {
-      const id = sideToNodeId(side);
-      if (byId.has(id)) continue;
-      byId.set(id, {
-        id,
-        kind: side.kind,
-        ingredientId: side.ingredientId,
-        variantId: side.variantId,
-        ingredientSlug: side.ingredientSlug,
-        ingredientName: side.ingredientName,
-        variantSlug: side.variantSlug,
-        variantName: side.variantName,
-      });
-    }
-  }
-  return [...byId.values()];
-}
-
-export interface GraphViewNode {
-  id: string;
-  kind: 'ingredient' | 'variant';
-  ingredientId: number;
-  variantId: number | null;
-  ingredientSlug: string;
-  ingredientName: string;
-  variantSlug: string | null;
-  variantName: string | null;
-}
-
-export interface GraphViewEdge {
-  id: number;
-  fromNodeId: string;
-  toNodeId: string;
-  ratio: number;
-  contextTags: readonly string[];
-  scope: 'global' | 'recipe';
-  recipeId: number | null;
-  recipeSlug: string | null;
-  notes: string | null;
-}
-
-export interface GraphView {
-  nodes: GraphViewNode[];
-  edges: GraphViewEdge[];
-}
+export type { GraphView, GraphViewEdge, GraphViewNode } from './substitutions-graph-view.js';
 
 /**
  * Endpoints are XOR-shaped: exactly one of `ingredientId` / `variantId` on
@@ -220,4 +158,23 @@ export const substitutionsRouter = router({
     substitutionsService.deleteSubstitution(getDrizzle(), input.id);
     return { ok: true as const };
   }),
+
+  /**
+   * PRD-149 — per-line substitution suggestions for the cook-modal
+   * picker. Wraps PRD-150's shared substitutions-resolve service.
+   */
+  resolveForLine: protectedProcedure
+    .input(
+      z.object({
+        recipeVersionId: z.number().int().positive(),
+        lineIndex: z.number().int().positive(),
+      })
+    )
+    .query(({ input }): SubResolution => {
+      const result = resolveForLine(getDrizzle(), input);
+      if (!result.ok) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: result.reason });
+      }
+      return result.resolution;
+    }),
 });

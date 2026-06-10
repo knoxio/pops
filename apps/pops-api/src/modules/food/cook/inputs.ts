@@ -18,6 +18,8 @@ const LOCATION = z.enum(['pantry', 'fridge', 'freezer', 'other']);
 
 const LineIndex = z.number().int().positive();
 
+const SubstitutionEdgeId = z.number().int().positive().optional();
+
 const ConsumptionOverrideSchema = z.discriminatedUnion('kind', [
   z.object({
     lineIndex: LineIndex,
@@ -25,6 +27,8 @@ const ConsumptionOverrideSchema = z.discriminatedUnion('kind', [
     batchId: z.number().int().positive(),
     consumeQty: z.number().finite().nonnegative(),
     unit: UNIT,
+    /** PRD-149 — substitution edge that produced this override. */
+    substitutionEdgeId: SubstitutionEdgeId,
   }),
   z.object({
     lineIndex: LineIndex,
@@ -39,6 +43,8 @@ const ConsumptionOverrideSchema = z.discriminatedUnion('kind', [
     consumeQty: z.number().finite().nonnegative(),
     externalQty: z.number().finite().nonnegative(),
     unit: UNIT,
+    /** PRD-149 — substitution edge that produced this override. */
+    substitutionEdgeId: SubstitutionEdgeId,
   }),
 ]);
 
