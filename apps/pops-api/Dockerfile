@@ -14,6 +14,7 @@ COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
+COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -39,6 +40,9 @@ COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/food-contracts/src ./packages/food-contracts/src
 COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
+COPY packages/inventory-db/src ./packages/inventory-db/src
+COPY packages/inventory-db/tsconfig.json ./packages/inventory-db/
+COPY packages/inventory-db/migrations ./packages/inventory-db/migrations
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
@@ -52,6 +56,8 @@ RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/core-db
+RUN pnpm build
+WORKDIR /app/packages/inventory-db
 RUN pnpm build
 WORKDIR /app/packages/media-db
 RUN pnpm build
@@ -95,6 +101,9 @@ COPY --from=builder /app/packages/app-lists-db/package.json ./node_modules/@pops
 COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
 COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
 COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations
+COPY --from=builder /app/packages/inventory-db/dist ./node_modules/@pops/inventory-db/dist
+COPY --from=builder /app/packages/inventory-db/package.json ./node_modules/@pops/inventory-db/
+COPY --from=builder /app/packages/inventory-db/migrations ./node_modules/@pops/inventory-db/migrations
 COPY --from=builder /app/packages/media-db/dist ./node_modules/@pops/media-db/dist
 COPY --from=builder /app/packages/media-db/package.json ./node_modules/@pops/media-db/
 COPY --from=builder /app/packages/media-db/migrations ./node_modules/@pops/media-db/migrations

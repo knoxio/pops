@@ -1,152 +1,117 @@
-import { asc, eq } from 'drizzle-orm';
-
-import { locations } from '@pops/db-types';
+/**
+ * Thin forwarders to `@pops/inventory-db`'s `locationsService` namespace.
+ *
+ * Each function resolves the pops-api shared drizzle handle via
+ * `getDrizzle()` and passes it to the package. Typed errors thrown by
+ * the package are translated to the `NotFoundError` / `ConflictError`
+ * variants the rest of pops-api still expects, so the global error
+ * handler keeps producing the same status codes and i18n keys.
+ *
+ * PR 4 of the inventory pillar Phase 1 deletes this shim and flips
+ * `router.ts` + `items/service.ts` to import from `@pops/inventory-db`
+ * directly.
+ */
+import {
+  LocationCycleError,
+  LocationNotFoundError,
+  LocationSelfParentError,
+  ParentLocationNotFoundError,
+  locationsService,
+} from '@pops/inventory-db';
 
 import { getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import {
-  getDescendantLocationIds,
-  getDeleteStats,
-  getLocationItems,
-  getLocationOrThrow,
-  getLocationPath,
-  getLocationsList,
-  type LocationItemsResult,
-} from './queries.js';
-import { toLocation } from './types.js';
 
 import type {
   CreateLocationInput,
+  DeleteLocationStats,
+  LocationItemsResult,
+  LocationListResult,
   LocationRow,
   LocationTreeNode,
   UpdateLocationInput,
 } from './types.js';
 
-export {
-  getDeleteStats,
-  getDescendantLocationIds,
-  getLocationItems,
-  getLocationPath,
-  type LocationItemsResult,
-};
+export type { DeleteLocationStats, LocationItemsResult };
 
-export interface LocationListResult {
-  rows: LocationRow[];
-  total: number;
+function translateLocationError(err: unknown): never {
+  if (err instanceof LocationNotFoundError) {
+    throw new NotFoundError('Location', err.id);
+  }
+  if (err instanceof ParentLocationNotFoundError) {
+    throw new NotFoundError('Parent location', err.id);
+  }
+  if (err instanceof LocationCycleError) {
+    throw new ConflictError('Moving this location would create a circular reference');
+  }
+  if (err instanceof LocationSelfParentError) {
+    throw new ConflictError('A location cannot be its own parent');
+  }
+  throw err;
+}
+
+function translateErrors<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    translateLocationError(err);
+  }
+}
+
+export function getDescendantLocationIds(id: string): string[] {
+  return locationsService.getDescendantLocationIds(getDrizzle(), id);
 }
 
 export function listLocations(): LocationListResult {
-  const rows = getLocationsList();
-  return { rows, total: rows.length };
+  return locationsService.listLocations(getDrizzle());
 }
 
 export function getLocation(id: string): LocationRow {
-  return getLocationOrThrow(id);
+  return translateErrors(() => locationsService.getLocation(getDrizzle(), id));
 }
 
 export function getLocationTree(): LocationTreeNode[] {
-  const allRows = getLocationsList();
-  const nodeMap = new Map<string, LocationTreeNode>();
-  const roots: LocationTreeNode[] = [];
-
-  for (const row of allRows) {
-    nodeMap.set(row.id, { ...toLocation(row), children: [] });
-  }
-
-  for (const row of allRows) {
-    const node = nodeMap.get(row.id);
-    if (!node) continue;
-    const parent = row.parentId ? nodeMap.get(row.parentId) : undefined;
-    if (parent) parent.children.push(node);
-    else roots.push(node);
-  }
-
-  return roots;
+  return locationsService.getLocationTree(getDrizzle());
 }
 
 export function getChildren(parentId: string): LocationRow[] {
-  return getDrizzle()
-    .select()
-    .from(locations)
-    .where(eq(locations.parentId, parentId))
-    .orderBy(asc(locations.sortOrder), asc(locations.name))
-    .all();
+  return locationsService.getChildren(getDrizzle(), parentId);
 }
 
-function assertParentExists(parentId: string): void {
-  const parent = getDrizzle()
-    .select({ id: locations.id })
-    .from(locations)
-    .where(eq(locations.id, parentId))
-    .get();
-  if (!parent) throw new NotFoundError('Parent location', parentId);
+export function getLocationPath(id: string): LocationRow[] {
+  return translateErrors(() => locationsService.getLocationPath(getDrizzle(), id));
+}
+
+export function getLocationItems(
+  locationId: string,
+  includeChildren: boolean,
+  limit: number,
+  offset: number
+): LocationItemsResult {
+  return translateErrors(() =>
+    locationsService.getLocationItems(getDrizzle(), {
+      locationId,
+      includeChildren,
+      limit,
+      offset,
+    })
+  );
+}
+
+export function getDeleteStats(id: string): DeleteLocationStats {
+  return translateErrors(() => locationsService.getDeleteStats(getDrizzle(), id));
 }
 
 export function createLocation(input: CreateLocationInput): LocationRow {
-  if (input.parentId) assertParentExists(input.parentId);
-
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-
-  getDrizzle()
-    .insert(locations)
-    .values({
-      id,
-      name: input.name,
-      parentId: input.parentId ?? null,
-      sortOrder: input.sortOrder ?? 0,
-      lastEditedTime: now,
-    })
-    .run();
-
-  return getLocation(id);
-}
-
-function assertNoCycle(id: string, newParentId: string): void {
-  const db = getDrizzle();
-  let current: string | null = newParentId;
-  while (current) {
-    const ancestor = db
-      .select({ parentId: locations.parentId })
-      .from(locations)
-      .where(eq(locations.id, current))
-      .get();
-    if (!ancestor) break;
-    if (ancestor.parentId === id) {
-      throw new ConflictError('Moving this location would create a circular reference');
-    }
-    current = ancestor.parentId;
-  }
-}
-
-function buildLocationUpdates(input: UpdateLocationInput): Partial<LocationRow> {
-  const updates: Partial<LocationRow> = {};
-  if (input.name !== undefined) updates.name = input.name;
-  if (input.parentId !== undefined) updates.parentId = input.parentId;
-  if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder;
-  return updates;
+  return translateErrors(() => locationsService.createLocation(getDrizzle(), input));
 }
 
 export function updateLocation(id: string, input: UpdateLocationInput): LocationRow {
-  getLocation(id);
-
-  if (input.parentId !== undefined && input.parentId !== null) {
-    if (input.parentId === id) throw new ConflictError('A location cannot be its own parent');
-    assertParentExists(input.parentId);
-    assertNoCycle(id, input.parentId);
-  }
-
-  const updates = buildLocationUpdates(input);
-  if (Object.keys(updates).length > 0) {
-    updates.lastEditedTime = new Date().toISOString();
-    getDrizzle().update(locations).set(updates).where(eq(locations.id, id)).run();
-  }
-
-  return getLocation(id);
+  return translateErrors(() => locationsService.updateLocation(getDrizzle(), id, input));
 }
 
 export function deleteLocation(id: string): void {
-  getLocation(id);
-  const result = getDrizzle().delete(locations).where(eq(locations.id, id)).run();
-  if (result.changes === 0) throw new NotFoundError('Location', id);
+  translateErrors(() => {
+    locationsService.deleteLocation(getDrizzle(), id);
+  });
 }

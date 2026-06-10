@@ -7,6 +7,7 @@ on:
       - "apps/pops-shell/**"
       - "packages/app-*/**"
       - "packages/db-types/**"
+      - "packages/inventory-db/**"
       - "packages/ui/**"
       - "packages/api-client/**"
       - "packages/widgets/**"
@@ -32,6 +33,7 @@ jobs:
               - 'apps/pops-shell/**'
               - 'packages/app-*/**'
               - 'packages/db-types/**'
+              - 'packages/inventory-db/**'
               - 'packages/ui/**'
               - 'packages/api-client/**'
               - 'packages/widgets/**'
@@ -74,6 +76,7 @@ jobs:
           cd ../module-registry && pnpm build
           cd ../food-contracts && pnpm build
           cd ../core-db && pnpm build
+          cd ../inventory-db && pnpm build
           cd ../media-db && pnpm build
           cd ../app-lists-db && pnpm build
           cd ../app-food-db && pnpm build
