@@ -62,6 +62,7 @@ export { extractPartialReasonFromExtractedJson } from './inbox/partial-reason.js
 export {
   DEFAULT_CREATION_WINDOW_SECONDS,
   countCreationsForVersion,
+  countCreationsForVersions,
   listCreationsForVersion,
   type CreationRow,
   type ListCreationsOptions,

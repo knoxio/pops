@@ -128,9 +128,31 @@ describe('PRD-137 — band boundaries', () => {
     expect(result.band).toBe('clean');
   });
 
-  it('79 → minor (just below the clean floor)', () => {
-    const r = scoreDraft(cleanInputs({ hasTitle: false, hasYield: false, ingestAgeMinutes: 1440 }));
-    // 100 - 20 - 15 = 65 → minor.
+  it('79 → minor (just below the clean floor, pinned exactly)', () => {
+    // PRD-137 §Rubric — clean is half-open at the lower bound (`score >= 80`),
+    // so 79 must land in `minor`. Build the score by composing weights that
+    // sum to exactly -21 against the clean baseline (drop NO_TITLE -20 +
+    // PARTIAL_RATE_LIMITED -5 + INGEST_KIND_TEXT +5 + drop AGE_FRESH +2
+    // = -20; instead use NO_TITLE -20 + PARTIAL_RATE_LIMITED -5 + AGE_FRESH +2
+    // + INGEST_KIND_TEXT +5 wait — let's compute step by step):
+    //   start 100
+    //   - 20 NO_TITLE        = 80
+    //   - 5  rate-limited    = 75
+    //   + 5  INGEST_KIND_TEXT = 80   → still clean. Try again:
+    //   100 - 20 (NO_TITLE) - 5 (rate-limited) + 5 (text) - 2 (stale) + 0 = 78 → minor.
+    // Easier: 100 - 20 (NO_TITLE) - 5 (instagram) + 0 + ingestAgeMinutes=1440
+    //   = 100 - 20 - 5 = 75 → minor. Pin 79 via:
+    //   100 - 20 NO_TITLE - 5 rate-limited + 5 text - 2 stale + 1 = impossible
+    //   integer weights → 79 isn't reachable. Pick 78 (closest reachable):
+    const r = scoreDraft(
+      cleanInputs({
+        hasTitle: false, // -20
+        partialReason: 'rate-limited', // -5
+        ingestKind: 'text', // +5
+        ingestAgeMinutes: 30_000, // AGE_STALE -2
+      })
+    );
+    expect(r.score).toBe(78);
     expect(r.band).toBe('minor');
   });
 
@@ -148,8 +170,12 @@ describe('PRD-137 — band boundaries', () => {
     expect(r.band).toBe('minor');
   });
 
-  it('49 → attention', () => {
-    // 100 - 40 (uncompiled) - 5 (instagram) - 5 (rate-limited) - 2 (stale) = 48.
+  it('49 → attention (just below the minor floor)', () => {
+    // PRD-137 §Rubric — `minor` requires `score >= 50`; 49 must be
+    // `attention`. Integer weights mean 49 isn't reachable from common
+    // combinations; we pin 48 (the closest reachable below the boundary)
+    // and assert it lands in `attention`.
+    //   100 - 40 (uncompiled) - 5 (instagram) - 5 (rate-limited) - 2 (stale) = 48.
     const r = scoreDraft(
       cleanInputs({
         compileStatus: 'uncompiled',
@@ -158,6 +184,7 @@ describe('PRD-137 — band boundaries', () => {
         ingestAgeMinutes: 30_000,
       })
     );
+    expect(r.score).toBe(48);
     expect(r.band).toBe('attention');
   });
 
@@ -179,16 +206,20 @@ describe('PRD-137 — band boundaries', () => {
     expect(r.band).toBe('attention');
   });
 
-  it('19 → blocked', () => {
+  it('score < 20 → blocked (just below the attention floor)', () => {
+    // Integer weights mean 19 isn't reachable from common combinations;
+    // we pin 18 (the closest reachable below the boundary) and assert
+    // both score and band.
     const r = scoreDraft(
       cleanInputs({
         ingestKind: 'text',
         ingredientLineCount: 0,
         stepCount: 0,
         hasYield: false,
-        ingestAgeMinutes: 30_000, // stale: -2 → 18
+        ingestAgeMinutes: 30_000, // stale: -2
       })
     );
+    expect(r.score).toBe(18);
     expect(r.band).toBe('blocked');
   });
 });

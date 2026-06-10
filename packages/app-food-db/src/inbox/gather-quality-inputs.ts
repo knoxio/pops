@@ -18,7 +18,7 @@ import { count, inArray, isNotNull } from 'drizzle-orm';
 import { ingestSources } from '../schema.js';
 import { recipeLines, recipeSteps, recipeVersionProposedSlugs } from '../schema.js';
 import { recipeVersions } from '../schema.js';
-import { countCreationsForVersion } from '../services/creations.js';
+import { countCreationsForVersions } from '../services/creations.js';
 import { type FoodDb } from '../services/internal.js';
 import { extractPartialReasonFromExtractedJson } from './partial-reason.js';
 import {
@@ -68,6 +68,13 @@ export function gatherQualityInputsForVersions(
   const lineCounts = readLineCounts(db, versions);
   const stepCounts = readStepCounts(db, versions);
   const slugCounts = readSlugCounts(db, versions);
+  // PRD-137 AC: O(1) round-trips. `countCreationsForVersions` does the
+  // window scan once across slug_registry + ingredient_variants for the
+  // entire batch (was per-version, which Copilot R1 flagged as N+1).
+  const creationCounts = countCreationsForVersions(
+    db,
+    versions.map((v) => v.id)
+  );
 
   for (const v of versions) {
     const source = v.sourceId !== null ? sources.get(v.sourceId) : undefined;
@@ -79,7 +86,7 @@ export function gatherQualityInputsForVersions(
         lineCount: lineCounts.get(v.id) ?? 0,
         stepCount: stepCounts.get(v.id) ?? 0,
         slugCount: slugCounts.get(v.id) ?? 0,
-        creationCount: countCreationsForVersion(db, v.id),
+        creationCount: creationCounts.get(v.id) ?? 0,
         now,
       })
     );

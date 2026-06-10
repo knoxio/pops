@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { recipes, recipeVersions } from '../schema.js';
 import {
   countCreationsForVersion,
+  countCreationsForVersions,
   DEFAULT_CREATION_WINDOW_SECONDS,
   listCreationsForVersion,
 } from '../services/creations.js';
@@ -198,5 +199,88 @@ describe('PRD-116 amendment — listCreationsForVersion', () => {
 
   it('default window matches the exported constant (60s)', () => {
     expect(DEFAULT_CREATION_WINDOW_SECONDS).toBe(60);
+  });
+
+  it('handles the production-shape compiled_at (ISO `T...Z` from new Date().toISOString())', () => {
+    // PRD-116's compile writer stamps recipe_versions.compiled_at with
+    // `new Date().toISOString()` — `2026-06-10T12:00:00.000Z`, NOT the
+    // SQLite `YYYY-MM-DD HH:MM:SS` shape. Naive string comparison would
+    // place slugs registered after the compile inside the window (`' '`
+    // sorts before `'T'`). The helper normalises both bounds to the
+    // SQLite shape so the comparison is correct.
+    const versionId = seedVersion(db, 'iso', { compiledAt: '2026-06-10T12:00:00.000Z' });
+    insertSlugRegistry(raw, {
+      slug: 'inside',
+      kind: 'ingredient',
+      targetId: 1,
+      createdAt: '2026-06-10 11:59:30',
+    });
+    insertSlugRegistry(raw, {
+      slug: 'after-the-compile',
+      kind: 'ingredient',
+      targetId: 2,
+      createdAt: '2026-06-10 12:00:30', // 30s AFTER compile — must be excluded
+    });
+    const slugs = listCreationsForVersion(db, versionId).map((r) => r.slug);
+    expect(slugs).toEqual(['inside']);
+  });
+
+  it('includes ingredient_variants created in the window (variants are not in slug_registry)', () => {
+    const versionId = seedVersion(db, 'with-variant', { compiledAt: '2026-06-10 12:00:00' });
+    // Seed a parent ingredient first so the variant FK is satisfied.
+    const parentId = (
+      raw
+        .prepare(
+          `INSERT INTO ingredients (slug, name, default_unit) VALUES ('flour-parent', 'Flour parent', 'g') RETURNING id`
+        )
+        .get() as { id: number }
+    ).id;
+    // Inside the window — variant counts.
+    raw
+      .prepare(
+        `INSERT INTO ingredient_variants (ingredient_id, slug, name, default_unit, created_at) VALUES (?, ?, ?, 'g', ?)`
+      )
+      .run(parentId, 'flour-bread', 'Bread flour', '2026-06-10 11:59:50');
+    // Outside the window — variant excluded.
+    raw
+      .prepare(
+        `INSERT INTO ingredient_variants (ingredient_id, slug, name, default_unit, created_at) VALUES (?, ?, ?, 'g', ?)`
+      )
+      .run(parentId, 'flour-old', 'Old flour', '2026-06-10 11:50:00');
+    const rows = listCreationsForVersion(db, versionId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.kind).toBe('variant');
+    expect(rows[0]?.slug).toBe('flour-bread');
+  });
+
+  it('countCreationsForVersions batches across the input ids in a single window scan', () => {
+    const a = seedVersion(db, 'a', { compiledAt: '2026-06-10 12:00:00' });
+    const b = seedVersion(db, 'b', { compiledAt: '2026-06-10 12:00:00' });
+    const noCompile = seedVersion(db, 'never', {
+      compiledAt: null,
+      compileStatus: 'uncompiled',
+    });
+    insertSlugRegistry(raw, {
+      slug: 's1',
+      kind: 'ingredient',
+      targetId: 1,
+      createdAt: '2026-06-10 11:59:30',
+    });
+    insertSlugRegistry(raw, {
+      slug: 's2',
+      kind: 'recipe',
+      targetId: 1,
+      createdAt: '2026-06-10 11:59:45',
+    });
+    const out = countCreationsForVersions(db, [a, b, noCompile]);
+    // Both compiled versions share the window — each sees 2 creations.
+    // The never-compiled version is absent from the map (callers default to 0).
+    expect(out.get(a)).toBe(2);
+    expect(out.get(b)).toBe(2);
+    expect(out.get(noCompile)).toBeUndefined();
+  });
+
+  it('countCreationsForVersions returns an empty map for an empty input list', () => {
+    expect(countCreationsForVersions(db, [])).toEqual(new Map());
   });
 });

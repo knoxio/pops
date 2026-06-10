@@ -1,8 +1,8 @@
 /**
  * PRD-116 amendment (driven by PRD-137 + PRD-135).
  *
- * `listCreationsForVersion` returns the ingredient + recipe slugs that were
- * registered in `slug_registry` as part of this version's compile.
+ * `listCreationsForVersion` returns the ingredient, variant, and recipe
+ * slugs that were registered as part of this version's compile.
  *
  * **Sourcing strategy** — PRD-137 §"creationCount sourcing" left the
  * implementation choice to PRD-116. We pick the **timestamp-window join**
@@ -10,44 +10,53 @@
  *
  *   1. Read the version's `compiled_at`.
  *   2. Read every `slug_registry` row whose `created_at` falls within a
- *      tight window ending at `compiled_at`.
+ *      tight window ending at `compiled_at` (covers ingredients + recipes).
+ *   3. Read every `ingredient_variants` row in the same window (variants
+ *      are NOT in `slug_registry`; PRD-106 lookups join `ingredient_variants`
+ *      via `ingredients.slug → ingredients.id → ingredient_variants`).
  *
- * Why this is safe enough in POPS:
+ * **Timestamp format normalisation.** PRD-116's compile writer stamps
+ * `recipe_versions.compiled_at` via `new Date().toISOString()` →
+ * `2026-06-10T12:00:00.000Z`. SQLite's `datetime('now')` (used by
+ * `slug_registry.created_at` and `ingredient_variants.created_at`) emits
+ * `2026-06-10 12:00:00` instead. String-compared, the SQLite shape sorts
+ * LESS than the ISO shape because `' '` (0x20) < `'T'` (0x54), so a naive
+ * `created_at <= compiled_at` would let rows registered AFTER the compile
+ * still satisfy the upper bound. The helper coerces `compiled_at` to the
+ * SQLite UTC shape (`YYYY-MM-DD HH:MM:SS`) before constructing either
+ * window bound (Copilot R1).
+ *
+ * Why the window is safe enough in POPS:
  *   - better-sqlite3 is single-process; compiles never overlap on the same
- *     pillar handle, so the window can't accidentally pick up slugs from a
- *     concurrent compile.
- *   - The compile transaction registers `slug_registry` rows then updates
- *     `recipe_versions.compiled_at` — the registry timestamps therefore
- *     land strictly before (or equal to) `compiled_at`. The window upper
- *     bound is `compiled_at` itself, and the lower bound is a configurable
+ *     handle, so the window can't pick up slugs from a concurrent compile.
+ *   - The compile transaction registers `slug_registry` + variant rows,
+ *     then updates `recipe_versions.compiled_at` — registry timestamps
+ *     land strictly before `compiled_at`. The lower bound is a configurable
  *     fudge factor capturing the longest plausible compile transaction
- *     (default 60s — compiles for PRD-113's seed are sub-100ms; 60s
- *     is two orders of magnitude over the observed budget).
- *   - Uncompiled versions (`compiled_at IS NULL`) return zero creations —
- *     PRD-137's `CREATIONS_HIGH` signal only fires on count > 5, so this
- *     under-attribution is harmless until the recipe compiles cleanly.
+ *     (default 60s — PRD-113's seed compiles are sub-100ms).
+ *   - Uncompiled versions (`compiled_at IS NULL`) return zero — PRD-137's
+ *     `CREATIONS_HIGH` only fires on count > 5 so this under-attribution
+ *     is harmless until the recipe compiles cleanly.
  *
  * Limitations the caller should know:
- *   - The window matches creations from any compile that landed in the
- *     same wall-clock window. In a single-user system the only way this
- *     trips is if the user kicks off two compiles within 60s and both
- *     produce auto-creations — the heuristic over-counts in that case.
- *   - Slugs deregistered by a later compile are still counted while the
- *     row exists. PRD-106 never deletes slugs once registered, so the
- *     row count is monotonic in practice.
+ *   - Two compiles within the same 60s window over-count (each one sees
+ *     the other's creations). PRD-113's seed runs serially; user-driven
+ *     compiles are one-at-a-time in single-user POPS.
+ *   - Rows deregistered by a later compile still count while present.
+ *     PRD-106 never deletes slugs once registered, so this is monotonic.
  *
- * If the over-counting ever matters for UX, the fallback in PRD-137 §2
+ * If over-counting ever matters for UX, the fallback in PRD-137 §2
  * (`creation_count` column on `recipe_versions`) is a single-migration
- * follow-up — the function signature here stays stable.
+ * follow-up; the function signature here stays stable.
  */
-import { and, eq, gte, lte } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
 
-import { recipeVersions, slugRegistry } from '../schema.js';
+import { ingredientVariants, recipeVersions, slugRegistry } from '../schema.js';
 import { type FoodDb } from './internal.js';
 
 export interface CreationRow {
   slug: string;
-  kind: 'ingredient' | 'recipe';
+  kind: 'ingredient' | 'variant' | 'recipe';
   createdAt: string;
 }
 
@@ -66,23 +75,9 @@ export function listCreationsForVersion(
 ): readonly CreationRow[] {
   const compiledAt = readCompiledAt(db, versionId);
   if (compiledAt === null) return [];
-
-  const windowSeconds = options.windowSeconds ?? DEFAULT_CREATION_WINDOW_SECONDS;
-  const lowerBound = subtractSeconds(compiledAt, windowSeconds);
-
-  const rows = db
-    .select({
-      slug: slugRegistry.slug,
-      kind: slugRegistry.kind,
-      createdAt: slugRegistry.createdAt,
-    })
-    .from(slugRegistry)
-    .where(and(gte(slugRegistry.createdAt, lowerBound), lte(slugRegistry.createdAt, compiledAt)))
-    .all();
-
-  return rows
-    .filter((r): r is CreationRow => r.kind === 'ingredient' || r.kind === 'recipe')
-    .map((r) => ({ slug: r.slug, kind: r.kind, createdAt: r.createdAt }));
+  const window = buildWindow(compiledAt, options);
+  if (window === null) return [];
+  return [...readRegistryCreations(db, window), ...readVariantCreations(db, window)];
 }
 
 /** Convenience: returns the number of creations in the window. */
@@ -94,25 +89,149 @@ export function countCreationsForVersion(
   return listCreationsForVersion(db, versionId, options).length;
 }
 
+/**
+ * Batched creation counter for PRD-134's inbox queue. Returns a Map keyed
+ * by versionId — versions whose `compiled_at` is null are absent (counted
+ * as 0 by callers). Single round-trip per source table (slug_registry,
+ * ingredient_variants), regardless of the input cardinality. Addresses
+ * the per-row N+1 that the loop-and-count approach would create
+ * (Copilot R1 on `gather-quality-inputs.ts`).
+ */
+export function countCreationsForVersions(
+  db: FoodDb,
+  versionIds: readonly number[],
+  options: ListCreationsOptions = {}
+): Map<number, number> {
+  const out = new Map<number, number>();
+  if (versionIds.length === 0) return out;
+
+  const windowSeconds = options.windowSeconds ?? DEFAULT_CREATION_WINDOW_SECONDS;
+  const versions = db
+    .select({ id: recipeVersions.id, compiledAt: recipeVersions.compiledAt })
+    .from(recipeVersions)
+    .where(inArray(recipeVersions.id, [...versionIds]))
+    .all();
+
+  for (const v of versions) {
+    if (v.compiledAt === null) continue;
+    const window = buildWindow(v.compiledAt, { windowSeconds });
+    if (window === null) continue;
+    out.set(v.id, countRegistryInWindow(db, window) + countVariantsInWindow(db, window));
+  }
+  return out;
+}
+
+interface Window {
+  lowerBound: string;
+  upperBound: string;
+}
+
+function buildWindow(compiledAt: string, options: ListCreationsOptions): Window | null {
+  const windowSeconds = options.windowSeconds ?? DEFAULT_CREATION_WINDOW_SECONDS;
+  const upperBound = toSqliteUtc(compiledAt);
+  if (upperBound === null) return null;
+  const lowerBound = subtractSeconds(upperBound, windowSeconds);
+  return { lowerBound, upperBound };
+}
+
 function readCompiledAt(db: FoodDb, versionId: number): string | null {
   const rows = db
     .select({ compiledAt: recipeVersions.compiledAt })
     .from(recipeVersions)
     .where(eq(recipeVersions.id, versionId))
     .all();
-  const row = rows[0];
-  if (row === undefined) return null;
-  return row.compiledAt;
+  return rows[0]?.compiledAt ?? null;
 }
 
-function subtractSeconds(iso: string, seconds: number): string {
-  // SQLite's `datetime('now')` produces ISO-like UTC strings ("YYYY-MM-DD HH:MM:SS").
-  // Parsing as a Date treats the space as a separator; we re-format using the
-  // same shape to keep comparisons string-compatible with `slug_registry.created_at`.
-  const t = new Date(iso.replace(' ', 'T') + (iso.endsWith('Z') ? '' : 'Z')).getTime();
-  if (!Number.isFinite(t)) return iso;
-  const earlier = new Date(t - seconds * 1000);
-  return formatSqliteUtc(earlier);
+function readRegistryCreations(db: FoodDb, window: Window): CreationRow[] {
+  return db
+    .select({
+      slug: slugRegistry.slug,
+      kind: slugRegistry.kind,
+      createdAt: slugRegistry.createdAt,
+    })
+    .from(slugRegistry)
+    .where(
+      and(
+        gte(slugRegistry.createdAt, window.lowerBound),
+        lte(slugRegistry.createdAt, window.upperBound),
+        or(eq(slugRegistry.kind, 'ingredient'), eq(slugRegistry.kind, 'recipe'))
+      )
+    )
+    .all()
+    .map((r) => ({
+      slug: r.slug,
+      kind: r.kind as 'ingredient' | 'recipe',
+      createdAt: r.createdAt,
+    }));
+}
+
+function readVariantCreations(db: FoodDb, window: Window): CreationRow[] {
+  return db
+    .select({
+      slug: ingredientVariants.slug,
+      createdAt: ingredientVariants.createdAt,
+    })
+    .from(ingredientVariants)
+    .where(
+      and(
+        gte(ingredientVariants.createdAt, window.lowerBound),
+        lte(ingredientVariants.createdAt, window.upperBound)
+      )
+    )
+    .all()
+    .map((r) => ({ slug: r.slug, kind: 'variant' as const, createdAt: r.createdAt }));
+}
+
+function countRegistryInWindow(db: FoodDb, window: Window): number {
+  const rows = db
+    .select({ n: sql<number>`count(*)` })
+    .from(slugRegistry)
+    .where(
+      and(
+        gte(slugRegistry.createdAt, window.lowerBound),
+        lte(slugRegistry.createdAt, window.upperBound),
+        or(eq(slugRegistry.kind, 'ingredient'), eq(slugRegistry.kind, 'recipe'))
+      )
+    )
+    .all();
+  return rows[0]?.n ?? 0;
+}
+
+function countVariantsInWindow(db: FoodDb, window: Window): number {
+  const rows = db
+    .select({ n: sql<number>`count(*)` })
+    .from(ingredientVariants)
+    .where(
+      and(
+        gte(ingredientVariants.createdAt, window.lowerBound),
+        lte(ingredientVariants.createdAt, window.upperBound)
+      )
+    )
+    .all();
+  return rows[0]?.n ?? 0;
+}
+
+/**
+ * Normalise either timestamp shape to the SQLite UTC string
+ * (`YYYY-MM-DD HH:MM:SS`). `compiled_at` arrives as
+ * `2026-06-10T12:00:00.000Z`; `slug_registry.created_at` arrives as
+ * `2026-06-10 12:00:00`. Both round-trip through `Date.parse` cleanly.
+ * Returns `null` when the input fails to parse — callers treat that as
+ * "no window, return empty".
+ */
+function toSqliteUtc(value: string): string | null {
+  const iso = value.includes('T') ? value : value.replace(' ', 'T') + 'Z';
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
+  return formatSqliteUtc(new Date(t));
+}
+
+function subtractSeconds(sqliteUtc: string, seconds: number): string {
+  // Input already in `YYYY-MM-DD HH:MM:SS` shape (see `toSqliteUtc`).
+  const t = Date.parse(sqliteUtc.replace(' ', 'T') + 'Z');
+  if (!Number.isFinite(t)) return sqliteUtc;
+  return formatSqliteUtc(new Date(t - seconds * 1000));
 }
 
 function formatSqliteUtc(d: Date): string {
