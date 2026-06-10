@@ -2,180 +2,27 @@
  * PRD-144 — integration tests for `food.cook.*`.
  *
  * Covers the cook event happy path, every `MarkCookedError` branch, the
- * shortfall-rollback contract, plan-entry linkage + race, and override
- * processing (PRD-146's deferred slice).
+ * shortfall-rollback contract, and plan-entry linkage + race.
+ *
+ * Consumption-override behaviour (PRD-146's deferred slice) is exercised
+ * separately in `cook-overrides.test.ts`.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import BetterSqlite3, { type Database } from 'better-sqlite3';
+import { type Database } from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   batchConsumptions,
   batches,
-  ingredientsService,
-  ingredientVariants,
   planEntries,
   planSlots,
-  recipeLines,
   recipeRuns,
-  recipesService,
   recipeVersions,
-  variantsService,
 } from '@pops/app-food-db';
 
 import { closeDb, getDrizzle, setDb } from '../../../db.js';
 import { createCaller } from '../../../shared/test-utils.js';
-
-const MIGRATION_FILES = [
-  '0058_high_sentinel.sql',
-  '0059_useful_hiroim.sql',
-  '0060_familiar_leo.sql',
-  '0061_shocking_skreet.sql',
-  '0062_chemical_donald_blake.sql',
-  '0063_bumpy_wolverine.sql',
-  '0064_peaceful_magma.sql',
-  '0065_prd_116_recipe_compile.sql',
-  '0066_prd_123_conversions.sql',
-  '0067_prd_125_ingest_error_columns.sql',
-  '0068_prd_136_inbox_review.sql',
-  '0069_prd_145_batches_deleted_at.sql',
-];
-
-function applyMigration(db: Database, filename: string): void {
-  const text = readFileSync(join(__dirname, '../../../db/drizzle-migrations', filename), 'utf8');
-  for (const stmt of text.split('--> statement-breakpoint')) {
-    const trimmed = stmt.trim();
-    if (trimmed.length > 0) db.exec(trimmed);
-  }
-}
-
-function createFoodTestDb(): Database {
-  const db = new BetterSqlite3(':memory:');
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-  for (const name of MIGRATION_FILES) applyMigration(db, name);
-  return db;
-}
-
-interface SeededRecipe {
-  recipeId: number;
-  versionId: number;
-  ingredientId: number;
-  variantId: number;
-  yieldVariantId: number;
-}
-
-function seedCompiledRecipe(slug: string, opts: { yields?: boolean } = {}): SeededRecipe {
-  const db = getDrizzle();
-  const yields = opts.yields ?? true;
-  const ing = ingredientsService.createIngredient(db, {
-    name: 'Tomato',
-    slug: `${slug}-tomato`,
-    defaultUnit: 'g',
-  });
-  const variant = variantsService.createVariant(db, {
-    ingredientId: ing.id,
-    name: 'Diced',
-    slug: `${slug}-diced`,
-    defaultUnit: 'g',
-  });
-  db.update(ingredientVariants)
-    .set({ defaultShelfLifeDaysFridge: 5, defaultShelfLifeDaysFreezer: 90 })
-    .where(eq(ingredientVariants.id, variant.id))
-    .run();
-
-  let yieldVariantId = variant.id;
-  if (yields) {
-    const yieldIng = ingredientsService.createIngredient(db, {
-      name: 'Sauce',
-      slug: `${slug}-sauce`,
-      defaultUnit: 'g',
-    });
-    const yieldVar = variantsService.createVariant(db, {
-      ingredientId: yieldIng.id,
-      name: 'Default',
-      slug: `${slug}-sauce-default`,
-      defaultUnit: 'g',
-    });
-    db.update(ingredientVariants)
-      .set({ defaultShelfLifeDaysFridge: 3, defaultShelfLifeDaysFreezer: 60 })
-      .where(eq(ingredientVariants.id, yieldVar.id))
-      .run();
-    yieldVariantId = yieldVar.id;
-  }
-
-  const { recipe, version } = recipesService.createRecipe(db, {
-    slug,
-    firstVersion: { title: `Test ${slug}`, bodyDsl: `@recipe(slug="${slug}", title="Test")` },
-  });
-  void recipe;
-  db.update(recipeVersions)
-    .set({
-      compileStatus: 'compiled',
-      compiledAt: new Date().toISOString(),
-      servings: 4,
-      yieldIngredientId: yields ? yieldVariantId : null,
-      yieldVariantId: yields ? yieldVariantId : null,
-      yieldQty: yields ? 800 : null,
-      yieldUnit: yields ? 'g' : null,
-    })
-    .where(eq(recipeVersions.id, version.id))
-    .run();
-  // Insert one canonical-g line so consumeForRun has work to do.
-  db.insert(recipeLines)
-    .values({
-      recipeVersionId: version.id,
-      position: 1,
-      ingredientId: ing.id,
-      variantId: variant.id,
-      prepStateId: null,
-      isRecipeRef: 0,
-      recipeRefId: null,
-      originalText: 'tomato',
-      originalQty: 200,
-      originalUnit: 'g',
-      qtyG: 200,
-      qtyMl: null,
-      qtyCount: null,
-      canonicalUnit: 'g',
-      optional: 0,
-      notes: null,
-    })
-    .run();
-  return {
-    recipeId: version.recipeId,
-    versionId: version.id,
-    ingredientId: ing.id,
-    variantId: variant.id,
-    yieldVariantId,
-  };
-}
-
-function seedBatch(variantId: number, qty: number): number {
-  const db = getDrizzle();
-  const rows = db
-    .insert(batches)
-    .values({
-      variantId,
-      prepStateId: null,
-      qtyRemaining: qty,
-      unit: 'g',
-      sourceType: 'purchase',
-      sourceId: null,
-      location: 'fridge',
-      producedAt: '2026-06-01T00:00:00.000Z',
-      expiresAt: null,
-      notes: null,
-    })
-    .returning()
-    .all();
-  const row = rows[0];
-  if (row === undefined) throw new Error('seedBatch failed');
-  return row.id;
-}
+import { createFoodTestDb, seedBatch, seedCompiledRecipe } from './cook-test-helpers.js';
 
 describe('food.cook router — PRD-144', () => {
   let sqlite: Database;
@@ -481,104 +328,6 @@ describe('food.cook router — PRD-144', () => {
         yield: { qty: 800, unit: 'g', location: 'fridge' },
       });
       expect(result).toEqual({ ok: false, reason: 'PlanEntryNotFound' });
-    });
-  });
-
-  describe('consumption overrides (PRD-146 deferred slice)', () => {
-    it('applies batch-override and skips FIFO for the same line', async () => {
-      const seed = seedCompiledRecipe('cook-override');
-      const fifoBatchId = seedBatch(seed.variantId, 1000);
-      const overrideBatchId = seedBatch(seed.variantId, 500);
-      const result = await caller.food.cook.markCooked({
-        recipeVersionId: seed.versionId,
-        scaleFactor: 1,
-        yield: { qty: 800, unit: 'g', location: 'fridge' },
-        consumptionOverrides: [
-          {
-            lineIndex: 1,
-            kind: 'batch-override',
-            batchId: overrideBatchId,
-            consumeQty: 200,
-            unit: 'g',
-          },
-        ],
-      });
-      expect(result.ok).toBe(true);
-      const db = getDrizzle();
-      const fifo = db.select().from(batches).where(eq(batches.id, fifoBatchId)).all()[0];
-      const overridden = db.select().from(batches).where(eq(batches.id, overrideBatchId)).all()[0];
-      expect(fifo?.qtyRemaining).toBe(1000); // untouched
-      expect(overridden?.qtyRemaining).toBe(300); // 500 - 200
-    });
-
-    it('records external overrides in recipe_runs.notes', async () => {
-      const seed = seedCompiledRecipe('cook-external');
-      const result = await caller.food.cook.markCooked({
-        recipeVersionId: seed.versionId,
-        scaleFactor: 1,
-        yield: { qty: 800, unit: 'g', location: 'fridge' },
-        consumptionOverrides: [
-          {
-            lineIndex: 1,
-            kind: 'external',
-            externalQty: 200,
-            externalUnit: 'g',
-          },
-        ],
-      });
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        const db = getDrizzle();
-        const run = db
-          .select()
-          .from(recipeRuns)
-          .where(eq(recipeRuns.id, result.recipeRunId))
-          .all()[0];
-        expect(run?.notes).toContain('cook-override:external');
-      }
-    });
-
-    it('rejects a zero-qty batch-override so it cannot bypass FIFO', async () => {
-      const seed = seedCompiledRecipe('cook-zero-qty');
-      seedBatch(seed.variantId, 1000);
-      const overrideBatchId = seedBatch(seed.variantId, 500);
-      const result = await caller.food.cook.markCooked({
-        recipeVersionId: seed.versionId,
-        scaleFactor: 1,
-        yield: { qty: 800, unit: 'g', location: 'fridge' },
-        consumptionOverrides: [
-          {
-            lineIndex: 1,
-            kind: 'batch-override',
-            batchId: overrideBatchId,
-            consumeQty: 0,
-            unit: 'g',
-          },
-        ],
-      });
-      expect(result).toMatchObject({ ok: false, reason: 'ShortfallUnresolved' });
-    });
-
-    it('rejects a batch-override pointing at a different variant', async () => {
-      const seed = seedCompiledRecipe('cook-wrong-variant');
-      seedBatch(seed.variantId, 1000);
-      // Seed a batch on the yield variant (unrelated to the recipe line).
-      const wrongBatchId = seedBatch(seed.yieldVariantId, 500);
-      const result = await caller.food.cook.markCooked({
-        recipeVersionId: seed.versionId,
-        scaleFactor: 1,
-        yield: { qty: 800, unit: 'g', location: 'fridge' },
-        consumptionOverrides: [
-          {
-            lineIndex: 1,
-            kind: 'batch-override',
-            batchId: wrongBatchId,
-            consumeQty: 200,
-            unit: 'g',
-          },
-        ],
-      });
-      expect(result).toMatchObject({ ok: false, reason: 'ShortfallUnresolved' });
     });
   });
 
