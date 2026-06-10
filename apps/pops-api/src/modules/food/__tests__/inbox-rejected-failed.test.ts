@@ -26,7 +26,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import BetterSqlite3, { type Database } from 'better-sqlite3';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -35,6 +35,7 @@ import {
   recipesService,
   variantsService,
 } from '@pops/app-food-db';
+import { ingestSources } from '@pops/db-types';
 
 import { closeDb, getDrizzle, setDb } from '../../../db.js';
 import { createCaller } from '../../../shared/test-utils.js';
@@ -158,13 +159,15 @@ function seedFailedSource(opts: {
   // every "this is a failed source" fixture is realistic; the legacy
   // half-null case is exercised explicitly by the regression test below.
   const errorMessage = opts.errorMessage ?? `seeded: ${opts.errorCode}`;
-  const updates: string[] = [
-    `error_code = '${opts.errorCode.replace(/'/g, "''")}'`,
-    `error_message = '${errorMessage.replace(/'/g, "''")}'`,
-    `attempts = ${opts.attempts ?? 1}`,
-  ];
-  if (opts.ingestedAt !== undefined) updates.push(`ingested_at = '${opts.ingestedAt}'`);
-  db.run(sql.raw(`UPDATE ingest_sources SET ${updates.join(', ')} WHERE id = ${source.id}`));
+  db.update(ingestSources)
+    .set({
+      errorCode: opts.errorCode,
+      errorMessage,
+      attempts: opts.attempts ?? 1,
+      ...(opts.ingestedAt !== undefined ? { ingestedAt: opts.ingestedAt } : {}),
+    })
+    .where(eq(ingestSources.id, source.id))
+    .run();
   return { sourceId: source.id };
 }
 
@@ -336,20 +339,18 @@ describe('food.inbox.listFailed — PRD-138', () => {
       kind: 'text',
       extractorVersion: 'test-v1',
     });
-    db.run(
-      sql.raw(
-        `UPDATE ingest_sources SET error_code = 'CodeOnlyNoMessage', error_message = NULL, attempts = 1 WHERE id = ${codeOnly.id}`
-      )
-    );
+    db.update(ingestSources)
+      .set({ errorCode: 'CodeOnlyNoMessage', errorMessage: null, attempts: 1 })
+      .where(eq(ingestSources.id, codeOnly.id))
+      .run();
     const messageOnly = ingestSourcesService.createIngestSource(db, {
       kind: 'text',
       extractorVersion: 'test-v1',
     });
-    db.run(
-      sql.raw(
-        `UPDATE ingest_sources SET error_code = NULL, error_message = 'msg without code', attempts = 1 WHERE id = ${messageOnly.id}`
-      )
-    );
+    db.update(ingestSources)
+      .set({ errorCode: null, errorMessage: 'msg without code', attempts: 1 })
+      .where(eq(ingestSources.id, messageOnly.id))
+      .run();
     const result = await caller.food.inbox.listFailed({});
     expect(result.items).toHaveLength(0);
   });
