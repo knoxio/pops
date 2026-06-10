@@ -179,3 +179,29 @@ jobs:
           labels: ${{ steps.meta-media-api.outputs.labels }}
           build-args: |
             BUILD_VERSION=${{ github.sha }}
+
+      - name: Generate metadata for pops-finance-api
+        id: meta-finance-api
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/knoxio/pops-finance-api
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=semver,pattern=v{{major}}
+
+      - name: Build and push pops-finance-api
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/pops-finance-api/Dockerfile
+          push: true
+          tags: ${{ steps.meta-finance-api.outputs.tags }}
+          labels: ${{ steps.meta-finance-api.outputs.labels }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}

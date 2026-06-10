@@ -73,3 +73,4 @@ apps/pops-api/\[REDACTED\]*
 data/
 !packages/**/src/**/data/
 !packages/**/src/**/data/**
+secrets

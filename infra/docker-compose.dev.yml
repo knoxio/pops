@@ -48,7 +48,7 @@ services:
       # `/pillars` snapshot that the shell's nginx proxy fans out to,
       # so it MUST default to the full sibling list rather than empty.
       # Sibling pillars get appended (id:baseUrl,...) as they extract.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004}
     expose:
       - '3001'
     healthcheck:
@@ -88,7 +88,7 @@ services:
       INVENTORY_SELF_BASE_URL: http://inventory-api:3002
       # Cross-pillar registry. Includes core-api by default so /pillars
       # surfaces both host pillars on the synthetic-entry list.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004}
     expose:
       - '3002'
     depends_on:
@@ -101,6 +101,48 @@ services:
           'node',
           '-e',
           "fetch('http://localhost:3002/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Finance pillar API (ADR-026, Phase 3 PR 2 of the finance track).
+  # Hosts finance.db reads/writes for the wish_list slice today;
+  # subsequent slices (budgets, transactions, imports, tag rules, tag
+  # vocabulary, URI dispatcher) move their tRPC routers behind it.
+  finance-api:
+    build:
+      context: ..
+      dockerfile: apps/pops-finance-api/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-finance-api
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    environment:
+      NODE_ENV: production
+      PORT: '3004'
+      FINANCE_SQLITE_PATH: /data/sqlite/finance.db
+      FINANCE_SELF_BASE_URL: http://finance-api:3004
+      # Cross-pillar registry — included for parity with siblings even
+      # though finance-api today only exposes /health.
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004}
+    expose:
+      - '3004'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3004/health').then(r=>{if(!r.ok)process.exit(1)})",
         ]
       interval: 30s
       timeout: 5s
@@ -130,7 +172,7 @@ services:
       MEDIA_SELF_BASE_URL: http://media-api:3003
       # Cross-pillar registry. Includes core-api + inventory-api by default
       # so /pillars surfaces every host pillar on the synthetic-entry list.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004}
     expose:
       - '3003'
     depends_on:
@@ -179,7 +221,7 @@ services:
       # its compose hostname so pops-api's URI dispatcher can route
       # outbound `pops:core/...` traffic to the new container. Deployers
       # override POPS_PILLARS to extend with sibling pillars.
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004}
       # Paperless-ngx integration (optional — leave unset to disable)
       PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
       PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
@@ -193,6 +235,8 @@ services:
       inventory-api:
         condition: service_healthy
       media-api:
+        condition: service_healthy
+      finance-api:
         condition: service_healthy
     healthcheck:
       test:
@@ -232,7 +276,7 @@ services:
       SQLITE_PATH: /data/sqlite/pops.db
       REDIS_HOST: pops-redis
       REDIS_PORT: '6379'
-      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004}
     depends_on:
       pops-redis:
         condition: service_healthy
@@ -241,6 +285,8 @@ services:
       inventory-api:
         condition: service_healthy
       media-api:
+        condition: service_healthy
+      finance-api:
         condition: service_healthy
 
   # ── FRONTEND ─────────────────────────────────────────────────────
