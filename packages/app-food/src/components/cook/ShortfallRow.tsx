@@ -59,15 +59,22 @@ function defaultBatchOverrideFor(
   return { kind: 'batch-override', batchId: batch.id, consumeQty };
 }
 
+// `candidate.ratio` matches the solver's convention (`line-evaluator.ts:88`):
+// 1 unit of substitute equals `ratio` units of the original ingredient.
+// So a shortfall of `needed` original units takes `needed / ratio` substitute
+// units to fully cover, and `consumed * ratio` substitute draws fill that many
+// original-units of need.
+
 function substitutionPartialFor(
   shortfall: LineShortfall,
   need: LineConsumeNeed,
   candidate: SubCandidate,
   batch: SubCandidateBatch
 ): LineResolution {
-  const required = need.qty * candidate.ratio;
-  const consumeQty = Math.min(batch.qtyRemaining, required, shortfall.available || required);
-  const externalQty = Math.max(0, shortfall.needed - consumeQty);
+  const requiredSubQty = need.qty / candidate.ratio;
+  const consumeQty = Math.min(batch.qtyRemaining, requiredSubQty);
+  const coveredOriginalQty = consumeQty * candidate.ratio;
+  const externalQty = Math.max(0, shortfall.needed - coveredOriginalQty);
   return {
     kind: 'partial',
     batchId: batch.batchId,
@@ -82,8 +89,8 @@ function substitutionBatchOverrideFor(
   candidate: SubCandidate,
   batch: SubCandidateBatch
 ): LineResolution {
-  const required = need.qty * candidate.ratio;
-  const consumeQty = Math.min(batch.qtyRemaining, required);
+  const requiredSubQty = need.qty / candidate.ratio;
+  const consumeQty = Math.min(batch.qtyRemaining, requiredSubQty);
   return {
     kind: 'batch-override',
     batchId: batch.batchId,
