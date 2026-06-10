@@ -2,6 +2,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { closeDb, setCoreDb, setDb } from '../db.js';
+import { setMediaDb } from '../db/media-db-handle.js';
 import { appRouter } from '../router.js';
 import { TAG_VOCABULARY_V1 } from './tag-vocabulary.js';
 
@@ -1472,19 +1473,22 @@ export function setupTestContext() {
   function setup(): { db: Database; caller: ReturnType<typeof createCaller> } {
     db = createTestDb();
     setDb(db);
-    // Route the core pillar handle at the same in-memory DB so the
-    // post-PR3 service-accounts call sites (which read/write via
-    // getCoreDrizzle()) keep operating on the test fixture without
-    // each suite having to seed a separate core.db. The shared
-    // `service_accounts` table lives in `createTestDb()` and is
-    // populated/queried through both connections transparently.
+    // Route the core + media pillar handles at the same in-memory DB so
+    // the post-cutover call sites (which read/write via
+    // getCoreDrizzle() / getMediaDrizzle()) keep operating on the test
+    // fixture without each suite having to seed a separate per-pillar
+    // file. The shared `service_accounts` + `shelf_impressions` tables
+    // live in `createTestDb()` and are populated/queried through all
+    // three connections transparently.
     setCoreDb({ db: drizzle(db), raw: db });
+    setMediaDb({ db: drizzle(db), raw: db });
 
     return { db, caller: createCaller(true) };
   }
 
   function teardown() {
     setCoreDb(null);
+    setMediaDb(null);
     closeDb();
   }
 

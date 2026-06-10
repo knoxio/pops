@@ -6,11 +6,12 @@
  * mirrors the core counterpart in shape (lazy open, idempotent close,
  * test-only swap).
  *
- * Phase 2 PR 2 of the media pillar migration: the handle is opened at
- * first call but production traffic still flows through the shared
- * singleton in `db.ts`. PR 3 of phase 2 flips shelf-impressions traffic
- * over to this handle; PR 4 drops the table from the shared journal +
- * adds the Litestream config.
+ * Phase 2 PR 2 of the media pillar migration: `apps/pops-api/src/index.ts`
+ * eagerly calls `getMediaDrizzle` at boot so the per-pillar migrations land
+ * before any request hits the API. Production traffic still flows through
+ * the shared singleton in `db.ts` — PR 3 of phase 2 flips shelf-impressions
+ * traffic over to this handle; PR 4 drops the table from the shared journal
+ * + adds the Litestream config.
  */
 import { openMediaDb, type MediaDb, type OpenedMediaDb } from '@pops/media-db';
 
@@ -45,9 +46,10 @@ export function closeMediaDb(): void {
 }
 
 /**
- * Test-only: swap the media pillar handle. Used by `setupTestContext`
- * to inject an in-memory DB so test suites don't write to the dev
- * `data/media.db` file. Returns the previous handle (or null).
+ * Test-only: swap the media pillar handle. Called from `setupTestContext`
+ * alongside `setCoreDb` to route both pillar handles at the same in-memory
+ * DB, so test suites don't write to the dev `data/media.db` file. Returns
+ * the previous handle (or null).
  */
 export function setMediaDb(next: OpenedMediaDb | null): OpenedMediaDb | null {
   const prev = mediaDb;

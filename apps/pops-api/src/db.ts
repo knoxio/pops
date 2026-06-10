@@ -7,6 +7,7 @@ import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3'
 import { openCoreDb, type CoreDb, type OpenedCoreDb } from '@pops/core-db';
 
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
+import { backfillCoreFromShared as backfillCoreImpl } from './db/core-backfill.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { closeInventoryDb } from './db/inventory-handle.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
@@ -281,54 +282,12 @@ export function setCoreDb(next: OpenedCoreDb | null): OpenedCoreDb | null {
 // directly by their consumers.
 
 /**
- * One-shot backfill copying service-account rows from the shared
- * `pops.db` into the core pillar's `core.db`. Idempotent — the
- * `WHERE id NOT IN (...)` filter means re-running after a partial
- * failure picks up where it left off without duplicating rows.
- *
- * Boot-time contract: PR 2 of phase 2 opened the core DB but did not
- * yet consume it. PR 3 (this entry point) flips service-accounts
- * traffic to the core handle, so the first deploy after PR 3 needs to
- * carry the existing rows across before any reads come from the new
- * file. Subsequent boots find the core copy already populated and
- * become a no-op via the existence filter.
- *
- * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
- * stale on-disk pops.db never bricks the boot path. Failures here
- * leave the core copy empty for that boot; the next deploy retries.
+ * Re-exported convenience wrapper around the standalone backfill in
+ * `./db/core-backfill.ts`. Resolves the singleton's raw handle and
+ * forwards. See {@link backfillCoreImpl} for the documented contract.
  */
 export function backfillCoreFromShared(): void {
-  if (!coreDb) return;
-  const sharedPath = resolveSqlitePath();
-  try {
-    coreDb.raw.prepare('ATTACH DATABASE ? AS pops').run(sharedPath);
-    try {
-      const hasTable = coreDb.raw
-        .prepare("SELECT 1 FROM pops.sqlite_master WHERE type='table' AND name='service_accounts'")
-        .get();
-      if (hasTable) {
-        // Enumerate columns explicitly so a future migration that
-        // widens the core table won't break the backfill against a
-        // stale on-disk pops.db that still has the older shape. Order
-        // matches the 0054_service_accounts.sql DDL byte-for-byte.
-        coreDb.raw.exec(`
-          INSERT INTO service_accounts (
-            id, name, key_prefix, key_hash, scopes,
-            created_at, last_used_at, revoked_at, created_by
-          )
-          SELECT
-            id, name, key_prefix, key_hash, scopes,
-            created_at, last_used_at, revoked_at, created_by
-          FROM pops.service_accounts
-          WHERE id NOT IN (SELECT id FROM service_accounts)
-        `);
-      }
-    } finally {
-      coreDb.raw.exec('DETACH DATABASE pops');
-    }
-  } catch (err) {
-    console.warn('[db] Core service-accounts backfill failed (non-fatal):', err);
-  }
+  backfillCoreImpl(coreDb?.raw ?? null);
 }
 
 export function setDb(newDb: BetterSqlite3.Database): BetterSqlite3.Database | null {

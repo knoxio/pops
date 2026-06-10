@@ -8,6 +8,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 import { createApp } from './app.js';
 import { backfillCoreFromShared, closeDb, getCoreDrizzle } from './db.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
+import { getMediaDrizzle } from './db/media-db-handle.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
 import {
@@ -61,6 +62,18 @@ try {
   getInventoryDrizzle();
 } catch (err) {
   console.error('[db] Failed to bootstrap the inventory pillar SQLite:', err);
+  throw err;
+}
+
+// Eagerly open the media pillar's SQLite + apply its journal at boot so
+// the per-pillar migrations land before any request hits the API. Phase 2
+// PR 2 only opens the handle — no production traffic routes here yet.
+// PR 3 of phase 2 adds `backfillMediaFromShared()` and flips
+// shelf-impressions traffic over.
+try {
+  getMediaDrizzle();
+} catch (err) {
+  console.error('[db] Failed to bootstrap the media pillar SQLite:', err);
   throw err;
 }
 
