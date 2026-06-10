@@ -28,7 +28,7 @@ export function ShoppingRowBody(props: ShoppingRowBodyProps): React.ReactElement
     <div className="min-w-0 flex-1">
       <div className="flex items-baseline gap-2">
         <span
-          className={`min-w-[3.5rem] text-sm tabular-nums ${
+          className={`min-w-14 text-sm tabular-nums ${
             isChecked ? 'text-muted-foreground' : 'text-foreground'
           }`}
           data-testid="qty-unit"

@@ -133,7 +133,7 @@ function LabelSubmit({
         onChange={(e) => setState({ ...state, label: e.target.value })}
         placeholder={t('shopping.add.label')}
         aria-label={t('shopping.add.label')}
-        className="min-w-[8rem] flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        className="min-w-32 flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
       />
       <button
         type="submit"
