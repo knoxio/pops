@@ -306,6 +306,76 @@ describe('updateBudget', () => {
   it('throws BudgetNotFoundError for an unknown id', () => {
     expect(() => updateBudget(db, 'missing', { category: 'x' })).toThrow(BudgetNotFoundError);
   });
+
+  it('throws BudgetConflictError when an update would collide with an existing budget', () => {
+    createBudget(db, { category: 'Food', period: 'Monthly', amount: 100 });
+    const second = createBudget(db, { category: 'Groceries', period: 'Monthly', amount: 50 });
+
+    let thrown: unknown;
+    try {
+      updateBudget(db, second.id, { category: 'Food' });
+    } catch (err) {
+      thrown = err;
+    }
+
+    expect(thrown).toBeInstanceOf(BudgetConflictError);
+    if (thrown instanceof BudgetConflictError) {
+      expect(thrown.category).toBe('Food');
+      expect(thrown.period).toBe('Monthly');
+    }
+  });
+
+  it('uses post-patch (category, period) in the conflict error when period also changes', () => {
+    createBudget(db, { category: 'Food', period: 'Yearly', amount: 1000 });
+    const second = createBudget(db, { category: 'Groceries', period: 'Monthly', amount: 50 });
+
+    let thrown: unknown;
+    try {
+      updateBudget(db, second.id, { category: 'Food', period: 'Yearly' });
+    } catch (err) {
+      thrown = err;
+    }
+
+    expect(thrown).toBeInstanceOf(BudgetConflictError);
+    if (thrown instanceof BudgetConflictError) {
+      expect(thrown.category).toBe('Food');
+      expect(thrown.period).toBe('Yearly');
+    }
+  });
+});
+
+describe('createBudget — UNIQUE constraint mapping (race-survivor)', () => {
+  let db: FinanceDb;
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('maps a UNIQUE violation on INSERT to BudgetConflictError when the pre-check is bypassed', () => {
+    createBudget(db, { category: 'Groceries', period: 'Monthly', amount: 100 });
+
+    const raw = db.$client as Database.Database;
+    raw.exec(`
+      CREATE TRIGGER inject_duplicate
+      BEFORE INSERT ON budgets
+      WHEN NEW.category = 'RaceCategory' AND NEW.period = 'Monthly'
+      BEGIN
+        UPDATE budgets SET category = 'RaceCategory' WHERE category = 'Groceries' AND period = 'Monthly';
+      END;
+    `);
+
+    let thrown: unknown;
+    try {
+      createBudget(db, { category: 'RaceCategory', period: 'Monthly', amount: 200 });
+    } catch (err) {
+      thrown = err;
+    }
+
+    expect(thrown).toBeInstanceOf(BudgetConflictError);
+    if (thrown instanceof BudgetConflictError) {
+      expect(thrown.category).toBe('RaceCategory');
+      expect(thrown.period).toBe('Monthly');
+    }
+  });
 });
 
 describe('deleteBudget', () => {

@@ -9,11 +9,12 @@
  * Mirrors `@pops/core-db`'s service-account pattern: db-arg services,
  * typed domain errors, no HTTP concerns.
  */
-import { and, asc, count, eq, isNull, like, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, like } from 'drizzle-orm';
 
 import { BudgetConflictError, BudgetNotFoundError } from '../errors.js';
-import { budgets, transactions } from '../schema.js';
-import { periodWindowEnd, periodWindowStart } from './period-window.js';
+import { budgets } from '../schema.js';
+import { bulkComputeSpend, spendMapKey } from './budget-spend.js';
+import { isBudgetUniqueViolation } from './budget-unique-violation.js';
 
 import type { FinanceDb } from './internal.js';
 
@@ -68,16 +69,8 @@ export interface ListBudgetsOptions {
 
 /**
  * Compute the total spent against a budget's category, restricted to the
- * budget's period window when applicable.
- *
- * Rules:
- *   - Match `transactions.tags` (a JSON-encoded text array) against the
- *     budget's category via SQLite `json_each`.
- *   - Exclude transactions with `type = 'Transfer'`.
- *   - Sum the absolute value of negative amounts only — outflows count as
- *     spend; inflows (Income, refunds) do not.
- *   - Restrict to `date >= periodWindowStart` for Monthly/Yearly. All-time
- *     for any other period (including null).
+ * budget's period window when applicable. Delegates to {@link bulkComputeSpend}
+ * so the single-row and list paths share the same aggregation SQL.
  */
 export function computeSpent(
   db: FinanceDb,
@@ -85,27 +78,8 @@ export function computeSpent(
   period: string | null,
   now: Date = new Date()
 ): number {
-  const windowStart = periodWindowStart(period, now);
-
-  const conditions = [
-    sql`EXISTS (SELECT 1 FROM json_each(${transactions.tags}) WHERE json_each.value = ${category})`,
-    sql`${transactions.type} != 'Transfer'`,
-  ];
-  if (windowStart !== null) {
-    const windowEnd = periodWindowEnd(now);
-    conditions.push(sql`${transactions.date} >= ${windowStart}`);
-    conditions.push(sql`${transactions.date} <= ${windowEnd}`);
-  }
-
-  const row = db
-    .select({
-      total: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.amount} < 0 THEN -${transactions.amount} ELSE 0 END), 0)`,
-    })
-    .from(transactions)
-    .where(and(...conditions))
-    .get();
-
-  return row?.total ?? 0;
+  const map = bulkComputeSpend(db, [{ category, period }], now);
+  return map.get(spendMapKey(period, category)) ?? 0;
 }
 
 /**
@@ -114,7 +88,8 @@ export function computeSpent(
  * shape as the list endpoint.
  */
 export function withSpend(db: FinanceDb, row: BudgetRow, now: Date = new Date()): BudgetWithSpend {
-  const spent = computeSpent(db, row.category, row.period, now);
+  const map = bulkComputeSpend(db, [{ category: row.category, period: row.period }], now);
+  const spent = map.get(spendMapKey(row.period, row.category)) ?? 0;
   const remaining = row.amount === null ? null : row.amount - spent;
   return { ...row, spent, remaining };
 }
@@ -142,8 +117,14 @@ export function listBudgets(db: FinanceDb, opts: ListBudgetsOptions): BudgetList
     .offset(opts.offset)
     .all();
 
+  const spendMap = bulkComputeSpend(
+    db,
+    rows.map((r) => ({ category: r.category, period: r.period })),
+    now
+  );
+
   const enriched: BudgetWithSpend[] = rows.map((row) => {
-    const spent = computeSpent(db, row.category, row.period, now);
+    const spent = spendMap.get(spendMapKey(row.period, row.category)) ?? 0;
     const remaining = row.amount === null ? null : row.amount - spent;
     return { ...row, spent, remaining };
   });
@@ -163,9 +144,9 @@ export function getBudget(db: FinanceDb, id: string): BudgetRow {
  * Create a new budget. Returns the persisted row.
  *
  * Throws `BudgetConflictError` if a budget with the same `(category, period)`
- * already exists. NULL periods collide with other NULL periods — the duplicate
- * check uses `IS NULL` for that case, matching the table's
- * `COALESCE(period, char(0))` unique index.
+ * already exists. The pre-check is the friendly fast path; the UNIQUE
+ * constraint mapping on the INSERT is the safety net for concurrent inserts
+ * that race past it.
  */
 export function createBudget(db: FinanceDb, input: CreateBudgetInput): BudgetRow {
   const period = input.period ?? null;
@@ -186,17 +167,24 @@ export function createBudget(db: FinanceDb, input: CreateBudgetInput): BudgetRow
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  db.insert(budgets)
-    .values({
-      id,
-      category: input.category,
-      period,
-      amount: input.amount ?? null,
-      active: input.active ? 1 : 0,
-      notes: input.notes ?? null,
-      lastEditedTime: now,
-    })
-    .run();
+  try {
+    db.insert(budgets)
+      .values({
+        id,
+        category: input.category,
+        period,
+        amount: input.amount ?? null,
+        active: input.active ? 1 : 0,
+        notes: input.notes ?? null,
+        lastEditedTime: now,
+      })
+      .run();
+  } catch (err) {
+    if (isBudgetUniqueViolation(err)) {
+      throw new BudgetConflictError(input.category, period);
+    }
+    throw err;
+  }
 
   return getBudget(db, id);
 }
@@ -212,16 +200,30 @@ function buildBudgetUpdates(input: UpdateBudgetInput): Partial<typeof budgets.$i
 }
 
 /**
- * Patch a budget. Throws `BudgetNotFoundError` if missing.
- * No-op writes (empty `input`) still re-read the row but skip the UPDATE.
+ * Patch a budget. Throws `BudgetNotFoundError` if missing. No-op writes
+ * (empty `input`) still re-read the row but skip the UPDATE.
+ *
+ * Patches that would change `(category, period)` into an existing budget's
+ * slot map UNIQUE constraint violations to `BudgetConflictError`, using the
+ * post-patch values for the error.
  */
 export function updateBudget(db: FinanceDb, id: string, input: UpdateBudgetInput): BudgetRow {
-  getBudget(db, id);
+  const current = getBudget(db, id);
 
   const updates = buildBudgetUpdates(input);
   if (Object.keys(updates).length > 0) {
     updates.lastEditedTime = new Date().toISOString();
-    db.update(budgets).set(updates).where(eq(budgets.id, id)).run();
+    const effectiveCategory = input.category ?? current.category;
+    const effectivePeriod = input.period !== undefined ? (input.period ?? null) : current.period;
+
+    try {
+      db.update(budgets).set(updates).where(eq(budgets.id, id)).run();
+    } catch (err) {
+      if (isBudgetUniqueViolation(err)) {
+        throw new BudgetConflictError(effectiveCategory, effectivePeriod);
+      }
+      throw err;
+    }
   }
 
   return getBudget(db, id);
