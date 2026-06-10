@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@pops/core-db": "workspace:*",
+    "@pops/types": "workspace:*",
     "express": "^5.1.0",
     "pino": "^10.3.1"
   },

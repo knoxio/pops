@@ -14,6 +14,7 @@ import { openCoreDb } from '@pops/core-db';
 
 import { createCoreApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
+import { parseBareOrigin } from './pillars/env.js';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -27,9 +28,17 @@ function resolvePort(): number {
 
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
+// Normalise CORE_SELF_BASE_URL (or the localhost fallback) through the
+// shared bare-origin parser so a misconfigured env crashes boot loudly
+// instead of publishing an invalid PillarRegistryEntry.baseUrl that
+// breaks downstream consumers appending `/uri/resolve`, `/health`, etc.
+const selfBaseUrl = parseBareOrigin(
+  'CORE_SELF_BASE_URL',
+  process.env['CORE_SELF_BASE_URL'] ?? `http://localhost:${port}`
+);
 
 const coreDb = openCoreDb(resolveCoreSqlitePath());
-const app = createCoreApiApp({ coreDb, version });
+const app = createCoreApiApp({ coreDb, version, selfBaseUrl });
 
 const server = app.listen(port, () => {
   console.warn(`[core-api] Listening on port ${port}`);

@@ -31,14 +31,22 @@ afterEach(() => {
 
 describe('GET /health', () => {
   it('returns ok + pillar + version', async () => {
-    const app = createCoreApiApp({ coreDb, version: '0.0.1-test' });
+    const app = createCoreApiApp({
+      coreDb,
+      version: '0.0.1-test',
+      selfBaseUrl: 'http://localhost:3001',
+    });
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true, pillar: 'core', version: '0.0.1-test' });
   });
 
   it('fails closed when the core handle is closed', async () => {
-    const app = createCoreApiApp({ coreDb, version: '0.0.1-test' });
+    const app = createCoreApiApp({
+      coreDb,
+      version: '0.0.1-test',
+      selfBaseUrl: 'http://localhost:3001',
+    });
     coreDb.raw.close();
     const res = await request(app).get('/health');
     expect(res.status).toBe(500);

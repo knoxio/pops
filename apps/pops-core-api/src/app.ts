@@ -1,11 +1,11 @@
 /**
  * Express app factory for the core pillar container.
  *
- * Phase 3 PR 1 of the core pillar migration scaffolds the new
- * `core-api` process with just a `/health` probe; the tRPC handler,
- * pillar registry, and URI dispatcher migrate in later PRs of the
- * phase. Kept as a factory so the test suite can spin up an in-process
- * `supertest` instance without having to bind a real port.
+ * Phase 3 PR 2 of the core pillar migration adds the pillar registry
+ * snapshot endpoint (`GET /pillars`) alongside the existing `/health`
+ * probe. The dispatcher (`POST /uri/resolve`) + tRPC routers land in
+ * subsequent PRs. Kept as a factory so the test suite can spin up an
+ * in-process `supertest` instance without binding a real port.
  */
 import express, { type Express, type Request, type Response } from 'express';
 
@@ -21,6 +21,10 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   app.get('/health', (_req: Request, res: Response) => {
     res.json(handlers.health());
+  });
+
+  app.get('/pillars', (_req: Request, res: Response) => {
+    res.json(handlers.pillars());
   });
 
   return app;
