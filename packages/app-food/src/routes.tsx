@@ -97,6 +97,10 @@ const RecipeDraftsPage = lazy(() =>
 const RecipeDraftEditPage = lazy(() =>
   import('./pages/recipes/RecipeDraftEditPage').then((m) => ({ default: m.RecipeDraftEditPage }))
 );
+const PlanPage = lazy(() => import('./pages/plan/PlanPage').then((m) => ({ default: m.PlanPage })));
+const FridgePage = lazy(() =>
+  import('./pages/fridge/FridgePage').then((m) => ({ default: m.FridgePage }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -119,6 +123,8 @@ export const navConfig = {
   items: [
     { path: '', label: 'Home', labelKey: 'food.home', icon: 'LayoutDashboard' },
     { path: '/recipes', label: 'Recipes', labelKey: 'food.recipes', icon: 'BookOpen' },
+    { path: '/plan', label: 'Plan', labelKey: 'food.plan', icon: 'Clock' },
+    { path: '/fridge', label: 'Fridge', labelKey: 'food.fridge', icon: 'Package' },
     { path: '/data', label: 'Manage data', labelKey: 'food.data', icon: 'Database' },
     { path: '/prompts', label: 'Prompts', labelKey: 'food.prompts', icon: 'FileText' },
   ],
@@ -155,4 +161,9 @@ export const routes: RouteObject[] = [
   { path: 'recipes/:slug/drafts', element: <RecipeDraftsPage /> },
   { path: 'recipes/:slug/drafts/:draftNo', element: <RecipeDraftEditPage /> },
   { path: 'prompts', element: <PromptViewerPage /> },
+  // I5-prep scaffolds — `PlanPage` (PRD-143) + `FridgePage` (PRD-147)
+  // render `null` until their owning PRDs wire real UI. Routes mounted
+  // up-front so navConfig links + cross-PRD imports resolve today.
+  { path: 'plan', element: <PlanPage /> },
+  { path: 'fridge', element: <FridgePage /> },
 ];

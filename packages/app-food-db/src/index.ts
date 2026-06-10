@@ -151,3 +151,56 @@ export type {
   RecipeRendererVariant,
   RecipeVersionWithCompiledData,
 } from './recipe-renderer-types.js';
+
+// Cross-PRD type contracts for the cook / plan / fridge feature set
+// (PRDs 143-147). Split by domain so each downstream PRD owns one file.
+// PRD-146 shares `batches.ts` with PRD-145.
+export type {
+  ConsumptionNeed,
+  ConsumptionOverride,
+  CookPreparation,
+  CookYieldDefault,
+  CookYieldInput,
+  MarkCookedError,
+  MarkCookedResult,
+  Shortfall,
+} from './types/cook.js';
+export type {
+  PlanEntryError,
+  PlanEntryMutationResult,
+  PlanEntryRow,
+  PlanSlotDeleteError,
+  PlanSlotDeleteResult,
+  PlanSlotError,
+  PlanSlotMutationResult,
+  PlanSlotRow,
+  PlanSlotUpdateError,
+  PlanSlotUpdateResult,
+  ReorderSlotError,
+  ReorderSlotResult,
+  WeekView,
+} from './types/plan.js';
+export type {
+  BatchAdjustReason,
+  BatchAdjustResult,
+  BatchDetail,
+  BatchEditPatch,
+  BatchError,
+  BatchForConsumeRow,
+  BatchLocation,
+  BatchMutationResult,
+  BatchSourceType,
+  BatchUnit,
+  LineResolution,
+  ManualBatchInput,
+  ManualBatchSourceType,
+  YieldArgs,
+} from './types/batches.js';
+export type {
+  FridgeBatchRow,
+  FridgeIngredientGroup,
+  FridgeLocationSection,
+  FridgeView,
+  FridgeViewCounts,
+  RecipeForCookRow,
+} from './types/fridge.js';
