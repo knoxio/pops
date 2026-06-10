@@ -61,7 +61,6 @@ export {
   type QualitySignalCode,
 } from './inbox/quality.js';
 export { gatherQualityInputsForVersions } from './inbox/gather-quality-inputs.js';
-export { extractPartialReasonFromExtractedJson } from './inbox/partial-reason.js';
 export {
   DEFAULT_CREATION_WINDOW_SECONDS,
   countCreationsForVersion,
@@ -99,13 +98,7 @@ export type {
   UnrejectResult,
   UnrejectSuccess,
 } from './services/inbox.js';
-export type {
-  FailedRow,
-  ListFailedFilter,
-  ListPage,
-  ListRejectedFilter,
-  RejectedRow,
-} from './services/inbox-queries.js';
+export type * from './services/inbox-queries.js';
 export type { PromoteVersionResult } from './services/recipe-versions.js';
 export type {
   DeleteBlockerSummary,

@@ -104,6 +104,12 @@ const PlanPage = lazy(() => import('./pages/plan/PlanPage').then((m) => ({ defau
 const FridgePage = lazy(() =>
   import('./pages/fridge/FridgePage').then((m) => ({ default: m.FridgePage }))
 );
+const InboxPage = lazy(() =>
+  import('./pages/inbox/InboxPage').then((m) => ({ default: m.InboxPage }))
+);
+const InspectorStubPage = lazy(() =>
+  import('./pages/inbox/InboxPage').then((m) => ({ default: m.InspectorStubPage }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -126,6 +132,7 @@ export const navConfig = {
   items: [
     { path: '', label: 'Home', labelKey: 'food.home', icon: 'LayoutDashboard' },
     { path: '/recipes', label: 'Recipes', labelKey: 'food.recipes', icon: 'BookOpen' },
+    { path: '/inbox', label: 'Inbox', labelKey: 'food.inbox', icon: 'Bell' },
     { path: '/plan', label: 'Plan', labelKey: 'food.plan', icon: 'Clock' },
     { path: '/fridge', label: 'Fridge', labelKey: 'food.fridge', icon: 'Package' },
     { path: '/data', label: 'Manage data', labelKey: 'food.data', icon: 'Database' },
@@ -172,4 +179,9 @@ export const routes: RouteObject[] = [
   // up-front so navConfig links + cross-PRD imports resolve today.
   { path: 'plan', element: <PlanPage /> },
   { path: 'fridge', element: <FridgePage /> },
+  // PRD-134 — review queue page. The `/food/inbox/:sourceId` stub belongs
+  // to PRD-135 (per-draft inspector); we ship a placeholder here so the
+  // row → inspector flow is integration-testable before PRD-135 lands.
+  { path: 'inbox', element: <InboxPage /> },
+  { path: 'inbox/:sourceId', element: <InspectorStubPage /> },
 ];
