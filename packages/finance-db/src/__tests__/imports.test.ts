@@ -238,13 +238,15 @@ describe('loadEntityMaps', () => {
     expect(aliasMap.get('aldi store')).toBe('Aldi');
   });
 
-  it('honours collision semantics — later aliases overwrite earlier ones', () => {
+  it('keeps a single winner when two entities share an alias (insertion order not guaranteed)', () => {
     seedEntity(harness.db, { name: 'Cafe One', aliases: 'shared' });
     seedEntity(harness.db, { name: 'Cafe Two', aliases: 'shared' });
 
     const { aliasMap } = loadEntityMaps(harness.db);
 
-    expect(aliasMap.get('shared')).toMatch(/Cafe (One|Two)/);
+    expect(aliasMap.size).toBe(1);
+    const winner = aliasMap.get('shared');
+    expect(winner === 'Cafe One' || winner === 'Cafe Two').toBe(true);
   });
 });
 
