@@ -17,6 +17,7 @@ import { slugsRouter } from './routers/slugs.js';
 import { substitutionsRouter } from './routers/substitutions.js';
 import { variantsRouter } from './routers/variants.js';
 import { shoppingRouter } from './shopping/router.js';
+import { solverRouter } from './solver/router.js';
 
 import type { ModuleManifest } from '@pops/types';
 
@@ -38,6 +39,7 @@ export const foodRouter = router({
   plan: planRouter,
   fridge: fridgeRouter,
   shopping: shoppingRouter,
+  solver: solverRouter,
 });
 
 export const manifest: ModuleManifest<typeof foodRouter> = {

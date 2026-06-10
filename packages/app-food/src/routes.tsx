@@ -108,6 +108,9 @@ const FridgePage = lazy(() =>
 const FromPlanPage = lazy(() =>
   import('./pages/shopping/FromPlanPage').then((m) => ({ default: m.FromPlanPage }))
 );
+const SolvePage = lazy(() =>
+  import('./pages/solve/SolvePage').then((m) => ({ default: m.SolvePage }))
+);
 const InboxPage = lazy(() =>
   import('./pages/inbox/InboxPage').then((m) => ({ default: m.InboxPage }))
 );
@@ -139,6 +142,7 @@ export const navConfig = {
     { path: '/inbox', label: 'Inbox', labelKey: 'food.inbox', icon: 'Bell' },
     { path: '/plan', label: 'Plan', labelKey: 'food.plan', icon: 'Clock' },
     { path: '/fridge', label: 'Fridge', labelKey: 'food.fridge', icon: 'Package' },
+    { path: '/solve', label: 'Solve', labelKey: 'food.solve', icon: 'Compass' },
     {
       path: '/shopping/from-plan',
       label: 'Shopping',
@@ -189,6 +193,8 @@ export const routes: RouteObject[] = [
   // up-front so navConfig links + cross-PRD imports resolve today.
   { path: 'plan', element: <PlanPage /> },
   { path: 'fridge', element: <FridgePage /> },
+  // PRD-150 — `/food/solve` what-can-I-cook discovery surface.
+  { path: 'solve', element: <SolvePage /> },
   // PRD-152 — plan-derived shopping list generator.
   { path: 'shopping/from-plan', element: <FromPlanPage /> },
   // PRD-134 — review queue page. PRD-135 — `:sourceId` per-draft inspector
