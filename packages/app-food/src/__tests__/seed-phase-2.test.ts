@@ -56,6 +56,8 @@ const MIGRATIONS = [
   '0068_prd_136_inbox_review.sql',
   // PRD-145 — batches.deleted_at soft-delete column.
   '0069_prd_145_batches_deleted_at.sql',
+  // PRD-151 — ingredient_tags + namespace expression index.
+  '0070_prd_151_ingredient_tags.sql',
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );

@@ -9,6 +9,7 @@ import {
   ingredientVariants,
   prepStates,
   ingredientAliases,
+  ingredientTags,
 } from './food-ingredients.js';
 
 export const slugRegistryRowSchema = createSelectSchema(slugRegistry);
@@ -16,3 +17,4 @@ export const ingredientsRowSchema = createSelectSchema(ingredients);
 export const ingredientVariantsRowSchema = createSelectSchema(ingredientVariants);
 export const prepStatesRowSchema = createSelectSchema(prepStates);
 export const ingredientAliasesRowSchema = createSelectSchema(ingredientAliases);
+export const ingredientTagsRowSchema = createSelectSchema(ingredientTags);

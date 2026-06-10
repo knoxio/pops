@@ -213,42 +213,39 @@ Inline per theme protocol.
 
 ### Schema
 
-- [ ] Migration adds `ingredient_tags` table + the two indexes per the SQL above.
-- [ ] `idx_ingredient_tags_namespace` (expression index) created and verified via `EXPLAIN QUERY PLAN` for `WHERE tag LIKE 'store-section:%'`.
-- [ ] `ON DELETE CASCADE` verified by deleting a test ingredient and asserting its tags are gone.
-- [ ] `packages/db-types` regenerated to export `ingredient_tags`.
+- [x] Migration adds `ingredient_tags` table + the two indexes per the SQL above. (`apps/pops-api/src/db/drizzle-migrations/0070_prd_151_ingredient_tags.sql`; namespace index added by hand to the generated SQL.)
+- [x] `idx_ingredient_tags_namespace` (expression index) created and verified via `EXPLAIN QUERY PLAN` for `WHERE tag LIKE 'store-section:%'`.
+- [x] `ON DELETE CASCADE` verified by deleting a test ingredient and asserting its tags are gone.
+- [x] `packages/db-types` regenerated to export `ingredient_tags`.
 
 ### Service layer
 
-- [ ] `addTagToIngredient` / `removeTagFromIngredient` / `listTagsForIngredient` / `listIngredientsByTag` / `listDistinctTags` / `setTagsForIngredient` all exposed.
-- [ ] `setTagsForIngredient` is one transaction (DELETE existing + INSERT new).
-- [ ] Tag normalisation: lowercase + trim on insert; regex validation per the spec.
-- [ ] `BadTagFormat` / `TagTooLong` / `IngredientNotFound` returned on respective conditions.
+- [x] `addTagToIngredient` / `removeTagFromIngredient` / `listTagsForIngredient` / `listIngredientsByTag` / `listDistinctTags` / `setTagsForIngredient` all exposed.
+- [x] `setTagsForIngredient` is one transaction (DELETE existing + INSERT new).
+- [x] Tag normalisation: lowercase + trim on insert; regex validation per the spec.
+- [x] `BadTagFormat` / `TagTooLong` / `IngredientNotFound` returned on respective conditions.
 
 ### tRPC
 
-- [ ] All four procedures exist in `apps/pops-api/src/modules/food/router.ts`.
-- [ ] `distinct` accepts an optional `namespacePrefix` to filter (e.g. `'store-section'`).
+- [x] All four procedures exist under `food.ingredients.tags.*` (mounted as a sub-router on the `ingredients` router so the wire path mirrors the spec; `apps/pops-api/src/modules/food/routers/ingredient-tags.ts`).
+- [x] `distinct` accepts an optional `namespacePrefix` to filter (e.g. `'store-section'`).
 
 ### PRD-122 CRUD additions
 
-- [ ] Ingredient detail view shows a Tags section with chip list + "+ Add tag" autocomplete.
-- [ ] Autocomplete suggestions come from `food.ingredients.tags.distinct` sorted by usage.
-- [ ] Bulk tag operations are NOT included in v1 (deferred — requires multi-select on PRD-122's Ingredients tab).
-- [ ] New `/food/data/tags` sub-route renders the Tags vocabulary tab (read-only).
+- [x] Ingredient detail view shows a Tags section with chip list + "+ Add tag" autocomplete.
+- [x] Autocomplete suggestions come from `food.ingredients.tags.distinct` sorted by usage.
+- [x] Bulk tag operations are NOT included in v1 (deferred — requires multi-select on PRD-122's Ingredients tab).
+- [x] New `/food/data/tags` sub-route renders the Tags vocabulary tab (read-only).
 
 ### PRD-113 seed extension
 
-- [ ] PRD-113's `db:seed:food` mise task is extended (this PRD's amendment to PRD-113) to apply `store-section:*` tags to the seeded ingredients per the "Illustrative example ingredients" column. Sections without seeded ingredients are NOT seeded — they appear after the user tags their own library.
-- [ ] After seed, `food.ingredients.tags.distinct({ namespacePrefix: 'store-section' })` returns at least 4 distinct values (produce, dairy, meat, pantry).
+- [x] PRD-113's `db:seed:food` mise task is extended (this PRD's amendment to PRD-113) to apply `store-section:*` tags to the seeded ingredients per the "Illustrative example ingredients" column. Sections without seeded ingredients are NOT seeded — they appear after the user tags their own library.
+- [x] After seed, `food.ingredients.tags.distinct({ namespacePrefix: 'store-section' })` returns at least 4 distinct values (produce, dairy, meat, pantry).
 
 ### Tests
 
-- [ ] Vitest suite at `packages/app-food/src/db/__tests__/ingredient-tags.test.ts` covers:
-  - Each invariant (PK uniqueness, CASCADE, regex validation, length cap).
-  - `setTagsForIngredient` round-trip.
-  - `listDistinctTags` with and without namespace filter.
-- [ ] Vitest + RTL at `packages/app-food/src/pages/data/__tests__/IngredientTagsEditor.test.tsx` covers the chip editor + autocomplete + bulk operations.
+- [x] Vitest suite at `packages/app-food-db/src/__tests__/ingredient-tags.test.ts` covers each invariant (PK uniqueness, CASCADE, regex validation, length cap), `setTagsForIngredient` round-trip, and `listDistinctTags` with and without namespace filter. (Filed under `app-food-db` — the service layer moved out of `app-food` per PRD-119's package split, so the test home moved with it.)
+- [x] Vitest + RTL at `packages/app-food/src/pages/data/ingredients-tab/__tests__/IngredientTagsEditor.test.tsx` covers the chip editor + autocomplete. Bulk operations are out of v1 scope (see deferral above), so they are not tested. The read-only Tags vocabulary tab has its own RTL suite at `packages/app-food/src/pages/data/tags-tab/__tests__/TagsTab.test.tsx`.
 
 ## Out of Scope
 

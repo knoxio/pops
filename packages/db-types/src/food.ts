@@ -17,6 +17,7 @@ import type {
   ingestSources,
   ingredientAliases,
   ingredients,
+  ingredientTags,
   ingredientVariants,
   ingredientWeights,
   planEntries,
@@ -45,6 +46,11 @@ export type PrepStateRow = InferSelectModel<typeof prepStates>;
 export type PrepStateInsert = InferInsertModel<typeof prepStates>;
 export type IngredientAliasRow = InferSelectModel<typeof ingredientAliases>;
 export type IngredientAliasInsert = InferInsertModel<typeof ingredientAliases>;
+
+// PRD-151
+export { ingredientTags } from './schema/food.js';
+export type IngredientTagRow = InferSelectModel<typeof ingredientTags>;
+export type IngredientTagInsert = InferInsertModel<typeof ingredientTags>;
 
 // PRD-107
 export type RecipeRow = InferSelectModel<typeof recipes>;

@@ -52,6 +52,7 @@ const MIGRATIONS = [
   '0067_prd_125_ingest_error_columns.sql', // PRD-125 error_code/message/attempts on ingest_sources
   '0068_prd_136_inbox_review.sql', // PRD-136 recipe_version_rejections + ingest_sources.reviewed_at
   '0069_prd_145_batches_deleted_at.sql', // PRD-145 batches.deleted_at soft-delete column
+  '0070_prd_151_ingredient_tags.sql', // PRD-151 ingredient_tags + namespace expression index
 ].map((name) =>
   readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
 );
@@ -111,6 +112,38 @@ describe('PRD-113 phase-1 seed', () => {
     });
     it('seeds the two phase-3 ingest_sources fixtures', () => {
       expect(summary.ingestSources).toBe(2);
+    });
+    it('seeds at least 4 store-section tags (PRD-151)', () => {
+      // produce, dairy, meat, pantry — the 4 sections with seeded ingredients.
+      expect(summary.ingredientTags).toBeGreaterThanOrEqual(4);
+    });
+  });
+
+  describe('ingredient_tags (PRD-151)', () => {
+    it('seeds the four store-sections that have seeded ingredients', () => {
+      const sections = raw
+        .prepare(
+          `SELECT DISTINCT tag FROM ingredient_tags WHERE tag LIKE 'store-section:%' ORDER BY tag`
+        )
+        .all() as { tag: string }[];
+      const values = sections.map((s) => s.tag);
+      expect(values).toEqual(
+        expect.arrayContaining([
+          'store-section:dairy',
+          'store-section:meat',
+          'store-section:pantry',
+          'store-section:produce',
+        ])
+      );
+    });
+
+    it('does not seed sections without seeded ingredients (frozen, condiments, beverages)', () => {
+      const empties = raw
+        .prepare(
+          `SELECT DISTINCT tag FROM ingredient_tags WHERE tag IN ('store-section:frozen', 'store-section:condiments', 'store-section:beverages')`
+        )
+        .all() as { tag: string }[];
+      expect(empties).toEqual([]);
     });
   });
 

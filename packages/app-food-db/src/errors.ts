@@ -221,6 +221,52 @@ export class IngestSourceNotFound extends Error {
   }
 }
 
+// ── PRD-151 errors ──────────────────────────────────────────────────────
+
+/**
+ * Thrown by the ingredient-tags service when a tag fails normalisation —
+ * either the value collapsed to an empty string after trimming, or the
+ * remaining characters violate the canonical regex documented in PRD-151.
+ *
+ * Allowed shape: `^[a-z0-9_-]+(:[a-z0-9_-]+)*$` (one or more segments joined
+ * by `:`). Service-layer trims and lowercases before validating.
+ */
+export class BadTagFormat extends Error {
+  readonly tag: string;
+
+  constructor(tag: string) {
+    super(`Tag "${tag}" is not a valid format — expected ^[a-z0-9_-]+(:[a-z0-9_-]+)*$`);
+    this.name = 'BadTagFormat';
+    this.tag = tag;
+  }
+}
+
+/**
+ * Thrown when a tag exceeds 64 characters after normalisation. Service-layer
+ * cap rather than a CHECK constraint so the error message can carry the value.
+ */
+export class TagTooLong extends Error {
+  readonly tag: string;
+  readonly length: number;
+
+  constructor(tag: string, length: number) {
+    super(`Tag "${tag}" is ${length} characters long; max is 64.`);
+    this.name = 'TagTooLong';
+    this.tag = tag;
+    this.length = length;
+  }
+}
+
+export class IngredientNotFound extends Error {
+  readonly ingredientId: number;
+
+  constructor(ingredientId: number) {
+    super(`Ingredient #${ingredientId} not found`);
+    this.name = 'IngredientNotFound';
+    this.ingredientId = ingredientId;
+  }
+}
+
 // ── PRD-123 errors ──────────────────────────────────────────────────────
 
 /**

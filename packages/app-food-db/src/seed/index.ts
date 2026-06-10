@@ -42,6 +42,7 @@ import { seedAliases } from './step-aliases.js';
 import { seedBatches } from './step-batches.js';
 import { seedConversions } from './step-conversions.js';
 import { linkIngestSourcesToDrafts, seedIngestSources } from './step-ingest-sources.js';
+import { seedIngredientTags } from './step-ingredient-tags.js';
 import { seedIngredientsAndVariants } from './step-ingredients.js';
 import { seedLists } from './step-lists.js';
 import { seedPlan } from './step-plan.js';
@@ -97,6 +98,7 @@ export function seedFood(
 
   const prepStates = seedPrepStates(foodDb, ctx);
   const ingredientCounts = seedIngredientsAndVariants(foodDb, ctx);
+  const ingredientTags = seedIngredientTags(foodDb, ctx);
   const aliases = seedAliases(foodDb, ctx);
   const conversionCounts = seedConversions(foodDb, ctx);
   const ingestSources = seedIngestSources(foodDb, ctx);
@@ -129,5 +131,6 @@ export function seedFood(
     ingestSources,
     unitConversions: conversionCounts.unitConversions,
     ingredientWeights: conversionCounts.ingredientWeights,
+    ingredientTags,
   };
 }

@@ -71,6 +71,9 @@ const SubGraphPage = lazy(() =>
 const ConversionsTab = lazy(() =>
   import('./pages/data/ConversionsTab').then((m) => ({ default: m.ConversionsTab }))
 );
+const TagsTab = lazy(() =>
+  import('./pages/data/tags-tab/TagsTab').then((m) => ({ default: m.TagsTab }))
+);
 const PromptViewerPage = lazy(() =>
   import('./pages/PromptViewerPage').then((m) => ({ default: m.PromptViewerPage }))
 );
@@ -147,6 +150,9 @@ export const routes: RouteObject[] = [
       // Substitutions tab while the graph subroute is open.
       { path: 'substitutions/graph', element: <SubGraphPage /> },
       { path: 'conversions', element: <ConversionsTab /> },
+      // PRD-151 — read-only Tags vocabulary view. The per-ingredient
+      // chip editor lives inside the Ingredients tab's detail panel.
+      { path: 'tags', element: <TagsTab /> },
     ],
   },
   // PRD-119 — recipe CRUD pages. 119-A mounts the list page + placeholders
