@@ -1,0 +1,64 @@
+FROM node:22-slim AS builder
+WORKDIR /app
+
+# Copy workspace root files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+
+# Copy workspace package.json files (for dep resolution)
+COPY packages/db-types/package.json ./packages/db-types/
+COPY packages/types/package.json ./packages/types/
+COPY packages/food-db/package.json ./packages/food-db/
+COPY apps/pops-food-api/package.json ./apps/pops-food-api/
+
+# Install pnpm and all workspace dependencies
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    corepack enable && pnpm install --frozen-lockfile
+
+# Copy shared package sources
+COPY packages/db-types/src ./packages/db-types/src
+COPY packages/db-types/tsconfig.json ./packages/db-types/
+COPY packages/types/src ./packages/types/src
+COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
+COPY packages/food-db/src ./packages/food-db/src
+COPY packages/food-db/tsconfig.json ./packages/food-db/
+COPY packages/food-db/migrations ./packages/food-db/migrations
+
+# Copy food-api source
+COPY apps/pops-food-api/tsconfig.json ./apps/pops-food-api/
+COPY apps/pops-food-api/src ./apps/pops-food-api/src
+
+# Build shared packages first
+WORKDIR /app/packages/db-types
+RUN pnpm build
+WORKDIR /app/packages/types
+RUN pnpm build
+WORKDIR /app/packages/food-db
+RUN pnpm build
+
+# Build food-api
+WORKDIR /app/apps/pops-food-api
+RUN pnpm build
+
+# Create standalone deployment (production deps only, no symlinks)
+RUN pnpm --filter @pops/food-api deploy --prod --legacy /app/deploy
+
+FROM node:22-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder --chown=node:node /app/deploy ./
+COPY --from=builder --chown=node:node /app/apps/pops-food-api/dist ./dist
+
+# Bundled migrations so openFoodDb's import.meta.url-relative
+# `migrations/` lookup finds the journal at runtime under the deployed
+# node_modules layout. The opener computes the path from its own module
+# URL (`<pkg>/dist/open-food-db.js` → `<pkg>/migrations/`), so the
+# folder has to land next to the built dist inside @pops/food-db.
+COPY --from=builder --chown=node:node /app/packages/food-db/migrations ./node_modules/@pops/food-db/migrations
+
+ARG BUILD_VERSION=dev
+ENV BUILD_VERSION=$BUILD_VERSION
+
+EXPOSE 3005
+USER node
+CMD ["node", "dist/server.js"]
