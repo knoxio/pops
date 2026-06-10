@@ -63,3 +63,13 @@ export type {
   ImportTransactionRow,
   CreateImportEntityResult,
 } from './services/imports.js';
+export * as budgetsService from './services/budgets.js';
+
+export type {
+  BudgetRow,
+  BudgetWithSpend,
+  BudgetListResult,
+  CreateBudgetInput,
+  UpdateBudgetInput,
+  ListBudgetsOptions,
+} from './services/budgets.js';

@@ -11,9 +11,11 @@
  * Mirrors the `@pops/core-db` schema re-export pattern.
  */
 export {
+  budgets,
   entities,
   tagVocabulary,
   transactions,
+  transactionCorrections,
   transactionTagRules,
   wishList,
 } from '@pops/db-types';
