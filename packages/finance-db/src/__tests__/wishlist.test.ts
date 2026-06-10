@@ -117,8 +117,8 @@ describe('listWishListItems', () => {
     expect(result.rows.map((r) => r.item)).toEqual(['Apple keyboard', 'Apple monitor', 'Couch']);
   });
 
-  it('filters by case-sensitive LIKE on item', () => {
-    const result = listWishListItems(db, { search: 'Apple', limit: 50, offset: 0 });
+  it('filters by LIKE on item (ASCII case-insensitive per SQLite default)', () => {
+    const result = listWishListItems(db, { search: 'apple', limit: 50, offset: 0 });
     expect(result.total).toBe(2);
     expect(result.rows.every((r) => r.item.startsWith('Apple'))).toBe(true);
   });

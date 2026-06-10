@@ -52,7 +52,7 @@ export interface WishListListResult {
 /** Filters + pagination accepted by `listWishListItems`. */
 export interface WishListQuery {
   search?: string | undefined;
-  priority?: string | undefined;
+  priority?: WishListPriority | undefined;
   limit: number;
   offset: number;
 }
