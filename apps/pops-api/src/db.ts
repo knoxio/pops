@@ -11,6 +11,7 @@ import { closeCerebrumDb } from './db/cerebrum-handle.js';
 import { backfillCoreFromShared as backfillCoreImpl } from './db/core-backfill.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { closeFinanceDb } from './db/finance-handle.js';
+import { closeFoodDb } from './db/food-handle.js';
 import { closeInventoryDb } from './db/inventory-handle.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
 import { closeMediaDb } from './db/media-db-handle.js';
@@ -241,6 +242,7 @@ export function closeDb(): void {
   closeInventoryDb();
   closeMediaDb();
   closeCerebrumDb();
+  closeFoodDb();
 }
 
 /**
