@@ -83,6 +83,7 @@
     "@pops/db-types": "workspace:*",
     "@pops/finance-db": "workspace:*",
     "@pops/food-contracts": "workspace:*",
+    "@pops/food-db": "workspace:*",
     "@pops/inventory-db": "workspace:*",
     "@pops/media-db": "workspace:*",
     "@pops/module-registry": "workspace:*",
