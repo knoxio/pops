@@ -139,6 +139,8 @@ services:
         condition: service_healthy
       core-api:
         condition: service_healthy
+      inventory-api:
+        condition: service_healthy
     healthcheck:
       test:
         [
@@ -183,6 +185,8 @@ services:
       pops-redis:
         condition: service_healthy
       core-api:
+        condition: service_healthy
+      inventory-api:
         condition: service_healthy
 
   # ── FOOD INGEST WORKER ───────────────────────────────────────────
