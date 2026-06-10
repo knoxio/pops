@@ -68,6 +68,13 @@ export type ConsumptionOverride =
       batchId: number;
       consumeQty: number;
       unit: 'g' | 'ml' | 'count';
+      /**
+       * PRD-149 — set when the override came from a substitution pick in
+       * `BatchOverridePicker`'s Substitutions section. Server validates
+       * the edge exists and resolves to the chosen batch's variant; on
+       * success appends a substitution audit line to `recipe_runs.notes`.
+       */
+      substitutionEdgeId?: number;
     }
   | {
       lineIndex: number;
@@ -82,6 +89,8 @@ export type ConsumptionOverride =
       consumeQty: number;
       externalQty: number;
       unit: 'g' | 'ml' | 'count';
+      /** PRD-149 — see `batch-override` variant. */
+      substitutionEdgeId?: number;
     };
 
 export type MarkCookedError =
@@ -95,7 +104,8 @@ export type MarkCookedError =
   | 'BadYieldQty'
   | 'BadRating'
   | 'BadExpiry'
-  | 'ShortfallUnresolved';
+  | 'ShortfallUnresolved'
+  | 'SubstitutionEdgeInvalid';
 
 export type MarkCookedResult =
   | { ok: true; recipeRunId: number; yieldedBatchId: number | null }

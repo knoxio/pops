@@ -1,10 +1,18 @@
 /**
- * `BatchOverridePicker` — PRD-146.
+ * `BatchOverridePicker` — PRD-146 + PRD-149 (sections amendment).
  *
- * Search/select widget inside `ShortfallRow` for picking a batch.
- * Queries `food.batches.searchForConsume` and surfaces FIFO-ordered
- * batches; defaults to filtering by the line's `ingredientId` so
- * batches of any variant of the same ingredient show up.
+ * Two sticky-header sections inside one dropdown:
+ *
+ *   - **Same-variant** (PRD-146): batches whose `variantId` matches the
+ *     line's variant, FIFO-ordered.
+ *   - **Substitutions** (PRD-149): every valid sub edge for the line's
+ *     variant × its non-empty batches, ranked by the picker's pure
+ *     ranking fn. Capped at 5 entries with a "Show all" expander.
+ *
+ * Selection routes through a discriminated `BatchPickerSelection` so the
+ * shortfall row can wire same-variant vs sub picks into the right
+ * resolution kind. Sub picks carry the `substitutionEdgeId` + ratio so
+ * the shortfall row can compute the override's `consumeQty`.
  */
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,16 +20,27 @@ import { useTranslation } from 'react-i18next';
 import { trpc } from '@pops/api-client';
 import { Button } from '@pops/ui';
 
-import { formatQty, formatExpiryDate, formatUnit } from './cook-format.js';
+import { SameVariantSection } from './BatchOverridePicker.same-variant.js';
+import { SubstitutionsSection } from './BatchOverridePicker.substitutions.js';
+import { useSubstitutionResolution } from './useSubstitutionResolution.js';
 
 import type { ReactNode } from 'react';
 
 import type { BatchForConsumeRow } from '@pops/app-food-db';
 
+import type { SubCandidate, SubCandidateBatch } from './useSubstitutionResolution.js';
+
+export type BatchPickerSelection =
+  | { kind: 'same-variant'; batch: BatchForConsumeRow }
+  | { kind: 'substitution'; candidate: SubCandidate; batch: SubCandidateBatch };
+
 export interface BatchOverridePickerProps {
   ingredientId?: number;
   variantId?: number;
-  onSelect: (batch: BatchForConsumeRow) => void;
+  recipeVersionId: number;
+  lineIndex: number;
+  linePrepStateId: number | null;
+  onSelect: (selection: BatchPickerSelection) => void;
   onCancel: () => void;
 }
 
@@ -35,7 +54,15 @@ function filterBatches(items: readonly BatchForConsumeRow[], search: string): Ba
 }
 
 export function BatchOverridePicker(props: BatchOverridePickerProps): ReactNode {
-  const { ingredientId, onSelect, onCancel } = props;
+  const {
+    ingredientId,
+    variantId,
+    recipeVersionId,
+    lineIndex,
+    linePrepStateId,
+    onSelect,
+    onCancel,
+  } = props;
   const { t } = useTranslation('food');
   const [search, setSearch] = useState('');
 
@@ -44,10 +71,17 @@ export function BatchOverridePicker(props: BatchOverridePickerProps): ReactNode 
     { enabled: ingredientId !== undefined }
   );
 
-  const filtered = useMemo(
-    () => filterBatches(query.data?.items ?? [], search),
-    [query.data, search]
-  );
+  const sameVariant = useMemo(() => {
+    const items = query.data?.items ?? [];
+    const scoped = variantId === undefined ? items : items.filter((b) => b.variantId === variantId);
+    return filterBatches(scoped, search);
+  }, [query.data, search, variantId]);
+
+  const subs = useSubstitutionResolution({
+    recipeVersionId,
+    lineIndex,
+    enabled: true,
+  });
 
   return (
     <div className="border rounded-md p-3 bg-card space-y-2" data-testid="batch-override-picker">
@@ -65,66 +99,17 @@ export function BatchOverridePicker(props: BatchOverridePickerProps): ReactNode 
         className="w-full border rounded px-2 py-1 text-sm"
         data-testid="batch-picker-search"
       />
-      <BatchList batches={filtered} onSelect={onSelect} />
+      <SameVariantSection
+        batches={sameVariant}
+        onSelect={(batch) => onSelect({ kind: 'same-variant', batch })}
+      />
+      <SubstitutionsSection
+        candidates={subs.rankedCandidates}
+        linePrepStateId={linePrepStateId}
+        isLoading={subs.isLoading}
+        isError={subs.isError}
+        onSelect={(selection) => onSelect({ kind: 'substitution', ...selection })}
+      />
     </div>
-  );
-}
-
-interface BatchListProps {
-  batches: readonly BatchForConsumeRow[];
-  onSelect: (batch: BatchForConsumeRow) => void;
-}
-
-function BatchList(props: BatchListProps): ReactNode {
-  const { t } = useTranslation('food');
-  if (props.batches.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground" data-testid="batch-picker-empty">
-        {t('cook.batchPicker.empty')}
-      </p>
-    );
-  }
-  return (
-    <ul className="border rounded divide-y max-h-60 overflow-y-auto">
-      {props.batches.map((batch) => (
-        <li key={batch.id}>
-          <BatchListRow batch={batch} onSelect={props.onSelect} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-interface BatchListRowProps {
-  batch: BatchForConsumeRow;
-  onSelect: (batch: BatchForConsumeRow) => void;
-}
-
-function BatchListRow(props: BatchListRowProps): ReactNode {
-  const { t } = useTranslation('food');
-  const { batch, onSelect } = props;
-  const expiry =
-    batch.expiresAt === null
-      ? t('cook.batchPicker.row.noExpiry')
-      : t('cook.batchPicker.row.expires', { date: formatExpiryDate(batch.expiresAt) });
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(batch)}
-      className="w-full text-left p-2 hover:bg-accent text-sm"
-      data-testid={`batch-picker-row-${batch.id}`}
-    >
-      <div className="font-medium">
-        #{batch.id} · {batch.ingredientName} · {batch.variantName}
-        {batch.prepStateLabel === null ? '' : ` · ${batch.prepStateLabel}`}
-      </div>
-      <div className="text-xs text-muted-foreground">
-        {t('cook.batchPicker.row.qty', {
-          qty: formatQty(batch.qtyRemaining),
-          unit: formatUnit(batch.unit),
-        })}{' '}
-        · {expiry}
-      </div>
-    </button>
   );
 }

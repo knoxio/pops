@@ -1,5 +1,5 @@
 /**
- * `ShortfallRow` — PRD-146.
+ * `ShortfallRow` — PRD-146 + PRD-149.
  *
  * One row per unresolved shortfall. Surfaces the three resolution
  * radios (`batch-override`, `external`, `partial`) plus the
@@ -8,10 +8,14 @@
  * `partial` mode adds `Batch qty` + `External qty` number inputs so the
  * user can split the need; defaults are `consumeQty = available`,
  * `externalQty = needed - available`.
+ *
+ * PRD-149 — when the user picks from the Substitutions section, the
+ * resolution carries `substitutionEdgeId` and `consumeQty` is computed
+ * from `lineQty × ratio` (capped at the chosen batch's remaining qty).
  */
 import { useState } from 'react';
 
-import { BatchOverridePicker } from './BatchOverridePicker.js';
+import { BatchOverridePicker, type BatchPickerSelection } from './BatchOverridePicker.js';
 import { formatUnit } from './cook-format.js';
 import { PartialQtyEditor, ResolutionRadios, RowHeader } from './shortfall-row-parts.js';
 
@@ -24,6 +28,8 @@ import type {
   LineShortfall,
 } from '@pops/app-food-db';
 
+import type { SubCandidate, SubCandidateBatch } from './useSubstitutionResolution.js';
+
 type Kind = LineResolution['kind'];
 
 interface PickerMode {
@@ -34,6 +40,7 @@ interface PickerMode {
 export interface ShortfallRowProps {
   shortfall: LineShortfall;
   need: LineConsumeNeed;
+  recipeVersionId: number;
   resolution: LineResolution | undefined;
   onResolve: (resolution: LineResolution) => void;
 }
@@ -52,8 +59,48 @@ function defaultBatchOverrideFor(
   return { kind: 'batch-override', batchId: batch.id, consumeQty };
 }
 
+// `candidate.ratio` matches the solver's convention (`line-evaluator.ts:88`):
+// 1 unit of substitute equals `ratio` units of the original ingredient.
+// So a shortfall of `needed` original units takes `needed / ratio` substitute
+// units to fully cover, and `consumed * ratio` substitute draws fill that many
+// original-units of need.
+
+function substitutionPartialFor(
+  shortfall: LineShortfall,
+  need: LineConsumeNeed,
+  candidate: SubCandidate,
+  batch: SubCandidateBatch
+): LineResolution {
+  const requiredSubQty = need.qty / candidate.ratio;
+  const consumeQty = Math.min(batch.qtyRemaining, requiredSubQty);
+  const coveredOriginalQty = consumeQty * candidate.ratio;
+  const externalQty = Math.max(0, shortfall.needed - coveredOriginalQty);
+  return {
+    kind: 'partial',
+    batchId: batch.batchId,
+    consumeQty,
+    externalQty,
+    substitutionEdgeId: candidate.substitutionId,
+  };
+}
+
+function substitutionBatchOverrideFor(
+  need: LineConsumeNeed,
+  candidate: SubCandidate,
+  batch: SubCandidateBatch
+): LineResolution {
+  const requiredSubQty = need.qty / candidate.ratio;
+  const consumeQty = Math.min(batch.qtyRemaining, requiredSubQty);
+  return {
+    kind: 'batch-override',
+    batchId: batch.batchId,
+    consumeQty,
+    substitutionEdgeId: candidate.substitutionId,
+  };
+}
+
 export function ShortfallRow(props: ShortfallRowProps): ReactNode {
-  const { shortfall, need, resolution, onResolve } = props;
+  const { shortfall, need, recipeVersionId, resolution, onResolve } = props;
   const [picker, setPicker] = useState<PickerMode>({ open: false, forKind: 'batch-override' });
 
   const unit = formatUnit(shortfall.unit);
@@ -67,12 +114,8 @@ export function ShortfallRow(props: ShortfallRowProps): ReactNode {
     setPicker({ open: true, forKind: kind });
   }
 
-  function onPickBatch(batch: BatchForConsumeRow): void {
-    onResolve(
-      picker.forKind === 'partial'
-        ? defaultPartialFor(shortfall, batch)
-        : defaultBatchOverrideFor(shortfall, batch)
-    );
+  function onPick(selection: BatchPickerSelection): void {
+    onResolve(buildResolution(selection, shortfall, need, picker.forKind));
     setPicker({ open: false, forKind: picker.forKind });
   }
 
@@ -84,7 +127,10 @@ export function ShortfallRow(props: ShortfallRowProps): ReactNode {
         <BatchOverridePicker
           ingredientId={need.ingredientId}
           variantId={need.variantId}
-          onSelect={onPickBatch}
+          recipeVersionId={recipeVersionId}
+          lineIndex={shortfall.lineIndex}
+          linePrepStateId={need.prepStateId}
+          onSelect={onPick}
           onCancel={() => setPicker((p) => ({ ...p, open: false }))}
         />
       ) : null}
@@ -93,4 +139,20 @@ export function ShortfallRow(props: ShortfallRowProps): ReactNode {
       ) : null}
     </div>
   );
+}
+
+function buildResolution(
+  selection: BatchPickerSelection,
+  shortfall: LineShortfall,
+  need: LineConsumeNeed,
+  forKind: 'batch-override' | 'partial'
+): LineResolution {
+  if (selection.kind === 'same-variant') {
+    return forKind === 'partial'
+      ? defaultPartialFor(shortfall, selection.batch)
+      : defaultBatchOverrideFor(shortfall, selection.batch);
+  }
+  return forKind === 'partial'
+    ? substitutionPartialFor(shortfall, need, selection.candidate, selection.batch)
+    : substitutionBatchOverrideFor(need, selection.candidate, selection.batch);
 }

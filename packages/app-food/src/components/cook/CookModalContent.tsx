@@ -23,6 +23,7 @@ interface Props {
   form: CookFormState;
   setForm: Dispatch<SetStateAction<CookFormState>>;
   resolution: ReturnType<typeof useCookResolution>;
+  recipeVersionId: number;
   errorMessage: string | null;
 }
 
@@ -31,6 +32,7 @@ export function CookModalContent({
   form,
   setForm,
   resolution,
+  recipeVersionId,
   errorMessage,
 }: Props): ReactElement {
   return (
@@ -65,6 +67,7 @@ export function CookModalContent({
         shortfalls={[]}
         needsByLine={resolution.needsByLine}
         resolutionMap={resolution.resolutionMap}
+        recipeVersionId={recipeVersionId}
         onResolve={resolution.setResolution}
         scaleResetSignal={resolution.scaleResetSignal}
       />

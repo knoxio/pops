@@ -20,6 +20,8 @@ import { eq } from 'drizzle-orm';
 
 import { batchConsumptions, batches, recipeLines } from '@pops/app-food-db';
 
+import { resolveSubstitutionContext, type LineDescriptor } from './mark-cooked-substitution.js';
+
 import type { ConsumptionOverride, FoodDb, MarkCookedError } from '@pops/app-food-db';
 
 export interface ApplyOverridesArgs {
@@ -61,66 +63,58 @@ export function applyConsumptionOverrides(
     if (!overrideCoversLine(o, line, args.scaleFactor)) {
       return { ok: false, reason: 'ShortfallUnresolved' };
     }
-    const outcome = processOverride(tx, args.runId, o, line);
-    if (!outcome.ok) return { ok: false, reason: outcome.reason };
+    const result = applyOneOverride(tx, args.runId, line, o);
+    if (!result.ok) return { ok: false, reason: result.reason };
     covered.add(o.lineIndex);
-    if (outcome.auditLine !== null) auditLines.push(outcome.auditLine);
+    for (const note of result.auditNotes) auditLines.push(note);
   }
 
   return { ok: true, coveredLineIndices: covered, auditLines };
 }
 
-type OverrideOutcome =
-  | { ok: true; auditLine: string | null }
+type OverrideResult =
+  | { ok: true; auditNotes: readonly string[] }
   | { ok: false; reason: MarkCookedError };
 
-function processOverride(
+function applyOneOverride(
   tx: FoodDb,
   runId: number,
-  override: ConsumptionOverride,
-  line: LineDescriptor
-): OverrideOutcome {
-  if (override.kind === 'external') return processExternal(override);
-  return processBatchDraw(tx, runId, override, line);
-}
-
-function processExternal(
-  override: Extract<ConsumptionOverride, { kind: 'external' }>
-): OverrideOutcome {
-  // External overrides must report a positive qty too, else they're a
-  // no-op that hides the line from FIFO.
-  if (override.externalQty <= 0) return { ok: false, reason: 'ShortfallUnresolved' };
-  return {
-    ok: true,
-    auditLine: formatExternalNote(override.lineIndex, override.externalQty, override.externalUnit),
-  };
-}
-
-function processBatchDraw(
-  tx: FoodDb,
-  runId: number,
-  override: Extract<ConsumptionOverride, { kind: 'batch-override' | 'partial' }>,
-  line: LineDescriptor
-): OverrideOutcome {
-  // Reject a zero-qty batch draw outright (Copilot R1): without this
-  // gate, a client could send `consumeQty: 0` to mark a line as covered
-  // and skip FIFO consumption entirely.
-  if (override.consumeQty <= 0) return { ok: false, reason: 'ShortfallUnresolved' };
+  line: LineDescriptor,
+  o: ConsumptionOverride
+): OverrideResult {
+  if (o.kind === 'external') {
+    if (o.externalQty <= 0) return { ok: false, reason: 'ShortfallUnresolved' };
+    return {
+      ok: true,
+      auditNotes: [formatExternalNote(o.lineIndex, o.externalQty, o.externalUnit)],
+    };
+  }
+  // `batch-override` and `partial` share the batch-draw path.
+  if (o.consumeQty <= 0) return { ok: false, reason: 'ShortfallUnresolved' };
+  const subContext = resolveSubstitutionContext({
+    tx,
+    edgeId: o.substitutionEdgeId,
+    batchId: o.batchId,
+    line,
+  });
+  if (!subContext.ok) return { ok: false, reason: 'SubstitutionEdgeInvalid' };
   const draw = drawFromBatch({
     tx,
     runId,
-    batchId: override.batchId,
-    qty: override.consumeQty,
-    unit: override.unit,
-    expectedVariantId: line.variantId,
-    expectedPrepStateId: line.prepStateId,
+    batchId: o.batchId,
+    qty: o.consumeQty,
+    unit: o.unit,
+    expectedVariantId: subContext.expectedVariantId,
+    expectedPrepStateId: subContext.expectedPrepStateId,
+    ignorePrepStateMismatch: o.substitutionEdgeId !== undefined,
   });
   if (!draw.ok) return { ok: false, reason: 'ShortfallUnresolved' };
-  if (override.kind === 'batch-override') return { ok: true, auditLine: null };
-  return {
-    ok: true,
-    auditLine: formatExternalNote(override.lineIndex, override.externalQty, override.unit),
-  };
+  const notes: string[] = [];
+  if (subContext.auditNote !== null) notes.push(subContext.auditNote);
+  if (o.kind === 'partial') {
+    notes.push(formatExternalNote(o.lineIndex, o.externalQty, o.unit));
+  }
+  return { ok: true, auditNotes: notes };
 }
 
 const EMPTY_SET: ReadonlySet<number> = new Set<number>();
@@ -129,15 +123,6 @@ const EMPTY_SET: ReadonlySet<number> = new Set<number>();
 // qty columns as REAL so a 1e-6 epsilon keeps us off the rounding edge
 // without admitting a meaningful shortfall.
 const QTY_EPSILON = 1e-6;
-
-interface LineDescriptor {
-  position: number;
-  variantId: number | null;
-  prepStateId: number | null;
-  optional: boolean;
-  needQty: number;
-  canonicalUnit: 'g' | 'ml' | 'count';
-}
 
 function buildLineIndex(tx: FoodDb, versionId: number): Map<number, LineDescriptor> {
   const rows = tx
@@ -205,10 +190,25 @@ interface DrawArgs {
   unit: 'g' | 'ml' | 'count';
   expectedVariantId: number | null;
   expectedPrepStateId: number | null;
+  /**
+   * PRD-149 — set true when the override carries a `substitutionEdgeId`,
+   * since the sub batch's prep state may legitimately differ from the
+   * line's per the prep-mismatch-is-informational rule.
+   */
+  ignorePrepStateMismatch?: boolean;
 }
 
 function drawFromBatch(args: DrawArgs): { ok: true } | { ok: false } {
-  const { tx, runId, batchId, qty, unit, expectedVariantId, expectedPrepStateId } = args;
+  const {
+    tx,
+    runId,
+    batchId,
+    qty,
+    unit,
+    expectedVariantId,
+    expectedPrepStateId,
+    ignorePrepStateMismatch,
+  } = args;
   if (qty <= 0) return { ok: false };
   const rows = tx
     .select({
@@ -231,7 +231,9 @@ function drawFromBatch(args: DrawArgs): { ok: true } | { ok: false } {
   // Without this guard a client could "cover" a tomato line by drawing
   // from an unrelated chicken batch.
   if (expectedVariantId !== null && batch.variantId !== expectedVariantId) return { ok: false };
-  if (batch.prepStateId !== expectedPrepStateId) return { ok: false };
+  if (ignorePrepStateMismatch !== true && batch.prepStateId !== expectedPrepStateId) {
+    return { ok: false };
+  }
   if (batch.qtyRemaining < qty) return { ok: false };
 
   tx.update(batches)

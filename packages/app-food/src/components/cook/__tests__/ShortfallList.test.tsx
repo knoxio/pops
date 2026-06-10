@@ -19,6 +19,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BatchForConsumeRow, LineConsumeNeed, LineShortfall } from '@pops/app-food-db';
 
 const mockUseQuery = vi.fn();
+const mockSubResolveQuery = vi.fn();
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
@@ -26,6 +27,11 @@ vi.mock('@pops/api-client', () => ({
       batches: {
         searchForConsume: {
           useQuery: (input: unknown, opts?: unknown) => mockUseQuery(input, opts),
+        },
+      },
+      substitutions: {
+        resolveForLine: {
+          useQuery: (input: unknown, opts?: unknown) => mockSubResolveQuery(input, opts),
         },
       },
     },
@@ -115,6 +121,7 @@ function ShortfallHost(props: HostProps): ReactElement {
         shortfalls={props.shortfalls}
         needsByLine={resolution.needsByLine}
         resolutionMap={resolution.resolutionMap}
+        recipeVersionId={999}
         onResolve={resolution.setResolution}
         scaleResetSignal={resolution.scaleResetSignal}
       />
@@ -125,6 +132,7 @@ function ShortfallHost(props: HostProps): ReactElement {
 describe('ShortfallList — PRD-146', () => {
   it('lists every unresolved shortfall with the expected radios + Mark-cooked stays disabled until all are resolved', async () => {
     mockUseQuery.mockReturnValue({ data: { items: [makeBatch({ id: 42 })] }, isLoading: false });
+    mockSubResolveQuery.mockReturnValue({ data: undefined, isLoading: false, isError: false });
     const user = userEvent.setup();
     const gate = vi.fn();
 
@@ -166,6 +174,7 @@ describe('ShortfallList — PRD-146', () => {
 
   it('shows the scale-reset banner and re-disables Mark-cooked when scaleFactor changes', async () => {
     mockUseQuery.mockReturnValue({ data: { items: [makeBatch({ id: 42 })] }, isLoading: false });
+    mockSubResolveQuery.mockReturnValue({ data: undefined, isLoading: false, isError: false });
     const user = userEvent.setup();
     const gate = vi.fn();
 
@@ -190,6 +199,7 @@ describe('ShortfallList — PRD-146', () => {
 
   it('renders the picker empty state when searchForConsume returns no matches', async () => {
     mockUseQuery.mockReturnValue({ data: { items: [] }, isLoading: false });
+    mockSubResolveQuery.mockReturnValue({ data: undefined, isLoading: false, isError: false });
     const user = userEvent.setup();
     const gate = vi.fn();
 

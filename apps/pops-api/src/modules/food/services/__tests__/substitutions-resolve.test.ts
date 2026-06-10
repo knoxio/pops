@@ -23,6 +23,7 @@ function edge(partial: Partial<SubstitutionEdge> & { id: number }): Substitution
     contextTags: [],
     scope: 'global',
     recipeId: null,
+    notes: null,
     ...partial,
   };
 }

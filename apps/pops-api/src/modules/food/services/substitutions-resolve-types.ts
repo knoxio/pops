@@ -28,6 +28,8 @@ export interface SubstitutionEdge {
   contextTags: readonly string[];
   scope: SubstitutionScope;
   recipeId: number | null;
+  /** PRD-149 — edge notes rendered in the picker row tooltip. */
+  notes: string | null;
 }
 
 /** Bulk-loaded edge index — global + per-recipe scoped. */
@@ -51,4 +53,10 @@ export interface SubstitutionCandidate {
   toIngredientId: number | null;
   toVariantId: number | null;
   scope: SubstitutionScope;
+  /** PRD-149 — surfaced so the cook picker can render the edge's tags inline. */
+  contextTags: readonly string[];
+  /** PRD-149 — null for global-scoped edges, the owning recipe for recipe-scoped. */
+  recipeId: number | null;
+  /** PRD-149 — edge notes rendered in the picker row tooltip. */
+  notes: string | null;
 }
