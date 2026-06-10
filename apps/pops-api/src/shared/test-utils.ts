@@ -2,6 +2,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 import { closeDb, setCoreDb, setDb } from '../db.js';
+import { setFinanceDb } from '../db/finance-handle.js';
 import { setInventoryDb } from '../db/inventory-handle.js';
 import { setMediaDb } from '../db/media-db-handle.js';
 import { appRouter } from '../router.js';
@@ -1490,11 +1491,17 @@ export function setupTestContext() {
     // home_inventory, fixtures, item_*) on the inventory handle too.
     setInventoryDb({ db: drizzle(db), raw: db });
 
+    // Same for the finance pillar handle (phase 2 PR 3): wish-list
+    // module reads/writes now resolve getFinanceDrizzle(), so the
+    // test fixture has to surface its tables on the finance handle.
+    setFinanceDb({ db: drizzle(db), raw: db });
+
     return { db, caller: createCaller(true) };
   }
 
   function teardown() {
     setCoreDb(null);
+    setFinanceDb(null);
     setInventoryDb(null);
     setMediaDb(null);
     closeDb();

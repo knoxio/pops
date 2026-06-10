@@ -21,7 +21,7 @@ import {
   type WishListPriority,
 } from '@pops/finance-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
 import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
@@ -69,7 +69,7 @@ export const wishlistRouter = router({
       };
     }
 
-    const { rows, total } = wishListService.listWishListItems(getDrizzle(), {
+    const { rows, total } = wishListService.listWishListItems(getFinanceDrizzle(), {
       search: input.search,
       priority: typed,
       limit,
@@ -86,7 +86,7 @@ export const wishlistRouter = router({
   get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
     mapDomainErrors(() => {
       try {
-        const row = wishListService.getWishListItem(getDrizzle(), input.id);
+        const row = wishListService.getWishListItem(getFinanceDrizzle(), input.id);
         return { data: toWishListItem(row) };
       } catch (err) {
         if (err instanceof WishListItemNotFoundError) {
@@ -99,7 +99,7 @@ export const wishlistRouter = router({
 
   /** Create a new wish list item. */
   create: protectedProcedure.input(CreateWishListItemSchema).mutation(({ input }) => {
-    const row = wishListService.createWishListItem(getDrizzle(), input);
+    const row = wishListService.createWishListItem(getFinanceDrizzle(), input);
     return {
       data: toWishListItem(row),
       message: 'Wish list item created',
@@ -117,7 +117,7 @@ export const wishlistRouter = router({
     .mutation(({ input }) =>
       mapDomainErrors(() => {
         try {
-          const row = wishListService.updateWishListItem(getDrizzle(), input.id, input.data);
+          const row = wishListService.updateWishListItem(getFinanceDrizzle(), input.id, input.data);
           return {
             data: toWishListItem(row),
             message: 'Wish list item updated',
@@ -135,7 +135,7 @@ export const wishlistRouter = router({
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) =>
     mapDomainErrors(() => {
       try {
-        wishListService.deleteWishListItem(getDrizzle(), input.id);
+        wishListService.deleteWishListItem(getFinanceDrizzle(), input.id);
         return { message: 'Wish list item deleted' };
       } catch (err) {
         if (err instanceof WishListItemNotFoundError) {

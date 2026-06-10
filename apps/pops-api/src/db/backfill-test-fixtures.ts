@@ -34,3 +34,18 @@ CREATE TABLE shelf_impressions (
 );
 CREATE INDEX idx_shelf_impressions_shelf_id ON shelf_impressions (shelf_id);
 `;
+
+export const WISH_LIST_TABLE_SQL = `
+CREATE TABLE wish_list (
+  id text PRIMARY KEY NOT NULL,
+  notion_id text,
+  item text NOT NULL,
+  target_amount real,
+  saved real,
+  priority text,
+  url text,
+  notes text,
+  last_edited_time text NOT NULL
+);
+CREATE UNIQUE INDEX wish_list_notion_id_unique ON wish_list (notion_id);
+`;

@@ -2,7 +2,7 @@ import { and, like, sql } from 'drizzle-orm';
 
 import { wishList } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 
@@ -39,7 +39,7 @@ export const wishlistSearchAdapter: SearchAdapter<WishlistHitData> = {
     const text = query.text.trim();
     if (!text) return [];
 
-    const db = getDrizzle();
+    const db = getFinanceDrizzle();
     const lowerText = text.toLowerCase();
 
     // Exclude already-purchased items (saved >= target_amount). Items with no
