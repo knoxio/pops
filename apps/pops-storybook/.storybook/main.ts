@@ -22,13 +22,33 @@ const config: StorybookConfig = {
     return mergeConfig(config, {
       plugins: [tailwindcss()],
       resolve: {
-        alias: {
-          '@pops/ui': path.resolve(__dirname, '../../../packages/ui/src'),
-          '@pops/app-media': path.resolve(__dirname, '../../../packages/app-media/src'),
-          '@pops/app-finance': path.resolve(__dirname, '../../../packages/app-finance/src'),
-          '@pops/app-food': path.resolve(__dirname, '../../../packages/app-food/src'),
-          '@pops/app-inventory': path.resolve(__dirname, '../../../packages/app-inventory/src'),
-        },
+        alias: [
+          {
+            find: '@pops/ui/theme/graph-colors',
+            replacement: path.resolve(__dirname, '../../../packages/ui/src/theme/graph-colors.ts'),
+          },
+          {
+            find: '@pops/ui/theme',
+            replacement: path.resolve(__dirname, '../../../packages/ui/src/theme/globals.css'),
+          },
+          { find: '@pops/ui', replacement: path.resolve(__dirname, '../../../packages/ui/src') },
+          {
+            find: '@pops/app-media',
+            replacement: path.resolve(__dirname, '../../../packages/app-media/src'),
+          },
+          {
+            find: '@pops/app-finance',
+            replacement: path.resolve(__dirname, '../../../packages/app-finance/src'),
+          },
+          {
+            find: '@pops/app-food',
+            replacement: path.resolve(__dirname, '../../../packages/app-food/src'),
+          },
+          {
+            find: '@pops/app-inventory',
+            replacement: path.resolve(__dirname, '../../../packages/app-inventory/src'),
+          },
+        ],
       },
     });
   },
