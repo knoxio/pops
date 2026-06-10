@@ -10,4 +10,4 @@
  *
  * Mirrors the `@pops/core-db` schema re-export pattern.
  */
-export { tagVocabulary, transactionTagRules, wishList } from '@pops/db-types';
+export { tagVocabulary, transactions, transactionTagRules, wishList } from '@pops/db-types';
