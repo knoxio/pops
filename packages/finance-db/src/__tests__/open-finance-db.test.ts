@@ -14,7 +14,7 @@
  * something to ALTER. Once the baseline split lands, this seeding can
  * be retired.
  */
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -37,8 +37,13 @@ afterEach(() => {
  * Minimum baseline DDL required for the package's journal to apply
  * cleanly: `entities` (FK target of `transaction_tag_rules` created by
  * 0026), `transaction_corrections` (ALTERed by 0025 + 0027), and
- * `budgets` (recreated by 0052). Schema lifted byte-for-byte from
- * `apps/pops-api/src/db/drizzle-migrations/0000_naive_chameleon.sql`.
+ * `budgets` (recreated by 0052). Only the three `CREATE TABLE`
+ * statements are copied from
+ * `apps/pops-api/src/db/drizzle-migrations/0000_naive_chameleon.sql`
+ * — the baseline indexes (e.g. `*_notion_id_unique`,
+ * `idx_corrections_*`) are intentionally omitted because nothing in
+ * the package journal queries them, and dropping them keeps the test
+ * fixture tight.
  */
 function seedBaseline(path: string): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -89,14 +94,16 @@ function seedBaseline(path: string): void {
 }
 
 describe('openFinanceDb', () => {
-  it('creates the parent directory and applies PRAGMAs', () => {
-    const path = join(tmpDir, 'nested', 'sub', 'finance.db');
-    expect(existsSync(path)).toBe(false);
+  it('applies the configured PRAGMAs on an existing DB file', () => {
+    // seedBaseline pre-creates the file (and its parent dir) so the
+    // package journal has tables to ALTER; this test asserts the
+    // PRAGMAs openFinanceDb sets on the existing handle, not the
+    // mkdir-if-missing path (covered separately below).
+    const path = join(tmpDir, 'finance.db');
     seedBaseline(path);
 
     const { raw } = openFinanceDb(path);
     try {
-      expect(existsSync(path)).toBe(true);
       expect(raw.pragma('journal_mode', { simple: true })).toBe('wal');
       expect(raw.pragma('foreign_keys', { simple: true })).toBe(1);
       expect(raw.pragma('busy_timeout', { simple: true })).toBe(5000);
