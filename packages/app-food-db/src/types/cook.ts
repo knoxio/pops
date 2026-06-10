@@ -10,6 +10,7 @@
  */
 
 import type { ConsumptionNeed, Shortfall } from '../services/batches.js';
+import type { LineConsumeNeed } from './batches.js';
 
 export type { ConsumptionNeed, Shortfall };
 
@@ -17,6 +18,10 @@ export type { ConsumptionNeed, Shortfall };
  * Pre-flight data for the cook modal. Returned by `food.cook.prepareCook`.
  * The modal renders this once on open; the consume-preview panel multiplies
  * `consumeNeeds[].qty` by `scaleFactor` client-side as the user adjusts it.
+ *
+ * `consumeNeeds` carries the enriched PRD-146 `LineConsumeNeed` shape
+ * (lineIndex + names + optional flag) so the modal can render the
+ * consume preview + shortfall list without a second round-trip.
  */
 export interface CookPreparation {
   recipeTitle: string;
@@ -25,7 +30,7 @@ export interface CookPreparation {
   defaultScaleFactor: number;
   yieldsBatch: boolean;
   yieldDefault: CookYieldDefault | null;
-  consumeNeeds: readonly ConsumptionNeed[];
+  consumeNeeds: readonly LineConsumeNeed[];
   alreadyCooked: boolean;
 }
 

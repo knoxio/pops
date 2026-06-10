@@ -22,21 +22,13 @@ function isNotImplemented(err: AnyError): boolean {
   return err instanceof TRPCError && err.code === 'NOT_IMPLEMENTED';
 }
 
-describe('food.cook.* scaffold (PRD-144)', () => {
-  const caller = createCaller();
-
-  it('rejects `prepareCook` with NOT_IMPLEMENTED', async () => {
-    await expect(
-      caller.food.cook.prepareCook({ recipeVersionId: 1, scaleFactor: 1 })
-    ).rejects.toSatisfy(isNotImplemented);
-  });
-
-  it('rejects `markCooked` with NOT_IMPLEMENTED', async () => {
-    await expect(
-      caller.food.cook.markCooked({ recipeVersionId: 1, scaleFactor: 1 })
-    ).rejects.toSatisfy(isNotImplemented);
-  });
-});
+// PRD-145 wired create/get/relocate/edit/adjustQty/delete and PRD-146
+// wired `searchForConsume` — see `batches-router.test.ts` for the
+// behaviour suite. No `food.batches.*` procedures remain in scaffold.
+//
+// PRD-144 wired food.cook.prepareCook + food.cook.markCooked — see
+// `cook-router.test.ts` for the behaviour suite. No procedures remain
+// in the cook scaffold's NOT_IMPLEMENTED allowlist.
 
 describe('food.plan.* scaffold (PRD-143)', () => {
   const caller = createCaller();

@@ -4,6 +4,11 @@
  * Shapes match PRD-144. `consumptionOverrides[]` shape is PRD-146's
  * `ConsumptionOverride` discriminated union — kept here as a Zod schema
  * so the wire boundary validates at the API edge.
+ *
+ * Range constraints (`scaleFactor > 0`, `yield.qty >= 0`, `rating in 1..5`)
+ * are enforced server-side so the corresponding `MarkCookedError` codes
+ * stay reachable. Per the PRD-142 / PRD-145 lessons, Zod's job is shape
+ * + finiteness; the service is the authoritative validator for ranges.
  */
 
 import { z } from 'zod';
@@ -38,13 +43,12 @@ const ConsumptionOverrideSchema = z.discriminatedUnion('kind', [
 ]);
 
 const CookYieldInputSchema = z.object({
-  qty: z.number().finite().nonnegative(),
+  qty: z.number().finite(),
   unit: UNIT,
   location: LOCATION,
   /**
    * ISO 8601 datetime. Validated at the API boundary so invalid
    * timestamps fail before `markCooked` opens its transaction.
-   * Same convention as `apps/pops-api/src/modules/food/routers/ingest-schemas.ts`.
    */
   expiresAt: z.string().datetime().optional(),
   notes: z.string().max(1000).optional(),
@@ -52,16 +56,16 @@ const CookYieldInputSchema = z.object({
 
 export const PrepareCookInputSchema = z.object({
   recipeVersionId: z.number().int().positive(),
-  scaleFactor: z.number().finite().positive(),
+  scaleFactor: z.number().finite(),
   planEntryId: z.number().int().positive().optional(),
 });
 
 export const MarkCookedInputSchema = z.object({
   recipeVersionId: z.number().int().positive(),
-  scaleFactor: z.number().finite().positive(),
+  scaleFactor: z.number().finite(),
   planEntryId: z.number().int().positive().optional(),
   yield: CookYieldInputSchema.optional(),
-  rating: z.number().int().min(1).max(5).optional(),
+  rating: z.number().int().optional(),
   notes: z.string().max(1000).optional(),
   consumptionOverrides: z.array(ConsumptionOverrideSchema).optional(),
 });
