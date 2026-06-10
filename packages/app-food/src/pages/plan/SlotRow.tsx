@@ -32,7 +32,12 @@ export function SlotRow({ slot, onRename, onReorder, onDelete }: SlotRowProps): 
         setName={setName}
         onCommit={() => {
           setEditing(false);
-          if (name.trim() !== slot.name) onRename(name.trim());
+          const trimmed = name.trim();
+          if (trimmed === '') {
+            setName(slot.name);
+            return;
+          }
+          if (trimmed !== slot.name) onRename(trimmed);
         }}
       />
       <SlotActions slot={slot} onEdit={() => setEditing(true)} onDelete={onDelete} />

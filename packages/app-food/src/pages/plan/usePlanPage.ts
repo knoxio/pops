@@ -8,7 +8,7 @@ import { useCallback } from 'react';
 
 import { trpc } from '@pops/api-client';
 
-import { toIsoMonday } from './iso-week.js';
+import { BadClientDateError, toIsoMonday } from './iso-week.js';
 
 const WEEK_POLL_INTERVAL_MS = 60_000;
 
@@ -19,7 +19,7 @@ export interface UsePlanPageOpts {
 }
 
 export function usePlanPage({ weekParam, today }: UsePlanPageOpts) {
-  const weekStart = toIsoMonday(weekParam ?? formatToday(today ?? new Date()));
+  const weekStart = safeIsoMonday(weekParam, today);
   const utils = trpc.useUtils();
   const weekQuery = trpc.food.plan.weekView.useQuery(
     { weekStart },
@@ -66,4 +66,15 @@ function formatToday(date: Date): string {
   const m = (date.getMonth() + 1).toString().padStart(2, '0');
   const d = date.getDate().toString().padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function safeIsoMonday(weekParam: string | null, today?: Date): string {
+  const fallback = formatToday(today ?? new Date());
+  if (weekParam === null) return toIsoMonday(fallback);
+  try {
+    return toIsoMonday(weekParam);
+  } catch (err) {
+    if (err instanceof BadClientDateError) return toIsoMonday(fallback);
+    throw err;
+  }
 }

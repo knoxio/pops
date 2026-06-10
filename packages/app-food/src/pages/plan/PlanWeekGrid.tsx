@@ -5,8 +5,9 @@
  * prep-session`). Each cell hosts a sortable list of plan entries. Drag
  * across cells calls `moveEntry`; drag within a cell calls
  * `reorderSlot`. The PRD calls for a separate mobile day swiper — at
- * narrow viewports the grid degrades to a stack-by-day list (tracked as
- * a follow-up GitHub issue).
+ * narrow viewports the grid currently keeps its desktop layout inside
+ * `overflow-x-auto` (horizontal scroll); the mobile day-swiper is
+ * tracked as a follow-up.
  */
 import {
   DndContext,

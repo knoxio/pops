@@ -284,7 +284,7 @@ Inline per theme protocol.
 
 ### Drag-and-drop
 
-- [x] Drag between cells calls `food.plan.moveEntry`; UI optimistically updates.
+- [x] Drag between cells calls `food.plan.moveEntry`; the grid refreshes via React Query invalidation on success (optimistic cache update is a follow-up).
 - [x] Drag within a cell calls `food.plan.reorderSlot`.
 - [x] Drag handles greyed and tooltip explains on `recipe_run_id IS NOT NULL` entries.
 - [x] Mobile long-press initiates drag.
@@ -316,7 +316,7 @@ Inline per theme protocol.
 
 ### Tests
 
-- [x] Vitest + RTL at `packages/app-food/src/pages/plan/__tests__/PlanPage.test.tsx` covers grid render + drag + edit + add.
+- [x] Vitest + RTL at `packages/app-food/src/pages/plan/__tests__/PlanPage.test.tsx` covers grid render + edit + add + slot drawer + slug-regex guard. (DnD pointer interactions exercised by `@dnd-kit`'s own coverage; RTL DnD test is a follow-up.)
 - [x] Vitest integration at `apps/pops-api/src/modules/food/__tests__/plan-router.test.ts` covers each procedure including error cases.
 - [ ] E2E: add 3 entries → drag one to a new cell → edit servings → delete one → all reflected on next reload. _(Gap — Playwright E2E deferred to follow-up issue.)_
 

@@ -44,6 +44,7 @@ export function PlanPage(): ReactElement {
     <main className="p-4 space-y-4" data-testid="plan-page">
       <Header
         label={formatWeekLabel(weekStart).long}
+        weekStart={weekStart}
         onPrev={() => setWeek(addDays(weekStart, -7))}
         onNext={() => setWeek(addDays(weekStart, 7))}
         onToday={() => setWeek(today)}
@@ -83,13 +84,20 @@ interface BodyProps {
 }
 
 function Body({ weekQuery, slotsQuery, onEdit, onAdd }: BodyProps): ReactElement {
-  if (weekQuery.isLoading) {
+  if (weekQuery.isLoading || slotsQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading week…</p>;
   }
   if (weekQuery.isError) {
     return (
       <p className="text-sm text-destructive" role="alert">
         Could not load week: {weekQuery.error.message}
+      </p>
+    );
+  }
+  if (slotsQuery.isError) {
+    return (
+      <p className="text-sm text-destructive" role="alert">
+        Could not load slots: {slotsQuery.error.message}
       </p>
     );
   }
@@ -107,6 +115,7 @@ function Body({ weekQuery, slotsQuery, onEdit, onAdd }: BodyProps): ReactElement
 
 interface HeaderProps {
   label: string;
+  weekStart: string;
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
@@ -133,6 +142,7 @@ function Header(props: HeaderProps): ReactElement {
         type="date"
         className="border rounded px-2 py-1 text-sm"
         data-testid="week-date-picker"
+        value={props.weekStart}
         onChange={(e) => {
           if (e.target.value !== '') props.onDatePick(e.target.value);
         }}

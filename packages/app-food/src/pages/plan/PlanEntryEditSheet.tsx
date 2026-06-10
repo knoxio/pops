@@ -1,9 +1,10 @@
 /**
  * PRD-143 — plan entry edit sheet.
  *
- * Side panel on desktop / bottom sheet on mobile (CSS-driven via media
- * query). Surfaces servings + notes + "Mark cooked" CTA (which links
- * into PRD-144's cook flow) + delete. When the entry has a non-null
+ * Fixed right-side drawer at all sizes (full-width on narrow viewports).
+ * The PRD's bottom-sheet variant for mobile is tracked as a follow-up.
+ * Surfaces servings + notes + "Mark cooked" CTA (which links into
+ * PRD-144's cook flow) + delete. When the entry has a non-null
  * `recipe_run_id` the form is read-only and shows "Cooked on".
  */
 import { useEffect, useState, type ReactElement } from 'react';

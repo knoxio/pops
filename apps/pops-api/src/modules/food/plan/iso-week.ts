@@ -22,6 +22,15 @@ export class BadIsoDateError extends Error {
  * keep day arithmetic free of DST surprises — the wire format carries
  * no time-of-day so timezone is irrelevant.
  */
+export function isValidIsoDate(input: string): boolean {
+  try {
+    parseIsoDateUtc(input);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function parseIsoDateUtc(input: string): Date {
   const match = ISO_DATE_RE.exec(input);
   if (match === null) throw new BadIsoDateError(input);

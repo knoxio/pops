@@ -7,10 +7,26 @@
 
 const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+export class BadClientDateError extends Error {
+  readonly input: string;
+  constructor(input: string) {
+    super(`Bad date: ${input}`);
+    this.name = 'BadClientDateError';
+    this.input = input;
+  }
+}
+
 function parseLocalDate(input: string): Date {
   const match = ISO_DATE_RE.exec(input);
-  if (match === null) throw new Error(`Bad date: ${input}`);
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (match === null) throw new BadClientDateError(input);
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
+    throw new BadClientDateError(input);
+  }
+  return d;
 }
 
 export function formatLocalDate(date: Date): string {

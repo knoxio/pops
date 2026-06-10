@@ -27,7 +27,7 @@ The North Star: get the user cooking from their Instagram saved folder within th
 | 02  | [Ingestion Pipeline](epics/02-ingestion-pipeline.md)                       | BullMQ queue, `pops-worker-food` container, web/Instagram/screenshot/text ingestion to drafts       | Not started |
 | 03  | [Draft Review & Approval](epics/03-draft-review.md)                        | Review queue UI, ingredient resolution, tag confirmation, promotion to current version              | Not started |
 | 04  | [Lists & Shopping](epics/04-lists-and-shopping.md)                         | `app-lists` scaffold (generic), food → shopping integration                                         | Not started |
-| 05  | [Meal Planning & Batches](epics/05-meal-planning.md)                       | Plan entries, cook events, batch creation with expiry, FIFO consumption, fridge view                | Not started |
+| 05  | [Meal Planning & Batches](epics/05-meal-planning.md)                       | Plan entries, cook events, batch creation with expiry, FIFO consumption, fridge view                | In progress |
 | 06  | [Substitutions & Solver](epics/06-substitutions.md)                        | Substitution graph, cook-time recommendations, "what can I cook tonight" solver                     | Not started |
 | 07  | [Pantry-Aware Shopping](epics/07-pantry-aware-shopping.md)                 | Plan-derived shopping list with pantry subtraction and store-section grouping                       | Not started |
 
