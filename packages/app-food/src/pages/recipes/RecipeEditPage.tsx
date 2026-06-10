@@ -7,6 +7,7 @@ import { trpc } from '@pops/api-client';
 import { Button } from '@pops/ui';
 
 import { DslEditor } from '../../components/DslEditor.js';
+import { HeroImageUploader } from '../../components/HeroImageUploader.js';
 import { AutoCreatedBanner } from './AutoCreatedBanner.js';
 import { buildEditorIssues } from './compile-result-issues.js';
 import { useRecipeEditMutations } from './useRecipeEditMutations.js';
@@ -64,6 +65,7 @@ export function RecipeEditShell({
   const [dsl, setDsl] = useState<string>('');
   const dslSeeded = useRef(false);
   const [latestCompile, setLatestCompile] = useState<CompileResult | null>(null);
+  const utils = trpc.useUtils();
 
   const renderingQuery = trpc.food.recipes.getForRendering.useQuery(
     { slug, versionNo: versionNo ?? undefined },
@@ -86,14 +88,29 @@ export function RecipeEditShell({
   const issues = buildEditorIssues(latestCompile, proposedRows);
   const canPromote = latestCompile !== null && latestCompile.ok === true && !actions.isSaving;
 
-  if (versionId === null || !dslSeeded.current) {
+  if (versionId === null || !dslSeeded.current || !renderingQuery.data) {
     return <Status text={t('recipes.edit.opening')} />;
   }
+
+  const recipe = renderingQuery.data.recipe;
+  const refreshHero = (): void => {
+    void utils.food.recipes.getForRendering.invalidate({
+      slug,
+      versionNo: versionNo ?? undefined,
+    });
+    void utils.food.recipes.list.invalidate();
+  };
 
   return (
     <div className="space-y-4 p-6">
       <EditHeader slug={slug} canPromote={canPromote} actions={actions} />
       <AutoCreatedBanner slugs={proposedRows.map((r) => r.slug)} />
+      <HeroImageUploader
+        recipeId={recipe.id}
+        currentPath={recipe.heroImagePath}
+        onUploaded={refreshHero}
+        onRemoved={refreshHero}
+      />
       <DslEditor initialValue={dsl} onChange={setDsl} issues={issues} />
     </div>
   );
