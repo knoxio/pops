@@ -27,6 +27,8 @@ export * as batchesLifecycleService from './services/batches-lifecycle.js';
 export * as ingestSourcesService from './services/ingest-sources.js';
 export * as inboxService from './services/inbox.js';
 export * as inboxQueries from './services/inbox-queries.js';
+export * as inboxInspectorService from './services/inbox-inspector.js';
+export type * from './services/inbox-inspector.js';
 export * as ingredientsService from './services/ingredients.js';
 export * as ingredientsQueries from './services/ingredients-queries.js';
 export * as ingredientTagsService from './services/ingredient-tags.js';

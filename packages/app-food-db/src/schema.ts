@@ -9,6 +9,7 @@
  * the food module's read surface stays self-describing.
  */
 export {
+  aiInferenceLog,
   batchConsumptions,
   batches,
   ingestSources,

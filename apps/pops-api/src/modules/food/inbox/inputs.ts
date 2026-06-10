@@ -20,3 +20,8 @@ export const RejectInputSchema = z.object({
   reason: z.enum(['wrong-recipe', 'low-quality-extraction', 'duplicate', 'not-a-recipe', 'other']),
   note: z.string().optional(),
 });
+
+// PRD-135 — `food.inbox.getForReview({ sourceId })`. Mirrors the
+// `ingestSources.id` shape (positive integer) so the inspector route's
+// `:sourceId` path-param parses cleanly without an in-flight coercion.
+export const GetForReviewInputSchema = z.object({ sourceId: z.number().int().positive() });
