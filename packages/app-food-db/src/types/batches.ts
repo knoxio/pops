@@ -105,6 +105,49 @@ export interface BatchForConsumeRow {
 }
 
 /**
+ * PRD-146 — line-keyed consume need surfaced to the cook modal.
+ *
+ * Adds display fields and `lineIndex` (`recipe_lines.position`, 1-based)
+ * to PRD-108's variant/prep/qty `ConsumptionNeed` so the UI can render a
+ * per-line picker and the resolution map can be keyed by lineIndex.
+ * Quantities are already at the user's current scale factor.
+ *
+ * Produced by PRD-144's `prepareCook` query alongside any
+ * pre-flight `LineShortfall[]`. PRD-146's UI does not derive aggregation
+ * itself — the server is the source of truth for per-line need shapes.
+ */
+export interface LineConsumeNeed {
+  lineIndex: number;
+  ingredientId: number;
+  ingredientName: string;
+  variantId: number;
+  variantName: string;
+  prepStateId: number | null;
+  prepStateLabel: string | null;
+  qty: number;
+  canonicalUnit: BatchUnit;
+  optional: boolean;
+}
+
+/**
+ * PRD-146 — line-keyed shortfall surfaced to `ShortfallList`.
+ *
+ * `available` reflects what FIFO would cover if applied. `available=0`
+ * means no matching non-empty, non-deleted batch exists for the line's
+ * `(variantId, prepStateId)` pair.
+ */
+export interface LineShortfall {
+  lineIndex: number;
+  ingredientId: number;
+  ingredientName: string;
+  variantName: string;
+  prepStateLabel: string | null;
+  needed: number;
+  available: number;
+  unit: BatchUnit;
+}
+
+/**
  * PRD-146 — per-line resolution state held by `useCookResolution`.
  *
  * `fifo` = accept PRD-108's default; `batch-override` = user picked a

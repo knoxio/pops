@@ -33,6 +33,7 @@ const MIGRATIONS = [
   // table. PRD-137's gather helper reads `reviewed_at` so the migration must
   // apply here too — without it the schema is missing the column.
   '0068_prd_136_inbox_review.sql',
+  '0069_prd_145_batches_deleted_at.sql',
 ].map((name) =>
   readFileSync(
     join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),

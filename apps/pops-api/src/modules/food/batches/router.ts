@@ -1,8 +1,9 @@
 /**
- * `food.batches.*` tRPC router — PRD-145 behaviour + PRD-146 scaffold.
+ * `food.batches.*` tRPC router — PRD-145 lifecycle + PRD-146 picker.
  *
  * Six lifecycle procedures wired to `batchesLifecycleService` from
- * `@pops/app-food-db`. `searchForConsume` remains a PRD-146 stub.
+ * `@pops/app-food-db`. `searchForConsume` powers PRD-146's
+ * `BatchOverridePicker` widget.
  */
 
 import { TRPCError } from '@trpc/server';
@@ -21,6 +22,7 @@ import {
   RelocateBatchInputSchema,
   SearchForConsumeInputSchema,
 } from './inputs.js';
+import { searchForConsume } from './search-for-consume.js';
 
 import type {
   BatchAdjustResult,
@@ -28,15 +30,6 @@ import type {
   BatchForConsumeRow,
   BatchMutationResult,
 } from '@pops/app-food-db';
-
-const NOT_IMPLEMENTED_MESSAGE = 'food.batches.searchForConsume is a scaffold; PRD-146 wires it';
-
-function notImplemented(): never {
-  throw new TRPCError({
-    code: 'NOT_IMPLEMENTED',
-    message: NOT_IMPLEMENTED_MESSAGE,
-  });
-}
 
 export const batchesRouter = router({
   create: protectedProcedure
@@ -101,5 +94,7 @@ export const batchesRouter = router({
 
   searchForConsume: protectedProcedure
     .input(SearchForConsumeInputSchema)
-    .query((): { items: readonly BatchForConsumeRow[] } => notImplemented()),
+    .query(({ input }): { items: readonly BatchForConsumeRow[] } => {
+      return searchForConsume(getDrizzle(), input);
+    }),
 });

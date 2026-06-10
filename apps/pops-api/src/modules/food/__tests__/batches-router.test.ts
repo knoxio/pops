@@ -431,11 +431,10 @@ describe('food.batches router — PRD-145', () => {
     });
   });
 
-  describe('searchForConsume scaffold (PRD-146)', () => {
-    it('still throws NOT_IMPLEMENTED', async () => {
-      await expect(caller.food.batches.searchForConsume({})).rejects.toMatchObject({
-        code: 'NOT_IMPLEMENTED',
-      });
+  describe('searchForConsume (PRD-146)', () => {
+    it('returns an empty list when no batches match', async () => {
+      const { items } = await caller.food.batches.searchForConsume({ variantId: 9_999_999 });
+      expect(items).toEqual([]);
     });
   });
 });
