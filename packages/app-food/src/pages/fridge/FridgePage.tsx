@@ -16,6 +16,7 @@
  *   - Mobile bottom-sheet modal variants.
  */
 import { useEffect, useState, type ReactElement } from 'react';
+import { Link } from 'react-router';
 
 import { Button, useDebouncedValue } from '@pops/ui';
 
@@ -71,7 +72,12 @@ export function FridgePage(): ReactElement {
     <div className="space-y-4 p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Fridge</h1>
-        <Button onClick={() => setAddOpen(true)}>+ Add batch</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/food/solve">What can I cook?</Link>
+          </Button>
+          <Button onClick={() => setAddOpen(true)}>+ Add batch</Button>
+        </div>
       </header>
 
       <FridgeFilterBar
