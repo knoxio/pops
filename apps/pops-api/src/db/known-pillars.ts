@@ -16,11 +16,17 @@
  * single source of truth so it stays consistent with the runtime story
  * documented in ADR-026).
  *
- * `ai` is included for completeness; the ADR notes it may fold into core
- * during Phase γ. Removing it here when that fold happens is a one-line
- * change.
+ * **`ai` was folded into core** during Phase γ (2026-06-10). `packages/app-ai/`
+ * remains as a UI shell — admin/observability for AI Ops — but its backend
+ * services (`apps/pops-api/src/modules/core/{ai-budgets,ai-observability,
+ * ai-alerts,ai-usage,ai-providers}`) and every AI migration
+ * (`0034_ai_observability` through `0056_ai_observability_repair`) already
+ * live in the core pillar's domain. There is no `packages/ai-db/` to build
+ * and no `pops-ai-api` container to scaffold; the entry is dropped here so
+ * the per-pillar runner doesn't probe for a non-existent package. The
+ * shell's `pillarIdForModule('ai')` returns `'core'` (default behaviour).
  *
- * @see .claude/pillar-migration-roadmap.md
+ * @see .claude/pillar-migration-roadmap.md (Track I — ai folds into core)
  */
 
 /** A single pillar's static metadata. */
@@ -44,8 +50,11 @@ function pillar(id: string): PillarDescriptor {
 /**
  * Canonical pillar list, in boot-time migration-apply order. Adding a new
  * pillar = adding a new entry here AND creating its `<id>-db` package.
- * Removing one (e.g. ai → core fold) = removing the entry AND folding its
- * migrations into core's journal via a manual migration.
+ *
+ * Removed 2026-06-10: `ai`. AI Ops is owned by the core pillar — no
+ * separate `packages/ai-db/` was ever created and every AI migration was
+ * authored against core's shared journal. The `app-ai` UI shell continues
+ * to consume `core`'s tRPC surface unchanged.
  */
 export const KNOWN_PILLARS: readonly PillarDescriptor[] = [
   pillar('core'),
@@ -53,7 +62,6 @@ export const KNOWN_PILLARS: readonly PillarDescriptor[] = [
   pillar('media'),
   pillar('inventory'),
   pillar('cerebrum'),
-  pillar('ai'),
   pillar('food'),
   pillar('lists'),
 ];

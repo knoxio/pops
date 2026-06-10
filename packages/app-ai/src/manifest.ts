@@ -2,7 +2,13 @@ import { navConfig, routes } from './routes';
 
 /**
  * AI Ops frontend module manifest (PRD-098).
- * Metadata-only at this point — the runtime loader (PRD-100) will read it.
+ *
+ * **UI-only module owned by the core pillar.** AI Ops has no per-pillar
+ * `@pops/ai-db` package and no `pops-ai-api` container; its backend
+ * lives in `apps/pops-api/src/modules/core/{ai-budgets,ai-observability,
+ * ai-alerts,ai-usage,ai-providers}`, and the shell's
+ * `pillarIdForModule('ai')` returns `'core'` permanently per the Track I
+ * fold (see `.claude/pillar-migration-roadmap.md`).
  */
 import type { ModuleManifest } from '@pops/types';
 
