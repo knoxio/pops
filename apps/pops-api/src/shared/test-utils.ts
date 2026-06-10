@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { closeDb, setCoreDb, setDb } from '../db.js';
 import { setCerebrumDb } from '../db/cerebrum-handle.js';
 import { setFinanceDb } from '../db/finance-handle.js';
+import { setFoodDb } from '../db/food-handle.js';
 import { setInventoryDb } from '../db/inventory-handle.js';
 import { setMediaDb } from '../db/media-db-handle.js';
 import { appRouter } from '../router.js';
@@ -1502,6 +1503,14 @@ export function setupTestContext() {
     // fixture has to surface that table on the cerebrum handle too.
     setCerebrumDb({ db: drizzle(db), raw: db });
 
+    // Same for the food pillar handle (phase 2 PR 2): the handle is
+    // opened at boot but no router has cut over yet. The injection is
+    // forward-looking — once PR 3 routes prep_states (and subsequent
+    // slices) through getFoodDrizzle() the fixture will already be
+    // pointed at the in-memory DB and won't try to open
+    // `data/food.db` mid-suite.
+    setFoodDb({ db: drizzle(db), raw: db });
+
     return { db, caller: createCaller(true) };
   }
 
@@ -1511,6 +1520,7 @@ export function setupTestContext() {
     setInventoryDb(null);
     setMediaDb(null);
     setCerebrumDb(null);
+    setFoodDb(null);
     closeDb();
   }
 
