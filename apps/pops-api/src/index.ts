@@ -7,6 +7,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 
 import { createApp } from './app.js';
 import { backfillCoreFromShared, closeDb, getCoreDrizzle } from './db.js';
+import { getFinanceDrizzle } from './db/finance-handle.js';
 import { backfillInventoryFromSharedDb, getInventoryDrizzle } from './db/inventory-handle.js';
 import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
@@ -63,6 +64,20 @@ try {
   backfillInventoryFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the inventory pillar SQLite:', err);
+  throw err;
+}
+
+// Eagerly open the finance pillar's SQLite + apply its journal at
+// boot. Phase 2 PR 2 of the finance pillar: the handle is opened so
+// the per-pillar migrations land before any request hits the API, but
+// no production traffic flips over yet — PR 3 of phase 2 cuts over the
+// wish-list slice with a single `getDrizzle()` → `getFinanceDrizzle()`
+// swap and adds the one-shot ATTACH-based backfill from the legacy
+// shared pops.db.
+try {
+  getFinanceDrizzle();
+} catch (err) {
+  console.error('[db] Failed to bootstrap the finance pillar SQLite:', err);
   throw err;
 }
 
