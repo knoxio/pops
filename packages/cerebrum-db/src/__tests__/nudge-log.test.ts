@@ -6,11 +6,14 @@
  * Higher-level tRPC coverage lives in pops-api's own integration suite
  * (until the cutover PR routes it through this package).
  *
- * The nudge_log CREATE TABLE is read from the shared drizzle journal so
- * the test catches drift between the production migration and the
- * schema. The safety re-creation tag (`0044_nudge_log`) does not need
- * to be applied here — it would be idempotent against an already-seeded
- * DB and adds no schema state.
+ * The nudge_log CREATE TABLE is read from the package-local migration
+ * copy at `packages/cerebrum-db/migrations/0039_dry_fabian_cortez.sql`.
+ * That file is intentionally byte-identical to the shared journal copy
+ * at `apps/pops-api/src/db/drizzle-migrations/0039_dry_fabian_cortez.sql`
+ * during the transitional release cycle (PR 2 adds the drift-guard CI
+ * job that enforces the byte-identity invariant). The safety re-creation
+ * tag (`0044_nudge_log`) does not need to be applied here — it would be
+ * idempotent against an already-seeded DB and adds no schema state.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -30,10 +33,7 @@ import type {
   NudgePersistenceThresholds,
 } from '../services/nudge-log-types.js';
 
-const NUDGE_LOG_MIGRATION = join(
-  __dirname,
-  '../../../../apps/pops-api/src/db/drizzle-migrations/0039_dry_fabian_cortez.sql'
-);
+const NUDGE_LOG_MIGRATION = join(__dirname, '../../migrations/0039_dry_fabian_cortez.sql');
 
 const CONTRADICTION_PARAMS = {
   contradiction: {

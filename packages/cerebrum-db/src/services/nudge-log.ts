@@ -49,16 +49,20 @@ export function persistCandidates(
   let created = 0;
   for (const candidate of candidates) {
     if (isInCooldown(db, candidate, thresholds, now)) continue;
+    // Single `now()` per inserted row — generateNudgeId and createdAt must
+    // agree (a stray minute-boundary cross between the two would put a row
+    // with id `…_HHmm_…` next to a createdAt one minute ahead).
+    const timestamp = now();
     db.insert(nudgeLog)
       .values({
-        id: generateNudgeId(candidate.type, now()),
+        id: generateNudgeId(candidate.type, timestamp),
         type: candidate.type,
         title: candidate.title,
         body: candidate.body,
         engramIds: JSON.stringify(candidate.engramIds),
         priority: candidate.priority,
         status: 'pending',
-        createdAt: now().toISOString(),
+        createdAt: timestamp.toISOString(),
         expiresAt: candidate.expiresAt,
         actionType: candidate.action?.type ?? null,
         actionLabel: candidate.action?.label ?? null,
@@ -108,7 +112,10 @@ export function listContradictions(
   if (opts.status !== null && opts.status !== undefined) {
     conditions.push(eq(nudgeLog.status, opts.status));
   }
-  // Require every field that the UI projection needs so total === rows after pagination.
+  // Require every contradiction-shape field on action_params at the SQL layer:
+  // both the returned rows AND the `total` count reflect only contradiction
+  // nudges. A row-level post-filter would let recurring/emerging pattern
+  // rows consume page slots and inflate `total`, making pagination dishonest.
   conditions.push(
     sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.engramA') IS NOT NULL`,
     sql`json_extract(${nudgeLog.actionParams}, '$.contradiction.engramB') IS NOT NULL`,
