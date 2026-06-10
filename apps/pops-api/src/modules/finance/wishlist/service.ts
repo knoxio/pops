@@ -44,6 +44,14 @@ export function listWishListItems(
   limit: number,
   offset: number
 ): WishListListResult {
+  // Preserve pre-cutover wire semantics: the original SQL filter applied
+  // an `eq(priority, <any-string>)` for any non-empty value, so an
+  // unknown priority matched zero rows. The package's typed query drops
+  // invalid values entirely, which would return ALL rows — a silent
+  // behaviour change. Short-circuit here to keep the empty-page result.
+  if (priority !== undefined && priority !== '' && !PRIORITY_LOOKUP.has(priority)) {
+    return { rows: [], total: 0 };
+  }
   return wishListService.listWishListItems(getDrizzle(), {
     search,
     priority: asPriority(priority),

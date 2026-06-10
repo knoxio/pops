@@ -21,6 +21,7 @@ jobs:
             backend:
               - 'apps/pops-api/**'
               - 'packages/db-types/**'
+              - 'packages/finance-db/**'
               - 'packages/inventory-db/**'
               - 'packages/types/**'
               - 'packages/auth/**'

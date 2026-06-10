@@ -111,6 +111,19 @@ describe('wishlist.list', () => {
     expect(result.data[0]!.item).toBe('AirPods Max');
   });
 
+  it('returns an empty page when priority is a non-empty unknown value', async () => {
+    seedWishListItem(db, { item: 'MacBook Pro', priority: 'Needing' });
+    seedWishListItem(db, { item: 'AirPods Max', priority: 'Dreaming' });
+
+    // Pre-cutover the SQL filter applied eq(priority, '<any-string>') so an
+    // unknown value matched zero rows. Lock that wire behaviour against the
+    // pillar-finance Phase 1 cutover regression where the package's typed
+    // query would drop unknown values and return all rows.
+    const result = await caller.finance.wishlist.list({ priority: 'NotARealPriority' });
+    expect(result.data).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+  });
+
   it('combines search and priority filters', async () => {
     seedWishListItem(db, { item: 'MacBook Pro', priority: 'Needing' });
     seedWishListItem(db, { item: 'MacBook Air', priority: 'Dreaming' });
