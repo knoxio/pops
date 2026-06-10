@@ -1,10 +1,12 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { shelfImpressionsService } from '@pops/media-db';
+
+import { getDrizzle } from '../../../db.js';
 import { protectedProcedure } from '../../../trpc.js';
 import { withTrpcInternalError } from './router-helpers.js';
 import * as service from './service.js';
-import { getRecentImpressions, recordImpressions } from './shelf/impressions.service.js';
 import { getRegisteredShelves } from './shelf/registry.js';
 import { assembleSession } from './shelf/session.service.js';
 
@@ -61,13 +63,16 @@ export const sessionAndShelfProcedures = {
   assembleSession: protectedProcedure.query(async () => {
     return withTrpcInternalError('Unknown error assembling discover session', async () => {
       const profile = service.getPreferenceProfile();
-      const impressions = getRecentImpressions(7);
+      const impressions = shelfImpressionsService.getRecentImpressions(getDrizzle(), 7);
       const selectedShelves = assembleSession(profile, impressions);
       const shelfResults = await buildShelfResults(selectedShelves);
       const nonEmpty = shelfResults.filter((s) =>
         s.pinned ? s.items.length >= 1 : s.items.length >= 3
       );
-      recordImpressions(nonEmpty.map((s) => s.shelfId));
+      const shelfIds = nonEmpty.map((s) => s.shelfId);
+      if (shelfIds.length > 0) {
+        shelfImpressionsService.recordImpressions(getDrizzle(), shelfIds);
+      }
       return { shelves: nonEmpty };
     });
   }),
