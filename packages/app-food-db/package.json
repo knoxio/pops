@@ -27,6 +27,7 @@
     "@pops/db-types": "workspace:*",
     "@pops/food-contracts": "workspace:*",
     "@pops/food-db": "workspace:*",
+    "@pops/lists-db": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
