@@ -49,8 +49,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 COPY --from=builder --chown=node:node /app/deploy ./
 COPY --from=builder --chown=node:node /app/apps/pops-cerebrum-api/dist ./dist
 
-# Bundled migrations so openCerebrumDb's require.resolve lookup finds
-# the journal at runtime under the deployed node_modules layout.
+# Bundled migrations so openCerebrumDb's import.meta.url-relative
+# `migrations/` lookup finds the journal at runtime under the deployed
+# node_modules layout. The opener computes the path from its own module
+# URL (`<pkg>/dist/open-cerebrum-db.js` → `<pkg>/migrations/`), so the
+# folder has to land next to the built dist inside @pops/cerebrum-db.
 COPY --from=builder --chown=node:node /app/packages/cerebrum-db/migrations ./node_modules/@pops/cerebrum-db/migrations
 
 ARG BUILD_VERSION=dev

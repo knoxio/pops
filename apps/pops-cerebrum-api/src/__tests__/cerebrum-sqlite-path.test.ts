@@ -1,7 +1,7 @@
 /**
  * Resolver tests for cerebrum-api's local SQLite path.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_CEREBRUM_API_SQLITE_PATH,
@@ -35,12 +35,9 @@ describe('resolveCerebrumSqlitePath (cerebrum-api)', () => {
   });
 
   it('falls back to ./data/cerebrum.db when neither env is set', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    try {
-      expect(resolveCerebrumSqlitePath()).toBe(DEFAULT_CEREBRUM_API_SQLITE_PATH);
-      expect(warn).toHaveBeenCalledOnce();
-    } finally {
-      warn.mockRestore();
-    }
+    // The per-pillar container resolver intentionally stays silent on
+    // the fallback branch (unlike pops-api's resolver). Asserting the
+    // returned path is enough — no console.warn to spy on here.
+    expect(resolveCerebrumSqlitePath()).toBe(DEFAULT_CEREBRUM_API_SQLITE_PATH);
   });
 });
