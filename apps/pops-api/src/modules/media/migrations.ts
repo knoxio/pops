@@ -39,8 +39,6 @@ export const mediaMigrationTags: readonly string[] = [
   '0019_little_diamondback',
   // debrief_status.
   '0020_melodic_major_mapleleaf',
-  // shelf_impressions.
-  '0021_spooky_lockheed',
   // comparisons elo deltas.
   '0022_elo_deltas',
   // comparisons source column.

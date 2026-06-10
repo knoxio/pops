@@ -50,7 +50,6 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0018_high_excalibur': 'media',
   '0019_little_diamondback': 'media',
   '0020_melodic_major_mapleleaf': 'media',
-  '0021_spooky_lockheed': 'media',
   '0022_elo_deltas': 'media',
   '0023_kind_james_howlett': 'media',
   '0024_dedupe_comparisons': 'media',
