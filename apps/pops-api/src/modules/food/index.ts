@@ -1,8 +1,11 @@
 import { router } from '../../trpc.js';
+import { batchesRouter } from './batches/router.js';
 import { conversionsRouter } from './conversions/router.js';
+import { cookRouter } from './cook/router.js';
 import { heroImageRouter } from './hero-image/router.js';
 import { inboxRouter } from './inbox/router.js';
 import { foodMigrations } from './migrations.js';
+import { planRouter } from './plan/router.js';
 import { recipesRouter } from './recipes/router.js';
 import { aiRouter } from './routers/ai.js';
 import { aliasesRouter } from './routers/aliases.js';
@@ -28,6 +31,9 @@ export const foodRouter = router({
   ai: aiRouter,
   recipes: recipesRouter,
   inbox: inboxRouter,
+  batches: batchesRouter,
+  cook: cookRouter,
+  plan: planRouter,
 });
 
 export const manifest: ModuleManifest<typeof foodRouter> = {
