@@ -8,6 +8,7 @@ on:
       - "packages/app-*/**"
       - "packages/cerebrum-db/**"
       - "packages/db-types/**"
+      - "packages/food-db/**"
       - "packages/inventory-db/**"
       - "packages/ui/**"
       - "packages/api-client/**"
@@ -35,6 +36,7 @@ jobs:
               - 'packages/app-*/**'
               - 'packages/cerebrum-db/**'
               - 'packages/db-types/**'
+              - 'packages/food-db/**'
               - 'packages/inventory-db/**'
               - 'packages/ui/**'
               - 'packages/api-client/**'
@@ -82,6 +84,7 @@ jobs:
           cd ../inventory-db && pnpm build
           cd ../media-db && pnpm build
           cd ../cerebrum-db && pnpm build
+          cd ../food-db && pnpm build
           cd ../app-lists-db && pnpm build
           cd ../app-food-db && pnpm build
 

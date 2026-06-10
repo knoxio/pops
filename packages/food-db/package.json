@@ -1,5 +1,5 @@
 {
-  "name": "@pops/app-food-db",
+  "name": "@pops/food-db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,10 +10,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./seed": {
-      "types": "./dist/seed/index.d.ts",
-      "default": "./dist/seed/index.js"
-    }
+    "./package.json": "./package.json"
   },
   "scripts": {
     "build": "tsc",
@@ -23,16 +20,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@pops/app-lists-db": "workspace:*",
     "@pops/db-types": "workspace:*",
-    "@pops/food-contracts": "workspace:*",
-    "@pops/food-db": "workspace:*",
+    "better-sqlite3": "^12.10.0",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@vitest/coverage-v8": "^4.1.8",
-    "better-sqlite3": "^12.10.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
   }
