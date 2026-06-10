@@ -1,0 +1,46 @@
+/**
+ * Smoke tests for the core-api Express app + health probe.
+ *
+ * Boots the app against an in-memory core.db so the suite doesn't
+ * write to disk and confirms the `/health` route returns the agreed
+ * `{ ok, pillar, version }` shape.
+ */
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import request from 'supertest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { openCoreDb, type OpenedCoreDb } from '@pops/core-db';
+
+import { createCoreApiApp } from '../app.js';
+
+let tmpDir: string;
+let coreDb: OpenedCoreDb;
+
+beforeEach(() => {
+  tmpDir = mkdtempSync(join(tmpdir(), 'core-api-test-'));
+  coreDb = openCoreDb(join(tmpDir, 'core.db'));
+});
+
+afterEach(() => {
+  coreDb.raw.close();
+  rmSync(tmpDir, { recursive: true, force: true });
+});
+
+describe('GET /health', () => {
+  it('returns ok + pillar + version', async () => {
+    const app = createCoreApiApp({ coreDb, version: '0.0.1-test' });
+    const res = await request(app).get('/health');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, pillar: 'core', version: '0.0.1-test' });
+  });
+
+  it('fails closed when the core handle is closed', async () => {
+    const app = createCoreApiApp({ coreDb, version: '0.0.1-test' });
+    coreDb.raw.close();
+    const res = await request(app).get('/health');
+    expect(res.status).toBe(500);
+  });
+});
