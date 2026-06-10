@@ -22,6 +22,8 @@ export * from './schema.js';
 
 export type { CerebrumDb } from './services/internal.js';
 
+export { openCerebrumDb, type OpenedCerebrumDb } from './open-cerebrum-db.js';
+
 export * as nudgeLogService from './services/nudge-log.js';
 
 // Public types re-exported at the package root so consumers can name
