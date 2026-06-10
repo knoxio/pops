@@ -16,6 +16,8 @@ export * from './schema.js';
 
 export type { InventoryDb } from './services/internal.js';
 
+export { openInventoryDb, type OpenedInventoryDb } from './open-inventory-db.js';
+
 export * as locationsService from './services/locations.js';
 
 // Public types re-exported at the package root so consumers can name
