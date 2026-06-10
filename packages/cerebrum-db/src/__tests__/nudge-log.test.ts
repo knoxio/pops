@@ -8,10 +8,10 @@
  *
  * The nudge_log CREATE TABLE is read from the package-local migration
  * copy at `packages/cerebrum-db/migrations/0039_dry_fabian_cortez.sql`.
- * That file is intentionally byte-identical to the shared journal copy
- * at `apps/pops-api/src/db/drizzle-migrations/0039_dry_fabian_cortez.sql`
- * during the transitional release cycle (PR 2 adds the drift-guard CI
- * job that enforces the byte-identity invariant). The safety re-creation
+ * A drift guard in `cerebrum-db-quality.yml` keeps that file
+ * byte-identical to the shared journal copy at
+ * `apps/pops-api/src/db/drizzle-migrations/0039_dry_fabian_cortez.sql`
+ * until the deletion PR retires the shared one. The safety re-creation
  * tag (`0044_nudge_log`) does not need to be applied here — it would be
  * idempotent against an already-seeded DB and adds no schema state.
  */
