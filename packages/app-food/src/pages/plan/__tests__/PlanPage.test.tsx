@@ -10,7 +10,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockWeekView = vi.fn();
 const mockListSlots = vi.fn();
@@ -256,5 +256,122 @@ describe('PlanPage', () => {
     await user.click(within(drawer).getByTestId('add-slot-submit'));
     expect(within(drawer).getByText(/kebab-case/i)).toBeTruthy();
     expect(mockAddSlotMutate).not.toHaveBeenCalled();
+  });
+});
+
+interface MediaQueryListLike {
+  matches: boolean;
+  media: string;
+  onchange: null;
+  addEventListener: (type: string, listener: (event: MediaQueryListEvent) => void) => void;
+  removeEventListener: (type: string, listener: (event: MediaQueryListEvent) => void) => void;
+  addListener: (listener: (event: MediaQueryListEvent) => void) => void;
+  removeListener: (listener: (event: MediaQueryListEvent) => void) => void;
+  dispatchEvent: (event: Event) => boolean;
+}
+
+function installMobileMatchMedia(): () => void {
+  const original = (window as unknown as { matchMedia?: typeof window.matchMedia }).matchMedia;
+  const stub = (query: string): MediaQueryListLike => ({
+    matches: query.includes('max-width: 767px'),
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  });
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: stub,
+  });
+  return () => {
+    if (original === undefined) {
+      delete (window as unknown as { matchMedia?: typeof window.matchMedia }).matchMedia;
+    } else {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        configurable: true,
+        value: original,
+      });
+    }
+  };
+}
+
+describe('PlanPage (mobile)', () => {
+  let restoreMatchMedia: () => void;
+  beforeEach(() => {
+    vi.clearAllMocks();
+    restoreMatchMedia = installMobileMatchMedia();
+    mockWeekView.mockReturnValue({
+      data: weekViewData,
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    mockListSlots.mockReturnValue({
+      data: slotsData,
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
+    mockListRecipes.mockReturnValue({
+      data: recipesData,
+      isLoading: false,
+      isError: false,
+    });
+  });
+
+  afterEach(() => {
+    restoreMatchMedia();
+  });
+
+  it('renders the day swiper instead of the grid on narrow viewports', () => {
+    renderPage();
+    expect(screen.queryByTestId('plan-week-grid')).toBeNull();
+    expect(screen.getByTestId('plan-day-swiper')).toBeTruthy();
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('Mon');
+  });
+
+  it('navigates between days with prev / next arrows', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
+    await user.click(screen.getByRole('button', { name: 'Next day' }));
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('16 Jun');
+    await user.click(screen.getByRole('button', { name: 'Previous day' }));
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
+  });
+
+  it('disables previous arrow on Monday and next arrow on Sunday', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(screen.getByRole('button', { name: 'Previous day' })).toHaveProperty('disabled', true);
+    for (let i = 0; i < 6; i++) {
+      await user.click(screen.getByRole('button', { name: 'Next day' }));
+    }
+    expect(screen.getByTestId('plan-day-label').textContent).toContain('21 Jun');
+    expect(screen.getByRole('button', { name: 'Next day' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows only the visible day’s entries — Tuesday is empty so the cooked chip is absent', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(screen.getByText('Pancakes')).toBeTruthy();
+    expect(screen.getByTestId('cooked-chip-2')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Next day' }));
+    expect(screen.queryByText('Pancakes')).toBeNull();
+    expect(screen.queryByTestId('cooked-chip-2')).toBeNull();
+  });
+
+  it('renders the edit sheet as a bottom-sheet on mobile', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByTestId('plan-entry-1'));
+    const sheet = await screen.findByTestId('plan-entry-edit-sheet');
+    expect(sheet.getAttribute('data-variant')).toBe('bottom-sheet');
+    expect(sheet.className).toContain('bottom-0');
   });
 });

@@ -1,11 +1,11 @@
 /**
  * PRD-143 — plan entry edit sheet.
  *
- * Fixed right-side drawer at all sizes (full-width on narrow viewports).
- * The PRD's bottom-sheet variant for mobile is tracked as a follow-up.
- * Surfaces servings + notes + "Mark cooked" CTA (which links into
- * PRD-144's cook flow) + delete. When the entry has a non-null
- * `recipe_run_id` the form is read-only and shows "Cooked on".
+ * Right-side drawer at `≥768px`; bottom-sheet at narrow viewports per the
+ * PRD's mobile spec (`useIsMobile`). Surfaces servings + notes + "Mark
+ * cooked" CTA (which links into PRD-144's cook flow) + delete. When the
+ * entry has a non-null `recipe_run_id` the form is read-only and shows
+ * "Cooked on".
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import { Link } from 'react-router';
@@ -13,6 +13,7 @@ import { Link } from 'react-router';
 import { trpc } from '@pops/api-client';
 import { Button, NumberInput } from '@pops/ui';
 
+import { useIsMobile } from './useIsMobile.js';
 import { usePlanEntryEdit } from './usePlanEntryEdit.js';
 
 import type { WirePlanEntryRow } from '@pops/app-food-db';
@@ -26,15 +27,22 @@ export interface PlanEntryEditSheetProps {
 
 export function PlanEntryEditSheet(props: PlanEntryEditSheetProps): ReactElement | null {
   const { entryId, weekStart, isOpen, onClose } = props;
+  const isMobile = useIsMobile();
   const weekQuery = trpc.food.plan.weekView.useQuery({ weekStart }, { enabled: isOpen });
   const entry = (weekQuery.data?.entries ?? []).find((e) => e.id === entryId) ?? null;
   if (!isOpen || entry === null) return null;
+  const variant = isMobile ? 'bottom-sheet' : 'right-drawer';
+  const variantClasses =
+    variant === 'bottom-sheet'
+      ? 'fixed inset-x-0 bottom-0 max-h-[85vh] rounded-t-lg border-t'
+      : 'fixed inset-y-0 right-0 w-full sm:w-96 border-l';
   return (
     <aside
-      className="fixed inset-y-0 right-0 w-full sm:w-96 bg-background border-l shadow-xl z-50 p-6 overflow-y-auto"
+      className={`${variantClasses} bg-background shadow-xl z-50 p-6 overflow-y-auto`}
       role="dialog"
       aria-label={`Edit plan entry for ${entry.recipeTitle}`}
       data-testid="plan-entry-edit-sheet"
+      data-variant={variant}
     >
       <Header entry={entry} onClose={onClose} />
       {entry.recipeRunId === null ? (
