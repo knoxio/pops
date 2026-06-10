@@ -1,12 +1,13 @@
 /**
- * Read services for the `list_items` table.
+ * Read + check-state services for the `list_items` table.
  *
- * Phase 1 PR 1 ships only the list + get + check trio — the create / update /
- * remove / bulk-add / reorder surface stays in `@pops/app-lists-db` for now
- * because it pulls in the position-allocation transaction helpers and the
- * ref-kind normalisation logic that haven't been audited for the new
- * package boundary yet. The next slice PR widens this surface once the
- * helpers move across.
+ * Phase 1 PR 1 ships two reads (list / get) and three check-state mutations
+ * (check / uncheck / bulk-uncheck). The create / update / remove / bulk-add
+ * / reorder surface stays in `@pops/app-lists-db` for now because it pulls
+ * in the position-allocation transaction helpers and the ref-kind
+ * normalisation logic that haven't been audited for the new package
+ * boundary yet. The next slice PR widens this surface once the helpers
+ * move across.
  *
  * `ref_id` is polymorphic — no FK enforcement at the schema level. Callers
  * that need cross-table validation do it in the router (mirrors how the

@@ -11,9 +11,12 @@
  * / `@pops/food-db` schema re-export pattern.
  *
  * Phase 1 PR 1 ships only the `listItems` slice — the `lists` table itself
- * is referenced for the FK + cascading delete tests, but the public list
- * surface (createList / listLists / archiveList / etc.) stays in
- * `@pops/app-lists-db` until the next slice PR moves it across.
+ * is referenced because the in-memory test suite needs to seed parent rows
+ * before inserting children (the `list_items.list_id` FK is plain ON DELETE
+ * NO ACTION, so there is no cascade — `deleteList` walks the children
+ * explicitly in `@pops/app-lists-db`). The public list surface
+ * (createList / listLists / archiveList / etc.) stays in `@pops/app-lists-db`
+ * until the next slice PR moves it across.
  */
 export { listItems, lists } from '@pops/db-types';
 export type {
