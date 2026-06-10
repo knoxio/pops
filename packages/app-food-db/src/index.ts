@@ -24,6 +24,7 @@ export { MAX_INGREDIENT_DEPTH } from './services/internal.js';
 export * as aliasesService from './services/aliases.js';
 export * as aliasesQueries from './services/aliases-queries.js';
 export * as batchesService from './services/batches.js';
+export * as batchesLifecycleService from './services/batches-lifecycle.js';
 export * as ingestSourcesService from './services/ingest-sources.js';
 export * as inboxService from './services/inbox.js';
 export * as inboxQueries from './services/inbox-queries.js';

@@ -22,48 +22,12 @@ function isNotImplemented(err: AnyError): boolean {
   return err instanceof TRPCError && err.code === 'NOT_IMPLEMENTED';
 }
 
-describe('food.batches.* scaffold (PRD-145 + PRD-146)', () => {
+describe('food.batches.* scaffold (PRD-146)', () => {
   const caller = createCaller();
 
-  it('rejects `create` with NOT_IMPLEMENTED', async () => {
-    await expect(
-      caller.food.batches.create({
-        variantId: 1,
-        prepStateId: null,
-        qty: 100,
-        unit: 'g',
-        location: 'fridge',
-        sourceType: 'purchase',
-      })
-    ).rejects.toSatisfy(isNotImplemented);
-  });
-
-  it('rejects `get` with NOT_IMPLEMENTED', async () => {
-    await expect(caller.food.batches.get({ id: 1 })).rejects.toSatisfy(isNotImplemented);
-  });
-
-  it('rejects `relocate` with NOT_IMPLEMENTED', async () => {
-    await expect(caller.food.batches.relocate({ id: 1, location: 'freezer' })).rejects.toSatisfy(
-      isNotImplemented
-    );
-  });
-
-  it('rejects `edit` with NOT_IMPLEMENTED', async () => {
-    await expect(caller.food.batches.edit({ id: 1, notes: 'hi' })).rejects.toSatisfy(
-      isNotImplemented
-    );
-  });
-
-  it('rejects `adjustQty` with NOT_IMPLEMENTED', async () => {
-    await expect(
-      caller.food.batches.adjustQty({ id: 1, delta: -10, reason: 'spoiled' })
-    ).rejects.toSatisfy(isNotImplemented);
-  });
-
-  it('rejects `delete` with NOT_IMPLEMENTED', async () => {
-    await expect(caller.food.batches.delete({ id: 1 })).rejects.toSatisfy(isNotImplemented);
-  });
-
+  // PRD-145 wired create/get/relocate/edit/adjustQty/delete — see
+  // `batches-router.test.ts` for the behaviour suite. Only PRD-146's
+  // `searchForConsume` remains a scaffold.
   it('rejects `searchForConsume` with NOT_IMPLEMENTED', async () => {
     await expect(caller.food.batches.searchForConsume({ limit: 10 })).rejects.toSatisfy(
       isNotImplemented

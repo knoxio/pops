@@ -1,17 +1,17 @@
 /**
- * `food.batches.*` tRPC router — scaffold for PRD-145 + PRD-146.
+ * `food.batches.*` tRPC router — PRD-145 behaviour + PRD-146 scaffold.
  *
- * Every procedure throws `NotImplemented` at runtime. Inputs are the
- * real PRD-spec'd Zod schemas; outputs are typed against the contracts
- * exported from `@pops/app-food-db`. PRDs 145 + 146 swap each
- * implementation in turn without re-shaping the wire surface.
- *
- * `searchForConsume` is owned by PRD-146; the rest by PRD-145.
+ * Six lifecycle procedures wired to `batchesLifecycleService` from
+ * `@pops/app-food-db`. `searchForConsume` remains a PRD-146 stub.
  */
 
 import { TRPCError } from '@trpc/server';
 
+import { batchesLifecycleService } from '@pops/app-food-db';
+
+import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { getBatchDetail } from './get.js';
 import {
   AdjustBatchQtyInputSchema,
   CreateBatchInputSchema,
@@ -29,8 +29,7 @@ import type {
   BatchMutationResult,
 } from '@pops/app-food-db';
 
-const NOT_IMPLEMENTED_MESSAGE =
-  'food.batches.* is a scaffold; PRD-145 + PRD-146 wire real behaviour';
+const NOT_IMPLEMENTED_MESSAGE = 'food.batches.searchForConsume is a scaffold; PRD-146 wires it';
 
 function notImplemented(): never {
   throw new TRPCError({
@@ -42,27 +41,63 @@ function notImplemented(): never {
 export const batchesRouter = router({
   create: protectedProcedure
     .input(CreateBatchInputSchema)
-    .mutation((): { batchId: number } => notImplemented()),
+    .mutation(({ input }): { batchId: number } => {
+      const result = batchesLifecycleService.createBatchManual(getDrizzle(), {
+        variantId: input.variantId,
+        prepStateId: input.prepStateId,
+        qty: input.qty,
+        unit: input.unit,
+        location: input.location,
+        sourceType: input.sourceType,
+        producedAt: input.producedAt,
+        expiresAt: input.expiresAt,
+        notes: input.notes,
+      });
+      if (result.ok === false) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `createBatchManual rejected: ${result.reason}`,
+        });
+      }
+      return { batchId: result.batchId };
+    }),
 
-  get: protectedProcedure
-    .input(GetBatchInputSchema)
-    .query((): BatchDetail | null => notImplemented()),
+  get: protectedProcedure.input(GetBatchInputSchema).query(({ input }): BatchDetail | null => {
+    return getBatchDetail(getDrizzle(), input.id);
+  }),
 
   relocate: protectedProcedure
     .input(RelocateBatchInputSchema)
-    .mutation((): BatchMutationResult => notImplemented()),
+    .mutation(({ input }): BatchMutationResult => {
+      return batchesLifecycleService.relocateBatch(getDrizzle(), input.id, input.location);
+    }),
 
   edit: protectedProcedure
     .input(EditBatchInputSchema)
-    .mutation((): BatchMutationResult => notImplemented()),
+    .mutation(({ input }): BatchMutationResult => {
+      return batchesLifecycleService.editBatch(getDrizzle(), input.id, {
+        expiresAt: input.expiresAt,
+        notes: input.notes,
+        prepStateId: input.prepStateId,
+      });
+    }),
 
   adjustQty: protectedProcedure
     .input(AdjustBatchQtyInputSchema)
-    .mutation((): BatchAdjustResult => notImplemented()),
+    .mutation(({ input }): BatchAdjustResult => {
+      return batchesLifecycleService.adjustBatchQty(
+        getDrizzle(),
+        input.id,
+        input.delta,
+        input.reason
+      );
+    }),
 
   delete: protectedProcedure
     .input(DeleteBatchInputSchema)
-    .mutation((): BatchMutationResult => notImplemented()),
+    .mutation(({ input }): BatchMutationResult => {
+      return batchesLifecycleService.deleteBatch(getDrizzle(), input.id);
+    }),
 
   searchForConsume: protectedProcedure
     .input(SearchForConsumeInputSchema)
