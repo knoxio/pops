@@ -15,3 +15,13 @@ export class WishListItemNotFoundError extends Error {
     this.id = id;
   }
 }
+
+export class TransactionTagRuleNotFoundError extends Error {
+  override readonly name = 'TransactionTagRuleNotFoundError' as const;
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`Transaction tag rule '${id}' not found`);
+    this.id = id;
+  }
+}

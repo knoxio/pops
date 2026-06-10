@@ -6,10 +6,11 @@
  * `apps/pops-api/src/modules/finance/` as the first mature-pillar migration
  * following the core pilot, per ADR-026.
  *
- * Per the CI-never-breaks pattern the migration is incremental — this PR
- * scaffolds the package and moves only the `wish-list` slice. The other
- * slices (budgets, transactions, imports, tag rules, tag vocabulary, URI
- * dispatcher) follow in subsequent PRs.
+ * Per the CI-never-breaks pattern the migration is incremental. The
+ * shipped slices so far are wish-list, tag-vocabulary, and
+ * transaction-tag-rules (all scaffolded — cutover lands in later PRs).
+ * The remaining slices (budgets, transactions, transaction_corrections,
+ * imports, URI dispatcher) follow in subsequent PRs.
  */
 export * from './errors.js';
 export * from './schema.js';
@@ -33,3 +34,12 @@ export {
 export * as tagVocabularyService from './services/tag-vocabulary.js';
 
 export { type TagVocabularyRow, type TagVocabularySource } from './services/tag-vocabulary.js';
+
+export * as transactionTagRulesService from './services/transaction-tag-rules.js';
+
+export {
+  type TransactionTagRuleRow,
+  type TagRuleMatchType,
+  type CreateTransactionTagRuleInput,
+  type UpdateTransactionTagRuleInput,
+} from './services/transaction-tag-rules.js';
