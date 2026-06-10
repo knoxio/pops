@@ -176,40 +176,40 @@ Inline per theme protocol.
 
 ### Rejected tab
 
-- [ ] `food.inbox.listRejected` lives in `apps/pops-api/src/modules/food/inbox-router.ts` and returns `RejectedRow[]` matching the shape above.
-- [ ] Cursor pagination works (`limit=20` default; `nextCursor` opaque base64 of the rejected-at timestamp + tie-breaking id).
-- [ ] Filter combinations (reason × kind × sinceDays) all run in one SQL query (no N+1).
-- [ ] `RejectedTab.tsx` renders rows with reject reason chip, kind chip, source URL truncated to 60 chars, relative time.
-- [ ] Per-row Undo button calls `food.inbox.unreject` and on success removes the row optimistically; on error toasts the failure code.
-- [ ] Filter chips drive query params; resetting filters clears them from the URL.
-- [ ] Empty state surfaces the recovery message.
+- [x] `food.inbox.listRejected` lives in `apps/pops-api/src/modules/food/inbox/router.ts` (sibling to the PRD-136 mutations) and returns `RejectedRow[]` matching the shape above.
+- [x] Cursor pagination works (`limit=20` default; `nextCursor` opaque base64url of `rejected_at|version_id`).
+- [x] Filter combinations (reason × kind × sinceDays) all run in one SQL query (no N+1).
+- [x] `RejectedTab.tsx` renders rows with reject reason chip, kind chip, source URL truncated to 60 chars, relative time.
+- [x] Per-row Undo button calls `food.inbox.unreject` and on success removes the row optimistically; on error toasts the failure code (mapped to `inbox.rejected.undo.failure.<reason>`).
+- [ ] Filter chips drive URL query params; resetting filters clears them from the URL. _PRD-134 owns URL hash → state wiring; PRD-138 ships the filter state via `initialFilters` prop ready to consume URL hash._
+- [x] Empty state surfaces the recovery message.
 
 ### Failed tab
 
-- [ ] `food.inbox.listFailed` returns `FailedRow[]` matching the shape above and excludes sources whose latest meta represents success.
-- [ ] All rows in `listFailed` are retryable (auth-dead is in Drafts tab; this tab carries only `ok:false` ingests).
-- [ ] `FailedTab.tsx` renders rows with kind chip, error code chip, error message truncated to 120 chars, attempts count, ingested-at relative time.
-- [ ] Per-row Retry button calls PRD-125's `food.ingest.retry`; on success removes the row optimistically and toasts "Re-queued."
-- [ ] Per-row "View source" opens `ViewSourceDialog` rendering per-kind content.
-- [ ] Auth-dead rows show a disabled Retry with a tooltip linking to `docs/runbooks/instagram-cookie-refresh.md`.
+- [x] `food.inbox.listFailed` returns `FailedRow[]` matching the shape above and excludes sources whose latest meta represents success (driven by `WHERE error_code IS NOT NULL` per the PRD-125 amendment).
+- [x] All rows in `listFailed` are retryable (auth-dead is in Drafts tab; this tab carries only `ok:false` ingests).
+- [x] `FailedTab.tsx` renders rows with kind chip, error code chip, error message truncated to 120 chars, attempts count, ingested-at relative time.
+- [x] Per-row Retry button calls PRD-125's `food.ingest.retry`; on success removes the row optimistically and toasts "Re-queued."
+- [x] Per-row "View source" opens `ViewSourceDialog` rendering per-kind content.
+- [ ] Auth-dead rows show a disabled Retry with a tooltip linking to `docs/runbooks/instagram-cookie-refresh.md`. _Auth-dead drafts never reach this tab per PRD-130 (they surface in the Drafts tab as partial drafts); the disabled-retry-tooltip surface is only reachable if a future handler emits an `error_code` for auth-dead — left unchecked until that path exists._
 
 ### View source dialog
 
-- [ ] Renders text ingests as `<pre>` with `white-space: pre-wrap`.
-- [ ] Renders screenshots from `${FOOD_INGEST_DIR}/<sourceId>/screenshot.<ext>` (served via the existing `/api/food/ingest/source/:sourceId/screenshot` endpoint — PRD-138 extends PRD-110 or PRD-125 to expose this; see "Cross-PRD dependencies").
-- [ ] Renders URL ingests with the URL as a clickable link + a sandboxed iframe (`sandbox="allow-same-origin"` only; no scripts).
-- [ ] Closes on Esc, click outside, or close button.
+- [x] Renders text ingests as `<pre>` with `white-space: pre-wrap`.
+- [x] Renders screenshots from `${FOOD_INGEST_DIR}/<sourceId>/screenshot.<ext>` (served via the existing `/api/food/ingest/source/:sourceId/screenshot` endpoint shipped in PRD-125).
+- [x] Renders URL ingests with the URL as a clickable link + a sandboxed iframe (`sandbox="allow-same-origin"` only; no scripts).
+- [x] Closes on Esc, click outside, or close button (Radix Dialog primitive handles all three).
 
 ### Tests
 
-- [ ] Vitest integration at `apps/pops-api/src/modules/food/__tests__/inbox-rejected-failed.test.ts`:
+- [x] Vitest integration at `apps/pops-api/src/modules/food/__tests__/inbox-rejected-failed.test.ts`:
   - `listRejected` filters by reason / kind / sinceDays correctly and excludes PRD-119-discarded drafts.
   - `listFailed` excludes sources with success-meta.
   - `listFailed` excludes sources whose latest meta is `ok: true` even when `partialReason='auth-dead'` (those land in PRD-134's Drafts tab).
-- [ ] Vitest + RTL at `packages/app-food/src/pages/inbox/__tests__/RejectedTab.test.tsx` and `FailedTab.test.tsx`:
+- [x] Vitest + RTL at `packages/app-food/src/pages/inbox/__tests__/{RejectedTab,FailedTab,ViewSourceDialog}.test.tsx`:
   - Undo flow optimistic update + rollback on error.
   - Retry flow optimistic update + rollback on error.
-  - Filter chips reflect URL query params.
+  - Filter chip toggles reach the query input. _URL-param reflection deferred with PRD-134._
   - Empty states render.
 
 ## Out of Scope

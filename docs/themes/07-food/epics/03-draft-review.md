@@ -18,7 +18,7 @@ This epic is review-loop only. The planning, batch, and cook-event surfaces that
 | 135 | [Per-Draft Inspector](../prds/135-draft-inspector/README.md)             | `/food/inbox/:sourceId` three-pane view: provenance + DSL editor + approve/reject controls; auto-create banner | Not started |
 | 136 | [Approval & Rejection Flow](../prds/136-approve-reject-flow/README.md)   | Server mutations (`approve` / `reject` / `unreject`); new `recipe_version_rejections` table; FK transitions    | Partial     |
 | 137 | [Review Quality Heuristic](../prds/137-quality-heuristic/README.md)      | Deterministic scoring function over compile_status + proposedSlugs + partialReason + kind + age; four bands    | Not started |
-| 138 | [Rejected & Failed Tabs](../prds/138-rejected-and-failed-tabs/README.md) | Rejected tab with undo; Failed-ingest tab wired to PRD-125 `retry`; reject-reason capture + filter             | Not started |
+| 138 | [Rejected & Failed Tabs](../prds/138-rejected-and-failed-tabs/README.md) | Rejected tab with undo; Failed-ingest tab wired to PRD-125 `retry`; reject-reason capture + filter             | Partial     |
 
 ### Build order
 

@@ -26,6 +26,7 @@ export * as aliasesQueries from './services/aliases-queries.js';
 export * as batchesService from './services/batches.js';
 export * as ingestSourcesService from './services/ingest-sources.js';
 export * as inboxService from './services/inbox.js';
+export * as inboxQueries from './services/inbox-queries.js';
 export * as ingredientsService from './services/ingredients.js';
 export * as ingredientsQueries from './services/ingredients-queries.js';
 export * as planService from './services/plan.js';
@@ -70,6 +71,13 @@ export type {
   UnrejectResult,
   UnrejectSuccess,
 } from './services/inbox.js';
+export type {
+  FailedRow,
+  ListFailedFilter,
+  ListPage,
+  ListRejectedFilter,
+  RejectedRow,
+} from './services/inbox-queries.js';
 export type { PromoteVersionResult } from './services/recipe-versions.js';
 export type {
   DeleteBlockerSummary,
