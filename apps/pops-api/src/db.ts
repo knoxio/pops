@@ -7,6 +7,7 @@ import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3'
 import { openCoreDb, type CoreDb, type OpenedCoreDb } from '@pops/core-db';
 
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
+import { closeCerebrumDb } from './db/cerebrum-handle.js';
 import { backfillCoreFromShared as backfillCoreImpl } from './db/core-backfill.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { closeFinanceDb } from './db/finance-handle.js';
@@ -239,6 +240,7 @@ export function closeDb(): void {
   closeFinanceDb();
   closeInventoryDb();
   closeMediaDb();
+  closeCerebrumDb();
 }
 
 /**
