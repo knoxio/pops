@@ -7,7 +7,7 @@
  * currently use horizontal scroll on the desktop grid.
  */
 import { useCallback, useState, type ReactElement } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@pops/ui';
 
@@ -25,6 +25,7 @@ interface AddTarget {
 
 export function PlanPage(): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const weekParam = searchParams.get('week');
   const { weekStart, weekQuery, slotsQuery } = usePlanPage({ weekParam });
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -50,6 +51,10 @@ export function PlanPage(): ReactElement {
         onToday={() => setWeek(today)}
         onDatePick={(date) => setWeek(date)}
         onManageSlots={() => setShowSlotDrawer(true)}
+        onMakeShoppingList={() => {
+          const end = addDays(weekStart, 6);
+          void navigate(`/food/shopping/from-plan?start=${weekStart}&end=${end}`);
+        }}
       />
       <Body
         weekQuery={weekQuery}
@@ -121,6 +126,8 @@ interface HeaderProps {
   onToday: () => void;
   onDatePick: (date: string) => void;
   onManageSlots: () => void;
+  /** PRD-152 amendment — navigates to `/food/shopping/from-plan` with the current week pre-filled. */
+  onMakeShoppingList: () => void;
 }
 
 function Header(props: HeaderProps): ReactElement {
@@ -154,6 +161,14 @@ function Header(props: HeaderProps): ReactElement {
         data-testid="manage-slots-btn"
       >
         Manage slots
+      </Button>
+      <Button
+        variant="default"
+        size="sm"
+        onClick={props.onMakeShoppingList}
+        data-testid="make-shopping-list-btn"
+      >
+        Make shopping list
       </Button>
     </header>
   );
