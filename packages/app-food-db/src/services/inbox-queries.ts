@@ -8,6 +8,16 @@
 export { listRejectedVersions } from './inbox-queries-rejected.js';
 export { listFailedErrorCodes, listFailedSources } from './inbox-queries-failed.js';
 export {
+  countPendingDrafts,
+  decodeDraftsCursor,
+  encodeDraftsCursor,
+  listDrafts,
+  type DraftSort,
+  type DraftsCursor,
+  type InboxDraftRow,
+  type ListDraftsFilter,
+} from './inbox-queries-drafts.js';
+export {
   decodeCursor,
   encodeCursor,
   type FailedRow,

@@ -25,6 +25,7 @@ import { inboxQueries, inboxService } from '@pops/app-food-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { ListDraftsInputSchema } from './drafts-inputs.js';
 import { ApproveInputSchema, RejectInputSchema, UnrejectInputSchema } from './inputs.js';
 import {
   DEFAULT_INBOX_LIST_LIMIT,
@@ -73,6 +74,24 @@ export const inboxRouter = router({
 
   failedErrorCodes: protectedProcedure.query(() => {
     return inboxQueries.listFailedErrorCodes(getDrizzle());
+  }),
+
+  list: protectedProcedure.input(ListDraftsInputSchema).query(({ input }) => {
+    const cursor =
+      input.cursor === undefined ? null : inboxQueries.decodeDraftsCursor(input.cursor);
+    return inboxQueries.listDrafts(getDrizzle(), {
+      bands: input.bands,
+      kinds: input.kinds,
+      partialReasons: input.partialReasons,
+      freshOnly: input.freshOnly,
+      sort: input.sort,
+      cursor,
+      limit: input.limit ?? DEFAULT_INBOX_LIST_LIMIT,
+    });
+  }),
+
+  pendingCount: protectedProcedure.query(() => {
+    return { count: inboxQueries.countPendingDrafts(getDrizzle()) };
   }),
 });
 

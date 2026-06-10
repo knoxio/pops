@@ -1,5 +1,5 @@
 /**
- * PRD-138 — read-only dialog showing the original ingest input.
+ * PRD-138 / PRD-134 — read-only dialog showing the original ingest input.
  *
  * Per-kind rendering:
  *   - url-web / url-instagram → `<a>` link + sandboxed iframe preview
@@ -11,6 +11,12 @@
  *   - screenshot → `<img src="/api/food/ingest/source/<id>/screenshot">`.
  *
  * No DSL editor — there's no draft to edit at this point.
+ *
+ * Props accept a narrow `ViewSource` shape (sourceId / ingestKind /
+ * sourceUrl / optional errorCode) so PRD-134's draft rows can mount the
+ * dialog from an `InboxDraftRow` without paying for the full `FailedRow`
+ * surface. PRD-138's `FailedTab` still passes a `FailedRow`; the dialog
+ * just narrows the fields it needs.
  */
 import { type ReactElement } from 'react';
 
@@ -23,10 +29,17 @@ import {
   DialogTitle,
 } from '@pops/ui';
 
-import { type FailedRow } from './inbox-types.js';
+import type { IngestSourceKind } from '@pops/db-types';
+
+export interface ViewSource {
+  sourceId: number;
+  ingestKind: IngestSourceKind;
+  sourceUrl: string | null;
+  errorCode?: string;
+}
 
 interface Props {
-  row: FailedRow | null;
+  row: ViewSource | null;
   onClose: () => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }
@@ -39,7 +52,9 @@ export function ViewSourceDialog({ row, onClose, t }: Props): ReactElement | nul
         <DialogHeader>
           <DialogTitle>{t('inbox.failed.viewSource.title')}</DialogTitle>
           <DialogDescription>
-            {t('inbox.failed.viewSource.description', { code: row.errorCode })}
+            {row.errorCode !== undefined && row.errorCode.length > 0
+              ? t('inbox.failed.viewSource.description', { code: row.errorCode })
+              : t('inbox.drafts.viewSource.description')}
           </DialogDescription>
         </DialogHeader>
         <ViewSourceBody row={row} t={t} />
@@ -53,7 +68,7 @@ function ViewSourceBody({
   row,
   t,
 }: {
-  row: FailedRow;
+  row: ViewSource;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }): ReactElement {
   if (row.ingestKind === 'screenshot') {

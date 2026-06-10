@@ -100,7 +100,11 @@ export type {
   UnrejectSuccess,
 } from './services/inbox.js';
 export type {
+  DraftSort,
+  DraftsCursor,
   FailedRow,
+  InboxDraftRow,
+  ListDraftsFilter,
   ListFailedFilter,
   ListPage,
   ListRejectedFilter,
