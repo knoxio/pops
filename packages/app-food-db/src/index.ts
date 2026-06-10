@@ -16,8 +16,7 @@ export * from './slug.js';
 
 // Drizzle handle type — re-exported so consumers don't have to reach
 // into the internal services module.
-export type { FoodDb } from './services/internal.js';
-export { MAX_INGREDIENT_DEPTH } from './services/internal.js';
+export { MAX_INGREDIENT_DEPTH, type FoodDb } from './services/internal.js';
 
 // Service namespaces — each module's free functions are exposed as a
 // namespace so the API router code stays self-documenting at call sites.
@@ -195,8 +194,7 @@ export type {
   RecipeVersionWithCompiledData,
 } from './recipe-renderer-types.js';
 
-// Cross-PRD type contracts for the cook / plan / fridge feature set
-// (PRDs 143-147). Split by domain so each downstream PRD owns one file.
+// Cross-PRD type contracts for cook / plan / fridge (PRDs 143-147).
 // PRD-146 shares `batches.ts` with PRD-145.
 export type {
   ConsumptionNeed,
