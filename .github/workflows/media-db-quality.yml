@@ -6,7 +6,6 @@ on:
     paths:
       - "packages/media-db/**"
       - "packages/db-types/**"
-      - "apps/pops-api/src/db/drizzle-migrations/0021_spooky_lockheed.sql"
       - ".github/workflows/media-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
@@ -27,33 +26,8 @@ jobs:
             relevant:
               - 'packages/media-db/**'
               - 'packages/db-types/**'
-              - 'apps/pops-api/src/db/drizzle-migrations/0021_spooky_lockheed.sql'
               - '.github/workflows/media-db-quality.yml'
               - '.github/workflows/_pkg-check.yml'
-
-  migration-drift-guard:
-    name: Migration drift (shared vs media-db)
-    needs: [changes]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Skip — no relevant changes"
-        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
-        run: echo "Skipping — no relevant changes"
-      - uses: actions/checkout@v6
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-      - name: Diff media-db copy against shared journal copy
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-        run: |
-          set -euo pipefail
-          shared='apps/pops-api/src/db/drizzle-migrations/0021_spooky_lockheed.sql'
-          pillar='packages/media-db/migrations/0021_spooky_lockheed.sql'
-          if ! diff -q "$shared" "$pillar"; then
-            echo "::error::Migration drift detected: $shared and $pillar must be byte-identical during the transitional release cycle (media pillar phase 1)."
-            diff "$shared" "$pillar" || true
-            exit 1
-          fi
-          echo "OK — both 0021_spooky_lockheed.sql copies are byte-identical."
 
   quality:
     needs: [changes]
