@@ -7,12 +7,11 @@
  */
 import { and, count, eq, sql } from 'drizzle-orm';
 
-import { nudgeLogService } from '@pops/cerebrum-db';
+import { nudgeLogService, rowToNudge } from '@pops/cerebrum-db';
 import { nudgeLog } from '@pops/db-types';
 
 import { logger } from '../../../lib/logger.js';
 import { ConcatenationSynthesizer, executeConsolidationAct } from './consolidation-act.js';
-import { rowToNudge } from './nudge-helpers.js';
 import { loadActiveEngrams } from './nudge-persistence.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
