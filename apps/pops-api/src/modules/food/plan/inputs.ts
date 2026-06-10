@@ -9,11 +9,19 @@
 import { z } from 'zod';
 
 const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD');
+
+/**
+ * Canonical food-domain slug grammar — lowercase ASCII kebab-case, no
+ * double hyphens, no leading/trailing hyphens. Mirrors
+ * `@pops/app-food-db/src/slug.ts`'s `SLUG_RE` so the API boundary
+ * rejects the same values the service layer rejects (lowercase only,
+ * `[a-z0-9]+(-[a-z0-9]+)*`).
+ */
 const SlugLike = z
   .string()
   .min(1)
   .max(64)
-  .regex(/^[a-z0-9][a-z0-9-]*$/i, 'slug-format');
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'lowercase-kebab-case');
 
 export const WeekViewInputSchema = z.object({
   weekStart: IsoDate,

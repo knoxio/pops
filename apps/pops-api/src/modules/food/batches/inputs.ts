@@ -13,6 +13,15 @@ const UNIT = z.enum(['g', 'ml', 'count']);
 const MANUAL_SOURCE_TYPE = z.enum(['purchase', 'gift', 'other']);
 const ADJUST_REASON = z.enum(['spoiled', 'wasted', 'correction']);
 
+/**
+ * ISO 8601 datetime. PRD-145 services parse `producedAt` / `expiresAt`
+ * as real timestamps (FIFO ordering, default-shelf-life arithmetic);
+ * validating here means invalid values fail at the API boundary rather
+ * than slipping into the DB. Same convention as
+ * `apps/pops-api/src/modules/food/routers/ingest-schemas.ts`.
+ */
+const IsoDateTime = z.string().datetime();
+
 export const CreateBatchInputSchema = z.object({
   variantId: z.number().int().positive(),
   prepStateId: z.number().int().positive().nullable(),
@@ -20,8 +29,8 @@ export const CreateBatchInputSchema = z.object({
   unit: UNIT,
   location: LOCATION,
   sourceType: MANUAL_SOURCE_TYPE,
-  producedAt: z.string().optional(),
-  expiresAt: z.string().optional(),
+  producedAt: IsoDateTime.optional(),
+  expiresAt: IsoDateTime.optional(),
   notes: z.string().max(1000).optional(),
 });
 
@@ -36,7 +45,7 @@ export const RelocateBatchInputSchema = z.object({
 
 export const EditBatchInputSchema = z.object({
   id: z.number().int().positive(),
-  expiresAt: z.string().nullable().optional(),
+  expiresAt: IsoDateTime.nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
   prepStateId: z.number().int().positive().nullable().optional(),
 });

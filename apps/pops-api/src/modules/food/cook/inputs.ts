@@ -41,7 +41,12 @@ const CookYieldInputSchema = z.object({
   qty: z.number().finite().nonnegative(),
   unit: UNIT,
   location: LOCATION,
-  expiresAt: z.string().optional(),
+  /**
+   * ISO 8601 datetime. Validated at the API boundary so invalid
+   * timestamps fail before `markCooked` opens its transaction.
+   * Same convention as `apps/pops-api/src/modules/food/routers/ingest-schemas.ts`.
+   */
+  expiresAt: z.string().datetime().optional(),
   notes: z.string().max(1000).optional(),
 });
 
