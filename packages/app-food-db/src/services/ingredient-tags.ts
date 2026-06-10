@@ -21,7 +21,7 @@
  * NOCASE collation on the index would let an upper-case lookup still hit,
  * but normalising at the boundary makes the contract explicit.
  */
-import { and, count, eq, like, min, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, like, min, sql } from 'drizzle-orm';
 
 import { BadTagFormat, IngredientNotFound, TagTooLong } from '../errors.js';
 import { ingredients, ingredientTags } from '../schema.js';
@@ -228,28 +228,32 @@ export function listDistinctTags(
   options: ListDistinctTagsOptions
 ): { tags: TagDistinctRow[] } {
   const limit = options.limit ?? 50;
+  const countCol = count(ingredientTags.ingredientId);
+  const firstSeenCol = min(ingredientTags.createdAt);
+  // ORDER BY + LIMIT pushed into SQLite so the namespace expression index
+  // can drive the lookup and the engine returns only the top-N to JS rather
+  // than the full distinct set.
   const baseSelect = db
     .select({
       tag: ingredientTags.tag,
-      ingredientCount: count(ingredientTags.ingredientId),
-      firstSeenAt: min(ingredientTags.createdAt),
+      ingredientCount: countCol,
+      firstSeenAt: firstSeenCol,
     })
     .from(ingredientTags)
-    .groupBy(ingredientTags.tag);
+    .groupBy(ingredientTags.tag)
+    .orderBy(desc(countCol), asc(ingredientTags.tag))
+    .limit(limit);
   const rows =
     options.namespacePrefix === null
       ? baseSelect.all()
       : baseSelect.where(like(ingredientTags.tag, `${options.namespacePrefix}:%`)).all();
-  const out: TagDistinctRow[] = rows.map((r) => ({
-    tag: r.tag,
-    ingredientCount: Number(r.ingredientCount ?? 0),
-    firstSeenAt: r.firstSeenAt ?? '',
-  }));
-  out.sort((a, b) => {
-    if (b.ingredientCount !== a.ingredientCount) return b.ingredientCount - a.ingredientCount;
-    return a.tag.localeCompare(b.tag);
-  });
-  return { tags: out.slice(0, limit) };
+  return {
+    tags: rows.map((r) => ({
+      tag: r.tag,
+      ingredientCount: Number(r.ingredientCount ?? 0),
+      firstSeenAt: r.firstSeenAt ?? '',
+    })),
+  };
 }
 
 /**

@@ -49,12 +49,9 @@ export function useTagsDraft({ ingredientId, remoteTags }: UseTagsDraftInput): T
 
   const commitPending = () => {
     const value = pending.trim().toLowerCase();
-    if (value.length === 0 || tags.includes(value)) {
-      setPending('');
-      return;
-    }
-    setTags([...tags, value]);
     setPending('');
+    if (value.length === 0) return;
+    setTags((prev) => (prev.includes(value) ? prev : [...prev, value]));
     setErrorKey(null);
   };
 
@@ -79,7 +76,7 @@ export function useTagsDraft({ ingredientId, remoteTags }: UseTagsDraftInput): T
     setPending,
     commitPending,
     remove: (tag) => {
-      setTags(tags.filter((t) => t !== tag));
+      setTags((prev) => prev.filter((t) => t !== tag));
       setErrorKey(null);
     },
     save,
