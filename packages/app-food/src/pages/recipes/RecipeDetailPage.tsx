@@ -6,11 +6,13 @@ import { toast } from 'sonner';
 import { trpc } from '@pops/api-client';
 
 import { RecipeRenderer } from '../../components/RecipeRenderer.js';
+import { CookNowPortal } from './CookNowPortal.js';
 import { MissingCurrentVersionBanner } from './MissingCurrentVersionBanner.js';
 import { RecipeActionMenu, type RecipeActionMenuItem } from './RecipeActionMenu.js';
 import { RecipeArchiveDialog } from './RecipeArchiveDialog.js';
 import { RecipeScaleProvider, useRecipeScale } from './RecipeScaleProvider.js';
 import { SendToListPortal } from './SendToListPortal.js';
+import { buildCookMenuItem, canCookRecipe, useCookFlow } from './use-cook-flow.js';
 import { buildSendMenuItem, canSendRecipe, useSendFlow } from './use-send-flow.js';
 import { useRecipeDetailData } from './useRecipeDetailData.js';
 
@@ -39,6 +41,7 @@ function RecipeDetailBody({ slug }: { slug: string }): ReactElement {
   const { data, draftCount, isLoading, error } = useRecipeDetailData({ slug });
   const archive = useArchiveFlow(slug);
   const send = useSendFlow();
+  const cook = useCookFlow();
 
   if (isLoading) {
     return <Status text={t('recipes.detail.loading')} />;
@@ -60,16 +63,22 @@ function RecipeDetailBody({ slug }: { slug: string }): ReactElement {
     canSend: canSendRecipe(data),
     onSelect: send.open,
   });
+  const cookMenuItem = buildCookMenuItem({
+    label: t('cook.menuItem'),
+    canCook: canCookRecipe(data),
+    onSelect: cook.open,
+  });
   return (
     <Shell
       title={data.recipe.slug}
       draftCount={draftCount}
       onArchive={archive.open}
-      extraItems={[sendMenuItem]}
+      extraItems={[cookMenuItem, sendMenuItem]}
     >
       <RecipeRenderer recipeVersion={data} scaleFactor={scaleFactor} variant="detail" />
       <ArchiveDialogPortal slug={slug} title={data.version.title} archive={archive} />
       <SendToListPortal flow={send} versionId={data.version.id} />
+      <CookNowPortal flow={cook} versionId={data.version.id} />
     </Shell>
   );
 }
