@@ -83,7 +83,6 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0051_strip_quoted_tv_show_titles': 'media',
   '0052_budgets_active_default_zero': 'finance',
   '0053_ai_inference_daily': 'core',
-  '0054_service_accounts': 'core',
   '0055_ai_alert_rules': 'core',
   '0056_ai_observability_repair': 'core',
   '0057_slimy_phalanx': 'inventory',
