@@ -15,11 +15,14 @@ import { buildDslCompletionSource } from '../autocomplete-source';
 
 import type { DslAutocompleteSources, SlugKind } from '../autocomplete-types';
 
-function makeContext(text: string) {
+function makeContext(text: string, { readOnly = false }: { readOnly?: boolean } = {}) {
   const cursor = text.indexOf('|');
   if (cursor === -1) throw new Error('fixture missing | marker');
   const docText = text.slice(0, cursor) + text.slice(cursor + 1);
-  const state = EditorState.create({ doc: docText });
+  const state = EditorState.create({
+    doc: docText,
+    extensions: readOnly ? [EditorState.readOnly.of(true)] : [],
+  });
   // CodeMirror's CompletionContext type carries a few private fields
   // (`abortListeners`, `parent`) we don't care about here. The source
   // only reads `state`, `pos`, and `explicit`, plus calls `matchBefore`
@@ -148,5 +151,33 @@ describe('dslCompletionSource', () => {
     const source = buildDslCompletionSource(empty);
     const result = await source(makeContext('@ingredient(1, |'));
     expect(result).toBeNull();
+  });
+
+  describe('read-only mode (PRD-120 part F)', () => {
+    it('returns null at @ even when the cursor is in a function-name context', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(makeContext('@|', { readOnly: true }));
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null inside descriptor-slug context without ever calling searchSlugs', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(makeContext('@ingredient(1, bana|', { readOnly: true }));
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null inside step-ref context without ever calling searchSlugs', async () => {
+      const { sources, searchSpy } = makeSources();
+      const source = buildDslCompletionSource(sources);
+      const result = await source(
+        makeContext('@ingredient(1, banana, 100:g)\n@step("Mash @|")', { readOnly: true })
+      );
+      expect(result).toBeNull();
+      expect(searchSpy).not.toHaveBeenCalled();
+    });
   });
 });

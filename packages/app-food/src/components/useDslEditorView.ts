@@ -48,6 +48,13 @@ export interface UseDslEditorViewOptions {
    * stub the lookups.
    */
   autocompleteSources: DslAutocompleteSources | null;
+  /**
+   * Accessible name for CodeMirror's contenteditable surface (the
+   * `.cm-content` element). Attached via `EditorView.contentAttributes`
+   * so it lands on the role=textbox node where axe-core expects it,
+   * rather than the wrapper div (PRD-120 part F).
+   */
+  ariaLabel?: string;
 }
 
 interface ViewCompartments {
@@ -219,6 +226,9 @@ function createEditorView(host: HTMLDivElement, args: CreateEditorViewArgs): Edi
         compartments.readOnly.of(buildReadOnlyExtension(options.readOnly)),
         compartments.chips.of(chipWidgetsExtension({ compact })),
         dslAutocompletion(buildSourcesProxy(sourcesRef)),
+        ...(options.ariaLabel
+          ? [EditorView.contentAttributes.of({ 'aria-label': options.ariaLabel })]
+          : []),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) emit(update.state.doc.toString());
         }),

@@ -487,3 +487,67 @@ describe('DslEditor — PRD-120 part C (issues prop)', () => {
     expect(surface.querySelector('.cm-dsl-issue-gutter-column')).not.toBeNull();
   });
 });
+
+describe('DslEditor — PRD-120 part F (read-only autocomplete + mobile drawer + a11y)', () => {
+  beforeEach(() => {
+    installMatchMedia(false);
+  });
+
+  function makeSources(): DslAutocompleteSources {
+    return {
+      searchSlugs: vi.fn(async () => [
+        { slug: 'banana', kind: 'ingredient' as const, name: 'Banana' },
+      ]) as unknown as DslAutocompleteSources['searchSlugs'],
+      listVariantsForIngredient: vi.fn(
+        async () => []
+      ) as unknown as DslAutocompleteSources['listVariantsForIngredient'],
+      listPrepStates: vi.fn(async () => []) as unknown as DslAutocompleteSources['listPrepStates'],
+    };
+  }
+
+  it('does not surface an autocomplete tooltip when the editor is read-only', () => {
+    render(
+      <DslEditor
+        initialValue='@recipe(slug="x")'
+        readOnly
+        onChange={() => {}}
+        autocompleteSources={makeSources()}
+      />
+    );
+    // CodeMirror only mounts a `.cm-tooltip-autocomplete` node when the
+    // configured source returns a non-null result. The part F source gate
+    // returns `null` whenever `state.readOnly` is true, so the popup must
+    // never enter the DOM.
+    expect(document.querySelector('.cm-tooltip-autocomplete')).toBeNull();
+  });
+
+  it('emits the mobile-drawer base theme into the document so CSS positions the popup at the viewport floor', () => {
+    render(
+      <DslEditor
+        initialValue='@recipe(slug="x")'
+        onChange={() => {}}
+        autocompleteSources={makeSources()}
+      />
+    );
+    // CodeMirror's StyleModule writes the baseTheme rules into a single
+    // <style> tag attached to document.head; if the mobile drawer media
+    // query made it into the bundle the textContent will carry both the
+    // viewport gate and the marker class.
+    const styles = Array.from(document.head.querySelectorAll('style'))
+      .map((el) => el.textContent ?? '')
+      .join('\n');
+    expect(styles).toContain('.dsl-editor-autocomplete');
+    expect(styles).toContain('max-width: 767px');
+  });
+
+  it('attaches the accessible label onto CodeMirror cm-content (role=textbox)', () => {
+    render(<DslEditor initialValue="hello" onChange={() => {}} />);
+    // axe-core flags `aria-label` on a generic div as `aria-prohibited-attr`;
+    // the label has to live on the role=textbox node, which CodeMirror
+    // sets on `.cm-content`. The hook plumbs it through
+    // `EditorView.contentAttributes`.
+    const content = screen.getByTestId('dsl-editor-surface').querySelector('.cm-content');
+    expect(content).not.toBeNull();
+    expect(content?.getAttribute('aria-label')?.length).toBeGreaterThan(0);
+  });
+});
