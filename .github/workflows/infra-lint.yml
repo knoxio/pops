@@ -1,0 +1,41 @@
+name: Infra Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/litestream/**"
+      - ".github/workflows/infra-lint.yml"
+  pull_request:
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'infra/litestream/**'
+              - '.github/workflows/infra-lint.yml'
+
+  yaml-lint:
+    name: YAML Lint (infra)
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
+    steps:
+      - name: "Skip — no relevant changes"
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
+        run: echo "Skipping — no infra changes"
+      - uses: actions/checkout@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+      - name: Lint Litestream YAML
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: npx yaml-lint infra/litestream/*.yml
