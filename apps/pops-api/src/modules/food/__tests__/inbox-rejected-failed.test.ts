@@ -153,9 +153,14 @@ function seedFailedSource(opts: {
     extractorVersion: 'test-v1',
     url: opts.url ?? null,
   });
+  // PRD-125's `workerComplete` writes `error_code` and `error_message` as a
+  // pair on `ok:false`. The seed defaults the message to a marker string so
+  // every "this is a failed source" fixture is realistic; the legacy
+  // half-null case is exercised explicitly by the regression test below.
+  const errorMessage = opts.errorMessage ?? `seeded: ${opts.errorCode}`;
   const updates: string[] = [
     `error_code = '${opts.errorCode.replace(/'/g, "''")}'`,
-    `error_message = ${opts.errorMessage === undefined ? 'NULL' : `'${opts.errorMessage.replace(/'/g, "''")}'`}`,
+    `error_message = '${errorMessage.replace(/'/g, "''")}'`,
     `attempts = ${opts.attempts ?? 1}`,
   ];
   if (opts.ingestedAt !== undefined) updates.push(`ingested_at = '${opts.ingestedAt}'`);
@@ -315,6 +320,36 @@ describe('food.inbox.listFailed — PRD-138', () => {
     // error_code stays NULL on the source — confirms the predicate excludes it.
     const seed = seedDraft('auth-dead-placeholder', 'url-instagram', 'https://instagram.com/p/x');
     expect(seed.sourceId).toBeGreaterThan(0);
+    const result = await caller.food.inbox.listFailed({});
+    expect(result.items).toHaveLength(0);
+  });
+
+  it('excludes legacy rows where only one of error_code / error_message is set', async () => {
+    // PRD-125's `workerComplete` writes the pair atomically, but a backfill
+    // or a half-finished migration could produce rows with just one half set.
+    // Either half being null means the row can't render a useful Failed row,
+    // so `buildWhere` filters it out rather than emitting an empty error
+    // message in the UI. Build both cases by hand — the seed helper now
+    // mirrors the production-pair contract and won't produce a half-null row.
+    const db = getDrizzle();
+    const codeOnly = ingestSourcesService.createIngestSource(db, {
+      kind: 'text',
+      extractorVersion: 'test-v1',
+    });
+    db.run(
+      sql.raw(
+        `UPDATE ingest_sources SET error_code = 'CodeOnlyNoMessage', error_message = NULL, attempts = 1 WHERE id = ${codeOnly.id}`
+      )
+    );
+    const messageOnly = ingestSourcesService.createIngestSource(db, {
+      kind: 'text',
+      extractorVersion: 'test-v1',
+    });
+    db.run(
+      sql.raw(
+        `UPDATE ingest_sources SET error_code = NULL, error_message = 'msg without code', attempts = 1 WHERE id = ${messageOnly.id}`
+      )
+    );
     const result = await caller.food.inbox.listFailed({});
     expect(result.items).toHaveLength(0);
   });

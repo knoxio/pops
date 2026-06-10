@@ -2,9 +2,12 @@
  * PRD-138 — `food.inbox.listFailed` + `food.inbox.failedErrorCodes`.
  *
  * Drives the Failed-ingests tab in `/food/inbox`. The "no successful retry"
- * rule reduces to `WHERE error_code IS NOT NULL` because PRD-125's
- * `workerComplete` nulls those columns on the next success — see the PRD-125
- * amendment carried in `0067_prd_125_ingest_error_columns.sql`.
+ * rule reduces to `WHERE error_code IS NOT NULL AND error_message IS NOT NULL`
+ * — the pair is the contract PRD-125's `workerComplete` writes on
+ * `ok:false` and clears on the next success (see the amendment carried in
+ * `0067_prd_125_ingest_error_columns.sql`). Guarding on both columns
+ * defends against a half-finished backfill or a legacy row leaving one half
+ * null, which would otherwise surface as an empty `errorMessage` in the UI.
  *
  * Auth-dead Instagram reels never reach this tab: PRD-130 emits
  * `ok: true, partialReason: 'auth-dead'` so the worker writes a placeholder
@@ -34,6 +37,10 @@ export function listFailedSources(db: FoodDb, filter: ListFailedFilter): ListPag
       ingestKind: r.ingestKind,
       sourceUrl: r.sourceUrl,
       errorCode: r.errorCode,
+      // `buildWhere` enforces `error_message IS NOT NULL` so the column type
+      // is structurally nullable but the value never is. The empty-string
+      // fallback stays as defence in depth in case the predicate ever
+      // moves.
       errorMessage: r.errorMessage ?? '',
       ingestedAt: r.ingestedAt,
       attempts: r.attempts,
@@ -76,7 +83,15 @@ function selectFailedRows(db: FoodDb, filter: ListFailedFilter): JoinedFailedRow
 }
 
 function buildWhere(filter: ListFailedFilter): SQL | undefined {
-  const clauses: SQL[] = [isNotNull(ingestSources.errorCode)];
+  // PRD-125's `workerComplete` writes `error_code` and `error_message` as a
+  // pair on `ok:false` and clears them as a pair on a successful retry.
+  // Pinning both predicates keeps the Failed tab from surfacing legacy or
+  // backfilled rows where only one half is populated (which would render
+  // as an empty error message in the UI).
+  const clauses: SQL[] = [
+    isNotNull(ingestSources.errorCode),
+    isNotNull(ingestSources.errorMessage),
+  ];
   if (filter.errorCodes && filter.errorCodes.length > 0) {
     clauses.push(inArray(ingestSources.errorCode, filter.errorCodes));
   }
