@@ -206,6 +206,32 @@ jobs:
           build-args: |
             BUILD_VERSION=${{ github.sha }}
 
+      - name: Generate metadata for pops-food-api
+        id: meta-food-api
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/knoxio/pops-food-api
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern=v{{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=semver,pattern=v{{major}}
+
+      - name: Build and push pops-food-api
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/pops-food-api/Dockerfile
+          push: true
+          tags: ${{ steps.meta-food-api.outputs.tags }}
+          labels: ${{ steps.meta-food-api.outputs.labels }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+
       - name: Generate metadata for pops-cerebrum-api
         id: meta-cerebrum-api
         uses: docker/metadata-action@v6
