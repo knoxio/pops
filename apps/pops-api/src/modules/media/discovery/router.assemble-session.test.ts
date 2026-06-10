@@ -12,14 +12,16 @@ vi.mock('./shelf/session.service.js', () => ({
   assembleSession: vi.fn(() => mockAssembledShelves.value),
 }));
 
-vi.mock('./shelf/impressions.service.js', () => ({
-  getRecentImpressions: vi.fn(() => mockImpressions.value),
-  recordImpressions: vi.fn((ids: string[]) => {
-    mockImpressionsRecorded.value.push(...ids);
-  }),
-  getShelfFreshness: vi.fn(() => 1.0),
-  cleanupOldImpressions: vi.fn(),
-  initImpressionsService: vi.fn(),
+vi.mock('@pops/media-db', () => ({
+  shelfImpressionsService: {
+    getRecentImpressions: vi.fn(() => mockImpressions.value),
+    recordImpressions: vi.fn((_db: unknown, ids: string[]) => {
+      mockImpressionsRecorded.value.push(...ids);
+    }),
+    getShelfFreshness: vi.fn(() => 1.0),
+    cleanupOldImpressions: vi.fn(),
+    initImpressionsService: vi.fn(),
+  },
 }));
 
 vi.mock('./service.js', () => ({
@@ -94,12 +96,13 @@ vi.mock('./shelf/registry.js', () => ({
   _clearRegistry: vi.fn(),
 }));
 
+import { shelfImpressionsService } from '@pops/media-db';
+
 import { setupTestContext } from '../../../shared/test-utils.js';
-import { recordImpressions } from './shelf/impressions.service.js';
 import { assembleSession } from './shelf/session.service.js';
 
 const mockAssembleSession = vi.mocked(assembleSession);
-const mockRecordImpressions = vi.mocked(recordImpressions);
+const mockRecordImpressions = vi.mocked(shelfImpressionsService.recordImpressions);
 
 const ctx = setupTestContext();
 let caller: ReturnType<(typeof ctx)['setup']>['caller'];
@@ -181,9 +184,10 @@ describe('media.discovery.assembleSession', () => {
     ];
     await caller.media.discovery.assembleSession();
     expect(mockRecordImpressions).toHaveBeenCalledWith(
+      expect.anything(),
       expect.arrayContaining(['because-you-watched:1', 'trending-tmdb'])
     );
-    const recorded = mockRecordImpressions.mock.calls[0]![0];
+    const recorded = mockRecordImpressions.mock.calls[0]![1];
     expect(recorded).not.toContain('empty-shelf');
   });
 

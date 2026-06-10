@@ -5,8 +5,9 @@
  *
  * Scoring and sampling helpers live in `session-helpers.ts`.
  */
+import { shelfImpressionsService } from '@pops/media-db';
+
 import { getSettingValue } from '../../../core/settings/service.js';
-import { getShelfFreshness } from './impressions.service.js';
 import { getRegisteredShelves } from './registry.js';
 import { computeScore, isGenreShelf, isPersonalShelf, weightedSample } from './session-helpers.js';
 
@@ -49,7 +50,7 @@ function categoriseCandidates(
     }
     for (const instance of instances) {
       const count = impressions.get(instance.shelfId) ?? 0;
-      const freshness = getShelfFreshness(count);
+      const freshness = shelfImpressionsService.getShelfFreshness(count);
       allCandidates.push({
         instance,
         category: def.category,

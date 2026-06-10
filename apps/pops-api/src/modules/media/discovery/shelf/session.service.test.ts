@@ -2,21 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PreferenceProfile, ShelfDefinition, ShelfInstance } from './types.js';
 
-// Mock registry and impressions service before imports
+// Mock registry and the media-db service before imports
 vi.mock('./registry.js', () => ({
   getRegisteredShelves: vi.fn(),
 }));
 
-vi.mock('./impressions.service.js', () => ({
-  getShelfFreshness: vi.fn().mockReturnValue(1.0),
+vi.mock('@pops/media-db', () => ({
+  shelfImpressionsService: {
+    getShelfFreshness: vi.fn().mockReturnValue(1.0),
+  },
 }));
 
-import { getShelfFreshness } from './impressions.service.js';
+import { shelfImpressionsService } from '@pops/media-db';
+
 import { getRegisteredShelves } from './registry.js';
 import { assembleSession } from './session.service.js';
 
 const mockGetRegisteredShelves = vi.mocked(getRegisteredShelves);
-const mockGetShelfFreshness = vi.mocked(getShelfFreshness);
+const mockGetShelfFreshness = vi.mocked(shelfImpressionsService.getShelfFreshness);
 
 /** Minimal PreferenceProfile for tests. */
 const profile: PreferenceProfile = {
