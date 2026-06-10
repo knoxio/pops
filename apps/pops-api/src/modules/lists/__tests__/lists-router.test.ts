@@ -66,7 +66,6 @@ describe('PRD-140 lists router', () => {
   afterEach(() => {
     setListsDb(null);
     closeDb();
-    raw.close();
   });
 
   describe('list.create', () => {
