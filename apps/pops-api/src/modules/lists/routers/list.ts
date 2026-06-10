@@ -5,6 +5,12 @@
  * `lists` to `list_items` so the page gets `itemCount` / `uncheckedCount` /
  * `lastUpdatedAt` in one round-trip. Every other procedure is a thin
  * transactional pass-through to PRD-112 services in `@pops/app-lists-db`.
+ *
+ * Track K phase 1 PR 3 cutover: the `listItemsForList` read used by `get`
+ * now resolves through the canonical `@pops/lists-db` package. The `lists`-
+ * header surface (createList / getList / updateList / etc.) and the
+ * `ListNotFoundError` typed error stay on `@pops/app-lists-db` until the
+ * next slice migrates the `lists` CRUD services across.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -14,11 +20,11 @@ import {
   createList,
   deleteList,
   getList,
-  listItemsForList,
   ListNotFoundError,
   unarchiveList,
   updateList,
 } from '@pops/app-lists-db';
+import { listItemsService } from '@pops/lists-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -74,7 +80,7 @@ export const listRouter = router({
     const db = getDrizzle();
     const list = getList(db, input.id);
     if (list === null) return null;
-    const items = listItemsForList(db, input.id);
+    const items = listItemsService.listItemsForList(db, input.id);
     return { list, items };
   }),
 
