@@ -68,11 +68,7 @@ export function listTransactionTagRules(db: FinanceDb): TransactionTagRuleRow[] 
 
 /** Get a single rule by id. Throws `TransactionTagRuleNotFoundError` if missing. */
 export function getTransactionTagRule(db: FinanceDb, id: string): TransactionTagRuleRow {
-  const row = db
-    .select()
-    .from(transactionTagRules)
-    .where(eq(transactionTagRules.id, id))
-    .get();
+  const row = db.select().from(transactionTagRules).where(eq(transactionTagRules.id, id)).get();
   if (!row) throw new TransactionTagRuleNotFoundError(id);
   return row;
 }
@@ -134,10 +130,7 @@ export function updateTransactionTagRule(
 
   const updates = buildTagRuleUpdates(input);
   if (Object.keys(updates).length > 0) {
-    db.update(transactionTagRules)
-      .set(updates)
-      .where(eq(transactionTagRules.id, id))
-      .run();
+    db.update(transactionTagRules).set(updates).where(eq(transactionTagRules.id, id)).run();
   }
 
   return getTransactionTagRule(db, id);
@@ -159,9 +152,6 @@ export function disableTransactionTagRule(db: FinanceDb, id: string): void {
 
 /** Hard-delete a rule. Throws if the id is unknown. */
 export function deleteTransactionTagRule(db: FinanceDb, id: string): void {
-  const result = db
-    .delete(transactionTagRules)
-    .where(eq(transactionTagRules.id, id))
-    .run();
+  const result = db.delete(transactionTagRules).where(eq(transactionTagRules.id, id)).run();
   if (result.changes === 0) throw new TransactionTagRuleNotFoundError(id);
 }

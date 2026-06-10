@@ -106,9 +106,7 @@ function freshDb(): TestHarness {
 
 function seedEntity(harness: TestHarness, id: string, name: string): void {
   harness.raw
-    .prepare(
-      `INSERT INTO entities (id, name, type, last_edited_time) VALUES (?, ?, 'company', ?)`
-    )
+    .prepare(`INSERT INTO entities (id, name, type, last_edited_time) VALUES (?, ?, 'company', ?)`)
     .run(id, name, new Date().toISOString());
 }
 
@@ -333,9 +331,9 @@ describe('updateTransactionTagRule', () => {
       matchType: 'exact',
       tags: ['x'],
     });
-    expect(() =>
-      updateTransactionTagRule(harness.db, created.id, { entityId: 'phantom' })
-    ).toThrow(/FOREIGN KEY constraint failed/);
+    expect(() => updateTransactionTagRule(harness.db, created.id, { entityId: 'phantom' })).toThrow(
+      /FOREIGN KEY constraint failed/
+    );
   });
 
   it('throws TransactionTagRuleNotFoundError for an unknown id', () => {
