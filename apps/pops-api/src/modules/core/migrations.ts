@@ -47,8 +47,6 @@ export const coreMigrationTags: readonly string[] = [
   '0050_ai_model_setting_alias',
   // ai_inference_daily rollup.
   '0053_ai_inference_daily',
-  // service_accounts (PRD-095).
-  '0054_service_accounts',
   // ai_alert_rules + ai_alerts (PRD-092 US-07).
   '0055_ai_alert_rules',
   // Repair migration for 0034 — restores ai_providers / ai_model_pricing
