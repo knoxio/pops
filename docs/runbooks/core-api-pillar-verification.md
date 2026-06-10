@@ -17,15 +17,27 @@ The Phase 4 verification per the roadmap: stop the core container and confirm th
 
 ### Step 1 — capture the healthy baseline
 
+`core-api` is exposed inside the compose network (`expose: 3001`),
+not bound to a host port. Run the probes from inside the network —
+either via `docker compose exec` on a sibling service or with an
+ad-hoc curl container:
+
 ```sh
 docker compose -f infra/docker-compose.yml ps
 # core-api, pops-api, pops-shell, pops-worker should all be "running (healthy)".
 
-curl -sS http://core-api:3001/health
+# Probe from inside the compose network.
+docker compose -f infra/docker-compose.yml exec pops-api \
+  node -e "fetch('http://core-api:3001/health').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 # {"ok":true,"pillar":"core","version":"<git-sha>"}
 
-curl -sS http://core-api:3001/pillars
+docker compose -f infra/docker-compose.yml exec pops-api \
+  node -e "fetch('http://core-api:3001/pillars').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 # {"pillars":[{"id":"core","baseUrl":"http://core-api:3001"}]}
+
+# Alternative — through the shell's nginx proxy from the host:
+curl -sS http://localhost:80/health
+curl -sS http://localhost:80/pillars
 ```
 
 ### Step 2 — stop core-api and observe
@@ -50,7 +62,10 @@ Within ~30s the healthcheck reports healthy. Re-running the curl probes in Step 
 
 ### Step 4 — write up surprises
 
-Record any unexpected behaviour in [`.claude/pillar-migration-roadmap.md`](../../.claude/pillar-migration-roadmap.md)'s **Lessons captured** section before unblocking Phase γ. Examples worth flagging:
+Record any unexpected behaviour in the **Lessons captured** section of
+`.claude/pillar-migration-roadmap.md` before unblocking Phase γ. That
+file is gitignored — it only exists in local clones / sibling
+workspaces, so it isn't linkable from GitHub. Examples worth flagging:
 
 - pops-api hard-crashes when core-api is down (it shouldn't — should degrade gracefully).
 - nginx returns a 502 / HTML index for `/pillars` instead of propagating a clean error to the SPA.
@@ -59,6 +74,6 @@ Record any unexpected behaviour in [`.claude/pillar-migration-roadmap.md`](../..
 ## Reference
 
 - ADR-026: per-domain pillar architecture
-- `.claude/pillar-migration-roadmap.md` (private) — Track D status + lessons captured
 - `apps/pops-core-api/src/server.ts` — boot sequence
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour
+- `.claude/pillar-migration-roadmap.md` — Track D status + lessons captured (gitignored, local-only)
