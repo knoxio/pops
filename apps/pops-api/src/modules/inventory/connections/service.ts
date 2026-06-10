@@ -6,7 +6,7 @@ import { and, count, eq, or } from 'drizzle-orm';
  */
 import { homeInventory, itemConnections } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
 import type { ItemConnectionRow, TraceNode } from './types.js';
@@ -22,7 +22,7 @@ export interface ConnectionListResult {
  * Validates both items exist. Throws ConflictError on duplicate.
  */
 export function connectItems(inputA: string, inputB: string): ItemConnectionRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   if (inputA === inputB) {
     throw new ConflictError('Cannot connect an item to itself');
@@ -75,7 +75,7 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
  * Throws NotFoundError if no connection exists between the two items.
  */
 export function disconnectItems(inputA: string, inputB: string): void {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   // Enforce A<B ordering (same normalisation as connectItems)
   const [itemAId, itemBId] = inputA < inputB ? [inputA, inputB] : [inputB, inputA];
@@ -101,7 +101,7 @@ export function listConnectionsForItem(
   limit: number,
   offset: number
 ): ConnectionListResult {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   const condition = or(eq(itemConnections.itemAId, itemId), eq(itemConnections.itemBId, itemId));
 
@@ -118,7 +118,7 @@ export function listConnectionsForItem(
  * references by tracking visited nodes.
  */
 export function traceConnections(itemId: string, maxDepth: number): TraceNode {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   // Validate the starting item exists
   const [startItem] = db

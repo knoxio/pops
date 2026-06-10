@@ -2,7 +2,7 @@ import { and, asc, count, eq } from 'drizzle-orm';
 
 import { fixtures, homeInventory, itemFixtureConnections } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import {
   isForeignKeyConstraintError,
@@ -34,7 +34,7 @@ export function listFixtures(opts: {
   limit: number;
   offset: number;
 }): FixtureListResult {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const conditions = [];
   if (opts.locationId) conditions.push(eq(fixtures.locationId, opts.locationId));
   if (opts.type) conditions.push(eq(fixtures.type, opts.type));
@@ -53,14 +53,14 @@ export function listFixtures(opts: {
 }
 
 export function getFixture(id: string): Fixture {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [row] = db.select().from(fixtures).where(eq(fixtures.id, id)).all();
   if (!row) throw new NotFoundError('Fixture', id);
   return row;
 }
 
 export function createFixture(input: CreateFixtureInput): Fixture {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [row] = db
     .insert(fixtures)
     .values({
@@ -77,7 +77,7 @@ export function createFixture(input: CreateFixtureInput): Fixture {
 }
 
 export function updateFixture(id: string, input: UpdateFixtureInput): Fixture {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   // Three-state per field: absent → leave, null → clear, value → set.
   // `UpdateFixtureSchema.refine` guarantees at least one input key, so the
@@ -95,7 +95,7 @@ export function updateFixture(id: string, input: UpdateFixtureInput): Fixture {
 }
 
 export function deleteFixture(id: string): void {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const result = db.delete(fixtures).where(eq(fixtures.id, id)).run();
   if (result.changes === 0) throw new NotFoundError('Fixture', id);
 }
@@ -105,7 +105,7 @@ export function deleteFixture(id: string): void {
 // correctness. We catch the constraint failures and reach for nicer error
 // messages only on the unhappy path.
 export function connectItemToFixture(itemId: string, fixtureId: string): ItemFixtureConnection {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   try {
     const [row] = db.insert(itemFixtureConnections).values({ itemId, fixtureId }).returning().all();
     if (!row) throw new Error('Failed to create item-fixture connection');
@@ -128,7 +128,7 @@ export function connectItemToFixture(itemId: string, fixtureId: string): ItemFix
 }
 
 export function disconnectItemFromFixture(itemId: string, fixtureId: string): void {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const result = db
     .delete(itemFixtureConnections)
     .where(
@@ -148,7 +148,7 @@ export function listFixturesForItem(
   limit: number,
   offset: number
 ): FixtureConnectionListResult {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const condition = eq(itemFixtureConnections.itemId, itemId);
   const rows = db
     .select()

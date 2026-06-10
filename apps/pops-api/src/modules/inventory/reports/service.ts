@@ -5,7 +5,7 @@ import { and, count, desc, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
  */
 import { homeInventory, itemDocuments, locations } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 
 import type { InventoryRow } from '../items/types.js';
 import type { DashboardSummary, RecentItem, ValueBreakdownEntry } from './types.js';
@@ -26,7 +26,7 @@ const WARRANTY_WINDOW_DAYS = 90;
  * and recently added items.
  */
 export function getDashboard(): DashboardSummary {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   const [summary] = db
     .select({
@@ -82,7 +82,7 @@ export interface WarrantyListItem extends InventoryRow {
 
 /** List all inventory items that have a warranty expiry date, sorted by expiry. */
 export function listWarrantyItems(): WarrantyListItem[] {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const rows = db
     .select({
       item: homeInventory,
@@ -107,7 +107,7 @@ export function listWarrantyItems(): WarrantyListItem[] {
  * Get replacement value breakdown grouped by location.
  */
 export function getValueByLocation(): ValueBreakdownEntry[] {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   return db
     .select({
@@ -127,7 +127,7 @@ export function getValueByLocation(): ValueBreakdownEntry[] {
  * Get replacement value breakdown grouped by item type.
  */
 export function getValueByType(): ValueBreakdownEntry[] {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   return db
     .select({

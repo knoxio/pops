@@ -2,7 +2,7 @@ import { asc, eq } from 'drizzle-orm';
 
 import { homeInventory, itemDocuments, itemPhotos, locations } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 
 export interface InsuranceReportItem {
   id: string;
@@ -38,7 +38,7 @@ export interface InsuranceReportOptions {
 }
 
 function getLocationSubtreeIds(rootId: string): Set<string> {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const allLocations = db.select().from(locations).all();
 
   const childrenMap = new Map<string, string[]>();
@@ -69,7 +69,7 @@ interface Lookups {
 }
 
 function buildLookups(): Lookups {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const locationNameMap = new Map<string, string>();
   for (const loc of db.select().from(locations).all()) locationNameMap.set(loc.id, loc.name);
 
@@ -150,7 +150,7 @@ function buildGroups(items: InsuranceReportItem[], lookups: Lookups): InsuranceR
 
 export function getInsuranceReport(options: InsuranceReportOptions = {}): InsuranceReportResult {
   const { locationId, includeChildren = true, sortBy = 'value' } = options;
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   let locationIds: Set<string> | null = null;
   if (locationId) {

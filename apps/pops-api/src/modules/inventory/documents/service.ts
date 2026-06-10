@@ -5,7 +5,7 @@ import { and, count, eq } from 'drizzle-orm';
  */
 import { homeInventory, itemDocuments } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
 import type { ItemDocumentRow } from './types.js';
@@ -25,7 +25,7 @@ export function linkDocument(
   documentType: string,
   title?: string
 ): ItemDocumentRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   // Validate item exists
   const [item] = db
@@ -78,7 +78,7 @@ export function linkDocument(
  * Unlink a document from an item by link ID.
  */
 export function unlinkDocument(id: number): void {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   const [row] = db
     .select({ id: itemDocuments.id })
@@ -99,7 +99,7 @@ export function listDocumentsForItem(
   limit: number,
   offset: number
 ): DocumentListResult {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   const condition = eq(itemDocuments.itemId, itemId);
 

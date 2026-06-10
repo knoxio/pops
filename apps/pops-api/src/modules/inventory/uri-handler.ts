@@ -7,7 +7,7 @@
  */
 import { LocationNotFoundError, locationsService } from '@pops/inventory-db';
 
-import { getDrizzle } from '../../db.js';
+import { getInventoryDrizzle } from '../../db/inventory-handle.js';
 import { NotFoundError } from '../../shared/errors.js';
 import { getInventoryItem } from './items/service.js';
 
@@ -33,7 +33,7 @@ export const inventoryUriHandler: UriHandlerDescriptor = {
       case 'item':
         return tryGet(() => getInventoryItem(id));
       case 'location':
-        return tryGet(() => locationsService.getLocation(getDrizzle(), id));
+        return tryGet(() => locationsService.getLocation(getInventoryDrizzle(), id));
       default:
         return { kind: 'not-found' };
     }

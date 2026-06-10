@@ -9,7 +9,7 @@ import sharp from 'sharp';
 
 import { homeInventory, itemPhotos } from '@pops/db-types';
 
-import { getDb, getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle, getInventoryRawDb } from '../../../db/inventory-handle.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getInventoryImagesDir } from './paths.js';
 
@@ -35,7 +35,7 @@ export interface PhotoListResult {
 
 /** Validate that an inventory item exists. */
 function assertItemExists(itemId: string): void {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [item] = db
     .select({ id: homeInventory.id })
     .from(homeInventory)
@@ -46,7 +46,7 @@ function assertItemExists(itemId: string): void {
 
 /** Get a single photo by ID. Throws NotFoundError if missing. */
 function getPhoto(id: number): ItemPhotoRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [row] = db.select().from(itemPhotos).where(eq(itemPhotos.id, id)).all();
   if (!row) throw new NotFoundError('Item photo', String(id));
   return row;
@@ -86,7 +86,7 @@ function nextPhotoFilename(baseDir: string, itemId: string): string {
 
 /** Upload, compress, and attach a photo to an inventory item. */
 export async function uploadPhoto(input: UploadPhotoInput): Promise<ItemPhotoRow> {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   assertItemExists(input.itemId);
 
@@ -118,7 +118,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<ItemPhotoRow
 
 /** Attach a photo to an inventory item. */
 export function attachPhoto(input: AttachPhotoInput): ItemPhotoRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   assertItemExists(input.itemId);
   assertSafeFilePath(input.filePath);
@@ -148,13 +148,13 @@ export function removePhoto(id: number): void {
     unlinkSync(fullPath);
   }
 
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   db.delete(itemPhotos).where(eq(itemPhotos.id, id)).run();
 }
 
 /** Update a photo's caption or sort order. */
 export function updatePhoto(id: number, input: UpdatePhotoInput): ItemPhotoRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   getPhoto(id); // Validates existence
 
@@ -179,7 +179,7 @@ export function updatePhoto(id: number, input: UpdatePhotoInput): ItemPhotoRow {
 
 /** List photos for an item, ordered by sortOrder. */
 export function listPhotosForItem(itemId: string, limit: number, offset: number): PhotoListResult {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   const rows = db
     .select()
@@ -204,8 +204,8 @@ export function listPhotosForItem(itemId: string, limit: number, offset: number)
  * in the orderedIds array (0-indexed).
  */
 export function reorderPhotos(itemId: string, orderedIds: number[]): ItemPhotoRow[] {
-  const db = getDrizzle();
-  const rawDb = getDb();
+  const db = getInventoryDrizzle();
+  const rawDb = getInventoryRawDb();
 
   assertItemExists(itemId);
 

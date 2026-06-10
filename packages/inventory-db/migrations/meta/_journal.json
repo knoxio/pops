@@ -8,6 +8,13 @@
       "when": 1773997925421,
       "tag": "0005_fancy_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781650200000,
+      "tag": "0006_inventory_pillar_baseline",
+      "breakpoints": true
     }
   ]
 }

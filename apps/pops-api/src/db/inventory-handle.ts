@@ -15,6 +15,7 @@
  */
 import { openInventoryDb, type InventoryDb, type OpenedInventoryDb } from '@pops/inventory-db';
 
+import { backfillInventoryFromShared } from './backfill-inventory-from-shared.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
 
 let inventoryDb: OpenedInventoryDb | null = null;
@@ -33,6 +34,22 @@ export function getInventoryDrizzle(): InventoryDb {
     inventoryDb = openInventoryDb(resolveInventorySqlitePath());
   }
   return inventoryDb.db;
+}
+
+/**
+ * Resolve the inventory pillar's raw better-sqlite3 handle. Same lazy
+ * open as `getInventoryDrizzle()` — the underlying connection is the
+ * same; the drizzle wrapper hides `.transaction()` / `.prepare()` /
+ * `.pragma()` which a handful of inventory module call sites still
+ * need (e.g. `photos.reorderPhotos` wraps a batch update in a
+ * better-sqlite3 transaction). Prefer `getInventoryDrizzle()` for
+ * everything that doesn't need that lower-level API.
+ */
+export function getInventoryRawDb(): OpenedInventoryDb['raw'] {
+  if (!inventoryDb) {
+    inventoryDb = openInventoryDb(resolveInventorySqlitePath());
+  }
+  return inventoryDb.raw;
 }
 
 /**
@@ -58,4 +75,16 @@ export function setInventoryDb(next: OpenedInventoryDb | null): OpenedInventoryD
   const prev = inventoryDb;
   inventoryDb = next;
   return prev;
+}
+
+/**
+ * Run the one-shot ATTACH backfill from the legacy shared pops.db into
+ * the inventory pillar's inventory.db. No-op if the inventory handle
+ * isn't open (e.g. boot still resolving). Idempotent against repeated
+ * boots via per-table `WHERE id NOT IN (...)` filters. See
+ * `backfill-inventory-from-shared.ts` for table-by-table behaviour.
+ */
+export function backfillInventoryFromSharedDb(sharedPath: string): void {
+  if (!inventoryDb) return;
+  backfillInventoryFromShared(inventoryDb, sharedPath);
 }

@@ -10,7 +10,7 @@ import { desc, count, eq } from 'drizzle-orm';
 
 import { homeInventory, itemUploadedFiles } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getInventoryDocumentsDir } from './paths.js';
 import {
@@ -28,7 +28,7 @@ export interface UploadedFileListResult {
 
 /** Validate that an inventory item exists. */
 function assertItemExists(itemId: string): void {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [item] = db
     .select({ id: homeInventory.id })
     .from(homeInventory)
@@ -39,7 +39,7 @@ function assertItemExists(itemId: string): void {
 
 /** Get a single uploaded file by ID. Throws NotFoundError if missing. */
 function getUploadedFile(id: number): ItemUploadedFileRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const [row] = db.select().from(itemUploadedFiles).where(eq(itemUploadedFiles.id, id)).all();
   if (!row) throw new NotFoundError('Item uploaded file', String(id));
   return row;
@@ -102,7 +102,7 @@ function nextFilenameForItem(baseDir: string, itemId: string, originalName: stri
 
 /** Upload a document and attach it to an inventory item. */
 export function uploadDocument(input: UploadDocumentInput): ItemUploadedFileRow {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   assertItemExists(input.itemId);
   const safeName = sanitiseUploadFileName(input.fileName);
@@ -140,7 +140,7 @@ export function removeUpload(id: number): void {
     unlinkSync(fullPath);
   }
 
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   db.delete(itemUploadedFiles).where(eq(itemUploadedFiles.id, id)).run();
 }
 
@@ -150,7 +150,7 @@ export function listUploadsForItem(
   limit: number,
   offset: number
 ): UploadedFileListResult {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
 
   const rows = db
     .select()

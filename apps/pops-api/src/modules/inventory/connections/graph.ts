@@ -1,6 +1,6 @@
 import { homeInventory, itemConnections } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
 
 import type { GraphData, GraphEdge, GraphNode } from './types.js';
@@ -59,7 +59,7 @@ function visitNeighbors(
 }
 
 export function getConnectionGraph(itemId: string, maxDepth: number): GraphData {
-  const db = getDrizzle();
+  const db = getInventoryDrizzle();
   const allConnections = db.select().from(itemConnections).all();
   const allItems = db
     .select({
