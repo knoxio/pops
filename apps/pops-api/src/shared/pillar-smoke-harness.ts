@@ -29,8 +29,12 @@
  *     aligned with the router schemas; treat a procedure that only
  *     ever surfaces Zod errors as an UNCOVERED entry, not a passing one.
  *
- * No `setTimeout` / `vi.useFakeTimers` — real timers, real I/O, real
- * in-memory DBs. Each pillar smoke runs in <5s on a warm vitest worker.
+ * Real timers, real I/O, in-memory DBs — no `vi.useFakeTimers`, no
+ * `setTimeout` masks. The harness's per-procedure 250ms guard (see
+ * `withTimeout`) is hygiene against external-dependency hangs (e.g.
+ * BullMQ trying to reach Redis), not a flakiness mask — a procedure
+ * that needs >250ms of SQL on `:memory:` is broken on its own merits.
+ * Each pillar smoke runs in <5s on a warm vitest worker.
  */
 /**
  * A path-keyed minimal-input map. The value is whatever Zod input the
