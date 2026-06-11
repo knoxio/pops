@@ -9,6 +9,7 @@ import {
 } from '@pops/db-types';
 
 import { closeDb, setDb } from '../../../db.js';
+import { setFinanceDb } from '../../../db/finance-handle.js';
 import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
 import { clearCache } from '../../core/ai-usage/cache.js';
 import { getProgress, setProgress } from './progress-store.js';
@@ -48,12 +49,14 @@ const orm = () => drizzle(db);
 beforeEach(() => {
   db = createTestDb();
   setDb(db);
+  setFinanceDb({ db: drizzle(db), raw: db });
 
   resetMockAi();
   clearCache();
 });
 
 afterEach(() => {
+  setFinanceDb(null);
   closeDb();
 });
 
