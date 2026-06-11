@@ -466,4 +466,50 @@ describe('backfillFinanceFromShared', () => {
       }
     });
   });
+
+  it('copies tag_vocabulary rows from the shared DB on first run (Track N5 PR 3)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      raw.exec(
+        `INSERT INTO tag_vocabulary (tag, source, is_active) VALUES ('Groceries', 'seed', 1)`
+      );
+      raw.exec(
+        `INSERT INTO tag_vocabulary (tag, source, is_active) VALUES ('Pet supplies', 'user', 1)`
+      );
+    });
+
+    const finance = openFinanceDb(join(tmpDir, 'finance.db'));
+    try {
+      backfillFinanceFromShared(finance, sharedPath);
+      const rows = finance.raw
+        .prepare('SELECT tag, source, is_active FROM tag_vocabulary ORDER BY tag')
+        .all() as { tag: string; source: string; is_active: number }[];
+      // The package's own migration seeds many `seed` rows into finance.db;
+      // assert presence of the carried rows rather than full equality.
+      const byTag = new Map(rows.map((r) => [r.tag, r]));
+      expect(byTag.get('Groceries')).toMatchObject({ source: 'seed', is_active: 1 });
+      expect(byTag.get('Pet supplies')).toMatchObject({ source: 'user', is_active: 1 });
+    } finally {
+      finance.raw.close();
+    }
+  });
+
+  it('tag_vocabulary backfill is idempotent — second run does not duplicate', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      raw.exec(
+        `INSERT INTO tag_vocabulary (tag, source, is_active) VALUES ('Pet supplies', 'user', 1)`
+      );
+    });
+
+    const finance = openFinanceDb(join(tmpDir, 'finance.db'));
+    try {
+      backfillFinanceFromShared(finance, sharedPath);
+      backfillFinanceFromShared(finance, sharedPath);
+      const count = finance.raw
+        .prepare(`SELECT count(*) AS n FROM tag_vocabulary WHERE tag = 'Pet supplies'`)
+        .get() as { n: number };
+      expect(count.n).toBe(1);
+    } finally {
+      finance.raw.close();
+    }
+  });
 });
