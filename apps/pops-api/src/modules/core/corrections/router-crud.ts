@@ -1,8 +1,7 @@
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
+import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { previewMatches } from './handlers/preview-matches.js';
 import { analyzeCorrection, generateRules } from './lib/rule-generator.js';
@@ -62,8 +61,8 @@ export const crudRouter = router({
         offset: z.coerce.number().nonnegative().optional(),
       })
     )
-    .query(({ input }) => {
-      try {
+    .query(({ input }) =>
+      mapDomainErrors(() => {
         const dbRules = service.listCorrections(undefined, PREVIEW_RULES_FETCH_LIMIT, 0).rows;
         const merged =
           input.pendingChangeSets && input.pendingChangeSets.length > 0
@@ -80,25 +79,15 @@ export const crudRouter = router({
           data: sliced.map(toCorrection),
           pagination: paginationMeta(merged.length, limit ?? merged.length, offset),
         };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
-      }
-    }),
+      })
+    ),
 
-  get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
-    try {
+  get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) =>
+    mapDomainErrors(() => {
       const row = service.getCorrection(input.id);
       return { data: toCorrection(row) };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-      }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   findMatch: protectedProcedure.input(FindCorrectionSchema).query(({ input }) => {
     const result = service.findMatchingCorrection(input.description, input.minConfidence);
@@ -113,43 +102,28 @@ export const crudRouter = router({
 
   update: protectedProcedure
     .input(z.object({ id: z.string(), data: UpdateCorrectionSchema }))
-    .mutation(({ input }) => {
-      try {
+    .mutation(({ input }) =>
+      mapDomainErrors(() => {
         const row = service.updateCorrection(input.id, input.data);
         return { data: toCorrection(row), message: 'Correction updated' };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
-      }
-    }),
+      })
+    ),
 
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
-    try {
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) =>
+    mapDomainErrors(() => {
       service.deleteCorrection(input.id);
       return { message: 'Correction deleted' };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-      }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   adjustConfidence: protectedProcedure
     .input(z.object({ id: z.string(), delta: z.number().min(-1).max(1) }))
-    .mutation(({ input }) => {
-      try {
+    .mutation(({ input }) =>
+      mapDomainErrors(() => {
         service.adjustConfidence(input.id, input.delta);
         return { message: 'Confidence adjusted' };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
-      }
-    }),
+      })
+    ),
 
   analyzeCorrection: protectedProcedure
     .input(

@@ -1,12 +1,38 @@
-import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
-
-import { transactionCorrections } from '@pops/db-types';
+/**
+ * Thin shims that forward CRUD operations on `transaction_corrections` to
+ * `@pops/finance-db`'s `transactionCorrectionsService`.
+ *
+ * Track N3 phase 1 PR 3 routing flip: the underlying drizzle handle (and
+ * the on-disk SQLite file) is unchanged — `getDrizzle()` still resolves to
+ * the shared `pops.db` so the in-tree imports pipeline (the other consumer
+ * of this table) keeps reading and writing the same rows. Only the code
+ * path moves from the in-tree implementation to the package one. PR 4 of
+ * phase 1 will delete this shim once the imports pipeline (N6) is also on
+ * the package and the handle can shift to `getFinanceDrizzle()`.
+ *
+ * Domain errors thrown by the package (`TransactionCorrectionNotFoundError`)
+ * are translated to `NotFoundError` so the existing router layer (and the
+ * tRPC error envelope it depends on) keeps returning `404 NOT_FOUND` with
+ * the same `common.notFound` i18n key.
+ */
+import {
+  transactionCorrectionsService,
+  TransactionCorrectionNotFoundError,
+  type CreateTransactionCorrectionInput,
+  type UpdateTransactionCorrectionInput,
+} from '@pops/finance-db';
 
 import { getDrizzle } from '../../../../db.js';
 import { NotFoundError } from '../../../../shared/errors.js';
-import { normalizeDescription } from '../types.js';
 
 import type { CorrectionRow, CreateCorrectionInput, UpdateCorrectionInput } from '../types.js';
+
+function rethrowAsNotFound(err: unknown, id: string): never {
+  if (err instanceof TransactionCorrectionNotFoundError) {
+    throw new NotFoundError('Correction', id);
+  }
+  throw err;
+}
 
 export function listCorrections(
   minConfidence?: number,
@@ -14,209 +40,79 @@ export function listCorrections(
   offset: number = 0,
   matchType?: 'exact' | 'contains' | 'regex'
 ): { rows: CorrectionRow[]; total: number } {
-  const db = getDrizzle();
-
-  const conditions = [];
-  if (minConfidence !== undefined) {
-    conditions.push(gte(transactionCorrections.confidence, minConfidence));
-  }
-  if (matchType) {
-    conditions.push(eq(transactionCorrections.matchType, matchType));
-  }
-  const condition = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const [countResult] = db
-    .select({ count: count() })
-    .from(transactionCorrections)
-    .where(condition)
-    .all();
-
-  const rows = db
-    .select()
-    .from(transactionCorrections)
-    .where(condition)
-    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  return { rows, total: countResult?.count ?? 0 };
+  return transactionCorrectionsService.listTransactionCorrections(getDrizzle(), {
+    minConfidence,
+    matchType,
+    limit,
+    offset,
+  });
 }
 
 export function getCorrection(id: string): CorrectionRow {
-  const db = getDrizzle();
-  const [row] = db
-    .select()
-    .from(transactionCorrections)
-    .where(eq(transactionCorrections.id, id))
-    .all();
-
-  if (!row) {
-    throw new NotFoundError('Correction', id);
+  try {
+    return transactionCorrectionsService.getTransactionCorrection(getDrizzle(), id);
+  } catch (err) {
+    rethrowAsNotFound(err, id);
   }
-
-  return row;
-}
-
-function updateExistingCorrection(
-  existing: CorrectionRow,
-  input: CreateCorrectionInput
-): CorrectionRow {
-  const db = getDrizzle();
-  db.update(transactionCorrections)
-    .set({
-      confidence: Math.min(existing.confidence + 0.1, 1.0),
-      timesApplied: existing.timesApplied + 1,
-      lastUsedAt: new Date().toISOString(),
-      entityId: input.entityId ?? existing.entityId,
-      entityName: input.entityName ?? existing.entityName,
-      location: input.location ?? existing.location,
-      tags: JSON.stringify(input.tags ?? []),
-      transactionType: input.transactionType ?? existing.transactionType,
-      priority: input.priority ?? existing.priority,
-      isActive: true,
-    })
-    .where(eq(transactionCorrections.id, existing.id))
-    .run();
-  return getCorrection(existing.id);
-}
-
-function insertNewCorrection(input: CreateCorrectionInput, normalized: string): CorrectionRow {
-  const db = getDrizzle();
-  const result = db
-    .insert(transactionCorrections)
-    .values({
-      descriptionPattern: normalized,
-      matchType: input.matchType,
-      entityId: input.entityId ?? null,
-      entityName: input.entityName ?? null,
-      location: input.location ?? null,
-      tags: JSON.stringify(input.tags ?? []),
-      transactionType: input.transactionType ?? null,
-      priority: input.priority ?? 0,
-      isActive: true,
-    })
-    .run();
-
-  const [inserted] = db
-    .select()
-    .from(transactionCorrections)
-    .where(sql`rowid = ${result.lastInsertRowid}`)
-    .all();
-
-  if (!inserted) throw new NotFoundError('Correction', String(result.lastInsertRowid));
-  return inserted;
 }
 
 export function createOrUpdateCorrection(input: CreateCorrectionInput): CorrectionRow {
-  const db = getDrizzle();
-  const normalized = normalizeDescription(input.descriptionPattern);
-
-  const [existing] = db
-    .select()
-    .from(transactionCorrections)
-    .where(
-      and(
-        eq(transactionCorrections.descriptionPattern, normalized),
-        eq(transactionCorrections.matchType, input.matchType)
-      )
-    )
-    .all();
-
-  if (existing) return updateExistingCorrection(existing, input);
-  return insertNewCorrection(input, normalized);
+  const packageInput: CreateTransactionCorrectionInput = {
+    descriptionPattern: input.descriptionPattern,
+    matchType: input.matchType,
+    entityId: input.entityId,
+    entityName: input.entityName,
+    location: input.location,
+    tags: input.tags,
+    transactionType: input.transactionType,
+    priority: input.priority,
+  };
+  return transactionCorrectionsService.createOrUpdateTransactionCorrection(
+    getDrizzle(),
+    packageInput
+  );
 }
 
 export function updateCorrection(id: string, input: UpdateCorrectionInput): CorrectionRow {
-  const db = getDrizzle();
-  const existing = getCorrection(id);
-
-  const updates: Partial<typeof transactionCorrections.$inferInsert> = {};
-  let hasUpdates = false;
-
-  if (input.descriptionPattern !== undefined) {
-    // Normalise on edit so the stored pattern stays consistent with how
-    // createOrUpdateCorrection persists newly created rules.
-    updates.descriptionPattern = normalizeDescription(input.descriptionPattern);
-    hasUpdates = true;
+  const packageInput: UpdateTransactionCorrectionInput = {
+    descriptionPattern: input.descriptionPattern,
+    matchType: input.matchType,
+    entityId: input.entityId,
+    entityName: input.entityName,
+    location: input.location,
+    tags: input.tags,
+    transactionType: input.transactionType,
+    isActive: input.isActive,
+    confidence: input.confidence,
+    priority: input.priority,
+  };
+  try {
+    return transactionCorrectionsService.updateTransactionCorrection(
+      getDrizzle(),
+      id,
+      packageInput
+    );
+  } catch (err) {
+    rethrowAsNotFound(err, id);
   }
-  if (input.matchType !== undefined) {
-    updates.matchType = input.matchType;
-    hasUpdates = true;
-  }
-  if (input.entityId !== undefined) {
-    updates.entityId = input.entityId;
-    hasUpdates = true;
-  }
-  if (input.entityName !== undefined) {
-    updates.entityName = input.entityName;
-    hasUpdates = true;
-  }
-  if (input.location !== undefined) {
-    updates.location = input.location;
-    hasUpdates = true;
-  }
-  if (input.tags !== undefined) {
-    updates.tags = JSON.stringify(input.tags);
-    hasUpdates = true;
-  }
-  if (input.transactionType !== undefined) {
-    updates.transactionType = input.transactionType;
-    hasUpdates = true;
-  }
-  if (input.isActive !== undefined) {
-    updates.isActive = input.isActive;
-    hasUpdates = true;
-  }
-  if (input.confidence !== undefined) {
-    updates.confidence = input.confidence;
-    hasUpdates = true;
-  }
-  if (input.priority !== undefined) {
-    updates.priority = input.priority;
-    hasUpdates = true;
-  }
-
-  if (!hasUpdates) {
-    return existing;
-  }
-
-  db.update(transactionCorrections).set(updates).where(eq(transactionCorrections.id, id)).run();
-
-  return getCorrection(id);
 }
 
 export function deleteCorrection(id: string): void {
-  const db = getDrizzle();
-  const result = db.delete(transactionCorrections).where(eq(transactionCorrections.id, id)).run();
-
-  if (result.changes === 0) {
-    throw new NotFoundError('Correction', id);
+  try {
+    transactionCorrectionsService.deleteTransactionCorrection(getDrizzle(), id);
+  } catch (err) {
+    rethrowAsNotFound(err, id);
   }
 }
 
 export function incrementCorrectionUsage(id: string): void {
-  const db = getDrizzle();
-  db.update(transactionCorrections)
-    .set({
-      timesApplied: sql`${transactionCorrections.timesApplied} + 1`,
-      lastUsedAt: new Date().toISOString(),
-    })
-    .where(eq(transactionCorrections.id, id))
-    .run();
+  transactionCorrectionsService.incrementTransactionCorrectionUsage(getDrizzle(), id);
 }
 
 export function adjustConfidence(id: string, delta: number): void {
-  const db = getDrizzle();
-  const existing = getCorrection(id);
-  const newConfidence = Math.max(0, Math.min(1, existing.confidence + delta));
-
-  db.update(transactionCorrections)
-    .set({ confidence: newConfidence })
-    .where(eq(transactionCorrections.id, id))
-    .run();
-
-  if (newConfidence < 0.3) {
-    deleteCorrection(id);
+  try {
+    transactionCorrectionsService.adjustTransactionCorrectionConfidence(getDrizzle(), id, delta);
+  } catch (err) {
+    rethrowAsNotFound(err, id);
   }
 }
