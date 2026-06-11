@@ -27,7 +27,7 @@ export interface PillarRegistryOptions {
 
 export function getPillarRegistry(options: PillarRegistryOptions): readonly PillarRegistryEntry[] {
   cached ??= parsePillarsEnv(process.env['POPS_PILLARS']);
-  const normalisedSelf = parseBareOrigin("lists's selfBaseUrl", options.selfBaseUrl);
+  const normalisedSelf = parseBareOrigin('lists-api selfBaseUrl', options.selfBaseUrl);
   const withoutSelf = cached.filter((p) => p.id !== 'lists');
   return [{ id: 'lists', baseUrl: normalisedSelf }, ...withoutSelf];
 }
