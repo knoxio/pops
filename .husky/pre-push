@@ -1,3 +1,5 @@
+pnpm typecheck
+
 branch=$(git branch --show-current)
 
 [ "$branch" = "main" ] && exit 0
@@ -7,5 +9,3 @@ if ! git merge-tree --write-tree origin/main HEAD > /dev/null 2>&1; then
   echo "pre-push: branch '$branch' conflicts with origin/main — rebase before pushing."
   exit 1
 fi
-
-pnpm typecheck
