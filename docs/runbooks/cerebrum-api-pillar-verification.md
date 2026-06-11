@@ -92,6 +92,29 @@ Record any unexpected behaviour in the **Lessons captured** section of `.claude/
 - The boot-time backfill duplicates rows (the WHERE-NOT-IN filter is supposed to dedupe — a failure here is a real bug).
 - nginx returns a 502 for `/pillars` instead of the expected snapshot when cerebrum-api is stopped (the snapshot is core-api's job, not cerebrum-api's — should be unaffected).
 
+## Track M5 PR 3 — legacy router deletion deferred
+
+The M5 PR 2 dispatcher (#2898) only matches **single-procedure** tRPC URLs:
+
+```
+location ~ ^/trpc/cerebrum\.nudges\.(list|get|dismiss|contradictions)$
+```
+
+The `$` anchor (no comma allowed) is deliberate. Every other URL — batched, all-nudges, or mixed — falls through to the legacy `/trpc` block and lands on pops-api. That fall-through is load-bearing: pops-api must keep answering the four migrated procedures whenever they appear inside a batched URL.
+
+The shell's tRPC transport is `httpBatchLink` (`packages/api-client/src/index.ts`). Two concrete batching cases that hit pops-api today:
+
+1. `NudgeIndicator` (top-bar, every page) polls `cerebrum.nudges.list`. tRPC merges any sibling queries fired in the same tick into one URL, e.g. `cerebrum.nudges.list,food.list`. The comma defeats the dispatcher regex; the request goes to pops-api and pops-api must resolve `list`.
+2. `NudgesPage` renders `nudges.list` + `nudges.contradictions` + `ContradictionsPanel`'s sibling queries on the same tick. The batched URL contains commas and falls through to pops-api, which must resolve both `list` and `contradictions`.
+
+Deleting the four migrated procedures from the pops-api `nudgesRouter` while the dispatcher still expects pops-api to be the batched-URL backstop would 404 the migrated parts of every mixed batch the shell sends. PR 3 is therefore **deferred** until one of:
+
+- the shell switches to `splitLink` / per-router transports so migrated procedures bypass batching with non-migrated procedures;
+- the dispatcher learns to parse batched tRPC URLs and split them across upstreams (Varnish/Envoy-style fan-out, or a tiny in-process splitter); or
+- the remaining `cerebrum.nudges.{scan,act,configure}` procedures migrate to `pops-cerebrum-api`, after which the dispatcher can swallow the whole `cerebrum.nudges.*` namespace (including batched URLs) and pops-api can drop the router entirely.
+
+Until one of those lands, every migrated procedure stays defined in both pops-api and pops-cerebrum-api. The duplication is the price of the partial-cutover dispatcher and is consistent with the matching inventory.locations.\* cutover (Track M4 PR 2, #2896).
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
@@ -99,3 +122,5 @@ Record any unexpected behaviour in the **Lessons captured** section of `.claude/
 - `apps/pops-api/src/db/cerebrum-handle.ts` — lazy open + ATTACH backfill
 - `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts` — table-by-table backfill
 - `.claude/pillar-migration-roadmap.md` — Track H status + lessons captured (gitignored, local-only)
+- #2892 — M5 PR 1 (nudges router moved into pops-cerebrum-api)
+- #2898 — M5 PR 2 (nginx dispatcher partial cutover)
