@@ -49,7 +49,7 @@ jobs:
         run: node scripts/check-pillar-schema-coverage.mjs --pillar ${{ matrix.pillar }}
 
   selftest:
-    name: Self-test (allowlist-bypass catches latent finance break)
+    name: Self-test (script catches injected missing table)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -63,23 +63,16 @@ jobs:
         run: |
           pnpm --filter @pops/db-types build
           pnpm --filter @pops/finance-db build
-      - name: Assert --ignore-allowlist flags the known finance gap
+      - name: Self-test (script catches injected missing table)
         run: |
           set +e
           node scripts/check-pillar-schema-coverage.mjs \
-            --pillar finance --ignore-allowlist > out.txt 2>&1
-          actual_exit=$?
-          cat out.txt
+            --pillar finance --inject-fake-table finance:fake_self_test_table 2>&1 | tee out.log
+          actual_exit=${PIPESTATUS[0]}
           if [ "$actual_exit" -eq 0 ]; then
-            echo "::error::expected non-zero exit when --ignore-allowlist is set against current main; got 0"
+            echo "::error::Self-test failed: script exited 0 with an injected fake table"
             exit 1
           fi
-          if ! grep -q "Missing tables" out.txt; then
-            echo "::error::expected output to mention 'Missing tables'"
-            exit 1
-          fi
-          if ! grep -q "transactions" out.txt; then
-            echo "::error::expected output to mention the transactions table"
-            exit 1
-          fi
-          echo "selftest OK — guard catches the latent finance break."
+          grep -q "fake_self_test_table" out.log || { echo "::error::Self-test failed: script did not flag injected fake table"; exit 1; }
+          grep -q "Missing tables" out.log || { echo "::error::Self-test failed: script did not produce 'Missing tables' message"; exit 1; }
+          echo "Self-test passed: script correctly catches injected missing tables"

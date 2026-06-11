@@ -23,6 +23,7 @@
  *   node scripts/check-pillar-schema-coverage.mjs --pillar finance
  *   node scripts/check-pillar-schema-coverage.mjs --all
  *   node scripts/check-pillar-schema-coverage.mjs --pillar finance --ignore-allowlist
+ *   node scripts/check-pillar-schema-coverage.mjs --pillar finance --inject-fake-table finance:fake_table
  *
  * Exit code 0 on full coverage (or allowlisted). Non-zero on any miss.
  * Non-zero on usage errors.
@@ -68,14 +69,7 @@ const ALLOWLISTED_MISSING_INDEXES = {};
  *
  * @type {Record<string, Set<string>>}
  */
-const ALLOWLISTED_MISSING_TABLES = {
-  // #2915 (feat(finance-db): extend pillar baseline …) adds the
-  // `transactions` table to the package journal. Until #2915 lands the
-  // runtime break documented in #2912 is still latent on main. This
-  // guard exists precisely to prevent the next instance — close out by
-  // removing this entry once #2915 merges.
-  finance: new Set(['transactions']),
-};
+const ALLOWLISTED_MISSING_TABLES = {};
 
 /**
  * Walk every file under `dir` recursively and return absolute paths
@@ -456,17 +450,29 @@ function diff(raw, usedSymbols, symbolToTable) {
  *
  * @param {typeof PILLARS[number]} pillar
  * @param {Map<string, { tableName: string; indexNames: string[] }>} symbolToTable
- * @param {{ ignoreAllowlist?: boolean }} [options]
+ * @param {{ ignoreAllowlist?: boolean; injectFakeTables?: string[] }} [options]
  * @returns {Promise<boolean>}
  */
 async function checkPillar(pillar, symbolToTable, options = {}) {
   const ignoreAllowlist = options.ignoreAllowlist === true;
+  const injectFakeTables = options.injectFakeTables ?? [];
   const pkgRoot = join(repoRoot, 'packages', pillar.pkg);
   if (!existsSync(pkgRoot)) {
     console.error(`[${pillar.name}] package not found at ${pkgRoot}`);
     return false;
   }
   const used = collectUsedTableSymbols(pkgRoot, symbolToTable);
+
+  for (const fakeTable of injectFakeTables) {
+    const fakeSymbol = `__injected_${fakeTable}`;
+    symbolToTable.set(fakeSymbol, {
+      tableName: fakeTable,
+      indexNames: [],
+      sourceFile: '<injected>',
+    });
+    used.add(fakeSymbol);
+    console.log(`[${pillar.name}] injected fake expected table: ${fakeTable}`);
+  }
 
   console.log(`[${pillar.name}] inspecting ${used.size} table symbol(s)`);
   if (used.size === 0) {
@@ -541,39 +547,59 @@ async function checkPillar(pillar, symbolToTable, options = {}) {
 
 /**
  * @param {string[]} argv
- * @returns {{ pillars: typeof PILLARS[number][]; help: boolean; ignoreAllowlist: boolean }}
+ * @returns {{ pillars: typeof PILLARS[number][]; help: boolean; ignoreAllowlist: boolean; injections: Map<string, string[]> }}
  */
 function parseArgs(argv) {
   let pillar = '';
   let all = false;
   let help = false;
   let ignoreAllowlist = false;
+  /**
+   * Synthetic injections used by the self-test job. The CI workflow asks
+   * the script to expect a table that the pillar's migrations do NOT
+   * create — proving the guard still catches missing tables without
+   * relying on a real prod-state mismatch. Format: `<pillar>:<table>`.
+   *
+   * @type {Map<string, string[]>}
+   */
+  const injections = new Map();
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--pillar') pillar = argv[++i] ?? '';
     else if (arg === '--all') all = true;
     else if (arg === '--help' || arg === '-h') help = true;
     else if (arg === '--ignore-allowlist') ignoreAllowlist = true;
-    else {
+    else if (arg === '--inject-fake-table') {
+      const spec = argv[++i] ?? '';
+      const [injPillar, injTable] = spec.split(':');
+      if (!injPillar || !injTable) {
+        console.error(`--inject-fake-table requires <pillar>:<table>, got: ${spec}`);
+        help = true;
+        continue;
+      }
+      const list = injections.get(injPillar) ?? [];
+      list.push(injTable);
+      injections.set(injPillar, list);
+    } else {
       console.error(`unknown arg: ${arg}`);
       help = true;
     }
   }
-  if (help) return { pillars: [], help: true, ignoreAllowlist };
-  if (all) return { pillars: [...PILLARS], help: false, ignoreAllowlist };
-  if (!pillar) return { pillars: [...PILLARS], help: false, ignoreAllowlist };
+  if (help) return { pillars: [], help: true, ignoreAllowlist, injections };
+  if (all) return { pillars: [...PILLARS], help: false, ignoreAllowlist, injections };
+  if (!pillar) return { pillars: [...PILLARS], help: false, ignoreAllowlist, injections };
   const match = PILLARS.find((p) => p.name === pillar);
   if (!match) {
     console.error(`unknown pillar: ${pillar}. Known: ${PILLARS.map((p) => p.name).join(', ')}`);
-    return { pillars: [], help: true, ignoreAllowlist };
+    return { pillars: [], help: true, ignoreAllowlist, injections };
   }
-  return { pillars: [match], help: false, ignoreAllowlist };
+  return { pillars: [match], help: false, ignoreAllowlist, injections };
 }
 
 function usage() {
   console.log(
     [
-      'Usage: node scripts/check-pillar-schema-coverage.mjs [--pillar <name>] [--all] [--ignore-allowlist]',
+      'Usage: node scripts/check-pillar-schema-coverage.mjs [--pillar <name>] [--all] [--ignore-allowlist] [--inject-fake-table <pillar>:<table>]',
       '',
       'Pillars: ' + PILLARS.map((p) => p.name).join(', '),
       '',
@@ -582,12 +608,17 @@ function usage() {
       '--ignore-allowlist disables the in-script grandfather list so the',
       'true diff (including known pre-existing drift) is reported. Use to',
       'verify a follow-up fix actually closes out an allowlisted entry.',
+      '',
+      '--inject-fake-table <pillar>:<table> tells the script to expect',
+      'a table that does NOT exist in the pillar migrations. Used by the',
+      'CI self-test to prove the guard still flags missing tables without',
+      'depending on a real prod-state mismatch. Repeatable.',
     ].join('\n')
   );
 }
 
 async function main() {
-  const { pillars, help, ignoreAllowlist } = parseArgs(process.argv.slice(2));
+  const { pillars, help, ignoreAllowlist, injections } = parseArgs(process.argv.slice(2));
   if (help) {
     usage();
     process.exit(2);
@@ -598,7 +629,10 @@ async function main() {
 
   let allOk = true;
   for (const pillar of pillars) {
-    const ok = await checkPillar(pillar, symbolToTable, { ignoreAllowlist });
+    const ok = await checkPillar(pillar, symbolToTable, {
+      ignoreAllowlist,
+      injectFakeTables: injections.get(pillar.name) ?? [],
+    });
     if (!ok) allOk = false;
   }
   process.exit(allOk ? 0 : 1);
