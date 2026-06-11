@@ -1,17 +1,20 @@
-import { TRPCError } from '@trpc/server';
+/** Transaction tRPC router — CRUD via `@pops/finance-db`'s `transactionsService`. */
 import { z } from 'zod';
 
-/**
- * Transaction tRPC router — CRUD procedures for transactions.
- */
 import { transactions as transactionsTable } from '@pops/db-types';
+import {
+  TransactionAlreadyExistsError,
+  TransactionNotFoundError,
+  transactionsService,
+} from '@pops/finance-db';
 
 import { getDb, getDrizzle } from '../../../db.js';
-import { NotFoundError } from '../../../shared/errors.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
 import { suggestTags } from '../../../shared/tag-suggester.js';
+import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
-import * as service from './service.js';
 import {
   CreateTransactionSchema,
   toTransaction,
@@ -28,6 +31,22 @@ const PREVIEW_DESCRIPTIONS_LIMIT = 2000;
 /** Default pagination values. */
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
+
+function runTransaction<T>(id: string | undefined, fn: () => T): T {
+  return mapDomainErrors(() => {
+    try {
+      return fn();
+    } catch (err) {
+      if (err instanceof TransactionNotFoundError) {
+        throw new NotFoundError('Transaction', id ?? err.id);
+      }
+      if (err instanceof TransactionAlreadyExistsError) {
+        throw new ConflictError(err.message);
+      }
+      throw err;
+    }
+  });
+}
 
 export const transactionsRouter = router({
   /** List transactions with optional filters and pagination. */
@@ -56,7 +75,12 @@ export const transactionsRouter = router({
         type: input.type,
       };
 
-      const { rows, total } = service.listTransactions(filters, limit, offset);
+      const { rows, total } = transactionsService.listTransactions(
+        getFinanceDrizzle(),
+        filters,
+        limit,
+        offset
+      );
 
       return {
         data: rows.map(toTransaction),
@@ -76,49 +100,34 @@ export const transactionsRouter = router({
     })
     .input(z.object({ id: z.string() }))
     .output(z.object({ data: TransactionSchema }))
-    .query(({ input }) => {
-      try {
-        const row = service.getTransaction(input.id);
+    .query(({ input }) =>
+      runTransaction(input.id, () => {
+        const row = transactionsService.getTransaction(getFinanceDrizzle(), input.id);
         return { data: toTransaction(row) };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
-      }
-    }),
+      })
+    ),
 
   /** Create a new transaction. */
-  create: protectedProcedure.input(CreateTransactionSchema).mutation(({ input }) => {
-    const row = service.createTransaction(input);
-    return {
-      data: toTransaction(row),
-      message: 'Transaction created',
-    };
-  }),
+  create: protectedProcedure.input(CreateTransactionSchema).mutation(({ input }) =>
+    runTransaction(undefined, () => {
+      const row = transactionsService.createTransaction(getFinanceDrizzle(), input);
+      return { data: toTransaction(row), message: 'Transaction created' };
+    })
+  ),
 
   /** Update an existing transaction. */
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        data: UpdateTransactionSchema,
+    .input(z.object({ id: z.string(), data: UpdateTransactionSchema }))
+    .mutation(({ input }) =>
+      runTransaction(input.id, () => {
+        const row = transactionsService.updateTransaction(
+          getFinanceDrizzle(),
+          input.id,
+          input.data
+        );
+        return { data: toTransaction(row), message: 'Transaction updated' };
       })
-    )
-    .mutation(({ input }) => {
-      try {
-        const row = service.updateTransaction(input.id, input.data);
-        return {
-          data: toTransaction(row),
-          message: 'Transaction updated',
-        };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
-      }
-    }),
+    ),
 
   /**
    * Delete a transaction. Returns the deleted row as a `snapshot` so the
@@ -126,17 +135,12 @@ export const transactionsRouter = router({
    * including original id, checksum, raw_row, and notion_id — fields that
    * the list shape strips and that an Undo flow needs to preserve.
    */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
-    try {
-      const snapshot = service.deleteTransaction(input.id);
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) =>
+    runTransaction(input.id, () => {
+      const snapshot = transactionsService.deleteTransaction(getFinanceDrizzle(), input.id);
       return { message: 'Transaction deleted', snapshot };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-      }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   /**
    * Restore a previously-deleted transaction from a snapshot returned by
@@ -148,15 +152,12 @@ export const transactionsRouter = router({
    * transaction id but does not auto-reattach those FKs — that requires
    * a separate manual step.
    */
-  restore: protectedProcedure.input(TransactionSnapshotSchema).mutation(({ input }) => {
-    try {
-      const row = service.restoreTransaction(input);
+  restore: protectedProcedure.input(TransactionSnapshotSchema).mutation(({ input }) =>
+    runTransaction(input.id, () => {
+      const row = transactionsService.restoreTransaction(getFinanceDrizzle(), input);
       return { data: toTransaction(row), message: 'Transaction restored' };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Restore failed';
-      throw new TRPCError({ code: 'CONFLICT', message });
-    }
-  }),
+    })
+  ),
 
   /**
    * Suggest tags for a transaction using entity defaults + correction rules.
