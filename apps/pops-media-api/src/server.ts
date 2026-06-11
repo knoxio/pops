@@ -10,7 +10,7 @@
  * rather than reaching back into pops-api's singleton — that's the whole
  * point of phase 3. Mirrors `apps/pops-core-api/src/server.ts`.
  */
-import { openMediaDb } from '@pops/media-db';
+import { openMediaDb, shelfImpressionsService } from '@pops/media-db';
 
 import { createMediaApiApp } from './app.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
@@ -30,6 +30,10 @@ const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
 
 const mediaDb = openMediaDb(resolveMediaSqlitePath());
+// PRD-065 retention cleanup: the shelf-impressions service runs once at
+// boot per the user-story spec, so the per-pillar container is the right
+// owner now that the writer lives here.
+shelfImpressionsService.initImpressionsService(mediaDb.db);
 const app = createMediaApiApp({ mediaDb, version });
 
 const server = app.listen(port, () => {
