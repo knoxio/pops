@@ -138,8 +138,8 @@ The deletion can ship once all of the following land:
 
 When a phase-1 cutover is scoped to a routing flip with a barrel re-exporter
 (`service.ts`) still re-exporting non-flipped handlers, the deletion PR cannot
-ship until every consumer of the barrel has been moved. Track J3 (#2870) and
-Track K3 (#2881) cleared their barrels in the same PR as the consumer cutover —
+ship until every consumer of the barrel has been moved. Track J3 PR 4 (#2870)
+and Track K3 PR 4 (#2881) cleared their barrels in the same PR as the consumer cutover —
 the canonical pattern — and so were free to delete in PR 4. Track N3's scaffold
 (#2857) deliberately left the imports pipeline behind for N6, which fragments
 the deletion. Future tracks of this shape should plan PR 4 as a follow-on to the
