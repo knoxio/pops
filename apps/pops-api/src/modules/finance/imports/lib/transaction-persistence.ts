@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { entities } from '@pops/db-types';
 import { importsService, type InsertImportTransactionInput } from '@pops/finance-db';
 
-import { getDrizzle } from '../../../../db.js';
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { logger } from '../../../../lib/logger.js';
 import { applyChangeSet } from '../../../core/corrections/service.js';
@@ -46,7 +45,7 @@ function createEntitiesPhase(payload: CommitPayload): {
   tempIdMap: Map<string, string>;
   entitiesCreated: number;
 } {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   const tempIdMap = new Map<string, string>();
   let entitiesCreated = 0;
   for (const pending of payload.entities) {
@@ -151,7 +150,7 @@ function writeTransactionsPhase(
  */
 export function commitImport(payload: CommitPayload): CommitResult {
   validateCommitPayload(payload);
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
 
   return db.transaction(() => {
     const { tempIdMap, entitiesCreated } = createEntitiesPhase(payload);
