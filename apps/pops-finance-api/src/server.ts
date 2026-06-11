@@ -1,18 +1,23 @@
 /**
  * Entry point for the finance pillar HTTP server.
  *
- * Phase 3 PR 1 of the finance pillar migration boots the process with
- * the minimal `/health` surface so the new container can be wired into
- * docker-compose + Watchtower without depending on the (still-
- * unfinished) tRPC + URI-dispatcher migration.
+ * Phase 3 PR 1 scaffolded the minimal `/health` surface. Phase 5 PR 1
+ * (Track M2) opens both `finance.db` (for writes) and a handle to the
+ * shared `core.db` (for service-account auth) and wires them into the
+ * Express app factory. `openCoreDb` runs migrations on open so the
+ * core handle is read/write at the SQLite level even though finance-api
+ * only issues reads against it.
  *
  * The process opens its OWN `finance.db` connection via `openFinanceDb`
  * rather than reaching back into pops-api's singleton — that's the
- * whole point of phase 3. Mirrors `apps/pops-media-api/src/server.ts`.
+ * whole point of phase 3. Mirrors `apps/pops-media-api/src/server.ts`
+ * and `apps/pops-inventory-api/src/server.ts`.
  */
+import { openCoreDb } from '@pops/core-db';
 import { openFinanceDb } from '@pops/finance-db';
 
 import { createFinanceApiApp } from './app.js';
+import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
 
 function resolvePort(): number {
@@ -31,7 +36,8 @@ const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
 
 const financeDb = openFinanceDb(resolveFinanceSqlitePath());
-const app = createFinanceApiApp({ financeDb, version });
+const coreDb = openCoreDb(resolveCoreSqlitePath());
+const app = createFinanceApiApp({ financeDb, coreDb, version });
 
 const server = app.listen(port, () => {
   console.warn(`[finance-api] Listening on port ${port}`);
@@ -44,6 +50,7 @@ function shutdown(signal: NodeJS.Signals): void {
   console.warn(`[finance-api] Shutting down (${signal})`);
   server.close(() => {
     financeDb.raw.close();
+    coreDb.raw.close();
   });
 }
 

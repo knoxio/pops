@@ -2,18 +2,28 @@
  * Request handlers for the finance pillar container.
  *
  * Logic lives here (not inline in `app.ts`) so tests can call into the
- * shape directly without booting Express. Subsequent PRs add tRPC +
- * domain-specific handlers alongside the existing health probe.
- *
- * Mirrors `apps/pops-media-api/src/handlers.ts` minus any pillar-specific
- * surface.
+ * shape directly without booting Express. Phase 5 PR 1 (Track M2) adds
+ * the optional `coreDb` dep so the tRPC context factory can authenticate
+ * `X-API-Key` callers against the shared `core.db` service-accounts
+ * table.
  */
 
+import type { OpenedCoreDb } from '@pops/core-db';
 import type { OpenedFinanceDb } from '@pops/finance-db';
 
 export interface FinanceApiDeps {
   /** Open handle to the finance pillar's SQLite. */
   financeDb: OpenedFinanceDb;
+  /**
+   * Optional handle to the shared `core.db`. When present, finance-api's
+   * tRPC context factory uses it to authenticate `X-API-Key` callers
+   * against the service-accounts table so machine principals reach
+   * finance endpoints with the same semantics they get from the legacy
+   * pops-api router. When absent, only Cloudflare Access (or the
+   * dev/tunnel fallbacks) is honoured — used by tests that don't
+   * exercise SA auth.
+   */
+  coreDb?: OpenedCoreDb;
   /** Semver of the build, surfaced on the health response. */
   version: string;
 }

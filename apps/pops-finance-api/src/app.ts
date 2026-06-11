@@ -1,18 +1,20 @@
 /**
  * Express app factory for the finance pillar container.
  *
- * Phase 3 PR 1 of the finance pillar migration boots the minimal
- * surface (`/health`) so the new container can be wired into
- * docker-compose and Watchtower without depending on the (still-
- * unfinished) tRPC migration. Subsequent PRs mount additional routes.
+ * Phase 3 PR 1 of the finance pillar migration scaffolded the minimal
+ * `/health` surface. Phase 5 PR 1 (Track M2) wires the tRPC handler at
+ * `/trpc` with the migrated finance subrouters (wishlist + budgets +
+ * the CRUD slice of transactions) backed by `@pops/finance-db` directly.
+ *
  * Kept as a factory so the test suite can spin up an in-process
  * `supertest` instance without binding a real port.
- *
- * Mirrors `apps/pops-media-api/src/app.ts`.
  */
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express, { type Express, type Request, type Response } from 'express';
 
 import { type FinanceApiDeps, makeRequestHandler } from './handlers.js';
+import { appRouter } from './router.js';
+import { createFinanceTrpcContextFactory } from './trpc.js';
 
 export function createFinanceApiApp(deps: FinanceApiDeps): Express {
   const app = express();
@@ -25,6 +27,17 @@ export function createFinanceApiApp(deps: FinanceApiDeps): Express {
   app.get('/health', (_req: Request, res: Response) => {
     res.json(handlers.health());
   });
+
+  app.use(
+    '/trpc',
+    createExpressMiddleware({
+      router: appRouter,
+      createContext: createFinanceTrpcContextFactory({
+        financeDb: deps.financeDb.db,
+        coreDb: deps.coreDb?.db,
+      }),
+    })
+  );
 
   return app;
 }
