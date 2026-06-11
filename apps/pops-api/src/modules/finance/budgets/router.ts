@@ -1,13 +1,27 @@
 /**
  * Budget tRPC router — CRUD procedures for budgets.
+ *
+ * Calls into `@pops/finance-db`'s `budgetsService` directly (the in-tree
+ * shim stays in place until PR 4 of the Track N1 phase 1 sequence deletes
+ * it).
+ *
+ * Domain errors from the package (`BudgetNotFoundError`,
+ * `BudgetConflictError`) are translated to `HttpError` subclasses inside
+ * each handler and then routed through `mapDomainErrors` so the tRPC
+ * layer sees a proper `TRPCError` with the right wire-level `code`
+ * (`NOT_FOUND` / `CONFLICT`). Throwing `HttpError` directly out of a
+ * tRPC handler surfaces as `INTERNAL_SERVER_ERROR` at the OpenAPI
+ * boundary, which we don't want.
  */
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { BudgetConflictError, BudgetNotFoundError, budgetsService } from '@pops/finance-db';
+
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
-import * as service from './service.js';
 import {
   BudgetQuerySchema,
   BudgetSchema,
@@ -19,6 +33,16 @@ import {
 /** Default pagination values. */
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
+
+function translateBudgetError(err: unknown, id?: string): never {
+  if (err instanceof BudgetNotFoundError) {
+    throw new NotFoundError('Budget', id ?? err.id);
+  }
+  if (err instanceof BudgetConflictError) {
+    throw new ConflictError(err.message);
+  }
+  throw err;
+}
 
 export const budgetsRouter = router({
   /** List budgets with optional search/period/active filters and pagination. */
@@ -42,7 +66,7 @@ export const budgetsRouter = router({
       else if (input.active === 'false') activeFilter = false;
       else activeFilter = undefined;
 
-      const { rows, total } = service.listBudgets({
+      const { rows, total } = budgetsService.listBudgets(getFinanceDrizzle(), {
         search: input.search,
         period: input.period,
         active: activeFilter,
@@ -68,33 +92,33 @@ export const budgetsRouter = router({
     })
     .input(z.object({ id: z.string() }))
     .output(z.object({ data: BudgetSchema }))
-    .query(({ input }) => {
-      try {
-        const row = service.getBudget(input.id);
-        return { data: toBudget(service.withSpend(row)) };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+    .query(({ input }) =>
+      mapDomainErrors(() => {
+        try {
+          const db = getFinanceDrizzle();
+          const row = budgetsService.getBudget(db, input.id);
+          return { data: toBudget(budgetsService.withSpend(db, row)) };
+        } catch (err) {
+          translateBudgetError(err, input.id);
         }
-        throw err;
-      }
-    }),
+      })
+    ),
 
   /** Create a new budget. */
-  create: protectedProcedure.input(CreateBudgetSchema).mutation(({ input }) => {
-    try {
-      const row = service.createBudget(input);
-      return {
-        data: toBudget(service.withSpend(row)),
-        message: 'Budget created',
-      };
-    } catch (err) {
-      if (err instanceof ConflictError) {
-        throw new TRPCError({ code: 'CONFLICT', message: err.message });
+  create: protectedProcedure.input(CreateBudgetSchema).mutation(({ input }) =>
+    mapDomainErrors(() => {
+      try {
+        const db = getFinanceDrizzle();
+        const row = budgetsService.createBudget(db, input);
+        return {
+          data: toBudget(budgetsService.withSpend(db, row)),
+          message: 'Budget created',
+        };
+      } catch (err) {
+        translateBudgetError(err);
       }
-      throw err;
-    }
-  }),
+    })
+  ),
 
   /** Update an existing budget. */
   update: protectedProcedure
@@ -104,31 +128,30 @@ export const budgetsRouter = router({
         data: UpdateBudgetSchema,
       })
     )
-    .mutation(({ input }) => {
-      try {
-        const row = service.updateBudget(input.id, input.data);
-        return {
-          data: toBudget(service.withSpend(row)),
-          message: 'Budget updated',
-        };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+    .mutation(({ input }) =>
+      mapDomainErrors(() => {
+        try {
+          const db = getFinanceDrizzle();
+          const row = budgetsService.updateBudget(db, input.id, input.data);
+          return {
+            data: toBudget(budgetsService.withSpend(db, row)),
+            message: 'Budget updated',
+          };
+        } catch (err) {
+          translateBudgetError(err, input.id);
         }
-        throw err;
-      }
-    }),
+      })
+    ),
 
   /** Delete a budget. */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
-    try {
-      service.deleteBudget(input.id);
-      return { message: 'Budget deleted' };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) =>
+    mapDomainErrors(() => {
+      try {
+        budgetsService.deleteBudget(getFinanceDrizzle(), input.id);
+        return { message: 'Budget deleted' };
+      } catch (err) {
+        translateBudgetError(err, input.id);
       }
-      throw err;
-    }
-  }),
+    })
+  ),
 });
