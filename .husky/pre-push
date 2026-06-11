@@ -1,3 +1,5 @@
+pnpm typecheck
+
 branch=$(git branch --show-current)
 
 [ "$branch" = "main" ] && exit 0
