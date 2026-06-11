@@ -125,7 +125,21 @@ export function createInventoryTrpcContextFactory(
   };
 }
 
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        /** i18n key for frontend translation lookup — mirrors pops-api's wire shape. */
+        messageKey:
+          error.cause instanceof Error && 'messageKey' in error.cause
+            ? (error.cause as { messageKey?: string }).messageKey
+            : undefined,
+      },
+    };
+  },
+});
 
 export const router = t.router;
 
