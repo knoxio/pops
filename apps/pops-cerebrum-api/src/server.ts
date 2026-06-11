@@ -2,18 +2,21 @@
  * Entry point for the cerebrum pillar HTTP server.
  *
  * Phase 3 PR 1 of the cerebrum pillar migration boots the process with
- * the minimal `/health` surface so the new container can be wired into
- * docker-compose + Watchtower without depending on the (still-unfinished)
- * tRPC + URI-dispatcher migration.
+ * the minimal `/health` surface; Phase 5 PR 1 (Track M5) adds the tRPC
+ * handler at `/trpc` for the nudge_log read/dismiss surface.
  *
- * The process opens its OWN cerebrum.db connection via `openCerebrumDb`
- * rather than reaching back into pops-api's singleton — that's the
- * whole point of phase 3.
+ * The process opens its OWN cerebrum.db AND core.db connections rather
+ * than reaching back into pops-api's singletons — that's the whole
+ * point of phase 3. core.db is required because the canonical
+ * `service_accounts` table that backs `X-API-Key` authentication lives
+ * on the core pillar; the handle is read-only in practice.
  */
 import { openCerebrumDb } from '@pops/cerebrum-db';
+import { openCoreDb } from '@pops/core-db';
 
 import { createCerebrumApiApp } from './app.js';
 import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
+import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -29,7 +32,8 @@ const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
 
 const cerebrumDb = openCerebrumDb(resolveCerebrumSqlitePath());
-const app = createCerebrumApiApp({ cerebrumDb, version });
+const coreDb = openCoreDb(resolveCoreSqlitePath());
+const app = createCerebrumApiApp({ cerebrumDb, coreDb, version });
 
 const server = app.listen(port, () => {
   console.warn(`[cerebrum-api] Listening on port ${port}`);
@@ -42,6 +46,7 @@ function shutdown(signal: NodeJS.Signals): void {
   console.warn(`[cerebrum-api] Shutting down (${signal})`);
   server.close(() => {
     cerebrumDb.raw.close();
+    coreDb.raw.close();
   });
 }
 
