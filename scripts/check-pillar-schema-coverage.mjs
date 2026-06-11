@@ -58,9 +58,7 @@ const PILLARS = /** @type {const} */ ([
  *
  * @type {Record<string, Set<string>>}
  */
-const ALLOWLISTED_MISSING_INDEXES = {
-  inventory: new Set(['locations:idx_locations_parent_sort']),
-};
+const ALLOWLISTED_MISSING_INDEXES = {};
 
 /**
  * Pre-existing missing tables — only as a transitional grandfather while
