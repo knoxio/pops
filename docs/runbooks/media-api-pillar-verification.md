@@ -71,6 +71,29 @@ flagging:
 - The shell's "media unavailable" placeholder paints over working non-media routes (PillarGuard scoping is too broad).
 - `media.db` writes succeed against a stopped media-api container (proves the shared-volume caveat noted in Step 2 — phase 4 follow-up: convert media-api to the sole writer once tRPC routers move into it).
 
+## Track M3 PR 3 — legacy router deletion is a no-op
+
+PR 3 of the M3 sequence was originally scoped to delete `media.shelfImpressions.*` from pops-api's `mediaRouter` once the M3 PR 2 dispatcher (#2895) drained traffic to pops-media-api. The deletion turns out to be a **no-op**: the tRPC surface this PR was meant to remove never existed on pops-api.
+
+The history is the asymmetry. Track M1 (`core.serviceAccounts.*`) and Tracks M4/M5 (`inventory.locations.*`, `cerebrum.nudges.*`) moved tRPC procedures that pops-api already exposed. Each PR 1 stood up a shadow router on the new pillar; each PR 2 cut the dispatcher over; each PR 3 was supposed to delete the now-shadowed tRPC mounts from pops-api. M3 followed the same three-PR shape on paper, but the actual code surface was different:
+
+- pops-api's `mediaRouter` (`apps/pops-api/src/modules/media/index.ts`) mounts `movies`, `tvShows`, `comparisons`, `watchlist`, `watchHistory`, `library`, `search`, `discovery`, `arr`, `plex`, `rotation`. **No `shelfImpressions` slice.**
+- The only legacy consumer of `shelfImpressionsService` lives inside `media.discovery.assembleSession` and `media.discovery.shelf.session.service` — both import `shelfImpressionsService` from `@pops/media-db` and call it in-process against the `media.db` handle. There is no tRPC indirection.
+
+So the dispatcher rule that PR 2 added (`^/trpc/media\.shelfImpressions\.`) never had a fall-through target on pops-api in the first place. PR 1 (#2890) is what stood up the public tRPC surface — on `pops-media-api` directly, not by migrating an existing surface.
+
+### Why the prefix match (not `[^,]+$`) is safe here
+
+The M4 and M5 dispatchers anchor with `[^,]+$` and `$` respectively because their legacy routers are still mounted on pops-api as the backstop for batched URLs. The shell's `httpBatchLink` packs sibling queries into comma-separated URLs that share a slice with un-migrated procedures; the anchor forces those batches back to pops-api so the un-migrated members still resolve.
+
+M3 has no such backstop because there's nothing to be a backstop. Removing the anchor means a hypothetical batched URL `/trpc/media.shelfImpressions.recordImpressions,media.discovery.assembleSession` would land on media-api, which would 404 the second member — but no such call exists today because `shelfImpressions` has no shell-side caller at all (the `httpBatchLink` only merges procedures the shell actually invokes). The risk is theoretical.
+
+### What stays open
+
+If future code adds a shell-side call to `trpc.media.shelfImpressions.*`, the unanchored dispatcher rule still works for single-procedure URLs. A new batched caller that mixes `media.shelfImpressions.*` with other `media.*` procedures would 404 the latter on media-api; at that point the dispatcher rule needs to either narrow to `[^,]+$` (matching the M4/M5 pattern, accepting batches fall through to pops-api which would still have to grow a mount) or the rest of `mediaRouter` needs to move to pops-media-api so the prefix can broaden to `^/trpc/media\.`.
+
+Track M3's PR 3 therefore ships as documentation only: this section plus the corrected `nginx.conf` comment that no longer claims the deletion is pending.
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
@@ -78,4 +101,5 @@ flagging:
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
 - `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
 - `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
+- `docs/runbooks/cerebrum-api-pillar-verification.md` — sibling runbook for the cerebrum pillar
 - `.claude/pillar-migration-roadmap.md` — Track F status + lessons captured (gitignored, local-only)
