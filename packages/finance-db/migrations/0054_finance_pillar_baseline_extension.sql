@@ -1,4 +1,4 @@
--- Finance pillar baseline extension — adds the four finance-owned tables
+-- Finance pillar baseline extension — adds the three finance-owned tables
 -- absent from `0053_finance_pillar_baseline.sql`.
 --
 -- Track N4 (#2908) flipped `transaction_tag_rules` consumers to
