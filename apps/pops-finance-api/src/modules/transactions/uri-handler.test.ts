@@ -1,8 +1,8 @@
 /**
  * Unit tests for the transaction URI handler (Track O3, #2845).
  *
- * Drives `createTransactionUriHandler` against a per-test in-memory
- * finance.db so the resolution paths are exercised end-to-end against the
+ * Drives `createTransactionUriHandler` against a per-test file-backed
+ * finance.db (under a fresh tmpdir) so the resolution paths are exercised end-to-end against the
  * real `transactionsService.getTransaction` — `not-found` for an absent
  * row, `object` for an existing one, and `not-found` for an unrecognised
  * type (the descriptor only advertises `transaction`, but the dispatcher

@@ -7,7 +7,7 @@
  * shape but takes the DB handle as a constructor argument rather than
  * reaching through the pops-api `getFinanceDrizzle()` global — finance-api
  * stands alone of pops-api in the dep graph (same convention as the
- * migrated routers from M2 PR 1 and the budget URI handler from O2).
+ * migrated routers from M2 PR 1).
  *
  * The descriptor follows the platform-wide `UriHandlerDescriptor` contract
  * (PRD-101 US-08, ADR-012): resolution that fails because the row is missing
