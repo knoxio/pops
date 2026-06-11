@@ -488,27 +488,26 @@ docker compose -f infra/docker-compose.yml exec pops-api \
 # Single-procedure URL through the dispatcher — should land on finance-api.
 # pops-shell is `expose: 80` only (not bound to a host port), so the probe
 # runs through `docker compose exec` against a sibling on the frontend
-# network. The shell wires `httpBatchLink` (packages/api-client/src/index.ts),
-# which sends tRPC queries as POST with a JSON body — NOT GET with a
-# `?input=...` query string. (Plain `httpLink` can use GET for queries, but
-# the shell uses the batched POST variant for every call.) The probe below
-# matches that shape: POST `/trpc/<procedure>?batch=1` with `{"0":{"json":<input>}}`
-# in the body.
+# network. The shell wires `httpBatchLink` (packages/api-client/src/index.ts)
+# with `maxURLLength: 2083`, which sends tRPC **queries as GET** with a
+# URL-encoded `input` parameter and **mutations as POST** with a JSON body.
+# The probe below matches the query shape: GET `/trpc/<procedure>?batch=1&input=...`
+# where the input is the URL-encoded JSON `{"0":{"json":null}}`.
 docker compose -f infra/docker-compose.yml exec pops-api \
-  node -e "fetch('http://pops-shell/trpc/finance.wishlist.list?batch=1',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({'0':{json:null}})}).then(r=>r.status).then(console.log)"
+  node -e "fetch('http://pops-shell/trpc/finance.wishlist.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D').then(r=>r.status).then(console.log)"
 # 200 (or 401 without auth — the route resolves on finance-api).
 ```
 
 ### Step B — stop finance-api and confirm split degradation
 
 ```sh
-docker compose -f infra/docker-compose.yml stop pops-finance-api
+docker compose -f infra/docker-compose.yml stop finance-api
 ```
 
 Expected behaviour:
 
-- **Single-procedure** POST `/trpc/finance.wishlist.*?batch=1`, `/trpc/finance.budgets.*?batch=1`, and `/trpc/finance.transactions.{list,get,create,update,delete,restore}?batch=1` URLs return 502 from the dispatcher upstream. Re-run the Step A probe — it should now fail with 502. This is true for both queries and mutations because `httpBatchLink` uses POST for both, and the dispatcher routes by URL path regardless of method.
-- **Batched** POST URLs (e.g. `/trpc/finance.transactions.list,finance.budgets.list?batch=1` from `DashboardPage`, or `/trpc/finance.transactions.list,finance.transactions.availableTags?batch=1` from `useTransactionsPage`) continue to succeed because the comma defeats the dispatcher regex and the batch falls through to pops-api, which still mounts the full `financeRouter` and still reads/writes `finance.db` via `getFinanceDrizzle()` on the shared volume. This is the load-bearing behaviour of the dispatcher's `$` anchor and the M2 PR 3 (#2940) deferral.
+- **Single-procedure** `GET /trpc/finance.wishlist.*?batch=1&input=...`, `/trpc/finance.budgets.*?batch=1&input=...`, and `/trpc/finance.transactions.{list,get}?batch=1&input=...` query URLs — plus `POST /trpc/finance.transactions.{create,update,delete,restore}?batch=1` mutation URLs — return 502 from the dispatcher upstream. Re-run the Step A probe — it should now fail with 502. The dispatcher routes by URL path regardless of method, so queries (GET) and mutations (POST) for the migrated procedures all fail identically.
+- **Batched** URLs (e.g. `GET /trpc/finance.transactions.list,finance.budgets.list?batch=1&input=...` from `DashboardPage`, or `GET /trpc/finance.transactions.list,finance.transactions.availableTags?batch=1&input=...` from `useTransactionsPage`) continue to succeed because the comma defeats the dispatcher regex and the batch falls through to pops-api, which still mounts the full `financeRouter` and still reads/writes `finance.db` via `getFinanceDrizzle()` on the shared volume. This is the load-bearing behaviour of the dispatcher's `$` anchor and the M2 PR 3 (#2940) deferral.
 - **Deferred procedures** — single-procedure URLs for `finance.transactions.{suggestTags,listDescriptionsForPreview,availableTags}` and every `finance.imports.*` procedure — continue to resolve on pops-api regardless of batching, because the M2 PR 2 dispatcher rule never claimed them. The transactions tag-suggestion path, the description preview, the available-tags chip set, and the imports pipeline all stay live during the outage.
 - The shell's `/pillars/health` aggregator (still on pops-api) flips finance's status from `'healthy'` to `'unavailable'` after the per-probe timeout fires. `PillarGuard` reads `'unavailable'` and shows the unavailable placeholder on finance routes whose entry points hit migrated single-procedure URLs; the rest of the shell (food, media, inventory, lists, cerebrum, core, plus the finance routes whose render paths only touch deferred procedures or batched URLs) keeps working. Degrade per-route, not whole-shell.
 - The shell's boot probe to `/pillars` still succeeds because the proxy hits core-api, not finance-api.
@@ -516,7 +515,7 @@ Expected behaviour:
 ### Step C — restart and confirm recovery
 
 ```sh
-docker compose -f infra/docker-compose.yml start pops-finance-api
+docker compose -f infra/docker-compose.yml start finance-api
 ```
 
 Within ~30s the healthcheck reports healthy. Re-run the Step A probe — single-procedure URLs route to finance-api again. `PillarGuard` re-promotes finance from `'unavailable'` back to `'healthy'` on the next status-context refresh; the finance UI hydrates without a hard navigation. No state recovery is needed because the container holds no in-process queue or cache — `finance.db` is on the shared volume and was never closed.
@@ -525,7 +524,7 @@ Within ~30s the healthcheck reports healthy. Re-run the Step A probe — single-
 
 - M2 reproduces the partial-cutover shape from M4 (#2900) and M5 (#2901) at a finer granularity: the migrated slice spans **two full subrouters** (`wishlist`, `budgets`) plus a **CRUD subset** of a third (`transactions.{list,get,create,update,delete,restore}`). The intra-subrouter split is the harder constraint — `useTransactionsPage` batches migrated `transactions.list` with deferred `transactions.availableTags` inside the same `httpBatchLink` URL, so the dispatcher cannot widen its rule to claim the whole `finance.transactions.*` namespace without 502-ing every page render. The `DashboardPage` batch crosses subrouter boundaries (`transactions.list,budgets.list`) and would 404 if the budgets mount were removed from pops-api.
 - The unblock path is one of: (a) migrate the three deferred transactions procedures (`suggestTags`, `listDescriptionsForPreview`, `availableTags`) and the entire `finance.imports.*` subrouter into `pops-finance-api`, after which the dispatcher can swallow the whole `finance.*` namespace including batched URLs and the legacy mounts can be deleted in full; (b) switch the shell to `splitLink` / per-router transports so migrated procedures bypass batching with non-migrated procedures; or (c) teach the dispatcher to parse batched tRPC URLs and split them across upstreams.
-- The probe-shape lesson is finance-specific and worth carrying forward: `httpBatchLink` sends queries as **POST with a JSON body** (`{"0":{"json":<input>}}`), not GET with `?input=...`. Plain `httpLink` allows GET-with-query-string for queries, and the inventory/cerebrum runbooks used that shape in earlier drills because their probe URLs happened to resolve on the GET path too. For finance, the shell wires `httpBatchLink` exclusively, so any drill probe that mirrors shell traffic must POST. Runbook drills that probe via curl/`fetch` MUST use POST with a JSON body to match the shell's actual on-the-wire shape; a GET probe would only exercise the dispatcher's URL routing, not the full request envelope.
+- The probe-shape carries forward from the inventory/cerebrum drills unchanged: `httpBatchLink` with `maxURLLength: 2083` (packages/api-client/src/index.ts) sends **queries as GET** with a URL-encoded `input` parameter and **mutations as POST** with a JSON body. Runbook drills that probe via curl/`fetch` must use GET-with-`?input=...` for queries (`finance.wishlist.list`, `finance.budgets.list`, `finance.transactions.{list,get}`) and POST-with-JSON-body for mutations (`finance.transactions.{create,update,delete,restore}`). The dispatcher routes by URL path regardless of method, so both forms exercise the same routing — but matching the shell's actual on-the-wire shape avoids drift between the runbook and the code path under test.
 - Docker probes for the dispatcher MUST run inside the compose frontend network via `docker compose exec` on a sibling service. `pops-shell` is `expose: 80` only — not host-published — so `curl http://localhost/trpc/...` from the host fails to connect. This is the same constraint as the cerebrum (#2901) and inventory (#2900) drills.
 - The duplication of the migrated procedures across `pops-api` (legacy `financeRouter`) and `pops-finance-api` is the load-bearing cost of the M2 PR 3 deferral. Keep the two implementations in sync — they share `@pops/finance-db` services, so drift is unlikely as long as no business logic lives in the routers themselves.
 - Record any unexpected behaviour in the **Lessons captured** section of `.claude/pillar-migration-roadmap.md` before flipping Track M2 to ✅.
