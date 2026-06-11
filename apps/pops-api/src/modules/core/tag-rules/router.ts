@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { tagVocabularyService } from '@pops/finance-db';
+
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { logger } from '../../../lib/logger.js';
 import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -8,7 +11,7 @@ import { TagRuleChangeSetSchema } from './types.js';
 
 export const tagRulesRouter = router({
   listVocabulary: protectedProcedure.query(() => {
-    return { tags: service.listVocabulary() };
+    return { tags: tagVocabularyService.listVocabularyTags(getFinanceDrizzle()) };
   }),
 
   proposeTagRuleChangeSet: protectedProcedure
@@ -78,8 +81,9 @@ export const tagRulesRouter = router({
           '[TagRules] Apply ChangeSet'
         );
 
+        const financeDb = getFinanceDrizzle();
         for (const t of input.acceptedNewTags) {
-          if (t.trim()) service.upsertVocabularyTag(t.trim(), 'user');
+          if (t.trim()) tagVocabularyService.upsertVocabularyTag(financeDb, t.trim(), 'user');
         }
 
         const rules = service.applyTagRuleChangeSet(input.changeSet);

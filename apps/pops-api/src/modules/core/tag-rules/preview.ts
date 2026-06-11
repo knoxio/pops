@@ -1,4 +1,6 @@
-import { listVocabulary } from './vocabulary.js';
+import { tagVocabularyService } from '@pops/finance-db';
+
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 
 import type {
   TagRuleChangeSet,
@@ -86,7 +88,9 @@ export function previewTagRuleChangeSet(args: {
   maxPreviewItems: number;
 }): { counts: TagRuleImpactCounts; affected: TagRuleImpactItem[] } {
   const txs = args.transactions.slice(0, args.maxPreviewItems);
-  const vocabulary = new Set(listVocabulary().map((t) => t.toLowerCase()));
+  const vocabulary = new Set(
+    tagVocabularyService.listVocabularyTags(getFinanceDrizzle()).map((t) => t.toLowerCase())
+  );
   const proposedRules = materializeProposedRules(args.changeSet);
 
   const affected: TagRuleImpactItem[] = [];

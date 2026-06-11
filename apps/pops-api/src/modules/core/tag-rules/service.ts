@@ -28,7 +28,6 @@ import type { TagRuleChangeSet, TagRuleChangeSetOp, TagRuleChangeSetProposal } f
 
 export type TagRuleRow = TransactionTagRuleRow;
 
-export { listVocabulary, upsertVocabularyTag } from './vocabulary.js';
 export { previewTagRuleChangeSet };
 export type { PreviewInputTransaction };
 
