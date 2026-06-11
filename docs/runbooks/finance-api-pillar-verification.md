@@ -244,6 +244,118 @@ should land a package-owned Zod schema module in PR 1 so UI consumers never
 take a dependency on `@pops/api/modules/...`. Track N3 PR 4 (#2905), M4 PR 3
 (#2900), and M5 PR 3 (#2901) all hit the same pattern.
 
+## Track N6 phase 1 PR 4 — imports persistence shim deletion deferred
+
+Track N6 phase 1 PR 4 was scoped to delete the persistence shims that PR 3
+(#2902) introduced under `apps/pops-api/src/modules/finance/imports/`, now that
+the user-facing imports pipeline (`processImport`, `executeImport`,
+`commitImport`, the entity-creation mutation, and the AI categoriser's
+deduplication / entity-lookup reads) forwards into `@pops/finance-db`'s
+`importsService`. The deletion is **unsafe today as a file-level delete**. This
+section captures the audit and unblock conditions; the PR ships no source/test
+churn.
+
+### Audit — what the shims look like and what still consumes them
+
+PR 3 (#2902) intentionally kept the slice's transformer pipeline + orchestration
+code in pops-api and forwarded only the four persistence primitives plus the
+`createEntity` mutation onto the package. The resulting shim surface is split
+across two pure-shim files and two mixed files:
+
+| In-tree file                     | Shim symbols                                              | Coexisting orchestration code                                                                                                                                                                                     | Internal consumers                                                                                                                                                                                                                                                                                     |
+| -------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `lib/deduplication.ts`           | `findExistingChecksums`                                   | None — pure shim.                                                                                                                                                                                                 | `imports/process-service.ts` (`findExistingChecksums`).                                                                                                                                                                                                                                                |
+| `lib/entity-lookup.ts`           | `loadEntityMaps`, `EntityEntry` / `EntityMaps` re-exports | `buildEntityMaps` — pure in-memory helper used only by `entity-lookup.test.ts`.                                                                                                                                   | `imports/process-service.ts` (`loadEntityMaps`), `imports/lib/correction-application.ts` (`loadEntityMaps` + the `entityLookup` / `aliases` types), `imports/lib/entity-matcher.ts` (`EntityEntry` type), `imports/lib/process-transaction-helpers.ts` (`EntityEntry` type), `entity-matcher.test.ts`. |
+| `lib/transaction-persistence.ts` | `insertTransaction`, `createEntityInternal`               | `commitImport` (atomic SQLite transaction), `createEntitiesPhase`, `applyChangeSetsPhase`, `applyTagRuleChangeSetsPhase`, `writeTransactionsPhase`, `deriveTransactionType`.                                      | `imports/execute-service.ts` (`insertTransaction`), the file's own `writeTransactionsPhase` (`insertTransaction`) and `createEntitiesPhase` (`createEntityInternal`).                                                                                                                                  |
+| `service.ts`                     | `createEntity`                                            | `processImport`, `executeImport`, `processImportWithProgress`, `executeImportWithProgress`, `logBackgroundImportComplete`, `reportBackgroundFailure`, and the `commitImport` / correction-application re-exports. | `imports/router.ts` mounts `createEntity` as the `imports.createEntity` tRPC mutation. The remaining orchestration exports are consumed by the same router and by `imports/router.test.ts`.                                                                                                            |
+
+Two files are pure shims (`lib/deduplication.ts`, `lib/entity-lookup.ts` —
+modulo the test-only `buildEntityMaps` helper) and could in principle be deleted
+once their call sites swap to `importsService.*` directly. The other two
+(`lib/transaction-persistence.ts`, `service.ts`) interleave shim helpers with
+orchestration code that must stay in pops-api: the commit-time SQLite
+transaction wrap, the entity / changeSet / tag-rule / write phases, the
+progress-streaming background tasks, and the formatted error path. A
+file-level delete of either would strand the orchestration.
+
+### Trade-off
+
+PR 3 (#2902) Option A landed an atomic transaction wrap around `commitImport`
+on `finance.db`, closing the correctness gap raised in #2842. The deferred
+deletion is therefore a **code-organisation cleanup**, not a correctness
+concern. The runtime behaviour and the on-disk transaction boundary are
+identical whether the shim helpers stay in the slice or get inlined at every
+call site.
+
+Deleting the shim helpers today as a file-level delete would break:
+
+- `imports/process-service.ts` — calls `findExistingChecksums` and
+  `loadEntityMaps` through the shim files.
+- `imports/lib/correction-application.ts`, `entity-matcher.ts`, and
+  `process-transaction-helpers.ts` — typed against `EntityEntry` / `EntityMaps`
+  re-exports from `lib/entity-lookup.ts`.
+- `imports/execute-service.ts` and the in-file phase orchestrators in
+  `lib/transaction-persistence.ts` — call `insertTransaction` and
+  `createEntityInternal` from inside the same module.
+- `imports/router.ts` — mounts `createEntity` as the
+  `finance.imports.createEntity` tRPC mutation off the slice's `service.ts`.
+
+### Unblock conditions
+
+The deletion (or full inlining, depending on which path the cleanup PR picks)
+can ship once all of the following land:
+
+1. **Retarget every internal call site** off the shim helpers and onto
+   `importsService.*` directly. Concretely:
+   - `process-service.ts` swaps `findExistingChecksums` / `loadEntityMaps` for
+     `importsService.findExistingChecksums(getFinanceDrizzle(), …)` /
+     `importsService.loadEntityMaps(getFinanceDrizzle())`.
+   - `correction-application.ts` swaps `loadEntityMaps` likewise and sources
+     `EntityMaps` / `EntityLookupEntry` from `@pops/finance-db`.
+   - `entity-matcher.ts` and `process-transaction-helpers.ts` source
+     `EntityEntry` from `@pops/finance-db` (alias the package's
+     `EntityLookupEntry` at the type-import boundary if the local name is worth
+     keeping).
+   - `execute-service.ts` swaps `insertTransaction` for
+     `importsService.insertImportTransaction(getFinanceDrizzle(), …)`.
+   - `writeTransactionsPhase` / `createEntitiesPhase` inside
+     `transaction-persistence.ts` swap their `insertTransaction` /
+     `createEntityInternal` callers for the package calls directly.
+   - `imports/router.ts` swaps `createEntity` for
+     `importsService.createImportEntity(getFinanceDrizzle(), input.name)`.
+2. **Extract orchestration out of the mixed files** if the cleanup PR prefers a
+   file-level delete over inlining. `lib/transaction-persistence.ts` would split
+   into `lib/commit-import.ts` (the `commitImport` orchestrator + its phase
+   helpers) and a deleted shim file; `service.ts` would lose its `createEntity`
+   export but keep `processImport` / `executeImport` / `*WithProgress` /
+   `commitImport` re-export. Pure inlining (no split, no file delete) is the
+   smaller change and likely the right one — the shim files become the natural
+   delete targets once their last call sites are gone.
+3. **Resolve #2921** — the residual cross-DB calls inside `applyChangeSet` /
+   `applyTagRuleChangeSet` (still reaching into `pops.db` from within the
+   `finance.db` transaction wrap) are a separate concern from the shim
+   deletion, but the cleanup PR should land after #2921 so the inlined
+   call sites don't get rewritten twice.
+4. **`buildEntityMaps`** — the test-only in-memory helper currently colocated
+   with the `loadEntityMaps` shim moves to a sibling `lib/entity-maps.ts`
+   (or onto `@pops/finance-db` if other consumers appear) so deleting
+   `lib/entity-lookup.ts` doesn't strand it.
+
+### Lesson captured
+
+Same shape as Track N3 PR 4 (#2905) and Track N4 PR 4 — a phase-1 cutover that
+forwards persistence primitives through thin in-tree shims while leaving the
+orchestration code in place fragments the deletion across two files (the pure
+shim files vs. the mixed orchestration files). The canonical clean-delete path
+(Track N1 PR 4 #2907, Track J PR 4 #2870, Track K PR 4 #2881) only works when
+PR 3 leaves the shim file with zero remaining call sites — i.e. the cutover
+flips every consumer of the shim before PR 4 lands. Track N6's scope
+deliberately kept the slice's transformer pipeline + orchestration on the
+shims to keep the PR 3 diff reviewable, so PR 4 inherits a retargeting workload
+rather than a file-level delete. The atomic-wrap correctness fix from Option A
+(#2902) means there is no time pressure on the cleanup — defer until the
+retargeting PR can be scheduled.
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
@@ -258,7 +370,11 @@ take a dependency on `@pops/api/modules/...`. Track N3 PR 4 (#2905), M4 PR 3
 - Track N4 PR 1 (scaffold): #2856
 - Track N4 PR 3 (routing flip): #2908
 - Track N4 finance.db table creation: #2915
+- Track N6 PR 3 (imports persistence cutover + atomic wrap): #2902
+- Track N6 epic: #2842
+- Track N1 PR 4 (canonical clean deletion sibling): #2907
 - Track J Phase 1 PR 4 (canonical clean deletion): #2870
 - Track K Phase 1 PR 4 (canonical clean deletion): #2881
 - Track M4 PR 3 (sibling defer pattern): #2900
 - Track M5 PR 3 (sibling defer pattern): #2901
+- Residual cross-DB transaction wrap issue: #2921
