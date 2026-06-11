@@ -74,7 +74,7 @@
     "mcp": "tsx src/mcp/server.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.100.1",
+    "@anthropic-ai/sdk": "^0.104.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@pops/app-food-db": "workspace:*",
     "@pops/app-lists-db": "workspace:*",
@@ -101,7 +101,7 @@
     "express-rate-limit": "^8.5.2",
     "gray-matter": "^4.0.3",
     "helmet": "^8.2.0",
-    "ioredis": "^5.11.0",
+    "ioredis": "^5.11.1",
     "js-yaml": "^4.2.0",
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.2.1",
@@ -120,7 +120,7 @@
     "@types/express": "^5.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.3",
     "@types/node-cron": "^3.0.11",
     "@types/papaparse": "^5.5.2",
     "@types/pdf-parse": "^1.1.5",
