@@ -2,13 +2,13 @@ import { desc, eq } from 'drizzle-orm';
 
 import { transactionCorrections } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
 import { normalizeDescription } from '../types.js';
 
 import type { ChangeSet, ChangeSetOp, CorrectionRow } from '../types.js';
 
-type Tx = Parameters<Parameters<ReturnType<typeof getDrizzle>['transaction']>[0]>[0];
+type Tx = Parameters<Parameters<ReturnType<typeof getFinanceDrizzle>['transaction']>[0]>[0];
 
 function applyAddOp(tx: Tx, op: Extract<ChangeSetOp, { op: 'add' }>): void {
   tx.insert(transactionCorrections)
@@ -62,7 +62,7 @@ function applyMutatingOp(tx: Tx, op: Exclude<ChangeSetOp, { op: 'add' }>): void 
 }
 
 export function applyChangeSet(changeSet: ChangeSet): CorrectionRow[] {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
 
   return db.transaction((tx) => {
     const order: Record<ChangeSetOp['op'], number> = { add: 1, edit: 2, disable: 3, remove: 4 };

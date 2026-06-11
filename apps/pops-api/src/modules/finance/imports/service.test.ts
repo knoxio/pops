@@ -1269,4 +1269,60 @@ describe('commitImport — atomicity', () => {
       .all();
     expect(afterTxns!.cnt).toBe(0);
   });
+
+  it('rolls back applyChangeSet (correction add) when a later phase throws — proves shared finance.db tx', () => {
+    const tempEntityId = 'temp:entity:00000000-0000-0000-0000-0000000000bb';
+    const probePattern = 'CROSS_DB_TX_PROBE_PATTERN';
+
+    const [correctionsBefore] = orm()
+      .select({ cnt: count() })
+      .from(transactionCorrections)
+      .where(eq(transactionCorrections.descriptionPattern, probePattern.toLowerCase()))
+      .all();
+    expect(correctionsBefore!.cnt).toBe(0);
+
+    expect(() =>
+      commitImport({
+        entities: [{ tempId: tempEntityId, name: 'CrossDbTxProbe', type: 'company' }],
+        changeSets: [
+          {
+            ops: [
+              {
+                op: 'add',
+                data: {
+                  descriptionPattern: probePattern,
+                  matchType: 'contains',
+                  entityId: tempEntityId,
+                  tags: [],
+                  confidence: 0.9,
+                  isActive: true,
+                },
+              },
+            ],
+          },
+        ],
+        tagRuleChangeSets: [
+          {
+            source: 'tag-edit-signal',
+            reason: 'force-failure-on-missing-tag-rule',
+            ops: [
+              {
+                op: 'edit',
+                id: 'tag-rule-that-does-not-exist',
+                data: { tags: ['boom'] },
+              },
+            ],
+          },
+        ],
+        transactions: [],
+      })
+    ).toThrow();
+
+    const [correctionsAfter] = orm()
+      .select({ cnt: count() })
+      .from(transactionCorrections)
+      .where(eq(transactionCorrections.descriptionPattern, probePattern.toLowerCase()))
+      .all();
+    expect(correctionsAfter!.cnt).toBe(0);
+  });
 });
