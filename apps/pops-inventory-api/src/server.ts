@@ -10,9 +10,11 @@
  * `openInventoryDb` rather than reaching back into pops-api's
  * singleton — that's the whole point of phase 3.
  */
+import { openCoreDb } from '@pops/core-db';
 import { openInventoryDb } from '@pops/inventory-db';
 
 import { createInventoryApiApp } from './app.js';
+import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
 import { parseBareOrigin } from './pillars/env.js';
 
@@ -51,7 +53,8 @@ function resolveSelfBaseUrl(): string {
 const selfBaseUrl = resolveSelfBaseUrl();
 
 const inventoryDb = openInventoryDb(resolveInventorySqlitePath());
-const app = createInventoryApiApp({ inventoryDb, version, selfBaseUrl });
+const coreDb = openCoreDb(resolveCoreSqlitePath());
+const app = createInventoryApiApp({ inventoryDb, coreDb, version, selfBaseUrl });
 
 const server = app.listen(port, () => {
   console.warn(`[inventory-api] Listening on port ${port}`);
@@ -64,6 +67,7 @@ function shutdown(signal: NodeJS.Signals): void {
   console.warn(`[inventory-api] Shutting down (${signal})`);
   server.close(() => {
     inventoryDb.raw.close();
+    coreDb.raw.close();
   });
 }
 

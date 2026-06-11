@@ -7,12 +7,23 @@
  */
 import { getPillarRegistry } from './pillars/registry.js';
 
+import type { OpenedCoreDb } from '@pops/core-db';
 import type { OpenedInventoryDb } from '@pops/inventory-db';
 import type { PillarRegistryEntry } from '@pops/types';
 
 export interface InventoryApiDeps {
   /** Open handle to the inventory pillar's SQLite. */
   inventoryDb: OpenedInventoryDb;
+  /**
+   * Optional handle to the shared `core.db`. When present, inventory-api's
+   * tRPC context factory uses it to authenticate `X-API-Key` callers
+   * against the service-accounts table so machine principals reach
+   * inventory endpoints with the same semantics they get from the
+   * legacy pops-api router. When absent, only Cloudflare Access (or the
+   * dev/tunnel fallbacks) is honoured — used by tests that don't
+   * exercise SA auth.
+   */
+  coreDb?: OpenedCoreDb;
   /** Semver of the build, surfaced on the health response. */
   version: string;
   /**
