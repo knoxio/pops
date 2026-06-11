@@ -133,7 +133,7 @@ export const TAG_VOCABULARY_TABLE_SQL = `
 CREATE TABLE tag_vocabulary (
   tag text PRIMARY KEY NOT NULL,
   source text DEFAULT 'seed' NOT NULL,
-  is_active integer DEFAULT 1 NOT NULL,
+  is_active integer DEFAULT true NOT NULL,
   created_at text DEFAULT (datetime('now')) NOT NULL
 );
 `;

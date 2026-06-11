@@ -31,7 +31,7 @@
  * for this slice — `listVocabularyTags` returns `[]` when empty and
  * `upsertVocabularyTag` is idempotent.
  */
-import { tagVocabularyService } from '@pops/finance-db';
+import { tagVocabularyService, type TagVocabularySource } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 
@@ -39,6 +39,6 @@ export function listVocabulary(): string[] {
   return tagVocabularyService.listVocabularyTags(getFinanceDrizzle());
 }
 
-export function upsertVocabularyTag(tag: string, source: 'seed' | 'user'): void {
+export function upsertVocabularyTag(tag: string, source: TagVocabularySource): void {
   tagVocabularyService.upsertVocabularyTag(getFinanceDrizzle(), tag, source);
 }
