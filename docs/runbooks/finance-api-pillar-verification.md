@@ -71,6 +71,81 @@ flagging:
 - The shell's "finance unavailable" placeholder paints over working non-finance routes (PillarGuard scoping is too broad).
 - `finance.db` writes succeed against a stopped finance-api container (proves the shared-volume caveat noted in Step 2 — phase 4 follow-up: convert finance-api to the sole writer once tRPC routers move into it).
 
+## Track N3 phase 1 PR 4 — in-tree `transaction_corrections` service deletion deferred
+
+Track N3 phase 1 PR 4 was scoped to delete the in-tree `transaction_corrections`
+service files from `apps/pops-api/src/modules/core/corrections/` now that PR 3
+(#2899) flipped the user-facing CRUD + matcher surface (`handlers/query-helpers.ts`,
+`handlers/pattern-match.ts`, `router-crud.ts`) onto `@pops/finance-db`'s
+`transactionCorrectionsService`. The deletion is **unsafe today**. This section
+captures the audit and unblock conditions; the PR ships no source/test churn.
+
+### Audit — what still consumes the in-tree service files
+
+PR 3's scoping note (#2899 body, "Intentionally not flipped") deliberately left
+the imports pipeline on the in-tree implementation. A fresh sweep of
+`apps/pops-api/src/` confirms the consumer set is even broader than the imports
+pipeline:
+
+| In-tree file                                   | Consumed by (outside `core/corrections/`)                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `service.ts` (barrel re-exporter)              | `shared/tag-suggester.ts` (`findAllMatchingCorrections`), `finance/imports/router.ts` (`applyChangeSet`), `finance/imports/lib/transaction-persistence.ts` (`applyChangeSet`), `finance/imports/lib/reclassify-existing.ts` (`findMatchingCorrectionFromRules`), `finance/imports/lib/correction-application.ts` (`listCorrections`), `finance/imports/lib/apply-learned-correction.ts` (`findAllMatchingCorrectionFromDB`), `finance/imports/service.rule-provenance.test.ts` (test fixture wiring). |
+| `pure-service.ts` / `apply-changeset-rules.ts` | `finance/imports/lib/correction-application.ts` (`applyChangeSetToRules`), `finance/imports/lib/apply-learned-correction.ts` (`findAllMatchingCorrectionFromRules`).                                                                                                                                                                                                                                                                                                                                  |
+| `types.ts` / `types-base.ts`                   | `shared/tag-suggester.ts` (`normalizeDescription`), `finance/imports/types.ts` (`ChangeSetSchema`), `finance/imports/router.ts` (`ChangeSetSchema`), `finance/imports/router.test.ts` (`ChangeSet`), `finance/imports/lib/reclassify-existing.ts` (`CorrectionRow`), `finance/imports/lib/correction-application.ts` (`ChangeSet`, `CorrectionRow`), `finance/imports/lib/apply-learned-correction.ts` (`CorrectionRow`, `classifyCorrectionMatch`).                                                  |
+| `handlers/apply-corrections.ts`                | Re-exported via `service.ts` as `applyChangeSet`; reads/writes the `transactionCorrections` table directly via `getDrizzle()`.                                                                                                                                                                                                                                                                                                                                                                        |
+| `handlers/compute-changeset.ts`                | Re-exported via `service.ts` as `proposeChangeSetFromCorrectionSignal`; reads the table directly.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `handlers/changeset-impact.ts`                 | Used by the in-tree `router-changeset.ts`; reads the table directly.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `handlers/ai-revise.ts` / `ai-inference.ts`    | Re-exported via `service.ts` and used by `router-changeset.ts`; reads the table directly.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `handlers/preview-matches.ts`                  | Re-exported via `service.ts`; used by `router.ts` for the preview procedure.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `handlers/query-helpers.ts` (the PR 3 shim)    | Re-exported via `service.ts`; consumed by `tag-suggester.ts`, the imports pipeline, and `router-crud.ts`.                                                                                                                                                                                                                                                                                                                                                                                             |
+| `handlers/pattern-match.ts` (the PR 3 shim)    | Re-exported via `service.ts`; consumed by `tag-suggester.ts`, the imports pipeline, `lib/rule-generator.ts`, and `lib/analyze-correction.ts`.                                                                                                                                                                                                                                                                                                                                                         |
+
+Even the PR 3 shim files cannot be deleted in isolation. `service.ts` is the
+barrel everyone outside `core/corrections/` imports from, and it re-exports
+`{listCorrections, findAllMatchingCorrections, applyChangeSet, ...}` from the
+shim and non-shim handlers alike. Removing either shim file breaks `tag-suggester.ts`
+and the imports pipeline at compile time.
+
+### Trade-off
+
+PR 3 (#2899) was deliberately scoped as a routing flip, not a removal. Its body
+states the deletion was contingent on **(a)** the imports pipeline (Track N6)
+moving onto `@pops/finance-db`, and **(b)** the higher-level changeset / AI
+orchestrations (`apply-corrections`, `compute-changeset`, `changeset-impact`,
+`ai-revise`, `ai-inference`, `preview-matches`) also moving off in-tree drizzle
+access. Neither has happened.
+
+Deleting the service files today would break:
+
+- `shared/tag-suggester.ts` — used by the imports pipeline and `apps/pops-mcp`'s
+  finance tooling. No replacement path exists in `@pops/finance-db`.
+- `finance/imports/router.ts` — the `applyChangeSetAndReevaluate` mutation calls
+  `applyChangeSet` (in-tree changeset writer that the package does not yet expose).
+- The in-tree `core.corrections.changeset.*` tRPC routes — `router-changeset.ts`
+  depends on `apply-corrections`, `compute-changeset`, `changeset-impact`,
+  `ai-revise`, `ai-inference`.
+
+### Unblock conditions
+
+The deletion can ship once all of the following land:
+
+1. **Track N6 cutover** of `imports/lib/{correction-application, correction-helpers, apply-learned-correction, reclassify-existing, transaction-persistence}.ts`, `imports/router.ts`, and `imports/types.ts` onto `@pops/finance-db`. This is N6's announced scope.
+2. **Package exposure** of `applyChangeSet`, `proposeChangeSetFromCorrectionSignal`, `previewMatches`, and the AI revise / inference orchestrations on `@pops/finance-db` so `router-changeset.ts` and the imports router can swap their imports without losing functionality.
+3. **`shared/tag-suggester.ts`** migrated to read from the package (`transactionCorrectionsService.findAllMatchingTransactionCorrections` already exists; the helper just needs the call-site swap).
+4. **The handle swap** from `getDrizzle()` to `getFinanceDrizzle()` — PR 3 explicitly deferred this because the on-disk `transaction_corrections` rows still live in `pops.db`. PR 3's note: _"PR 4 (the imports cutover) will land the backfill + handle swap together."_ That backfill is N6 territory, not N3.
+
+### Lesson captured
+
+When a phase-1 cutover is scoped to a routing flip with a barrel re-exporter
+(`service.ts`) still re-exporting non-flipped handlers, the deletion PR cannot
+ship until every consumer of the barrel has been moved. Track J3 (#2870) and
+Track K3 (#2881) cleared their barrels in the same PR as the consumer cutover —
+the canonical pattern — and so were free to delete in PR 4. Track N3's scaffold
+(#2857) deliberately left the imports pipeline behind for N6, which fragments
+the deletion. Future tracks of this shape should plan PR 4 as a follow-on to the
+N6-equivalent cutover, not as a phase-1 deliverable. M4 PR 3 (#2900) and M5 PR 3
+(#2901) hit the same pattern at the nginx-dispatcher layer.
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
@@ -79,3 +154,9 @@ flagging:
 - `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
 - `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
 - `docs/runbooks/media-api-pillar-verification.md` — sibling runbook for the media pillar
+- Track N3 PR 1 (scaffold): #2857
+- Track N3 PR 3 (routing flip): #2899
+- Track J Phase 1 PR 4 (canonical clean deletion): #2870
+- Track K Phase 1 PR 4 (canonical clean deletion): #2881
+- Track M4 PR 3 (sibling defer pattern): #2900
+- Track M5 PR 3 (sibling defer pattern): #2901
