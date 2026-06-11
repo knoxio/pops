@@ -7,6 +7,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 # Copy workspace package.json files (for dep resolution)
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
+COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY apps/pops-cerebrum-api/package.json ./apps/pops-cerebrum-api/
 
@@ -19,6 +20,9 @@ COPY packages/db-types/src ./packages/db-types/src
 COPY packages/db-types/tsconfig.json ./packages/db-types/
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
+COPY packages/core-db/src ./packages/core-db/src
+COPY packages/core-db/tsconfig.json ./packages/core-db/
+COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
@@ -31,6 +35,8 @@ COPY apps/pops-cerebrum-api/src ./apps/pops-cerebrum-api/src
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
+RUN pnpm build
+WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
