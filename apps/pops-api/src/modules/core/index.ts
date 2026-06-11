@@ -21,7 +21,6 @@ import { featuresRouter } from './features/router.js';
 import { jobsRouter } from './jobs/router.js';
 import { coreMigrations } from './migrations.js';
 import { searchRouter } from './search/router.js';
-import { serviceAccountsRouter } from './service-accounts/router.js';
 import { settingsRouter } from './settings/router.js';
 import { shellRouter } from './shell/router.js';
 import { tagRulesRouter } from './tag-rules/router.js';
@@ -43,7 +42,6 @@ export const coreRouter = router({
   settings: settingsRouter,
   features: featuresRouter,
   search: searchRouter,
-  serviceAccounts: serviceAccountsRouter,
   shell: shellRouter,
   uri: uriRouter,
 });
