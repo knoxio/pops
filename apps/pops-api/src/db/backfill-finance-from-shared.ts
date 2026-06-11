@@ -2,16 +2,21 @@
  * Boot-time backfill from the legacy shared `pops.db` into the finance
  * pillar's `finance.db`.
  *
- * Phase 2 PR 3 of the finance pillar flips the wish-list slice to the
- * finance handle. The first deploy after PR 3 needs to carry the
- * existing rows from the shared DB across before any reads come from
- * the new file. Subsequent boots find the finance copy already
- * populated and become a no-op via the `WHERE id NOT IN (...)`
- * existence filter on every table.
+ * Track N (per-pillar cutover) flips finance consumers from the shared
+ * `pops.db` to the dedicated `finance.db`. The first deploy after each
+ * slice cutover needs to carry the existing rows from the shared DB
+ * across before any reads come from the new file. Subsequent boots
+ * find the finance copy already populated and become a no-op via the
+ * `WHERE id NOT IN (...)` existence filter on every table.
  *
- * Only `wish_list` is copied today. Future cutover PRs (budgets,
- * transactions, imports, tag rules, tag vocabulary) extend the
- * `TABLE_COPIES` list; FK-safe ordering is enforced here.
+ * Order matters for FK enforcement (with `foreign_keys = ON`):
+ *   entities (no parent)
+ *     → transactions (FK → entities)
+ *     → transaction_corrections (FK → entities)
+ *     → transaction_tag_rules (FK → entities)
+ *   tag_vocabulary (no FK, PK is `tag`)
+ *   budgets (no FK, UNIQUE on category+period)
+ *   wish_list (no FK)
  *
  * Each table is wrapped in `tryCopyTable` so a missing source table
  * (post-PR-4 drop scenario, or a stale on-disk pops.db) doesn't bring
@@ -39,6 +44,101 @@ interface TableCopy {
 }
 
 const TABLE_COPIES: readonly TableCopy[] = [
+  {
+    table: 'entities',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'notion_id',
+      'name',
+      'type',
+      'abn',
+      'aliases',
+      'default_transaction_type',
+      'default_tags',
+      'notes',
+      'last_edited_time',
+    ],
+  },
+  {
+    table: 'transactions',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'notion_id',
+      'description',
+      'account',
+      'amount',
+      'date',
+      'type',
+      'tags',
+      'entity_id',
+      'entity_name',
+      'location',
+      'country',
+      'related_transaction_id',
+      'notes',
+      'checksum',
+      'raw_row',
+      'last_edited_time',
+    ],
+  },
+  {
+    table: 'transaction_corrections',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'description_pattern',
+      'match_type',
+      'entity_id',
+      'entity_name',
+      'location',
+      'tags',
+      'transaction_type',
+      'is_active',
+      'confidence',
+      'priority',
+      'times_applied',
+      'created_at',
+      'last_used_at',
+    ],
+  },
+  {
+    table: 'transaction_tag_rules',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'description_pattern',
+      'match_type',
+      'entity_id',
+      'tags',
+      'is_active',
+      'confidence',
+      'priority',
+      'times_applied',
+      'created_at',
+      'last_used_at',
+    ],
+  },
+  {
+    table: 'tag_vocabulary',
+    idColumn: 'tag',
+    columns: ['tag', 'source', 'is_active', 'created_at'],
+  },
+  {
+    table: 'budgets',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'notion_id',
+      'category',
+      'period',
+      'amount',
+      'active',
+      'notes',
+      'last_edited_time',
+    ],
+  },
   {
     table: 'wish_list',
     idColumn: 'id',
