@@ -3,6 +3,8 @@ import {
   budgetsService,
   TransactionNotFoundError,
   transactionsService,
+  WishListItemNotFoundError,
+  wishListService,
 } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../db/finance-handle.js';
@@ -10,11 +12,11 @@ import { NotFoundError } from '../../shared/errors.js';
 /**
  * Finance URI handler (PRD-101 US-08, ADR-012).
  *
- * Owns the `pops:finance/{type}/{id}` namespace for the three object types
- * that are referenced cross-module: transactions, budgets, and entities
- * (entities live under finance because every existing reference site —
- * search adapter, tag-rule changeset, AI tool — already addresses them via
- * `pops:finance/entity/...`).
+ * Owns the `pops:finance/{type}/{id}` namespace for the object types that
+ * are referenced cross-module: transactions, budgets, entities, and wish
+ * list items (entities live under finance because every existing reference
+ * site — search adapter, tag-rule changeset, AI tool — already addresses
+ * them via `pops:finance/entity/...`).
  *
  * The handler returns `not-found` on missing rows rather than throwing the
  * service-layer `NotFoundError` — the central dispatcher (US-08) translates
@@ -24,7 +26,7 @@ import { getEntity } from '../core/entities/service.js';
 
 import type { UriHandlerDescriptor, UriResolution } from '@pops/types';
 
-export const FINANCE_URI_TYPES = ['transaction', 'entity', 'budget'] as const;
+export const FINANCE_URI_TYPES = ['transaction', 'entity', 'budget', 'wish-list'] as const;
 
 /** Run a service-layer get and translate `NotFoundError` to `not-found`. */
 async function tryGet<TData>(get: () => TData | Promise<TData>): Promise<UriResolution<TData>> {
@@ -34,7 +36,8 @@ async function tryGet<TData>(get: () => TData | Promise<TData>): Promise<UriReso
     if (
       error instanceof NotFoundError ||
       error instanceof BudgetNotFoundError ||
-      error instanceof TransactionNotFoundError
+      error instanceof TransactionNotFoundError ||
+      error instanceof WishListItemNotFoundError
     ) {
       return { kind: 'not-found' };
     }
@@ -52,6 +55,8 @@ export const financeUriHandler: UriHandlerDescriptor = {
         return tryGet(() => getEntity(id));
       case 'budget':
         return tryGet(() => budgetsService.getBudget(getFinanceDrizzle(), id));
+      case 'wish-list':
+        return tryGet(() => wishListService.getWishListItem(getFinanceDrizzle(), id));
       default:
         return { kind: 'not-found' };
     }
