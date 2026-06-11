@@ -12,6 +12,7 @@ import { closeDb, setDb } from '../../../db.js';
 import { setFinanceDb } from '../../../db/finance-handle.js';
 import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
 import { clearCache } from '../../core/ai-usage/cache.js';
+import { normalizeDescription } from '../../core/corrections/types-base.js';
 import { getProgress, setProgress } from './progress-store.js';
 import {
   applyLearnedCorrection,
@@ -1271,58 +1272,68 @@ describe('commitImport — atomicity', () => {
   });
 
   it('rolls back applyChangeSet (correction add) when a later phase throws — proves shared finance.db tx', () => {
-    const tempEntityId = 'temp:entity:00000000-0000-0000-0000-0000000000bb';
-    const probePattern = 'CROSS_DB_TX_PROBE_PATTERN';
+    const financeRaw = createTestDb();
+    const prevFinance = setFinanceDb({ db: drizzle(financeRaw), raw: financeRaw });
 
-    const [correctionsBefore] = orm()
-      .select({ cnt: count() })
-      .from(transactionCorrections)
-      .where(eq(transactionCorrections.descriptionPattern, probePattern.toLowerCase()))
-      .all();
-    expect(correctionsBefore!.cnt).toBe(0);
+    try {
+      const probePattern = 'CROSS_DB_TX_PROBE_PATTERN';
+      const storedPattern = normalizeDescription(probePattern);
+      const financeOrm = drizzle(financeRaw);
 
-    expect(() =>
-      commitImport({
-        entities: [{ tempId: tempEntityId, name: 'CrossDbTxProbe', type: 'company' }],
-        changeSets: [
-          {
-            ops: [
-              {
-                op: 'add',
-                data: {
-                  descriptionPattern: probePattern,
-                  matchType: 'contains',
-                  entityId: tempEntityId,
-                  tags: [],
-                  confidence: 0.9,
-                  isActive: true,
+      const countCorrectionsIn = (handle: typeof financeOrm): number => {
+        const [row] = handle
+          .select({ cnt: count() })
+          .from(transactionCorrections)
+          .where(eq(transactionCorrections.descriptionPattern, storedPattern))
+          .all();
+        return row!.cnt;
+      };
+
+      expect(countCorrectionsIn(orm())).toBe(0);
+      expect(countCorrectionsIn(financeOrm)).toBe(0);
+
+      expect(() =>
+        commitImport({
+          entities: [],
+          changeSets: [
+            {
+              ops: [
+                {
+                  op: 'add',
+                  data: {
+                    descriptionPattern: probePattern,
+                    matchType: 'contains',
+                    entityId: null,
+                    tags: [],
+                    confidence: 0.9,
+                    isActive: true,
+                  },
                 },
-              },
-            ],
-          },
-        ],
-        tagRuleChangeSets: [
-          {
-            source: 'tag-edit-signal',
-            reason: 'force-failure-on-missing-tag-rule',
-            ops: [
-              {
-                op: 'edit',
-                id: 'tag-rule-that-does-not-exist',
-                data: { tags: ['boom'] },
-              },
-            ],
-          },
-        ],
-        transactions: [],
-      })
-    ).toThrow();
+              ],
+            },
+          ],
+          tagRuleChangeSets: [
+            {
+              source: 'tag-edit-signal',
+              reason: 'force-failure-on-missing-tag-rule',
+              ops: [
+                {
+                  op: 'edit',
+                  id: 'tag-rule-that-does-not-exist',
+                  data: { tags: ['boom'] },
+                },
+              ],
+            },
+          ],
+          transactions: [],
+        })
+      ).toThrow();
 
-    const [correctionsAfter] = orm()
-      .select({ cnt: count() })
-      .from(transactionCorrections)
-      .where(eq(transactionCorrections.descriptionPattern, probePattern.toLowerCase()))
-      .all();
-    expect(correctionsAfter!.cnt).toBe(0);
+      expect(countCorrectionsIn(orm())).toBe(0);
+      expect(countCorrectionsIn(financeOrm)).toBe(0);
+    } finally {
+      setFinanceDb(prevFinance);
+      financeRaw.close();
+    }
   });
 });
