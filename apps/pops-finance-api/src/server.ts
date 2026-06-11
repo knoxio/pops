@@ -2,9 +2,11 @@
  * Entry point for the finance pillar HTTP server.
  *
  * Phase 3 PR 1 scaffolded the minimal `/health` surface. Phase 5 PR 1
- * (Track M2) opens both `finance.db` (for writes) and a read-only
- * handle to the shared `core.db` (for service-account auth) and wires
- * them into the Express app factory.
+ * (Track M2) opens both `finance.db` (for writes) and a handle to the
+ * shared `core.db` (for service-account auth) and wires them into the
+ * Express app factory. `openCoreDb` runs migrations on open so the
+ * core handle is read/write at the SQLite level even though finance-api
+ * only issues reads against it.
  *
  * The process opens its OWN `finance.db` connection via `openFinanceDb`
  * rather than reaching back into pops-api's singleton — that's the
