@@ -33,6 +33,7 @@ const CEREBRUM_IGNORE = new Set<string>([
   // `plexus_adapters` lives on the shared schema (see src/db/schema.ts) but
   // is NOT in createTestDb's synthetic fixture. Pillar handle not involved.
   'cerebrum.plexus.adapters.list',
+  'cerebrum.plexus.adapters.get',
   // `reflex_executions` — same shared-only situation.
   'cerebrum.reflex.history',
   // `embeddings_vec` is a sqlite-vec virtual table that requires the
@@ -43,10 +44,10 @@ const CEREBRUM_IGNORE = new Set<string>([
 
 const CEREBRUM_INPUTS: PillarSmokeInputs = {
   'cerebrum.engrams.get': { id: 'nonexistent-engram-id' },
-  'cerebrum.scopes.validate': { scopes: [] },
-  'cerebrum.scopes.reconcile': { scopes: [] },
-  'cerebrum.scopes.filter': { scopes: [] },
-  'cerebrum.templates.get': { id: 'nonexistent-template-id' },
+  'cerebrum.scopes.validate': { scope: 'probe/smoke' },
+  'cerebrum.scopes.reconcile': { suggestedScopes: ['probe/smoke'] },
+  'cerebrum.scopes.filter': { scopes: ['probe/smoke'] },
+  'cerebrum.templates.get': { name: 'nonexistent-template-name' },
   'cerebrum.retrieval.search': { query: 'smoke' },
   'cerebrum.retrieval.context': { query: 'smoke' },
   'cerebrum.retrieval.similar': { engramId: 'nonexistent-engram-id' },
@@ -64,8 +65,8 @@ const CEREBRUM_INPUTS: PillarSmokeInputs = {
   'cerebrum.glia.getStalenessScore': { engramId: 'nonexistent-engram-id' },
   'cerebrum.glia.getQualityScore': { engramId: 'nonexistent-engram-id' },
   'cerebrum.nudges.get': { id: 'nonexistent-nudge-id' },
-  'cerebrum.plexus.adapters.get': { id: 'nonexistent-adapter-id' },
-  'cerebrum.reflex.get': { id: 'nonexistent-reflex-id' },
+  'cerebrum.plexus.adapters.get': { adapterId: 'nonexistent-adapter' },
+  'cerebrum.reflex.get': { name: 'nonexistent-reflex-name' },
   'ego.conversations.get': { id: 'nonexistent-conversation-id' },
 };
 

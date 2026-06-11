@@ -38,13 +38,16 @@ import { createCaller, createTestDb } from '../../../shared/test-utils.js';
 const CORE_INPUTS: PillarSmokeInputs = {
   'core.entities.list': {},
   'core.entities.get': { id: 'nonexistent-entity-id' },
-  'core.aiProviders.get': { id: 'nonexistent-provider-id' },
+  'core.aiProviders.get': { providerId: 'nonexistent-provider' },
   'core.aiBudgets.getBudgetStatus': { scope: 'global' },
   'core.aiAlerts.rules.get': { id: 1 },
   'core.corrections.get': { id: 'nonexistent-correction-id' },
   'core.corrections.findMatch': { description: 'Smoke probe' },
   'core.corrections.previewMatches': { signal: { description: 'Smoke probe' } },
-  'core.jobs.get': { id: 'nonexistent-job-id' },
+  // jobs.get reads from BullMQ, not from a per-pillar SQLite handle. We
+  // still send a valid input so the resolver enters its body (and gets
+  // swallowed by the per-procedure timeout when Redis is unavailable).
+  'core.jobs.get': { jobId: 'nonexistent-job-id', queue: 'pops-default' },
   'core.embeddings.search': { query: 'smoke probe', limit: 1 },
   'core.tagRules.proposeTagRuleChangeSet': {
     signal: { description: 'Smoke probe', tags: ['Smoke'] },
@@ -54,9 +57,11 @@ const CORE_INPUTS: PillarSmokeInputs = {
     changeSet: { add: [], edit: [], remove: [], disable: [] },
     transactions: [],
   },
-  'core.settings.get': { key: 'nonexistent.key' },
-  'core.settings.getBulk': { keys: ['nonexistent.key'] },
-  'core.features.isEnabled': { id: 'nonexistent-feature' },
+  // `core.settings.get` validates `key` against `SETTINGS_KEY_VALUES` (z.enum)
+  // so we have to send a real key for the SQL body to run.
+  'core.settings.get': { key: 'plex_url' },
+  'core.settings.getBulk': { keys: ['plex_url'] },
+  'core.features.isEnabled': { key: 'nonexistent-feature' },
   'core.search.query': { text: 'smoke', context: { app: null, page: null } },
   'core.search.showMore': {
     domain: 'transactions',

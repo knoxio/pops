@@ -17,18 +17,28 @@
  * harness — the table it queried is missing from the pillar's package
  * migrations journal.
  *
- * Non-table errors (NotFound, validation, FK violations on empty seed,
- * missing-row schema-validation failures from empty output) are
- * tolerated: they prove the SQL parser reached + opened the table.
+ * Errors that aren't `no such table` are tolerated by category:
+ *   - **NotFound / FK violations / output-schema failures on empty seed:**
+ *     the SQL parser opened the table and reached a body that didn't
+ *     find a row. The harness has proved the table exists.
+ *   - **Zod validation errors:** the resolver short-circuited BEFORE
+ *     any SQL ran. This does NOT prove table reachability — it means
+ *     the per-pillar input map doesn't model the procedure's input
+ *     shape. Procedures whose input maps drift out of date silently
+ *     stop covering their SQL path. Keep the per-pillar input map
+ *     aligned with the router schemas; treat a procedure that only
+ *     ever surfaces Zod errors as an UNCOVERED entry, not a passing one.
  *
  * No `setTimeout` / `vi.useFakeTimers` — real timers, real I/O, real
  * in-memory DBs. Each pillar smoke runs in <5s on a warm vitest worker.
  */
 /**
  * A path-keyed minimal-input map. The value is whatever Zod input the
- * procedure expects. `undefined` means "the procedure has no input
- * schema" (or accepts `void`). Use this to satisfy `.get({ id })`-style
- * procedures so the SQL body actually runs.
+ * procedure expects. Entries absent from the map fall through to `{}`
+ * — covers procedures that accept `void` or `z.object({...optional()})`
+ * without explicit configuration. Procedures with required inputs (every
+ * `.get(id)` / `.findByX(payload)` style) MUST have an entry here or
+ * they'll fail Zod validation and the harness will skip their SQL path.
  */
 export type PillarSmokeInputs = Readonly<Record<string, unknown>>;
 
@@ -138,12 +148,11 @@ function resolveCallerPath(
  * `setFooDb({ db, raw })` already invoked against the fresh opener so
  * the cutover code path resolves to the in-memory DB.
  *
- * Procedures absent from the input map default to `undefined` — fine
- * for procedures that accept void / optional inputs, but a procedure
- * that requires a non-trivial input AND is absent from the map will
- * throw a Zod validation error (which the harness tolerates because
- * Zod validation happens before any SQL is executed — and Zod errors
- * do not match `no such table`).
+ * Procedures absent from the input map default to `{}` — fine for
+ * procedures that accept void / `z.object({ ...optional() })` shapes,
+ * but a procedure with required inputs AND no map entry will throw a
+ * Zod validation error before any SQL runs and silently skip its
+ * coverage. Keep the per-pillar map aligned with the router schemas.
  *
  * @returns An array of failures (empty on success).
  */
