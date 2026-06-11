@@ -12,6 +12,7 @@ import { closeDb, setDb } from '../../../db.js';
 import { setFinanceDb } from '../../../db/finance-handle.js';
 import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
 import { clearCache } from '../../core/ai-usage/cache.js';
+import { normalizeDescription } from '../../core/corrections/types-base.js';
 import { getProgress, setProgress } from './progress-store.js';
 import {
   applyLearnedCorrection,
@@ -1268,5 +1269,71 @@ describe('commitImport — atomicity', () => {
       .where(eq(transactionsTable.checksum, 'atomicity-probe-checksum'))
       .all();
     expect(afterTxns!.cnt).toBe(0);
+  });
+
+  it('rolls back applyChangeSet (correction add) when a later phase throws — proves shared finance.db tx', () => {
+    const financeRaw = createTestDb();
+    const prevFinance = setFinanceDb({ db: drizzle(financeRaw), raw: financeRaw });
+
+    try {
+      const probePattern = 'CROSS_DB_TX_PROBE_PATTERN';
+      const storedPattern = normalizeDescription(probePattern);
+      const financeOrm = drizzle(financeRaw);
+
+      const countCorrectionsIn = (handle: typeof financeOrm): number => {
+        const [row] = handle
+          .select({ cnt: count() })
+          .from(transactionCorrections)
+          .where(eq(transactionCorrections.descriptionPattern, storedPattern))
+          .all();
+        return row!.cnt;
+      };
+
+      expect(countCorrectionsIn(orm())).toBe(0);
+      expect(countCorrectionsIn(financeOrm)).toBe(0);
+
+      expect(() =>
+        commitImport({
+          entities: [],
+          changeSets: [
+            {
+              ops: [
+                {
+                  op: 'add',
+                  data: {
+                    descriptionPattern: probePattern,
+                    matchType: 'contains',
+                    entityId: null,
+                    tags: [],
+                    confidence: 0.9,
+                    isActive: true,
+                  },
+                },
+              ],
+            },
+          ],
+          tagRuleChangeSets: [
+            {
+              source: 'tag-edit-signal',
+              reason: 'force-failure-on-missing-tag-rule',
+              ops: [
+                {
+                  op: 'edit',
+                  id: 'tag-rule-that-does-not-exist',
+                  data: { tags: ['boom'] },
+                },
+              ],
+            },
+          ],
+          transactions: [],
+        })
+      ).toThrow();
+
+      expect(countCorrectionsIn(orm())).toBe(0);
+      expect(countCorrectionsIn(financeOrm)).toBe(0);
+    } finally {
+      setFinanceDb(prevFinance);
+      financeRaw.close();
+    }
   });
 });
