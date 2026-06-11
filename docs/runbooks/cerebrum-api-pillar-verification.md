@@ -115,6 +115,64 @@ Deleting the four migrated procedures from the pops-api `nudgesRouter` while the
 
 Until one of those lands, every migrated procedure stays defined in both pops-api and pops-cerebrum-api. The duplication is the price of the partial-cutover dispatcher and is consistent with the matching inventory.locations.\* cutover (Track M4 PR 2, #2896).
 
+## Phase 5 verification drill
+
+After Track M5 lands the writer-move sequence (PR 1 #2892, PR 2 #2898, PR 3 #2901), `pops-cerebrum-api` is the tRPC handler for the four migrated `cerebrum.nudges.{list,get,dismiss,contradictions}` procedures, but **only** for single-procedure URLs. The dispatcher rule is `$`-anchored — every URL containing a comma falls through to the legacy `nudgesRouter` mount on `pops-api`. PR 3 was deferred to docs (#2901) because the shell's `NudgeIndicator` (top-bar, every page) and `NudgesPage` co-batch `cerebrum.nudges.*` with sibling queries on every render tick.
+
+This changes the outage drill in two material ways from the Phase 4 baseline:
+
+1. Stopping `cerebrum-api` now 502s **single-procedure** URLs for the four migrated procedures. The shell rarely emits these (batching is the default), so the visible impact on the UI is small — but direct probes will see clean failures.
+2. The `cerebrum.nudges.{scan,act,configure}` procedures (un-migrated) and every **batched** URL — even ones whose members are all migrated procedures — still resolve on `pops-api` against `cerebrum.db` via `getCerebrumDrizzle()` on the shared volume. So the bulk of shell traffic (the top-bar nudge poll, the `NudgesPage` render, the contradictions panel) keeps working. The drill is partial-cutover only.
+
+### Step A — capture the new baseline
+
+```sh
+docker compose -f infra/docker-compose.yml ps
+# cerebrum-api running healthy.
+
+docker compose -f infra/docker-compose.yml exec pops-api \
+  node -e "fetch('http://cerebrum-api:3007/health').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
+# {"ok":true,"pillar":"cerebrum","version":"<git-sha>"}
+
+# Single-procedure URL through the dispatcher — should land on cerebrum-api:
+curl -sS -o /dev/null -w "%{http_code}\n" "http://localhost:80/trpc/cerebrum.nudges.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D"
+# 200 (or 401 without auth — the route resolves on cerebrum-api).
+```
+
+### Step B — stop cerebrum-api and confirm split degradation
+
+```sh
+docker compose -f infra/docker-compose.yml stop cerebrum-api
+```
+
+Expected behaviour:
+
+- **Single-procedure** `POST /trpc/cerebrum.nudges.{list,get,dismiss,contradictions}` URLs return 502 from the dispatcher upstream. Re-run the curl probe in Step A — it should now fail with a 502.
+- **Batched** `POST /trpc/cerebrum.nudges.list,food.list,...` URLs continue to succeed because the comma defeats the dispatcher regex and the batch falls through to pops-api. The top-bar `NudgeIndicator` poll, the `NudgesPage` render, and the `ContradictionsPanel` sibling queries all keep working. This is the load-bearing behaviour of the dispatcher's `$` anchor.
+- **Un-migrated procedures** (`cerebrum.nudges.{scan,act,configure}`) continue to resolve on pops-api regardless of batching, because they were never migrated and the dispatcher never claimed them.
+- The shell's `/pillars/health` aggregator (still on pops-api) reads cerebrum as `'unknown'` from `/pillars/health` — the legacy default for the pre-cutover sentinel container. `PillarGuard` treats unknown as healthy, so cerebrum routes hydrate normally rather than showing a "cerebrum unavailable" placeholder.
+- The shell's boot probe to `/pillars` still succeeds because the proxy hits core-api, not cerebrum-api.
+
+### Step C — restart and confirm recovery
+
+```sh
+docker compose -f infra/docker-compose.yml start cerebrum-api
+```
+
+Within ~30s the healthcheck reports healthy. Re-run the Step A curl probe — single-procedure URLs route to cerebrum-api again. No state recovery is needed because the container holds no in-process queue or cache.
+
+### Step D — verify the boot-time backfill is idempotent (unchanged from Phase 4)
+
+The Step 4 nudge_log backfill drill from Phase 4 still applies — re-run it from this runbook's earlier "Step 4 — verify the boot-time backfill is idempotent" section. The Phase 5 cutover did not touch `backfillCerebrumFromSharedDb()`.
+
+### Step E — lessons captured during PR 1/2/3
+
+- M5 mirrors M4's partial-cutover constraint. The shell's `NudgeIndicator` polls `cerebrum.nudges.list` on every page (top-bar component), and `NudgesPage` renders multiple migrated procedures + sibling queries on the same tick. The `$` anchor refuses every comma-containing URL by design — without it, batched calls would route to cerebrum-api and 404 the un-migrated members (`scan`, `act`, `configure`).
+- The unblock path is to either: (a) migrate the remaining `cerebrum.nudges.{scan,act,configure}` procedures into pops-cerebrum-api (after which the dispatcher can swallow the whole `cerebrum.nudges.*` namespace including batches and the legacy router can be deleted in full), (b) switch the shell to `splitLink`, or (c) teach the dispatcher to parse batched tRPC URLs.
+- Mutation batching is not a concern: `NudgesPage` disables both `dismiss` (migrated) and `act` (un-migrated) buttons via a shared `isPending`, so they can't fire in the same tick. Only the query path needs the fall-through.
+- The duplication of the four migrated procedures across pops-api and pops-cerebrum-api is the load-bearing cost of the partial cutover. Keep the two implementations in sync (they share `@pops/cerebrum-db` services, so drift is unlikely as long as no implementation logic lives in the routers themselves).
+- Record any unexpected behaviour in the **Lessons captured** section of `.claude/pillar-migration-roadmap.md` before flipping Track M to ✅.
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
@@ -124,3 +182,4 @@ Until one of those lands, every migrated procedure stays defined in both pops-ap
 - `.claude/pillar-migration-roadmap.md` — Track H status + lessons captured (gitignored, local-only)
 - #2892 — M5 PR 1 (nudges router moved into pops-cerebrum-api)
 - #2898 — M5 PR 2 (nginx dispatcher partial cutover)
+- #2901 — M5 PR 3 (docs-only deferral)
