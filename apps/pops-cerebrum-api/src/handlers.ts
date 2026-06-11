@@ -16,8 +16,10 @@ export interface CerebrumApiDeps {
   /**
    * Open handle to the core pillar's SQLite. Required for the
    * service-account authentication path (the canonical
-   * `service_accounts` table lives on the core pillar). Reads-only in
-   * practice — the write surface stays in pops-api / pops-core-api.
+   * `service_accounts` table lives on the core pillar). MUST be
+   * writable — auth touches `service_accounts.last_used_at` per
+   * request and `openCoreDb` applies migrations at boot. Mounting
+   * `core.db` read-only will break both auth and boot.
    */
   coreDb: OpenedCoreDb;
   /** Semver of the build, surfaced on the health response. */

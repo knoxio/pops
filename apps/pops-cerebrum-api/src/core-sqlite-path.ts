@@ -6,8 +6,10 @@ import { dirname, join } from 'node:path';
  *
  * cerebrum-api needs its OWN open handle to `core.db` because the
  * `service_accounts` table that backs `X-API-Key` authentication lives
- * on the core pillar. The handle is read-only in practice (auth queries
- * are SELECTs); the write surface stays in pops-api / pops-core-api.
+ * on the core pillar. The handle MUST be writable: auth touches
+ * `service_accounts.last_used_at` on every request, and `openCoreDb`
+ * applies the package-local migration journal at boot. Deployers
+ * mounting `core.db` read-only will break both auth and boot.
  *
  * Intentionally NOT imported from `apps/pops-api/src/db/core-sqlite-path.ts`
  * — the per-pillar container is supposed to stand alone of pops-api in

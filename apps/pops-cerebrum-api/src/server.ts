@@ -9,7 +9,9 @@
  * than reaching back into pops-api's singletons — that's the whole
  * point of phase 3. core.db is required because the canonical
  * `service_accounts` table that backs `X-API-Key` authentication lives
- * on the core pillar; the handle is read-only in practice.
+ * on the core pillar. The core.db handle MUST be writable — auth
+ * touches `service_accounts.last_used_at` per request and `openCoreDb`
+ * applies migrations at boot.
  */
 import { openCerebrumDb } from '@pops/cerebrum-db';
 import { openCoreDb } from '@pops/core-db';
