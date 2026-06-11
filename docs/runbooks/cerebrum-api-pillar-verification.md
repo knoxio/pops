@@ -134,8 +134,13 @@ docker compose -f infra/docker-compose.yml exec pops-api \
   node -e "fetch('http://cerebrum-api:3007/health').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 # {"ok":true,"pillar":"cerebrum","version":"<git-sha>"}
 
-# Single-procedure URL through the dispatcher — should land on cerebrum-api:
-curl -sS -o /dev/null -w "%{http_code}\n" "http://localhost:80/trpc/cerebrum.nudges.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D"
+# Single-procedure URL through the dispatcher — should land on cerebrum-api.
+# pops-shell only exposes port 80 inside the frontend network, so run
+# the probe through `docker compose exec` against a sibling on that
+# network. httpBatchLink uses GET for queries, so the probe is a GET
+# with URL-encoded input.
+docker compose -f infra/docker-compose.yml exec pops-api \
+  node -e "fetch('http://pops-shell/trpc/cerebrum.nudges.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D').then(r=>r.status).then(console.log)"
 # 200 (or 401 without auth — the route resolves on cerebrum-api).
 ```
 
@@ -147,8 +152,8 @@ docker compose -f infra/docker-compose.yml stop cerebrum-api
 
 Expected behaviour:
 
-- **Single-procedure** `POST /trpc/cerebrum.nudges.{list,get,dismiss,contradictions}` URLs return 502 from the dispatcher upstream. Re-run the curl probe in Step A — it should now fail with a 502.
-- **Batched** `POST /trpc/cerebrum.nudges.list,food.list,...` URLs continue to succeed because the comma defeats the dispatcher regex and the batch falls through to pops-api. The top-bar `NudgeIndicator` poll, the `NudgesPage` render, and the `ContradictionsPanel` sibling queries all keep working. This is the load-bearing behaviour of the dispatcher's `$` anchor.
+- **Single-procedure** `GET /trpc/cerebrum.nudges.{list,get,contradictions}` URLs (and `POST /trpc/cerebrum.nudges.dismiss` — `dismiss` is a mutation) return 502 from the dispatcher upstream. Re-run the Step A probe — it should now fail with a 502. (`httpBatchLink` emits GET for queries with URL-encoded input and POST for mutations; the dispatcher routes both methods identically.)
+- **Batched** `GET /trpc/cerebrum.nudges.list,food.list,...` URLs continue to succeed because the comma defeats the dispatcher regex and the batch falls through to pops-api. The top-bar `NudgeIndicator` poll, the `NudgesPage` render, and the `ContradictionsPanel` sibling queries all keep working. This is the load-bearing behaviour of the dispatcher's `$` anchor.
 - **Un-migrated procedures** (`cerebrum.nudges.{scan,act,configure}`) continue to resolve on pops-api regardless of batching, because they were never migrated and the dispatcher never claimed them.
 - The shell's `/pillars/health` aggregator (still on pops-api) reads cerebrum as `'unknown'` from `/pillars/health` — the legacy default for the pre-cutover sentinel container. `PillarGuard` treats unknown as healthy, so cerebrum routes hydrate normally rather than showing a "cerebrum unavailable" placeholder.
 - The shell's boot probe to `/pillars` still succeeds because the proxy hits core-api, not cerebrum-api.
