@@ -84,9 +84,13 @@ After Track M1 lands the writer-move sequence (PR 1 #2889, PR 2 #2897, PR 3 #291
 docker compose -f infra/docker-compose.yml ps
 # All pillars running healthy.
 
+# Probe the migrated tRPC surface without auth — the point is to prove
+# the route resolves on core-api, not to authenticate. Expect 401
+# because `core.serviceAccounts.list` is `userOnly` and the probe sends
+# no Cloudflare Access user headers.
 docker compose -f infra/docker-compose.yml exec pops-api \
-  node -e "fetch('http://core-api:3001/trpc/core.serviceAccounts.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D', { headers: { 'X-API-Key': process.env.POPS_ADMIN_API_KEY } }).then(r=>r.status).then(console.log)"
-# 200 (or 401 if no key is set — the point is the route resolves on core-api).
+  node -e "fetch('http://core-api:3001/trpc/core.serviceAccounts.list?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D').then(r=>r.status).then(console.log)"
+# 401 — handler is alive on core-api, auth correctly refuses.
 ```
 
 ### Step B — stop core-api and confirm per-route degradation
@@ -100,7 +104,7 @@ Expected behaviour:
 - `POST /trpc/core.serviceAccounts.list` (and `create`, `revoke`) via the shell's nginx proxy returns a 502 from the dispatcher upstream — `pops-api` no longer serves these procedures, so there is no fall-through. The single admin caller (CLI / MCP server) sees a clean transport error rather than a stale response.
 - Every other shell route keeps rendering. `PillarGuard` reads `core` as `'unknown'` from `/pillars/health` and treats unknown as healthy. The food, finance, inventory, media, lists, and cerebrum routes hydrate normally.
 - `pops-api` and `pops-worker` were started behind `depends_on: core-api (service_healthy)` — they keep running. Anything that resolves `pops:core/...` URIs through the dispatcher continues to live on `pops-api` (none today, because the URI dispatcher itself has not moved).
-- `pops-shell`'s boot probe to `/pillars` still succeeds because the registry endpoint is core-api — but with core-api down, the registry-client collapses to the synthetic `core` self-entry per `pillar-registry-client.ts`. The shell does not boot-fail.
+- `pops-shell`'s boot probe to `/pillars` fails at the HTTP layer (typically 502 — the `/pillars` proxy hits core-api which is now stopped). The shell still boots because `fetchPillarRegistry` (`apps/pops-shell/src/app/pillars/pillar-registry-client.ts`) collapses the failure to the synthetic `core` self-entry rather than propagating it.
 
 ### Step C — restart and confirm recovery
 
