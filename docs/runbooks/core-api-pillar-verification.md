@@ -7,7 +7,7 @@ Verification drill for the **core pillar** container after the ADR-026 Phase 3 m
 After core pillar Phase 3:
 
 - `apps/pops-core-api/` ships as `ghcr.io/knoxio/pops-core-api`, listens on port 3001 inside the container network.
-- Endpoints exposed: `GET /health`, `GET /pillars`.
+- Endpoints exposed: `GET /health`, `GET /pillars`, and the tRPC surface at `/trpc` (currently hosting `core.serviceAccounts.{list, create, revoke}`; more procedures move under Track M1 PR 2/3/4). The tRPC surface honours the same `X-API-Key` / Cloudflare-JWT auth contract as `pops-api`.
 - `/pillars/health` aggregator stays on pops-api until the URI dispatcher migrates (PR follow-up).
 - `pops-api`, `pops-worker`, and `pops-shell` (via nginx proxy) all read pillar registry data from core-api.
 
