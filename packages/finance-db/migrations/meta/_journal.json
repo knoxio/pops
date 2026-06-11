@@ -36,6 +36,13 @@
       "when": 1778429000000,
       "tag": "0052_budgets_active_default_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778500000001,
+      "tag": "0054_finance_pillar_baseline_extension",
+      "breakpoints": true
     }
   ]
 }
