@@ -1,12 +1,16 @@
 import { eq } from 'drizzle-orm';
 
 import { entities } from '@pops/db-types';
-import { importsService, type InsertImportTransactionInput } from '@pops/finance-db';
+import {
+  importsService,
+  tagVocabularyService,
+  type InsertImportTransactionInput,
+} from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { logger } from '../../../../lib/logger.js';
 import { applyChangeSet } from '../../../core/corrections/service.js';
-import { applyTagRuleChangeSet, upsertVocabularyTag } from '../../../core/tag-rules/service.js';
+import { applyTagRuleChangeSet } from '../../../core/tag-rules/service.js';
 import {
   collectTagsFromTagRuleChangeSet,
   resolveChangeSetTempIds,
@@ -77,10 +81,11 @@ function applyTagRuleChangeSetsPhase(
   tempIdMap: Map<string, string>
 ): number {
   let tagRulesApplied = 0;
+  const financeDb = getFinanceDrizzle();
   for (const cs of payload.tagRuleChangeSets) {
     const resolved = resolveTagRuleChangeSetTempIds(cs, tempIdMap);
     for (const tag of collectTagsFromTagRuleChangeSet(resolved)) {
-      upsertVocabularyTag(tag, 'user');
+      tagVocabularyService.upsertVocabularyTag(financeDb, tag, 'user');
     }
     applyTagRuleChangeSet(resolved);
     tagRulesApplied += resolved.ops.length;
