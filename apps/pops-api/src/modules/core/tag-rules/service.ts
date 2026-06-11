@@ -1,12 +1,28 @@
-import { desc, eq } from 'drizzle-orm';
+/**
+ * Thin shims that forward `transaction_tag_rules` CRUD to
+ * `@pops/finance-db`'s `transactionTagRulesService`.
+ *
+ * Track N4 phase 1 PR 3 routing flip. The underlying SQLite file moves
+ * to the finance pillar's `finance.db` via `getFinanceDrizzle()` — the
+ * package's services already accept a `FinanceDb` handle (including a
+ * transaction) as their first arg, so the legacy in-tree transaction
+ * wrapping in `applyTagRuleChangeSet` keeps working unchanged.
+ *
+ * Domain errors thrown by the package (`TransactionTagRuleNotFoundError`)
+ * are translated to the in-tree `NotFoundError` so the existing router
+ * + consumers (the imports persistence pipeline at
+ * `apps/pops-api/src/modules/finance/imports/lib/transaction-persistence.ts`)
+ * keep seeing the same error type and the tRPC envelope keeps surfacing
+ * `404 NOT_FOUND`. PR 4 of the phase 1 sequence deletes this shim once
+ * nothing in-tree still imports from here.
+ */
+import { transactionTagRulesService, TransactionTagRuleNotFoundError } from '@pops/finance-db';
 
-import { transactionTagRules } from '@pops/db-types';
-
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { previewTagRuleChangeSet, type PreviewInputTransaction } from './preview.js';
 
-import type { TransactionTagRuleRow } from '@pops/db-types';
+import type { FinanceDb, TransactionTagRuleRow } from '@pops/finance-db';
 
 import type { TagRuleChangeSet, TagRuleChangeSetOp, TagRuleChangeSetProposal } from './types.js';
 
@@ -16,73 +32,64 @@ export { listVocabulary, upsertVocabularyTag } from './vocabulary.js';
 export { previewTagRuleChangeSet };
 export type { PreviewInputTransaction };
 
-export function listTagRules(): TagRuleRow[] {
-  return getDrizzle()
-    .select()
-    .from(transactionTagRules)
-    .orderBy(desc(transactionTagRules.confidence), desc(transactionTagRules.timesApplied))
-    .all();
+function rethrowAsNotFound(err: unknown, id: string): never {
+  if (err instanceof TransactionTagRuleNotFoundError) {
+    throw new NotFoundError('transaction_tag_rules', id);
+  }
+  throw err;
 }
 
-type TagRulesTx = ReturnType<typeof getDrizzle>;
+export function listTagRules(): TagRuleRow[] {
+  return transactionTagRulesService.listTransactionTagRules(getFinanceDrizzle());
+}
 
-function addTagRule(
-  tx: TagRulesTx,
-  data: Extract<TagRuleChangeSetOp, { op: 'add' }>['data']
-): void {
-  tx.insert(transactionTagRules)
-    .values({
-      descriptionPattern: data.descriptionPattern,
-      matchType: data.matchType,
-      entityId: data.entityId ?? null,
-      tags: JSON.stringify(data.tags ?? []),
-      confidence: data.confidence ?? 0.95,
-      isActive: data.isActive ?? true,
-      priority: data.priority ?? 0,
-      timesApplied: 0,
-    })
-    .run();
+function addTagRule(tx: FinanceDb, data: Extract<TagRuleChangeSetOp, { op: 'add' }>['data']): void {
+  transactionTagRulesService.createTransactionTagRule(tx, {
+    descriptionPattern: data.descriptionPattern,
+    matchType: data.matchType,
+    entityId: data.entityId ?? null,
+    tags: data.tags ?? [],
+    confidence: data.confidence ?? 0.95,
+    isActive: data.isActive ?? true,
+    priority: data.priority ?? 0,
+  });
 }
 
 function editTagRule(
-  tx: TagRulesTx,
+  tx: FinanceDb,
   id: string,
   data: Extract<TagRuleChangeSetOp, { op: 'edit' }>['data']
 ): void {
-  const existing = tx
-    .select({ id: transactionTagRules.id })
-    .from(transactionTagRules)
-    .where(eq(transactionTagRules.id, id))
-    .get();
-  if (!existing) throw new NotFoundError('transaction_tag_rules', id);
-
-  tx.update(transactionTagRules)
-    .set({
-      entityId: data.entityId !== undefined ? data.entityId : undefined,
-      tags: data.tags ? JSON.stringify(data.tags) : undefined,
-      confidence: data.confidence ?? undefined,
-      isActive: data.isActive ?? undefined,
-      priority: data.priority ?? undefined,
-    })
-    .where(eq(transactionTagRules.id, id))
-    .run();
+  try {
+    transactionTagRulesService.updateTransactionTagRule(tx, id, {
+      entityId: data.entityId,
+      tags: data.tags,
+      confidence: data.confidence,
+      isActive: data.isActive,
+      priority: data.priority,
+    });
+  } catch (err) {
+    rethrowAsNotFound(err, id);
+  }
 }
 
-function disableTagRule(tx: TagRulesTx, id: string): void {
-  const res = tx
-    .update(transactionTagRules)
-    .set({ isActive: false })
-    .where(eq(transactionTagRules.id, id))
-    .run();
-  if (res.changes === 0) throw new NotFoundError('transaction_tag_rules', id);
+function disableTagRule(tx: FinanceDb, id: string): void {
+  try {
+    transactionTagRulesService.disableTransactionTagRule(tx, id);
+  } catch (err) {
+    rethrowAsNotFound(err, id);
+  }
 }
 
-function removeTagRule(tx: TagRulesTx, id: string): void {
-  const res = tx.delete(transactionTagRules).where(eq(transactionTagRules.id, id)).run();
-  if (res.changes === 0) throw new NotFoundError('transaction_tag_rules', id);
+function removeTagRule(tx: FinanceDb, id: string): void {
+  try {
+    transactionTagRulesService.deleteTransactionTagRule(tx, id);
+  } catch (err) {
+    rethrowAsNotFound(err, id);
+  }
 }
 
-function applyOp(tx: TagRulesTx, op: TagRuleChangeSetOp): void {
+function applyOp(tx: FinanceDb, op: TagRuleChangeSetOp): void {
   switch (op.op) {
     case 'add':
       addTagRule(tx, op.data);
@@ -99,14 +106,10 @@ function applyOp(tx: TagRulesTx, op: TagRuleChangeSetOp): void {
 }
 
 export function applyTagRuleChangeSet(changeSet: TagRuleChangeSet): TagRuleRow[] {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   return db.transaction((tx) => {
     for (const op of changeSet.ops) applyOp(tx, op);
-    return tx
-      .select()
-      .from(transactionTagRules)
-      .orderBy(desc(transactionTagRules.confidence), desc(transactionTagRules.timesApplied))
-      .all();
+    return transactionTagRulesService.listTransactionTagRules(tx);
   });
 }
 

@@ -1,8 +1,7 @@
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { logger } from '../../../lib/logger.js';
-import { NotFoundError } from '../../../shared/errors.js';
+import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import { TagRuleChangeSetSchema } from './types.js';
@@ -72,27 +71,21 @@ export const tagRulesRouter = router({
         acceptedNewTags: z.array(z.string()).optional().default([]),
       })
     )
-    .mutation(({ input }) => {
-      logger.info(
-        { opCount: input.changeSet.ops.length, acceptedNewTags: input.acceptedNewTags.length },
-        '[TagRules] Apply ChangeSet'
-      );
+    .mutation(({ input }) =>
+      mapDomainErrors(() => {
+        logger.info(
+          { opCount: input.changeSet.ops.length, acceptedNewTags: input.acceptedNewTags.length },
+          '[TagRules] Apply ChangeSet'
+        );
 
-      // Persist newly-accepted tags into vocabulary before applying rules.
-      for (const t of input.acceptedNewTags) {
-        if (t.trim()) service.upsertVocabularyTag(t.trim(), 'user');
-      }
+        for (const t of input.acceptedNewTags) {
+          if (t.trim()) service.upsertVocabularyTag(t.trim(), 'user');
+        }
 
-      try {
         const rules = service.applyTagRuleChangeSet(input.changeSet);
         return { rules };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
-      }
-    }),
+      })
+    ),
 
   rejectTagRuleChangeSet: protectedProcedure
     .input(
