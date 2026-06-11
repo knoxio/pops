@@ -74,10 +74,48 @@ flagging:
 - The shell's "inventory unavailable" placeholder paints over working non-inventory routes (PillarGuard scoping is too broad).
 - `inventory.db` writes succeed against a stopped inventory-api container (proves the shared-volume caveat noted in Step 2 — phase 4 follow-up: convert inventory-api to the sole writer once tRPC routers move into it).
 
+## Track M4 dispatcher cutover — PR 3 deferred
+
+Track M4 ships in three PRs:
+
+| PR    | Status       | Scope                                                                                                                                                             |
+| ----- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #2891 | Merged       | Stand up `locationsRouter` inside `pops-inventory-api`.                                                                                                           |
+| #2896 | Merged       | nginx dispatches single-procedure `/trpc/inventory.locations.*` URLs to `inventory-api`. Legacy router on pops-api stays mounted as the batched-URL fall-through. |
+| PR 3  | **Deferred** | Delete the legacy `locations` router from `pops-api`.                                                                                                             |
+
+### Why PR 3 is deferred
+
+The shared `packages/api-client` configures `httpBatchLink`:
+
+```ts
+httpBatchLink({ url: '/trpc', maxURLLength: 2083, ... })
+```
+
+Every `useQuery`/`useMutation` that fires in the same React tick is packed into a single `/trpc/a,b,…` request. The shell's inventory pages call `locations.*` from the same render cycle as `items.*`, `reports.*`, etc. — e.g. `packages/app-inventory/src/pages/items-page/useItemsPageModel.ts` issues `trpc.inventory.items.distinctTypes.useQuery()` and `trpc.inventory.locations.tree.useQuery()` from the same hook.
+
+The Track M4 PR 2 nginx rule anchors with `[^,]+$` so only **single-procedure** URLs reach `inventory-api`. Every batched URL — including ones whose members are all `inventory.locations.*` calls that happen to share a tick — falls through to `pops-api`. Deleting the `locations` router from `pops-api` would therefore 404 those batched calls.
+
+### What would unblock PR 3
+
+Pick one of:
+
+1. **Migrate the rest of the `inventoryRouter` subrouters** (`items`, `reports`, `connections`, `documents`, `documentFiles`, `paperless`, `fixtures`, `photos`) into `pops-inventory-api` and route the whole `/trpc/inventory.*` namespace there, batched or not. PR 3 then becomes the final cleanup once the legacy mount has no remaining consumers.
+2. **Split inventory off its own `httpBatchLink` instance** with a dedicated URL prefix (e.g. `/trpc-inventory`) so the dispatcher can match the prefix unconditionally and pops-api never sees an inventory call. This is invasive — `createTRPCReact<AppRouter>()` is a single client today.
+3. **Force `locations.*` calls into their own React tick** (e.g. wrap in a separate `useQuery` with a microtask delay) so they never batch with siblings. Brittle; rejected.
+
+Option 1 is the planned path. Until then, `pops-api` keeps `locationsRouter` mounted and serves it from `inventory.db` (Phase 2 cutover) — the data layer is already unified, only the HTTP boundary remains split. Both code paths read/write the same SQLite file, so there is no drift risk.
+
+### Lesson captured
+
+A single `httpBatchLink` plus a regex-dispatcher pattern can only retire a router slice when **every co-existing slice in the same `AppRouter` has also moved**. Plan migrations in whole-namespace units, not per-subrouter, or accept the legacy mount living on indefinitely.
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
 - `apps/pops-inventory-api/src/server.ts` — boot sequence
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
+- `apps/pops-shell/nginx.conf` — Track M4 PR 2 dispatcher rule and trade-off comment
+- `packages/api-client/src/index.ts` — shared `httpBatchLink` setup
 - `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
 - `.claude/pillar-migration-roadmap.md` — Track G status + lessons captured (gitignored, local-only)
