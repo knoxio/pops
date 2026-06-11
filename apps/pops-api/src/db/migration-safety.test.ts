@@ -405,14 +405,24 @@ describe('migration safety', () => {
     `;
     const byTitle = 'SELECT title FROM movies WHERE title = ?';
 
+    /**
+     * The migration only touches the `movies` table — building the full schema
+     * via `initializeSchema` was costing ~95ms per case (and growing with every
+     * new migration added to the project). Inline the minimal table instead.
+     */
+    function setupMoviesTable(db: BetterSqlite3.Database): void {
+      db.exec(
+        'CREATE TABLE movies (tmdb_id INTEGER PRIMARY KEY, title TEXT NOT NULL, genres TEXT)'
+      );
+    }
+
     function insertMovie(db: BetterSqlite3.Database, title: string): void {
       db.prepare("INSERT INTO movies (tmdb_id, title, genres) VALUES (?, ?, '[]')").run(1, title);
     }
 
     it('strips surrounding quotes from a wrapped title', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, '"Wuthering Heights"');
       db.exec(migrationSql);
       expect(db.prepare(byTitle).get('Wuthering Heights')).toBeDefined();
@@ -421,8 +431,7 @@ describe('migration safety', () => {
 
     it('does not touch a title with only a leading quote', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, '"Something');
       db.exec(migrationSql);
       expect(db.prepare(byTitle).get('"Something')).toBeDefined();
@@ -431,8 +440,7 @@ describe('migration safety', () => {
 
     it('does not touch a title with only a trailing quote', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, 'Something"');
       db.exec(migrationSql);
       expect(db.prepare(byTitle).get('Something"')).toBeDefined();
@@ -441,8 +449,7 @@ describe('migration safety', () => {
 
     it('does not touch a title with internal quotes', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, 'Film "Noir" Style');
       db.exec(migrationSql);
       expect(db.prepare(byTitle).get('Film "Noir" Style')).toBeDefined();
@@ -451,8 +458,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty title from bare ""', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, '""');
       db.exec(migrationSql);
       expect(db.prepare(byTitle).get('""')).toBeDefined();
@@ -461,8 +467,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty title from all-quote string """', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, '"""');
       db.exec(migrationSql);
       expect(db.prepare(byTitle).get('"""')).toBeDefined();
@@ -471,8 +476,7 @@ describe('migration safety', () => {
 
     it('does not affect a clean title', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, 'The Dark Knight');
       db.exec(migrationSql);
       expect(db.prepare(byTitle).get('The Dark Knight')).toBeDefined();
@@ -481,8 +485,7 @@ describe('migration safety', () => {
 
     it('is idempotent — running twice gives the same result', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupMoviesTable(db);
       insertMovie(db, '"Wuthering Heights"');
       db.exec(migrationSql);
       db.exec(migrationSql);
@@ -508,6 +511,18 @@ describe('migration safety', () => {
     `;
     const byName = 'SELECT name, original_name FROM tv_shows WHERE name = ?';
 
+    /**
+     * The migration only touches the `tv_shows` table — building the full
+     * schema via `initializeSchema` was costing ~95ms per case (and growing
+     * with every new migration added to the project). Inline the minimal
+     * table instead.
+     */
+    function setupTvShowsTable(db: BetterSqlite3.Database): void {
+      db.exec(
+        'CREATE TABLE tv_shows (tvdb_id INTEGER PRIMARY KEY, name TEXT NOT NULL, original_name TEXT)'
+      );
+    }
+
     function insertShow(
       db: BetterSqlite3.Database,
       name: string,
@@ -522,8 +537,7 @@ describe('migration safety', () => {
 
     it('strips surrounding quotes from a wrapped name', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, '"The Wire"');
       db.exec(migrationSql);
       expect(db.prepare(byName).get('The Wire')).toBeDefined();
@@ -532,8 +546,7 @@ describe('migration safety', () => {
 
     it('strips surrounding quotes from original_name independently of name', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, 'The Wire', '"The Wire"');
       db.exec(migrationSql);
       const row = db.prepare(byName).get('The Wire') as {
@@ -546,8 +559,7 @@ describe('migration safety', () => {
 
     it('does not touch a name with only a leading quote', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, '"Something');
       db.exec(migrationSql);
       expect(db.prepare(byName).get('"Something')).toBeDefined();
@@ -556,8 +568,7 @@ describe('migration safety', () => {
 
     it('does not touch a name with only a trailing quote', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, 'Something"');
       db.exec(migrationSql);
       expect(db.prepare(byName).get('Something"')).toBeDefined();
@@ -566,8 +577,7 @@ describe('migration safety', () => {
 
     it('does not touch a name with internal quotes', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, 'Show "Title" Format');
       db.exec(migrationSql);
       expect(db.prepare(byName).get('Show "Title" Format')).toBeDefined();
@@ -576,8 +586,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty name from bare ""', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, '""');
       db.exec(migrationSql);
       expect(db.prepare(byName).get('""')).toBeDefined();
@@ -586,8 +595,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty name from all-quote string """', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, '"""');
       db.exec(migrationSql);
       expect(db.prepare(byName).get('"""')).toBeDefined();
@@ -596,8 +604,7 @@ describe('migration safety', () => {
 
     it('does not affect a clean name', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, 'Breaking Bad');
       db.exec(migrationSql);
       expect(db.prepare(byName).get('Breaking Bad')).toBeDefined();
@@ -606,8 +613,7 @@ describe('migration safety', () => {
 
     it('leaves NULL original_name untouched', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, 'The Sopranos', null);
       db.exec(migrationSql);
       const row = db.prepare(byName).get('The Sopranos') as {
@@ -620,8 +626,7 @@ describe('migration safety', () => {
 
     it('is idempotent — running twice gives the same result', () => {
       const db = new BetterSqlite3(dbPath);
-      db.pragma('foreign_keys = ON');
-      initializeSchema(db);
+      setupTvShowsTable(db);
       insertShow(db, '"The Wire"', '"The Wire"');
       db.exec(migrationSql);
       db.exec(migrationSql);
