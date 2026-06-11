@@ -234,9 +234,9 @@ leaves a barrel re-exporter (`service.ts`) re-exporting non-flipped helpers
 plus a co-located Zod schema (`types.ts`) that the entire UI package depends on
 through `@pops/api/modules/...`. The deletion PR cannot ship until every
 consumer of the barrel and every cross-package types import has been moved.
-Track J3 PR 4 (#2870) and Track K3 PR 4 (#2881) cleared their barrels in the
-same PR as the consumer cutover — the canonical pattern — and so were free to
-delete in PR 4. Track N4's scaffold (#2856) and cutover (#2908) deliberately
+Track J Phase 1 PR 4 (#2870) and Track K Phase 1 PR 4 (#2881) cleared their
+barrels in the same PR as the consumer cutover — the canonical pattern — and
+so were free to delete in PR 4. Track N4's scaffold (#2856) and cutover (#2908) deliberately
 left the imports pipeline + the cross-package types path behind for N6,
 fragmenting the deletion. Future tracks of this shape should plan PR 4 as a
 follow-on to the N6-equivalent cutover, not as a phase-1 deliverable, and
