@@ -129,8 +129,13 @@ docker compose -f infra/docker-compose.yml exec pops-api \
   node -e "fetch('http://inventory-api:3002/health').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
 # {"ok":true,"pillar":"inventory","version":"<git-sha>"}
 
-# Single-procedure URL through the dispatcher — should land on inventory-api:
-curl -sS -o /dev/null -w "%{http_code}\n" "http://localhost:80/trpc/inventory.locations.tree?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D"
+# Single-procedure URL through the dispatcher — should land on inventory-api.
+# pops-shell only exposes port 80 inside the frontend network, so run
+# the probe through `docker compose exec` against a sibling on that
+# network. httpBatchLink uses GET for queries, so the probe is a GET
+# with URL-encoded input.
+docker compose -f infra/docker-compose.yml exec pops-api \
+  node -e "fetch('http://pops-shell/trpc/inventory.locations.tree?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D').then(r=>r.status).then(console.log)"
 # 200 (or 401 without auth — the route resolves on inventory-api).
 ```
 
@@ -142,8 +147,8 @@ docker compose -f infra/docker-compose.yml stop inventory-api
 
 Expected behaviour:
 
-- **Single-procedure** `POST /trpc/inventory.locations.*` URLs return 502 from the dispatcher upstream. Re-run the curl probe in Step A — it should now fail with a 502.
-- **Batched** `POST /trpc/inventory.locations.tree,inventory.items.distinctTypes,...` URLs continue to succeed because they fall through to the legacy `locationsRouter` on pops-api, which keeps reading `inventory.db` via `getInventoryDrizzle()` against the shared volume. This is the load-bearing behaviour of the dispatcher's `[^,]+$` anchor — it is what keeps the shell hydrated during an inventory-api outage.
+- **Single-procedure** `GET /trpc/inventory.locations.*` URLs return 502 from the dispatcher upstream. Re-run the Step A probe — it should now fail with a 502. (`httpBatchLink` uses GET for queries; mutations are POST and follow the same routing.)
+- **Batched** `GET /trpc/inventory.locations.tree,inventory.items.distinctTypes,...` URLs continue to succeed because they fall through to the legacy `locationsRouter` on pops-api, which keeps reading `inventory.db` via `getInventoryDrizzle()` against the shared volume. This is the load-bearing behaviour of the dispatcher's `[^,]+$` anchor — it is what keeps the shell hydrated during an inventory-api outage.
 - The shell's `/pillars/health` aggregator (still on pops-api) flips inventory's status to `'unavailable'` after the per-probe timeout fires. `PillarGuard` reads `'unavailable'` and shows the unavailable placeholder on inventory routes; other pillars (food, finance, media, lists, cerebrum, core) keep working — degrade per-route, not whole-shell.
 - The shell's boot probe to `/pillars` still succeeds because the proxy hits core-api, not inventory-api.
 
