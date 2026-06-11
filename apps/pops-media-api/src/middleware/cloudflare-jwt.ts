@@ -81,6 +81,9 @@ export async function verifyCloudflareJWT(token: string): Promise<CloudflareJWTP
 
   const expectedAud = process.env['CLOUDFLARE_ACCESS_AUD'];
   if (expectedAud) {
+    if (payload.aud === undefined) {
+      throw new Error('Invalid JWT: Missing aud claim while CLOUDFLARE_ACCESS_AUD is configured');
+    }
     let audList: readonly string[] = [];
     if (Array.isArray(payload.aud)) {
       audList = payload.aud;
