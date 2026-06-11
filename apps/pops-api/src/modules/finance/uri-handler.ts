@@ -1,4 +1,9 @@
-import { BudgetNotFoundError, budgetsService } from '@pops/finance-db';
+import {
+  BudgetNotFoundError,
+  budgetsService,
+  TransactionNotFoundError,
+  transactionsService,
+} from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../db/finance-handle.js';
 import { NotFoundError } from '../../shared/errors.js';
@@ -16,7 +21,6 @@ import { NotFoundError } from '../../shared/errors.js';
  * its result into a `UriResolverResult` for the caller.
  */
 import { getEntity } from '../core/entities/service.js';
-import { getTransaction } from './transactions/service.js';
 
 import type { UriHandlerDescriptor, UriResolution } from '@pops/types';
 
@@ -27,7 +31,11 @@ async function tryGet<TData>(get: () => TData | Promise<TData>): Promise<UriReso
   try {
     return { kind: 'object', data: await get() };
   } catch (error) {
-    if (error instanceof NotFoundError || error instanceof BudgetNotFoundError) {
+    if (
+      error instanceof NotFoundError ||
+      error instanceof BudgetNotFoundError ||
+      error instanceof TransactionNotFoundError
+    ) {
       return { kind: 'not-found' };
     }
     throw error;
@@ -39,7 +47,7 @@ export const financeUriHandler: UriHandlerDescriptor = {
   resolve: async (type, id) => {
     switch (type) {
       case 'transaction':
-        return tryGet(() => getTransaction(id));
+        return tryGet(() => transactionsService.getTransaction(getFinanceDrizzle(), id));
       case 'entity':
         return tryGet(() => getEntity(id));
       case 'budget':
