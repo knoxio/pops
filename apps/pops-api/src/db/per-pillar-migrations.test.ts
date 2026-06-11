@@ -206,9 +206,11 @@ describe('runPerPillarMigrations', () => {
     // (core pillar Phase 1 PR 2); `media` owns `packages/media-db/migrations/`
     // with 0021_spooky_lockheed (media pillar Phase 1 PR 2); `inventory`
     // owns `packages/inventory-db/migrations/` with 0005_fancy_crystal
-    // (inventory pillar Phase 1 PR 2) AND 0006_inventory_pillar_baseline
+    // (inventory pillar Phase 1 PR 2), 0006_inventory_pillar_baseline
     // (inventory pillar Phase 2 PR 3 — comprehensive home_inventory +
-    // fixtures + item_* baseline ahead of the cutover); `cerebrum` owns
+    // fixtures + item_* baseline ahead of the cutover), AND
+    // 0007_locations_parent_sort_index (#2917 — backfill missing index
+    // carried over from shared journal 0009_red_quasimodo); `cerebrum` owns
     // `packages/cerebrum-db/migrations/` with 0039_dry_fabian_cortez and
     // 0044_nudge_log (cerebrum pillar Phase 1 PR 2 — nudge_log slice).
     // Pillars without their own journal yet still skip cleanly.
@@ -224,6 +226,7 @@ describe('runPerPillarMigrations', () => {
       expect([...result.applied].toSorted()).toEqual([
         '0005_fancy_crystal',
         '0006_inventory_pillar_baseline',
+        '0007_locations_parent_sort_index',
         '0021_spooky_lockheed',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
