@@ -101,7 +101,7 @@ The Track M4 PR 2 nginx rule anchors with `[^,]+$` so only **single-procedure** 
 Pick one of:
 
 1. **Migrate the rest of the `inventoryRouter` subrouters** (`items`, `reports`, `connections`, `documents`, `documentFiles`, `paperless`, `fixtures`, `photos`) into `pops-inventory-api` and route the whole `/trpc/inventory.*` namespace there, batched or not. PR 3 then becomes the final cleanup once the legacy mount has no remaining consumers.
-2. **Split inventory off its own `httpBatchLink` instance** with a dedicated URL prefix (e.g. `/trpc-inventory`) so the dispatcher can match the prefix unconditionally and pops-api never sees an inventory call. This is invasive — `createTRPCReact<AppRouter>()` is a single client today.
+2. **Route inventory operations through a separate link inside the existing `createTRPCReact<AppRouter>()` client** — e.g. use `splitLink` to send `inventory.*` paths down a dedicated `httpBatchLink` with its own URL prefix (`/trpc-inventory`) while everything else keeps using the current `httpBatchLink('/trpc')`. The shared client + router types stay; only the link wiring is added. Less invasive than a parallel client but still needs link-aware batching and a separate dispatcher prefix.
 3. **Force `locations.*` calls into their own React tick** (e.g. wrap in a separate `useQuery` with a microtask delay) so they never batch with siblings. Brittle; rejected.
 
 Option 1 is the planned path. Until then, `pops-api` keeps `locationsRouter` mounted and serves it from `inventory.db` (Phase 2 cutover) — the data layer is already unified, only the HTTP boundary remains split. Both code paths read/write the same SQLite file, so there is no drift risk.
