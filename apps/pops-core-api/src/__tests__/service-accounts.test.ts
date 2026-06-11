@@ -189,7 +189,7 @@ describe('/trpc HTTP surface', () => {
     expect(res.body.result.data).toEqual([]);
   });
 
-  it('rejects an unknown but well-shaped X-API-Key by user-only-gating the list endpoint', async () => {
+  it('does not crash when handed a well-shaped X-API-Key that matches no DB row', async () => {
     const app = makeApp();
     // A header that passes parseApiKey but does not match any DB row leaves
     // ctx.serviceAccount === null. In production that would land in the
@@ -206,7 +206,7 @@ describe('/trpc HTTP surface', () => {
     expect(res.body.result.data).toEqual([]);
   });
 
-  it('rejects a real, in-scope X-API-Key from the userOnly admin endpoint with FORBIDDEN-equivalent UNAUTHORIZED', async () => {
+  it('rejects service-account principals from userOnly admin endpoints with UNAUTHORIZED', async () => {
     const app = makeApp();
     const admin = userCaller();
     const created = await admin.core.serviceAccounts.create({
