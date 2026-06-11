@@ -94,6 +94,59 @@ If future code adds a shell-side call to `trpc.media.shelfImpressions.*`, the un
 
 Track M3's PR 3 therefore ships as documentation only: this section plus the corrected `nginx.conf` comment that no longer claims the deletion is pending.
 
+## Phase 5 verification drill
+
+After Track M3 lands the writer-move sequence (PR 1 #2890, PR 2 #2895, PR 3 #2904), `pops-media-api` is the sole tRPC handler for `media.shelfImpressions.{recordImpressions,getRecentImpressions,getShelfFreshness,cleanup}`. PR 3 was a docs-only no-op (the procedures never existed on pops-api in the first place — see the "Track M3 PR 3 — legacy router deletion is a no-op" section above), so the dispatcher rule `^/trpc/media\.shelfImpressions\.` is unanchored and routes every URL — single-procedure or batched — to pops-media-api.
+
+This changes the outage drill in two material ways from the Phase 4 baseline:
+
+1. Stopping `media-api` now genuinely 502s the four `media.shelfImpressions.*` tRPC URLs at the dispatcher boundary — there is no fall-through.
+2. The **in-process** `shelfImpressionsService` consumer still lives inside `pops-api` at `apps/pops-api/src/modules/media/discovery/router-shelf.ts` (the `assembleSession` ingest path) and `apps/pops-api/src/modules/media/discovery/shelf/session.service.ts`. Both call `shelfImpressionsService` from `@pops/media-db` against the `media.db` handle directly — no HTTP hop. So `media.discovery.assembleSession` keeps recording impressions even with media-api stopped, because the data layer is shared via the SQLite file on the volume mount. The Phase 5 outage drill is therefore **HTTP-layer only** for media; full data-layer isolation requires the discovery slice itself to migrate (out of scope for Track M).
+
+### Step A — capture the new baseline
+
+```sh
+docker compose -f infra/docker-compose.yml ps
+# media-api running healthy.
+
+docker compose -f infra/docker-compose.yml exec pops-api \
+  node -e "fetch('http://media-api:3003/health').then(r=>r.json()).then(j=>console.log(JSON.stringify(j)))"
+# {"ok":true,"pillar":"media","version":"<git-sha>"}
+
+# Direct probe of the migrated tRPC surface (CF JWT or dev fallback required):
+docker compose -f infra/docker-compose.yml exec pops-api \
+  node -e "fetch('http://media-api:3003/trpc/media.shelfImpressions.getShelfFreshness?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22shelfId%22%3A%22demo%22%7D%7D%7D').then(r=>r.status).then(console.log)"
+# 200 (or 401 without auth — the route resolves on media-api).
+```
+
+### Step B — stop media-api and confirm per-route degradation
+
+```sh
+docker compose -f infra/docker-compose.yml stop media-api
+```
+
+Expected behaviour:
+
+- `POST /trpc/media.shelfImpressions.*` via the shell's nginx proxy returns 502 from the dispatcher upstream. No shelf-impressions-specific UI surface breaks because the shell has zero direct `media.shelfImpressions.*` callers today (see the M3 PR 3 audit). The route is genuinely down at the HTTP layer; the visible degradation that follows is the next bullet — `PillarGuard` marking media `'unavailable'` on the `/pillars/health` aggregator, which paints the unavailable placeholder on every media route regardless of which procedure they call.
+- `media.discovery.assembleSession` (in-process shelf-impressions writer) keeps working because the consumer reads `media.db` through the shared volume, not via HTTP to media-api. This is the shared-volume caveat from the Phase 4 drill, and it persists into Phase 5 until the discovery slice itself migrates.
+- The shell's `/pillars/health` aggregator (still on pops-api) flips media's status to `'unavailable'` after the per-probe timeout fires. `PillarGuard` reads `'unavailable'` and shows the unavailable placeholder on media routes; other pillars (food, finance, inventory, lists, cerebrum, core) keep working — degrade per-route, not whole-shell.
+- The shell's boot probe to `/pillars` still succeeds because the proxy hits core-api, not media-api.
+
+### Step C — restart and confirm recovery
+
+```sh
+docker compose -f infra/docker-compose.yml start media-api
+```
+
+Within ~30s the healthcheck reports healthy. `PillarGuard` re-promotes media from `'unavailable'` back to `'healthy'` on the next status-context refresh; the media UI hydrates without a hard navigation.
+
+### Step D — lessons captured during PR 1/2/3
+
+- The M3 sequence is the only M-track where PR 3 turned out to be a no-op. The shelf-impressions tRPC surface was stood up on `pops-media-api` directly in PR 1 (#2890); pops-api never had a `shelfImpressions` slice on its `mediaRouter` to delete. The asymmetry with M1/M4/M5 (which all migrated pre-existing tRPC mounts) is documented in the "Track M3 PR 3 — legacy router deletion is a no-op" section above.
+- The unanchored prefix dispatcher (`^/trpc/media\.shelfImpressions\.`) is safe today because no shell-side caller batches `media.shelfImpressions.*` with sibling `media.*` procedures. If a future shell caller adds such a batch, the rule needs to either narrow to `[^,]+$` (matching M4/M5) or the rest of `mediaRouter` needs to move so the prefix can broaden to `^/trpc/media\.`. Record either trajectory in the dispatcher comment in `apps/pops-shell/nginx.conf`.
+- The shared-volume caveat is the load-bearing limitation of the M3 drill. Until `media.discovery.assembleSession` moves out of pops-api, stopping media-api is an HTTP-layer test only — the data layer keeps absorbing writes.
+- Record any unexpected behaviour in the **Lessons captured** section of `.claude/pillar-migration-roadmap.md` before flipping Track M to ✅.
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
@@ -103,3 +156,6 @@ Track M3's PR 3 therefore ships as documentation only: this section plus the cor
 - `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
 - `docs/runbooks/cerebrum-api-pillar-verification.md` — sibling runbook for the cerebrum pillar
 - `.claude/pillar-migration-roadmap.md` — Track F status + lessons captured (gitignored, local-only)
+- #2890 — M3 PR 1 (shelf-impressions router stood up on pops-media-api)
+- #2895 — M3 PR 2 (nginx dispatcher cutover, unanchored prefix)
+- #2904 — M3 PR 3 (docs-only no-op)
