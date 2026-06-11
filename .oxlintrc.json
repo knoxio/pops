@@ -322,7 +322,8 @@
         "apps/pops-api/scripts/**/*.ts",
         "apps/pops-shell/e2e/**/*.ts",
         "packages/app-*/scripts/**/*.ts",
-        "services/*/src/scripts/**/*.ts"
+        "services/*/src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}"
       ],
       "rules": {
         "max-lines": "off",
