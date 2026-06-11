@@ -1,9 +1,9 @@
 /**
  * Import service — entity matching, deduplication, and SQLite writes.
  */
-import { entities } from '@pops/db-types';
+import { importsService } from '@pops/finance-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { formatImportError } from '../../../lib/errors.js';
 import { logger } from '../../../lib/logger.js';
 import { executeImportCore } from './execute-service.js';
@@ -50,14 +50,12 @@ export function executeImport(transactions: ConfirmedTransaction[]): ExecuteImpo
 
 /**
  * Create a new entity in SQLite.
+ *
+ * Thin shim forwarding to `@pops/finance-db`'s `importsService` —
+ * Track N6 phase 1 PR 3 cutover.
  */
 export function createEntity(name: string): CreateEntityOutput {
-  const db = getDrizzle();
-  const entityId = crypto.randomUUID();
-  db.insert(entities)
-    .values({ id: entityId, name, lastEditedTime: new Date().toISOString() })
-    .run();
-  return { entityId, entityName: name };
+  return importsService.createImportEntity(getFinanceDrizzle(), name);
 }
 
 function logBackgroundImportComplete(

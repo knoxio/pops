@@ -1,32 +1,18 @@
-import { inArray } from 'drizzle-orm';
-
-import { transactions } from '@pops/db-types';
-
-import { getDrizzle } from '../../../../db.js';
-
 /**
- * Query SQLite for existing checksums.
- * Returns set of checksums that already exist in the transactions table.
+ * Thin shim forwarding `findExistingChecksums` to `@pops/finance-db`'s
+ * `importsService`.
+ *
+ * Track N6 phase 1 PR 3 cutover: the implementation now lives in
+ * `packages/finance-db/src/services/imports.ts`. The slice's transformer
+ * pipeline + orchestration code (process / execute / progress streaming /
+ * AI categoriser / commitImport) stays in-tree — only the four pure
+ * persistence helpers move. PR 4 will retire the shim once the in-tree
+ * imports module no longer references it.
  */
+import { importsService } from '@pops/finance-db';
+
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
+
 export function findExistingChecksums(checksums: string[]): Set<string> {
-  if (checksums.length === 0) return new Set();
-
-  const db = getDrizzle();
-  const existingChecksums = new Set<string>();
-
-  // Query in batches of 500 to avoid SQLite variable limits
-  for (let i = 0; i < checksums.length; i += 500) {
-    const batch = checksums.slice(i, i + 500);
-    const rows = db
-      .select({ checksum: transactions.checksum })
-      .from(transactions)
-      .where(inArray(transactions.checksum, batch))
-      .all();
-
-    for (const row of rows) {
-      if (row.checksum) existingChecksums.add(row.checksum);
-    }
-  }
-
-  return existingChecksums;
+  return importsService.findExistingChecksums(getFinanceDrizzle(), checksums);
 }

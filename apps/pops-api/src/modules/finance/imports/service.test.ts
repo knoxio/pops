@@ -9,11 +9,13 @@ import {
 } from '@pops/db-types';
 
 import { closeDb, setDb } from '../../../db.js';
+import { setFinanceDb } from '../../../db/finance-handle.js';
 import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
 import { clearCache } from '../../core/ai-usage/cache.js';
 import { getProgress, setProgress } from './progress-store.js';
 import {
   applyLearnedCorrection,
+  commitImport,
   createEntity,
   executeImport,
   processImport,
@@ -48,12 +50,14 @@ const orm = () => drizzle(db);
 beforeEach(() => {
   db = createTestDb();
   setDb(db);
+  setFinanceDb({ db: drizzle(db), raw: db });
 
   resetMockAi();
   clearCache();
 });
 
 afterEach(() => {
+  setFinanceDb(null);
   closeDb();
 });
 
@@ -1215,5 +1219,54 @@ describe('loadAliases', () => {
     // Should not crash
     const result = await processImport([], 'Amex');
     expect(result).toBeDefined();
+  });
+});
+
+describe('commitImport — atomicity', () => {
+  it('rolls back entities created earlier in the pipeline when a later phase throws', () => {
+    const tempId = 'temp:entity:00000000-0000-0000-0000-0000000000aa';
+
+    const [before] = orm().select({ cnt: count() }).from(entitiesTable).all();
+    expect(before!.cnt).toBe(0);
+
+    expect(() =>
+      commitImport({
+        entities: [{ tempId, name: 'AtomicityProbe', type: 'company' }],
+        changeSets: [
+          {
+            ops: [
+              {
+                op: 'edit',
+                id: 'correction-that-does-not-exist',
+                data: { entityName: 'Whatever' },
+              },
+            ],
+          },
+        ],
+        tagRuleChangeSets: [],
+        transactions: [
+          {
+            date: '2026-02-13',
+            description: 'ATOMICITY PROBE',
+            amount: -10,
+            account: 'Amex',
+            rawRow: '{}',
+            checksum: 'atomicity-probe-checksum',
+            entityId: tempId,
+            entityName: 'AtomicityProbe',
+          },
+        ],
+      })
+    ).toThrow();
+
+    const [afterEntities] = orm().select({ cnt: count() }).from(entitiesTable).all();
+    expect(afterEntities!.cnt).toBe(0);
+
+    const [afterTxns] = orm()
+      .select({ cnt: count() })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, 'atomicity-probe-checksum'))
+      .all();
+    expect(afterTxns!.cnt).toBe(0);
   });
 });

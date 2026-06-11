@@ -48,6 +48,7 @@ vi.mock('./lib/ai-categorizer.js', async (importOriginal) => {
 });
 
 import { closeDb, setDb } from '../../../db.js';
+import { setFinanceDb } from '../../../db/finance-handle.js';
 import { mockConfig, resetMockAi } from './lib/ai-categorizer.mock.js';
 
 let caller: ReturnType<typeof createCaller>;
@@ -82,6 +83,7 @@ async function waitForCompletion<T extends ProcessImportOutput | ExecuteImportOu
 beforeEach(() => {
   db = createTestDb();
   setDb(db);
+  setFinanceDb({ db: drizzle(db), raw: db });
   caller = createCaller(true);
 
   resetMockAi();
@@ -89,6 +91,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setFinanceDb(null);
   closeDb();
 });
 

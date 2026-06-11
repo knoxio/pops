@@ -4,7 +4,7 @@ import { transactionCorrections, transactions } from '@pops/db-types';
 
 import { findMatchingCorrectionFromRules } from '../../../core/corrections/service.js';
 
-import type { getDrizzle } from '../../../../db.js';
+import type { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import type { CorrectionRow } from '../../../core/corrections/types.js';
 
 const RECLASSIFY_BATCH_SIZE = 500;
@@ -63,7 +63,7 @@ function buildReclassifyUpdates(
 }
 
 function fetchBatch(
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getFinanceDrizzle>,
   importedChecksums: string[],
   offset: number
 ): BatchTxn[] {
@@ -91,7 +91,7 @@ function fetchBatch(
  * Returns the count of transactions whose classification was updated.
  */
 export function reclassifyExistingTransactions(
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getFinanceDrizzle>,
   importedChecksums: string[]
 ): number {
   const allRules = db

@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
 
-import { entities, transactions } from '@pops/db-types';
+import { entities } from '@pops/db-types';
+import { importsService, type InsertImportTransactionInput } from '@pops/finance-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { logger } from '../../../../lib/logger.js';
 import { applyChangeSet } from '../../../core/corrections/service.js';
 import { applyTagRuleChangeSet, upsertVocabularyTag } from '../../../core/tag-rules/service.js';
@@ -17,56 +18,20 @@ import { reclassifyExistingTransactions } from './reclassify-existing.js';
 import type { TransactionRow } from '../../transactions/types.js';
 import type { CommitPayload, CommitResult, FailedTransactionDetail } from '../types.js';
 
-/** Insert a transaction directly into SQLite. Returns the created row. */
-export function insertTransaction(input: {
-  description: string;
-  account: string;
-  amount: number;
-  date: string;
-  type: string;
-  tags: string[];
-  entityId: string | null;
-  entityName: string | null;
-  location: string | null;
-  rawRow?: string;
-  checksum?: string;
-}): TransactionRow {
-  const db = getDrizzle();
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-
-  db.insert(transactions)
-    .values({
-      id,
-      description: input.description,
-      account: input.account,
-      amount: input.amount,
-      date: input.date,
-      type: input.type || '',
-      tags: JSON.stringify(input.tags),
-      entityId: input.entityId,
-      entityName: input.entityName,
-      location: input.location,
-      checksum: input.checksum ?? null,
-      rawRow: input.rawRow ?? null,
-      lastEditedTime: now,
-    })
-    .run();
-
-  const row = db.select().from(transactions).where(eq(transactions.id, id)).get();
-  if (!row) throw new Error(`Insert succeeded but row not found: ${id}`);
-  return row;
+/**
+ * Insert a transaction directly into SQLite. Returns the created row.
+ *
+ * Thin shim forwarding to `@pops/finance-db`'s `importsService` —
+ * Track N6 phase 1 PR 3 cutover. The package's
+ * `InsertImportTransactionInput` shape is identical to this function's
+ * historical signature so callers compile unchanged.
+ */
+export function insertTransaction(input: InsertImportTransactionInput): TransactionRow {
+  return importsService.insertImportTransaction(getFinanceDrizzle(), input);
 }
 
 function createEntityInternal(name: string): { entityId: string; entityName: string } {
-  const db = getDrizzle();
-  const entityId = crypto.randomUUID();
-
-  db.insert(entities)
-    .values({ id: entityId, name, lastEditedTime: new Date().toISOString() })
-    .run();
-
-  return { entityId, entityName: name };
+  return importsService.createImportEntity(getFinanceDrizzle(), name);
 }
 
 interface RuleApplyCounts {
@@ -80,7 +45,7 @@ function createEntitiesPhase(payload: CommitPayload): {
   tempIdMap: Map<string, string>;
   entitiesCreated: number;
 } {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   const tempIdMap = new Map<string, string>();
   let entitiesCreated = 0;
   for (const pending of payload.entities) {
@@ -185,7 +150,7 @@ function writeTransactionsPhase(
  */
 export function commitImport(payload: CommitPayload): CommitResult {
   validateCommitPayload(payload);
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
 
   return db.transaction(() => {
     const { tempIdMap, entitiesCreated } = createEntitiesPhase(payload);
