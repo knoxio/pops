@@ -140,7 +140,15 @@ describe('0054_finance_pillar_baseline_extension', () => {
              (id, description, account, amount, date, type, last_edited_time)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
         )
-        .run('txn-1', 'Test charge', 'Up Savings', 12.5, '2026-06-01', 'Purchase', '2026-06-01T00:00:00Z');
+        .run(
+          'txn-1',
+          'Test charge',
+          'Up Savings',
+          12.5,
+          '2026-06-01',
+          'Purchase',
+          '2026-06-01T00:00:00Z'
+        );
 
       raw
         .prepare(
@@ -207,7 +215,15 @@ describe('0054_finance_pillar_baseline_extension', () => {
              (id, description, account, amount, date, type, last_edited_time)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
         )
-        .run('seed-1', 'Seed row', 'Up Savings', 1, '2026-06-01', 'Purchase', '2026-06-01T00:00:00Z');
+        .run(
+          'seed-1',
+          'Seed row',
+          'Up Savings',
+          1,
+          '2026-06-01',
+          'Purchase',
+          '2026-06-01T00:00:00Z'
+        );
     } finally {
       first.raw.close();
     }
@@ -215,9 +231,9 @@ describe('0054_finance_pillar_baseline_extension', () => {
     expect(() => {
       const second = openFinanceDb(path);
       try {
-        const txn = second.raw
-          .prepare('SELECT id FROM transactions WHERE id = ?')
-          .get('seed-1') as { id: string } | undefined;
+        const txn = second.raw.prepare('SELECT id FROM transactions WHERE id = ?').get('seed-1') as
+          | { id: string }
+          | undefined;
         expect(txn?.id).toBe('seed-1');
       } finally {
         second.raw.close();
@@ -236,7 +252,15 @@ describe('0054_finance_pillar_baseline_extension', () => {
              (id, description, account, amount, date, type, last_edited_time)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
         )
-        .run('legacy-1', 'Legacy charge', 'Up Savings', 1, '2026-06-01', 'Purchase', '2026-06-01T00:00:00Z');
+        .run(
+          'legacy-1',
+          'Legacy charge',
+          'Up Savings',
+          1,
+          '2026-06-01',
+          'Purchase',
+          '2026-06-01T00:00:00Z'
+        );
     } finally {
       first.raw.close();
     }
@@ -248,7 +272,7 @@ describe('0054_finance_pillar_baseline_extension', () => {
     ).n;
     const deleteInfo = raw
       .prepare(
-        "DELETE FROM __drizzle_migrations WHERE created_at = (SELECT MAX(created_at) FROM __drizzle_migrations)"
+        'DELETE FROM __drizzle_migrations WHERE created_at = (SELECT MAX(created_at) FROM __drizzle_migrations)'
       )
       .run();
     expect(deleteInfo.changes).toBeGreaterThan(0);
