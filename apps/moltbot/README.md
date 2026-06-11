@@ -140,11 +140,13 @@ Skills authenticate to pops-api using:
 X-API-Key: <plaintext key from pops_api_key secret>
 ```
 
-pops-api rejects the call with 401 if the key is missing/invalid or 403 if
-the key is valid but the row's `scopes` don't cover the procedure path
-(e.g. `moltbot` calling `core.serviceAccounts.create` will hit 403). See
-`apps/pops-api/src/modules/core/service-accounts/` for the implementation
-and rotation API.
+pops-core-api rejects the call with 401 if the key is missing/invalid or
+403 if the key is valid but the row's `scopes` don't cover the procedure
+path (e.g. `moltbot` calling `core.serviceAccounts.create` will hit 403).
+See `apps/pops-core-api/src/modules/service-accounts/` for the
+implementation and rotation API. Requests reach pops-core-api via the
+nginx dispatcher in `apps/pops-shell/nginx.conf` that routes
+`/trpc/core.serviceAccounts.*` to the core pillar container.
 
 ## Why a separate validator container?
 
