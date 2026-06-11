@@ -1,12 +1,13 @@
 /**
  * Unit tests for the budget URI handler (Track O2, #2844).
  *
- * Drives `createBudgetUriHandler` against a per-test in-memory finance.db so
- * the resolution paths are exercised end-to-end against the real
- * `budgetsService.getBudget` — `not-found` for an absent row, `object` for an
- * existing one, and `not-found` for an unrecognised type (the descriptor only
- * advertises `budget`, but the dispatcher contract still asks us to handle a
- * mismatched type gracefully).
+ * Drives `createBudgetUriHandler` against a per-test file-backed finance.db
+ * (created in a fresh `mkdtempSync` directory and closed + removed in
+ * `afterEach`) so the resolution paths are exercised end-to-end against the
+ * real `budgetsService.getBudget` — `not-found` for an absent row, `object`
+ * for an existing one, and `not-found` for an unrecognised type (the
+ * descriptor only advertises `budget`, but the dispatcher contract still
+ * asks us to handle a mismatched type gracefully).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
