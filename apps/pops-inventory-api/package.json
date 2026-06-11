@@ -12,12 +12,18 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@pops/core-db": "workspace:*",
+    "@pops/db-types": "workspace:*",
     "@pops/inventory-db": "workspace:*",
     "@pops/types": "workspace:*",
-    "express": "^5.1.0"
+    "@trpc/server": "^11.17.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.1",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.8",
