@@ -146,6 +146,104 @@ the deletion. Future tracks of this shape should plan PR 4 as a follow-on to the
 N6-equivalent cutover, not as a phase-1 deliverable. M4 PR 3 (#2900) and M5 PR 3
 (#2901) hit the same pattern at the nginx-dispatcher layer.
 
+## Track N4 phase 1 PR 4 — in-tree `transaction_tag_rules` shim deletion deferred
+
+Track N4 phase 1 PR 4 was scoped to delete the in-tree `transaction_tag_rules`
+shim under `apps/pops-api/src/modules/core/tag-rules/` now that PR 3 (#2908)
+flipped the CRUD surface (`service.ts`, `router.ts`) onto `@pops/finance-db`'s
+`transactionTagRulesService` and #2915 created the underlying table in
+`finance.db`. The deletion is **unsafe today**. This section captures the
+audit and unblock conditions; the PR ships no source/test churn.
+
+### Audit — what still consumes the in-tree shim
+
+PR 3's body (#2908, "What stays for PR 4") explicitly noted that the imports
+persistence pipeline still imports `applyTagRuleChangeSet` / `upsertVocabularyTag`
+from `core/tag-rules/service.ts` and would need to migrate first under Track N6.
+A fresh sweep of `apps/pops-api/src/` and `packages/` confirms the consumer set
+is broader than the imports pipeline alone — `app-finance` UI code consumes the
+`TagRuleChangeSet*` types through the cross-package `@pops/api/modules/core/tag-rules/types`
+path:
+
+| In-tree file    | Consumed by (outside `core/tag-rules/`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `service.ts`    | `finance/imports/lib/transaction-persistence.ts` (`applyTagRuleChangeSet`, `upsertVocabularyTag`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `types.ts`      | `finance/imports/lib/commit-temp-resolver.ts` (`TagRuleChangeSet`), `finance/imports/types.ts` (`TagRuleChangeSetSchema`), `packages/app-finance/src/components/imports/rule-creation/utils.ts`, `packages/app-finance/src/components/imports/tag-review/useTagReviewActions.ts`, `packages/app-finance/src/components/imports/tag-review/useTagReviewState.ts`, `packages/app-finance/src/components/imports/TagReviewStep.test.tsx`, `packages/app-finance/src/lib/commit-payload.ts`, `packages/app-finance/src/lib/commit-payload.test.ts`, `packages/app-finance/src/store/import-store-types.ts`. |
+| `router.ts`     | `apps/pops-api/src/modules/core/index.ts` mounts `tagRulesRouter` on the tRPC tree. Stays in place per the Option A scoping decision in #2908 — the router lives under `modules/core/tag-rules/` and cross-pillar imports `@pops/finance-db`.                                                                                                                                                                                                                                                                                                                                                           |
+| `preview.ts`    | Re-exported via `service.ts`; suggestion-only logic with no persistence. Out of scope for the cutover.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `vocabulary.ts` | Re-exported via `service.ts`; reads/writes `tag_vocabulary`. Waits on Track N5 PR 3, not N4 PR 4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+Even though PR 3 flipped the `service.ts` CRUD paths onto the package, the file
+still acts as the barrel that every non-`core/tag-rules/` caller imports from.
+Deleting `service.ts` breaks `transaction-persistence.ts` at compile time.
+Deleting `types.ts` breaks the entire `app-finance` import-flow UI plus the
+in-tree `finance/imports/types.ts` (`TagRuleChangeSetSchema`) and
+`commit-temp-resolver.ts`.
+
+### Trade-off
+
+PR 3 (#2908) was deliberately scoped as a routing flip, not a removal. Its body
+states the deletion was contingent on **(a)** the imports pipeline (Track N6)
+moving onto `@pops/finance-db`, and **(b)** the `app-finance` UI consumers
+swapping their `@pops/api/modules/core/tag-rules/types` imports onto a
+package-owned type surface. Neither has happened.
+
+Deleting the shim today would break:
+
+- `finance/imports/lib/transaction-persistence.ts` — the commit pipeline calls
+  `applyTagRuleChangeSet` and `upsertVocabularyTag` directly. `@pops/finance-db`
+  exposes `transactionTagRulesService.*` and `upsertVocabularyTag`, but the
+  call sites still go through the in-tree barrel.
+- `finance/imports/types.ts` — re-exports / wraps `TagRuleChangeSetSchema`
+  inside the commit payload schema for the imports router.
+- `finance/imports/lib/commit-temp-resolver.ts` — typed against
+  `TagRuleChangeSet`; consumed by `transaction-persistence.ts`.
+- The entire `packages/app-finance` import-flow surface — `commit-payload.ts`,
+  `import-store-types.ts`, `TagReviewStep.test.tsx`, and the `tag-review` +
+  `rule-creation` hooks all import `TagRuleChangeSet` / `TagRuleImpactItem`
+  through `@pops/api/modules/core/tag-rules/types`.
+
+### Unblock conditions
+
+The deletion can ship once all of the following land:
+
+1. **Track N6 cutover** of `finance/imports/lib/transaction-persistence.ts`,
+   `finance/imports/lib/commit-temp-resolver.ts`, and `finance/imports/types.ts`
+   onto `@pops/finance-db` — call `transactionTagRulesService.*` and
+   `upsertVocabularyTag` directly, and source `TagRuleChangeSet*` from a
+   package-owned types module.
+2. **Package exposure of the `TagRuleChangeSet*` schema + types** on
+   `@pops/finance-db` (or a sibling tag-rules contract package) so
+   `packages/app-finance` can import `TagRuleChangeSet`, `TagRuleImpactItem`,
+   and `TagRuleChangeSetSchema` without crossing the `@pops/api/modules/...`
+   boundary. The Zod schema currently lives only in-tree.
+3. **`packages/app-finance` import swap** — `commit-payload.ts`,
+   `import-store-types.ts`, `TagReviewStep.test.tsx`, `tag-review/useTagReviewActions.ts`,
+   `tag-review/useTagReviewState.ts`, `rule-creation/utils.ts`, and
+   `commit-payload.test.ts` repoint to the package-owned types module.
+4. **`proposeTagRuleChangeSet`** moved onto the package (or its remaining
+   in-tree caller deleted) so deleting `service.ts` doesn't strand the
+   tag-edit-signal proposal helper. Today it is exported from the shim but is
+   not yet on `@pops/finance-db`.
+
+### Lesson captured
+
+Same shape as Track N3 PR 4 (#2905): a phase-1 cutover scoped to a CRUD flip
+leaves a barrel re-exporter (`service.ts`) re-exporting non-flipped helpers
+(`previewTagRuleChangeSet`, `proposeTagRuleChangeSet`, `upsertVocabularyTag`)
+plus a co-located Zod schema (`types.ts`) that the entire UI package depends on
+through `@pops/api/modules/...`. The deletion PR cannot ship until every
+consumer of the barrel and every cross-package types import has been moved.
+Track J Phase 1 PR 4 (#2870) and Track K Phase 1 PR 4 (#2881) cleared their
+barrels in the same PR as the consumer cutover — the canonical pattern — and
+so were free to delete in PR 4. Track N4's scaffold (#2856) and cutover (#2908) deliberately
+left the imports pipeline + the cross-package types path behind for N6,
+fragmenting the deletion. Future tracks of this shape should plan PR 4 as a
+follow-on to the N6-equivalent cutover, not as a phase-1 deliverable, and
+should land a package-owned Zod schema module in PR 1 so UI consumers never
+take a dependency on `@pops/api/modules/...`. Track N3 PR 4 (#2905), M4 PR 3
+(#2900), and M5 PR 3 (#2901) all hit the same pattern.
+
 ## Reference
 
 - ADR-026: per-domain pillar architecture
@@ -156,6 +254,10 @@ N6-equivalent cutover, not as a phase-1 deliverable. M4 PR 3 (#2900) and M5 PR 3
 - `docs/runbooks/media-api-pillar-verification.md` — sibling runbook for the media pillar
 - Track N3 PR 1 (scaffold): #2857
 - Track N3 PR 3 (routing flip): #2899
+- Track N3 PR 4 (sibling defer pattern): #2905
+- Track N4 PR 1 (scaffold): #2856
+- Track N4 PR 3 (routing flip): #2908
+- Track N4 finance.db table creation: #2915
 - Track J Phase 1 PR 4 (canonical clean deletion): #2870
 - Track K Phase 1 PR 4 (canonical clean deletion): #2881
 - Track M4 PR 3 (sibling defer pattern): #2900
