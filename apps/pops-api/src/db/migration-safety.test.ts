@@ -396,13 +396,10 @@ describe('migration safety', () => {
   });
 
   describe('0042_strip_quoted_movie_titles migration', () => {
-    const migrationSql = `
-      UPDATE movies
-      SET title = TRIM(title, '"')
-      WHERE title LIKE '"%"'
-        AND length(title) > 2
-        AND TRIM(title, '"') != '';
-    `;
+    const migrationSql = readFileSync(
+      join(__dirname, 'drizzle-migrations/0042_strip_quoted_movie_titles.sql'),
+      'utf8'
+    );
     const byTitle = 'SELECT title FROM movies WHERE title = ?';
 
     /**
@@ -422,6 +419,7 @@ describe('migration safety', () => {
 
     it('strips surrounding quotes from a wrapped title', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, '"Wuthering Heights"');
       db.exec(migrationSql);
@@ -431,6 +429,7 @@ describe('migration safety', () => {
 
     it('does not touch a title with only a leading quote', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, '"Something');
       db.exec(migrationSql);
@@ -440,6 +439,7 @@ describe('migration safety', () => {
 
     it('does not touch a title with only a trailing quote', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, 'Something"');
       db.exec(migrationSql);
@@ -449,6 +449,7 @@ describe('migration safety', () => {
 
     it('does not touch a title with internal quotes', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, 'Film "Noir" Style');
       db.exec(migrationSql);
@@ -458,6 +459,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty title from bare ""', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, '""');
       db.exec(migrationSql);
@@ -467,6 +469,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty title from all-quote string """', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, '"""');
       db.exec(migrationSql);
@@ -476,6 +479,7 @@ describe('migration safety', () => {
 
     it('does not affect a clean title', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, 'The Dark Knight');
       db.exec(migrationSql);
@@ -485,6 +489,7 @@ describe('migration safety', () => {
 
     it('is idempotent — running twice gives the same result', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupMoviesTable(db);
       insertMovie(db, '"Wuthering Heights"');
       db.exec(migrationSql);
@@ -496,19 +501,10 @@ describe('migration safety', () => {
   });
 
   describe('0051_strip_quoted_tv_show_titles migration (#2403)', () => {
-    const migrationSql = `
-      UPDATE tv_shows
-      SET name = TRIM(name, '"')
-      WHERE name LIKE '"%"'
-        AND length(name) > 2
-        AND TRIM(name, '"') != '';
-
-      UPDATE tv_shows
-      SET original_name = TRIM(original_name, '"')
-      WHERE original_name LIKE '"%"'
-        AND length(original_name) > 2
-        AND TRIM(original_name, '"') != '';
-    `;
+    const migrationSql = readFileSync(
+      join(__dirname, 'drizzle-migrations/0051_strip_quoted_tv_show_titles.sql'),
+      'utf8'
+    );
     const byName = 'SELECT name, original_name FROM tv_shows WHERE name = ?';
 
     /**
@@ -537,6 +533,7 @@ describe('migration safety', () => {
 
     it('strips surrounding quotes from a wrapped name', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, '"The Wire"');
       db.exec(migrationSql);
@@ -546,6 +543,7 @@ describe('migration safety', () => {
 
     it('strips surrounding quotes from original_name independently of name', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, 'The Wire', '"The Wire"');
       db.exec(migrationSql);
@@ -559,6 +557,7 @@ describe('migration safety', () => {
 
     it('does not touch a name with only a leading quote', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, '"Something');
       db.exec(migrationSql);
@@ -568,6 +567,7 @@ describe('migration safety', () => {
 
     it('does not touch a name with only a trailing quote', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, 'Something"');
       db.exec(migrationSql);
@@ -577,6 +577,7 @@ describe('migration safety', () => {
 
     it('does not touch a name with internal quotes', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, 'Show "Title" Format');
       db.exec(migrationSql);
@@ -586,6 +587,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty name from bare ""', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, '""');
       db.exec(migrationSql);
@@ -595,6 +597,7 @@ describe('migration safety', () => {
 
     it('does not produce an empty name from all-quote string """', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, '"""');
       db.exec(migrationSql);
@@ -604,6 +607,7 @@ describe('migration safety', () => {
 
     it('does not affect a clean name', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, 'Breaking Bad');
       db.exec(migrationSql);
@@ -613,6 +617,7 @@ describe('migration safety', () => {
 
     it('leaves NULL original_name untouched', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, 'The Sopranos', null);
       db.exec(migrationSql);
@@ -626,6 +631,7 @@ describe('migration safety', () => {
 
     it('is idempotent — running twice gives the same result', () => {
       const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
       setupTvShowsTable(db);
       insertShow(db, '"The Wire"', '"The Wire"');
       db.exec(migrationSql);
