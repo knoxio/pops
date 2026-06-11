@@ -71,6 +71,107 @@ flagging:
 - The shell's "finance unavailable" placeholder paints over working non-finance routes (PillarGuard scoping is too broad).
 - `finance.db` writes succeed against a stopped finance-api container (proves the shared-volume caveat noted in Step 2 — phase 4 follow-up: convert finance-api to the sole writer once tRPC routers move into it).
 
+## Track M2 PR 3 — legacy finance router deletion deferred
+
+Track M2 phase 5 PR 3 was scoped to delete (or trim to deferred-only) the
+legacy finance router mounts on `pops-api` now that the M2 PR 2 dispatcher
+(#2934) routes single-procedure tRPC URLs for the migrated slice to
+`pops-finance-api`. The deletion is **unsafe today**. This section captures
+the audit and unblock conditions; the PR ships no source/test churn.
+
+### Audit — why this can't be deleted yet
+
+The M2 PR 2 dispatcher rule is:
+
+```
+^/trpc/finance\.((wishlist|budgets)\.[^,]+|transactions\.(list|get|create|update|delete|restore))$
+```
+
+Both branches are comma-free (`[^,]+` on the wishlist/budgets side, a
+closed alternation on the transactions side) and the regex is `$`-anchored.
+Every batched tRPC URL — i.e. any URL containing `,` — therefore falls
+through to the legacy `/trpc` block and lands on `pops-api`. The dispatcher
+commit (#2934) calls this out: _"batched URLs (which the client only emits
+when multiple procedures fire on the same tick) keep falling through to
+pops-api which still serves the whole `financeRouter`."_
+
+`pops-shell` wires `httpBatchLink` (`packages/api-client/src/index.ts`),
+so batching is the default for sibling queries. Two shell paths emit
+batched URLs that contain migrated procedures and expect `pops-api` to
+resolve them:
+
+1. **`DashboardPage.tsx`** (`packages/app-finance/src/pages/DashboardPage.tsx`)
+   fires `trpc.finance.transactions.list.useQuery` and
+   `trpc.finance.budgets.list.useQuery` in the same render. Output URL:
+   `/trpc/finance.transactions.list,finance.budgets.list`. The comma
+   defeats the dispatcher regex; the batch reaches `pops-api`.
+2. **`useTransactionsPage.ts`** (`packages/app-finance/src/pages/transactions/useTransactionsPage.ts`)
+   fires `trpc.finance.transactions.list.useQuery` alongside
+   `trpc.finance.transactions.availableTags.useQuery`. Output URL:
+   `/trpc/finance.transactions.list,finance.transactions.availableTags`.
+   `list` is migrated; `availableTags` is one of the three deferred
+   transactions procedures. Same comma → same fall-through.
+
+Both of these batches require **the full `financeRouter` to stay mounted
+on `pops-api`**: the dashboard batch needs `transactions.list` and
+`budgets.list`; the transactions-page batch needs `transactions.list`
+(migrated) and `transactions.availableTags` (deferred).
+
+### What was on the table
+
+The PR plan considered three paths:
+
+| Path            | What it would do                                                                                                                                                                           | Why it fails today                                                                                                                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full delete     | Remove `wishlistRouter`, `budgetsRouter`, `transactionsRouter` mounts from `apps/pops-api/src/modules/finance/index.ts`.                                                                   | 404s every batched URL above (e.g. dashboard → `transactions.list,budgets.list` → both 404).                                                                                                                                                                                |
+| Partial delete  | Remove `wishlistRouter` + `budgetsRouter` (5/5 + 5/5 migrated); trim `transactionsRouter` to the three deferred procedures (`suggestTags`, `listDescriptionsForPreview`, `availableTags`). | 404s the dashboard batch (still needs `budgets.list` on pops-api). Also 404s any batched URL that mixes migrated transactions CRUD (`list`, `get`, `create`, `update`, `delete`, `restore`) with the three deferred procedures. The transactions-page batch is the example. |
+| Defer (this PR) | Keep the mounts intact, document the trade-off, and point the dispatcher comment at this section.                                                                                          | Matches the M4/M5 deferral pattern. Monotonic, trivially revertible.                                                                                                                                                                                                        |
+
+The partial delete looked appealing on paper because wishlist and budgets
+have nothing left on pops-api, but the dashboard batch
+(`finance.transactions.list,finance.budgets.list`) crosses subrouter
+boundaries inside one URL, so removing the budgets mount breaks the
+dashboard. The transactions trim hits the same issue at the
+sibling-procedure level (`list,availableTags`).
+
+### Unblock conditions
+
+The deletion can ship once any of these lands:
+
+- the shell switches to `splitLink` / per-router transports so migrated
+  procedures bypass batching with non-migrated procedures (or per-pillar
+  `httpBatchLink` instances so `finance.*` calls never share a URL with
+  non-`finance.*` siblings — though that alone wouldn't unblock the
+  transactions trim, which mixes migrated + deferred procedures inside
+  the same subrouter);
+- the dispatcher learns to parse batched tRPC URLs and split them across
+  upstreams (in-nginx Lua, an in-process splitter, or a hop to
+  Envoy/Varnish);
+- the three deferred transactions procedures (`suggestTags`,
+  `listDescriptionsForPreview`, `availableTags`) and `finance.imports.*`
+  finish migrating to `pops-finance-api`, at which point the dispatcher
+  can swallow the whole `finance.*` namespace including batched URLs
+  and the legacy mounts can be deleted in full.
+
+### What this PR ships
+
+- This runbook section.
+- `apps/pops-shell/nginx.conf` — M2 PR 2 dispatcher comment updated so it
+  no longer reads as if PR 3 is pending, and instead points to this
+  section for the deferral rationale. Mirrors the comment update #2900
+  made for the M4 dispatcher.
+
+### Lesson captured
+
+Same shape as Track M4 PR 3 (#2900) and Track M5 PR 3 (#2901). A single
+`httpBatchLink` + regex-dispatcher pattern can only retire a router slice
+when every sibling slice in the same `AppRouter` has also moved — and at
+the subrouter level, every sibling procedure inside the same subrouter
+too. The dashboard batch (cross-subrouter) and the transactions-page
+batch (intra-subrouter migrated + deferred) are both blockers here. Plan
+pillar migrations in whole-namespace units; partial-subrouter migrations
+fragment the deletion across multiple PR sequences.
+
 ## Track N3 phase 1 PR 4 — in-tree `transaction_corrections` service deletion deferred
 
 Track N3 phase 1 PR 4 was scoped to delete the in-tree `transaction_corrections`
@@ -377,4 +478,7 @@ retargeting PR can be scheduled.
 - Track K Phase 1 PR 4 (canonical clean deletion): #2881
 - Track M4 PR 3 (sibling defer pattern): #2900
 - Track M5 PR 3 (sibling defer pattern): #2901
+- Track M2 PR 1 (writer move): #2933
+- Track M2 PR 2 (nginx dispatcher cutover): #2934
+- Track M2 epic: #2833
 - Residual cross-DB transaction wrap issue: #2921
