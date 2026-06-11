@@ -74,10 +74,21 @@ function countRows(raw: BetterSqlite3.Database, table: string): number {
  * covers everything else. The backfill must already be ready for the
  * transactions cutover before that PR lands — this helper simulates the
  * post-cutover finance.db so the tests exercise the full TABLE_COPIES set.
+ *
+ * The DDL is rewritten to `IF NOT EXISTS` so this helper stays safe once
+ * the N2 cutover lands and `openFinanceDb()` starts creating the
+ * `transactions` table (and its indexes) via the finance-db migration —
+ * otherwise the second CREATE would throw "table already exists".
  */
 function openFinanceForCutover(path: string): ReturnType<typeof openFinanceDb> {
   const finance = openFinanceDb(path);
-  finance.raw.exec(TRANSACTIONS_TABLE_SQL);
+  const idempotentSql = TRANSACTIONS_TABLE_SQL.replaceAll(
+    'CREATE TABLE ',
+    'CREATE TABLE IF NOT EXISTS '
+  )
+    .replaceAll('CREATE UNIQUE INDEX ', 'CREATE UNIQUE INDEX IF NOT EXISTS ')
+    .replaceAll('CREATE INDEX ', 'CREATE INDEX IF NOT EXISTS ');
+  finance.raw.exec(idempotentSql);
   return finance;
 }
 
