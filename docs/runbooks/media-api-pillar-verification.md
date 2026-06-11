@@ -78,7 +78,7 @@ PR 3 of the M3 sequence was originally scoped to delete `media.shelfImpressions.
 The history is the asymmetry. Track M1 (`core.serviceAccounts.*`) and Tracks M4/M5 (`inventory.locations.*`, `cerebrum.nudges.*`) moved tRPC procedures that pops-api already exposed. Each PR 1 stood up a shadow router on the new pillar; each PR 2 cut the dispatcher over; each PR 3 was supposed to delete the now-shadowed tRPC mounts from pops-api. M3 followed the same three-PR shape on paper, but the actual code surface was different:
 
 - pops-api's `mediaRouter` (`apps/pops-api/src/modules/media/index.ts`) mounts `movies`, `tvShows`, `comparisons`, `watchlist`, `watchHistory`, `library`, `search`, `discovery`, `arr`, `plex`, `rotation`. **No `shelfImpressions` slice.**
-- The only legacy consumer of `shelfImpressionsService` lives inside `media.discovery.assembleSession` and `media.discovery.shelf.session.service` — both import `shelfImpressionsService` from `@pops/media-db` and call it in-process against the `media.db` handle. There is no tRPC indirection.
+- The only legacy consumer of `shelfImpressionsService` lives inside the `media.discovery.assembleSession` tRPC procedure and the in-process helper at `apps/pops-api/src/modules/media/discovery/shelf/session.service.ts` — both import `shelfImpressionsService` from `@pops/media-db` and call it in-process against the `media.db` handle. There is no tRPC indirection.
 
 So the dispatcher rule that PR 2 added (`^/trpc/media\.shelfImpressions\.`) never had a fall-through target on pops-api in the first place. PR 1 (#2890) is what stood up the public tRPC surface — on `pops-media-api` directly, not by migrating an existing surface.
 
