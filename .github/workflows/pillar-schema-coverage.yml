@@ -1,0 +1,85 @@
+name: Pillar Schema Coverage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/*-db/**"
+      - "packages/db-types/**"
+      - "scripts/check-pillar-schema-coverage.mjs"
+      - ".github/workflows/pillar-schema-coverage.yml"
+  pull_request:
+    paths:
+      - "packages/*-db/**"
+      - "packages/db-types/**"
+      - "scripts/check-pillar-schema-coverage.mjs"
+      - ".github/workflows/pillar-schema-coverage.yml"
+
+concurrency:
+  group: pillar-schema-coverage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    name: ${{ matrix.pillar }} schema coverage
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pillar: [finance, core, media, inventory, cerebrum, food, lists]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build pillar packages
+        run: |
+          pnpm --filter @pops/db-types build
+          pnpm --filter @pops/core-db build
+          pnpm --filter @pops/finance-db build
+          pnpm --filter @pops/inventory-db build
+          pnpm --filter @pops/media-db build
+          pnpm --filter @pops/cerebrum-db build
+          pnpm --filter @pops/food-db build
+          pnpm --filter @pops/lists-db build
+      - name: Run schema-coverage check for ${{ matrix.pillar }}
+        run: node scripts/check-pillar-schema-coverage.mjs --pillar ${{ matrix.pillar }}
+
+  selftest:
+    name: Self-test (allowlist-bypass catches latent finance break)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build finance-db
+        run: |
+          pnpm --filter @pops/db-types build
+          pnpm --filter @pops/finance-db build
+      - name: Assert --ignore-allowlist flags the known finance gap
+        run: |
+          set +e
+          node scripts/check-pillar-schema-coverage.mjs \
+            --pillar finance --ignore-allowlist > out.txt 2>&1
+          actual_exit=$?
+          cat out.txt
+          if [ "$actual_exit" -eq 0 ]; then
+            echo "::error::expected non-zero exit when --ignore-allowlist is set against current main; got 0"
+            exit 1
+          fi
+          if ! grep -q "Missing tables" out.txt; then
+            echo "::error::expected output to mention 'Missing tables'"
+            exit 1
+          fi
+          if ! grep -q "transactions" out.txt; then
+            echo "::error::expected output to mention the transactions table"
+            exit 1
+          fi
+          echo "selftest OK — guard catches the latent finance break."
