@@ -127,7 +127,7 @@ docker compose -f infra/docker-compose.yml stop media-api
 
 Expected behaviour:
 
-- `POST /trpc/media.shelfImpressions.*` via the shell's nginx proxy returns 502 from the dispatcher upstream. The shell has zero direct callers of `media.shelfImpressions.*` today (see the M3 PR 3 audit), so no UI surface breaks visibly — but the route is genuinely down.
+- `POST /trpc/media.shelfImpressions.*` via the shell's nginx proxy returns 502 from the dispatcher upstream. No shelf-impressions-specific UI surface breaks because the shell has zero direct `media.shelfImpressions.*` callers today (see the M3 PR 3 audit). The route is genuinely down at the HTTP layer; the visible degradation that follows is the next bullet — `PillarGuard` marking media `'unavailable'` on the `/pillars/health` aggregator, which paints the unavailable placeholder on every media route regardless of which procedure they call.
 - `media.discovery.assembleSession` (in-process shelf-impressions writer) keeps working because the consumer reads `media.db` through the shared volume, not via HTTP to media-api. This is the shared-volume caveat from the Phase 4 drill, and it persists into Phase 5 until the discovery slice itself migrates.
 - The shell's `/pillars/health` aggregator (still on pops-api) flips media's status to `'unavailable'` after the per-probe timeout fires. `PillarGuard` reads `'unavailable'` and shows the unavailable placeholder on media routes; other pillars (food, finance, inventory, lists, cerebrum, core) keep working — degrade per-route, not whole-shell.
 - The shell's boot probe to `/pillars` still succeeds because the proxy hits core-api, not media-api.
