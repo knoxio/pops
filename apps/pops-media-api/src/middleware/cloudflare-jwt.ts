@@ -16,7 +16,7 @@ import type { JwtPayload } from 'jsonwebtoken';
 
 export interface CloudflareJWTPayload extends JwtPayload {
   email: string;
-  aud: string[];
+  aud?: string | string[];
   iss: string;
 }
 
@@ -80,8 +80,16 @@ export async function verifyCloudflareJWT(token: string): Promise<CloudflareJWTP
   }) as CloudflareJWTPayload;
 
   const expectedAud = process.env['CLOUDFLARE_ACCESS_AUD'];
-  if (expectedAud && !payload.aud.includes(expectedAud)) {
-    throw new Error('Invalid JWT: Audience mismatch');
+  if (expectedAud) {
+    let audList: readonly string[] = [];
+    if (Array.isArray(payload.aud)) {
+      audList = payload.aud;
+    } else if (typeof payload.aud === 'string') {
+      audList = [payload.aud];
+    }
+    if (!audList.includes(expectedAud)) {
+      throw new Error('Invalid JWT: Audience mismatch');
+    }
   }
   if (!payload.email) {
     throw new Error('Invalid JWT: Missing email claim');
