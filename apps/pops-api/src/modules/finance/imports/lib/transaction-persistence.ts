@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import { entities } from '@pops/db-types';
+import { entities, type TransactionRow } from '@pops/db-types';
 import {
   importsService,
   tagVocabularyService,
@@ -19,7 +19,6 @@ import {
 import { COMMIT_TEMP_ENTITY_PREFIX, validateCommitPayload } from './commit-validation.js';
 import { reclassifyExistingTransactions } from './reclassify-existing.js';
 
-import type { TransactionRow } from '../../transactions/types.js';
 import type { CommitPayload, CommitResult, FailedTransactionDetail } from '../types.js';
 
 /**
