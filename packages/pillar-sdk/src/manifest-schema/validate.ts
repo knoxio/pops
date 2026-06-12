@@ -1,6 +1,8 @@
 import { ManifestPayloadSchema, type ManifestPayload } from './schema.js';
 
-import type { $ZodIssue } from 'zod/v4/core';
+import type { ZodError } from 'zod';
+
+type ZodIssue = ZodError['issues'][number];
 
 export type ValidationIssue = {
   field: string;
@@ -33,7 +35,7 @@ export function validateManifestPayload(input: unknown): ValidationResult {
   return { ok: true, payload: parsed.data };
 }
 
-function mapZodIssue(issue: $ZodIssue, input: unknown): ValidationIssue[] {
+function mapZodIssue(issue: ZodIssue, input: unknown): ValidationIssue[] {
   if (issue.code === 'unrecognized_keys') {
     return issue.keys.map((key) => {
       const childPath: (string | number)[] = [...toStringNumberPath(issue.path), key];
