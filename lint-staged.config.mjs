@@ -18,7 +18,9 @@ export default {
   },
 
   '*.{json,md,css}': (filenames) => {
-    const formatFiles = filenames.map(esc).join(' ');
+    const formattable = filenames.filter((f) => !/\/openapi\/[^/]+\.openapi\.json$/.test(f));
+    if (formattable.length === 0) return [];
+    const formatFiles = formattable.map(esc).join(' ');
     return [`oxfmt --write ${formatFiles}`];
   },
 };

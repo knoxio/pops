@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { BudgetPeriodSchema, BudgetSchema } from '../src/schemas/budget.js';
+import { EntitySchema } from '../src/schemas/entity.js';
+import { TransactionSchema } from '../src/schemas/transaction.js';
 import { WishListItemSchema, WishListPrioritySchema } from '../src/schemas/wish-list-item.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
@@ -35,6 +38,10 @@ function zodToOpenApiSchema(schema: z.ZodType): OpenApiSchema {
 export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
+    Transaction: zodToOpenApiSchema(TransactionSchema),
+    Budget: zodToOpenApiSchema(BudgetSchema),
+    BudgetPeriod: zodToOpenApiSchema(BudgetPeriodSchema),
+    Entity: zodToOpenApiSchema(EntitySchema),
     WishListPriority: zodToOpenApiSchema(WishListPrioritySchema),
     WishListItem: zodToOpenApiSchema(WishListItemSchema),
     CreateWishListItemInput: zodToOpenApiSchema(CreateWishListItemBodySchema),

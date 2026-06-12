@@ -21,9 +21,19 @@ import { MANIFEST_OUTPUT_PATH, readContractVersion, renderManifest } from './ren
 
 import type { FinanceError } from '../src/errors.js';
 import type { FinanceRouter } from '../src/router.js';
+import type { Budget } from '../src/types/budget.js';
+import type { Entity } from '../src/types/entity.js';
+import type { Transaction } from '../src/types/transaction.js';
 import type { WishListItem } from '../src/types/wish-list-item.js';
 
-export type SurfaceAssertion = [WishListItem, FinanceError, FinanceRouter];
+export type SurfaceAssertion = [
+  Budget,
+  Entity,
+  Transaction,
+  WishListItem,
+  FinanceError,
+  FinanceRouter,
+];
 
 const version = readContractVersion();
 const rendered = renderManifest(version);
