@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./router": {
+      "types": "./src/router.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --clear-screen=false src/server.ts",

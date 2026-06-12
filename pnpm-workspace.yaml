@@ -15,6 +15,7 @@ packages:
   - 'packages/finance-contract'
   - 'packages/finance-db'
   - 'packages/db-types'
+  - 'packages/inventory-contract'
   - 'packages/inventory-db'
   - 'packages/media-contract'
   - 'packages/media-db'
