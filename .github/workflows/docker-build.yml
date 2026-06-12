@@ -1,16 +1,12 @@
 name: Docker Build
 
 on:
+  # Pull requests: NO workflow-level paths filter.
+  # `Validate Docker builds` is a required branch-protection check, so the
+  # workflow must always trigger on every PR; the job-level
+  # `dorny/paths-filter` below skips the heavy docker-buildx work and the
+  # required check still posts green via the skip-as-pass pattern.
   pull_request:
-    paths:
-      - "infra/docker*/**"
-      - "infra/docker-compose*.yml"
-      - "**/Dockerfile"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "turbo.json"
-      - "tsconfig.base.json"
-      - ".github/workflows/docker-build.yml"
   push:
     branches: [main]
     paths:
@@ -22,11 +18,6 @@ on:
       - "turbo.json"
       - "tsconfig.base.json"
       - ".github/workflows/docker-build.yml"
-
-# Workflow-level filter keeps `Validate Docker builds` off docs/code-only
-# PRs entirely. Per-pillar code is validated by `pillar-images.yml` and
-# the `*-api-quality.yml` workflows — this job only re-validates the
-# Dockerfile + compose surfaces. (Theme 13 PRD-220.)
 
 jobs:
   changes:

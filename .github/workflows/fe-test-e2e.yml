@@ -3,7 +3,6 @@ name: E2E Tests
 on:
   push:
     branches: [main, develop]
-  pull_request:
     paths:
       - 'apps/pops-shell/**'
       - 'apps/pops-api/**'
@@ -20,6 +19,12 @@ on:
       - 'packages/food-contracts/**'
       - 'packages/*-db/**'
       - '.github/workflows/fe-test-e2e.yml'
+  # Pull requests: NO workflow-level paths filter.
+  # `Playwright E2E Tests` is a required branch-protection check, so the
+  # workflow must always trigger on every PR; the job-level
+  # `dorny/paths-filter` below skips the heavy work and the required
+  # check still goes green via the skip-as-pass pattern.
+  pull_request:
 
 jobs:
   changes:
