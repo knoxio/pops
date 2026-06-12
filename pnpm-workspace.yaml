@@ -19,6 +19,7 @@ packages:
   - 'packages/inventory-db'
   - 'packages/media-contract'
   - 'packages/media-db'
+  - 'packages/cerebrum-contract'
   - 'packages/cerebrum-db'
   - 'packages/food-db'
   - 'packages/food-contracts'
