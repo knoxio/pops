@@ -6,7 +6,7 @@
 
 ## Reading order
 
-1. **Critical path** — the four PRDs every other epic blocks on. Spec them first; everything else lights up after.
+1. **Critical path** — the five PRDs every other epic blocks on. Spec them first; everything else lights up after.
 2. **Wave plan** — concrete sequencing across 5 waves. Each wave names its parallel agents.
 3. **Quality gates** — what must hold between waves before the next one starts.
 4. **Agent topology** — how to allocate the parallel-agent budget.
@@ -15,7 +15,7 @@
 
 ---
 
-## Critical path (the load-bearing four)
+## Critical path (the load-bearing five)
 
 Five PRDs gate everything else. Ship in order; each unblocks the next.
 
@@ -44,6 +44,7 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 | PRD                                          | Order                 | Owner agent           |
 | -------------------------------------------- | --------------------- | --------------------- |
 | 153 contract scaffold (finance pilot)        | 1                     | `a:contract-scaffold` |
+| 154 semver CI + affected rebuild             | 1 (parallel with 153) | `a:semver-ci`         |
 | 156 import discipline lint rule              | 1 (parallel with 153) | `a:lint-rule`         |
 | 157 manifest schema                          | 2                     | `a:manifest-schema`   |
 | 161 registry endpoints                       | 3                     | `a:registry-core`     |
@@ -72,7 +73,6 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 | PRD                                                              | Parallelism                    | Owner agent                |
 | ---------------------------------------------------------------- | ------------------------------ | -------------------------- |
 | 153 rollout (media/inventory/cerebrum/core/food/lists contracts) | 6 in parallel                  | `a:contract-<pillar>` × 6  |
-| 154 semver CI + affected rebuild                                 | independent                    | `a:semver-ci`              |
 | 155 manifest gen rollout                                         | follows 153                    | `a:manifest-gen-rollout`   |
 | 158 bootstrap rollout (each pillar)                              | follows their 153              | `a:bootstrap-<pillar>` × 6 |
 | 163 subscription model (SSE)                                     | independent                    | `a:subscriptions`          |
@@ -92,7 +92,7 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 - Semver CI blocks breaking changes; affected-package rebuild lights up dependents
 - SSE subscription + reconciliation tested via fault injection (kill core-api mid-stream; verify clean recovery)
 - Epic 08a fully shipped: `core.tagRules` + `core.corrections` namespaces gone; finance-api genuinely self-contained
-- Docs container deployed (browseable at `/docs/`)
+- Docs container deployed (browsable at `/docs/`)
 
 **Wave 2 duration:** 4 weeks. ~14 parallel agents at peak.
 
@@ -125,7 +125,7 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 - `httpBatchLink` → `splitLink` cutover proven on the shell; legacy regex rules retired
 - Schema-coverage CI (Theme 12's #2917) is green across all pillars with the affected-rebuild safety net
 
-**Wave 3 duration:** 6 weeks. Peak parallelism: ~20 agents. Slice PRDs run in parallel and merge in batches.
+**Wave 3 duration:** 6 weeks. Peak parallelism: 20-30 agents. Slice PRDs run in parallel and merge in batches.
 
 ### Wave 4 — Cross-cutting orchestrators + FE
 
