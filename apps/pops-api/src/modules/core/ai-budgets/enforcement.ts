@@ -4,12 +4,23 @@
  * Split out of `service.ts` so the read-side CRUD/status code (mounted on
  * `core.aiBudgets`) and the inference-middleware enforcement path can each
  * stay under the project's max-lines lint budget.
+ *
+ * Read/write split (PRD-186 PR 2 cutover): `listApplicableBudgets` and the
+ * per-scope usage aggregation forward to `@pops/core-db`'s `aiUsageService`
+ * against `getCoreDrizzle()` so reads land on `core.db`. The conflict-
+ * detection read in `migrateLegacyBudgetSettings` is routed through the
+ * same package surface. `findFallbackProvider` stays on the legacy
+ * `getDrizzle()` handle because it joins `ai_providers` and
+ * `ai_model_pricing`, which are not part of the core-db package surface.
+ * Writes (`upsertBudget`) keep flowing through the shared store until
+ * PRD-186 PR 3 flips writes too.
  */
-import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 
-import { aiBudgets, aiInferenceLog, aiModelPricing, aiProviders } from '@pops/db-types';
+import { aiUsageService, type AiBudgetRow } from '@pops/core-db';
+import { aiModelPricing, aiProviders } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle, getDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
 import { getSettingOrNull, setRawSetting } from '../settings/service.js';
 import { upsertBudget } from './service.js';
@@ -41,49 +52,37 @@ export interface BudgetBreach {
   limit: number;
 }
 
-type BudgetRow = typeof aiBudgets.$inferSelect;
-
 function monthStart(): string {
   const d = new Date();
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0)).toISOString();
 }
 
 function getUsageForScope(
-  db: ReturnType<typeof getDrizzle>,
-  row: BudgetRow,
+  row: AiBudgetRow,
   start: string
 ): { currentTokenUsage: number; currentCostUsage: number } {
-  const conditions = [gte(aiInferenceLog.createdAt, start)];
-  if (row.scopeType === 'provider' && row.scopeValue) {
-    conditions.push(eq(aiInferenceLog.provider, row.scopeValue));
-  } else if (row.scopeType === 'operation' && row.scopeValue) {
-    conditions.push(eq(aiInferenceLog.operation, row.scopeValue));
-  }
-  const [agg] = db
-    .select({
-      totalTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens} + ${aiInferenceLog.outputTokens}), 0)`,
-      totalCost: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-    })
-    .from(aiInferenceLog)
-    .where(and(...conditions))
-    .all();
+  const usage = aiUsageService.sumInferenceLogUsage(getCoreDrizzle(), {
+    since: start,
+    ...(row.scopeType === 'provider' && row.scopeValue ? { provider: row.scopeValue } : {}),
+    ...(row.scopeType === 'operation' && row.scopeValue ? { operation: row.scopeValue } : {}),
+  });
   return {
-    currentTokenUsage: agg?.totalTokens ?? 0,
-    currentCostUsage: agg?.totalCost ?? 0,
+    currentTokenUsage: usage.totalInputTokens + usage.totalOutputTokens,
+    currentCostUsage: usage.totalCostUsd,
   };
 }
 
+function budgetMatchesCall(row: AiBudgetRow, provider: string, operation: string): boolean {
+  if (row.scopeType === 'global') return true;
+  if (row.scopeType === 'provider') return row.scopeValue === provider;
+  if (row.scopeType === 'operation') return row.scopeValue === operation;
+  return false;
+}
+
 function listApplicableBudgets(provider: string, operation: string): ApplicableBudget[] {
-  const db = getDrizzle();
-  const rows = db
-    .select()
-    .from(aiBudgets)
-    .where(
-      sql`(${aiBudgets.scopeType} = 'global')
-        OR (${aiBudgets.scopeType} = 'provider' AND ${aiBudgets.scopeValue} = ${provider})
-        OR (${aiBudgets.scopeType} = 'operation' AND ${aiBudgets.scopeValue} = ${operation})`
-    )
-    .all();
+  const rows = aiUsageService
+    .listBudgets(getCoreDrizzle())
+    .filter((row) => budgetMatchesCall(row, provider, operation));
   if (rows.length === 0) return [];
   const start = monthStart();
   const usageByScope = new Map<string, { currentTokenUsage: number; currentCostUsage: number }>();
@@ -91,7 +90,7 @@ function listApplicableBudgets(provider: string, operation: string): ApplicableB
     const scopeKey = `${row.scopeType}:${row.scopeValue ?? ''}`;
     let usage = usageByScope.get(scopeKey);
     if (!usage) {
-      usage = getUsageForScope(db, row, start);
+      usage = getUsageForScope(row, start);
       usageByScope.set(scopeKey, usage);
     }
     return {
@@ -170,6 +169,11 @@ function mapLegacyFallbackToAction(raw: string | null): 'block' | 'warn' {
   return 'warn';
 }
 
+function hasGlobalBudgetConflict(): boolean {
+  const rows = aiUsageService.listBudgets(getCoreDrizzle());
+  return rows.some((row) => row.scopeType === 'global' || row.id === 'global');
+}
+
 /**
  * Idempotent startup migration from legacy `ai.monthlyTokenBudget` /
  * `ai.budgetExceededFallback` settings into a global `ai_budgets` row.
@@ -180,16 +184,10 @@ function mapLegacyFallbackToAction(raw: string | null): 'block' | 'warn' {
 export function migrateLegacyBudgetSettings(): void {
   if (getSettingOrNull(LEGACY_MIGRATED_FLAG_KEY)) return;
 
-  const db = getDrizzle();
   // Skip if either: a global-scoped row already exists, or a row with id='global'
   // already exists under a different scope. upsertBudget keys on id, so the
   // latter would silently clobber unrelated data.
-  const conflict = db
-    .select({ id: aiBudgets.id })
-    .from(aiBudgets)
-    .where(sql`${aiBudgets.scopeType} = 'global' OR ${aiBudgets.id} = 'global'`)
-    .get();
-  if (conflict) {
+  if (hasGlobalBudgetConflict()) {
     setRawSetting(LEGACY_MIGRATED_FLAG_KEY, '1');
     return;
   }
@@ -220,6 +218,11 @@ export function migrateLegacyBudgetSettings(): void {
  * the first active local provider together with its default model. Returns
  * `null` when no candidate is available — the middleware then treats fallback
  * as block.
+ *
+ * Stays on `getDrizzle()` (shared `pops.db`) because this query joins
+ * `ai_providers` + `ai_model_pricing`, neither of which lives in
+ * `@pops/core-db`. A future PR can lift those tables into the package
+ * surface and complete the cutover.
  */
 export function findFallbackProvider(): { provider: string; model: string } | null {
   const db = getDrizzle();
