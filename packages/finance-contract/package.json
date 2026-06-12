@@ -30,10 +30,12 @@
       "types": "./dist/manifest.d.ts",
       "default": "./dist/manifest.js"
     },
+    "./openapi": "./openapi/finance.openapi.json",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsx scripts/generate-openapi.ts",
+    "generate:openapi": "tsx scripts/generate-openapi.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -44,6 +46,7 @@
   },
   "devDependencies": {
     "@pops/finance-api": "workspace:*",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
   }
