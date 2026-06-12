@@ -34,7 +34,9 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsc && tsx scripts/generate-openapi.ts",
+    "build": "tsx scripts/verify-manifest.ts && tsc && tsx scripts/generate-openapi.ts",
+    "generate:manifest": "tsx scripts/generate-manifest.ts",
+    "verify:manifest": "tsx scripts/verify-manifest.ts",
     "generate:openapi": "tsx scripts/generate-openapi.ts",
     "extract:ts": "tsc && tsx ../../scripts/contract/extract-cli.ts --pillar finance --kind ts",
     "extract:zod": "tsc && tsx ../../scripts/contract/extract-cli.ts --pillar finance --kind zod",
