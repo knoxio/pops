@@ -13,7 +13,7 @@ export interface Transaction {
   id: string;
   description: string;
   amount: number;
-  /** ISO-8601 timestamp. Validated by `TransactionSchema` via `.datetime()`. */
+  /** Date-only string (`YYYY-MM-DD`). Validated by `TransactionSchema` via `.date()`. Mirrors the API's date-only finance transaction shape. */
   date: string;
   entityId: string | null;
   /**
