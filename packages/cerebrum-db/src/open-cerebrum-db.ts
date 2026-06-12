@@ -114,7 +114,7 @@ export function openCerebrumDb(
   raw.pragma('busy_timeout = 5000');
 
   const shouldLoadVec = options.loadVec !== false;
-  const vecAvailable = shouldLoadVec ? tryLoadVecExtension(raw, options.logger) : false;
+  const vecLoaded = shouldLoadVec ? tryLoadVecExtension(raw, options.logger) : false;
 
   const db = drizzle(raw) as CerebrumDb;
   try {
@@ -124,7 +124,35 @@ export function openCerebrumDb(
     throw err;
   }
 
-  if (vecAvailable) ensureEmbeddingsVecTable(raw);
+  const vecAvailable = vecLoaded && ensureAndProbeEmbeddingsVec(raw, options.logger);
 
   return { db, raw, vecAvailable };
+}
+
+/**
+ * Create the `embeddings_vec` virtual table and probe it with a no-op
+ * query to confirm the vec0 module is actually usable on this
+ * connection. Returns `true` only when both the create and the probe
+ * succeed — covers the case where the extension loads but the virtual
+ * table can't be queried (module init error, name collision against a
+ * non-vec0 table, etc.).
+ */
+function ensureAndProbeEmbeddingsVec(
+  raw: Database.Database,
+  logger: VecLoaderLogger | undefined
+): boolean {
+  if (!ensureEmbeddingsVecTable(raw)) {
+    logger?.warn?.({}, '[cerebrum-db] embeddings_vec ensure failed — vector features disabled');
+    return false;
+  }
+  try {
+    raw.prepare('SELECT 1 FROM embeddings_vec LIMIT 0').all();
+    return true;
+  } catch (err) {
+    logger?.warn?.(
+      { err: (err as Error).message },
+      '[cerebrum-db] embeddings_vec probe failed — vector features disabled'
+    );
+    return false;
+  }
 }
