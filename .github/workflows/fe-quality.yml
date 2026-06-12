@@ -8,9 +8,11 @@ on:
       - "packages/app-*/**"
       - "packages/cerebrum-db/**"
       - "packages/db-types/**"
+      - "packages/finance-contract/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
       - "packages/lists-db/**"
+      - "packages/pillar-sdk/**"
       - "packages/ui/**"
       - "packages/api-client/**"
       - "packages/widgets/**"
@@ -40,9 +42,11 @@ jobs:
               - 'packages/app-*/**'
               - 'packages/cerebrum-db/**'
               - 'packages/db-types/**'
+              - 'packages/finance-contract/**'
               - 'packages/food-db/**'
               - 'packages/inventory-db/**'
               - 'packages/lists-db/**'
+              - 'packages/pillar-sdk/**'
               - 'packages/ui/**'
               - 'packages/api-client/**'
               - 'packages/widgets/**'
