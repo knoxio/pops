@@ -75,3 +75,29 @@ export const ListOutputSchema = z.object({
   pillars: z.array(RegistryEntrySchema),
   fetchedAt: z.string(),
 });
+
+/**
+ * Heartbeat wire shapes (Theme 13 PRD-162).
+ *
+ * Pillars POST `core.registry.heartbeat({ pillar })` every
+ * `HEARTBEAT_INTERVAL_MS` (≈10s). The output is a discriminated union:
+ *   - `ok: true`  — the heartbeat was recorded; status now `healthy`.
+ *   - `ok: false` — the pillar is not registered; SDK should re-register.
+ */
+export const HeartbeatInputSchema = z.object({
+  pillar: z.string().min(1),
+});
+
+export const HeartbeatOutputSchema = z.discriminatedUnion('ok', [
+  z.object({
+    ok: z.literal(true),
+    pillarId: z.string(),
+    lastHeartbeatAt: z.string(),
+    status: PillarStatusSchema,
+    statusChanged: z.boolean(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    reason: z.literal('not-registered'),
+  }),
+]);
