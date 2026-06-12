@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { IngredientSchema } from '../src/schemas/ingredient.js';
+import { MealPlanSchema, MealTypeSchema } from '../src/schemas/meal-plan.js';
 import { RecipeSchema } from '../src/schemas/recipe.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
@@ -16,7 +18,10 @@ const PAGINATION_SCHEMA: OpenApiSchema = {
 
 const CreateRecipeBodySchema = z.object({
   name: z.string().min(1),
-  servings: z.number().nullable().optional(),
+  ingredients: z.array(z.string()).optional(),
+  instructions: z.string().optional(),
+  tagIds: z.array(z.string()).optional(),
+  source: z.string().nullable().optional(),
 });
 
 const UpdateRecipeBodySchema = CreateRecipeBodySchema.partial();
@@ -32,6 +37,9 @@ export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
     Recipe: zodToOpenApiSchema(RecipeSchema),
+    MealType: zodToOpenApiSchema(MealTypeSchema),
+    MealPlan: zodToOpenApiSchema(MealPlanSchema),
+    Ingredient: zodToOpenApiSchema(IngredientSchema),
     CreateRecipeInput: zodToOpenApiSchema(CreateRecipeBodySchema),
     UpdateRecipeInput: zodToOpenApiSchema(UpdateRecipeBodySchema),
     RecipeListResponse: {

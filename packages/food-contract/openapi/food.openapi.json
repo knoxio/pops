@@ -4,13 +4,28 @@
       "CreateRecipeInput": {
         "additionalProperties": false,
         "properties": {
+          "ingredients": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "instructions": {
+            "type": "string"
+          },
           "name": {
             "minLength": 1,
             "type": "string"
           },
-          "servings": {
+          "source": {
             "nullable": true,
-            "type": "number"
+            "type": "string"
+          },
+          "tagIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -28,6 +43,91 @@
           "message"
         ],
         "type": "object"
+      },
+      "Ingredient": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lastEditedTime": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "unit",
+          "lastEditedTime"
+        ],
+        "type": "object"
+      },
+      "MealPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lastEditedTime": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "mealType": {
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ],
+            "type": "string"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "recipeId": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "mealType",
+          "recipeId",
+          "notes",
+          "lastEditedTime"
+        ],
+        "type": "object"
+      },
+      "MealType": {
+        "enum": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "type": "string"
       },
       "Pagination": {
         "properties": {
@@ -60,6 +160,16 @@
           "id": {
             "type": "string"
           },
+          "ingredients": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "instructions": {
+            "type": "string"
+          },
           "lastEditedTime": {
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
@@ -68,15 +178,25 @@
           "name": {
             "type": "string"
           },
-          "servings": {
+          "source": {
             "nullable": true,
-            "type": "number"
+            "type": "string"
+          },
+          "tagIds": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "type": "array"
           }
         },
         "required": [
           "id",
           "name",
-          "servings",
+          "ingredients",
+          "instructions",
+          "tagIds",
+          "source",
           "lastEditedTime"
         ],
         "type": "object"
@@ -116,13 +236,28 @@
       "UpdateRecipeInput": {
         "additionalProperties": false,
         "properties": {
+          "ingredients": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "instructions": {
+            "type": "string"
+          },
           "name": {
             "minLength": 1,
             "type": "string"
           },
-          "servings": {
+          "source": {
             "nullable": true,
-            "type": "number"
+            "type": "string"
+          },
+          "tagIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object"
