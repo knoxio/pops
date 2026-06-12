@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { movies } from '@pops/db-types';
 
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addMovie } from '../library/service.js';
 import { logWatch } from '../watch-history/service.js';
 import {
@@ -12,7 +13,6 @@ import {
 } from './sync-discover-types.js';
 import { extractExternalIdAsNumber } from './sync-helpers.js';
 
-import type { getDrizzle } from '../../../db.js';
 import type { getImageCache, getTmdbClient } from '../tmdb/index.js';
 import type { PlexClient } from './client.js';
 import type { ActivityWatchEntry } from './sync-discover-graphql.js';
@@ -28,7 +28,6 @@ export interface ProcessMovieEntryArgs {
   movieByRatingKey: MovieByRatingKey;
   movieByTmdbId: MovieByTmdbId;
   result: DiscoverItemResult;
-  db: ReturnType<typeof getDrizzle>;
 }
 
 interface ResolveMovieArgs {
@@ -39,22 +38,13 @@ interface ResolveMovieArgs {
   movieByRatingKey: MovieByRatingKey;
   movieByTmdbId: MovieByTmdbId;
   result: DiscoverItemResult;
-  db: ReturnType<typeof getDrizzle>;
 }
 
 async function resolveMovie(
   args: ResolveMovieArgs
 ): Promise<{ id: number; title: string; tmdbId: number } | null> {
-  const {
-    ratingKey,
-    plexClient,
-    tmdbClient,
-    imageCache,
-    movieByRatingKey,
-    movieByTmdbId,
-    result,
-    db,
-  } = args;
+  const { ratingKey, plexClient, tmdbClient, imageCache, movieByRatingKey, movieByTmdbId, result } =
+    args;
 
   await delay(RATE_LIMIT_DELAY_MS);
   const meta = await plexClient.getDiscoverMetadata(ratingKey);
@@ -69,16 +59,25 @@ async function resolveMovie(
     return null;
   }
 
+  const mediaDb = getMediaDrizzle();
   const existing = movieByTmdbId.get(tmdbId);
   if (existing) {
-    db.update(movies).set({ discoverRatingKey: ratingKey }).where(eq(movies.id, existing.id)).run();
+    mediaDb
+      .update(movies)
+      .set({ discoverRatingKey: ratingKey })
+      .where(eq(movies.id, existing.id))
+      .run();
     const movie = { ...existing, tmdbId };
     movieByRatingKey.set(ratingKey, movie);
     return movie;
   }
 
   const { movie: newMovie } = await addMovie(tmdbId, tmdbClient, imageCache);
-  db.update(movies).set({ discoverRatingKey: ratingKey }).where(eq(movies.id, newMovie.id)).run();
+  mediaDb
+    .update(movies)
+    .set({ discoverRatingKey: ratingKey })
+    .where(eq(movies.id, newMovie.id))
+    .run();
   const movie = { id: newMovie.id, title: newMovie.title, tmdbId };
   movieByRatingKey.set(ratingKey, movie);
   movieByTmdbId.set(tmdbId, { id: newMovie.id, title: newMovie.title });

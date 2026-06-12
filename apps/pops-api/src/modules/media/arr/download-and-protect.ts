@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { movies, settings } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
 import { getImageCache, getTmdbClient } from '../tmdb/index.js';
 import * as arrService from './service.js';
@@ -80,7 +81,7 @@ async function ensureLibraryEntry(tmdbId: number): Promise<void> {
 }
 
 function markMovieProtected(tmdbId: number): void {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const updateResult = db
     .update(movies)
     .set({ rotationStatus: 'protected' })

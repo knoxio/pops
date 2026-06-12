@@ -9,6 +9,7 @@ import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { mediaWatchlist, movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getRadarrClient } from '../arr/service.js';
 
 const BYTES_PER_GB = 1_073_741_824;
@@ -89,19 +90,18 @@ export function getEligibleForRemoval(
   movieSizes: MovieSizeMap,
   downloadingTmdbIds: Set<number>
 ): EligibleMovie[] {
-  const db = getDrizzle();
+  const sharedDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
   const now = new Date().toISOString();
 
-  // Get watchlist movie IDs
-  const watchlistRows = db
+  const watchlistRows = sharedDb
     .select({ mediaId: mediaWatchlist.mediaId })
     .from(mediaWatchlist)
     .where(eq(mediaWatchlist.mediaType, 'movie'))
     .all();
   const watchlistMovieIds = new Set(watchlistRows.map((r) => r.mediaId));
 
-  // Query movies that are NOT leaving and NOT protected (with unexpired protection)
-  const candidates = db
+  const candidates = mediaDb
     .select({
       id: movies.id,
       tmdbId: movies.tmdbId,
@@ -209,7 +209,7 @@ export interface ExpiredMovieResult {
  * Continues on individual failures — never aborts the cycle.
  */
 export async function processExpiredMovies(): Promise<ExpiredMovieResult[]> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const client = getRadarrClient();
   if (!client) throw new Error('Radarr not configured');
 
@@ -271,7 +271,7 @@ export async function processExpiredMovies(): Promise<ExpiredMovieResult[]> {
  * Get the total size in GB of movies currently in the 'leaving' state.
  */
 export function getLeavingMovieSizeGb(movieSizes: MovieSizeMap): number {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const leavingMovies = db
     .select({ tmdbId: movies.tmdbId })
     .from(movies)
@@ -290,7 +290,7 @@ export function getLeavingMovieSizeGb(movieSizes: MovieSizeMap): number {
  */
 export function markMoviesAsLeaving(movieIds: number[], expiresAt: string): void {
   if (movieIds.length === 0) return;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const now = new Date().toISOString();
   db.update(movies)
     .set({
