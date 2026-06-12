@@ -63,6 +63,25 @@ export function getScopeRuleEngine(): ScopeRuleEngine {
  * `engramsService` against `readDb`; writes still land on `pops.db`
  * until PRD-179 US-03 flips them too. See `EngramService` top-of-file
  * JSDoc for the cross-store consistency contract.
+ *
+ * Blast radius: this is the single production factory, so every
+ * consumer — user-facing routers (engrams, ingest, scopes), AI tools,
+ * curation jobs, glia revert, nudges, ego context helpers — picks up
+ * the `cerebrum.db`-backed read seam. That is the intended cutover
+ * shape: keeping a parallel `pops.db` read path defeats the migration
+ * and re-introduces the divergence the cutover is closing.
+ *
+ * Write-adjacent safety: read-after-write goes through the private
+ * `loadEngram` (write store) so created/updated rows surface
+ * immediately. The one cross-store existence check that gates writes
+ * — `EngramService.exists`, used by glia revert — falls back to the
+ * write store when the read store misses, so newly-written rows can
+ * still be restored/unlinked before the next backfill. See the
+ * `exists()` JSDoc for the contract.
+ *
+ * Tests inject a single in-memory SQLite via `new EngramService({ db,
+ * ... })`; `readDb` defaults to `db` at the constructor so existing
+ * harnesses keep working without churn.
  */
 export function getEngramService(): EngramService {
   return new EngramService({

@@ -5,12 +5,16 @@
  * All write operations use atomic file writes before index updates.
  *
  * Read/write split during the migration window (PRD-179 PR 2):
- *  - Pure user-facing reads — `list`, `read`, `exists` — are routed
- *    through `readDb` (a `CerebrumDb` handle, wired to
- *    `getCerebrumDrizzle()` in `instance.ts`) and forwarded to the
- *    `@pops/cerebrum-db` `engramsService.{listEngrams,findIndexRow,
- *    existsEngram}` namespace. These are the seam called out by
- *    PRD-179 PR 2.
+ *  - Pure user-facing reads — `list`, `read` — are routed through
+ *    `readDb` (a `CerebrumDb` handle, wired to `getCerebrumDrizzle()`
+ *    in `instance.ts`) and forwarded to the `@pops/cerebrum-db`
+ *    `engramsService.{listEngrams,findIndexRow}` namespace. These are
+ *    the seam called out by PRD-179 PR 2.
+ *  - `exists` checks `readDb` first then falls back to `db` (the write
+ *    store). Glia revert calls `exists` to gate `restore`/`unlink`
+ *    writes, so a row newly created since boot — present only in
+ *    `pops.db` — must still report `true`. Drop the fallback once
+ *    PRD-179 US-03 collapses writes onto `cerebrum.db`.
  *  - Every write path — `create`, `update`, `archive`, `restore`,
  *    `changeType`, `link`, `unlink`, `hardDelete`, `reindex` — and any
  *    read-after-write hop (the private `loadEngram` helper used to
@@ -60,7 +64,7 @@ import {
 } from './handlers/list-engrams.js';
 import { reindexEngrams } from './handlers/rebuild-index.js';
 import { restoreEngram, type RestoreResult } from './handlers/restore-engram.js';
-import { getIndexRow, upsertIndex } from './handlers/upsert-index.js';
+import { findIndexRow, getIndexRow, upsertIndex } from './handlers/upsert-index.js';
 import { canTransitionStatus, type EngramFrontmatter, type EngramStatus } from './schema.js';
 import { buildEngram, type Engram } from './types.js';
 
@@ -221,9 +225,22 @@ export class EngramService {
     return deleteEngram({ root: this.root, db: this.db, now: this.now }, id);
   }
 
-  /** True iff `id` is present in the engram index. */
+  /**
+   * True iff `id` is present in the engram index.
+   *
+   * Consults the cerebrum read store first; falls back to the shared write
+   * store (`pops.db`) when missing. Write-context callers (glia revert in
+   * particular — see `../glia/revert-operations.ts`) check existence before
+   * issuing `restore` / `unlink` mutations on the write store. A row newly
+   * created since boot lives only in `pops.db` until the next backfill, so
+   * a `readDb`-only check would produce false negatives and silently skip
+   * the restore. The fallback keeps the TOCTOU window closed during the
+   * cutover; once PRD-179 US-03 collapses writes onto `cerebrum.db`, the
+   * second hop becomes redundant and can be dropped.
+   */
   exists(id: string): boolean {
-    return engramsService.existsEngram(this.readDb, id);
+    if (engramsService.existsEngram(this.readDb, id)) return true;
+    return findIndexRow(this.db, id) !== null;
   }
 
   /**
