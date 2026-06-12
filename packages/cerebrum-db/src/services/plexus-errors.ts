@@ -22,7 +22,6 @@ export class PlexusAdapterNotFoundError extends Error {
  * registry slot under a different id).
  */
 export class PlexusAdapterNameConflictError extends Error {
-  readonly name: string;
   readonly adapterName: string;
   constructor(adapterName: string) {
     super(`Plexus adapter name '${adapterName}' already registered`);

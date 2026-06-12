@@ -97,6 +97,7 @@ export function upsertAdapter(db: CerebrumDb, args: UpsertAdapterArgs): PlexusAd
     .onConflictDoUpdate({
       target: plexusAdapters.id,
       set: {
+        name: args.name,
         status: 'registered',
         config: serialisedConfig,
         lastError: null,
@@ -107,7 +108,12 @@ export function upsertAdapter(db: CerebrumDb, args: UpsertAdapterArgs): PlexusAd
   return getAdapterOrThrow(db, args.id);
 }
 
-/** Patch payload for `updateAdapterStatus` — `lastError` is cleared when null. */
+/**
+ * Patch payload for `updateAdapterStatus`. `lastError` is cleared
+ * whenever it is omitted or explicitly null (the implementation
+ * normalises both via `?? null`); pass a non-empty string to record a
+ * fresh failure.
+ */
 export interface AdapterStatusPatch {
   status: PlexusAdapterStatus;
   updatedAt: string;

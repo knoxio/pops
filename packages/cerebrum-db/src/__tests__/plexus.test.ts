@@ -117,6 +117,17 @@ describe('upsertAdapter', () => {
       PlexusAdapterNameConflictError
     );
   });
+
+  it('re-upserting the same id with a new name persists the rename', () => {
+    upsertAdapter(db, makeUpsert({ id: 'adp_rename', name: 'original' }));
+    const renamed = upsertAdapter(
+      db,
+      makeUpsert({ id: 'adp_rename', name: 'updated', updatedAt: '2026-06-10T13:00:00Z' })
+    );
+    expect(renamed.name).toBe('updated');
+    expect(getAdapterByName(db, 'updated')?.id).toBe('adp_rename');
+    expect(getAdapterByName(db, 'original')).toBeNull();
+  });
 });
 
 describe('getAdapter / getAdapterOrThrow / getAdapterByName', () => {
