@@ -9,9 +9,13 @@
  * cerebrum pillar's read surface stays self-describing. Mirrors the
  * `@pops/core-db` / `@pops/inventory-db` schema re-export pattern.
  *
- * This first slice exposes only `nudgeLog` (PRD-084 reflex/nudge audit
- * trail). Downstream slices (engrams, embeddings, conversations,
- * glia_actions, plexus_adapters, plexus_filters) will add their tables
- * here as their service code lands.
+ * Currently exposes:
+ *   - `nudgeLog` — PRD-084 reflex/nudge audit trail.
+ *   - `engramIndex` / `engramScopes` / `engramTags` / `engramLinks` —
+ *     PRD-179 atomic memory units + their graph edges.
+ *
+ * Downstream slices (embeddings, conversations, glia_actions,
+ * plexus_adapters, plexus_filters) will add their tables here as their
+ * service code lands.
  */
-export { nudgeLog } from '@pops/db-types';
+export { engramIndex, engramLinks, engramScopes, engramTags, nudgeLog } from '@pops/db-types';

@@ -1502,7 +1502,9 @@ export function setupTestContext() {
     // Same for the cerebrum pillar handle (phase 2 PR 3): nudge_log
     // reads/writes now resolve getCerebrumDrizzle(), so the test
     // fixture has to surface that table on the cerebrum handle too.
-    setCerebrumDb({ db: drizzle(db), raw: db });
+    // vecAvailable: false — the in-memory test fixture doesn't load
+    // sqlite-vec; vector consumers that need it inject their own handle.
+    setCerebrumDb({ db: drizzle(db), raw: db, vecAvailable: false });
 
     // Same for the food pillar handle (phase 2 PR 2): the handle is
     // opened at boot but no router has cut over yet. The injection is
