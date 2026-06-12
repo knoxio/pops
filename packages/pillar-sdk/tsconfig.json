@@ -3,13 +3,14 @@
   "compilerOptions": {
     "module": "Node16",
     "moduleResolution": "Node16",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2023", "DOM"],
     "types": ["node"],
+    "jsx": "react-jsx",
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist",
     "rootDir": "src"
   },
   "include": ["src/**/*"],
-  "exclude": ["**/__tests__/**", "**/*.test.ts"]
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"]
 }
