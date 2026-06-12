@@ -1,6 +1,6 @@
 import { httpBatchLink, splitLink } from '@trpc/client';
 
-import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk';
+import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk/capabilities';
 
 import type { Operation, TRPCLink } from '@trpc/client';
 
