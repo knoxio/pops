@@ -57,6 +57,19 @@ function monthStart(): string {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0)).toISOString();
 }
 
+/**
+ * Aggregate monthly token + cost usage for a single budget scope.
+ *
+ * Staleness window: reads from `core.db` via `aiUsageService`, but
+ * inference logs are still inserted into the shared `pops.db` by
+ * `apps/pops-api/src/lib/inference-middleware.ts`. The `core.db` copy is
+ * only refreshed by the boot-time backfill, so any inference recorded
+ * since process start is invisible here. Net effect: enforcement can
+ * under-count usage and over-allow calls (fail to warn/block/fallback)
+ * during normal uptime. Accepted risk during the read/write split window.
+ * TODO(PRD-186 PR 3): drop this note once the inference writer flips to
+ * `core.db` (or a dual-write path lands).
+ */
 function getUsageForScope(
   row: AiBudgetRow,
   start: string
