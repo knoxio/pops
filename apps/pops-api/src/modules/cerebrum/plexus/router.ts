@@ -4,24 +4,27 @@
  * Exposes adapter management and ingestion filter CRUD. The router is a thin
  * adapter over the lifecycle manager and database — no business logic here.
  *
- * Read/write split during the PRD-180 cutover window (PR 2):
+ * Read/write split during the cerebrum.plexus cutover window:
  *  - Pure user-facing reads — `adapters.list`, `adapters.get`, `filters.list`
  *    — resolve through `getCerebrumDrizzle()` and forward to the
  *    `@pops/cerebrum-db` `plexusService.{listAdapters,getAdapter,listFilters}`
- *    namespace. These are the seam called out by PRD-180 PR 2.
+ *    namespace. This is the read seam of the cutover.
  *  - Writes (`filters.set` — atomic delete-then-insert) plus their
  *    accompanying parent-exists guard still go through the shared
  *    `pops.db` write handle (`getDb()`); the lifecycle-manager mutations
  *    (`register`, `unregister`, `healthCheck`, `sync`) also stay on
  *    `getDb()` via `lifecycle-db.ts` for read-after-write consistency.
- *    PRD-180 US-03 flips the writes too, at which point the router can
- *    collapse onto a single `CerebrumDb` handle and `getDb()` drops out.
+ *    A follow-up cutover flips the writes too, at which point the
+ *    router can collapse onto a single `CerebrumDb` handle and
+ *    `getDb()` drops out. See PRD-180 for the broader pillar sequence;
+ *    exact phase/PR numbering is owned by that doc and may drift from
+ *    this comment.
  *
  * Cross-store consistency between the legacy `pops.db` writes and the
  * pillar's `cerebrum.db` reads relies on the boot-time backfill in
  * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts` — same
- * pattern as the engrams (PRD-179 PR 2) and conversations (PRD-182
- * PR 2) cutovers.
+ * pattern as the other cerebrum pillar cutovers (engrams,
+ * conversations).
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
