@@ -34,6 +34,7 @@
     "coverage",
     "pnpm-lock.yaml",
     "package-lock.json",
+    "packages/*/openapi/*.openapi.json",
     "*.csv",
     "*.jsonl",
     "**/*.tsbuildinfo",
