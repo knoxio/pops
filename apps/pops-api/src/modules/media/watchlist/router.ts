@@ -185,11 +185,10 @@ export const watchlistRouter = router({
 
   /** Remove an entry from the watchlist. Pushes removal to Plex if connected (best-effort). */
   remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
-    // Fetch entry before removing to get plexRatingKey
     let plexRatingKey: string | null;
     try {
-      const entry = service.getWatchlistEntry(input.id);
-      plexRatingKey = (entry as Record<string, unknown>).plexRatingKey as string | null;
+      const entry = service.getSharedWatchlistEntry(input.id);
+      plexRatingKey = entry.plexRatingKey;
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: 'NOT_FOUND', message: err.message });

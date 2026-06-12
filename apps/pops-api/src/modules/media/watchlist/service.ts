@@ -93,12 +93,21 @@ function translate<T>(fn: () => T): T {
   }
 }
 
-/** Read an entry off the shared `pops.db` — used by write paths to avoid a cross-store TOCTOU. */
+/**
+ * Read an entry off the shared `pops.db` — used by write paths to avoid a
+ * cross-store TOCTOU. Exported as `getSharedWatchlistEntry` for callers
+ * (e.g. the router's removal prefetch) that need a write-store-consistent
+ * existence check during the cutover window: a row newly added since the
+ * last boot lives only in `pops.db` and would 404 against the now-media-pillar
+ * `getWatchlistEntry`. Drop this once writes also move to `media.db`.
+ */
 function readSharedEntry(id: number): MediaWatchlistRow {
   const row = getDrizzle().select().from(mediaWatchlist).where(eq(mediaWatchlist.id, id)).get();
   if (!row) throw new NotFoundError('WatchlistEntry', String(id));
   return row;
 }
+
+export { readSharedEntry as getSharedWatchlistEntry };
 
 function enrichRow(row: MediaWatchlistRow): EnrichedWatchlistRow {
   const rawDb = getDb();
