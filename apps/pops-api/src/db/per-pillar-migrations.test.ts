@@ -203,8 +203,9 @@ describe('runPerPillarMigrations', () => {
     // Smoke check: importing the runner under the real layout exercises
     // the workspace fallback path against an actual on-disk pillar dir.
     // `core` owns `packages/core-db/migrations/` with 0054_service_accounts
-    // (core pillar Phase 1 PR 2) and 0055_pillar_registry (Theme 13 PRD-161
-    // registry endpoints); `media` owns `packages/media-db/migrations/`
+    // (core pillar Phase 1 PR 2), 0055_pillar_registry (Theme 13 PRD-161
+    // registry endpoints), and 0056_settings_baseline (PRD-183 US-01 —
+    // settings baseline); `media` owns `packages/media-db/migrations/`
     // with 0021_spooky_lockheed (media pillar Phase 1 PR 2),
     // 0022_media_movies_baseline (Theme 13 PRD-165 US-01 — movies baseline),
     // 0023_watchlist_baseline (Theme 13 PRD-167 PR 1 — watchlist baseline),
@@ -242,6 +243,7 @@ describe('runPerPillarMigrations', () => {
         '0044_nudge_log',
         '0054_service_accounts',
         '0055_pillar_registry',
+        '0056_settings_baseline',
       ]);
       expect([...result.pillarsApplied].toSorted()).toEqual([
         'cerebrum',
