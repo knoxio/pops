@@ -8,8 +8,8 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html'],
       reportsDirectory: 'coverage',
-      include: ['src/**/*.ts'],
-      exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.ts'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.{ts,tsx}'],
     },
   },
 });
