@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
+import { ConnectionSchema } from '../src/schemas/connection.js';
 import { ItemSchema } from '../src/schemas/item.js';
+import { LocationSchema } from '../src/schemas/location.js';
+import { WarrantySchema } from '../src/schemas/warranty.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
 const PAGINATION_SCHEMA: OpenApiSchema = {
@@ -32,6 +35,9 @@ export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
     Item: zodToOpenApiSchema(ItemSchema),
+    Location: zodToOpenApiSchema(LocationSchema),
+    Warranty: zodToOpenApiSchema(WarrantySchema),
+    Connection: zodToOpenApiSchema(ConnectionSchema),
     CreateItemInput: zodToOpenApiSchema(CreateItemBodySchema),
     UpdateItemInput: zodToOpenApiSchema(UpdateItemBodySchema),
     ItemListResponse: {

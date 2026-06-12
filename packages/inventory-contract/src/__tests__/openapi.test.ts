@@ -44,6 +44,18 @@ describe('@pops/inventory-contract openapi snapshot', () => {
     expect(openapi.components.schemas).toHaveProperty('Item');
   });
 
+  it('references the Location entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Location');
+  });
+
+  it('references the Warranty entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Warranty');
+  });
+
+  it('references the Connection entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Connection');
+  });
+
   it('describes the items list endpoint', () => {
     const op = openapi.paths['/inventory/items']?.['get'];
     expect(op).toBeDefined();
