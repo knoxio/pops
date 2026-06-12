@@ -21,6 +21,7 @@ packages:
   - 'packages/media-db'
   - 'packages/cerebrum-contract'
   - 'packages/cerebrum-db'
+  - 'packages/core-contract'
   - 'packages/food-db'
   - 'packages/food-contracts'
   - 'packages/lists-db'
