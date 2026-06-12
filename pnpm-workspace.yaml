@@ -12,6 +12,7 @@ packages:
   - 'packages/overlay-ego'
   - 'packages/api-client'
   - 'packages/core-db'
+  - 'packages/finance-contract'
   - 'packages/finance-db'
   - 'packages/db-types'
   - 'packages/inventory-db'
