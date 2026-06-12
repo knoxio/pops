@@ -390,17 +390,17 @@ Status legend: ⏳ Not started · 🔄 In progress · ✅ Done · ⛔ Blocked
 | 219     | docs-swagger-container           | 2    | ⏳     | 153                    | dev ergonomics                 |
 | 184     | core-tag-rules-cleanup           | 3    | ⏳     | 206                    | core cleanup                   |
 | 185     | core-corrections-cleanup         | 3    | ⏳     | 206                    | core cleanup                   |
-| 220     | ci-path-filter-audit             | 1    | ⏳     | independent            | CI lean-ness wave 1            |
-| 221     | ci-affected-rebuild              | 2    | ⏳     | 220                    | CI lean-ness wave 2            |
-| 222     | ci-docs-fast-path                | 2    | ⏳     | 220                    | CI lean-ness wave 2            |
-| 223     | ci-pillar-isolation              | 3    | ⏳     | 221                    | CI lean-ness wave 3            |
-| 224     | ci-e2e-scoping                   | 3    | ⏳     | 221                    | CI lean-ness wave 3            |
-| 225     | ci-publish-narrowing             | 4    | ⏳     | 221                    | CI lean-ness wave 4            |
-| 226     | ci-budget-enforcement            | 5    | ⏳     | 220-225                | CI lean-ness wave 5            |
+| 220     | ci-path-filter-audit             | 1    | ⏳     | independent            | CI leanness wave 1             |
+| 221     | ci-affected-rebuild              | 2    | ⏳     | 220                    | CI leanness wave 2             |
+| 222     | ci-docs-fast-path                | 2    | ⏳     | 220                    | CI leanness wave 2             |
+| 223     | ci-pillar-isolation              | 3    | ⏳     | 221                    | CI leanness wave 3             |
+| 224     | ci-e2e-scoping                   | 3    | ⏳     | 221                    | CI leanness wave 3             |
+| 225     | ci-publish-narrowing             | 4    | ⏳     | 221                    | CI leanness wave 4             |
+| 226     | ci-budget-enforcement            | 5    | ⏳     | 220-225                | CI leanness wave 5             |
 
 ---
 
-## CI lean-ness (continuous track, runs across all waves)
+## CI leanness (continuous track, runs across all waves)
 
 The pillar split is not just a runtime decoupling — it's also the opportunity to collapse the **PR turnaround time** by making CI fire only the jobs that can plausibly fail given the diff. A finance contract bump shouldn't run media's Playwright suite or rebuild the food worker image. Hold this discipline from PR-1.
 
@@ -437,7 +437,7 @@ What fires when it shouldn't, as of PR #2944:
 
 ### Per-wave deliverables
 
-| Wave | Lean-ness deliverable                                                                                                                                                                                                                                                                                 | Owner agent    |
+| Wave | Leanness deliverable                                                                                                                                                                                                                                                                                  | Owner agent    |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
 | 1    | **PRD-220** `ci-path-filter-audit`: extend `paths:` to every workflow (close the per-pillar filters; carve out `quality.yml`; skip whole jobs on miss)                                                                                                                                                | `a:ci-lean-1`  |
 | 2    | **PRD-221** `ci-affected-rebuild`: wire turbo `--filter='...[origin/main]'` into a single `affected-rebuild` job that decides which pillar workflows can be skipped _globally_. Replaces N per-pillar `Detect changes` jobs with one. Feeds matrix outputs to pillar-images / fe-test-e2e / api-test. | `a:ci-lean-2`  |
@@ -461,7 +461,7 @@ These are added to the existing wave gates — they don't replace anything, they
 
 ### Principles for every PRD this theme
 
-1. **Path-filter every new workflow.** If you add a CI job, it must have a `paths:` filter at the workflow `on:` level AND a `dorny/paths-filter` at the job level. Both, because the workflow-level keeps the workflow off the queue entirely on `main`, and the job-level handles PRs.
+1. **Path-filter every new workflow at the trigger level.** Add `paths:` (or `paths-ignore:`) to the `pull_request:` AND `push: branches: [main]` triggers — both apply on PRs and on `main`. If the workflow is a **required** branch-protection check, also add a `dorny/paths-filter` _job-level_ gate so the workflow still runs (to mark the required check green) but skips the heavy steps when the trigger filter alone would have skipped it. Required-check workflows must always satisfy branch protection; not-required ones can skip outright via the trigger-level filter and don't need the job-level gate.
 2. **Skip at the job, not the step.** The current `_pkg-check.yml` skips individual steps with `if:` — that still spins up the runner. Skip the whole job with `if: needs.changes.outputs.relevant == 'true'` and let the dependent check pass automatically.
 3. **Don't add a new "check all pillars" matrix.** Use the affected-rebuild output once PRD-221 lands; until then, route per-pillar logic through the per-pillar workflow files.
 4. **Measure before merging.** When you open a PR, glance at the required checks list. If your "small fix" fires >10 checks, the path filter for one of them is wrong — open a follow-up PR-220-series ticket.
@@ -541,4 +541,4 @@ After Theme 13, the next theme is whatever you decide. Mobile (per the existing 
 - **Each wave has hard quality gates; don't paper over failed gates.**
 - **The critical path is PRD-153 → 157 → 161 → 158 → 191 — that's the load-bearing five.**
 - **Theme 12's CI patterns + the new contract semver CI together catch ~95% of regressions before merge.**
-- **CI lean-ness is a parallel track, not a Wave 5 afterthought.** Every wave ships a PRD that narrows CI scope; by Wave 3 a single-pillar PR fires ≤ 6 checks (down from ~20+).
+- **CI leanness is a parallel track, not a Wave 5 afterthought.** Every wave ships a PRD that narrows CI scope; by Wave 3 a single-pillar PR fires ≤ 6 checks (down from ~20+).
