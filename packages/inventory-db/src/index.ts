@@ -19,6 +19,7 @@ export type { InventoryDb } from './services/internal.js';
 export { openInventoryDb, type OpenedInventoryDb } from './open-inventory-db.js';
 
 export * as locationsService from './services/locations.js';
+export * as itemsService from './services/items.js';
 
 // Public types re-exported at the package root so consumers can name
 // them without reaching into the namespaces.
@@ -33,3 +34,16 @@ export type {
 } from './services/locations.js';
 
 export { toLocation } from './services/locations.js';
+
+export type {
+  CreateItemInput,
+  InventoryRow,
+  Item,
+  ItemFilters,
+  ItemListResult,
+  UpdateItemInput,
+} from './services/items.js';
+
+export { toItem } from './services/items.js';
+
+export { ItemConflictError, ItemNotFoundError } from './services/items-errors.js';
