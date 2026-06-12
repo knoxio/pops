@@ -9,11 +9,18 @@
  * copy already populated and become a no-op via the
  * `WHERE id NOT IN (...)` existence filter.
  *
- * Today the slice only covers the `nudge_log` table; the engrams +
- * embeddings + conversations + glia + plexus slices add their entries
- * here when their cutovers land. Order matters when FKs are introduced
- * across cerebrum-owned tables — for the nudge_log-only slice the
- * order is trivial.
+ * Today the slice covers:
+ *   - `nudge_log` (Track M5 / PRD-149)
+ *   - `engram_index` + `engram_scopes` + `engram_tags` + `engram_links`
+ *     (PRD-179 US-01 — scaffold; consumers still write to the shared
+ *     pops.db until US-03 flips them over)
+ *
+ * The remaining cerebrum tables (embeddings + embeddings_vec,
+ * conversations, glia, plexus) add their entries here when their
+ * cutovers land. Order matters when FKs are introduced across
+ * cerebrum-owned tables — `engram_index` is copied first so the
+ * cascading auxiliaries (`engram_scopes`, `engram_tags`, `engram_links`)
+ * can satisfy their FK at insert time.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Partial failures
@@ -58,6 +65,46 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'action_label',
       'action_params',
     ],
+  },
+  {
+    table: 'engram_index',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'file_path',
+      'type',
+      'source',
+      'status',
+      'template',
+      'created_at',
+      'modified_at',
+      'title',
+      'content_hash',
+      'body_hash',
+      'word_count',
+      'custom_fields',
+    ],
+  },
+  {
+    // engram_scopes has no surrogate id — the pair (engram_id, scope) is
+    // unique. Use engram_id as the existence-filter column; once any row
+    // for an engram is copied across, subsequent runs are no-ops for that
+    // engram. New scopes added to a still-shared engram won't replicate,
+    // which is acceptable: the cutover PR (US-03) routes new writes
+    // through getCerebrumDrizzle() before this asymmetry matters.
+    table: 'engram_scopes',
+    idColumn: 'engram_id',
+    columns: ['engram_id', 'scope'],
+  },
+  {
+    table: 'engram_tags',
+    idColumn: 'engram_id',
+    columns: ['engram_id', 'tag'],
+  },
+  {
+    table: 'engram_links',
+    idColumn: 'source_id',
+    columns: ['source_id', 'target_id'],
   },
 ];
 

@@ -219,8 +219,9 @@ describe('runPerPillarMigrations', () => {
     // missing index carried over from shared journal 0009_red_quasimodo);
     // `cerebrum` owns `packages/cerebrum-db/migrations/` with
     // 0039_dry_fabian_cortez and 0044_nudge_log (cerebrum pillar Phase 1
-    // PR 2 — nudge_log slice). Pillars without their own journal yet still
-    // skip cleanly.
+    // PR 2 — nudge_log slice) and 0050_engrams_baseline (PRD-179 US-01 —
+    // engrams baseline). Pillars without their own journal yet still skip
+    // cleanly.
     await withDb((db) => {
       const realPillars: PillarDescriptor[] = [
         { id: 'core', dbPackageDir: 'packages/core-db' },
@@ -241,6 +242,7 @@ describe('runPerPillarMigrations', () => {
         '0025_media_watch_history_baseline',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
+        '0050_engrams_baseline',
         '0054_service_accounts',
         '0055_pillar_registry',
         '0056_settings_baseline',
