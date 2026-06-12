@@ -21,9 +21,11 @@ import { MANIFEST_OUTPUT_PATH, readContractVersion, renderManifest } from './ren
 
 import type { FoodError } from '../src/errors.js';
 import type { FoodRouter } from '../src/router.js';
+import type { Ingredient } from '../src/types/ingredient.js';
+import type { MealPlan } from '../src/types/meal-plan.js';
 import type { Recipe } from '../src/types/recipe.js';
 
-export type SurfaceAssertion = [Recipe, FoodError, FoodRouter];
+export type SurfaceAssertion = [Recipe, MealPlan, Ingredient, FoodError, FoodRouter];
 
 const version = readContractVersion();
 const rendered = renderManifest(version);
