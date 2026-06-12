@@ -42,6 +42,10 @@
       "types": "./dist/react/index.d.ts",
       "default": "./dist/react/index.js"
     },
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "default": "./dist/contracts/index.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -52,6 +56,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@pops/finance-contract": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

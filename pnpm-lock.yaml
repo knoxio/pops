@@ -2033,6 +2033,9 @@ importers:
 
   packages/pillar-sdk:
     dependencies:
+      '@pops/finance-contract':
+        specifier: workspace:*
+        version: link:../finance-contract
       zod:
         specifier: ^4.4.3
         version: 4.4.3
