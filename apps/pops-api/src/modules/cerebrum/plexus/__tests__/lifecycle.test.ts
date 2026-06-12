@@ -16,6 +16,8 @@ import { setCerebrumDb } from '../../../../db/cerebrum-handle.js';
 import { BaseAdapter } from '../adapter.js';
 import { PlexusLifecycleManager } from '../lifecycle.js';
 
+import type { OpenedCerebrumDb } from '@pops/cerebrum-db';
+
 import type { AdapterConfig, AdapterStatus, EngineData, IngestOptions } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -98,18 +100,23 @@ function defaultConfig(): AdapterConfig {
 describe('PlexusLifecycleManager', () => {
   let db: BetterSqlite3.Database;
   let prevDb: BetterSqlite3.Database | null;
+  let prevCerebrumDb: OpenedCerebrumDb | null;
   let lifecycle: PlexusLifecycleManager;
 
   beforeEach(() => {
     db = createTestDb();
     prevDb = setDb(db);
-    setCerebrumDb({ db: drizzle<Record<string, unknown>>(db), raw: db, vecAvailable: false });
+    prevCerebrumDb = setCerebrumDb({
+      db: drizzle<Record<string, unknown>>(db),
+      raw: db,
+      vecAvailable: false,
+    });
     // Use a very large interval so scheduled health checks don't fire during tests.
     lifecycle = new PlexusLifecycleManager({ healthIntervalMs: 999_999_999 });
   });
 
   afterEach(() => {
-    setCerebrumDb(null);
+    setCerebrumDb(prevCerebrumDb);
     if (prevDb) setDb(prevDb);
     else db.close();
     vi.restoreAllMocks();

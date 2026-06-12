@@ -254,6 +254,17 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/cerebrum/plexus/__tests__/lifecycle.test.ts",
+    "to": "packages/cerebrum-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/cerebrum-db",
+    "dependencyTypes": ["undetermined", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-cerebrum"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/cerebrum/plexus/lifecycle-db.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
