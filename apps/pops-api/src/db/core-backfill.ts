@@ -1,25 +1,82 @@
 import { resolveSqlitePath } from './sqlite-path.js';
 
 /**
- * One-shot core-pillar backfill — copies service-account rows from the
- * shared `pops.db` into `core.db` via ATTACH.
+ * Boot-time backfill from the legacy shared `pops.db` into the core
+ * pillar's `core.db`.
  *
- * Lifted out of `db.ts` so that file stays under the eslint(max-lines) cap
- * once the core + inventory + media pillar handles + the closes all
- * landed there. The behaviour is unchanged.
+ * Each slice cutover (Phase 2 PR 3 service-accounts, PRD-183 settings, …)
+ * flips its handle to `getCoreDrizzle()`. The first deploy after each
+ * cutover needs to carry the existing rows from the shared DB across
+ * before any reads come from the new file. Subsequent boots find the
+ * core copy already populated and become a no-op via the
+ * `WHERE <id> NOT IN (...)` existence filter on every table.
  *
- * Boot-time contract: Phase 2 PR 2 opened the core DB but did not yet
- * consume it. PR 3 (this entry point) flipped service-accounts traffic
- * to the core handle, so the first deploy after PR 3 carried the existing
- * rows across before any reads came from the new file. Subsequent boots
- * find the core copy already populated and become a no-op via the
- * `WHERE id NOT IN (...)` existence filter.
+ * No FK relationships exist between the listed core tables, so order
+ * is independent — but each entry is wrapped in `tryCopyTable` so a
+ * missing source table (post-PR-4 drop scenario, or a stale on-disk
+ * pops.db) doesn't bring the whole backfill down. Failures are logged
+ * + swallowed; the remaining tables still attempt.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
- * stale on-disk pops.db never bricks the boot path. Failures here leave
- * the core copy empty for that boot; the next deploy retries.
+ * stale on-disk pops.db never bricks the boot path. Failures here
+ * leave the core copy partially populated for that boot; the next
+ * deploy retries and the idempotent filter picks up only the
+ * still-missing rows.
+ *
+ * Mirrors `./backfill-finance-from-shared.ts` and `./media-backfill.ts`.
  */
 import type Database from 'better-sqlite3';
+
+interface TableCopy {
+  readonly table: string;
+  /** Explicit column list keeps the backfill robust against a stale
+   * on-disk pops.db that already widened or narrowed since the boot
+   * image was built. */
+  readonly columns: readonly string[];
+  /** Identifier column used in the existence filter. */
+  readonly idColumn: string;
+}
+
+const TABLE_COPIES: readonly TableCopy[] = [
+  {
+    table: 'service_accounts',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'name',
+      'key_prefix',
+      'key_hash',
+      'scopes',
+      'created_at',
+      'last_used_at',
+      'revoked_at',
+      'created_by',
+    ],
+  },
+  {
+    table: 'settings',
+    idColumn: 'key',
+    columns: ['key', 'value'],
+  },
+];
+
+function tryCopyTable(raw: Database.Database, copy: TableCopy): void {
+  try {
+    const hasTable = raw
+      .prepare(`SELECT 1 FROM pops.sqlite_master WHERE type='table' AND name='${copy.table}'`)
+      .get();
+    if (!hasTable) return;
+    const cols = copy.columns.join(', ');
+    raw.exec(`
+      INSERT INTO ${copy.table} (${cols})
+      SELECT ${cols}
+      FROM pops.${copy.table}
+      WHERE ${copy.idColumn} NOT IN (SELECT ${copy.idColumn} FROM ${copy.table})
+    `);
+  } catch (err) {
+    console.warn(`[db] Core backfill of ${copy.table} failed (non-fatal):`, err);
+  }
+}
 
 /**
  * Run the idempotent backfill against the open core SQLite handle. The
@@ -33,30 +90,11 @@ export function backfillCoreFromShared(coreRaw: Database.Database | null): void 
   try {
     coreRaw.prepare('ATTACH DATABASE ? AS pops').run(sharedPath);
     try {
-      const hasTable = coreRaw
-        .prepare("SELECT 1 FROM pops.sqlite_master WHERE type='table' AND name='service_accounts'")
-        .get();
-      if (hasTable) {
-        // Enumerate columns explicitly so a future migration that
-        // widens the core table won't break the backfill against a
-        // stale on-disk pops.db that still has the older shape. Order
-        // matches the 0054_service_accounts.sql DDL byte-for-byte.
-        coreRaw.exec(`
-          INSERT INTO service_accounts (
-            id, name, key_prefix, key_hash, scopes,
-            created_at, last_used_at, revoked_at, created_by
-          )
-          SELECT
-            id, name, key_prefix, key_hash, scopes,
-            created_at, last_used_at, revoked_at, created_by
-          FROM pops.service_accounts
-          WHERE id NOT IN (SELECT id FROM service_accounts)
-        `);
-      }
+      for (const copy of TABLE_COPIES) tryCopyTable(coreRaw, copy);
     } finally {
       coreRaw.exec('DETACH DATABASE pops');
     }
   } catch (err) {
-    console.warn('[db] Core service-accounts backfill failed (non-fatal):', err);
+    console.warn('[db] Core backfill ATTACH failed (non-fatal):', err);
   }
 }

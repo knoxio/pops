@@ -20,6 +20,7 @@ export { openCoreDb, type OpenedCoreDb } from './open-core-db.js';
 export * as serviceAccountsService from './services/service-accounts.js';
 export * as serviceAccountKeys from './services/service-account-keys.js';
 export * as pillarRegistryService from './services/pillar-registry.js';
+export * as settingsService from './services/settings.js';
 
 export type {
   ApplyStatusUpdate,
@@ -41,3 +42,10 @@ export type {
 } from './services/service-accounts.js';
 
 export type { IssuedKey } from './services/service-account-keys.js';
+
+export type {
+  Setting,
+  SetSettingInput,
+  SettingListResult,
+  SettingRow,
+} from './services/settings.js';

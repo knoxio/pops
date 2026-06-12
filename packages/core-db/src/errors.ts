@@ -36,3 +36,13 @@ export class ServiceAccountAlreadyRevokedError extends Error {
     this.id = id;
   }
 }
+
+export class SettingNotFoundError extends Error {
+  override readonly name = 'SettingNotFoundError' as const;
+  readonly key: string;
+
+  constructor(key: string) {
+    super(`Setting '${key}' not found`);
+    this.key = key;
+  }
+}

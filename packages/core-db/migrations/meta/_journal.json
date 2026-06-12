@@ -15,6 +15,13 @@
       "when": 1781568000000,
       "tag": "0055_pillar_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781827200000,
+      "tag": "0056_settings_baseline",
+      "breakpoints": true
     }
   ]
 }
