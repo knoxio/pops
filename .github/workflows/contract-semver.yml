@@ -59,6 +59,7 @@ jobs:
           pnpm --filter @pops/cerebrum-contract build
           pnpm --filter @pops/core-contract build
           pnpm --filter @pops/lists-contract build
+          pnpm --filter @pops/food-contract build
           pnpm --filter @pops/pillar-sdk build
 
       - name: Regenerate snapshots (in-place)
