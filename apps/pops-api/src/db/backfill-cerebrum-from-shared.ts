@@ -7,7 +7,8 @@
  * the existing nudge_log rows from the shared DB across before any
  * reads come from the new file. Subsequent boots find the cerebrum
  * copy already populated and become a no-op via the
- * `WHERE id NOT IN (...)` existence filter.
+ * `WHERE NOT EXISTS (...)` existence filter (composite-key aware for
+ * junction tables like `conversation_context`).
  *
  * Today the slice covers:
  *   - `nudge_log` (Track M5 / PRD-149)
@@ -51,14 +52,19 @@ interface TableCopy {
    * image was built.
    */
   readonly columns: readonly string[];
-  /** Identifier column used in the existence filter. */
-  readonly idColumn: string;
+  /**
+   * Identifier column(s) used in the existence filter. A single entry
+   * covers tables with a surrogate PK; multiple entries express a
+   * composite key on junction tables (e.g. `conversation_context`)
+   * where row identity is the tuple, not a single column.
+   */
+  readonly idColumns: readonly [string, ...string[]];
 }
 
 const TABLE_COPIES: readonly TableCopy[] = [
   {
     table: 'nudge_log',
-    idColumn: 'id',
+    idColumns: ['id'],
     columns: [
       'id',
       'type',
@@ -77,7 +83,7 @@ const TABLE_COPIES: readonly TableCopy[] = [
   },
   {
     table: 'engram_index',
-    idColumn: 'id',
+    idColumns: ['id'],
     columns: [
       'id',
       'file_path',
@@ -96,28 +102,25 @@ const TABLE_COPIES: readonly TableCopy[] = [
   },
   {
     // engram_scopes has no surrogate id — the pair (engram_id, scope) is
-    // unique. Use engram_id as the existence-filter column; once any row
-    // for an engram is copied across, subsequent runs are no-ops for that
-    // engram. New scopes added to a still-shared engram won't replicate,
-    // which is acceptable: the cutover PR (US-03) routes new writes
-    // through getCerebrumDrizzle() before this asymmetry matters.
+    // unique. Filter on the composite tuple so new scopes added to an
+    // already-copied engram still converge on subsequent boots.
     table: 'engram_scopes',
-    idColumn: 'engram_id',
+    idColumns: ['engram_id', 'scope'],
     columns: ['engram_id', 'scope'],
   },
   {
     table: 'engram_tags',
-    idColumn: 'engram_id',
+    idColumns: ['engram_id', 'tag'],
     columns: ['engram_id', 'tag'],
   },
   {
     table: 'engram_links',
-    idColumn: 'source_id',
+    idColumns: ['source_id', 'target_id'],
     columns: ['source_id', 'target_id'],
   },
   {
     table: 'glia_actions',
-    idColumn: 'id',
+    idColumns: ['id'],
     columns: [
       'id',
       'action_type',
@@ -143,7 +146,7 @@ const TABLE_COPIES: readonly TableCopy[] = [
     // engram_scopes is: PR 3 (US-03) routes writes through the cerebrum
     // handle before any divergence matters.
     table: 'glia_trust_state',
-    idColumn: 'action_type',
+    idColumns: ['action_type'],
     columns: [
       'action_type',
       'current_phase',
@@ -161,12 +164,12 @@ const TABLE_COPIES: readonly TableCopy[] = [
     // (both FK with ON DELETE CASCADE); copying it first lets the
     // dependents satisfy their FK at insert time.
     table: 'conversations',
-    idColumn: 'id',
+    idColumns: ['id'],
     columns: ['id', 'title', 'active_scopes', 'app_context', 'model', 'created_at', 'updated_at'],
   },
   {
     table: 'messages',
-    idColumn: 'id',
+    idColumns: ['id'],
     columns: [
       'id',
       'conversation_id',
@@ -181,14 +184,10 @@ const TABLE_COPIES: readonly TableCopy[] = [
   },
   {
     // conversation_context's PK is the (conversation_id, engram_id) pair.
-    // Use conversation_id as the existence-filter column — once any row
-    // for a conversation is copied across, subsequent runs are no-ops
-    // for that conversation; new engram associations on a still-shared
-    // conversation won't replicate, which is acceptable for the same
-    // reason engram_scopes is: PR 3 routes new writes through the
-    // cerebrum handle before this asymmetry matters.
+    // Filter on the composite tuple so new engram associations added to
+    // an already-copied conversation still converge on subsequent boots.
     table: 'conversation_context',
-    idColumn: 'conversation_id',
+    idColumns: ['conversation_id', 'engram_id'],
     columns: ['conversation_id', 'engram_id', 'relevance_score', 'loaded_at'],
   },
 ];
@@ -200,11 +199,16 @@ function tryCopyTable(raw: Database.Database, copy: TableCopy): void {
       .get();
     if (!hasTable) return;
     const cols = copy.columns.join(', ');
+    const keyMatch = copy.idColumns
+      .map((col) => `target.${col} = pops.${copy.table}.${col}`)
+      .join(' AND ');
     raw.exec(`
       INSERT INTO ${copy.table} (${cols})
       SELECT ${cols}
       FROM pops.${copy.table}
-      WHERE ${copy.idColumn} NOT IN (SELECT ${copy.idColumn} FROM ${copy.table})
+      WHERE NOT EXISTS (
+        SELECT 1 FROM ${copy.table} AS target WHERE ${keyMatch}
+      )
     `);
   } catch (err) {
     console.warn(`[db] Cerebrum backfill of ${copy.table} failed (non-fatal):`, err);

@@ -471,6 +471,29 @@ describe('backfillCerebrumFromShared', () => {
     }
   });
 
+  it('converges new conversation_context pairs when one row for the conversation already exists', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertConversationRow(raw, 'conv_shared');
+      insertConversationContextRow(raw, 'conv_shared', 'eng_shared_a');
+      insertConversationContextRow(raw, 'conv_shared', 'eng_shared_b');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      insertConversationRow(cerebrum.raw, 'conv_shared');
+      insertConversationContextRow(cerebrum.raw, 'conv_shared', 'eng_shared_a');
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const rows = cerebrum.raw
+        .prepare(
+          'SELECT engram_id FROM conversation_context WHERE conversation_id = ? ORDER BY engram_id'
+        )
+        .all('conv_shared') as { engram_id: string }[];
+      expect(rows.map((r) => r.engram_id)).toEqual(['eng_shared_a', 'eng_shared_b']);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
   it('tolerates a shared DB with no cerebrum tables (post-PR-4 drop scenario)', () => {
     const sharedPath = join(tmpDir, 'pops.db');
     const raw = new BetterSqlite3(sharedPath);
