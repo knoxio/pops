@@ -30,7 +30,7 @@ describe('GliaActionService', () => {
 
   beforeEach(() => {
     db = createTestDb();
-    svc = new GliaActionService(drizzle(db), makeClock());
+    svc = new GliaActionService(drizzle<Record<string, unknown>>(db), makeClock());
     svc.seedTrustStates();
   });
 
