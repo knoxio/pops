@@ -12,10 +12,7 @@
  * `-media.ts`, `-finance.ts`) so each file stays under the 200-line
  * lint cap. This barrel keeps the existing import surface stable.
  */
-export {
-  SERVICE_ACCOUNTS_TABLE_SQL,
-  SETTINGS_TABLE_SQL,
-} from './backfill-test-fixtures-core.js';
+export { SERVICE_ACCOUNTS_TABLE_SQL, SETTINGS_TABLE_SQL } from './backfill-test-fixtures-core.js';
 export {
   MOVIES_TABLE_SQL,
   SHELF_IMPRESSIONS_TABLE_SQL,
