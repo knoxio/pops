@@ -42,6 +42,10 @@
       "types": "./dist/react/index.d.ts",
       "default": "./dist/react/index.js"
     },
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "default": "./dist/contracts/index.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -68,10 +72,14 @@
     "vitest": "^4.1.8"
   },
   "peerDependencies": {
+    "@pops/finance-contract": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
     "react": "^19.0.0"
   },
   "peerDependenciesMeta": {
+    "@pops/finance-contract": {
+      "optional": true
+    },
     "@tanstack/react-query": {
       "optional": true
     },
