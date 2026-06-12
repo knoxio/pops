@@ -4,6 +4,30 @@
   "entries": [
     {
       "entry": ".",
+      "name": "Budget",
+      "kind": "interface",
+      "text": "export interface Budget {\n    id: string;\n    name: string;\n    cap: number;\n    period: BudgetPeriod;\n    categoryId: string | null;\n    lastEditedTime: string;\n}"
+    },
+    {
+      "entry": ".",
+      "name": "BudgetPeriod",
+      "kind": "type",
+      "text": "export type BudgetPeriod = (typeof BUDGET_PERIODS)[number];"
+    },
+    {
+      "entry": ".",
+      "name": "BudgetPeriodSchema",
+      "kind": "variable",
+      "text": "export declare const BudgetPeriodSchema: z.ZodEnum<{\n    monthly: \"monthly\";\n    yearly: \"yearly\";\n}>;"
+    },
+    {
+      "entry": ".",
+      "name": "BudgetSchema",
+      "kind": "variable",
+      "text": "export declare const BudgetSchema: z.ZodObject<{\n    id: z.ZodString;\n    name: z.ZodString;\n    cap: z.ZodNumber;\n    period: z.ZodEnum<{\n        monthly: \"monthly\";\n        yearly: \"yearly\";\n    }>;\n    categoryId: z.ZodNullable<z.ZodString>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
+    },
+    {
+      "entry": ".",
       "name": "ContractStatus",
       "kind": "type",
       "text": "export type ContractStatus = 'ok' | 'not-found' | 'unavailable' | 'degraded';"
@@ -16,9 +40,21 @@
     },
     {
       "entry": ".",
+      "name": "Entity",
+      "kind": "interface",
+      "text": "export interface Entity {\n    id: string;\n    name: string;\n    aliases: readonly string[];\n    lastEditedTime: string;\n}"
+    },
+    {
+      "entry": ".",
+      "name": "EntitySchema",
+      "kind": "variable",
+      "text": "export declare const EntitySchema: z.ZodObject<{\n    id: z.ZodString;\n    name: z.ZodString;\n    aliases: z.ZodReadonly<z.ZodArray<z.ZodString>>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
+    },
+    {
+      "entry": ".",
       "name": "FinanceContract",
       "kind": "interface",
-      "text": "export interface FinanceContract {\n    readonly pillar: 'finance';\n    readonly version: string;\n    readonly entities: {\n        readonly wishListItem: WishListItem;\n    };\n    readonly errors: FinanceError;\n    readonly router: FinanceRouter;\n}"
+      "text": "export interface FinanceContract {\n    readonly pillar: 'finance';\n    readonly version: string;\n    readonly entities: {\n        readonly budget: Budget;\n        readonly entity: Entity;\n        readonly transaction: Transaction;\n        readonly wishListItem: WishListItem;\n    };\n    readonly errors: FinanceError;\n    readonly router: FinanceRouter;\n}"
     },
     {
       "entry": ".",
@@ -48,7 +84,19 @@
       "entry": ".",
       "name": "FinanceRouter",
       "kind": "type",
-      "text": "export type FinanceRouter = typeof financeRouter;"
+      "text": "export type FinanceRouter = AnyTRPCRouter;"
+    },
+    {
+      "entry": ".",
+      "name": "Transaction",
+      "kind": "interface",
+      "text": "export interface Transaction {\n    id: string;\n    description: string;\n    amount: number;\n    date: string;\n    entityId: string | null;\n    tagIds: readonly string[];\n    lastEditedTime: string;\n}"
+    },
+    {
+      "entry": ".",
+      "name": "TransactionSchema",
+      "kind": "variable",
+      "text": "export declare const TransactionSchema: z.ZodObject<{\n    id: z.ZodString;\n    description: z.ZodString;\n    amount: z.ZodNumber;\n    date: z.ZodString;\n    entityId: z.ZodNullable<z.ZodString>;\n    tagIds: z.ZodReadonly<z.ZodArray<z.ZodString>>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
     },
     {
       "entry": ".",
@@ -114,13 +162,37 @@
       "entry": "./manifest",
       "name": "FinanceContract",
       "kind": "interface",
-      "text": "export interface FinanceContract {\n    readonly pillar: 'finance';\n    readonly version: string;\n    readonly entities: {\n        readonly wishListItem: WishListItem;\n    };\n    readonly errors: FinanceError;\n    readonly router: FinanceRouter;\n}"
+      "text": "export interface FinanceContract {\n    readonly pillar: 'finance';\n    readonly version: string;\n    readonly entities: {\n        readonly budget: Budget;\n        readonly entity: Entity;\n        readonly transaction: Transaction;\n        readonly wishListItem: WishListItem;\n    };\n    readonly errors: FinanceError;\n    readonly router: FinanceRouter;\n}"
     },
     {
       "entry": "./router",
       "name": "FinanceRouter",
       "kind": "type",
-      "text": "export type FinanceRouter = typeof financeRouter;"
+      "text": "export type FinanceRouter = AnyTRPCRouter;"
+    },
+    {
+      "entry": "./schemas",
+      "name": "BudgetPeriodSchema",
+      "kind": "variable",
+      "text": "export declare const BudgetPeriodSchema: z.ZodEnum<{\n    monthly: \"monthly\";\n    yearly: \"yearly\";\n}>;"
+    },
+    {
+      "entry": "./schemas",
+      "name": "BudgetSchema",
+      "kind": "variable",
+      "text": "export declare const BudgetSchema: z.ZodObject<{\n    id: z.ZodString;\n    name: z.ZodString;\n    cap: z.ZodNumber;\n    period: z.ZodEnum<{\n        monthly: \"monthly\";\n        yearly: \"yearly\";\n    }>;\n    categoryId: z.ZodNullable<z.ZodString>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
+    },
+    {
+      "entry": "./schemas",
+      "name": "EntitySchema",
+      "kind": "variable",
+      "text": "export declare const EntitySchema: z.ZodObject<{\n    id: z.ZodString;\n    name: z.ZodString;\n    aliases: z.ZodReadonly<z.ZodArray<z.ZodString>>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
+    },
+    {
+      "entry": "./schemas",
+      "name": "TransactionSchema",
+      "kind": "variable",
+      "text": "export declare const TransactionSchema: z.ZodObject<{\n    id: z.ZodString;\n    description: z.ZodString;\n    amount: z.ZodNumber;\n    date: z.ZodString;\n    entityId: z.ZodNullable<z.ZodString>;\n    tagIds: z.ZodReadonly<z.ZodArray<z.ZodString>>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
     },
     {
       "entry": "./schemas",
@@ -133,6 +205,30 @@
       "name": "WishListPrioritySchema",
       "kind": "variable",
       "text": "export declare const WishListPrioritySchema: z.ZodEnum<{\n    Needing: \"Needing\";\n    Soon: \"Soon\";\n    \"One Day\": \"One Day\";\n    Dreaming: \"Dreaming\";\n}>;"
+    },
+    {
+      "entry": "./types",
+      "name": "Budget",
+      "kind": "interface",
+      "text": "export interface Budget {\n    id: string;\n    name: string;\n    cap: number;\n    period: BudgetPeriod;\n    categoryId: string | null;\n    lastEditedTime: string;\n}"
+    },
+    {
+      "entry": "./types",
+      "name": "BudgetPeriod",
+      "kind": "type",
+      "text": "export type BudgetPeriod = (typeof BUDGET_PERIODS)[number];"
+    },
+    {
+      "entry": "./types",
+      "name": "Entity",
+      "kind": "interface",
+      "text": "export interface Entity {\n    id: string;\n    name: string;\n    aliases: readonly string[];\n    lastEditedTime: string;\n}"
+    },
+    {
+      "entry": "./types",
+      "name": "Transaction",
+      "kind": "interface",
+      "text": "export interface Transaction {\n    id: string;\n    description: string;\n    amount: number;\n    date: string;\n    entityId: string | null;\n    tagIds: readonly string[];\n    lastEditedTime: string;\n}"
     },
     {
       "entry": "./types",

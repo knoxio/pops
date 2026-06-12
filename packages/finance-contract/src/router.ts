@@ -1,19 +1,19 @@
-/**
- * The finance pillar's tRPC router *type*. Type-only re-export from
- * `apps/pops-finance-api` — no runtime tRPC code crosses the contract
- * boundary. Consumers use this to type the `pillar('finance').foo.bar(…)`
- * SDK calls (Epic 05 / PRD-191).
- *
- * Current shape: `typeof financeRouter`. Until PRD-153 us-04 + PRD-155 land
- * the build-time declaration bundler, this re-export means the contract's
- * emitted `.d.ts` still references `@pops/finance-api` (which transitively
- * references `@pops/finance-db`). The lint rule in PRD-156 stays focused
- * on *value* imports; type-only references through the contract are
- * tolerated as the migration intermediate. A committed OpenAPI snapshot
- * at `openapi/finance.openapi.json` is the planned long-term wire-typed
- * alternative consumers can use instead (PRD-153 US-04 — not yet
- * shipped).
- */
-import type { financeRouter } from '@pops/finance-api/router';
+import type { AnyTRPCRouter } from '@trpc/server';
 
-export type FinanceRouter = typeof financeRouter;
+/**
+ * Opaque tRPC router type for the finance pillar. Until PRD-155 ships the
+ * declaration bundler, `FinanceRouter` is the generic `AnyTRPCRouter` —
+ * consumers using `pillar<FinanceRouter>('finance')` get a fully opaque
+ * `PillarHandle` with no route or procedure keys preserved. The committed
+ * OpenAPI snapshot at `openapi/finance.openapi.json` is the wire-typed
+ * alternative until PRD-155 lands.
+ *
+ * This shape was previously `typeof financeRouter` (re-exporting from
+ * `@pops/finance-api`), but that import-type closed a build-graph cycle
+ * (pillar-sdk → finance-contract → finance-api → pillar-sdk) that broke
+ * turbo's `^build` chain and forced every CI workflow to manually
+ * pre-build packages in order. PRD-155's declaration bundler will
+ * restore the concrete per-procedure types without re-introducing the
+ * cycle.
+ */
+export type FinanceRouter = AnyTRPCRouter;
