@@ -26,6 +26,7 @@ import {
   SHELF_IMPRESSIONS_TABLE_SQL,
   TV_SHOWS_TABLE_SQL,
   WATCH_HISTORY_TABLE_SQL,
+  WATCHLIST_TABLE_SQL,
 } from './backfill-test-fixtures.js';
 
 let tmpDir: string;
@@ -569,6 +570,132 @@ describe('backfillMediaFromShared', () => {
 
       expect(() => backfillMediaFromShared()).not.toThrow();
       const count = media.raw.prepare('SELECT count(*) AS n FROM watch_history').get() as {
+        n: number;
+      };
+      expect(count.n).toBe(0);
+    });
+  });
+
+  describe('watchlist (PRD-167 PR 2)', () => {
+    interface WatchlistSeed {
+      mediaType: 'movie' | 'tv_show';
+      mediaId: number;
+      priority?: number | null;
+      notes?: string | null;
+      source?: string;
+      plexRatingKey?: string | null;
+    }
+
+    function openSharedWithWatchlist(rows: WatchlistSeed[]): string {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.exec(WATCHLIST_TABLE_SQL);
+      const insert = raw.prepare(
+        'INSERT INTO watchlist (media_type, media_id, priority, notes, source, plex_rating_key) VALUES (?, ?, ?, ?, ?, ?)'
+      );
+      for (const row of rows) {
+        insert.run(
+          row.mediaType,
+          row.mediaId,
+          row.priority ?? null,
+          row.notes ?? null,
+          row.source ?? 'manual',
+          row.plexRatingKey ?? null
+        );
+      }
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+      return path;
+    }
+
+    it('copies fresh watchlist rows on first run and is a no-op on the second', () => {
+      openSharedWithWatchlist([
+        { mediaType: 'movie', mediaId: 603, priority: 0 },
+        { mediaType: 'tv_show', mediaId: 42, priority: 1 },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      backfillMediaFromShared();
+      const after = media.raw
+        .prepare('SELECT id, media_type, media_id FROM watchlist ORDER BY id')
+        .all() as { id: number; media_type: string; media_id: number }[];
+      expect(after.map((r) => r.media_id)).toEqual([603, 42]);
+
+      backfillMediaFromShared();
+      const second = media.raw.prepare('SELECT count(*) AS n FROM watchlist').get() as {
+        n: number;
+      };
+      expect(second.n).toBe(2);
+    });
+
+    it('only inserts watchlist rows missing from the media copy', () => {
+      openSharedWithWatchlist([
+        { mediaType: 'movie', mediaId: 603 },
+        { mediaType: 'tv_show', mediaId: 42 },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      // Pre-seed id=1 with a different (media_type, media_id) tuple so the
+      // backfill skips it by id and the unique index doesn't conflict with
+      // the id=2 carry-over.
+      media.raw
+        .prepare('INSERT INTO watchlist (id, media_type, media_id) VALUES (?, ?, ?)')
+        .run(1, 'movie', 99_999);
+
+      backfillMediaFromShared();
+      const rows = media.raw
+        .prepare('SELECT id, media_type, media_id FROM watchlist ORDER BY id')
+        .all() as { id: number; media_type: string; media_id: number }[];
+      expect(rows).toEqual([
+        { id: 1, media_type: 'movie', media_id: 99_999 },
+        { id: 2, media_type: 'tv_show', media_id: 42 },
+      ]);
+    });
+
+    it('carries every column across (full-shape roundtrip)', () => {
+      openSharedWithWatchlist([
+        {
+          mediaType: 'tv_show',
+          mediaId: 12_345,
+          priority: 3,
+          notes: 'Pinned for the weekend',
+          source: 'plex',
+          plexRatingKey: 'discover-key-1',
+        },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      backfillMediaFromShared();
+
+      const row = media.raw
+        .prepare('SELECT * FROM watchlist WHERE media_id = ?')
+        .get(12_345) as Record<string, unknown>;
+      expect(row).toMatchObject({
+        media_type: 'tv_show',
+        media_id: 12_345,
+        priority: 3,
+        notes: 'Pinned for the weekend',
+        source: 'plex',
+        plex_rating_key: 'discover-key-1',
+      });
+    });
+
+    it('tolerates a shared DB without the watchlist table', () => {
+      // Shared DB has shelf_impressions but no watchlist — backfill copies
+      // shelf rows and skips watchlist without throwing.
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      expect(() => backfillMediaFromShared()).not.toThrow();
+      const count = media.raw.prepare('SELECT count(*) AS n FROM watchlist').get() as {
         n: number;
       };
       expect(count.n).toBe(0);

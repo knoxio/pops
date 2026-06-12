@@ -4,9 +4,12 @@
  * @deprecated PRD-167 PR 1 (Theme 13) shadows this router on
  * `apps/pops-media-api/src/modules/watchlist` against `@pops/media-db`.
  * The mount stays here as the fall-through while the dispatcher / cutover
- * lands in PRD-167 PR 3; reads continue to flow through this surface
- * because the `movies` / `tv_shows` enrichment join hasn't moved to the
- * media pillar yet (gated on PRD-165 / PRD-166).
+ * lands in PRD-167 PR 3.
+ *
+ * PRD-167 PR 2 (this PR) cuts the read paths in `./service.ts` over to
+ * `@pops/media-db`'s `watchlistService` via `getMediaDrizzle()`. Writes
+ * still target `pops.db`; see `./service.ts` for the documented split
+ * and the cross-store consistency contract.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';

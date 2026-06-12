@@ -91,3 +91,17 @@ CREATE INDEX idx_watch_history_media ON watch_history (media_type, media_id);
 CREATE INDEX idx_watch_history_watched_at ON watch_history (watched_at);
 CREATE UNIQUE INDEX idx_watch_history_unique ON watch_history (media_type, media_id, watched_at);
 `;
+
+export const WATCHLIST_TABLE_SQL = `
+CREATE TABLE watchlist (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  media_type text NOT NULL,
+  media_id integer NOT NULL,
+  priority integer DEFAULT 0,
+  notes text,
+  added_at text DEFAULT (datetime('now')) NOT NULL,
+  source text DEFAULT 'manual' NOT NULL,
+  plex_rating_key text
+);
+CREATE UNIQUE INDEX idx_watchlist_media ON watchlist (media_type, media_id);
+`;

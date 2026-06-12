@@ -110,6 +110,20 @@ const TABLE_COPIES: readonly TableCopy[] = [
     idColumn: 'id',
     columns: ['id', 'media_type', 'media_id', 'watched_at', 'completed', 'blacklisted'],
   },
+  {
+    table: 'watchlist',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'media_type',
+      'media_id',
+      'priority',
+      'notes',
+      'added_at',
+      'source',
+      'plex_rating_key',
+    ],
+  },
 ];
 
 function tryCopyTable(raw: Database.Database, copy: TableCopy): void {

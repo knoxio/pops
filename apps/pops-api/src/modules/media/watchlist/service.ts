@@ -1,11 +1,63 @@
-import { and, asc, count, desc, eq, type SQL } from 'drizzle-orm';
-
 /**
- * Watchlist service — CRUD operations against SQLite via Drizzle ORM.
+ * Watchlist read/write surface — PRD-167 PR 2 cutover.
+ *
+ * Read/write split during the migration window (mirrors the watch-history
+ * PR #3008 / movies PR #3006 pattern):
+ *
+ *  - `listWatchlist`, `getWatchlistEntry` and `getWatchlistStatus` are
+ *    routed through `getMediaDrizzle()` (the media pillar's per-pillar
+ *    `media.db.watchlist`) by forwarding to `@pops/media-db`'s
+ *    `watchlistService`. The list-row enrichment (`title` / `posterUrl`
+ *    join against `movies` / `tv_shows`) still runs through the raw
+ *    `getDb()` handle against the shared `pops.db` because the legacy
+ *    `movies` / `tv_shows` reads in this app continue to do so until
+ *    PRD-165 PR 4 / PRD-166 PR 4 retire the shared copies — both stores
+ *    stay in sync via the boot-time backfill so the join sees the same
+ *    rows either way.
+ *
+ *  - Every write path — `addToWatchlist`, `updateWatchlistEntry`,
+ *    `removeFromWatchlist`, `reorderWatchlist`, `removeByMedia`,
+ *    `resequencePriorities` — still goes through `getDrizzle()` (the
+ *    shared `pops.db`). Cross-module writers in this app
+ *    (`watch-history/handlers/log-watch-event.ts`,
+ *    `watch-history/handlers/batch-operations.ts`,
+ *    `plex/sync-watchlist.ts`, `rotation/removal-selection.ts`, the
+ *    discovery and comparisons readers) hold raw drizzle handles on
+ *    `mediaWatchlist` and target `pops.db`; keeping writes on the same
+ *    store avoids bifurcating new rows between the two SQLite files
+ *    until the full slice can be moved.
+ *
+ * Cross-store consistency relies on `backfillMediaFromShared()` in
+ * `apps/pops-api/src/db/media-backfill.ts`, which now copies the
+ * `watchlist` table from `pops.db` -> `media.db` on boot (this PR
+ * extends the `TABLE_COPIES` list). The copy is idempotent (`WHERE id
+ * NOT IN (...)`). Between boots, newly-written rows live only in
+ * `pops.db` and won't appear in `listWatchlist` / `getWatchlistEntry`
+ * results until the next deploy reruns the backfill — the same
+ * trade-off taken by the movies (PRD-165) and watch-history (PRD-168)
+ * cutovers. Full read-your-writes consistency lands when the writers
+ * also cut over.
+ *
+ * TOCTOU note: write paths that need an existence check (update /
+ * remove / reorder) read it from `pops.db` directly via
+ * `readSharedEntry` rather than going through the now-media-pillar
+ * `getWatchlistEntry`. This keeps the check and the subsequent UPDATE /
+ * DELETE on the same store so a row present on one side but not the
+ * other can't produce inconsistent "not found vs. silent no-op"
+ * behaviour. Mirrors the watch-history `deleteWatchHistoryEntry` fix
+ * shipped in PR #3008.
  */
+import { and, asc, desc, eq } from 'drizzle-orm';
+
 import { mediaWatchlist } from '@pops/db-types';
+import {
+  watchlistService,
+  WatchlistEntryNotFoundError,
+  WatchlistReorderConflictError,
+} from '@pops/media-db';
 
 import { getDb, getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
 import type {
@@ -22,90 +74,94 @@ export interface WatchlistListResult {
   total: number;
 }
 
-/** List watchlist entries with optional filters. */
+function narrowMediaType(value: string | undefined): 'movie' | 'tv_show' | undefined {
+  if (value === 'movie' || value === 'tv_show') return value;
+  return undefined;
+}
+
+function translate<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (err instanceof WatchlistEntryNotFoundError) {
+      throw new NotFoundError('WatchlistEntry', String(err.entryId));
+    }
+    if (err instanceof WatchlistReorderConflictError) {
+      throw new ConflictError(err.message);
+    }
+    throw err;
+  }
+}
+
+/** Read an entry off the shared `pops.db` — used by write paths to avoid a cross-store TOCTOU. */
+function readSharedEntry(id: number): MediaWatchlistRow {
+  const row = getDrizzle().select().from(mediaWatchlist).where(eq(mediaWatchlist.id, id)).get();
+  if (!row) throw new NotFoundError('WatchlistEntry', String(id));
+  return row;
+}
+
+function enrichRow(row: MediaWatchlistRow): EnrichedWatchlistRow {
+  const rawDb = getDb();
+  let title: string | null = null;
+  let posterUrl: string | null = null;
+
+  if (row.mediaType === 'movie') {
+    const movie = rawDb
+      .prepare('SELECT title, tmdb_id, poster_path FROM movies WHERE id = ?')
+      .get(row.mediaId) as
+      | { title: string; tmdb_id: number; poster_path: string | null }
+      | undefined;
+    if (movie) {
+      title = movie.title;
+      posterUrl = movie.poster_path ? `/media/images/movie/${movie.tmdb_id}/poster.jpg` : null;
+    }
+  } else if (row.mediaType === 'tv_show') {
+    const show = rawDb
+      .prepare('SELECT name, tvdb_id, poster_path FROM tv_shows WHERE id = ?')
+      .get(row.mediaId) as
+      | { name: string; tvdb_id: number; poster_path: string | null }
+      | undefined;
+    if (show) {
+      title = show.name;
+      posterUrl = show.poster_path ? `/media/images/tv/${show.tvdb_id}/poster.jpg` : null;
+    }
+  }
+
+  return { ...row, title, posterUrl };
+}
+
+/** List watchlist entries with optional filters. Reads from the media pillar handle. */
 export function listWatchlist(
   filters: WatchlistFilters,
   limit: number,
   offset: number
 ): WatchlistListResult {
-  const db = getDrizzle();
-  const conditions: SQL[] = [];
-
-  if (filters.mediaType) {
-    conditions.push(eq(mediaWatchlist.mediaType, filters.mediaType as 'movie' | 'tv_show'));
-  }
-
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const rawRows = db
-    .select()
-    .from(mediaWatchlist)
-    .where(where)
-    .orderBy(asc(mediaWatchlist.priority), desc(mediaWatchlist.addedAt))
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  // Enrich with title and poster from movies/tv_shows tables
-  const rawDb = getDb();
-  const rows = rawRows.map((row) => {
-    let title: string | null = null;
-    let posterUrl: string | null = null;
-
-    if (row.mediaType === 'movie') {
-      const movie = rawDb
-        .prepare('SELECT title, tmdb_id, poster_path FROM movies WHERE id = ?')
-        .get(row.mediaId) as
-        | { title: string; tmdb_id: number; poster_path: string | null }
-        | undefined;
-      if (movie) {
-        title = movie.title;
-        posterUrl = movie.poster_path ? `/media/images/movie/${movie.tmdb_id}/poster.jpg` : null;
-      }
-    } else if (row.mediaType === 'tv_show') {
-      const show = rawDb
-        .prepare('SELECT name, tvdb_id, poster_path FROM tv_shows WHERE id = ?')
-        .get(row.mediaId) as
-        | { name: string; tvdb_id: number; poster_path: string | null }
-        | undefined;
-      if (show) {
-        title = show.name;
-        posterUrl = show.poster_path ? `/media/images/tv/${show.tvdb_id}/poster.jpg` : null;
-      }
-    }
-
-    return { ...row, title, posterUrl };
-  });
-
-  const [countRow] = db.select({ total: count() }).from(mediaWatchlist).where(where).all();
-
-  return { rows, total: countRow?.total ?? 0 };
+  const { rows, total } = watchlistService.listWatchlist(
+    getMediaDrizzle(),
+    { mediaType: narrowMediaType(filters.mediaType) },
+    limit,
+    offset
+  );
+  return { rows: rows.map(enrichRow), total };
 }
 
-/** Check whether a specific media item is on the watchlist. Returns entry ID if present. */
+/** Check whether a specific media item is on the watchlist. Reads from the media pillar handle. */
 export function getWatchlistStatus(
   mediaType: 'movie' | 'tv_show',
   mediaId: number
 ): { onWatchlist: boolean; entryId: number | null } {
-  const db = getDrizzle();
-  const row = db
-    .select({ id: mediaWatchlist.id })
-    .from(mediaWatchlist)
-    .where(and(eq(mediaWatchlist.mediaType, mediaType), eq(mediaWatchlist.mediaId, mediaId)))
-    .get();
-  return row ? { onWatchlist: true, entryId: row.id } : { onWatchlist: false, entryId: null };
+  return watchlistService.getWatchlistStatus(getMediaDrizzle(), mediaType, mediaId);
 }
 
-/** Get a single watchlist entry by id. Throws NotFoundError if missing. */
+/** Get a single watchlist entry by id. Reads from the media pillar handle. */
 export function getWatchlistEntry(id: number): MediaWatchlistRow {
-  const db = getDrizzle();
-  const row = db.select().from(mediaWatchlist).where(eq(mediaWatchlist.id, id)).get();
-
-  if (!row) throw new NotFoundError('WatchlistEntry', String(id));
-  return row;
+  return translate(() => watchlistService.getWatchlistEntry(getMediaDrizzle(), id));
 }
 
-/** Add an item to the watchlist. Idempotent — returns the existing entry if already present. */
+/**
+ * Add an item to the watchlist. Idempotent — returns the existing entry if
+ * already present. Writes go to `pops.db` (see file header for the split).
+ */
 export function addToWatchlist(input: AddToWatchlistInput): {
   row: MediaWatchlistRow;
   created: boolean;
@@ -123,7 +179,7 @@ export function addToWatchlist(input: AddToWatchlistInput): {
       })
       .run();
 
-    return { row: getWatchlistEntry(Number(result.lastInsertRowid)), created: true };
+    return { row: readSharedEntry(Number(result.lastInsertRowid)), created: true };
   } catch (err) {
     if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
       const existing = db
@@ -136,7 +192,7 @@ export function addToWatchlist(input: AddToWatchlistInput): {
           )
         )
         .get();
-      if (existing) return { row: getWatchlistEntry(existing.id), created: false };
+      if (existing) return { row: readSharedEntry(existing.id), created: false };
     }
     throw err;
   }
@@ -144,10 +200,9 @@ export function addToWatchlist(input: AddToWatchlistInput): {
 
 /** Update a watchlist entry. Returns the updated row. */
 export function updateWatchlistEntry(id: number, input: UpdateWatchlistInput): MediaWatchlistRow {
-  getWatchlistEntry(id);
+  readSharedEntry(id);
 
   const updates: Partial<typeof mediaWatchlist.$inferSelect> = {};
-
   if (input.priority !== undefined) updates.priority = input.priority ?? null;
   if (input.notes !== undefined) updates.notes = input.notes ?? null;
 
@@ -155,12 +210,12 @@ export function updateWatchlistEntry(id: number, input: UpdateWatchlistInput): M
     getDrizzle().update(mediaWatchlist).set(updates).where(eq(mediaWatchlist.id, id)).run();
   }
 
-  return getWatchlistEntry(id);
+  return readSharedEntry(id);
 }
 
 /** Remove an entry from the watchlist. Throws NotFoundError if missing. */
 export function removeFromWatchlist(id: number): void {
-  getWatchlistEntry(id);
+  readSharedEntry(id);
 
   const result = getDrizzle().delete(mediaWatchlist).where(eq(mediaWatchlist.id, id)).run();
   if (result.changes === 0) throw new NotFoundError('WatchlistEntry', String(id));
@@ -172,19 +227,16 @@ export function reorderWatchlist(items: { id: number; priority: number }[]): voi
 
   const db = getDrizzle();
 
-  // Validate all IDs exist
   for (const item of items) {
     const row = db.select().from(mediaWatchlist).where(eq(mediaWatchlist.id, item.id)).get();
     if (!row) throw new NotFoundError('WatchlistEntry', String(item.id));
   }
 
-  // Check for duplicate priorities
   const priorities = items.map((i) => i.priority);
   if (new Set(priorities).size !== priorities.length) {
     throw new ConflictError('Duplicate priorities in reorder request');
   }
 
-  // Update all priorities in a transaction
   getDb().transaction(() => {
     for (const item of items) {
       db.update(mediaWatchlist)
@@ -209,7 +261,10 @@ export function removeByMedia(mediaType: 'movie' | 'tv_show', mediaId: number): 
 
 /**
  * Re-sequence all watchlist priorities to eliminate gaps (0, 1, 2, ...).
- * Accepts an optional drizzle-compatible instance to run inside an existing transaction.
+ * Accepts an optional drizzle-compatible instance to run inside an existing
+ * transaction. Writes go to the shared `pops.db`; callers in this app
+ * (e.g. `watch-history/handlers/log-watch-event.ts`) hold the matching
+ * handle.
  */
 export function resequencePriorities(drizzleInstance?: ReturnType<typeof getDrizzle>): void {
   const db = drizzleInstance ?? getDrizzle();
