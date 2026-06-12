@@ -44,6 +44,18 @@ describe('@pops/lists-contract openapi snapshot', () => {
     expect(openapi.components.schemas).toHaveProperty('ListItem');
   });
 
+  it('references the Project entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Project');
+  });
+
+  it('references the Tag entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Tag');
+  });
+
+  it('references the AgendaItem entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('AgendaItem');
+  });
+
   it('describes the list-items list endpoint', () => {
     const op = openapi.paths['/lists/items']?.['get'];
     expect(op).toBeDefined();
