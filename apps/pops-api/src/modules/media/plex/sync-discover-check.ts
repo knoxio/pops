@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { movies } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { logWatch } from '../watch-history/service.js';
 import { getPlexToken } from './service.js';
 import { fetchActivityForItem } from './sync-discover-graphql.js';
@@ -75,7 +75,7 @@ export async function checkAndLogMovieWatch(
     const ratingKey = await findRatingKey({ plexClient, title, tmdbId });
     if (!ratingKey) return false;
 
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     db.update(movies).set({ discoverRatingKey: ratingKey }).where(eq(movies.id, movieId)).run();
 
     const state = await plexClient.getUserState(ratingKey);

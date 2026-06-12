@@ -9,6 +9,7 @@ import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { mediaWatchlist, movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getRadarrClient } from '../arr/service.js';
 
 const BYTES_PER_GB = 1_073_741_824;
@@ -209,7 +210,7 @@ export interface ExpiredMovieResult {
  * Continues on individual failures — never aborts the cycle.
  */
 export async function processExpiredMovies(): Promise<ExpiredMovieResult[]> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const client = getRadarrClient();
   if (!client) throw new Error('Radarr not configured');
 
@@ -290,7 +291,7 @@ export function getLeavingMovieSizeGb(movieSizes: MovieSizeMap): number {
  */
 export function markMoviesAsLeaving(movieIds: number[], expiresAt: string): void {
   if (movieIds.length === 0) return;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const now = new Date().toISOString();
   db.update(movies)
     .set({

@@ -85,7 +85,6 @@ async function dispatchEntry(entry: ActivityWatchEntry, ctx: ProcessEntryContext
       movieByRatingKey: ctx.movieByRatingKey,
       movieByTmdbId: ctx.movieByTmdbId,
       result: ctx.movieResult,
-      db,
     });
     return;
   }

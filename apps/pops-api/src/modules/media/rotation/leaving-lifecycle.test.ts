@@ -9,8 +9,8 @@ const mockFrom = vi.fn(() => ({ where: mockWhere }));
 const mockSelect = vi.fn(() => ({ from: mockFrom }));
 const mockUpdate = vi.fn(() => ({ set: mockSet }));
 
-vi.mock('../../../db.js', () => ({
-  getDrizzle: () => ({
+vi.mock('../../../db/media-db-handle.js', () => ({
+  getMediaDrizzle: () => ({
     select: mockSelect,
     update: mockUpdate,
   }),

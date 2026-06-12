@@ -7,14 +7,14 @@ import { eq } from 'drizzle-orm';
  */
 import { movies } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 /**
  * Clear leaving/protected rotation status for a specific movie.
  * Returns true if the movie existed and was updated, false otherwise.
  */
 export function cancelLeaving(movieId: number): boolean {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const movie = db
     .select({ id: movies.id, rotationStatus: movies.rotationStatus })
     .from(movies)
@@ -46,7 +46,7 @@ export function cancelLeaving(movieId: number): boolean {
 export function clearLeavingOnWatchlistAdd(mediaType: string, mediaId: number): boolean {
   if (mediaType !== 'movie') return false;
 
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const movie = db
     .select({ id: movies.id, rotationStatus: movies.rotationStatus })
     .from(movies)

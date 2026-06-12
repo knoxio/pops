@@ -14,6 +14,10 @@ vi.mock('../../../db.js', () => ({
   getDrizzle: vi.fn(),
 }));
 
+vi.mock('../../../db/media-db-handle.js', () => ({
+  getMediaDrizzle: vi.fn(),
+}));
+
 vi.mock('./service.js', () => ({
   getPlexToken: vi.fn(),
   getPlexClientId: vi.fn(),
@@ -66,6 +70,7 @@ vi.mock('@pops/db-types', () => ({
 }));
 
 import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addMovie } from '../library/service.js';
 import { logWatch } from '../watch-history/service.js';
 import { getPlexClientId, getPlexToken } from './service.js';
@@ -77,6 +82,7 @@ import type { PlexMediaItem } from './types.js';
 
 const mockLogWatch = vi.mocked(logWatch);
 const mockGetDrizzle = vi.mocked(getDrizzle);
+const mockGetMediaDrizzle = vi.mocked(getMediaDrizzle);
 const mockGetPlexToken = vi.mocked(getPlexToken);
 const mockGetPlexClientId = vi.mocked(getPlexClientId);
 const mockExtractExternalId = vi.mocked(extractExternalIdAsNumber);
@@ -124,6 +130,10 @@ function setupDrizzleMock(
   const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
   const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
   mockGetDrizzle.mockReturnValue({
+    select: mockSelect,
+    update: mockUpdate,
+  } as unknown as BetterSQLite3Database);
+  mockGetMediaDrizzle.mockReturnValue({
     select: mockSelect,
     update: mockUpdate,
   } as unknown as BetterSQLite3Database);

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { movies, rotationCandidates, settings } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { getRadarrClient } from '../arr/service.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
@@ -91,7 +92,8 @@ export async function downloadCandidateImpl(
     .where(eq(rotationCandidates.id, candidateId))
     .run();
 
-  db.update(movies)
+  getMediaDrizzle()
+    .update(movies)
     .set({ rotationStatus: 'protected' })
     .where(eq(movies.tmdbId, candidate.tmdbId))
     .run();
