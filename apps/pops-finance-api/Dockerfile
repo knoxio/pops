@@ -9,6 +9,7 @@ COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-db/package.json ./packages/finance-db/
+COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY apps/pops-finance-api/package.json ./apps/pops-finance-api/
 
 # Install pnpm and all workspace dependencies
@@ -26,6 +27,8 @@ COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/finance-db/src ./packages/finance-db/src
 COPY packages/finance-db/tsconfig.json ./packages/finance-db/
 COPY packages/finance-db/migrations ./packages/finance-db/migrations
+COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
+COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/
 
 # Copy finance-api source
 COPY apps/pops-finance-api/tsconfig.json ./apps/pops-finance-api/
@@ -39,6 +42,8 @@ RUN pnpm build
 WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/finance-db
+RUN pnpm build
+WORKDIR /app/packages/pillar-sdk
 RUN pnpm build
 
 # Build finance-api

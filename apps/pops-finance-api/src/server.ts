@@ -1,3 +1,5 @@
+import { openCoreDb } from '@pops/core-db';
+import { openFinanceDb } from '@pops/finance-db';
 /**
  * Entry point for the finance pillar HTTP server.
  *
@@ -12,13 +14,21 @@
  * rather than reaching back into pops-api's singleton — that's the
  * whole point of phase 3. Mirrors `apps/pops-media-api/src/server.ts`
  * and `apps/pops-inventory-api/src/server.ts`.
+ *
+ * Theme 13 PRD-158 adds an opt-in registry handshake via
+ * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
+ * builds a hand-rolled finance manifest (PRD-155 will generate this
+ * later) and registers with the central registry on boot. SIGTERM
+ * triggers `runtime.stop()` so the heartbeat clears and the registry
+ * sees an explicit deregister.
  */
-import { openCoreDb } from '@pops/core-db';
-import { openFinanceDb } from '@pops/finance-db';
+import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createFinanceApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
@@ -32,12 +42,57 @@ function resolvePort(): number {
   return parsed;
 }
 
+function buildFinanceManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'finance',
+    version,
+    contract: {
+      package: '@pops/finance-contract',
+      version,
+      tag: `contract-finance@v${version}`,
+    },
+    routes: {
+      queries: [
+        'finance.wishlist.list',
+        'finance.wishlist.get',
+        'finance.budgets.list',
+        'finance.budgets.get',
+        'finance.transactions.list',
+        'finance.transactions.get',
+      ],
+      mutations: [
+        'finance.wishlist.create',
+        'finance.wishlist.update',
+        'finance.wishlist.delete',
+        'finance.budgets.create',
+        'finance.budgets.update',
+        'finance.budgets.delete',
+        'finance.transactions.create',
+        'finance.transactions.update',
+        'finance.transactions.delete',
+        'finance.transactions.restore',
+      ],
+      subscriptions: [],
+    },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: ['finance/transaction', 'finance/wishlist-item', 'finance/budget'] },
+    settings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
+}
+
 const port = resolvePort();
-const version = process.env['BUILD_VERSION'] ?? 'dev';
+const version = process.env['BUILD_VERSION'] ?? '0.1.0';
 
 const financeDb = openFinanceDb(resolveFinanceSqlitePath());
 const coreDb = openCoreDb(resolveCoreSqlitePath());
 const app = createFinanceApiApp({ financeDb, coreDb, version });
+
+let pillarHandle: PillarBootstrapHandle | undefined;
+if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
+  pillarHandle = await bootstrapPillar({ manifest: buildFinanceManifest(version) });
+}
 
 const server = app.listen(port, () => {
   console.warn(`[finance-api] Listening on port ${port}`);
@@ -48,9 +103,11 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[finance-api] Shutting down (${signal})`);
-  server.close(() => {
-    financeDb.raw.close();
-    coreDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
+    server.close(() => {
+      financeDb.raw.close();
+      coreDb.raw.close();
+    });
   });
 }
 

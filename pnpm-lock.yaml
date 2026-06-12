@@ -367,6 +367,9 @@ importers:
       '@pops/finance-db':
         specifier: workspace:*
         version: link:../../packages/finance-db
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../packages/pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -2013,6 +2016,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
       '@vitest/coverage-v8':
         specifier: ^4.1.8
         version: 4.1.8(vitest@4.1.8)
