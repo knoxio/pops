@@ -54,6 +54,15 @@ async function lookupTvShowRatingKey(
 /**
  * Push a watchlist item to Plex and store the ratingKey.
  * Best-effort — failures are logged but do not throw.
+ *
+ * Writes the resolved `plexRatingKey` back through `getDrizzle()` (the shared
+ * `pops.db`) to match the store used by `watchlist/service.ts#addToWatchlist`,
+ * which inserts the row this update targets. Routing this through
+ * `getMediaDrizzle()` would target `media.db`, where the row does not yet
+ * exist until the next boot-time backfill — the update would silently match
+ * zero rows and `plex_rating_key` would be lost, so future removals could
+ * not address the Plex side. TODO: move this to `getMediaDrizzle()` in the
+ * sibling PR that migrates the remaining watchlist shim writes (PRD-167 PR4).
  */
 export async function pushToPlexWatchlist(
   watchlistId: number,
@@ -72,7 +81,6 @@ export async function pushToPlexWatchlist(
 
     await client.addToWatchlist(ratingKey);
 
-    // Persist the ratingKey so future remove operations work
     getDrizzle()
       .update(mediaWatchlist)
       .set({ plexRatingKey: ratingKey })
