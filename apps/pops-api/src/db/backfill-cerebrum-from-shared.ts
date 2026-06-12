@@ -21,16 +21,20 @@
  *   - `conversations` + `messages` + `conversation_context` (PRD-182
  *     US-01 — scaffold; consumers still write to the shared pops.db
  *     until PR 3 flips them over)
+ *   - `plexus_adapters` + `plexus_filters` (PRD-180 US-01 — scaffold;
+ *     the lifecycle manager still writes to the shared pops.db until
+ *     US-03 flips it over)
  *
- * The remaining cerebrum tables (embeddings + embeddings_vec, plexus)
- * add their entries here when their cutovers land. Order matters when
- * FKs are introduced across cerebrum-owned tables — `engram_index` is
- * copied first so the cascading auxiliaries (`engram_scopes`,
- * `engram_tags`, `engram_links`) can satisfy their FK at insert time.
- * The two glia tables have no cross-table FKs so their order is
- * independent of the engram block. The conversations block has an FK
- * from `messages` and `conversation_context` to `conversations`, so the
- * parent table is copied first.
+ * The remaining cerebrum tables (embeddings + embeddings_vec) add their
+ * entries here when their cutovers land. Order matters when FKs are
+ * introduced across cerebrum-owned tables — `engram_index` is copied
+ * first so the cascading auxiliaries (`engram_scopes`, `engram_tags`,
+ * `engram_links`) can satisfy their FK at insert time. The two glia
+ * tables have no cross-table FKs so their order is independent of the
+ * engram block. The conversations block has an FK from `messages` and
+ * `conversation_context` to `conversations`, so the parent table is
+ * copied first. `plexus_adapters` is copied before `plexus_filters` so
+ * `plexus_filters.adapter_id` resolves at insert time.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Partial failures
@@ -189,6 +193,32 @@ const TABLE_COPIES: readonly TableCopy[] = [
     table: 'conversation_context',
     idColumns: ['conversation_id', 'engram_id'],
     columns: ['conversation_id', 'engram_id', 'relevance_score', 'loaded_at'],
+  },
+  {
+    // plexus_adapters has to be copied before plexus_filters so the
+    // FK on plexus_filters.adapter_id resolves at insert time. The
+    // ingested/emitted counters keep drifting on the still-shared
+    // row until PR 3 (US-03) routes writes through the cerebrum
+    // handle, mirroring the engram_scopes / glia_trust_state pattern.
+    table: 'plexus_adapters',
+    idColumns: ['id'],
+    columns: [
+      'id',
+      'name',
+      'status',
+      'config',
+      'last_health',
+      'last_error',
+      'ingested_count',
+      'emitted_count',
+      'created_at',
+      'updated_at',
+    ],
+  },
+  {
+    table: 'plexus_filters',
+    idColumns: ['id'],
+    columns: ['id', 'adapter_id', 'filter_type', 'field', 'pattern', 'enabled'],
   },
 ];
 

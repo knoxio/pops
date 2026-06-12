@@ -18,10 +18,19 @@
  *   - `conversations` / `messages` / `conversationContext` — PRD-182
  *     chat-with-cerebrum sessions, append-only message stream, and the
  *     conversation → engram junction table.
+ *   - `plexusAdapters` / `plexusFilters` — PRD-180 external adapter
+ *     registry + per-adapter ingestion filter rules (PRD-090).
  *
- * Downstream slices (embeddings, plexus_adapters, plexus_filters) will
- * add their tables here as their service code lands.
+ * Downstream slices (embeddings) will add their tables here as their
+ * service code lands.
  */
 export { engramIndex, engramLinks, engramScopes, engramTags, nudgeLog } from '@pops/db-types';
-export { gliaActions, gliaTrustState } from '@pops/db-types/schema';
-export { conversationContext, conversations, messages } from '@pops/db-types/schema';
+export {
+  conversationContext,
+  conversations,
+  gliaActions,
+  gliaTrustState,
+  messages,
+  plexusAdapters,
+  plexusFilters,
+} from '@pops/db-types/schema';
