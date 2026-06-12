@@ -10,4 +10,4 @@
  *
  * Mirrors the `@pops/app-food-db` schema re-export pattern.
  */
-export { pillarRegistry, serviceAccounts } from '@pops/db-types';
+export { pillarRegistry, serviceAccounts, settings } from '@pops/db-types';

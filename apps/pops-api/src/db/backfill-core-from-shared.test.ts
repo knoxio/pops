@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openCoreDb } from '@pops/core-db';
 
 import { backfillCoreFromShared, closeCoreDb, setCoreDb } from '../db.js';
-import { SERVICE_ACCOUNTS_TABLE_SQL } from './backfill-test-fixtures.js';
+import { SERVICE_ACCOUNTS_TABLE_SQL, SETTINGS_TABLE_SQL } from './backfill-test-fixtures.js';
 
 let tmpDir: string;
 
@@ -124,5 +124,104 @@ describe('backfillCoreFromShared', () => {
       n: number;
     };
     expect(count.n).toBe(0);
+  });
+
+  describe('settings (PRD-183 PR 1)', () => {
+    function openSharedWithSettings(rows: { key: string; value: string }[]): string {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SERVICE_ACCOUNTS_TABLE_SQL);
+      raw.exec(SETTINGS_TABLE_SQL);
+      const insert = raw.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
+      for (const row of rows) insert.run(row.key, row.value);
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+      return path;
+    }
+
+    it('copies fresh settings rows on first run and is a no-op on the second', () => {
+      openSharedWithSettings([
+        { key: 'ui.theme', value: 'dark' },
+        { key: 'ai.model', value: 'sonnet' },
+      ]);
+      const core = openCoreDb(join(tmpDir, 'core.db'));
+      setCoreDb(core);
+
+      backfillCoreFromShared();
+      const after = core.raw.prepare('SELECT key, value FROM settings ORDER BY key').all() as {
+        key: string;
+        value: string;
+      }[];
+      expect(after).toEqual([
+        { key: 'ai.model', value: 'sonnet' },
+        { key: 'ui.theme', value: 'dark' },
+      ]);
+
+      backfillCoreFromShared();
+      const second = core.raw.prepare('SELECT count(*) AS n FROM settings').get() as {
+        n: number;
+      };
+      expect(second.n).toBe(2);
+    });
+
+    it('only inserts settings rows missing from the core copy (preserves existing values)', () => {
+      openSharedWithSettings([
+        { key: 'ui.theme', value: 'dark' },
+        { key: 'ai.model', value: 'sonnet' },
+      ]);
+      const core = openCoreDb(join(tmpDir, 'core.db'));
+      setCoreDb(core);
+      core.raw
+        .prepare('INSERT INTO settings (key, value) VALUES (?, ?)')
+        .run('ui.theme', 'pre-existing-value');
+
+      backfillCoreFromShared();
+      const rows = core.raw.prepare('SELECT key, value FROM settings ORDER BY key').all() as {
+        key: string;
+        value: string;
+      }[];
+      expect(rows).toEqual([
+        { key: 'ai.model', value: 'sonnet' },
+        { key: 'ui.theme', value: 'pre-existing-value' },
+      ]);
+    });
+
+    it('tolerates a shared DB without the settings table', () => {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SERVICE_ACCOUNTS_TABLE_SQL);
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+
+      const core = openCoreDb(join(tmpDir, 'core.db'));
+      setCoreDb(core);
+
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      try {
+        expect(() => backfillCoreFromShared()).not.toThrow();
+        expect(warn).not.toHaveBeenCalled();
+      } finally {
+        warn.mockRestore();
+      }
+      const count = core.raw.prepare('SELECT count(*) AS n FROM settings').get() as {
+        n: number;
+      };
+      expect(count.n).toBe(0);
+    });
+
+    it('carries every column across (full-shape roundtrip)', () => {
+      openSharedWithSettings([
+        { key: 'ai.modelOverrides.query', value: 'haiku' },
+        { key: 'cerebrum.auditor.contradictionModel', value: 'opus' },
+      ]);
+      const core = openCoreDb(join(tmpDir, 'core.db'));
+      setCoreDb(core);
+
+      backfillCoreFromShared();
+      const row = core.raw
+        .prepare('SELECT key, value FROM settings WHERE key = ?')
+        .get('ai.modelOverrides.query') as { key: string; value: string };
+      expect(row).toEqual({ key: 'ai.modelOverrides.query', value: 'haiku' });
+    });
   });
 });

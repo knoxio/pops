@@ -20,3 +20,10 @@ CREATE UNIQUE INDEX service_accounts_key_prefix_unique ON service_accounts (key_
 CREATE INDEX idx_service_accounts_key_prefix ON service_accounts (key_prefix);
 CREATE INDEX idx_service_accounts_revoked_at ON service_accounts (revoked_at);
 `;
+
+export const SETTINGS_TABLE_SQL = `
+CREATE TABLE settings (
+  key text PRIMARY KEY NOT NULL,
+  value text NOT NULL
+);
+`;
