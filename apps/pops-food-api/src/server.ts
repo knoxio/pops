@@ -9,12 +9,26 @@
  * The process opens its OWN `food.db` connection via `openFoodDb`
  * rather than reaching back into pops-api's singleton — that's the
  * whole point of phase 3.
+ *
+ * Theme 13 PRD-158 adds an opt-in registry handshake via
+ * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
+ * builds a hand-rolled food manifest (PRD-155 will generate this
+ * later) and registers with the central registry on boot. SIGTERM
+ * triggers `pillarHandle.stop()` so the heartbeat clears and the
+ * registry sees an explicit deregister.
+ *
+ * The runtime tRPC surface is still pending, so `routes.queries`
+ * and `routes.mutations` are empty for now — bootstrap registers
+ * the pillar's identity, health probe, and contract pin.
  */
 import { openFoodDb } from '@pops/food-db';
+import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createFoodApiApp } from './app.js';
 import { resolveFoodSqlitePath } from './food-sqlite-path.js';
 import { parseBareOrigin } from './pillars/env.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
@@ -26,6 +40,24 @@ function resolvePort(): number {
     throw new Error(`[food-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
+}
+
+function buildFoodManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'food',
+    version,
+    contract: {
+      package: '@pops/food-contracts',
+      version,
+      tag: `contract-food@v${version}`,
+    },
+    routes: { queries: [], mutations: [], subscriptions: [] },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    settings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
 }
 
 const port = resolvePort();
@@ -55,6 +87,11 @@ const selfBaseUrl = resolveSelfBaseUrl();
 const foodDb = openFoodDb(resolveFoodSqlitePath());
 const app = createFoodApiApp({ foodDb, version, selfBaseUrl });
 
+let pillarHandle: PillarBootstrapHandle | undefined;
+if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
+  pillarHandle = await bootstrapPillar({ manifest: buildFoodManifest(version) });
+}
+
 const server = app.listen(port, () => {
   console.warn(`[food-api] Listening on port ${port}`);
 });
@@ -64,8 +101,10 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[food-api] Shutting down (${signal})`);
-  server.close(() => {
-    foodDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
+    server.close(() => {
+      foodDb.raw.close();
+    });
   });
 }
 

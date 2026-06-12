@@ -9,12 +9,26 @@
  * The process opens its OWN `lists.db` connection via `openListsDb`
  * rather than reaching back into pops-api's singleton — that's the
  * whole point of phase 3.
+ *
+ * Theme 13 PRD-158 adds an opt-in registry handshake via
+ * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
+ * builds a hand-rolled lists manifest (PRD-155 will generate this
+ * later) and registers with the central registry on boot. SIGTERM
+ * triggers `pillarHandle.stop()` so the heartbeat clears and the
+ * registry sees an explicit deregister.
+ *
+ * The runtime tRPC surface is still pending, so `routes.queries`
+ * and `routes.mutations` are empty for now — bootstrap registers
+ * the pillar's identity, health probe, and contract pin.
  */
 import { openListsDb } from '@pops/lists-db';
+import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createListsApiApp } from './app.js';
 import { resolveListsSqlitePath } from './lists-sqlite-path.js';
 import { parseBareOrigin } from './pillars/env.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
@@ -27,6 +41,24 @@ function resolvePort(): number {
     throw new Error(`[lists-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
+}
+
+function buildListsManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'lists',
+    version,
+    contract: {
+      package: '@pops/lists-contract',
+      version,
+      tag: `contract-lists@v${version}`,
+    },
+    routes: { queries: [], mutations: [], subscriptions: [] },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    settings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
 }
 
 const port = resolvePort();
@@ -56,6 +88,11 @@ const selfBaseUrl = resolveSelfBaseUrl();
 const listsDb = openListsDb(resolveListsSqlitePath());
 const app = createListsApiApp({ listsDb, version, selfBaseUrl });
 
+let pillarHandle: PillarBootstrapHandle | undefined;
+if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
+  pillarHandle = await bootstrapPillar({ manifest: buildListsManifest(version) });
+}
+
 const server = app.listen(port, () => {
   console.warn(`[lists-api] Listening on port ${port}`);
 });
@@ -65,8 +102,10 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[lists-api] Shutting down (${signal})`);
-  server.close(() => {
-    listsDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
+    server.close(() => {
+      listsDb.raw.close();
+    });
   });
 }
 

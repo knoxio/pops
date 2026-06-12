@@ -12,13 +12,23 @@
  * on the core pillar. The core.db handle MUST be writable — auth
  * touches `service_accounts.last_used_at` per request and `openCoreDb`
  * applies migrations at boot.
+ *
+ * Theme 13 PRD-158 adds an opt-in registry handshake via
+ * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
+ * builds a hand-rolled cerebrum manifest (PRD-155 will generate this
+ * later) and registers with the central registry on boot. SIGTERM
+ * triggers `pillarHandle.stop()` so the heartbeat clears and the
+ * registry sees an explicit deregister.
  */
 import { openCerebrumDb } from '@pops/cerebrum-db';
 import { openCoreDb } from '@pops/core-db';
+import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createCerebrumApiApp } from './app.js';
 import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -30,12 +40,39 @@ function resolvePort(): number {
   return parsed;
 }
 
+function buildCerebrumManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'cerebrum',
+    version,
+    contract: {
+      package: '@pops/cerebrum-contract',
+      version,
+      tag: `contract-cerebrum@v${version}`,
+    },
+    routes: {
+      queries: ['cerebrum.nudges.list', 'cerebrum.nudges.get', 'cerebrum.nudges.contradictions'],
+      mutations: ['cerebrum.nudges.dismiss'],
+      subscriptions: [],
+    },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    settings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
+}
+
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
 
 const cerebrumDb = openCerebrumDb(resolveCerebrumSqlitePath());
 const coreDb = openCoreDb(resolveCoreSqlitePath());
 const app = createCerebrumApiApp({ cerebrumDb, coreDb, version });
+
+let pillarHandle: PillarBootstrapHandle | undefined;
+if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
+  pillarHandle = await bootstrapPillar({ manifest: buildCerebrumManifest(version) });
+}
 
 const server = app.listen(port, () => {
   console.warn(`[cerebrum-api] Listening on port ${port}`);
@@ -46,9 +83,11 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[cerebrum-api] Shutting down (${signal})`);
-  server.close(() => {
-    cerebrumDb.raw.close();
-    coreDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
+    server.close(() => {
+      cerebrumDb.raw.close();
+      coreDb.raw.close();
+    });
   });
 }
 
