@@ -13,7 +13,12 @@
             "type": "string"
           },
           "priority": {
-            "enum": ["Needing", "Soon", "One Day", "Dreaming"],
+            "enum": [
+              "Needing",
+              "Soon",
+              "One Day",
+              "Dreaming"
+            ],
             "nullable": true,
             "type": "string"
           },
@@ -31,7 +36,9 @@
             "type": "string"
           }
         },
-        "required": ["item"],
+        "required": [
+          "item"
+        ],
         "type": "object"
       },
       "DeleteResponse": {
@@ -40,7 +47,9 @@
             "type": "string"
           }
         },
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "type": "object"
       },
       "Pagination": {
@@ -61,7 +70,11 @@
             "type": "integer"
           }
         },
-        "required": ["total", "limit", "offset"],
+        "required": [
+          "total",
+          "limit",
+          "offset"
+        ],
         "type": "object"
       },
       "UpdateWishListItemInput": {
@@ -76,7 +89,12 @@
             "type": "string"
           },
           "priority": {
-            "enum": ["Needing", "Soon", "One Day", "Dreaming"],
+            "enum": [
+              "Needing",
+              "Soon",
+              "One Day",
+              "Dreaming"
+            ],
             "nullable": true,
             "type": "string"
           },
@@ -115,7 +133,12 @@
             "type": "string"
           },
           "priority": {
-            "enum": ["Needing", "Soon", "One Day", "Dreaming"],
+            "enum": [
+              "Needing",
+              "Soon",
+              "One Day",
+              "Dreaming"
+            ],
             "nullable": true,
             "type": "string"
           },
@@ -159,7 +182,9 @@
             "type": "string"
           }
         },
-        "required": ["data"],
+        "required": [
+          "data"
+        ],
         "type": "object"
       },
       "WishListListResponse": {
@@ -174,11 +199,19 @@
             "$ref": "#/components/schemas/Pagination"
           }
         },
-        "required": ["data", "pagination"],
+        "required": [
+          "data",
+          "pagination"
+        ],
         "type": "object"
       },
       "WishListPriority": {
-        "enum": ["Needing", "Soon", "One Day", "Dreaming"],
+        "enum": [
+          "Needing",
+          "Soon",
+          "One Day",
+          "Dreaming"
+        ],
         "type": "string"
       }
     }
@@ -243,7 +276,9 @@
           }
         },
         "summary": "List wish list items",
-        "tags": ["wishlist"]
+        "tags": [
+          "wishlist"
+        ]
       },
       "post": {
         "operationId": "finance.wishlist.create",
@@ -270,7 +305,9 @@
           }
         },
         "summary": "Create a wish list item",
-        "tags": ["wishlist"]
+        "tags": [
+          "wishlist"
+        ]
       }
     },
     "/finance/wishlist/{id}": {
@@ -302,7 +339,9 @@
           }
         },
         "summary": "Delete a wish list item",
-        "tags": ["wishlist"]
+        "tags": [
+          "wishlist"
+        ]
       },
       "get": {
         "operationId": "finance.wishlist.get",
@@ -332,7 +371,9 @@
           }
         },
         "summary": "Get a wish list item by id",
-        "tags": ["wishlist"]
+        "tags": [
+          "wishlist"
+        ]
       },
       "patch": {
         "operationId": "finance.wishlist.update",
@@ -372,7 +413,9 @@
           }
         },
         "summary": "Update a wish list item",
-        "tags": ["wishlist"]
+        "tags": [
+          "wishlist"
+        ]
       }
     }
   },
