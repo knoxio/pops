@@ -44,6 +44,18 @@ describe('@pops/core-contract openapi snapshot', () => {
     expect(openapi.components.schemas).toHaveProperty('RegistryEntry');
   });
 
+  it('references the Setting entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Setting');
+  });
+
+  it('references the ServiceAccount entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('ServiceAccount');
+  });
+
+  it('references the Pillar entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Pillar');
+  });
+
   it('describes the registry list endpoint', () => {
     const op = openapi.paths['/core/registry']?.['get'];
     expect(op).toBeDefined();

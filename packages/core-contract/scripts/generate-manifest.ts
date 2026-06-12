@@ -2,13 +2,13 @@
  * Manifest type generator for `@pops/core-contract` (Theme 13 PRD-155).
  *
  * Emits `src/manifest.generated.ts` from the contract's hand-maintained
- * surface (`types/registry-entry.ts`, `errors.ts`, `router.ts`) plus the
- * version declared in `package.json`. The output is committed, then piped
+ * surface (`types/*.ts`, `errors.ts`, `router.ts`) plus the version
+ * declared in `package.json`. The output is committed, then piped
  * through `oxfmt` so the committed file matches the workspace formatting
  * rules. CI's `verify:manifest` job re-renders + oxfmts in-memory and
  * byte-compares.
  *
- * Imports below intentionally pull `RegistryEntry`, `CoreError`, and
+ * Imports below intentionally pull each entity, `CoreError`, and
  * `CoreRouter` so that running the generator validates that the
  * source modules still expose the symbols the manifest names. A missing
  * or renamed export here makes the codegen fail loudly rather than
@@ -21,9 +21,19 @@ import { MANIFEST_OUTPUT_PATH, readContractVersion, renderManifest } from './ren
 
 import type { CoreError } from '../src/errors.js';
 import type { CoreRouter } from '../src/router.js';
+import type { Pillar } from '../src/types/pillar.js';
 import type { RegistryEntry } from '../src/types/registry-entry.js';
+import type { ServiceAccount } from '../src/types/service-account.js';
+import type { Setting } from '../src/types/setting.js';
 
-export type SurfaceAssertion = [RegistryEntry, CoreError, CoreRouter];
+export type SurfaceAssertion = [
+  Pillar,
+  RegistryEntry,
+  ServiceAccount,
+  Setting,
+  CoreError,
+  CoreRouter,
+];
 
 const version = readContractVersion();
 const rendered = renderManifest(version);
