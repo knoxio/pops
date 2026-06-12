@@ -50,7 +50,7 @@ describe('GliaTrustMachine', () => {
     db = createTestDb();
     clock = makeControllableClock();
     thresholds = { ...DEFAULT_THRESHOLDS };
-    svc = new GliaActionService(drizzle(db), clock.now);
+    svc = new GliaActionService(drizzle<Record<string, unknown>>(db), clock.now);
     machine = new GliaTrustMachine(svc, () => thresholds, clock.now);
     svc.seedTrustStates();
   });

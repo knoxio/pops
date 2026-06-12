@@ -74,7 +74,7 @@ describe('GliaDigestService', () => {
   beforeEach(() => {
     db = createTestDb();
     actionService = new GliaActionService(
-      drizzle(db),
+      drizzle<Record<string, unknown>>(db),
       steppingClock('2026-05-10T10:00:00Z', 60_000)
     );
     actionService.seedTrustStates();
