@@ -1,170 +1,85 @@
-import { and, asc, count, eq, like } from 'drizzle-orm';
+/**
+ * TV shows wrapper — resolves the media-pillar drizzle handle and forwards
+ * to `@pops/media-db`'s `tvShowsService` (PRD-166 cutover).
+ *
+ * Mirrors the movies PR 3 pattern: in-tree callers (router.ts,
+ * library/tv-show-service.ts, plex sync helpers, watchlist push,
+ * thetvdb service + refresh-episodes, …) keep importing from
+ * `./tv-shows/service.js` unchanged. The handle now points at the media
+ * pillar's per-pillar SQLite via `getMediaDrizzle()` instead of the
+ * shared `pops.db` singleton, so every tv-shows write lands in
+ * `media.db.tv_shows`. Reads issued from the legacy mount still serve
+ * the same rows because the backfill keeps both stores in sync until
+ * the shim retires.
+ *
+ * Error translation: the package surface throws `TvShowNotFoundError` /
+ * `TvShowConflictError`. We re-throw them as the in-tree `NotFoundError`
+ * / `ConflictError` so the router's `instanceof` checks (and library /
+ * plex callers that catch the same shapes) keep working without churn.
+ *
+ * Out of scope (per PRD-166): `seasons-service.ts` and
+ * `episodes-service.ts` still route through `getDrizzle()`; they migrate
+ * once their slices land in `@pops/media-db`.
+ */
+import {
+  tvShowsService,
+  TvShowConflictError,
+  TvShowNotFoundError,
+  type TvShowFilters,
+  type TvShowListResult,
+} from '@pops/media-db';
 
-import { tvShows } from '@pops/db-types';
-
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
-import type { TvShowRow } from '@pops/db-types';
+import type { CreateTvShowInput, TvShowRow, UpdateTvShowInput } from './types.js';
 
-import type { CreateTvShowInput, UpdateTvShowInput } from './types.js';
+export type { TvShowListResult };
 
-export interface TvShowListResult {
-  rows: TvShowRow[];
-  total: number;
+function translate<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (err instanceof TvShowNotFoundError) {
+      throw new NotFoundError('TvShow', String(err.id));
+    }
+    if (err instanceof TvShowConflictError) {
+      throw new ConflictError(`TV show with TVDB ID ${err.tvdbId} already exists`);
+    }
+    throw err;
+  }
 }
 
+/** List TV shows with optional filters. */
 export function listTvShows(
-  search: string | undefined,
-  status: string | undefined,
+  filters: TvShowFilters,
   limit: number,
   offset: number
 ): TvShowListResult {
-  const db = getDrizzle();
-  const conditions = [];
-  if (search) conditions.push(like(tvShows.name, `%${search}%`));
-  if (status) conditions.push(eq(tvShows.status, status));
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const rows = db
-    .select()
-    .from(tvShows)
-    .where(where)
-    .orderBy(asc(tvShows.name))
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  const countRow = db.select({ total: count() }).from(tvShows).where(where).all()[0];
-  return { rows, total: countRow?.total ?? 0 };
+  return tvShowsService.listTvShows(getMediaDrizzle(), filters, limit, offset);
 }
 
+/** Get a single TV show by id. Throws `NotFoundError` if missing. */
 export function getTvShow(id: number): TvShowRow {
-  const db = getDrizzle();
-  const row = db.select().from(tvShows).where(eq(tvShows.id, id)).get();
-  if (!row) throw new NotFoundError('TvShow', String(id));
-  return row;
+  return translate(() => tvShowsService.getTvShow(getMediaDrizzle(), id));
 }
 
+/** Get a single TV show by TVDB ID. Returns `null` if not found. */
 export function getTvShowByTvdbId(tvdbId: number): TvShowRow | null {
-  const db = getDrizzle();
-  return db.select().from(tvShows).where(eq(tvShows.tvdbId, tvdbId)).get() ?? null;
+  return tvShowsService.getTvShowByTvdbId(getMediaDrizzle(), tvdbId);
 }
 
-const TV_SHOW_NULLABLE_INSERT_KEYS = [
-  'originalName',
-  'overview',
-  'firstAirDate',
-  'lastAirDate',
-  'status',
-  'originalLanguage',
-  'numberOfSeasons',
-  'numberOfEpisodes',
-  'episodeRunTime',
-  'posterPath',
-  'backdropPath',
-  'logoPath',
-  'posterOverridePath',
-  'voteAverage',
-  'voteCount',
-] as const satisfies ReadonlyArray<keyof CreateTvShowInput & keyof typeof tvShows.$inferInsert>;
-
-function buildTvShowInsertValues(
-  input: CreateTvShowInput,
-  now: string
-): typeof tvShows.$inferInsert {
-  const values: Record<string, unknown> = {
-    tvdbId: input.tvdbId,
-    name: input.name,
-    genres: input.genres ? JSON.stringify(input.genres) : null,
-    networks: input.networks ? JSON.stringify(input.networks) : null,
-    createdAt: now,
-    updatedAt: now,
-  };
-  for (const key of TV_SHOW_NULLABLE_INSERT_KEYS) {
-    values[key] = input[key] ?? null;
-  }
-  return values as typeof tvShows.$inferInsert;
-}
-
+/** Create a new TV show. Throws `ConflictError` on duplicate tvdbId. */
 export function createTvShow(input: CreateTvShowInput): TvShowRow {
-  const db = getDrizzle();
-  const existing = db
-    .select({ id: tvShows.id })
-    .from(tvShows)
-    .where(eq(tvShows.tvdbId, input.tvdbId))
-    .get();
-  if (existing) {
-    throw new ConflictError(`TV show with TVDB ID ${input.tvdbId} already exists`);
-  }
-  const now = new Date().toISOString();
-  db.insert(tvShows).values(buildTvShowInsertValues(input, now)).run();
-  const row = db.select().from(tvShows).where(eq(tvShows.tvdbId, input.tvdbId)).get();
-  if (!row) throw new Error(`TV show with TVDB ID ${input.tvdbId} not found after insert`);
-  return row;
+  return translate(() => tvShowsService.createTvShow(getMediaDrizzle(), input));
 }
 
-const TV_SHOW_NULLABLE_KEYS = [
-  'originalName',
-  'overview',
-  'firstAirDate',
-  'lastAirDate',
-  'status',
-  'originalLanguage',
-  'numberOfSeasons',
-  'numberOfEpisodes',
-  'episodeRunTime',
-  'posterPath',
-  'backdropPath',
-  'logoPath',
-  'posterOverridePath',
-  'voteAverage',
-  'voteCount',
-] as const satisfies ReadonlyArray<keyof UpdateTvShowInput & keyof typeof tvShows.$inferInsert>;
-
-const TV_SHOW_JSON_KEYS = ['genres', 'networks'] as const satisfies ReadonlyArray<
-  keyof UpdateTvShowInput & keyof typeof tvShows.$inferInsert
->;
-
-function buildTvShowUpdate(input: UpdateTvShowInput): Partial<typeof tvShows.$inferInsert> | null {
-  const updates: Record<string, unknown> = {};
-  let touched = false;
-
-  if (input.name !== undefined) {
-    updates.name = input.name;
-    touched = true;
-  }
-
-  for (const key of TV_SHOW_NULLABLE_KEYS) {
-    const value = input[key];
-    if (value === undefined) continue;
-    updates[key] = value ?? null;
-    touched = true;
-  }
-
-  for (const key of TV_SHOW_JSON_KEYS) {
-    const value = input[key];
-    if (value === undefined) continue;
-    updates[key] = JSON.stringify(value);
-    touched = true;
-  }
-
-  if (!touched) return null;
-  updates.updatedAt = new Date().toISOString();
-  return updates as Partial<typeof tvShows.$inferInsert>;
-}
-
+/** Update an existing TV show. Throws `NotFoundError` if missing. */
 export function updateTvShow(id: number, input: UpdateTvShowInput): TvShowRow {
-  getTvShow(id);
-  const updates = buildTvShowUpdate(input);
-  if (updates) {
-    getDrizzle().update(tvShows).set(updates).where(eq(tvShows.id, id)).run();
-  }
-  return getTvShow(id);
+  return translate(() => tvShowsService.updateTvShow(getMediaDrizzle(), id, input));
 }
 
+/** Delete a TV show by id. Throws `NotFoundError` if missing. */
 export function deleteTvShow(id: number): void {
-  getTvShow(id);
-  const db = getDrizzle();
-  db.delete(tvShows).where(eq(tvShows.id, id)).run();
+  translate(() => tvShowsService.deleteTvShow(getMediaDrizzle(), id));
 }
