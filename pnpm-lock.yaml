@@ -309,6 +309,9 @@ importers:
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../packages/pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types

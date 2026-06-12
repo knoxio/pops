@@ -6,10 +6,12 @@
  * than a procedure-path rename: existing pops-api clients call
  * `core.serviceAccounts.create`, and core-api answers on the same path.
  */
+import { registryRouter } from './modules/registry/router.js';
 import { serviceAccountsRouter } from './modules/service-accounts/router.js';
 import { router } from './trpc.js';
 
 export const coreRouter = router({
+  registry: registryRouter,
   serviceAccounts: serviceAccountsRouter,
 });
 
