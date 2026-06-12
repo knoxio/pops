@@ -23,4 +23,5 @@ packages:
   - 'packages/types'
   - 'packages/module-registry'
   - 'packages/navigation'
+  - 'packages/pillar-sdk'
   - 'packages/ui'
