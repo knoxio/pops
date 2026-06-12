@@ -3,41 +3,40 @@
  *
  * Exposes adapter management and ingestion filter CRUD. The router is a thin
  * adapter over the lifecycle manager and database — no business logic here.
+ *
+ * Read/write split during the PRD-180 cutover window (PR 2):
+ *  - Pure user-facing reads — `adapters.list`, `adapters.get`, `filters.list`
+ *    — resolve through `getCerebrumDrizzle()` and forward to the
+ *    `@pops/cerebrum-db` `plexusService.{listAdapters,getAdapter,listFilters}`
+ *    namespace. These are the seam called out by PRD-180 PR 2.
+ *  - Writes (`filters.set` — atomic delete-then-insert) plus their
+ *    accompanying parent-exists guard still go through the shared
+ *    `pops.db` write handle (`getDb()`); the lifecycle-manager mutations
+ *    (`register`, `unregister`, `healthCheck`, `sync`) also stay on
+ *    `getDb()` via `lifecycle-db.ts` for read-after-write consistency.
+ *    PRD-180 US-03 flips the writes too, at which point the router can
+ *    collapse onto a single `CerebrumDb` handle and `getDb()` drops out.
+ *
+ * Cross-store consistency between the legacy `pops.db` writes and the
+ * pillar's `cerebrum.db` reads relies on the boot-time backfill in
+ * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts` — same
+ * pattern as the engrams (PRD-179 PR 2) and conversations (PRD-182
+ * PR 2) cutovers.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { plexusService } from '@pops/cerebrum-db';
+
 import { getDb } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 
-import type { PlexusAdapter, PlexusAdapterRow, PlexusFilter, PlexusFilterRow } from './types.js';
+import type { PlexusFilter, PlexusFilterRow } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function rowToAdapter(row: PlexusAdapterRow): PlexusAdapter {
-  let config: Record<string, unknown> | null = null;
-  if (row.config) {
-    try {
-      config = JSON.parse(row.config) as Record<string, unknown>;
-    } catch {
-      config = null;
-    }
-  }
-  return {
-    id: row.id,
-    name: row.name,
-    status: row.status,
-    config,
-    lastHealth: row.last_health,
-    lastError: row.last_error,
-    ingestedCount: row.ingested_count,
-    emittedCount: row.emitted_count,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
 
 function rowToFilter(row: PlexusFilterRow): PlexusFilter {
   return {
@@ -73,25 +72,27 @@ const setFiltersSchema = z.object({
 // ---------------------------------------------------------------------------
 
 const adaptersRouter = router({
-  /** List all registered adapters. */
+  /**
+   * List all registered adapters.
+   *
+   * Pure read — routed through the cerebrum pillar handle. See the
+   * top-of-file JSDoc for the read/write split contract.
+   */
   list: protectedProcedure.query(() => {
-    const db = getDb();
-    const rows = db
-      .prepare('SELECT * FROM plexus_adapters ORDER BY name')
-      .all() as PlexusAdapterRow[];
-    return { adapters: rows.map(rowToAdapter) };
+    return { adapters: plexusService.listAdapters(getCerebrumDrizzle()) };
   }),
 
-  /** Get a single adapter by ID. */
+  /**
+   * Get a single adapter by ID.
+   *
+   * Pure read — routed through the cerebrum pillar handle.
+   */
   get: protectedProcedure.input(adapterIdSchema).query(({ input }) => {
-    const db = getDb();
-    const row = db.prepare('SELECT * FROM plexus_adapters WHERE id = ?').get(input.adapterId) as
-      | PlexusAdapterRow
-      | undefined;
-    if (!row) {
+    const adapter = plexusService.getAdapter(getCerebrumDrizzle(), input.adapterId);
+    if (!adapter) {
       throw new TRPCError({ code: 'NOT_FOUND', message: `Adapter '${input.adapterId}' not found` });
     }
-    return { adapter: rowToAdapter(row) };
+    return { adapter };
   }),
 
   /** Run a health check on a specific adapter. */
@@ -121,16 +122,26 @@ const adaptersRouter = router({
 });
 
 const filtersRouter = router({
-  /** List filters for an adapter. */
+  /**
+   * List filters for an adapter.
+   *
+   * Pure read — routed through the cerebrum pillar handle.
+   */
   list: protectedProcedure.input(adapterIdSchema).query(({ input }) => {
-    const db = getDb();
-    const rows = db
-      .prepare('SELECT * FROM plexus_filters WHERE adapter_id = ? ORDER BY id')
-      .all(input.adapterId) as PlexusFilterRow[];
-    return { filters: rows.map(rowToFilter) };
+    return { filters: plexusService.listFilters(getCerebrumDrizzle(), input.adapterId) };
   }),
 
-  /** Replace all filters for an adapter (atomic). */
+  /**
+   * Replace all filters for an adapter (atomic).
+   *
+   * Write path — stays on the shared `pops.db` handle (`getDb()`). The
+   * parent-exists check shares the same handle so the guard sees the
+   * latest write state. Returning the freshly-written filter list off
+   * the same handle keeps the response consistent with the caller's
+   * own write; routing the post-write read through the pillar handle
+   * would surface a backfill-lag hole inside the same RPC. PRD-180
+   * US-03 collapses both onto the pillar handle.
+   */
   set: protectedProcedure.input(setFiltersSchema).mutation(({ input }) => {
     const db = getDb();
 

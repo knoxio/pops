@@ -30,11 +30,8 @@ import { createCaller, createTestDb } from '../../../shared/test-utils.js';
  * via `getCerebrumDrizzle()`.
  */
 const CEREBRUM_IGNORE = new Set<string>([
-  // `plexus_adapters` lives on the shared schema (see src/db/schema.ts) but
-  // is NOT in createTestDb's synthetic fixture. Pillar handle not involved.
-  'cerebrum.plexus.adapters.list',
-  'cerebrum.plexus.adapters.get',
-  // `reflex_executions` — same shared-only situation.
+  // `reflex_executions` — shared-only table, not in createTestDb's
+  // synthetic fixture. Pillar handle not involved.
   'cerebrum.reflex.history',
   // `embeddings_vec` is a sqlite-vec virtual table that requires the
   // extension to be loaded — createTestDb doesn't bind sqlite-vec so the
@@ -66,6 +63,7 @@ const CEREBRUM_INPUTS: PillarSmokeInputs = {
   'cerebrum.glia.getQualityScore': { engramId: 'nonexistent-engram-id' },
   'cerebrum.nudges.get': { id: 'nonexistent-nudge-id' },
   'cerebrum.plexus.adapters.get': { adapterId: 'nonexistent-adapter' },
+  'cerebrum.plexus.filters.list': { adapterId: 'nonexistent-adapter' },
   'cerebrum.reflex.get': { name: 'nonexistent-reflex-name' },
   'ego.conversations.get': { id: 'nonexistent-conversation-id' },
 };
