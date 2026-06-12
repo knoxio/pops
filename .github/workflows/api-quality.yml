@@ -89,6 +89,7 @@ jobs:
           cd ../lists-db && pnpm build
           cd ../app-lists-db && pnpm build
           cd ../app-food-db && pnpm build
+          cd ../finance-contract && pnpm build
           cd ../pillar-sdk && pnpm build
 
       - name: Type check

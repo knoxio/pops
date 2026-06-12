@@ -231,6 +231,7 @@ describe('runPerPillarMigrations', () => {
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
         '0054_service_accounts',
+        '0055_pillar_registry',
       ]);
       expect([...result.pillarsApplied].toSorted()).toEqual([
         'cerebrum',
