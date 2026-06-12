@@ -4,53 +4,24 @@
  * Exposes adapter management and ingestion filter CRUD. The router is a thin
  * adapter over the lifecycle manager and database — no business logic here.
  *
- * Read/write split during the cerebrum.plexus cutover window:
- *  - Pure user-facing reads — `adapters.list`, `adapters.get`, `filters.list`
- *    — resolve through `getCerebrumDrizzle()` and forward to the
- *    `@pops/cerebrum-db` `plexusService.{listAdapters,getAdapter,listFilters}`
- *    namespace. This is the read seam of the cutover.
- *  - Writes (`filters.set` — atomic delete-then-insert) plus their
- *    accompanying parent-exists guard still go through the shared
- *    `pops.db` write handle (`getDb()`); the lifecycle-manager mutations
- *    (`register`, `unregister`, `healthCheck`, `sync`) also stay on
- *    `getDb()` via `lifecycle-db.ts` for read-after-write consistency.
- *    A follow-up cutover flips the writes too, at which point the
- *    router can collapse onto a single `CerebrumDb` handle and
- *    `getDb()` drops out. See PRD-180 for the broader pillar sequence;
- *    exact phase/PR numbering is owned by that doc and may drift from
- *    this comment.
- *
- * Cross-store consistency between the legacy `pops.db` writes and the
- * pillar's `cerebrum.db` reads relies on the boot-time backfill in
- * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts` — same
- * pattern as the other cerebrum pillar cutovers (engrams,
- * conversations).
+ * Post-cutover (PRD-180 US-03 / PR3): every read and write resolves through
+ * `getCerebrumDrizzle()` and delegates to the `@pops/cerebrum-db`
+ * `plexusService` namespace. The previous read/write split — where reads
+ * landed on `cerebrum.db` but `filters.set` + the lifecycle-manager
+ * mutations still wrote to the shared `pops.db` — is closed. The
+ * lifecycle-manager writes flow through the same pillar handle via
+ * `lifecycle-db.ts`. The TOML loader, the per-adapter HTTP clients
+ * (Notion / Linear / IMAP / etc.), and the envelope encryption of the
+ * `config` blob stay in this module — they are domain orchestration / IO,
+ * not data-access.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { plexusService } from '@pops/cerebrum-db';
+import { plexusService, PlexusAdapterNotFoundError } from '@pops/cerebrum-db';
 
-import { getDb } from '../../../db.js';
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
-
-import type { PlexusFilter, PlexusFilterRow } from './types.js';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function rowToFilter(row: PlexusFilterRow): PlexusFilter {
-  return {
-    id: row.id,
-    adapterId: row.adapter_id,
-    filterType: row.filter_type,
-    field: row.field,
-    pattern: row.pattern,
-    enabled: row.enabled === 1,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Input schemas
@@ -75,21 +46,12 @@ const setFiltersSchema = z.object({
 // ---------------------------------------------------------------------------
 
 const adaptersRouter = router({
-  /**
-   * List all registered adapters.
-   *
-   * Pure read — routed through the cerebrum pillar handle. See the
-   * top-of-file JSDoc for the read/write split contract.
-   */
+  /** List all registered adapters. */
   list: protectedProcedure.query(() => {
     return { adapters: plexusService.listAdapters(getCerebrumDrizzle()) };
   }),
 
-  /**
-   * Get a single adapter by ID.
-   *
-   * Pure read — routed through the cerebrum pillar handle.
-   */
+  /** Get a single adapter by ID. */
   get: protectedProcedure.input(adapterIdSchema).query(({ input }) => {
     const adapter = plexusService.getAdapter(getCerebrumDrizzle(), input.adapterId);
     if (!adapter) {
@@ -125,11 +87,7 @@ const adaptersRouter = router({
 });
 
 const filtersRouter = router({
-  /**
-   * List filters for an adapter.
-   *
-   * Pure read — routed through the cerebrum pillar handle.
-   */
+  /** List filters for an adapter. */
   list: protectedProcedure.input(adapterIdSchema).query(({ input }) => {
     return { filters: plexusService.listFilters(getCerebrumDrizzle(), input.adapterId) };
   }),
@@ -137,29 +95,14 @@ const filtersRouter = router({
   /**
    * Replace all filters for an adapter (atomic).
    *
-   * Write path — stays on the shared `pops.db` handle (`getDb()`). The
-   * parent-exists check shares the same handle so the guard sees the
-   * latest write state. Returning the freshly-written filter list off
-   * the same handle keeps the response consistent with the caller's
-   * own write; routing the post-write read through the pillar handle
-   * would surface a backfill-lag hole inside the same RPC. PRD-180
-   * US-03 collapses both onto the pillar handle.
+   * Routed through the cerebrum pillar handle. `plexusService.setFilters`
+   * runs the delete-then-insert inside a single transaction and throws
+   * `PlexusAdapterNotFoundError` when the parent adapter is missing so
+   * filter rules never get orphaned under a phantom id. The return
+   * payload is the freshly-written list off the same handle, keeping the
+   * RPC response consistent with the write the caller just made.
    */
   set: protectedProcedure.input(setFiltersSchema).mutation(({ input }) => {
-    const db = getDb();
-
-    // Verify adapter exists.
-    const adapter = db
-      .prepare('SELECT id FROM plexus_adapters WHERE id = ?')
-      .get(input.adapterId) as { id: string } | undefined;
-    if (!adapter) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Adapter '${input.adapterId}' not found`,
-      });
-    }
-
-    // Validate regex patterns.
     for (const f of input.filters) {
       try {
         new RegExp(f.pattern);
@@ -171,30 +114,22 @@ const filtersRouter = router({
       }
     }
 
-    // Full replace in a transaction.
-    const txn = db.transaction(() => {
-      db.prepare('DELETE FROM plexus_filters WHERE adapter_id = ?').run(input.adapterId);
-      const insert = db.prepare(
-        'INSERT INTO plexus_filters (id, adapter_id, filter_type, field, pattern, enabled) VALUES (?, ?, ?, ?, ?, ?)'
+    try {
+      const filters = plexusService.setFilters(
+        getCerebrumDrizzle(),
+        input.adapterId,
+        input.filters
       );
-      for (const [i, f] of input.filters.entries()) {
-        insert.run(
-          `pxf_${input.adapterId}_${i}`,
-          input.adapterId,
-          f.filterType,
-          f.field,
-          f.pattern,
-          f.enabled ? 1 : 0
-        );
+      return { filters };
+    } catch (err) {
+      if (err instanceof PlexusAdapterNotFoundError) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Adapter '${input.adapterId}' not found`,
+        });
       }
-    });
-    txn();
-
-    // Return the updated filter list.
-    const rows = db
-      .prepare('SELECT * FROM plexus_filters WHERE adapter_id = ? ORDER BY id')
-      .all(input.adapterId) as PlexusFilterRow[];
-    return { filters: rows.map(rowToFilter) };
+      throw err;
+    }
   }),
 });
 

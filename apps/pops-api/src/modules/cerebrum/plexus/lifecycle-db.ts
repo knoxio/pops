@@ -1,34 +1,36 @@
 /**
- * Database helpers for the Plexus lifecycle manager (PRD-090).
+ * Database helpers for the Plexus lifecycle manager (PRD-090, PRD-180 US-03).
  *
- * Extracted from lifecycle.ts to keep the main class under the line limit.
+ * Post-cutover: every helper resolves `getCerebrumDrizzle()` and delegates to
+ * the `@pops/cerebrum-db` `plexusService` namespace. The reads stay on the
+ * pillar handle (paired with the PRD-180 PR2 read cut) and the writes now
+ * land there too — closing the previous split where reads went through
+ * `cerebrum.db` while writes still hit the shared `pops.db`.
+ *
+ * The TOML loader, the per-adapter HTTP clients (Notion / Linear / IMAP /
+ * etc.), and the envelope encryption of the `config` blob stay in
+ * `apps/pops-api/src/modules/cerebrum/plexus/*` — they are domain
+ * orchestration / IO, not data-access.
  */
-import { getDb } from '../../../db.js';
+import { plexusService, type PlexusAdapter, type PlexusFilter } from '@pops/cerebrum-db';
 
-import type {
-  AdapterStatusValue,
-  FilterDefinition,
-  FilterRule,
-  FilterType,
-  PlexusAdapterRow,
-} from './types.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
+
+import type { AdapterStatusValue, FilterDefinition, FilterRule } from './types.js';
 
 export function upsertAdapterRow(
   adapterId: string,
   name: string,
   settings: Record<string, unknown>,
   now: string
-): void {
-  const db = getDb();
-  db.prepare(
-    `INSERT INTO plexus_adapters (id, name, status, config, created_at, updated_at)
-     VALUES (?, ?, 'registered', ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET
-       status = 'registered',
-       config = excluded.config,
-       last_error = NULL,
-       updated_at = excluded.updated_at`
-  ).run(adapterId, name, JSON.stringify(settings), now, now);
+): PlexusAdapter {
+  return plexusService.upsertAdapter(getCerebrumDrizzle(), {
+    id: adapterId,
+    name,
+    config: settings,
+    createdAt: now,
+    updatedAt: now,
+  });
 }
 
 export function updateAdapterStatus(
@@ -36,79 +38,46 @@ export function updateAdapterStatus(
   status: AdapterStatusValue,
   error?: string
 ): void {
-  const db = getDb();
-  db.prepare(
-    'UPDATE plexus_adapters SET status = ?, last_error = ?, updated_at = ? WHERE id = ?'
-  ).run(status, error ?? null, new Date().toISOString(), adapterId);
+  plexusService.updateAdapterStatus(getCerebrumDrizzle(), adapterId, {
+    status,
+    updatedAt: new Date().toISOString(),
+    lastError: error ?? null,
+  });
 }
 
 export function updateAdapterLastHealth(adapterId: string): void {
-  const now = new Date().toISOString();
-  const db = getDb();
-  db.prepare('UPDATE plexus_adapters SET last_health = ?, updated_at = ? WHERE id = ?').run(
-    now,
-    now,
-    adapterId
-  );
+  plexusService.recordAdapterHealth(getCerebrumDrizzle(), adapterId, new Date().toISOString());
 }
 
-export function getAdapterRow(adapterId: string): PlexusAdapterRow {
-  const db = getDb();
-  const row = db.prepare('SELECT * FROM plexus_adapters WHERE id = ?').get(adapterId) as
-    | PlexusAdapterRow
-    | undefined;
-  if (!row) throw new Error(`Adapter row '${adapterId}' not found`);
-  return row;
+export function getAdapterRow(adapterId: string): PlexusAdapter {
+  return plexusService.getAdapterOrThrow(getCerebrumDrizzle(), adapterId);
 }
 
 export function deleteAdapter(adapterId: string): boolean {
-  const db = getDb();
-  db.prepare('DELETE FROM plexus_filters WHERE adapter_id = ?').run(adapterId);
-  const result = db.prepare('DELETE FROM plexus_adapters WHERE id = ?').run(adapterId);
-  return result.changes > 0;
+  return plexusService.deleteAdapter(getCerebrumDrizzle(), adapterId) > 0;
 }
 
 export function incrementIngestedCount(adapterId: string, count: number): void {
-  const db = getDb();
-  db.prepare(
-    'UPDATE plexus_adapters SET ingested_count = ingested_count + ?, updated_at = ? WHERE id = ?'
-  ).run(count, new Date().toISOString(), adapterId);
+  plexusService.incrementAdapterCounter(getCerebrumDrizzle(), adapterId, {
+    counter: 'ingestedCount',
+    delta: count,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export function getEnabledFilterRows(adapterId: string): FilterRule[] {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      'SELECT filter_type, field, pattern, enabled FROM plexus_filters WHERE adapter_id = ? AND enabled = 1'
-    )
-    .all(adapterId) as Array<{
-    filter_type: string;
-    field: string;
-    pattern: string;
-    enabled: number;
-  }>;
-  return rows.map((r) => ({
-    filterType: r.filter_type as FilterType,
-    field: r.field,
-    pattern: r.pattern,
-    enabled: r.enabled === 1,
-  }));
+  return plexusService.listEnabledFilters(getCerebrumDrizzle(), adapterId).map(filterToRule);
 }
 
 export function syncFilterRows(adapterId: string, filters: FilterDefinition[]): void {
-  const db = getDb();
-  db.prepare('DELETE FROM plexus_filters WHERE adapter_id = ?').run(adapterId);
-  const insert = db.prepare(
-    'INSERT INTO plexus_filters (id, adapter_id, filter_type, field, pattern, enabled) VALUES (?, ?, ?, ?, ?, ?)'
-  );
-  for (const [i, f] of filters.entries()) {
-    insert.run(
-      `pxf_${adapterId}_${i}`,
-      adapterId,
-      f.filterType,
-      f.field,
-      f.pattern,
-      f.enabled !== false ? 1 : 0
-    );
-  }
+  plexusService.setFilters(getCerebrumDrizzle(), adapterId, filters);
+}
+
+function filterToRule(filter: PlexusFilter): FilterRule {
+  return {
+    filterType: filter.filterType,
+    field: filter.field,
+    pattern: filter.pattern,
+    enabled: filter.enabled,
+  };
 }

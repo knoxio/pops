@@ -1,15 +1,22 @@
 /**
- * Tests for PlexusLifecycleManager (PRD-090, US-02).
+ * Tests for PlexusLifecycleManager (PRD-090, US-02; PRD-180 US-03).
  *
  * Uses an in-memory SQLite database to exercise the full registration,
- * health-check, and shutdown flows without touching disk.
+ * health-check, and shutdown flows without touching disk. Post-PR3 the
+ * lifecycle reads + writes both resolve through `getCerebrumDrizzle()`,
+ * so the fixture wires `setCerebrumDb()` against the same in-memory
+ * handle the test asserts on.
  */
 import BetterSqlite3 from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setDb } from '../../../../db.js';
+import { setCerebrumDb } from '../../../../db/cerebrum-handle.js';
 import { BaseAdapter } from '../adapter.js';
 import { PlexusLifecycleManager } from '../lifecycle.js';
+
+import type { OpenedCerebrumDb } from '@pops/cerebrum-db';
 
 import type { AdapterConfig, AdapterStatus, EngineData, IngestOptions } from '../types.js';
 
@@ -93,16 +100,23 @@ function defaultConfig(): AdapterConfig {
 describe('PlexusLifecycleManager', () => {
   let db: BetterSqlite3.Database;
   let prevDb: BetterSqlite3.Database | null;
+  let prevCerebrumDb: OpenedCerebrumDb | null;
   let lifecycle: PlexusLifecycleManager;
 
   beforeEach(() => {
     db = createTestDb();
     prevDb = setDb(db);
+    prevCerebrumDb = setCerebrumDb({
+      db: drizzle<Record<string, unknown>>(db),
+      raw: db,
+      vecAvailable: false,
+    });
     // Use a very large interval so scheduled health checks don't fire during tests.
     lifecycle = new PlexusLifecycleManager({ healthIntervalMs: 999_999_999 });
   });
 
   afterEach(() => {
+    setCerebrumDb(prevCerebrumDb);
     if (prevDb) setDb(prevDb);
     else db.close();
     vi.restoreAllMocks();
@@ -120,7 +134,7 @@ describe('PlexusLifecycleManager', () => {
       expect(row.id).toBe('plx_mock');
       expect(row.name).toBe('mock');
       expect(row.status).toBe('healthy');
-      expect(row.last_error).toBeNull();
+      expect(row.lastError).toBeNull();
       expect(adapter.initializeFn).toHaveBeenCalledOnce();
     });
 
@@ -131,7 +145,7 @@ describe('PlexusLifecycleManager', () => {
       const row = await lifecycle.register(adapter, defaultConfig());
 
       expect(row.status).toBe('error');
-      expect(row.last_error).toBe('connection refused');
+      expect(row.lastError).toBe('connection refused');
     });
 
     it('stores adapter settings in the config column', async () => {
@@ -142,7 +156,7 @@ describe('PlexusLifecycleManager', () => {
         settings: { host: 'imap.example.com', port: 993 },
       };
       const row = await lifecycle.register(adapter, config);
-      expect(JSON.parse(row.config ?? '{}')).toEqual({ host: 'imap.example.com', port: 993 });
+      expect(row.config).toEqual({ host: 'imap.example.com', port: 993 });
     });
   });
 

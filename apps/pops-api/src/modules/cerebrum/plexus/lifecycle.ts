@@ -17,13 +17,10 @@ import {
   upsertAdapterRow,
 } from './lifecycle-db.js';
 
+import type { PlexusAdapter } from '@pops/cerebrum-db';
+
 import type { PlexusAdapterInterface } from './adapter.js';
-import type {
-  AdapterConfig,
-  AdapterStatusValue,
-  FilterDefinition,
-  PlexusAdapterRow,
-} from './types.js';
+import type { AdapterConfig, AdapterStatusValue, FilterDefinition } from './types.js';
 
 const SHUTDOWN_TIMEOUT_MS = 5_000;
 
@@ -81,7 +78,7 @@ export class PlexusLifecycleManager {
     adapter: PlexusAdapterInterface,
     config: AdapterConfig,
     filters?: FilterDefinition[]
-  ): Promise<PlexusAdapterRow> {
+  ): Promise<PlexusAdapter> {
     const id = `plx_${adapter.name}`;
     upsertAdapterRow(id, adapter.name, config.settings, new Date().toISOString());
     if (filters) syncFilterRows(id, filters);
