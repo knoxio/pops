@@ -6,7 +6,7 @@
  *
  * PRD-086 US-02: Approval Tracking.
  *
- * Read/write split during the migration window (PRD-181 PR 2):
+ * Read/write split during the cerebrum-pillar cutover window:
  *  - Pure user-facing reads — `getAction`, `listActions`, `getTrustState`,
  *    `listTrustStates`, `listAutonomousActionsInWindow`,
  *    `countAutonomousExecutionsSince`, `countAutonomousRevertsSince`,
@@ -19,9 +19,11 @@
  *    `updateTrustState` — and any read-after-write hop (the private
  *    `requireAction` helper used to rehydrate the row we just wrote)
  *    still goes through `db` (the shared `pops.db` handle).
- *    Read-after-write consistency lives on that same store. PRD-181
- *    US-03 flips the writes too, at which point `db` collapses into
- *    `readDb`.
+ *    Read-after-write consistency lives on that same store. A
+ *    follow-up cutover flips the writes too, at which point `db`
+ *    collapses into `readDb`. See PRD-181 for the broader pillar
+ *    sequence; exact phase numbering is owned by that doc and may
+ *    drift from this comment.
  *
  * Cross-store consistency relies on `backfillCerebrumFromShared()` in
  * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts`: a one-way,
@@ -30,9 +32,9 @@
  * boots, newly-written actions live only in `pops.db` and won't appear
  * in the public read methods served from `readDb` until the next deploy
  * reruns the backfill. Read-after-write is preserved within the same
- * process because `requireAction` reads from the write store. This is
- * the same trade-off taken by the engrams (PRD-179 PR 2) and
- * conversations (PRD-182 PR 2) cutovers.
+ * process because `requireAction` reads from the write store. Same
+ * trade-off taken by the other cerebrum pillar cutovers (engrams,
+ * conversations).
  */
 import { eq, sql } from 'drizzle-orm';
 
