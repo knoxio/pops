@@ -17,14 +17,19 @@
  *   - `glia_actions` + `glia_trust_state` (PRD-181 US-01 — scaffold;
  *     consumers still write to the shared pops.db until US-03 flips
  *     them over)
+ *   - `conversations` + `messages` + `conversation_context` (PRD-182
+ *     US-01 — scaffold; consumers still write to the shared pops.db
+ *     until PR 3 flips them over)
  *
- * The remaining cerebrum tables (embeddings + embeddings_vec,
- * conversations, plexus) add their entries here when their cutovers
- * land. Order matters when FKs are introduced across cerebrum-owned
- * tables — `engram_index` is copied first so the cascading auxiliaries
- * (`engram_scopes`, `engram_tags`, `engram_links`) can satisfy their FK
- * at insert time. The two glia tables have no cross-table FKs so their
- * order is independent of the engram block.
+ * The remaining cerebrum tables (embeddings + embeddings_vec, plexus)
+ * add their entries here when their cutovers land. Order matters when
+ * FKs are introduced across cerebrum-owned tables — `engram_index` is
+ * copied first so the cascading auxiliaries (`engram_scopes`,
+ * `engram_tags`, `engram_links`) can satisfy their FK at insert time.
+ * The two glia tables have no cross-table FKs so their order is
+ * independent of the engram block. The conversations block has an FK
+ * from `messages` and `conversation_context` to `conversations`, so the
+ * parent table is copied first.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Partial failures
@@ -150,6 +155,41 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'graduated_at',
       'updated_at',
     ],
+  },
+  {
+    // Conversations is the parent of `messages` and `conversation_context`
+    // (both FK with ON DELETE CASCADE); copying it first lets the
+    // dependents satisfy their FK at insert time.
+    table: 'conversations',
+    idColumn: 'id',
+    columns: ['id', 'title', 'active_scopes', 'app_context', 'model', 'created_at', 'updated_at'],
+  },
+  {
+    table: 'messages',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'conversation_id',
+      'role',
+      'content',
+      'citations',
+      'tool_calls',
+      'tokens_in',
+      'tokens_out',
+      'created_at',
+    ],
+  },
+  {
+    // conversation_context's PK is the (conversation_id, engram_id) pair.
+    // Use conversation_id as the existence-filter column — once any row
+    // for a conversation is copied across, subsequent runs are no-ops
+    // for that conversation; new engram associations on a still-shared
+    // conversation won't replicate, which is acceptable for the same
+    // reason engram_scopes is: PR 3 routes new writes through the
+    // cerebrum handle before this asymmetry matters.
+    table: 'conversation_context',
+    idColumn: 'conversation_id',
+    columns: ['conversation_id', 'engram_id', 'relevance_score', 'loaded_at'],
   },
 ];
 
