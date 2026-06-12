@@ -6,12 +6,21 @@
  * or transaction handle to pass in. Mirrors `@pops/media-db`'s movies
  * service signature.
  *
- * Procedure surface tracks the PRD-168 contract:
- * `media.watchHistory.{list, byItem, byDateRange, add, update, delete}`.
+ * Procedure surface tracks the PRD-168 contract plus a `getById` helper
+ * for the router layer:
+ * `media.watchHistory.{list, byItem, byDateRange, add, getById, update, delete}`.
  * The in-tree service in `apps/pops-api/src/modules/media/watch-history/`
  * still routes through the shared `getDrizzle()` handle for now —
  * PRD-168 PR 3 flips that to `getMediaDrizzle()` and routes through
  * this module.
+ *
+ * `watchedAt` is stored as SQLite `datetime('now')` text — second-precision
+ * `YYYY-MM-DD HH:MM:SS` UTC. When the caller omits it on insert we resolve
+ * the value in JS up front (same format) so it can be reused for the row,
+ * the conflict error, and any caller-side log. The unique index covers
+ * `(media_type, media_id, watched_at)`, so two omitted inserts for the
+ * same item inside the same second deliberately raise
+ * `WatchHistoryConflictError` with the resolved timestamp.
  *
  * Cross-table orchestration that today lives in the in-tree handlers
  * (auto-removing watchlist rows on a movie completion, queueing a debrief
@@ -155,11 +164,22 @@ export function byDateRange(
  * (e.g. plex sync) should catch and skip — or use `INSERT OR IGNORE`
  * directly via the raw handle while we keep the public service strict.
  */
+/**
+ * Format a JS Date as the second-precision UTC string SQLite returns from
+ * `datetime('now')` — `YYYY-MM-DD HH:MM:SS`. Used to materialise
+ * `watchedAt` up front when the caller omits it on insert, so the value
+ * survives into the conflict error.
+ */
+function nowSqliteDatetime(): string {
+  return new Date().toISOString().replace('T', ' ').slice(0, 19);
+}
+
 export function add(db: MediaDb, input: AddWatchHistoryInput): WatchHistoryRow {
+  const watchedAt = input.watchedAt ?? nowSqliteDatetime();
   const values: typeof watchHistory.$inferInsert = {
     mediaType: input.mediaType,
     mediaId: input.mediaId,
-    ...(input.watchedAt !== undefined ? { watchedAt: input.watchedAt } : {}),
+    watchedAt,
     ...(input.completed !== undefined ? { completed: input.completed } : {}),
     ...(input.blacklisted !== undefined ? { blacklisted: input.blacklisted } : {}),
   };
@@ -174,17 +194,16 @@ export function add(db: MediaDb, input: AddWatchHistoryInput): WatchHistoryRow {
     return row;
   } catch (err) {
     if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
-      const watchedAt = input.watchedAt ?? '';
       throw new WatchHistoryConflictError(input.mediaType, input.mediaId, watchedAt);
     }
     throw err;
   }
 }
 
-function buildUpdatePatch(
-  input: UpdateWatchHistoryInput
-): Partial<typeof watchHistory.$inferSelect> | null {
-  const updates: Record<string, unknown> = {};
+type WatchHistoryUpdate = Partial<typeof watchHistory.$inferInsert>;
+
+function buildUpdatePatch(input: UpdateWatchHistoryInput): WatchHistoryUpdate | null {
+  const updates: WatchHistoryUpdate = {};
   let touched = false;
 
   if (input.mediaType !== undefined) {
@@ -209,7 +228,7 @@ function buildUpdatePatch(
   }
 
   if (!touched) return null;
-  return updates as Partial<typeof watchHistory.$inferSelect>;
+  return updates;
 }
 
 /**
@@ -236,7 +255,7 @@ export function update(db: MediaDb, id: number, input: UpdateWatchHistoryInput):
       if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
         const current = getById(db, id);
         throw new WatchHistoryConflictError(
-          (input.mediaType ?? current.mediaType) as WatchHistoryMediaType,
+          input.mediaType ?? current.mediaType,
           input.mediaId ?? current.mediaId,
           input.watchedAt ?? current.watchedAt
         );
