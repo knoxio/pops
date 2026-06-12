@@ -77,6 +77,38 @@ CREATE TABLE glia_trust_state (
 );
 `;
 
+const CONVERSATIONS_SCHEMA_SQL = `
+CREATE TABLE conversations (
+  id text PRIMARY KEY NOT NULL,
+  title text,
+  active_scopes text NOT NULL,
+  app_context text,
+  model text NOT NULL,
+  created_at text NOT NULL,
+  updated_at text NOT NULL
+);
+CREATE TABLE messages (
+  id text PRIMARY KEY NOT NULL,
+  conversation_id text NOT NULL,
+  role text NOT NULL,
+  content text NOT NULL,
+  citations text,
+  tool_calls text,
+  tokens_in integer,
+  tokens_out integer,
+  created_at text NOT NULL,
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON UPDATE no action ON DELETE cascade
+);
+CREATE TABLE conversation_context (
+  conversation_id text NOT NULL,
+  engram_id text NOT NULL,
+  relevance_score real,
+  loaded_at text NOT NULL,
+  PRIMARY KEY (conversation_id, engram_id),
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON UPDATE no action ON DELETE cascade
+);
+`;
+
 const ENGRAMS_SCHEMA_SQL = `
 CREATE TABLE engram_index (
   id text PRIMARY KEY NOT NULL,
@@ -131,9 +163,44 @@ function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string
   raw.exec(NUDGE_LOG_SQL);
   raw.exec(ENGRAMS_SCHEMA_SQL);
   raw.exec(GLIA_SCHEMA_SQL);
+  raw.exec(CONVERSATIONS_SCHEMA_SQL);
   seed(raw);
   raw.close();
   return path;
+}
+
+function insertConversationRow(raw: BetterSqlite3.Database, id: string): void {
+  raw
+    .prepare(
+      `INSERT INTO conversations
+        (id, title, active_scopes, app_context, model, created_at, updated_at)
+       VALUES (?, 'T', '[]', NULL, 'gpt-4', '2026-06-10T10:00:00Z', '2026-06-10T10:00:00Z')`
+    )
+    .run(id);
+}
+
+function insertMessageRow(raw: BetterSqlite3.Database, id: string, conversationId: string): void {
+  raw
+    .prepare(
+      `INSERT INTO messages
+        (id, conversation_id, role, content, created_at)
+       VALUES (?, ?, 'user', 'hi', '2026-06-10T10:00:01Z')`
+    )
+    .run(id, conversationId);
+}
+
+function insertConversationContextRow(
+  raw: BetterSqlite3.Database,
+  conversationId: string,
+  engramId: string
+): void {
+  raw
+    .prepare(
+      `INSERT INTO conversation_context
+        (conversation_id, engram_id, relevance_score, loaded_at)
+       VALUES (?, ?, 0.5, '2026-06-10T10:00:00Z')`
+    )
+    .run(conversationId, engramId);
 }
 
 function insertGliaAction(raw: BetterSqlite3.Database, id: string): void {
@@ -322,6 +389,106 @@ describe('backfillCerebrumFromShared', () => {
         id: string;
       }[];
       expect(rows.map((r) => r.id)).toEqual(['glia_both', 'glia_shared_only']);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('copies conversations + messages + conversation_context on first run', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertConversationRow(raw, 'conv_a');
+      insertConversationRow(raw, 'conv_b');
+      insertMessageRow(raw, 'msg_a1', 'conv_a');
+      insertMessageRow(raw, 'msg_a2', 'conv_a');
+      insertConversationContextRow(raw, 'conv_a', 'eng_a');
+      insertConversationContextRow(raw, 'conv_b', 'eng_b');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const { convs } = cerebrum.raw
+        .prepare('SELECT count(*) AS convs FROM conversations')
+        .get() as { convs: number };
+      const { msgs } = cerebrum.raw.prepare('SELECT count(*) AS msgs FROM messages').get() as {
+        msgs: number;
+      };
+      const { ctx } = cerebrum.raw
+        .prepare('SELECT count(*) AS ctx FROM conversation_context')
+        .get() as { ctx: number };
+      expect(convs).toBe(2);
+      expect(msgs).toBe(2);
+      expect(ctx).toBe(2);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('skips conversation rows already present in the cerebrum copy (idempotent)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertConversationRow(raw, 'conv_dup');
+      insertMessageRow(raw, 'msg_dup', 'conv_dup');
+      insertConversationContextRow(raw, 'conv_dup', 'eng_dup');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const { convs } = cerebrum.raw
+        .prepare('SELECT count(*) AS convs FROM conversations')
+        .get() as { convs: number };
+      const { msgs } = cerebrum.raw.prepare('SELECT count(*) AS msgs FROM messages').get() as {
+        msgs: number;
+      };
+      const { ctx } = cerebrum.raw
+        .prepare('SELECT count(*) AS ctx FROM conversation_context')
+        .get() as { ctx: number };
+      expect(convs).toBe(1);
+      expect(msgs).toBe(1);
+      expect(ctx).toBe(1);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('only inserts conversation rows missing from the cerebrum copy (mixed state)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertConversationRow(raw, 'conv_shared_only');
+      insertConversationRow(raw, 'conv_both');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      insertConversationRow(cerebrum.raw, 'conv_both');
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const rows = cerebrum.raw.prepare('SELECT id FROM conversations ORDER BY id').all() as {
+        id: string;
+      }[];
+      expect(rows.map((r) => r.id)).toEqual(['conv_both', 'conv_shared_only']);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('converges new conversation_context pairs when one row for the conversation already exists', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertConversationRow(raw, 'conv_shared');
+      insertConversationContextRow(raw, 'conv_shared', 'eng_shared_a');
+      insertConversationContextRow(raw, 'conv_shared', 'eng_shared_b');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      insertConversationRow(cerebrum.raw, 'conv_shared');
+      insertConversationContextRow(cerebrum.raw, 'conv_shared', 'eng_shared_a');
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const rows = cerebrum.raw
+        .prepare(
+          'SELECT engram_id FROM conversation_context WHERE conversation_id = ? ORDER BY engram_id'
+        )
+        .all('conv_shared') as { engram_id: string }[];
+      expect(rows.map((r) => r.engram_id)).toEqual(['eng_shared_a', 'eng_shared_b']);
     } finally {
       cerebrum.raw.close();
     }

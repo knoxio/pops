@@ -21,9 +21,14 @@
  *     `glia_actions` and the per-action-type trust state. Trust
  *     graduation, dispatch and digest rendering stay in pops-api until
  *     PRD-181 US-03.
+ *   - PRD-182 US-01 added the conversations data layer — schemas,
+ *     baseline migration, and the `conversationsService` namespace
+ *     covering CRUD on `conversations`, append/list on `messages`, and
+ *     upsert/list on the `conversation_context` junction table. The
+ *     chat orchestration (streaming, model selection, auto-titling)
+ *     stays in pops-api until PRD-182 PR 3.
  *
- * The remaining slices (embeddings, conversations, plexus) follow in
- * subsequent PRs. Cerebrum's load-bearing surgery is the URI
+ * The remaining slices (embeddings, plexus) follow in subsequent PRs. Cerebrum's load-bearing surgery is the URI
  * dispatcher round-trip (engrams reference other pillars' entities by
  * URI) — that lands when the consumers cut over, not in this scaffold.
  *
@@ -51,6 +56,7 @@ export {
 export * as nudgeLogService from './services/nudge-log.js';
 export * as engramsService from './services/engrams.js';
 export * as gliaService from './services/glia.js';
+export * as conversationsService from './services/conversations.js';
 
 export type {
   Nudge,
@@ -94,3 +100,24 @@ export {
   type UpdateTrustStatePatch,
   type UserDecision,
 } from './services/glia-types.js';
+
+export {
+  MESSAGE_ROLES,
+  type Conversation,
+  type ConversationContextEntry,
+  type ConversationListFilters,
+  type InsertConversationRow,
+  type InsertMessageRow,
+  type ListConversationsResult,
+  type Message,
+  type MessageRole,
+  type UpdateConversationPatch,
+  type UpsertContextRow,
+} from './services/conversations-types.js';
+
+export {
+  ConversationConflictError,
+  ConversationNotFoundError,
+  MessageConflictError,
+  MessageNotFoundError,
+} from './services/conversations-errors.js';
