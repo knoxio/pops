@@ -15,6 +15,7 @@ import { and, count, desc, eq, like, type SQL, sql } from 'drizzle-orm';
 
 import { MovieConflictError, MovieNotFoundError } from '../errors.js';
 import { movies } from '../schema.js';
+import { isMoviesTmdbIdUniqueViolation } from './movies-unique-violation.js';
 
 import type { MediaDb } from './internal.js';
 
@@ -198,7 +199,7 @@ export function listMovies(
     .offset(offset)
     .all();
 
-  const [countRow] = db.select({ total: count() }).from(movies).where(where).all();
+  const countRow = db.select({ total: count() }).from(movies).where(where).get();
 
   return { rows, total: countRow?.total ?? 0 };
 }
@@ -218,14 +219,15 @@ export function getMovieByTmdbId(db: MediaDb, tmdbId: number): MovieRow | null {
 /**
  * Create a new movie. Returns the persisted row. Throws
  * `MovieConflictError` when the `tmdbId` already exists (the unique index
- * raises a `UNIQUE constraint failed: movies.tmdb_id` SQLITE_CONSTRAINT).
+ * raises `SQLITE_CONSTRAINT_UNIQUE` on `movies.tmdb_id`). Any other
+ * constraint violation propagates untouched so the caller can map it.
  */
 export function createMovie(db: MediaDb, input: CreateMovieInput): MovieRow {
   try {
     const result = db.insert(movies).values(buildMovieInsertValues(input)).run();
     return getMovie(db, Number(result.lastInsertRowid));
   } catch (err) {
-    if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
+    if (isMoviesTmdbIdUniqueViolation(err)) {
       throw new MovieConflictError(input.tmdbId);
     }
     throw err;
