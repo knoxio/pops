@@ -38,14 +38,14 @@ describe('collect-specs', () => {
     expect(catalog.contracts).toHaveLength(EXPECTED_PILLARS.length);
 
     const ids = catalog.contracts.map((entry) => entry.id).toSorted();
-    expect(ids).toEqual([...EXPECTED_PILLARS]);
+    expect(ids).toEqual([...EXPECTED_PILLARS].toSorted());
 
     for (const pillar of EXPECTED_PILLARS) {
       const entry = catalog.contracts.find((c) => c.id === pillar);
-      expect(entry, `expected a ${pillar} contract entry in the catalog`).toBeDefined();
-      expect(entry?.openapiPath).toBe(`/openapi/${pillar}.json`);
-      expect(entry?.registryPillarId).toBe(pillar);
-      expect(entry?.contractTag).toMatch(new RegExp(`^contract-${pillar}@v`));
+      if (!entry) throw new Error(`expected a ${pillar} contract entry in the catalog`);
+      expect(entry.openapiPath).toBe(`/openapi/${pillar}.json`);
+      expect(entry.registryPillarId).toBe(pillar);
+      expect(entry.contractTag).toMatch(new RegExp(`^contract-${pillar}@v`));
 
       expect(existsSync(resolve(DIST_DIR, 'openapi', `${pillar}.json`))).toBe(true);
 
