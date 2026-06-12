@@ -28,6 +28,7 @@ import { pillarRegistryService } from '@pops/core-db';
 import { validateManifestPayload } from '@pops/pillar-sdk';
 
 import { publicProcedure, router } from '../../trpc.js';
+import { emitRegistryEvent } from './event-bus.js';
 import { computeStatus, registryNow } from './status.js';
 import {
   DeregisterInputSchema,
@@ -81,6 +82,8 @@ export const registryRouter = router({
         manifest: result.payload,
         now: registryNow().toISOString(),
       });
+      const entry = toRegistryEntry(persisted, registryNow());
+      emitRegistryEvent({ event: 'registered', pillarId: entry.pillarId, entry });
       return {
         ok: true as const,
         pillarId: persisted.pillarId,
@@ -93,6 +96,9 @@ export const registryRouter = router({
     .output(DeregisterOutputSchema)
     .mutation(({ input, ctx }) => {
       const removed = pillarRegistryService.deletePillarRegistration(ctx.coreDb, input.pillar);
+      if (removed) {
+        emitRegistryEvent({ event: 'deregistered', pillarId: input.pillar, entry: null });
+      }
       return { ok: true as const, removed };
     }),
 
@@ -105,6 +111,10 @@ export const registryRouter = router({
       });
       if (!result.recorded || !result.registration) {
         return { ok: false as const, reason: 'not-registered' as const };
+      }
+      if (result.statusChanged) {
+        const entry = toRegistryEntry(result.registration, registryNow());
+        emitRegistryEvent({ event: 'health-changed', pillarId: entry.pillarId, entry });
       }
       return {
         ok: true as const,
