@@ -10,7 +10,7 @@ import { join } from 'node:path';
 
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   addToWatchlist,
@@ -47,7 +47,10 @@ let raw: Database.Database;
 
 beforeEach(() => {
   ({ db, raw } = freshDb());
-  return () => raw.close();
+});
+
+afterEach(() => {
+  raw.close();
 });
 
 describe('addToWatchlist', () => {

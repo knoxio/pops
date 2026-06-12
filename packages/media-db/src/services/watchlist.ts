@@ -17,6 +17,7 @@
 import { and, asc, count, desc, eq, type SQL } from 'drizzle-orm';
 
 import { mediaWatchlist } from '../schema.js';
+import { isWatchlistMediaUniqueViolation } from './watchlist-unique-violation.js';
 
 import type { MediaDb } from './internal.js';
 
@@ -125,7 +126,7 @@ export function addToWatchlist(
       .run();
     return { row: getWatchlistEntry(db, Number(result.lastInsertRowid)), created: true };
   } catch (err) {
-    if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
+    if (isWatchlistMediaUniqueViolation(err)) {
       const existing = db
         .select()
         .from(mediaWatchlist)
@@ -168,30 +169,36 @@ export function removeFromWatchlist(db: MediaDb, id: number): void {
   if (result.changes === 0) throw new WatchlistEntryNotFoundError(id);
 }
 
-/** Batch-reorder watchlist priorities. */
+/**
+ * Batch-reorder watchlist priorities. The entire rewrite runs inside a
+ * single SQLite transaction so a mid-loop failure rolls back any earlier
+ * UPDATEs — callers never observe a half-applied ordering.
+ */
 export function reorderWatchlist(db: MediaDb, items: { id: number; priority: number }[]): void {
   if (items.length === 0) return;
-
-  for (const item of items) {
-    const row = db
-      .select({ id: mediaWatchlist.id })
-      .from(mediaWatchlist)
-      .where(eq(mediaWatchlist.id, item.id))
-      .get();
-    if (!row) throw new WatchlistEntryNotFoundError(item.id);
-  }
 
   const priorities = items.map((i) => i.priority);
   if (new Set(priorities).size !== priorities.length) {
     throw new WatchlistReorderConflictError('Duplicate priorities in reorder request');
   }
 
-  for (const item of items) {
-    db.update(mediaWatchlist)
-      .set({ priority: item.priority })
-      .where(eq(mediaWatchlist.id, item.id))
-      .run();
-  }
+  db.transaction((tx) => {
+    for (const item of items) {
+      const row = tx
+        .select({ id: mediaWatchlist.id })
+        .from(mediaWatchlist)
+        .where(eq(mediaWatchlist.id, item.id))
+        .get();
+      if (!row) throw new WatchlistEntryNotFoundError(item.id);
+    }
+
+    for (const item of items) {
+      tx.update(mediaWatchlist)
+        .set({ priority: item.priority })
+        .where(eq(mediaWatchlist.id, item.id))
+        .run();
+    }
+  });
 }
 
 /** Remove a watchlist entry by (mediaType, mediaId). Returns true on hit. */
@@ -207,20 +214,26 @@ export function removeByMedia(
   return result.changes > 0;
 }
 
-/** Re-sequence priorities (0, 1, 2, …) to eliminate gaps. */
+/**
+ * Re-sequence priorities (0, 1, 2, …) to eliminate gaps. Runs inside a
+ * single SQLite transaction so a mid-rewrite failure rolls back rather
+ * than leaving the table partially renumbered.
+ */
 export function resequencePriorities(db: MediaDb): void {
-  const rows = db
-    .select({ id: mediaWatchlist.id })
-    .from(mediaWatchlist)
-    .orderBy(asc(mediaWatchlist.priority), desc(mediaWatchlist.addedAt))
-    .all();
+  db.transaction((tx) => {
+    const rows = tx
+      .select({ id: mediaWatchlist.id })
+      .from(mediaWatchlist)
+      .orderBy(asc(mediaWatchlist.priority), desc(mediaWatchlist.addedAt))
+      .all();
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    if (row) {
-      db.update(mediaWatchlist).set({ priority: i }).where(eq(mediaWatchlist.id, row.id)).run();
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (row) {
+        tx.update(mediaWatchlist).set({ priority: i }).where(eq(mediaWatchlist.id, row.id)).run();
+      }
     }
-  }
+  });
 }
 
 /** Persist the Plex rating key for a watchlist entry (best-effort lookup result). */
