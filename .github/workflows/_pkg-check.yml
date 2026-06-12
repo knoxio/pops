@@ -61,6 +61,7 @@ jobs:
           pnpm --filter @pops/inventory-contract build
           pnpm --filter @pops/cerebrum-contract build
           pnpm --filter @pops/core-contract build
+          pnpm --filter @pops/lists-contract build
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
         if: inputs.skip != 'true'
 
@@ -105,6 +106,7 @@ jobs:
           pnpm --filter @pops/inventory-contract build
           pnpm --filter @pops/cerebrum-contract build
           pnpm --filter @pops/core-contract build
+          pnpm --filter @pops/lists-contract build
       - name: Run tests (with coverage if configured)
         if: inputs.skip != 'true'
         run: |
