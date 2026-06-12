@@ -37,12 +37,16 @@ function getService(): NudgeService {
   // against the cerebrum handle so detector input lines up with fresh
   // writes. `HybridSearchService` still consumes `getDrizzle()` (the
   // shared `pops.db`) because its underlying `semantic-search-metadata`
-  // path joins cross-pillar tables (movies/tvShows/transactions/
-  // homeInventory) that have not migrated yet — narrowing that handle
-  // would break the cross-source result enrichment. The shared-store
-  // engram tables are kept current by `backfillCerebrumFromShared` so
-  // this read is acceptable until the cross-pillar metadata resolver
-  // is split.
+  // path joins `engram_index` with cross-pillar tables
+  // (movies/tvShows/transactions/homeInventory) that have not migrated
+  // yet — narrowing that handle to the cerebrum file would break the
+  // cross-source enrichment joins. Note `backfillCerebrumFromShared` is
+  // one-directional (pops → cerebrum) and does *not* mirror post-PR-3
+  // engram writes back into `pops.db`, so this hybrid search can return
+  // stale results for engrams created or modified after PR 3. The
+  // window closes in PRD-179 PR 4, which restructures retrieval (see
+  // JSDoc on HybridSearchService / SemanticSearchService /
+  // StructuredQueryService for the full plan).
   const db = getCerebrumDrizzle();
   const engramsDb = getCerebrumDrizzle();
   const searchService = new HybridSearchService(getDrizzle());
