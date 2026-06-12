@@ -64,16 +64,7 @@ describe('PillarCallError', () => {
 
 describe('PILLARS', () => {
   it('is the canonical readonly list of pillar ids', () => {
-    expect(PILLARS).toEqual([
-      'core',
-      'finance',
-      'media',
-      'inventory',
-      'cerebrum',
-      'ai',
-      'food',
-      'lists',
-    ]);
+    expect(PILLARS).toEqual(['core', 'finance', 'media', 'inventory', 'cerebrum', 'food', 'lists']);
   });
 
   it('every id is unique', () => {

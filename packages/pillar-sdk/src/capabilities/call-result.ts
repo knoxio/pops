@@ -22,11 +22,12 @@ export type CallResult<T> =
     };
 
 /**
- * Every non-`ok` `CallResult` variant has a string `kind`. This helper
- * extracts that set of kinds — used to type-narrow `PillarCallError.cause`
- * and to constrain callers that branch on failure modes.
+ * The set of non-`ok` `CallResult` kinds. Used to type-narrow
+ * `PillarCallError.cause` and to constrain callers that branch on failure
+ * modes. `'ok'` is excluded because every consumer of this alias is in a
+ * failure path.
  */
-export type CallResultKind = CallResult<unknown>['kind'];
+export type CallResultKind = Exclude<CallResult<unknown>, { kind: 'ok' }>['kind'];
 
 /**
  * Thrown by the per-procedure `.orThrow()` helper attached to every callable
@@ -39,7 +40,7 @@ export class PillarCallError extends Error {
   override readonly cause: Exclude<CallResult<unknown>, { kind: 'ok' }>;
 
   constructor(cause: Exclude<CallResult<unknown>, { kind: 'ok' }>) {
-    super(formatPillarCallErrorMessage(cause));
+    super(formatPillarCallErrorMessage(cause), { cause });
     this.name = 'PillarCallError';
     this.cause = cause;
   }

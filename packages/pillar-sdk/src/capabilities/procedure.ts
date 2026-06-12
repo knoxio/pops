@@ -17,18 +17,22 @@ export type InputOf<P extends ProcedureShape> = P['_def']['inputs'] extends read
   ...unknown[],
 ]
   ? First
-  : never;
+  : void;
 
 export type OutputOf<P extends ProcedureShape> = P['_def']['output'];
 
 export type KindOf<P extends ProcedureShape> = P['_def']['kind'];
 
+type CallArgs<P extends ProcedureShape> =
+  InputOf<P> extends void ? [input?: void] : [input: InputOf<P>];
+
 /**
  * The signature the SDK exposes for a procedure: input → `Promise<CallResult>`.
- * Consumer narrows on `result.kind === 'ok'`.
+ * Consumer narrows on `result.kind === 'ok'`. Procedures with no `.input()`
+ * can be called with no argument.
  */
 export type CallSignature<P extends ProcedureShape> = (
-  input: InputOf<P>
+  ...args: CallArgs<P>
 ) => Promise<CallResult<OutputOf<P>>>;
 
 /**
@@ -37,5 +41,5 @@ export type CallSignature<P extends ProcedureShape> = (
  * helper; failure modes become exceptions (`PillarCallError`).
  */
 export type CallSignatureOrThrow<P extends ProcedureShape> = (
-  input: InputOf<P>
+  ...args: CallArgs<P>
 ) => Promise<OutputOf<P>>;

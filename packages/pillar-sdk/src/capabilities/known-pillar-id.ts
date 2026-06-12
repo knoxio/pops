@@ -7,7 +7,8 @@
  * ship its `KnownPillarId` projection without taking a build-time dependency
  * on a not-yet-shipped sibling PRD.
  *
- * The set mirrors the eight pillars ADR-026 carves the platform into.
+ * The set matches the seven pillars ADR-026 carves the platform into.
+ * AI Ops is intentionally NOT a pillar — it lives inside `core`.
  * Adding a new pillar = add a string here → every consumer that types a
  * pillar id against `KnownPillarId` updates at compile time.
  */
@@ -17,7 +18,6 @@ export const PILLARS = [
   'media',
   'inventory',
   'cerebrum',
-  'ai',
   'food',
   'lists',
 ] as const;
