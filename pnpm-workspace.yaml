@@ -25,6 +25,7 @@ packages:
   - 'packages/food-db'
   - 'packages/food-contracts'
   - 'packages/lists-contract'
+  - 'packages/food-contract'
   - 'packages/lists-db'
   - 'packages/types'
   - 'packages/module-registry'
