@@ -9,9 +9,10 @@
  * emitted `.d.ts` still references `@pops/finance-api` (which transitively
  * references `@pops/finance-db`). The lint rule in PRD-156 stays focused
  * on *value* imports; type-only references through the contract are
- * tolerated as the migration intermediate. The OpenAPI snapshot
- * (`openapi/finance.openapi.json`) is the long-term wire-typed alternative
- * consumers can use instead.
+ * tolerated as the migration intermediate. A committed OpenAPI snapshot
+ * at `openapi/finance.openapi.json` is the planned long-term wire-typed
+ * alternative consumers can use instead (PRD-153 US-04 — not yet
+ * shipped).
  */
 import type { financeRouter } from '@pops/finance-api/router';
 

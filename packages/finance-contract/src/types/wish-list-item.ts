@@ -1,4 +1,4 @@
-export const WISH_LIST_PRIORITIES = ['low', 'medium', 'high'] as const;
+export const WISH_LIST_PRIORITIES = ['Needing', 'Soon', 'One Day', 'Dreaming'] as const;
 
 export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];
 
@@ -15,8 +15,9 @@ export interface WishListItem {
   /** `targetAmount - saved`, or `null` when either operand is null. */
   remainingAmount: number | null;
   priority: WishListPriority | null;
+  /** Absolute URL. Validated by `WishListItemSchema` via `.url()`. */
   url: string | null;
   notes: string | null;
-  /** ISO-8601 timestamp. */
+  /** ISO-8601 timestamp. Validated by `WishListItemSchema` via `.datetime()`. */
   lastEditedTime: string;
 }

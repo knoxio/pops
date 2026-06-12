@@ -32,3 +32,8 @@ export const FinanceDomainErrorSchema = z.discriminatedUnion('kind', [
 ]);
 
 export type FinanceError = { kind: ContractStatus } | FinanceDomainError;
+
+export const FinanceErrorSchema = z.union([
+  z.object({ kind: ContractStatusSchema }).strict(),
+  FinanceDomainErrorSchema,
+]);

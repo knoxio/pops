@@ -11,7 +11,7 @@ export const WishListItemSchema = z.object({
   saved: z.number().nullable(),
   remainingAmount: z.number().nullable(),
   priority: WishListPrioritySchema.nullable(),
-  url: z.string().nullable(),
+  url: z.string().url().nullable(),
   notes: z.string().nullable(),
-  lastEditedTime: z.string(),
+  lastEditedTime: z.string().datetime(),
 });
