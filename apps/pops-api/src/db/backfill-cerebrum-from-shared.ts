@@ -9,11 +9,22 @@
  * copy already populated and become a no-op via the
  * `WHERE id NOT IN (...)` existence filter.
  *
- * Today the slice only covers the `nudge_log` table; the engrams +
- * embeddings + conversations + glia + plexus slices add their entries
- * here when their cutovers land. Order matters when FKs are introduced
- * across cerebrum-owned tables — for the nudge_log-only slice the
- * order is trivial.
+ * Today the slice covers:
+ *   - `nudge_log` (Track M5 / PRD-149)
+ *   - `engram_index` + `engram_scopes` + `engram_tags` + `engram_links`
+ *     (PRD-179 US-01 — scaffold; consumers still write to the shared
+ *     pops.db until US-03 flips them over)
+ *   - `glia_actions` + `glia_trust_state` (PRD-181 US-01 — scaffold;
+ *     consumers still write to the shared pops.db until US-03 flips
+ *     them over)
+ *
+ * The remaining cerebrum tables (embeddings + embeddings_vec,
+ * conversations, plexus) add their entries here when their cutovers
+ * land. Order matters when FKs are introduced across cerebrum-owned
+ * tables — `engram_index` is copied first so the cascading auxiliaries
+ * (`engram_scopes`, `engram_tags`, `engram_links`) can satisfy their FK
+ * at insert time. The two glia tables have no cross-table FKs so their
+ * order is independent of the engram block.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Partial failures
@@ -57,6 +68,87 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'action_type',
       'action_label',
       'action_params',
+    ],
+  },
+  {
+    table: 'engram_index',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'file_path',
+      'type',
+      'source',
+      'status',
+      'template',
+      'created_at',
+      'modified_at',
+      'title',
+      'content_hash',
+      'body_hash',
+      'word_count',
+      'custom_fields',
+    ],
+  },
+  {
+    // engram_scopes has no surrogate id — the pair (engram_id, scope) is
+    // unique. Use engram_id as the existence-filter column; once any row
+    // for an engram is copied across, subsequent runs are no-ops for that
+    // engram. New scopes added to a still-shared engram won't replicate,
+    // which is acceptable: the cutover PR (US-03) routes new writes
+    // through getCerebrumDrizzle() before this asymmetry matters.
+    table: 'engram_scopes',
+    idColumn: 'engram_id',
+    columns: ['engram_id', 'scope'],
+  },
+  {
+    table: 'engram_tags',
+    idColumn: 'engram_id',
+    columns: ['engram_id', 'tag'],
+  },
+  {
+    table: 'engram_links',
+    idColumn: 'source_id',
+    columns: ['source_id', 'target_id'],
+  },
+  {
+    table: 'glia_actions',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'action_type',
+      'affected_ids',
+      'rationale',
+      'payload',
+      'phase',
+      'status',
+      'user_decision',
+      'user_note',
+      'executed_at',
+      'decided_at',
+      'reverted_at',
+      'created_at',
+    ],
+  },
+  {
+    // glia_trust_state's PK is `action_type` — the same column doubles
+    // as the existence-filter source. Once a row for an action type is
+    // copied across, the WHERE NOT IN clause makes subsequent runs a
+    // no-op for that type; new counter increments on the still-shared
+    // row won't replicate, which is acceptable for the same reason
+    // engram_scopes is: PR 3 (US-03) routes writes through the cerebrum
+    // handle before any divergence matters.
+    table: 'glia_trust_state',
+    idColumn: 'action_type',
+    columns: [
+      'action_type',
+      'current_phase',
+      'approved_count',
+      'rejected_count',
+      'reverted_count',
+      'autonomous_since',
+      'last_revert_at',
+      'graduated_at',
+      'updated_at',
     ],
   },
 ];

@@ -3,7 +3,8 @@
  *
  * Exercises the migration apply path against a fresh tmp file, verifies
  * the resulting schema, and confirms the helper is idempotent when
- * re-run against the same DB.
+ * re-run against the same DB. Covers both the nudge_log slice (Track M5)
+ * and the engrams baseline (PRD-179 US-01).
  */
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,7 +13,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openCerebrumDb } from '../open-cerebrum-db.js';
-import { nudgeLog } from '../schema.js';
+import { engramIndex, nudgeLog } from '../schema.js';
+import { upsertEngramIndex } from '../services/engrams.js';
 import { persistCandidates } from '../services/nudge-log.js';
 
 let tmpDir: string;
@@ -30,7 +32,7 @@ describe('openCerebrumDb', () => {
     const path = join(tmpDir, 'nested', 'sub', 'cerebrum.db');
     expect(existsSync(path)).toBe(false);
 
-    const { raw } = openCerebrumDb(path);
+    const { raw } = openCerebrumDb(path, { loadVec: false });
     try {
       expect(existsSync(path)).toBe(true);
       expect(raw.pragma('journal_mode', { simple: true })).toBe('wal');
@@ -43,7 +45,7 @@ describe('openCerebrumDb', () => {
 
   it('applies the nudge_log migration and accepts writes via the service', () => {
     const path = join(tmpDir, 'cerebrum.db');
-    const { db, raw } = openCerebrumDb(path);
+    const { db, raw } = openCerebrumDb(path, { loadVec: false });
     try {
       expect(db.select().from(nudgeLog).all()).toHaveLength(0);
       const created = persistCandidates(
@@ -68,9 +70,52 @@ describe('openCerebrumDb', () => {
     }
   });
 
+  it('applies the engrams baseline and accepts writes via the service', () => {
+    const path = join(tmpDir, 'cerebrum.db');
+    const { db, raw } = openCerebrumDb(path, { loadVec: false });
+    try {
+      expect(db.select().from(engramIndex).all()).toHaveLength(0);
+      upsertEngramIndex(db, {
+        id: 'eng_20260510_1000_test',
+        filePath: 'notes/eng_20260510_1000_test.md',
+        type: 'note',
+        source: 'manual',
+        status: 'active',
+        template: null,
+        createdAt: '2026-05-10T10:00:00Z',
+        modifiedAt: '2026-05-10T10:00:00Z',
+        title: 'T',
+        contentHash: 'h',
+        bodyHash: 'bh',
+        wordCount: 1,
+        customFields: {},
+        scopes: ['work'],
+        tags: [],
+        links: [],
+      });
+      expect(db.select().from(engramIndex).all()).toHaveLength(1);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('skips sqlite-vec when loadVec is false and reports vecAvailable=false', () => {
+    const path = join(tmpDir, 'cerebrum.db');
+    const opened = openCerebrumDb(path, { loadVec: false });
+    try {
+      expect(opened.vecAvailable).toBe(false);
+      const row = opened.raw
+        .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='embeddings_vec'`)
+        .get();
+      expect(row).toBeUndefined();
+    } finally {
+      opened.raw.close();
+    }
+  });
+
   it('is idempotent — re-opening the same DB does not re-apply migrations', () => {
     const path = join(tmpDir, 'cerebrum.db');
-    const first = openCerebrumDb(path);
+    const first = openCerebrumDb(path, { loadVec: false });
     try {
       persistCandidates(
         first.db,
@@ -92,7 +137,7 @@ describe('openCerebrumDb', () => {
       first.raw.close();
     }
 
-    const second = openCerebrumDb(path);
+    const second = openCerebrumDb(path, { loadVec: false });
     try {
       expect(second.db.select().from(nudgeLog).all()).toHaveLength(1);
     } finally {
