@@ -56,7 +56,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@pops/finance-contract": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -73,10 +72,14 @@
     "vitest": "^4.1.8"
   },
   "peerDependencies": {
+    "@pops/finance-contract": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
     "react": "^19.0.0"
   },
   "peerDependenciesMeta": {
+    "@pops/finance-contract": {
+      "optional": true
+    },
     "@tanstack/react-query": {
       "optional": true
     },
