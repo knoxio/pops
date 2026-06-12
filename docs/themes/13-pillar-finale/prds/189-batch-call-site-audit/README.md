@@ -52,3 +52,11 @@ Audit produces a report at `docs/themes/13-pillar-finale/prds/189-batch-call-sit
 - General performance optimisation. Only batch-related concerns.
 - Server-side aggregator endpoints (Epic 08b's search orchestrator).
 - Component-level refactors beyond batching.
+
+## Acceptance Criteria
+
+- [x] Audit script at `scripts/audit/batch-call-sites.ts` scans `apps/pops-shell/src/**/*.{ts,tsx}` and `packages/app-*/src/**/*.{ts,tsx}` for tRPC call sites (`trpc.<pillar>.<...>` and `utils.<pillar>.<...>` from `trpc.useUtils()`).
+- [x] Sites are grouped per file by inferred pillar (first path segment) and any file mixing calls from ≥2 pillars is flagged as a potential cross-pillar batch.
+- [x] Inventory committed at [`inventory.md`](./inventory.md), regeneratable via `pnpm tsx scripts/audit/batch-call-sites.ts --write docs/themes/13-pillar-finale/prds/189-batch-call-site-audit/inventory.md`.
+- [x] Parser/grouping logic covered by [`scripts/audit/__tests__/batch-call-sites.test.ts`](../../../../../scripts/audit/__tests__/batch-call-sites.test.ts).
+- [ ] Each flagged cross-pillar site has a follow-up PR resolving it (refactor) or documenting it as accepted (deferred — handled per-site in subsequent PRs).
