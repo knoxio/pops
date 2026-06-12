@@ -7,10 +7,12 @@
  * `media.shelfImpressions.*`, and media-api answers on the same path.
  */
 import { shelfImpressionsRouter } from './modules/shelf-impressions/router.js';
+import { watchlistRouter } from './modules/watchlist/router.js';
 import { router } from './trpc.js';
 
 export const mediaRouter = router({
   shelfImpressions: shelfImpressionsRouter,
+  watchlist: watchlistRouter,
 });
 
 export const appRouter = router({
