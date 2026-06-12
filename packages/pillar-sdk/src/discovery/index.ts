@@ -9,3 +9,13 @@ export {
   MIN_CACHE_TTL_MS,
 } from './cache.js';
 export { RegistryUnreachableError, type PillarSnapshot, type RegistrySnapshot } from './types.js';
+export {
+  computeBackoffDelay,
+  startReconnectingSubscription,
+  RECONNECT_INITIAL_DELAY_MS,
+  RECONNECT_MAX_DELAY_MS,
+  RECONNECT_BACKOFF_FACTOR,
+  type ReconnectingSubscription,
+  type ReconnectingSubscriptionOptions,
+  type SubscriptionHandle,
+} from './reconnect.js';
