@@ -19,6 +19,14 @@ export { openCoreDb, type OpenedCoreDb } from './open-core-db.js';
 
 export * as serviceAccountsService from './services/service-accounts.js';
 export * as serviceAccountKeys from './services/service-account-keys.js';
+export * as pillarRegistryService from './services/pillar-registry.js';
+
+export type {
+  PersistableManifest,
+  PillarRegistration,
+  PillarStatus,
+  UpsertPillarRegistrationInput,
+} from './services/pillar-registry.js';
 
 // Public types — re-exported at the package root so consumers can name
 // them without reaching into the namespaces.

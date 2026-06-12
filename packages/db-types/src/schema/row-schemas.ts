@@ -48,6 +48,7 @@ export * from './media-scores-row-schemas.js';
 export * from './media-watchlist-row-schemas.js';
 export * from './movies-row-schemas.js';
 export * from './nudge-log-row-schemas.js';
+export * from './pillar-registry-row-schemas.js';
 export * from './reflex-executions-row-schemas.js';
 export * from './rotation-candidates-row-schemas.js';
 export * from './rotation-exclusions-row-schemas.js';

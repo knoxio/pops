@@ -8,6 +8,13 @@
       "when": 1778431569630,
       "tag": "0054_service_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781568000000,
+      "tag": "0055_pillar_registry",
+      "breakpoints": true
     }
   ]
 }

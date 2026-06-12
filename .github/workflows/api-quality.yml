@@ -89,6 +89,7 @@ jobs:
           cd ../lists-db && pnpm build
           cd ../app-lists-db && pnpm build
           cd ../app-food-db && pnpm build
+          cd ../pillar-sdk && pnpm build
 
       - name: Type check
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'

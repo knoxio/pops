@@ -61,6 +61,7 @@ export { mediaScores } from './media-scores.js';
 export { mediaWatchlist } from './media-watchlist.js';
 export { movies } from './movies.js';
 export { nudgeLog } from './nudge-log.js';
+export { pillarRegistry } from './pillar-registry.js';
 export { rotationCandidates } from './rotation-candidates.js';
 export { rotationExclusions } from './rotation-exclusions.js';
 export { rotationLog } from './rotation-log.js';

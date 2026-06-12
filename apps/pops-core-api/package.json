@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@pops/core-db": "workspace:*",
+    "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@trpc/server": "^11.17.0",
     "express": "^5.1.0",
