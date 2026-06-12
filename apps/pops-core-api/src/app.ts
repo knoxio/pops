@@ -15,6 +15,7 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express, { type Express, type Request, type Response } from 'express';
 
 import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
+import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js';
 import { appRouter } from './router.js';
 import { createCoreTrpcContextFactory } from './trpc.js';
 
@@ -31,6 +32,8 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
   app.get('/pillars', (_req: Request, res: Response) => {
     res.json(handlers.pillars());
   });
+
+  app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
 
   app.use(
     '/trpc',
