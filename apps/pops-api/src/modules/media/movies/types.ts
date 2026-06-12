@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { MovieRow } from '@pops/db-types';
+import type { MovieRow } from '@pops/media-db';
 
 export type { MovieRow };
 
