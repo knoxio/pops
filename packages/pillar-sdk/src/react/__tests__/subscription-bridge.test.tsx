@@ -125,11 +125,13 @@ describe('applySubscriptionEvent (pure rules)', () => {
     });
   });
 
-  it('pillar.snapshot invalidates every cache entry whose first segment matches a pillar in the snapshot', async () => {
+  it('pillar.snapshot invalidates every cache entry whose first segment looks like a pillarId (defends against deregistered-during-gap)', async () => {
     const client = new QueryClient();
     seedQuery(client, ['finance', 'wishlist', 'list', '{}'], [{ id: 'wish-1' }]);
     seedQuery(client, ['media', 'movies', 'list', '{}'], []);
-    seedQuery(client, ['health', 'metrics', 'get', '{}'], { hr: 60 });
+    // A first-segment key that does NOT match the pillarId pattern
+    // (uppercase) — should be left alone.
+    seedQuery(client, ['SystemMetrics', 'hr', '{}'], { hr: 60 });
 
     applySubscriptionEvent(client, {
       event: 'pillar.snapshot',
@@ -139,18 +141,37 @@ describe('applySubscriptionEvent (pure rules)', () => {
     await waitFor(() => {
       expect(client.getQueryState(['finance', 'wishlist', 'list', '{}'])?.isInvalidated).toBe(true);
       expect(client.getQueryState(['media', 'movies', 'list', '{}'])?.isInvalidated).toBe(true);
-      expect(client.getQueryState(['health', 'metrics', 'get', '{}'])?.isInvalidated).toBe(false);
+      expect(client.getQueryState(['SystemMetrics', 'hr', '{}'])?.isInvalidated).toBe(false);
     });
   });
 
-  it('ignores malformed payloads (missing pillarId / non-array snapshot)', async () => {
+  it('snapshot invalidates pillars NOT in the snapshot (deregistered-during-gap defense)', async () => {
     const client = new QueryClient();
+    // finance was previously cached but has been deregistered during the
+    // SSE gap; the reconnect snapshot only contains media.
     seedQuery(client, ['finance', 'wishlist', 'list', '{}'], [{ id: 'wish-1' }]);
+    seedQuery(client, ['media', 'movies', 'list', '{}'], []);
 
+    applySubscriptionEvent(client, {
+      event: 'pillar.snapshot',
+      data: [entry('media')],
+    });
+
+    await waitFor(() => {
+      // finance is invalidated even though it's absent from the snapshot.
+      expect(client.getQueryState(['finance', 'wishlist', 'list', '{}'])?.isInvalidated).toBe(true);
+      expect(client.getQueryState(['media', 'movies', 'list', '{}'])?.isInvalidated).toBe(true);
+    });
+  });
+
+  it('ignores malformed single-event payloads', async () => {
+    const client = new QueryClient();
+    seedQuery(client, ['SystemMetrics', 'hr', '{}'], { hr: 60 });
+
+    // Non-pillar key + malformed register payload = nothing invalidated.
     applySubscriptionEvent(client, { event: 'pillar.registered', data: { entry: {} } });
-    applySubscriptionEvent(client, { event: 'pillar.snapshot', data: 'oops' });
 
-    expect(client.getQueryState(['finance', 'wishlist', 'list', '{}'])?.isInvalidated).toBe(false);
+    expect(client.getQueryState(['SystemMetrics', 'hr', '{}'])?.isInvalidated).toBe(false);
   });
 });
 

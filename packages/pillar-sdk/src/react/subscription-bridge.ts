@@ -20,6 +20,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { DEFAULT_REGISTRY_URL } from '../discovery/cache-internals.js';
 import { startReconnectingSubscription, type SubscriptionHandle } from '../discovery/reconnect.js';
 
 import type { QueryClient } from '@tanstack/react-query';
@@ -51,7 +52,6 @@ export interface SubscriptionSource extends SubscriptionHandle {
 
 export type SubscriptionConnect = () => Promise<SubscriptionSource> | SubscriptionSource;
 
-const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
 const SUBSCRIBE_PATH = '/registry/subscribe';
 
 const TRACKED_EVENTS: readonly SubscriptionEventName[] = [
@@ -71,7 +71,7 @@ export interface UsePillarSubscriptionBridgeOptions {
   readonly registryUrl?: string;
   /** Disable the bridge without unmounting the component. */
   readonly enabled?: boolean;
-  /** Bubble up reconnect / parse failures. Optional — defaults to console.warn. */
+  /** Bubble up reconnect / connection failures. Optional — defaults to console.warn. Malformed event payloads are swallowed (dropped) without firing this callback. */
   readonly onError?: (error: unknown) => void;
 }
 
@@ -146,12 +146,21 @@ export function applySubscriptionEvent(client: QueryClient, event: SubscriptionE
       return;
     }
     case 'pillar.snapshot': {
-      const pillarIds = extractSnapshotPillarIds(event.data);
-      if (pillarIds.size === 0) return;
+      // On reconnect we don't know which pillars were deregistered
+      // during the gap, so we invalidate EVERY pillar-prefixed cache
+      // entry, not just the ones still present in the snapshot. The
+      // snapshot pillars then refetch from a fresh source-of-truth,
+      // and any pillar that's gone returns `unavailable` (PRD-191).
+      // Targeting only snapshot members would leave stale data behind
+      // for pillars deregistered mid-gap.
+      const snapshotIds = extractSnapshotPillarIds(event.data);
       void client.invalidateQueries({
         predicate: (query) => {
           const first = query.queryKey[0];
-          return typeof first === 'string' && pillarIds.has(first);
+          if (typeof first !== 'string') return false;
+          // Invalidate everything whose first key segment looks like a
+          // pillarId — present-in-snapshot or otherwise.
+          return snapshotIds.has(first) || isLikelyPillarId(first);
         },
       });
       return;
@@ -176,6 +185,19 @@ function extractSnapshotPillarIds(data: unknown): ReadonlySet<string> {
     if (hasStringPillarId(entry)) ids.add(entry.pillarId);
   }
   return ids;
+}
+
+/**
+ * Heuristic: a query-key first segment looks like a pillar id if it
+ * matches the lowercase-kebab-case constraint from PRD-157's
+ * `ManifestPayloadSchema`. False positives are harmless (the
+ * invalidation just refetches) but false negatives would leave stale
+ * data after a deregistration during a gap, which is what we're
+ * defending against.
+ */
+const LIKELY_PILLAR_ID = /^[a-z][a-z0-9-]*$/;
+function isLikelyPillarId(value: string): boolean {
+  return LIKELY_PILLAR_ID.test(value);
 }
 
 function reportError(error: unknown, onError?: (error: unknown) => void): void {
@@ -220,19 +242,29 @@ function openEventSourceSubscription(registryUrl: string): SubscriptionSource {
     domListeners.push({ name, handler });
   }
 
+  let closed = false;
+  const closeSource = (): void => {
+    if (closed) return;
+    closed = true;
+    for (const { name, handler } of domListeners) {
+      source.removeEventListener(name, handler);
+    }
+    source.removeEventListener('error', onSourceError);
+    source.close();
+  };
+
   const onSourceError = (): void => {
+    // Stop EventSource's built-in retry by closing the underlying
+    // connection — startReconnectingSubscription owns the reconnect
+    // schedule and would otherwise race with EventSource opening a
+    // second connection on top of the first.
+    closeSource();
     for (const listener of closeListeners) listener();
   };
   source.addEventListener('error', onSourceError);
 
   return {
-    close: (): void => {
-      for (const { name, handler } of domListeners) {
-        source.removeEventListener(name, handler);
-      }
-      source.removeEventListener('error', onSourceError);
-      source.close();
-    },
+    close: closeSource,
     onClose: (listener) => {
       closeListeners.add(listener);
       return () => closeListeners.delete(listener);
