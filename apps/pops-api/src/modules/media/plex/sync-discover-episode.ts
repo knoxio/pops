@@ -52,10 +52,10 @@ async function getOrResolveShow(
   args: ProcessEpisodeEntryArgs,
   showTitle: string
 ): Promise<{ showId: number; tvdbId: number } | null> {
-  const { showCache, plexClient, tvdbClient, imageCache, result, db } = args;
+  const { showCache, plexClient, tvdbClient, imageCache, result } = args;
   let showInfo = showCache.get(showTitle);
   if (showInfo === undefined) {
-    showInfo = await resolveShow({ plexClient, tvdbClient, imageCache, showTitle, result, db });
+    showInfo = await resolveShow({ plexClient, tvdbClient, imageCache, showTitle, result });
     showCache.set(showTitle, showInfo);
   }
   return showInfo;
