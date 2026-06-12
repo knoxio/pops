@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,10 @@ function main(): void {
   const rules = buildAllBoundaryRules();
   const content = renderRulesFile(rules);
   writeFileSync(RULES_FILE, content);
+  execFileSync('pnpm', ['exec', 'oxfmt', '--write', RULES_FILE], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+  });
   process.stdout.write(`Wrote ${rules.length} boundary rules to ${RULES_FILE}\n`);
 }
 
