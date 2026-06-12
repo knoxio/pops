@@ -22,6 +22,8 @@ export {
   MovieNotFoundError,
   TvShowConflictError,
   TvShowNotFoundError,
+  WatchHistoryConflictError,
+  WatchHistoryNotFoundError,
 } from './errors.js';
 
 export type {
@@ -47,6 +49,18 @@ export type {
 } from './services/tv-shows.js';
 
 export * as tvShowsService from './services/tv-shows.js';
+
+export type {
+  AddWatchHistoryInput,
+  UpdateWatchHistoryInput,
+  WatchHistoryEntry,
+  WatchHistoryFilters,
+  WatchHistoryListResult,
+  WatchHistoryMediaType,
+  WatchHistoryRow,
+} from './services/watch-history.js';
+
+export * as watchHistoryService from './services/watch-history.js';
 
 export * as watchlistService from './services/watchlist.js';
 

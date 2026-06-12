@@ -29,6 +29,13 @@
       "when": 1788000000000,
       "tag": "0024_media_tv_shows_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790000000000,
+      "tag": "0025_media_watch_history_baseline",
+      "breakpoints": true
     }
   ]
 }

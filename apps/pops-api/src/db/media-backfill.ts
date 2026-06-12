@@ -5,11 +5,12 @@ import { resolveSqlitePath } from './sqlite-path.js';
  * pillar's `media.db`.
  *
  * Each slice cutover (Phase 2 PR 3 shelf-impressions, PRD-165 movies,
- * PRD-166 tv-shows, …) flips its handle to `getMediaDrizzle()`. The
- * first deploy after each cutover needs to carry the existing rows from
- * the shared DB across before any reads come from the new file.
- * Subsequent boots find the media copy already populated and become a
- * no-op via the `WHERE id NOT IN (...)` existence filter on every table.
+ * PRD-166 tv-shows, PRD-168 watch history, …) flips its handle to
+ * `getMediaDrizzle()`. The first deploy after each cutover needs to
+ * carry the existing rows from the shared DB across before any reads
+ * come from the new file. Subsequent boots find the media copy already
+ * populated and become a no-op via the `WHERE id NOT IN (...)`
+ * existence filter on every table.
  *
  * No FK relationships exist between the listed media tables, so order
  * is independent — but each entry is wrapped in `tryCopyTable` so a
@@ -103,6 +104,11 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'created_at',
       'updated_at',
     ],
+  },
+  {
+    table: 'watch_history',
+    idColumn: 'id',
+    columns: ['id', 'media_type', 'media_id', 'watched_at', 'completed', 'blacklisted'],
   },
 ];
 

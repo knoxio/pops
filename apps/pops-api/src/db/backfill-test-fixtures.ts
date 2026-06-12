@@ -7,214 +7,24 @@
  * byte-identical migration that lands in both
  * `apps/pops-api/src/db/drizzle-migrations/` and
  * `packages/<id>-db/migrations/`.
+ *
+ * Split across per-pillar siblings (`backfill-test-fixtures-core.ts`,
+ * `-media.ts`, `-finance.ts`) so each file stays under the 200-line
+ * lint cap. This barrel keeps the existing import surface stable.
  */
-export const SERVICE_ACCOUNTS_TABLE_SQL = `
-CREATE TABLE service_accounts (
-  id text PRIMARY KEY NOT NULL,
-  name text NOT NULL,
-  key_prefix text NOT NULL,
-  key_hash text NOT NULL,
-  scopes text DEFAULT '[]' NOT NULL,
-  created_at text DEFAULT (datetime('now')) NOT NULL,
-  last_used_at text,
-  revoked_at text,
-  created_by text
-);
-CREATE UNIQUE INDEX service_accounts_name_unique ON service_accounts (name);
-CREATE UNIQUE INDEX service_accounts_key_prefix_unique ON service_accounts (key_prefix);
-CREATE INDEX idx_service_accounts_key_prefix ON service_accounts (key_prefix);
-CREATE INDEX idx_service_accounts_revoked_at ON service_accounts (revoked_at);
-`;
-
-export const SHELF_IMPRESSIONS_TABLE_SQL = `
-CREATE TABLE shelf_impressions (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  shelf_id text NOT NULL,
-  shown_at text DEFAULT (datetime('now')) NOT NULL
-);
-CREATE INDEX idx_shelf_impressions_shelf_id ON shelf_impressions (shelf_id);
-`;
-
-export const MOVIES_TABLE_SQL = `
-CREATE TABLE movies (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  tmdb_id integer NOT NULL,
-  imdb_id text,
-  title text NOT NULL,
-  original_title text,
-  overview text,
-  tagline text,
-  release_date text,
-  runtime integer,
-  status text,
-  original_language text,
-  budget integer,
-  revenue integer,
-  poster_path text,
-  backdrop_path text,
-  logo_path text,
-  poster_override_path text,
-  discover_rating_key text,
-  vote_average real,
-  vote_count integer,
-  genres text,
-  created_at text DEFAULT (datetime('now')) NOT NULL,
-  updated_at text DEFAULT (datetime('now')) NOT NULL,
-  rotation_status text,
-  rotation_expires_at text,
-  rotation_marked_at text
-);
-CREATE INDEX idx_movies_rotation_status ON movies (rotation_status);
-CREATE UNIQUE INDEX idx_movies_tmdb_id ON movies (tmdb_id);
-CREATE INDEX idx_movies_title ON movies (title);
-CREATE INDEX idx_movies_release_date ON movies (release_date);
-`;
-
-export const TV_SHOWS_TABLE_SQL = `
-CREATE TABLE tv_shows (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  tvdb_id integer NOT NULL,
-  name text NOT NULL,
-  original_name text,
-  overview text,
-  first_air_date text,
-  last_air_date text,
-  status text,
-  original_language text,
-  number_of_seasons integer,
-  number_of_episodes integer,
-  episode_run_time integer,
-  poster_path text,
-  backdrop_path text,
-  logo_path text,
-  poster_override_path text,
-  discover_rating_key text,
-  vote_average real,
-  vote_count integer,
-  genres text,
-  networks text,
-  created_at text DEFAULT (datetime('now')) NOT NULL,
-  updated_at text DEFAULT (datetime('now')) NOT NULL
-);
-CREATE UNIQUE INDEX idx_tv_shows_tvdb_id ON tv_shows (tvdb_id);
-CREATE INDEX idx_tv_shows_name ON tv_shows (name);
-CREATE INDEX idx_tv_shows_first_air_date ON tv_shows (first_air_date);
-`;
-
-export const WISH_LIST_TABLE_SQL = `
-CREATE TABLE wish_list (
-  id text PRIMARY KEY NOT NULL,
-  notion_id text,
-  item text NOT NULL,
-  target_amount real,
-  saved real,
-  priority text,
-  url text,
-  notes text,
-  last_edited_time text NOT NULL
-);
-CREATE UNIQUE INDEX wish_list_notion_id_unique ON wish_list (notion_id);
-`;
-
-export const ENTITIES_TABLE_SQL = `
-CREATE TABLE entities (
-  id text PRIMARY KEY NOT NULL,
-  notion_id text,
-  name text NOT NULL,
-  type text DEFAULT 'company' NOT NULL,
-  abn text,
-  aliases text,
-  default_transaction_type text,
-  default_tags text,
-  notes text,
-  last_edited_time text NOT NULL
-);
-CREATE UNIQUE INDEX entities_notion_id_unique ON entities (notion_id);
-`;
-
-export const TRANSACTIONS_TABLE_SQL = `
-CREATE TABLE transactions (
-  id text PRIMARY KEY NOT NULL,
-  notion_id text,
-  description text NOT NULL,
-  account text NOT NULL,
-  amount real NOT NULL,
-  date text NOT NULL,
-  type text NOT NULL,
-  tags text DEFAULT '[]' NOT NULL,
-  entity_id text,
-  entity_name text,
-  location text,
-  country text,
-  related_transaction_id text,
-  notes text,
-  checksum text,
-  raw_row text,
-  last_edited_time text NOT NULL,
-  FOREIGN KEY (entity_id) REFERENCES entities(id) ON UPDATE no action ON DELETE set null
-);
-CREATE UNIQUE INDEX transactions_notion_id_unique ON transactions (notion_id);
-CREATE INDEX idx_transactions_date ON transactions (date);
-CREATE UNIQUE INDEX idx_transactions_checksum ON transactions (checksum);
-`;
-
-export const TRANSACTION_CORRECTIONS_TABLE_SQL = `
-CREATE TABLE transaction_corrections (
-  id text PRIMARY KEY NOT NULL,
-  description_pattern text NOT NULL,
-  match_type text DEFAULT 'exact' NOT NULL,
-  entity_id text,
-  entity_name text,
-  location text,
-  tags text DEFAULT '[]' NOT NULL,
-  transaction_type text,
-  is_active integer DEFAULT 1 NOT NULL,
-  confidence real DEFAULT 0.5 NOT NULL,
-  priority integer DEFAULT 0 NOT NULL,
-  times_applied integer DEFAULT 0 NOT NULL,
-  created_at text DEFAULT (datetime('now')) NOT NULL,
-  last_used_at text,
-  FOREIGN KEY (entity_id) REFERENCES entities(id) ON UPDATE no action ON DELETE set null
-);
-`;
-
-export const TRANSACTION_TAG_RULES_TABLE_SQL = `
-CREATE TABLE transaction_tag_rules (
-  id text PRIMARY KEY NOT NULL,
-  description_pattern text NOT NULL,
-  match_type text DEFAULT 'exact' NOT NULL,
-  entity_id text,
-  tags text DEFAULT '[]' NOT NULL,
-  is_active integer DEFAULT 1 NOT NULL,
-  confidence real DEFAULT 0.5 NOT NULL,
-  priority integer DEFAULT 0 NOT NULL,
-  times_applied integer DEFAULT 0 NOT NULL,
-  created_at text DEFAULT (datetime('now')) NOT NULL,
-  last_used_at text,
-  FOREIGN KEY (entity_id) REFERENCES entities(id) ON UPDATE no action ON DELETE set null
-);
-`;
-
-export const TAG_VOCABULARY_TABLE_SQL = `
-CREATE TABLE tag_vocabulary (
-  tag text PRIMARY KEY NOT NULL,
-  source text DEFAULT 'seed' NOT NULL,
-  is_active integer DEFAULT true NOT NULL,
-  created_at text DEFAULT (datetime('now')) NOT NULL
-);
-`;
-
-export const BUDGETS_TABLE_SQL = `
-CREATE TABLE budgets (
-  id text PRIMARY KEY NOT NULL,
-  notion_id text,
-  category text NOT NULL,
-  period text,
-  amount real,
-  active integer DEFAULT 0 NOT NULL,
-  notes text,
-  last_edited_time text NOT NULL
-);
-CREATE UNIQUE INDEX budgets_notion_id_unique ON budgets (notion_id);
-CREATE UNIQUE INDEX idx_budgets_category_period ON budgets (category, COALESCE(period, char(0)));
-`;
+export { SERVICE_ACCOUNTS_TABLE_SQL } from './backfill-test-fixtures-core.js';
+export {
+  MOVIES_TABLE_SQL,
+  SHELF_IMPRESSIONS_TABLE_SQL,
+  TV_SHOWS_TABLE_SQL,
+  WATCH_HISTORY_TABLE_SQL,
+} from './backfill-test-fixtures-media.js';
+export {
+  BUDGETS_TABLE_SQL,
+  ENTITIES_TABLE_SQL,
+  TAG_VOCABULARY_TABLE_SQL,
+  TRANSACTION_CORRECTIONS_TABLE_SQL,
+  TRANSACTION_TAG_RULES_TABLE_SQL,
+  TRANSACTIONS_TABLE_SQL,
+  WISH_LIST_TABLE_SQL,
+} from './backfill-test-fixtures-finance.js';
