@@ -135,57 +135,10 @@ export interface FilterDefinition {
 }
 
 // ---------------------------------------------------------------------------
-// Database row shapes
-// ---------------------------------------------------------------------------
-
-export interface PlexusAdapterRow {
-  id: string;
-  name: string;
-  status: AdapterStatusValue;
-  config: string | null;
-  last_health: string | null;
-  last_error: string | null;
-  ingested_count: number;
-  emitted_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PlexusFilterRow {
-  id: string;
-  adapter_id: string;
-  filter_type: FilterType;
-  field: string;
-  pattern: string;
-  enabled: number;
-}
-
-// ---------------------------------------------------------------------------
-// API response shapes
-// ---------------------------------------------------------------------------
-
-export interface PlexusAdapter {
-  id: string;
-  name: string;
-  status: AdapterStatusValue;
-  config: Record<string, unknown> | null;
-  lastHealth: string | null;
-  lastError: string | null;
-  ingestedCount: number;
-  emittedCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PlexusFilter {
-  id: string;
-  adapterId: string;
-  filterType: FilterType;
-  field: string;
-  pattern: string;
-  enabled: boolean;
-}
-
+// Row + API shapes for adapters and filters now live in `@pops/cerebrum-db`
+// (`PlexusAdapter`, `PlexusFilter`, `PlexusAdapterRow`, `PlexusFilterRow`).
+// PRD-180 PR3 moved the data-access seam there; this module no longer
+// re-exports its own copies.
 // ---------------------------------------------------------------------------
 // TOML config shape
 // ---------------------------------------------------------------------------
