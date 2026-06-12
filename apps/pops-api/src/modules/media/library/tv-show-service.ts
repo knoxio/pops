@@ -155,6 +155,33 @@ function downloadShowImages(args: DownloadShowImagesArgs): void {
  * - Idempotent: returns existing show if already in library.
  * - Fetches full detail + episodes from TheTVDB.
  * - Inserts show, seasons, and episodes in a single transaction.
+ *
+ * Cross-store note (PRD-166 PR 3): the `tv_shows` writer surface
+ * migrated to `getMediaDrizzle()` in PR #3007, but this one transaction
+ * stays on `getDrizzle()` (shared `pops.db`) because it co-mutates
+ * `seasons` and `episodes` in the same atomic unit, and those tables
+ * have not yet moved to `@pops/media-db`. Splitting the transaction
+ * across two SQLite files would lose atomicity (a crash between the
+ * `tv_shows` insert on media.db and the `seasons`/`episodes` inserts on
+ * pops.db could leave a parent row without children, surfacing as
+ * empty shows in the UI). Mirrors the mixed-table strategy used by
+ * `rotation/download-candidate.ts` in PRD-165 PR 3.
+ *
+ * Until the migration completes, callers that need to update the
+ * `tv_shows` row immediately after creation must address the row on
+ * the SAME handle the insert landed on — i.e. `getDrizzle()` — or the
+ * update will silently no-op (the `backfillMediaFromShared` bridge is
+ * insert-only and only runs at boot, so a media.db update against an
+ * id that lives only in pops.db hits zero rows). The post-`addTvShow`
+ * `discoverRatingKey` update in `plex/sync-discover-show.ts` is
+ * routed through `getDrizzle()` for this reason.
+ *
+ * TODO(PRD-166 follow-up): once `seasons` + `episodes` join `tv_shows`
+ * in `@pops/media-db` (PRD-166 currently lists all three but only
+ * `tv_shows` has shipped), flip this transaction to
+ * `getMediaDrizzle()` and collapse the `tv_shows` entry in
+ * `media-backfill.ts` along with the matching shared-journal table
+ * drop.
  */
 export async function addTvShow(
   tvdbId: number,
