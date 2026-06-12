@@ -221,9 +221,10 @@ describe('runPerPillarMigrations', () => {
     // 0039_dry_fabian_cortez and 0044_nudge_log (cerebrum pillar Phase 1
     // PR 2 — nudge_log slice), 0050_engrams_baseline (PRD-179 US-01 —
     // engrams baseline), 0051_glia_baseline (PRD-181 US-01 — glia
-    // baseline) and 0052_conversations_baseline (PRD-182 US-01 —
-    // conversations baseline). Pillars without their own journal yet
-    // still skip cleanly.
+    // baseline), 0052_conversations_baseline (PRD-182 US-01 —
+    // conversations baseline), and 0053_plexus_baseline (PRD-180 US-01 —
+    // plexus baseline). Pillars without their own journal yet still skip
+    // cleanly.
     await withDb((db) => {
       const realPillars: PillarDescriptor[] = [
         { id: 'core', dbPackageDir: 'packages/core-db' },
@@ -247,6 +248,7 @@ describe('runPerPillarMigrations', () => {
         '0050_engrams_baseline',
         '0051_glia_baseline',
         '0052_conversations_baseline',
+        '0053_plexus_baseline',
         '0054_service_accounts',
         '0055_pillar_registry',
         '0056_settings_baseline',

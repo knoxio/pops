@@ -48,6 +48,33 @@ CREATE TABLE nudge_log (
 );
 `;
 
+const PLEXUS_SCHEMA_SQL = `
+CREATE TABLE plexus_adapters (
+  id text PRIMARY KEY NOT NULL,
+  name text NOT NULL,
+  status text DEFAULT 'registered' NOT NULL,
+  config text,
+  last_health text,
+  last_error text,
+  ingested_count integer DEFAULT 0 NOT NULL,
+  emitted_count integer DEFAULT 0 NOT NULL,
+  created_at text NOT NULL,
+  updated_at text NOT NULL
+);
+CREATE UNIQUE INDEX idx_plexus_adapters_name ON plexus_adapters (name);
+CREATE INDEX idx_plexus_adapters_status ON plexus_adapters (status);
+CREATE TABLE plexus_filters (
+  id text PRIMARY KEY NOT NULL,
+  adapter_id text NOT NULL,
+  filter_type text NOT NULL,
+  field text NOT NULL,
+  pattern text NOT NULL,
+  enabled integer DEFAULT 1 NOT NULL,
+  FOREIGN KEY (adapter_id) REFERENCES plexus_adapters(id) ON UPDATE no action ON DELETE cascade
+);
+CREATE INDEX idx_plexus_filters_adapter_id ON plexus_filters (adapter_id);
+`;
+
 const GLIA_SCHEMA_SQL = `
 CREATE TABLE glia_actions (
   id text PRIMARY KEY NOT NULL,
@@ -164,6 +191,7 @@ function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string
   raw.exec(ENGRAMS_SCHEMA_SQL);
   raw.exec(GLIA_SCHEMA_SQL);
   raw.exec(CONVERSATIONS_SCHEMA_SQL);
+  raw.exec(PLEXUS_SCHEMA_SQL);
   seed(raw);
   raw.close();
   return path;
@@ -201,6 +229,26 @@ function insertConversationContextRow(
        VALUES (?, ?, 0.5, '2026-06-10T10:00:00Z')`
     )
     .run(conversationId, engramId);
+}
+
+function insertPlexusAdapter(raw: BetterSqlite3.Database, id: string, name?: string): void {
+  raw
+    .prepare(
+      `INSERT INTO plexus_adapters
+        (id, name, status, config, ingested_count, emitted_count, created_at, updated_at)
+       VALUES (?, ?, 'registered', '{"k":"v"}', 0, 0, '2026-06-10T10:00:00Z', '2026-06-10T10:00:00Z')`
+    )
+    .run(id, name ?? id);
+}
+
+function insertPlexusFilter(raw: BetterSqlite3.Database, id: string, adapterId: string): void {
+  raw
+    .prepare(
+      `INSERT INTO plexus_filters
+        (id, adapter_id, filter_type, field, pattern, enabled)
+       VALUES (?, ?, 'include', 'title', '.*urgent.*', 1)`
+    )
+    .run(id, adapterId);
 }
 
 function insertGliaAction(raw: BetterSqlite3.Database, id: string): void {
@@ -489,6 +537,72 @@ describe('backfillCerebrumFromShared', () => {
         )
         .all('conv_shared') as { engram_id: string }[];
       expect(rows.map((r) => r.engram_id)).toEqual(['eng_shared_a', 'eng_shared_b']);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('copies plexus_adapters + plexus_filters from the shared DB on first run', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertPlexusAdapter(raw, 'adp_notion', 'notion');
+      insertPlexusAdapter(raw, 'adp_linear', 'linear');
+      insertPlexusFilter(raw, 'pxf_notion_0', 'adp_notion');
+      insertPlexusFilter(raw, 'pxf_linear_0', 'adp_linear');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const { adapters } = cerebrum.raw
+        .prepare('SELECT count(*) AS adapters FROM plexus_adapters')
+        .get() as { adapters: number };
+      const { filters } = cerebrum.raw
+        .prepare('SELECT count(*) AS filters FROM plexus_filters')
+        .get() as { filters: number };
+      expect(adapters).toBe(2);
+      expect(filters).toBe(2);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('skips plexus rows already present in the cerebrum copy (idempotent)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertPlexusAdapter(raw, 'adp_dup', 'dup');
+      insertPlexusFilter(raw, 'pxf_dup_0', 'adp_dup');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const { adapters } = cerebrum.raw
+        .prepare('SELECT count(*) AS adapters FROM plexus_adapters')
+        .get() as { adapters: number };
+      const { filters } = cerebrum.raw
+        .prepare('SELECT count(*) AS filters FROM plexus_filters')
+        .get() as { filters: number };
+      expect(adapters).toBe(1);
+      expect(filters).toBe(1);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('only inserts plexus rows missing from the cerebrum copy (mixed state)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertPlexusAdapter(raw, 'adp_shared_only', 'shared-only');
+      insertPlexusAdapter(raw, 'adp_both', 'both');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      insertPlexusAdapter(cerebrum.raw, 'adp_both', 'both');
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const rows = cerebrum.raw.prepare('SELECT id FROM plexus_adapters ORDER BY id').all() as {
+        id: string;
+      }[];
+      expect(rows.map((r) => r.id)).toEqual(['adp_both', 'adp_shared_only']);
     } finally {
       cerebrum.raw.close();
     }

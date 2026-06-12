@@ -27,10 +27,17 @@
  *     upsert/list on the `conversation_context` junction table. The
  *     chat orchestration (streaming, model selection, auto-titling)
  *     stays in pops-api until PRD-182 PR 3.
+ *   - PRD-180 US-01 added the plexus data layer — schemas, baseline
+ *     migration, and the `plexusService` namespace covering adapter
+ *     CRUD on `plexus_adapters` and the per-adapter filter set. TOML
+ *     config loading, the per-adapter HTTP clients, the lifecycle
+ *     orchestrator and the encrypted-config envelope all stay in
+ *     pops-api until PRD-180 US-03.
  *
- * The remaining slices (embeddings, plexus) follow in subsequent PRs. Cerebrum's load-bearing surgery is the URI
- * dispatcher round-trip (engrams reference other pillars' entities by
- * URI) — that lands when the consumers cut over, not in this scaffold.
+ * The remaining slice (embeddings) follows in a subsequent PR.
+ * Cerebrum's load-bearing surgery is the URI dispatcher round-trip
+ * (engrams reference other pillars' entities by URI) — that lands when
+ * the consumers cut over, not in this scaffold.
  *
  * Subsequent PRs flesh out three sibling packages — `cerebrum-contract`,
  * `cerebrum-api`, `cerebrum-ui` — which are deferred until their first
@@ -57,6 +64,7 @@ export * as nudgeLogService from './services/nudge-log.js';
 export * as engramsService from './services/engrams.js';
 export * as gliaService from './services/glia.js';
 export * as conversationsService from './services/conversations.js';
+export * as plexusService from './services/plexus.js';
 
 export type {
   Nudge,
@@ -121,3 +129,27 @@ export {
   MessageConflictError,
   MessageNotFoundError,
 } from './services/conversations-errors.js';
+
+export {
+  PLEXUS_ADAPTER_STATUSES,
+  PLEXUS_FILTER_TYPES,
+  type PlexusAdapter,
+  type PlexusAdapterRow,
+  type PlexusAdapterStatus,
+  type PlexusFilter,
+  type PlexusFilterDefinition,
+  type PlexusFilterRow,
+  type PlexusFilterType,
+  type UpsertAdapterArgs,
+} from './services/plexus-types.js';
+
+export {
+  rowToAdapter as plexusRowToAdapter,
+  rowToFilter as plexusRowToFilter,
+  parseAdapterConfig as plexusParseAdapterConfig,
+} from './services/plexus-helpers.js';
+
+export {
+  PlexusAdapterNameConflictError,
+  PlexusAdapterNotFoundError,
+} from './services/plexus-errors.js';
