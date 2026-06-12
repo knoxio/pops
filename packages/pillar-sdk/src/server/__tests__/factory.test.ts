@@ -140,6 +140,10 @@ describe('server pillar() — outbound auth header', () => {
     const finance = pillar('finance', { transport, fetchImpl });
     await finance.wishlist.list({});
     expect(calls.at(-1)?.headers['x-api-key']).toBe('env-a');
+
+    process.env[SERVER_SDK_API_KEY_ENV] = 'env-b';
+    await finance.wishlist.list({});
+    expect(calls.at(-1)?.headers['x-api-key']).toBe('env-b');
   });
 });
 

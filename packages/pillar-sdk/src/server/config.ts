@@ -64,16 +64,17 @@ export function configureServerSdk(config: ServerSdkConfig): void {
 }
 
 /**
- * Read the active server SDK config. Exposed for the factory and tests;
- * not part of the public surface.
+ * Read the active server SDK config. Exported via the package's
+ * `./server` subpath for tests and advanced introspection.
  */
 export function getServerSdkConfig(): Readonly<ServerSdkConfig> {
   return currentConfig;
 }
 
 /**
- * Reset config back to empty. Used by tests; not exported from the
- * package entry-point.
+ * Reset config back to empty. Exported via the package's `./server`
+ * subpath for tests; production callers should treat the config as
+ * write-once at boot.
  */
 export function __resetServerSdkConfig(): void {
   currentConfig = {};

@@ -58,8 +58,7 @@ export function pillar<TRouter>(
   pillarId: string,
   options: ServerPillarOptions = {}
 ): PillarHandle<TRouter> {
-  const apiKey = resolveApiKey();
-  if (apiKey === undefined) {
+  if (resolveApiKey() === undefined) {
     throw new PillarServerSdkError(
       `service-account auth required for server-side SDK: set ${SERVER_SDK_API_KEY_ENV} or call configureServerSdk({ apiKey }).`
     );
@@ -73,7 +72,7 @@ export function pillar<TRouter>(
     return existing.handle as PillarHandle<TRouter>;
   }
 
-  const clientOptions = buildClientOptions(apiKey, config, options);
+  const clientOptions = buildClientOptions(config, options);
   const handle = clientPillar<TRouter>(pillarId, clientOptions);
   handleCache.set(cacheKey, {
     handle: handle as PillarHandle<unknown>,
@@ -83,14 +82,21 @@ export function pillar<TRouter>(
 }
 
 function buildClientOptions(
-  apiKey: string,
   config: ReturnType<typeof getServerSdkConfig>,
   options: ServerPillarOptions
 ): PillarClientOptions {
   const transport = resolveTransport(config, options);
   const clientOptions: PillarClientOptions = {
     transport,
-    authHeaders: () => ({ 'x-api-key': apiKey }),
+    authHeaders: () => {
+      const current = resolveApiKey();
+      if (current === undefined) {
+        throw new PillarServerSdkError(
+          `service-account auth required for server-side SDK call: set ${SERVER_SDK_API_KEY_ENV} or call configureServerSdk({ apiKey }).`
+        );
+      }
+      return { 'x-api-key': current };
+    },
   };
   const fetchImpl = options.fetchImpl ?? config.fetchImpl;
   if (fetchImpl !== undefined) clientOptions.fetchImpl = fetchImpl;
