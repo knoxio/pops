@@ -46,3 +46,13 @@ export class SettingNotFoundError extends Error {
     this.key = key;
   }
 }
+
+export class AiBudgetNotFoundError extends Error {
+  override readonly name = 'AiBudgetNotFoundError' as const;
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`AI budget '${id}' not found`);
+    this.id = id;
+  }
+}

@@ -10,4 +10,11 @@
  *
  * Mirrors the `@pops/app-food-db` schema re-export pattern.
  */
-export { pillarRegistry, serviceAccounts, settings } from '@pops/db-types';
+export {
+  aiBudgets,
+  aiInferenceDaily,
+  aiInferenceLog,
+  pillarRegistry,
+  serviceAccounts,
+  settings,
+} from '@pops/db-types';
