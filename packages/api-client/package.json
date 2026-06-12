@@ -6,15 +6,18 @@
   "main": "src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "echo \"(no tests in @pops/api-client)\""
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@pops/api": "workspace:*",
+    "@pops/pillar-sdk": "workspace:*",
     "@trpc/client": "11.17.0",
     "@trpc/react-query": "11.17.0"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "react": "^19.0.0"
