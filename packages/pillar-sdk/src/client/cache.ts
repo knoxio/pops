@@ -11,7 +11,8 @@ type CacheEntry = {
  * `lookup()` joins the same promise rather than firing a parallel HTTP
  * request. Expired entries refetch lazily on the next call.
  *
- * Not exported from the package — `pillar()` owns the lifecycle.
+ * Re-exported under `@pops/pillar-sdk/client` for tests and advanced
+ * usage, but `pillar()` is the normal lifecycle owner.
  */
 export class DiscoveryCache {
   private readonly transport: DiscoveryTransport;

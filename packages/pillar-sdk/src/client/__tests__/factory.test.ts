@@ -64,8 +64,8 @@ describe('pillar() factory — happy path', () => {
       expect(result.value).toEqual([{ id: 'wish-1' }]);
     }
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/wishlist.list');
-    expect(calls[0]?.body).toEqual({ input: { limit: 10 } });
+    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.wishlist.list');
+    expect(calls[0]?.body).toEqual({ limit: 10 });
   });
 
   it('serialises a missing input argument as { input: null }', async () => {
@@ -74,7 +74,7 @@ describe('pillar() factory — happy path', () => {
     );
     const finance = pillar('finance', { transport, fetchImpl });
     await finance.wishlist.list();
-    expect(calls[0]?.body).toEqual({ input: null });
+    expect(calls[0]?.body).toBeNull();
   });
 
   it('orThrow() unwraps the value on success', async () => {
@@ -156,7 +156,7 @@ describe('pillar() factory — failure modes', () => {
     const result = await finance.wishlist.list({});
     expect(result.kind).toBe('contract-mismatch');
     if (result.kind === 'contract-mismatch') {
-      expect(result.expected).toBe('wishlist.list');
+      expect(result.expected).toBe('finance.wishlist.list');
     }
   });
 
@@ -177,7 +177,7 @@ describe('pillar() factory — failure modes', () => {
       pillars: [discoveredPillar()],
     });
     const fetchImpl = fakeFetch((url) => {
-      if (url.endsWith('/trpc/wishlist.list')) {
+      if (url.endsWith('/trpc/finance.wishlist.list')) {
         return new Response('boom', { status: 502 });
       }
       return jsonResponse({});
@@ -302,7 +302,7 @@ describe('pillar() factory — routing edge cases', () => {
     const { fetchImpl, calls } = recordingFetch(() => jsonResponse({ result: { data: 'ok' } }));
     const finance = pillar('finance', { transport, fetchImpl });
     await finance.transactions.imports.create({ id: '1' });
-    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/transactions.imports.create');
+    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.transactions.imports.create');
   });
 
   it("returns 'contract-mismatch' when the consumer calls a top-level leaf with only one path segment", async () => {
@@ -320,6 +320,6 @@ describe('pillar() factory — routing edge cases', () => {
     const { fetchImpl, calls } = recordingFetch(() => jsonResponse({ result: { data: null } }));
     const finance = pillar('finance', { transport, fetchImpl });
     await finance.wishlist.list({});
-    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/wishlist.list');
+    expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.wishlist.list');
   });
 });

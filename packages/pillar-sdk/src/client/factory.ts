@@ -35,7 +35,8 @@ function isCustomConfig(options: PillarClientOptions): boolean {
   return (
     options.transport !== undefined ||
     options.cacheTtlMs !== undefined ||
-    options.registry !== undefined
+    options.registry !== undefined ||
+    options.fetchImpl !== undefined
   );
 }
 

@@ -14,9 +14,10 @@ export type HttpCallContext = {
 };
 
 export async function performHttpCall(ctx: HttpCallContext): Promise<CallResult<unknown>> {
-  const url = buildUrl(ctx.discovered.baseUrl, ctx.path);
+  const namespacedPath = [ctx.pillarId, ...ctx.path];
+  const url = buildUrl(ctx.discovered.baseUrl, namespacedPath);
   const headers = await buildHeaders(ctx.authHeaders);
-  const body = JSON.stringify({ input: ctx.input ?? null });
+  const body = JSON.stringify(ctx.input ?? null);
 
   const controller = new AbortController();
   const timeoutMs = ctx.callTimeoutMs ?? DEFAULT_CALL_TIMEOUT_MS;
@@ -36,7 +37,7 @@ export async function performHttpCall(ctx: HttpCallContext): Promise<CallResult<
     clearTimeout(timer);
   }
 
-  return mapResponse(ctx.pillarId, ctx.path, response);
+  return mapResponse(ctx.pillarId, namespacedPath, response);
 }
 
 function buildUrl(baseUrl: string, path: readonly string[]): string {
