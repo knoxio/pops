@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm';
 
 import { tvShows } from '@pops/db-types';
 
+import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addTvShow } from '../library/tv-show-service.js';
 import {
   delay,
@@ -11,7 +13,6 @@ import {
 } from './sync-discover-types.js';
 import { extractExternalIdAsNumber } from './sync-helpers.js';
 
-import type { getDrizzle } from '../../../db.js';
 import type { getTvdbClient } from '../thetvdb/index.js';
 import type { getImageCache } from '../tmdb/index.js';
 import type { PlexClient } from './client.js';
@@ -22,7 +23,6 @@ export interface ResolveShowArgs {
   imageCache: ReturnType<typeof getImageCache>;
   showTitle: string;
   result: DiscoverItemResult;
-  db: ReturnType<typeof getDrizzle>;
 }
 
 async function findTvdbCandidate(
@@ -47,7 +47,7 @@ async function findTvdbCandidate(
 export async function resolveShow(
   args: ResolveShowArgs
 ): Promise<{ showId: number; tvdbId: number } | null> {
-  const { plexClient, tvdbClient, imageCache, showTitle, result, db } = args;
+  const { plexClient, tvdbClient, imageCache, showTitle, result } = args;
   try {
     await delay(RATE_LIMIT_DELAY_MS);
     const searchResults = await plexClient.searchDiscover(showTitle, 'show');
@@ -63,8 +63,9 @@ export async function resolveShow(
     }
 
     const { tvdbId, ratingKey } = candidate;
+    const mediaDb = getMediaDrizzle();
 
-    const existingShow = db
+    const existingShow = mediaDb
       .select({ id: tvShows.id, tvdbId: tvShows.tvdbId })
       .from(tvShows)
       .where(eq(tvShows.tvdbId, tvdbId))
@@ -72,7 +73,8 @@ export async function resolveShow(
 
     if (existingShow) {
       if (ratingKey) {
-        db.update(tvShows)
+        mediaDb
+          .update(tvShows)
           .set({ discoverRatingKey: ratingKey })
           .where(eq(tvShows.id, existingShow.id))
           .run();
@@ -82,7 +84,13 @@ export async function resolveShow(
 
     const { show: newShow } = await addTvShow(tvdbId, tvdbClient, imageCache);
     if (ratingKey) {
-      db.update(tvShows)
+      // addTvShow inserts via getDrizzle() (mixed-table tx with
+      // seasons + episodes — see tv-show-service.ts JSDoc). The new
+      // row lives only on pops.db until the next boot's backfill
+      // copies it across, so this update must hit the same handle or
+      // it would silently no-op against media.db.
+      getDrizzle()
+        .update(tvShows)
         .set({ discoverRatingKey: ratingKey })
         .where(eq(tvShows.id, newShow.id))
         .run();
