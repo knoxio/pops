@@ -6,6 +6,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { closeDb, setDb } from '../../../db.js';
+import { setCerebrumDb } from '../../../db/cerebrum-handle.js';
 import { appRouter } from '../../../router.js';
 import { createTestDb } from '../../../shared/test-utils.js';
 import { resetCerebrumCache } from '../instance.js';
@@ -157,6 +158,7 @@ describe('cerebrum.scopes tRPC procedures', () => {
   beforeEach(() => {
     rawDb = createTestDb();
     setDb(rawDb);
+    setCerebrumDb({ db: drizzle(rawDb), raw: rawDb, vecAvailable: false });
     root = mkdtempSync(join(tmpdir(), 'scopes-trpc-'));
     previousRoot = process.env['ENGRAM_ROOT'];
     process.env['ENGRAM_ROOT'] = root;
@@ -164,6 +166,7 @@ describe('cerebrum.scopes tRPC procedures', () => {
   });
 
   afterEach(() => {
+    setCerebrumDb(null);
     closeDb();
     rmSync(root, { recursive: true, force: true });
     if (previousRoot === undefined) delete process.env['ENGRAM_ROOT'];

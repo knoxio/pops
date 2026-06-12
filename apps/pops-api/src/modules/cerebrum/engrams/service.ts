@@ -1,9 +1,48 @@
 /**
- * Engram CRUD service — thin orchestrator.
- * All write operations use atomic file writes before index updates.
+ * Engram CRUD service — read/write split during the PRD-179 cutover.
+ *
  * The filesystem is source of truth; the index is a regenerable cache.
+ * All write operations use atomic file writes before index updates.
+ *
+ * Read/write split during the migration window (PRD-179 PR 2):
+ *  - Pure user-facing reads — `list`, `read` — are routed through
+ *    `readDb` (a `CerebrumDb` handle, wired to `getCerebrumDrizzle()`
+ *    in `instance.ts`) and forwarded to the `@pops/cerebrum-db`
+ *    `engramsService.{listEngrams,findIndexRow}` namespace. These are
+ *    the seam called out by PRD-179 PR 2.
+ *  - `exists` checks `readDb` first then falls back to `db` (the write
+ *    store). Glia revert calls `exists` to gate `restore`/`unlink`
+ *    writes, so a row newly created since boot — present only in
+ *    `pops.db` — must still report `true`. Drop the fallback once
+ *    PRD-179 US-03 collapses writes onto `cerebrum.db`.
+ *  - Every write path — `create`, `update`, `archive`, `restore`,
+ *    `changeType`, `link`, `unlink`, `hardDelete`, `reindex` — and any
+ *    read-after-write hop (the private `loadEngram` helper used to
+ *    rehydrate the row we just wrote) still goes through `db` (the
+ *    shared `pops.db` handle). Read-after-write consistency lives on
+ *    that same store. PRD-179 US-03 flips the writes too, at which
+ *    point `db` collapses into `readDb`.
+ *
+ * Cross-store consistency relies on `backfillCerebrumFromShared()` in
+ * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts`: a one-way,
+ * boot-time copy from `pops.db` -> `cerebrum.db` that idempotently
+ * fills missing rows on `engram_index` + its three many-to-many
+ * auxiliaries. Between boots, newly-written engrams live only in
+ * `pops.db` and won't appear in `list`/`read`/`exists` results from
+ * `readDb` until the next deploy reruns the backfill. Read-after-write
+ * is preserved within the same process because `loadEngram` reads from
+ * the write store. This is the same trade-off taken by the watch-history
+ * (PRD-168 PR 2) and movies (PRD-165 PR 3) cutovers.
+ *
+ * Filesystem markdown writes, the template registry, and the scope-rule
+ * engine stay in pops-api — `@pops/cerebrum-db` is pure data-access.
+ * `EngramServiceOptions.readDb` is optional so the existing in-memory
+ * test rigs (which inject a single SQLite handle for both stores) keep
+ * working without churn; when omitted it falls back to `db`.
  */
 import { readFileSync } from 'node:fs';
+
+import { engramsService, type CerebrumDb } from '@pops/cerebrum-db';
 
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { parseEngramFile, serializeEngram } from './file.js';
@@ -20,7 +59,6 @@ import {
 import { linkEngrams, unlinkEngrams } from './handlers/link-helpers.js';
 import {
   hydrateEngrams,
-  listEngrams,
   type ListEngramsOptions,
   type ListEngramsResult,
 } from './handlers/list-engrams.js';
@@ -56,7 +94,20 @@ export interface UpdateEngramInput {
 
 export interface EngramServiceOptions {
   root: string;
+  /**
+   * Write handle — the shared `pops.db` drizzle wrapper. All write paths
+   * and read-after-write hops route through this handle until PRD-179
+   * US-03 flips the writes too.
+   */
   db: BetterSQLite3Database;
+  /**
+   * Read handle — the cerebrum pillar's `cerebrum.db` drizzle wrapper.
+   * Pure user-facing reads (`list`, `read`, `exists`) forward through
+   * `@pops/cerebrum-db`'s `engramsService` against this handle. Defaults
+   * to `db` so test rigs that inject a single in-memory SQLite keep
+   * working without churn.
+   */
+  readDb?: CerebrumDb;
   templates: TemplateRegistry;
   scopeRuleEngine?: ScopeRuleEngine;
   now?: () => Date;
@@ -65,6 +116,7 @@ export interface EngramServiceOptions {
 export class EngramService {
   private readonly root: string;
   private readonly db: BetterSQLite3Database;
+  private readonly readDb: CerebrumDb;
   private readonly templates: TemplateRegistry;
   private readonly scopeRuleEngine: ScopeRuleEngine | undefined;
   private readonly now: () => Date;
@@ -72,6 +124,7 @@ export class EngramService {
   constructor(options: EngramServiceOptions) {
     this.root = options.root;
     this.db = options.db;
+    this.readDb = options.readDb ?? options.db;
     this.templates = options.templates;
     this.scopeRuleEngine = options.scopeRuleEngine;
     this.now = options.now ?? (() => new Date());
@@ -92,16 +145,17 @@ export class EngramService {
   }
 
   read(id: string): { engram: Engram; body: string } {
-    const row = getIndexRow(this.db, id);
-    const content = readFileSync(absolutePath(this.root, row.file_path), 'utf8');
+    const row = engramsService.findIndexRow(this.readDb, id);
+    if (!row) throw new NotFoundError('Engram', id);
+    const content = readFileSync(absolutePath(this.root, row.filePath), 'utf8');
     const { frontmatter, body } = parseEngramFile(content);
     return {
       engram: buildEngram(frontmatter, {
-        filePath: row.file_path,
+        filePath: row.filePath,
         title: row.title,
-        contentHash: row.content_hash,
-        wordCount: row.word_count,
-        customFields: parseCustomFields(row.custom_fields),
+        contentHash: row.contentHash,
+        wordCount: row.wordCount,
+        customFields: engramsService.parseCustomFields(row.customFields),
       }),
       body,
     };
@@ -171,8 +225,21 @@ export class EngramService {
     return deleteEngram({ root: this.root, db: this.db, now: this.now }, id);
   }
 
-  /** True iff `id` is present in the engram index. */
+  /**
+   * True iff `id` is present in the engram index.
+   *
+   * Consults the cerebrum read store first; falls back to the shared write
+   * store (`pops.db`) when missing. Write-context callers (glia revert in
+   * particular — see `../glia/revert-operations.ts`) check existence before
+   * issuing `restore` / `unlink` mutations on the write store. A row newly
+   * created since boot lives only in `pops.db` until the next backfill, so
+   * a `readDb`-only check would produce false negatives and silently skip
+   * the restore. The fallback keeps the TOCTOU window closed during the
+   * cutover; once PRD-179 US-03 collapses writes onto `cerebrum.db`, the
+   * second hop becomes redundant and can be dropped.
+   */
   exists(id: string): boolean {
+    if (engramsService.existsEngram(this.readDb, id)) return true;
     return findIndexRow(this.db, id) !== null;
   }
 
@@ -196,7 +263,7 @@ export class EngramService {
   }
 
   list(opts: ListEngramsOptions = {}): ListEngramsResult {
-    return listEngrams(this.db, opts);
+    return engramsService.listEngrams(this.readDb, opts);
   }
 
   reindex(): { indexed: number } {

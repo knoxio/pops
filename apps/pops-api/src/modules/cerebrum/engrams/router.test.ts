@@ -2,9 +2,11 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { closeDb, setDb } from '../../../db.js';
+import { setCerebrumDb } from '../../../db/cerebrum-handle.js';
 import { appRouter } from '../../../router.js';
 import { createTestDb } from '../../../shared/test-utils.js';
 import { resetCerebrumCache } from '../instance.js';
@@ -27,6 +29,7 @@ describe('cerebrum tRPC router', () => {
   beforeEach(() => {
     db = createTestDb();
     setDb(db);
+    setCerebrumDb({ db: drizzle(db), raw: db, vecAvailable: false });
     root = mkdtempSync(join(tmpdir(), 'cerebrum-router-'));
     previousRoot = process.env['ENGRAM_ROOT'];
     process.env['ENGRAM_ROOT'] = root;
@@ -34,6 +37,7 @@ describe('cerebrum tRPC router', () => {
   });
 
   afterEach(() => {
+    setCerebrumDb(null);
     closeDb();
     rmSync(root, { recursive: true, force: true });
     if (previousRoot === undefined) delete process.env['ENGRAM_ROOT'];
