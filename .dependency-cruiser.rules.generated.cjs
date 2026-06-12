@@ -8,7 +8,7 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/core-db. Use @pops/core-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-core-api|packages/core-db)/',
+      pathNot: '^(apps/pops-core-api|packages/core-db|packages/core-contract/scripts)/',
     },
     to: {
       path: '^packages/core-db/',
@@ -20,7 +20,7 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/finance-db. Use @pops/finance-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-finance-api|packages/finance-db)/',
+      pathNot: '^(apps/pops-finance-api|packages/finance-db|packages/finance-contract/scripts)/',
     },
     to: {
       path: '^packages/finance-db/',
@@ -32,7 +32,7 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/media-db. Use @pops/media-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-media-api|packages/media-db)/',
+      pathNot: '^(apps/pops-media-api|packages/media-db|packages/media-contract/scripts)/',
     },
     to: {
       path: '^packages/media-db/',
@@ -44,7 +44,8 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/inventory-db. Use @pops/inventory-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-inventory-api|packages/inventory-db)/',
+      pathNot:
+        '^(apps/pops-inventory-api|packages/inventory-db|packages/inventory-contract/scripts)/',
     },
     to: {
       path: '^packages/inventory-db/',
@@ -56,7 +57,7 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/cerebrum-db. Use @pops/cerebrum-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-cerebrum-api|packages/cerebrum-db)/',
+      pathNot: '^(apps/pops-cerebrum-api|packages/cerebrum-db|packages/cerebrum-contract/scripts)/',
     },
     to: {
       path: '^packages/cerebrum-db/',
@@ -68,7 +69,7 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/food-db. Use @pops/food-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-food-api|packages/food-db)/',
+      pathNot: '^(apps/pops-food-api|packages/food-db|packages/food-contract/scripts)/',
     },
     to: {
       path: '^packages/food-db/',
@@ -80,7 +81,7 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/lists-db. Use @pops/lists-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-lists-api|packages/lists-db)/',
+      pathNot: '^(apps/pops-lists-api|packages/lists-db|packages/lists-contract/scripts)/',
     },
     to: {
       path: '^packages/lists-db/',

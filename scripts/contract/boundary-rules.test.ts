@@ -47,6 +47,16 @@ describe('buildBoundaryRule', () => {
       expect(fromNotRegex.test(`packages/${pillar}-db/__tests__/foo.test.ts`)).toBe(true);
     });
 
+    it('from.pathNot excludes the contract package scripts directory', () => {
+      expect(fromNotRegex.test(`packages/${pillar}-contract/scripts/generate-openapi.ts`)).toBe(
+        true
+      );
+    });
+
+    it('from.pathNot does NOT exclude the contract package src directory', () => {
+      expect(fromNotRegex.test(`packages/${pillar}-contract/src/index.ts`)).toBe(false);
+    });
+
     it('from.pathNot does not exclude non-owning callers', () => {
       expect(fromNotRegex.test('apps/pops-api/src/modules/foo.ts')).toBe(false);
       expect(fromNotRegex.test('apps/pops-worker/src/index.ts')).toBe(false);

@@ -14,6 +14,7 @@ export function buildBoundaryRule(pillar: Pillar): BoundaryRule {
   const runtimePkg = `${pillar}-db`;
   const apiDir = `apps/pops-${pillar}-api`;
   const runtimeDir = `packages/${runtimePkg}`;
+  const contractScriptsDir = `packages/${pillar}-contract/scripts`;
   return {
     name: `no-cross-pillar-runtime-import-${pillar}`,
     severity: 'error',
@@ -22,7 +23,7 @@ export function buildBoundaryRule(pillar: Pillar): BoundaryRule {
       `Use @pops/${pillar}-contract for types and the pillar() SDK for calls. ` +
       `See ${PRD_PATH}`,
     from: {
-      pathNot: `^(${apiDir}|${runtimeDir})/`,
+      pathNot: `^(${apiDir}|${runtimeDir}|${contractScriptsDir})/`,
     },
     to: {
       path: `^${runtimeDir}/`,
