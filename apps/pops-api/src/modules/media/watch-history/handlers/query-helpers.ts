@@ -1,3 +1,33 @@
+/**
+ * Watch-history read/write surface — PRD-168 PR2 cutover.
+ *
+ * Read/write split during the migration window:
+ *  - `listWatchHistory` and `getWatchHistoryEntry` are routed through
+ *    `getMediaDrizzle()` (the media pillar's `media.db.watch_history`).
+ *    These are the simple reads called out by PRD-168 PR2.
+ *  - Every write path — `logWatch` in `./log-watch-event.ts`,
+ *    `deleteWatchHistoryEntry` below, `batchLogWatch`, the cascade
+ *    deletes for `debrief_sessions` / `debrief_results` — still goes
+ *    through `getDrizzle()` (the shared `pops.db`). Debrief tables and
+ *    the `watch_history.id` FK they hang off are still pinned to the
+ *    legacy mount, so writes must stay there until the full slice
+ *    moves to `@pops/media-db`.
+ *
+ * Cross-store consistency relies on `backfillMediaFromShared()` in
+ * `apps/pops-api/src/db/media-backfill.ts`: a one-way, boot-time copy
+ * from `pops.db` -> `media.db` that idempotently fills missing rows.
+ * Between boots, newly-logged events live only in `pops.db` and won't
+ * appear in list/get results until the next deploy reruns the backfill.
+ * This is the same trade-off taken by the movies (PRD-165) and
+ * tv-shows (PRD-166) cutovers; the full read-your-writes consistency
+ * lands when the write paths also cut over.
+ *
+ * TOCTOU fix: `deleteWatchHistoryEntry` deletes from `pops.db`, so its
+ * existence check must read from the same store. The function relies on
+ * the in-transaction `result.changes === 0` signal (against `pops.db`)
+ * rather than `getWatchHistoryEntry` (against `media.db`) to avoid a
+ * race where the row exists on one side but not the other.
+ */
 import { eq, inArray } from 'drizzle-orm';
 
 import { debriefResults, debriefSessions, watchHistory } from '@pops/db-types';
@@ -58,10 +88,14 @@ export function getWatchHistoryEntry(id: number): WatchHistoryRow {
 }
 
 export function deleteWatchHistoryEntry(id: number): void {
-  getWatchHistoryEntry(id);
-
   getDrizzle().transaction((tx) => {
-    // Cascade: delete debrief_results rows that belong to sessions referencing this entry.
+    const existing = tx
+      .select({ id: watchHistory.id })
+      .from(watchHistory)
+      .where(eq(watchHistory.id, id))
+      .get();
+    if (!existing) throw new NotFoundError('WatchHistoryEntry', String(id));
+
     const sessionIds = tx
       .select({ id: debriefSessions.id })
       .from(debriefSessions)
@@ -73,10 +107,8 @@ export function deleteWatchHistoryEntry(id: number): void {
       tx.delete(debriefResults).where(inArray(debriefResults.sessionId, sessionIds)).run();
     }
 
-    // Cascade: delete debrief_sessions rows referencing this watch_history entry.
     tx.delete(debriefSessions).where(eq(debriefSessions.watchHistoryId, id)).run();
 
-    // Now safe to delete the watch_history row.
     const result = tx.delete(watchHistory).where(eq(watchHistory.id, id)).run();
     if (result.changes === 0) throw new NotFoundError('WatchHistoryEntry', String(id));
   });
