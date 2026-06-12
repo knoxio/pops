@@ -1,5 +1,6 @@
-import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
+
+import { createPillarSplitLink } from './split-link.js';
 
 /**
  * Shared tRPC client for all app packages.
@@ -42,15 +43,17 @@ function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise
 }
 
 /**
- * tRPC client instance with httpBatchLink.
- * Batches multiple requests into a single HTTP call for better performance.
- * The shell passes this to <trpc.Provider>.
+ * tRPC client instance with a per-pillar splitLink (PRD-187).
+ *
+ * Each pillar's procedures route to their own batched URL
+ * (`/trpc-<pillar>`); non-pillar procedures keep flowing to the legacy
+ * `/trpc` endpoint. No batch URL ever spans more than one pillar, so the
+ * legacy nginx procedure-path regex rules can be retired once PRD-190
+ * lands.
  */
 export const trpcClient = trpc.createClient({
   links: [
-    httpBatchLink({
-      url: '/trpc', // Proxied by Vite to localhost:3000 in dev
-      maxURLLength: 2083,
+    createPillarSplitLink({
       fetch: fetchWithTimeout,
     }),
   ],
@@ -105,3 +108,10 @@ export type {
   BatchableOp,
   LegacyBatchTarget,
 } from './batching-invariants.js';
+export {
+  createPillarSplitLink,
+  pillarOfPath,
+  PILLAR_TRPC_URLS,
+  LEGACY_TRPC_URL,
+} from './split-link.js';
+export type { CreateSplitLinkOptions, TerminalLinkFactory } from './split-link.js';

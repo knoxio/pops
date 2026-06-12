@@ -69,6 +69,17 @@ export default defineConfig({
         changeOrigin: true,
         // Don't rewrite — tRPC expects /trpc prefix
       },
+      // PRD-187 splitLink routes per-pillar batches through dedicated URL
+      // prefixes. While the legacy monolith still serves every router on
+      // /trpc, the dev proxy rewrites `/trpc-<pillar>` back to `/trpc` so
+      // existing endpoints keep answering. Once per-pillar APIs run as
+      // separate processes the rewrite goes away and each prefix targets
+      // its own upstream.
+      '^/trpc-(core|finance|media|inventory|cerebrum|food|lists)': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/trpc-[^/]+/, '/trpc'),
+      },
       '/media/images': {
         target: 'http://localhost:3000',
         changeOrigin: true,
