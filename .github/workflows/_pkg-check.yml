@@ -57,6 +57,7 @@ jobs:
           pnpm --filter @pops/app-food-db build
           pnpm --filter @pops/pillar-sdk build
           pnpm --filter @pops/finance-contract build
+          pnpm --filter @pops/media-contract build
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
         if: inputs.skip != 'true'
 
@@ -97,6 +98,7 @@ jobs:
           pnpm --filter @pops/app-food-db build
           pnpm --filter @pops/pillar-sdk build
           pnpm --filter @pops/finance-contract build
+          pnpm --filter @pops/media-contract build
       - name: Run tests (with coverage if configured)
         if: inputs.skip != 'true'
         run: |
