@@ -3,4 +3,7 @@
  * a new entity means adding both a file under `types/` and a matching
  * schema under `schemas/`. The round-trip test enforces that they agree.
  */
+export type { Pillar, PillarStatus } from './pillar.js';
 export type { RegistryEntry } from './registry-entry.js';
+export type { ServiceAccount } from './service-account.js';
+export type { Setting } from './setting.js';

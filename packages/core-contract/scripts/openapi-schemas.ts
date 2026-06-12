@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
+import { PillarSchema } from '../src/schemas/pillar.js';
 import { RegistryEntrySchema } from '../src/schemas/registry-entry.js';
+import { ServiceAccountSchema } from '../src/schemas/service-account.js';
+import { SettingSchema } from '../src/schemas/setting.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
 const PAGINATION_SCHEMA: OpenApiSchema = {
@@ -33,7 +36,10 @@ function zodToOpenApiSchema(schema: z.ZodType): OpenApiSchema {
 export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
+    Pillar: zodToOpenApiSchema(PillarSchema),
     RegistryEntry: zodToOpenApiSchema(RegistryEntrySchema),
+    ServiceAccount: zodToOpenApiSchema(ServiceAccountSchema),
+    Setting: zodToOpenApiSchema(SettingSchema),
     RegisterPillarInput: zodToOpenApiSchema(RegisterPillarBodySchema),
     HeartbeatInput: zodToOpenApiSchema(HeartbeatBodySchema),
     RegistryEntryListResponse: {
