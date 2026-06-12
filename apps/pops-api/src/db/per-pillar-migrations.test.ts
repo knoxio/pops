@@ -228,6 +228,7 @@ describe('runPerPillarMigrations', () => {
         '0006_inventory_pillar_baseline',
         '0007_locations_parent_sort_index',
         '0021_spooky_lockheed',
+        '0024_media_tv_shows_baseline',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
         '0054_service_accounts',

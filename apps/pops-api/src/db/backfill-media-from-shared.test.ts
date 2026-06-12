@@ -21,7 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openMediaDb } from '@pops/media-db';
 
 import { backfillMediaFromShared, closeMediaDb, setMediaDb } from '../db/media-db-handle.js';
-import { SHELF_IMPRESSIONS_TABLE_SQL } from './backfill-test-fixtures.js';
+import { SHELF_IMPRESSIONS_TABLE_SQL, TV_SHOWS_TABLE_SQL } from './backfill-test-fixtures.js';
 
 let tmpDir: string;
 
@@ -120,5 +120,164 @@ describe('backfillMediaFromShared', () => {
       n: number;
     };
     expect(count.n).toBe(0);
+  });
+
+  describe('tv_shows (PRD-166 PR 1)', () => {
+    function openSharedWithTvShows(
+      rows: { tvdbId: number; name: string; firstAirDate?: string | null }[]
+    ): string {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.exec(TV_SHOWS_TABLE_SQL);
+      const insert = raw.prepare(
+        'INSERT INTO tv_shows (tvdb_id, name, first_air_date) VALUES (?, ?, ?)'
+      );
+      for (const row of rows) {
+        insert.run(row.tvdbId, row.name, row.firstAirDate ?? null);
+      }
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+      return path;
+    }
+
+    it('copies fresh tv-show rows on first run and is a no-op on the second', () => {
+      openSharedWithTvShows([
+        { tvdbId: 81189, name: 'Breaking Bad', firstAirDate: '2008-01-20' },
+        { tvdbId: 1396, name: 'Better Call Saul', firstAirDate: '2015-02-08' },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      backfillMediaFromShared();
+      const after = media.raw
+        .prepare('SELECT id, tvdb_id, name FROM tv_shows ORDER BY id')
+        .all() as { id: number; tvdb_id: number; name: string }[];
+      expect(after.map((r) => r.name)).toEqual(['Breaking Bad', 'Better Call Saul']);
+
+      backfillMediaFromShared();
+      const second = media.raw.prepare('SELECT count(*) AS n FROM tv_shows').get() as {
+        n: number;
+      };
+      expect(second.n).toBe(2);
+    });
+
+    it('only inserts tv-show rows missing from the media copy', () => {
+      openSharedWithTvShows([
+        { tvdbId: 81189, name: 'Breaking Bad' },
+        { tvdbId: 1396, name: 'Better Call Saul' },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      media.raw
+        .prepare('INSERT INTO tv_shows (id, tvdb_id, name) VALUES (?, ?, ?)')
+        .run(1, 99999, 'Pre-existing');
+
+      backfillMediaFromShared();
+      const rows = media.raw
+        .prepare('SELECT id, tvdb_id, name FROM tv_shows ORDER BY id')
+        .all() as { id: number; tvdb_id: number; name: string }[];
+      expect(rows).toEqual([
+        { id: 1, tvdb_id: 99999, name: 'Pre-existing' },
+        { id: 2, tvdb_id: 1396, name: 'Better Call Saul' },
+      ]);
+    });
+
+    it('carries every column across (full-shape roundtrip)', () => {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.exec(TV_SHOWS_TABLE_SQL);
+      raw
+        .prepare(
+          `INSERT INTO tv_shows (
+            tvdb_id, name, original_name, overview,
+            first_air_date, last_air_date, status, original_language,
+            number_of_seasons, number_of_episodes, episode_run_time,
+            poster_path, backdrop_path, logo_path, poster_override_path,
+            discover_rating_key, vote_average, vote_count, genres, networks,
+            created_at, updated_at
+          ) VALUES (
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?
+          )`
+        )
+        .run(
+          81189,
+          'Breaking Bad',
+          'Breaking Bad',
+          'A high-school chemistry teacher turned methamphetamine producer.',
+          '2008-01-20',
+          '2013-09-29',
+          'Ended',
+          'en',
+          5,
+          62,
+          47,
+          '/poster.jpg',
+          '/backdrop.jpg',
+          '/logo.png',
+          '/override.jpg',
+          'discover-key-bb',
+          9.5,
+          12_345,
+          JSON.stringify(['Drama', 'Crime']),
+          JSON.stringify(['AMC']),
+          '2026-06-01 00:00:00',
+          '2026-06-02 00:00:00'
+        );
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      backfillMediaFromShared();
+
+      const row = media.raw
+        .prepare('SELECT * FROM tv_shows WHERE tvdb_id = ?')
+        .get(81189) as Record<string, unknown>;
+      expect(row).toMatchObject({
+        tvdb_id: 81189,
+        name: 'Breaking Bad',
+        original_name: 'Breaking Bad',
+        first_air_date: '2008-01-20',
+        last_air_date: '2013-09-29',
+        status: 'Ended',
+        original_language: 'en',
+        number_of_seasons: 5,
+        number_of_episodes: 62,
+        episode_run_time: 47,
+        poster_path: '/poster.jpg',
+        backdrop_path: '/backdrop.jpg',
+        logo_path: '/logo.png',
+        poster_override_path: '/override.jpg',
+        discover_rating_key: 'discover-key-bb',
+        vote_average: 9.5,
+        vote_count: 12_345,
+        created_at: '2026-06-01 00:00:00',
+        updated_at: '2026-06-02 00:00:00',
+      });
+      expect(JSON.parse(String(row['genres']))).toEqual(['Drama', 'Crime']);
+      expect(JSON.parse(String(row['networks']))).toEqual(['AMC']);
+    });
+
+    it('tolerates a shared DB without the tv_shows table', () => {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      expect(() => backfillMediaFromShared()).not.toThrow();
+      const count = media.raw.prepare('SELECT count(*) AS n FROM tv_shows').get() as { n: number };
+      expect(count.n).toBe(0);
+    });
   });
 });
