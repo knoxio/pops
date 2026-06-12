@@ -10,10 +10,19 @@ Settings are key-value app configuration: theme, language, default behaviours, f
 
 ## Data Model
 
-Tables (move from shared to `packages/core-db`):
+Tables (move from shared to `packages/core-db`). Schema mirrors the existing
+shared definitions verbatim — the cutover preserves them as-is and does not
+re-shape them. Any future widening (typed value columns, `updated_at`, etc.)
+ships under its own PRD.
 
-- `settings` — { key, value_text, value_json, value_type, updated_at } (global app settings)
-- `user_settings` — { user_id, key, value, updated_at } (per-user; single-user today but kept for future)
+- `settings` — `{ key TEXT PK, value TEXT NOT NULL }` (global app settings).
+  Callers JSON-encode structured values into `value`.
+- `user_settings` — `{ user_email TEXT, key TEXT, value TEXT NOT NULL,
+PRIMARY KEY (user_email, key) }` with `idx_user_settings_user` on
+  `user_email` (per-user; single-user today but kept for future).
+  Scoped to PR 1's follow-up — the US-01 baseline only ships the `settings`
+  table; `user_settings` lands alongside the journal split (PR 2) so the
+  shared journal can drop both at once.
 
 ## API Surface
 
