@@ -14,13 +14,17 @@
  *   - `engram_index` + `engram_scopes` + `engram_tags` + `engram_links`
  *     (PRD-179 US-01 — scaffold; consumers still write to the shared
  *     pops.db until US-03 flips them over)
+ *   - `glia_actions` + `glia_trust_state` (PRD-181 US-01 — scaffold;
+ *     consumers still write to the shared pops.db until US-03 flips
+ *     them over)
  *
  * The remaining cerebrum tables (embeddings + embeddings_vec,
- * conversations, glia, plexus) add their entries here when their
- * cutovers land. Order matters when FKs are introduced across
- * cerebrum-owned tables — `engram_index` is copied first so the
- * cascading auxiliaries (`engram_scopes`, `engram_tags`, `engram_links`)
- * can satisfy their FK at insert time.
+ * conversations, plexus) add their entries here when their cutovers
+ * land. Order matters when FKs are introduced across cerebrum-owned
+ * tables — `engram_index` is copied first so the cascading auxiliaries
+ * (`engram_scopes`, `engram_tags`, `engram_links`) can satisfy their FK
+ * at insert time. The two glia tables have no cross-table FKs so their
+ * order is independent of the engram block.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Partial failures
@@ -105,6 +109,47 @@ const TABLE_COPIES: readonly TableCopy[] = [
     table: 'engram_links',
     idColumn: 'source_id',
     columns: ['source_id', 'target_id'],
+  },
+  {
+    table: 'glia_actions',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'action_type',
+      'affected_ids',
+      'rationale',
+      'payload',
+      'phase',
+      'status',
+      'user_decision',
+      'user_note',
+      'executed_at',
+      'decided_at',
+      'reverted_at',
+      'created_at',
+    ],
+  },
+  {
+    // glia_trust_state's PK is `action_type` — the same column doubles
+    // as the existence-filter source. Once a row for an action type is
+    // copied across, the WHERE NOT IN clause makes subsequent runs a
+    // no-op for that type; new counter increments on the still-shared
+    // row won't replicate, which is acceptable for the same reason
+    // engram_scopes is: PR 3 (US-03) routes writes through the cerebrum
+    // handle before any divergence matters.
+    table: 'glia_trust_state',
+    idColumn: 'action_type',
+    columns: [
+      'action_type',
+      'current_phase',
+      'approved_count',
+      'rejected_count',
+      'reverted_count',
+      'autonomous_since',
+      'last_revert_at',
+      'graduated_at',
+      'updated_at',
+    ],
   },
 ];
 

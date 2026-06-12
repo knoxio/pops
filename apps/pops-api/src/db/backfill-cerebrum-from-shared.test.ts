@@ -48,6 +48,35 @@ CREATE TABLE nudge_log (
 );
 `;
 
+const GLIA_SCHEMA_SQL = `
+CREATE TABLE glia_actions (
+  id text PRIMARY KEY NOT NULL,
+  action_type text NOT NULL,
+  affected_ids text NOT NULL,
+  rationale text NOT NULL,
+  payload text,
+  phase text NOT NULL,
+  status text NOT NULL,
+  user_decision text,
+  user_note text,
+  executed_at text,
+  decided_at text,
+  reverted_at text,
+  created_at text NOT NULL
+);
+CREATE TABLE glia_trust_state (
+  action_type text PRIMARY KEY NOT NULL,
+  current_phase text NOT NULL,
+  approved_count integer DEFAULT 0 NOT NULL,
+  rejected_count integer DEFAULT 0 NOT NULL,
+  reverted_count integer DEFAULT 0 NOT NULL,
+  autonomous_since text,
+  last_revert_at text,
+  graduated_at text,
+  updated_at text NOT NULL
+);
+`;
+
 const ENGRAMS_SCHEMA_SQL = `
 CREATE TABLE engram_index (
   id text PRIMARY KEY NOT NULL,
@@ -101,9 +130,30 @@ function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string
   const raw = new BetterSqlite3(path);
   raw.exec(NUDGE_LOG_SQL);
   raw.exec(ENGRAMS_SCHEMA_SQL);
+  raw.exec(GLIA_SCHEMA_SQL);
   seed(raw);
   raw.close();
   return path;
+}
+
+function insertGliaAction(raw: BetterSqlite3.Database, id: string): void {
+  raw
+    .prepare(
+      `INSERT INTO glia_actions
+        (id, action_type, affected_ids, rationale, phase, status, created_at)
+       VALUES (?, 'prune', '["eng_a"]', 'r', 'propose', 'pending', '2026-06-10T10:00:00Z')`
+    )
+    .run(id);
+}
+
+function insertGliaTrustState(raw: BetterSqlite3.Database, actionType: string): void {
+  raw
+    .prepare(
+      `INSERT INTO glia_trust_state
+        (action_type, current_phase, approved_count, rejected_count, reverted_count, updated_at)
+       VALUES (?, 'propose', 0, 0, 0, '2026-06-10T10:00:00Z')`
+    )
+    .run(actionType);
 }
 
 function insertNudge(raw: BetterSqlite3.Database, id: string): void {
@@ -206,6 +256,72 @@ describe('backfillCerebrumFromShared', () => {
         n: number;
       };
       expect(n).toBe(1);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('copies glia_actions + glia_trust_state from the shared DB on first run', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertGliaAction(raw, 'glia_a');
+      insertGliaAction(raw, 'glia_b');
+      insertGliaTrustState(raw, 'prune');
+      insertGliaTrustState(raw, 'consolidate');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const { actions } = cerebrum.raw
+        .prepare('SELECT count(*) AS actions FROM glia_actions')
+        .get() as { actions: number };
+      const { trust } = cerebrum.raw
+        .prepare('SELECT count(*) AS trust FROM glia_trust_state')
+        .get() as { trust: number };
+      expect(actions).toBe(2);
+      expect(trust).toBe(2);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('skips glia rows already present in the cerebrum copy (idempotent)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertGliaAction(raw, 'glia_dup');
+      insertGliaTrustState(raw, 'prune');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const { actions } = cerebrum.raw
+        .prepare('SELECT count(*) AS actions FROM glia_actions')
+        .get() as { actions: number };
+      const { trust } = cerebrum.raw
+        .prepare('SELECT count(*) AS trust FROM glia_trust_state')
+        .get() as { trust: number };
+      expect(actions).toBe(1);
+      expect(trust).toBe(1);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('only inserts glia rows missing from the cerebrum copy (mixed state)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertGliaAction(raw, 'glia_shared_only');
+      insertGliaAction(raw, 'glia_both');
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      insertGliaAction(cerebrum.raw, 'glia_both');
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const rows = cerebrum.raw.prepare('SELECT id FROM glia_actions ORDER BY id').all() as {
+        id: string;
+      }[];
+      expect(rows.map((r) => r.id)).toEqual(['glia_both', 'glia_shared_only']);
     } finally {
       cerebrum.raw.close();
     }
