@@ -1,0 +1,21 @@
+export {
+  bootstrapPillar,
+  type BootstrapPillarOptions,
+  type PillarBootstrapHandle,
+} from './bootstrap.js';
+export {
+  PillarManifestInvalidError,
+  PillarRegistrationFailedError,
+  PillarRegistrationRejectedError,
+} from './errors.js';
+export { type BootstrapLogger } from './logger.js';
+export { type HealthApp, type HealthResponseLike } from './health-route.js';
+export {
+  createHttpRegistryTransport,
+  RegistryNetworkError,
+  RegistryTransportError,
+  type HeartbeatResult,
+  type HttpRegistryTransportOptions,
+  type RegistrationResult,
+  type RegistryTransport,
+} from './transport.js';
