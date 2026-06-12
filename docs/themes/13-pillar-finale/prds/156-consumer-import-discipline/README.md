@@ -13,11 +13,14 @@ A new dependency-cruiser rule that forbids non-owning code from importing `@pops
 ```
 For every pillar P:
   An import from `@pops/<P>-db` is allowed only from:
-    - `apps/pops-<P>-api/**`           (the pillar's own container)
-    - `packages/<P>-db/**`              (the pillar's own runtime package, self-references)
-    - `packages/<P>-db/__tests__/**`    (test files alongside the runtime)
+    - `apps/pops-<P>-api/**`                  (the pillar's own container)
+    - `packages/<P>-db/**`                     (the pillar's own runtime package, self-references)
+    - `packages/<P>-db/__tests__/**`           (test files alongside the runtime)
+    - `packages/<P>-contract/scripts/**`       (the contract's own OpenAPI generator runs at contract-build time and needs the runtime tRPC router; see PRD-153)
   All other imports from `@pops/<P>-db` are forbidden.
   Violation message must direct the author to `@pops/<P>-contract`.
+
+Implementation note: dependency-cruiser resolves workspace packages through pnpm symlinks to `packages/<P>-db/dist/index.{js,d.ts}`. The `to.path` regex therefore matches the resolved workspace path (`^packages/<P>-db/`), not the bare specifier `@pops/<P>-db`. This requires `.dependency-cruiser.cjs` to keep `dist` in `options.doNotFollow` (not `options.exclude`) so the dep edge stays in the graph.
 ```
 
 ### Configuration extension
@@ -33,10 +36,10 @@ For every pillar P:
     'Use @pops/finance-contract for types and the pillar() SDK for calls. ' +
     'See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
   from: {
-    pathNot: '^(apps/pops-finance-api|packages/finance-db)/',
+    pathNot: '^(apps/pops-finance-api|packages/finance-db|packages/finance-contract/scripts)/',
   },
   to: {
-    path: '^@pops/finance-db(/|$)',
+    path: '^packages/finance-db/',
   },
 }
 ```
@@ -46,13 +49,13 @@ One rule per pillar (7 in total: core, finance, media, inventory, cerebrum, food
 ### Generated rule file
 
 ```
-.dependency-cruiser.rules.generated.js   # generated; committed; required by .dependency-cruiser.cjs
+.dependency-cruiser.rules.generated.cjs   # generated; committed; required by .dependency-cruiser.cjs
 ```
 
 `.dependency-cruiser.cjs` imports this file and spreads it into its `forbidden` array:
 
 ```js
-const { contractBoundaryRules } = require('./.dependency-cruiser.rules.generated.js');
+const { contractBoundaryRules } = require('./.dependency-cruiser.rules.generated.cjs');
 module.exports = {
   forbidden: [, /* existing rules */ ...contractBoundaryRules],
   /* ... */
@@ -116,7 +119,7 @@ The existing `Module boundaries` job already runs `pnpm lint:boundaries`. After 
 | Contract author wants to import `@pops/finance-db` from `packages/finance-contract/scripts/generate-openapi.ts`          | Allowed by exception — `packages/<pillar>-contract/scripts/**` is added to the `pathNot` of the rule for THAT pillar only. Contract's own OpenAPI generator legitimately needs the runtime for type extraction.                                                         |
 | Author imports from `@pops/finance-db` in `apps/pops-worker` (genuinely needs it because the worker writes finance data) | Violation. Use the SDK: `pillar('finance').transactions.create(...)`. If the worker NEEDS direct DB access for a reason that can't go through HTTP (e.g. bulk insert performance), that's an exception that warrants a separate ADR — not an escape hatch in this rule. |
 | Test code in `apps/pops-api/__tests__/` imports `@pops/finance-db` to seed a fixture                                     | Violation. Use the contract types + factory functions that operate on the contract shape; or refactor the test to use the SDK against a registered in-memory finance pillar.                                                                                            |
-| Pillar list changes (new pillar added)                                                                                   | Generator regenerates the rules file; CI verifies it's up to date. Author runs `pnpm lint:boundaries:generate && git add .dependency-cruiser.rules.generated.js`.                                                                                                       |
+| Pillar list changes (new pillar added)                                                                                   | Generator regenerates the rules file; CI verifies it's up to date. Author runs `pnpm lint:boundaries:generate && git add .dependency-cruiser.rules.generated.cjs`.                                                                                                      |
 | `@pops/finance-db` imports `@pops/finance-contract` (forward dep)                                                        | Allowed — the runtime package depending on its own contract is the canonical pattern. The boundary rule is about non-owning code, not the owning runtime.                                                                                                               |
 | `@pops/finance-contract` accidentally imports `@pops/finance-db` at _runtime_ (not devDep)                               | This violates the contract package's `package.json` discipline (PRD-153) — the runtime dep would surface to consumers. Depcruise's existing `not-to-dev-dep` rule already catches it.                                                                                   |
 | A consumer migrates off `@pops/finance-db` but the violation baseline still lists it                                     | Author runs `pnpm lint:boundaries:baseline` to regenerate the baseline; PR includes the updated `.dependency-cruiser-known-violations.json` showing the violation drained. CI verifies the baseline matches current state.                                              |
@@ -127,7 +130,7 @@ The existing `Module boundaries` job already runs `pnpm lint:boundaries`. After 
 | #   | Story                                                                       | Summary                                                                                                                    | Parallelisable           |
 | --- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | 01  | [us-01-pillar-list-canonical-source](us-01-pillar-list-canonical-source.md) | `scripts/contract/pillar-list.ts` — the canonical pillar list other tooling reads                                          | yes — independent        |
-| 02  | [us-02-boundary-rule-generator](us-02-boundary-rule-generator.md)           | `scripts/contract/generate-boundary-rules.ts` — emits `.dependency-cruiser.rules.generated.js`                             | blocked by us-01         |
+| 02  | [us-02-boundary-rule-generator](us-02-boundary-rule-generator.md)           | `scripts/contract/generate-boundary-rules.ts` — emits `.dependency-cruiser.rules.generated.cjs`                            | blocked by us-01         |
 | 03  | [us-03-depcruise-config-integration](us-03-depcruise-config-integration.md) | Update `.dependency-cruiser.cjs` to import + spread the generated rules into `forbidden`                                   | blocked by us-02         |
 | 04  | [us-04-verify-boundary-rules-drift](us-04-verify-boundary-rules-drift.md)   | `scripts/contract/verify-boundary-rules.ts` — drift check for CI                                                           | blocked by us-02         |
 | 05  | [us-05-known-violations-baseline](us-05-known-violations-baseline.md)       | Run `lint:boundaries:baseline` to seed `.dependency-cruiser-known-violations.json` with existing violations; commit        | blocked by us-03         |

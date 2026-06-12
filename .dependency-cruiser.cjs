@@ -5,13 +5,19 @@
  * - packages/app-<x>/** must not import from packages/app-<y>/** (x ≠ y)
  * - apps/pops-api/src/modules/<x>/** must not import from
  *   apps/pops-api/src/modules/<y>/** (y ≠ x and y ≠ core)
+ * - Non-owning code must not import @pops/<pillar>-db directly; consumers
+ *   go through @pops/<pillar>-contract. Rules generated from
+ *   scripts/contract/pillar-list.ts.
  *
  * Allow-listed shared workspace packages for packages/app-*: @pops/ui,
  * @pops/api-client, @pops/navigation, @pops/db-types, @pops/types,
  * @pops/import-tools, @pops/auth, @pops/widgets, @pops/test-utils.
  *
- * See docs/themes/01-foundation/prds/097-module-import-boundaries/.
+ * See docs/themes/01-foundation/prds/097-module-import-boundaries/ and
+ * docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/.
  */
+const { contractBoundaryRules } = require('./.dependency-cruiser.rules.generated.cjs');
+
 module.exports = {
   forbidden: [
     {
@@ -36,21 +42,14 @@ module.exports = {
         pathNot: '^apps/pops-api/src/modules/($1|core)/',
       },
     },
+    ...contractBoundaryRules,
   ],
   options: {
     doNotFollow: {
-      path: 'node_modules',
+      path: ['node_modules', 'dist'],
     },
     exclude: {
-      path: [
-        'node_modules',
-        'dist',
-        'build',
-        '\\.next',
-        'coverage',
-        '/migrations/',
-        'drizzle\\.config\\.',
-      ],
+      path: ['node_modules', 'build', '\\.next', 'coverage', '/migrations/', 'drizzle\\.config\\.'],
     },
     tsConfig: {
       fileName: 'tsconfig.base.json',

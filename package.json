@@ -11,6 +11,8 @@
     "lint:fix": "oxlint --type-aware --fix",
     "lint:boundaries": "depcruise --config .dependency-cruiser.cjs --ignore-known --output-type err apps/pops-api/src/modules packages/app-ai/src packages/app-cerebrum/src packages/app-finance/src packages/app-inventory/src packages/app-media/src",
     "lint:boundaries:baseline": "depcruise --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json apps/pops-api/src/modules packages/app-ai/src packages/app-cerebrum/src packages/app-finance/src packages/app-inventory/src packages/app-media/src",
+    "lint:boundaries:generate": "tsx scripts/contract/generate-boundary-rules.ts",
+    "lint:boundaries:verify": "tsx scripts/contract/verify-boundary-rules.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
@@ -18,13 +20,17 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@types/node": "^25.9.3",
     "dependency-cruiser": "^17.4.3",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
     "oxfmt": "^0.54.0",
     "oxlint": "^1.69.0",
     "oxlint-tsgolint": "^0.23.0",
-    "turbo": "^2.9.18"
+    "tsx": "^4.22.4",
+    "turbo": "^2.9.18",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   },
   "packageManager": "pnpm@10.32.1",
   "pnpm": {
