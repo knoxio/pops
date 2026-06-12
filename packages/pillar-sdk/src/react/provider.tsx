@@ -1,6 +1,11 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createContext, useContext, useMemo } from 'react';
 
+import {
+  usePillarSubscriptionBridge,
+  type UsePillarSubscriptionBridgeOptions,
+} from './subscription-bridge.js';
+
 import type { QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
@@ -18,6 +23,17 @@ export type PillarSdkProviderProps = {
    * read from whichever is closest.
    */
   queryClient?: QueryClient;
+  /**
+   * When true, mounts {@link usePillarSubscriptionBridge} so registry
+   * SSE events invalidate matching React Query caches. Off by default
+   * — tests stay deterministic and CLI consumers don't open sockets.
+   */
+  subscribe?: boolean;
+  /**
+   * Forwarded to `usePillarSubscriptionBridge` when `subscribe` is set.
+   * Ignored otherwise.
+   */
+  subscriptionOptions?: UsePillarSubscriptionBridgeOptions;
   children: ReactNode;
 };
 
@@ -34,14 +50,30 @@ export type PillarSdkProviderProps = {
 export function PillarSdkProvider({
   options,
   queryClient,
+  subscribe = false,
+  subscriptionOptions,
   children,
 }: PillarSdkProviderProps): ReactNode {
   const memoised = useMemo<PillarClientOptions>(() => options ?? {}, [options]);
-  const inner = <PillarSdkContext.Provider value={memoised}>{children}</PillarSdkContext.Provider>;
+  const inner = (
+    <PillarSdkContext.Provider value={memoised}>
+      {subscribe ? <SubscriptionBridgeMount options={subscriptionOptions} /> : null}
+      {children}
+    </PillarSdkContext.Provider>
+  );
   if (queryClient) {
     return <QueryClientProvider client={queryClient}>{inner}</QueryClientProvider>;
   }
   return inner;
+}
+
+function SubscriptionBridgeMount({
+  options,
+}: {
+  options?: UsePillarSubscriptionBridgeOptions;
+}): null {
+  usePillarSubscriptionBridge(options);
+  return null;
 }
 
 /**
