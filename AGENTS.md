@@ -465,16 +465,17 @@ When working in this repository (any `pops*` workspace), agents should:
 
 - **Auto-commit logical chunks as you go.** Don't wait for explicit permission for each commit. A "logical chunk" is one coherent change: a feature increment, a bug fix, a refactor that compiles + passes tests. Don't bundle unrelated changes into one commit.
 - **Auto-open the PR when the work is ready for review.** Push the branch and run `gh pr create` without prompting first. PR title + body must follow the project conventions (see commit messages in git log for tone).
-- **Still ask before any destructive operation.** No force-push, no `git reset --hard` on shared branches, no pushes directly to `main`, no PR closes/merges, no branch deletes — these always require explicit user confirmation regardless of this override.
+- **Auto-merge a PR once BOTH of these are true:** (a) every required CI check is green (no skipped-required, no in-progress, no failure), AND (b) every Copilot review comment is either addressed in a follow-up commit on the same branch OR explicitly rebutted with a reply that explains why the comment is wrong. No human review wait — the project relies on CI + Copilot as the gates. Use `gh pr merge --squash --delete-branch` (squash to keep main history flat). Do NOT auto-merge when CI is partially green but some required checks are still pending — wait for them.
+- **Still ask before other destructive operations.** No force-push, no `git reset --hard` on shared branches, no pushes directly to `main`, no PR closes (non-merge), no branch deletes outside of `gh pr merge --delete-branch`, no `--no-verify` on hooks — these always require explicit user confirmation regardless of this override.
 - **Still respect signed-off / no-claude-references rules** from the global `~/.claude/CLAUDE.md`: no Claude as co-author, no Claude references in commit messages or PR bodies.
 - **Still verify CI passes locally before pushing** per the "CI should never fail" rule in `~/.claude/CLAUDE.md`.
 
 ### PR review cadence
 
-GitHub Copilot's automated PR review is **disabled** on this repo (it was hitting usage limits). The user is **not** reviewing PRs manually either. There is no review safety net — every PR you open ships as-is.
+CI + GitHub Copilot are the merge gates. The user does **not** review PRs manually — getting it right before pushing is non-negotiable.
 
-Implication for agents:
-
+- **CI is required and non-skippable.** Every required check must complete green before the merge. A skipped check that satisfies branch protection counts as green; a check stuck `in_progress` does not — wait it out.
+- **Copilot review comments are blocking.** When Copilot's automated review leaves comments on a PR, each comment must be either: (a) addressed in a fix commit on the same branch and the comment resolved, or (b) replied to with a rebuttal that explains why Copilot is wrong. Agents must check `gh pr view <n> --json reviews,reviewThreads` (or equivalent) before merging and act on any unresolved Copilot thread.
 - **Get the PR right before pushing.** Run typecheck, tests, lint, and the relevant Docker/compose validations locally. If it fails locally, it ships broken.
 - Do **not** suggest "request a re-review" or "ping a human" — neither will happen.
 
