@@ -1,0 +1,150 @@
+{
+  "contract": "@pops/finance-contract",
+  "version": "0.1.0",
+  "entries": [
+    {
+      "entry": ".",
+      "name": "ContractStatus",
+      "kind": "type",
+      "text": "export type ContractStatus = 'ok' | 'not-found' | 'unavailable' | 'degraded';"
+    },
+    {
+      "entry": ".",
+      "name": "ContractStatusSchema",
+      "kind": "variable",
+      "text": "export declare const ContractStatusSchema: z.ZodEnum<{\n    ok: \"ok\";\n    \"not-found\": \"not-found\";\n    unavailable: \"unavailable\";\n    degraded: \"degraded\";\n}>;"
+    },
+    {
+      "entry": ".",
+      "name": "FinanceContract",
+      "kind": "interface",
+      "text": "export interface FinanceContract {\n    readonly pillar: 'finance';\n    readonly version: string;\n    readonly entities: {\n        readonly wishListItem: WishListItem;\n    };\n    readonly errors: FinanceError;\n    readonly router: FinanceRouter;\n}"
+    },
+    {
+      "entry": ".",
+      "name": "FinanceDomainError",
+      "kind": "type",
+      "text": "export type FinanceDomainError = {\n    kind: 'budget-exceeded';\n    budgetId: string;\n    overspendCents: number;\n} | {\n    kind: 'invalid-currency';\n    code: string;\n};"
+    },
+    {
+      "entry": ".",
+      "name": "FinanceDomainErrorSchema",
+      "kind": "variable",
+      "text": "export declare const FinanceDomainErrorSchema: z.ZodDiscriminatedUnion<[\n    z.ZodObject<{\n        kind: z.ZodLiteral<\"budget-exceeded\">;\n        budgetId: z.ZodString;\n        overspendCents: z.ZodNumber;\n    }, z.core.$strip>,\n    z.ZodObject<{\n        kind: z.ZodLiteral<\"invalid-currency\">;\n        code: z.ZodString;\n    }, z.core.$strip>\n], \"kind\">;"
+    },
+    {
+      "entry": ".",
+      "name": "FinanceError",
+      "kind": "type",
+      "text": "export type FinanceError = {\n    kind: ContractStatus;\n} | FinanceDomainError;"
+    },
+    {
+      "entry": ".",
+      "name": "FinanceErrorSchema",
+      "kind": "variable",
+      "text": "export declare const FinanceErrorSchema: z.ZodUnion<readonly [\n    z.ZodObject<{\n        kind: z.ZodEnum<{\n            ok: \"ok\";\n            \"not-found\": \"not-found\";\n            unavailable: \"unavailable\";\n            degraded: \"degraded\";\n        }>;\n    }, z.core.$strict>,\n    z.ZodDiscriminatedUnion<[\n        z.ZodObject<{\n            kind: z.ZodLiteral<\"budget-exceeded\">;\n            budgetId: z.ZodString;\n            overspendCents: z.ZodNumber;\n        }, z.core.$strip>,\n        z.ZodObject<{\n            kind: z.ZodLiteral<\"invalid-currency\">;\n            code: z.ZodString;\n        }, z.core.$strip>\n    ], \"kind\">\n]>;"
+    },
+    {
+      "entry": ".",
+      "name": "FinanceRouter",
+      "kind": "type",
+      "text": "export type FinanceRouter = typeof financeRouter;"
+    },
+    {
+      "entry": ".",
+      "name": "WishListItem",
+      "kind": "interface",
+      "text": "export interface WishListItem {\n    id: string;\n    item: string;\n    targetAmount: number | null;\n    saved: number | null;\n    remainingAmount: number | null;\n    priority: WishListPriority | null;\n    url: string | null;\n    notes: string | null;\n    lastEditedTime: string;\n}"
+    },
+    {
+      "entry": ".",
+      "name": "WishListItemSchema",
+      "kind": "variable",
+      "text": "export declare const WishListItemSchema: z.ZodObject<{\n    id: z.ZodString;\n    item: z.ZodString;\n    targetAmount: z.ZodNullable<z.ZodNumber>;\n    saved: z.ZodNullable<z.ZodNumber>;\n    remainingAmount: z.ZodNullable<z.ZodNumber>;\n    priority: z.ZodNullable<z.ZodEnum<{\n        Needing: \"Needing\";\n        Soon: \"Soon\";\n        \"One Day\": \"One Day\";\n        Dreaming: \"Dreaming\";\n    }>>;\n    url: z.ZodNullable<z.ZodString>;\n    notes: z.ZodNullable<z.ZodString>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
+    },
+    {
+      "entry": ".",
+      "name": "WishListPriority",
+      "kind": "type",
+      "text": "export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];"
+    },
+    {
+      "entry": ".",
+      "name": "WishListPrioritySchema",
+      "kind": "variable",
+      "text": "export declare const WishListPrioritySchema: z.ZodEnum<{\n    Needing: \"Needing\";\n    Soon: \"Soon\";\n    \"One Day\": \"One Day\";\n    Dreaming: \"Dreaming\";\n}>;"
+    },
+    {
+      "entry": "./errors",
+      "name": "ContractStatus",
+      "kind": "type",
+      "text": "export type ContractStatus = 'ok' | 'not-found' | 'unavailable' | 'degraded';"
+    },
+    {
+      "entry": "./errors",
+      "name": "ContractStatusSchema",
+      "kind": "variable",
+      "text": "export declare const ContractStatusSchema: z.ZodEnum<{\n    ok: \"ok\";\n    \"not-found\": \"not-found\";\n    unavailable: \"unavailable\";\n    degraded: \"degraded\";\n}>;"
+    },
+    {
+      "entry": "./errors",
+      "name": "FinanceDomainError",
+      "kind": "type",
+      "text": "export type FinanceDomainError = {\n    kind: 'budget-exceeded';\n    budgetId: string;\n    overspendCents: number;\n} | {\n    kind: 'invalid-currency';\n    code: string;\n};"
+    },
+    {
+      "entry": "./errors",
+      "name": "FinanceDomainErrorSchema",
+      "kind": "variable",
+      "text": "export declare const FinanceDomainErrorSchema: z.ZodDiscriminatedUnion<[\n    z.ZodObject<{\n        kind: z.ZodLiteral<\"budget-exceeded\">;\n        budgetId: z.ZodString;\n        overspendCents: z.ZodNumber;\n    }, z.core.$strip>,\n    z.ZodObject<{\n        kind: z.ZodLiteral<\"invalid-currency\">;\n        code: z.ZodString;\n    }, z.core.$strip>\n], \"kind\">;"
+    },
+    {
+      "entry": "./errors",
+      "name": "FinanceError",
+      "kind": "type",
+      "text": "export type FinanceError = {\n    kind: ContractStatus;\n} | FinanceDomainError;"
+    },
+    {
+      "entry": "./errors",
+      "name": "FinanceErrorSchema",
+      "kind": "variable",
+      "text": "export declare const FinanceErrorSchema: z.ZodUnion<readonly [\n    z.ZodObject<{\n        kind: z.ZodEnum<{\n            ok: \"ok\";\n            \"not-found\": \"not-found\";\n            unavailable: \"unavailable\";\n            degraded: \"degraded\";\n        }>;\n    }, z.core.$strict>,\n    z.ZodDiscriminatedUnion<[\n        z.ZodObject<{\n            kind: z.ZodLiteral<\"budget-exceeded\">;\n            budgetId: z.ZodString;\n            overspendCents: z.ZodNumber;\n        }, z.core.$strip>,\n        z.ZodObject<{\n            kind: z.ZodLiteral<\"invalid-currency\">;\n            code: z.ZodString;\n        }, z.core.$strip>\n    ], \"kind\">\n]>;"
+    },
+    {
+      "entry": "./manifest",
+      "name": "FinanceContract",
+      "kind": "interface",
+      "text": "export interface FinanceContract {\n    readonly pillar: 'finance';\n    readonly version: string;\n    readonly entities: {\n        readonly wishListItem: WishListItem;\n    };\n    readonly errors: FinanceError;\n    readonly router: FinanceRouter;\n}"
+    },
+    {
+      "entry": "./router",
+      "name": "FinanceRouter",
+      "kind": "type",
+      "text": "export type FinanceRouter = typeof financeRouter;"
+    },
+    {
+      "entry": "./schemas",
+      "name": "WishListItemSchema",
+      "kind": "variable",
+      "text": "export declare const WishListItemSchema: z.ZodObject<{\n    id: z.ZodString;\n    item: z.ZodString;\n    targetAmount: z.ZodNullable<z.ZodNumber>;\n    saved: z.ZodNullable<z.ZodNumber>;\n    remainingAmount: z.ZodNullable<z.ZodNumber>;\n    priority: z.ZodNullable<z.ZodEnum<{\n        Needing: \"Needing\";\n        Soon: \"Soon\";\n        \"One Day\": \"One Day\";\n        Dreaming: \"Dreaming\";\n    }>>;\n    url: z.ZodNullable<z.ZodString>;\n    notes: z.ZodNullable<z.ZodString>;\n    lastEditedTime: z.ZodString;\n}, z.core.$strip>;"
+    },
+    {
+      "entry": "./schemas",
+      "name": "WishListPrioritySchema",
+      "kind": "variable",
+      "text": "export declare const WishListPrioritySchema: z.ZodEnum<{\n    Needing: \"Needing\";\n    Soon: \"Soon\";\n    \"One Day\": \"One Day\";\n    Dreaming: \"Dreaming\";\n}>;"
+    },
+    {
+      "entry": "./types",
+      "name": "WishListItem",
+      "kind": "interface",
+      "text": "export interface WishListItem {\n    id: string;\n    item: string;\n    targetAmount: number | null;\n    saved: number | null;\n    remainingAmount: number | null;\n    priority: WishListPriority | null;\n    url: string | null;\n    notes: string | null;\n    lastEditedTime: string;\n}"
+    },
+    {
+      "entry": "./types",
+      "name": "WishListPriority",
+      "kind": "type",
+      "text": "export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];"
+    }
+  ]
+}
