@@ -1,8 +1,44 @@
-import { and, count, desc, eq, inArray, type SQL } from 'drizzle-orm';
+/**
+ * Watch-history read/write surface — PRD-168 PR2 cutover.
+ *
+ * Read/write split during the migration window:
+ *  - `listWatchHistory` and `getWatchHistoryEntry` are routed through
+ *    `getMediaDrizzle()` (the media pillar's `media.db.watch_history`).
+ *    These are the simple reads called out by PRD-168 PR2.
+ *  - Every write path — `logWatch` in `./log-watch-event.ts`,
+ *    `deleteWatchHistoryEntry` below, `batchLogWatch`, the cascade
+ *    deletes for `debrief_sessions` / `debrief_results` — still goes
+ *    through `getDrizzle()` (the shared `pops.db`). Debrief tables and
+ *    the `watch_history.id` FK they hang off are still pinned to the
+ *    legacy mount, so writes must stay there until the full slice
+ *    moves to `@pops/media-db`.
+ *
+ * Cross-store consistency relies on `backfillMediaFromShared()` in
+ * `apps/pops-api/src/db/media-backfill.ts`: a one-way, boot-time copy
+ * from `pops.db` -> `media.db` that idempotently fills missing rows.
+ * Between boots, newly-logged events live only in `pops.db` and won't
+ * appear in list/get results until the next deploy reruns the backfill.
+ * This is the same trade-off taken by the movies (PRD-165) and
+ * tv-shows (PRD-166) cutovers; the full read-your-writes consistency
+ * lands when the write paths also cut over.
+ *
+ * TOCTOU fix: `deleteWatchHistoryEntry` deletes from `pops.db`, so its
+ * existence check must read from the same store. The function relies on
+ * the in-transaction `result.changes === 0` signal (against `pops.db`)
+ * rather than `getWatchHistoryEntry` (against `media.db`) to avoid a
+ * race where the row exists on one side but not the other.
+ */
+import { eq, inArray } from 'drizzle-orm';
 
 import { debriefResults, debriefSessions, watchHistory } from '@pops/db-types';
+import {
+  type WatchHistoryMediaType,
+  watchHistoryService,
+  WatchHistoryNotFoundError,
+} from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
 
 import type { WatchHistoryFilters, WatchHistoryRow } from '../types.js';
@@ -15,44 +51,51 @@ export interface WatchHistoryListResult {
   total: number;
 }
 
+function narrowMediaType(value: string | undefined): WatchHistoryMediaType | undefined {
+  if (value === 'movie' || value === 'episode') return value;
+  return undefined;
+}
+
+function translate<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (err instanceof WatchHistoryNotFoundError) {
+      throw new NotFoundError('WatchHistoryEntry', String(err.id));
+    }
+    throw err;
+  }
+}
+
 export function listWatchHistory(
   filters: WatchHistoryFilters,
   limit: number,
   offset: number
 ): WatchHistoryListResult {
-  const db = getDrizzle();
-  const conditions: SQL[] = [];
-  if (filters.mediaType) {
-    conditions.push(eq(watchHistory.mediaType, filters.mediaType as 'movie' | 'episode'));
-  }
-  if (filters.mediaId) conditions.push(eq(watchHistory.mediaId, filters.mediaId));
-
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = db
-    .select()
-    .from(watchHistory)
-    .where(where)
-    .orderBy(desc(watchHistory.watchedAt))
-    .limit(limit)
-    .offset(offset)
-    .all();
-  const [countRow] = db.select({ total: count() }).from(watchHistory).where(where).all();
-  return { rows, total: countRow?.total ?? 0 };
+  return watchHistoryService.list(
+    getMediaDrizzle(),
+    {
+      mediaType: narrowMediaType(filters.mediaType),
+      mediaId: filters.mediaId,
+    },
+    limit,
+    offset
+  );
 }
 
 export function getWatchHistoryEntry(id: number): WatchHistoryRow {
-  const db = getDrizzle();
-  const row = db.select().from(watchHistory).where(eq(watchHistory.id, id)).get();
-  if (!row) throw new NotFoundError('WatchHistoryEntry', String(id));
-  return row;
+  return translate(() => watchHistoryService.getById(getMediaDrizzle(), id));
 }
 
 export function deleteWatchHistoryEntry(id: number): void {
-  // Verify the entry exists before attempting deletion (throws NotFoundError if missing).
-  getWatchHistoryEntry(id);
-
   getDrizzle().transaction((tx) => {
-    // Cascade: delete debrief_results rows that belong to sessions referencing this entry.
+    const existing = tx
+      .select({ id: watchHistory.id })
+      .from(watchHistory)
+      .where(eq(watchHistory.id, id))
+      .get();
+    if (!existing) throw new NotFoundError('WatchHistoryEntry', String(id));
+
     const sessionIds = tx
       .select({ id: debriefSessions.id })
       .from(debriefSessions)
@@ -64,10 +107,8 @@ export function deleteWatchHistoryEntry(id: number): void {
       tx.delete(debriefResults).where(inArray(debriefResults.sessionId, sessionIds)).run();
     }
 
-    // Cascade: delete debrief_sessions rows referencing this watch_history entry.
     tx.delete(debriefSessions).where(eq(debriefSessions.watchHistoryId, id)).run();
 
-    // Now safe to delete the watch_history row.
     const result = tx.delete(watchHistory).where(eq(watchHistory.id, id)).run();
     if (result.changes === 0) throw new NotFoundError('WatchHistoryEntry', String(id));
   });
