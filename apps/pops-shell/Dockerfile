@@ -31,6 +31,8 @@ COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/navigation/package.json ./packages/navigation/
 COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
+COPY packages/finance-contract/package.json ./packages/finance-contract/
+COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 
 # Install pnpm and dependencies (cached across builds)
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -54,6 +56,8 @@ COPY packages/cerebrum-db/ ./packages/cerebrum-db/
 COPY packages/food-db/ ./packages/food-db/
 COPY packages/lists-db/ ./packages/lists-db/
 COPY packages/food-contracts/ ./packages/food-contracts/
+COPY packages/finance-contract/ ./packages/finance-contract/
+COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
@@ -79,6 +83,10 @@ RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/app-food-db
+RUN pnpm build
+WORKDIR /app/packages/finance-contract
+RUN pnpm build
+WORKDIR /app/packages/pillar-sdk
 RUN pnpm build
 
 # Copy remaining source files
