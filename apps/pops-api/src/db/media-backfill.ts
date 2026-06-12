@@ -18,6 +18,27 @@ import { resolveSqlitePath } from './sqlite-path.js';
  * pops.db) doesn't bring the whole backfill down. Failures are logged
  * + swallowed; the remaining tables still attempt.
  *
+ * Insert-only semantics — staleness model: `tryCopyTable` runs
+ * `INSERT ... WHERE id NOT IN (SELECT id FROM target)`, so the boot
+ * copy is strictly additive. For slices whose writes still target
+ * `pops.db` during the read/write split (`watchlist` is the live
+ * example as of PRD-167 PR 2), an UPDATE or DELETE applied to
+ * `pops.db.<table>` between boots is not reflected in
+ * `media.db.<table>`: an updated row keeps its stale fields in the
+ * media copy, and a deleted row keeps existing there until a manual
+ * intervention or the writer cutover lands. Reads off the media handle
+ * therefore lag writes by up to one boot cycle for the in-flight
+ * `priority` / `notes` / `plex_rating_key` columns and may
+ * temporarily surface entries that have already been deleted on the
+ * shared store. The watchlist router's removal flow guards against
+ * the deletion-resurrection foot-gun by routing the pre-delete
+ * existence check through `getSharedWatchlistEntry` (writes go to the
+ * same store as the check). Full read-your-writes consistency lands
+ * with PRD-167's writer cutover, at which point this `watchlist`
+ * entry collapses into a pure post-cutover seed and the staleness
+ * window disappears. Mirrors the precedent set by PRD-168 PR 2 for
+ * `watch_history` and PRD-165 PR 3 for `movies`.
+ *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Failures here
  * leave the media copy partially populated for that boot; the next
@@ -109,6 +130,20 @@ const TABLE_COPIES: readonly TableCopy[] = [
     table: 'watch_history',
     idColumn: 'id',
     columns: ['id', 'media_type', 'media_id', 'watched_at', 'completed', 'blacklisted'],
+  },
+  {
+    table: 'watchlist',
+    idColumn: 'id',
+    columns: [
+      'id',
+      'media_type',
+      'media_id',
+      'priority',
+      'notes',
+      'added_at',
+      'source',
+      'plex_rating_key',
+    ],
   },
 ];
 

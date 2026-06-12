@@ -24,6 +24,7 @@ export {
   SHELF_IMPRESSIONS_TABLE_SQL,
   TV_SHOWS_TABLE_SQL,
   WATCH_HISTORY_TABLE_SQL,
+  WATCHLIST_TABLE_SQL,
 } from './backfill-test-fixtures-media.js';
 export {
   BUDGETS_TABLE_SQL,

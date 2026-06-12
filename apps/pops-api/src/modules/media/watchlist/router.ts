@@ -4,9 +4,12 @@
  * @deprecated PRD-167 PR 1 (Theme 13) shadows this router on
  * `apps/pops-media-api/src/modules/watchlist` against `@pops/media-db`.
  * The mount stays here as the fall-through while the dispatcher / cutover
- * lands in PRD-167 PR 3; reads continue to flow through this surface
- * because the `movies` / `tv_shows` enrichment join hasn't moved to the
- * media pillar yet (gated on PRD-165 / PRD-166).
+ * lands in PRD-167 PR 3.
+ *
+ * PRD-167 PR 2 (this PR) cuts the read paths in `./service.ts` over to
+ * `@pops/media-db`'s `watchlistService` via `getMediaDrizzle()`. Writes
+ * still target `pops.db`; see `./service.ts` for the documented split
+ * and the cross-store consistency contract.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -182,11 +185,10 @@ export const watchlistRouter = router({
 
   /** Remove an entry from the watchlist. Pushes removal to Plex if connected (best-effort). */
   remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
-    // Fetch entry before removing to get plexRatingKey
     let plexRatingKey: string | null;
     try {
-      const entry = service.getWatchlistEntry(input.id);
-      plexRatingKey = (entry as Record<string, unknown>).plexRatingKey as string | null;
+      const entry = service.getSharedWatchlistEntry(input.id);
+      plexRatingKey = entry.plexRatingKey;
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
