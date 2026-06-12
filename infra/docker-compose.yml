@@ -476,6 +476,28 @@ services:
       timeout: 5s
       retries: 3
 
+  # API docs browser — Stoplight Elements pointed at every contract
+  # package's OpenAPI snapshot (Theme 13 PRD-219). Purely static; the
+  # `/docs/` location block in pops-shell's nginx.conf reverse-proxies
+  # browser traffic here. The catalog of contracts is a build-time
+  # snapshot baked into the image — redeploys reflect the contracts
+  # that existed at image build time.
+  pops-docs:
+    image: ghcr.io/knoxio/pops-docs:${POPS_IMAGE_TAG:-main}
+    container_name: pops-docs
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
+    networks:
+      - frontend
+    expose:
+      - '80'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:80/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   metabase:
     image: metabase/metabase:v0.52.5
     container_name: pops-metabase

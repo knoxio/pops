@@ -1,0 +1,109 @@
+:root {
+  color-scheme: dark;
+  --pops-docs-bg: #0b0d10;
+  --pops-docs-surface: #15181d;
+  --pops-docs-border: #232830;
+  --pops-docs-fg: #e7ebf0;
+  --pops-docs-muted: #8a93a0;
+  --pops-docs-accent: #7aa2ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--pops-docs-bg);
+  color: var(--pops-docs-fg);
+  font-family:
+    'Plus Jakarta Sans',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  height: 100%;
+}
+
+.pops-docs-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--pops-docs-border);
+  background: var(--pops-docs-surface);
+}
+
+.pops-docs-header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.pops-docs-header p {
+  margin: 4px 0 0;
+  color: var(--pops-docs-muted);
+  font-size: 13px;
+}
+
+.pops-docs-root {
+  display: flex;
+  height: calc(100vh - 64px);
+  min-height: 480px;
+}
+
+.pops-docs-nav {
+  width: 240px;
+  border-right: 1px solid var(--pops-docs-border);
+  background: var(--pops-docs-surface);
+  overflow-y: auto;
+}
+
+.pops-docs-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0;
+}
+
+.pops-docs-nav button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: var(--pops-docs-fg);
+  font: inherit;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+
+.pops-docs-nav button:hover {
+  background: rgba(122, 162, 255, 0.08);
+}
+
+.pops-docs-nav button.is-active {
+  border-left-color: var(--pops-docs-accent);
+  background: rgba(122, 162, 255, 0.12);
+  color: var(--pops-docs-accent);
+}
+
+.pops-docs-stage {
+  flex: 1;
+  overflow: hidden;
+}
+
+.pops-docs-stage elements-api {
+  display: block;
+  height: 100%;
+}
+
+.pops-docs-loading,
+.pops-docs-empty,
+.pops-docs-error {
+  margin: 24px;
+  color: var(--pops-docs-muted);
+}
+
+.pops-docs-error {
+  color: #ff7373;
+}

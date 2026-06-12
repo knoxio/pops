@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>POPS — API docs</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements@9.0.6/styles.min.css" />
+    <script
+      src="https://unpkg.com/@stoplight/elements@9.0.6/web-components.min.js"
+      defer
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <header class="pops-docs-header">
+      <h1>POPS — API docs</h1>
+      <p>Live navigable view of every contract package's OpenAPI surface.</p>
+    </header>
+    <main id="pops-docs-root" class="pops-docs-root">
+      <p class="pops-docs-loading">Loading catalog…</p>
+    </main>
+    <script>
+      (async () => {
+        const root = document.getElementById('pops-docs-root');
+        try {
+          const catalogResponse = await fetch('/catalog.json', { cache: 'no-store' });
+          if (!catalogResponse.ok) {
+            throw new Error('catalog fetch failed: ' + catalogResponse.status);
+          }
+          const catalog = await catalogResponse.json();
+          const contracts = Array.isArray(catalog.contracts) ? catalog.contracts : [];
+
+          if (contracts.length === 0) {
+            root.innerHTML =
+              '<p class="pops-docs-empty">No contract OpenAPI snapshots in this build. Generate one via the contract package and rebuild this image.</p>';
+            return;
+          }
+
+          if (contracts.length === 1) {
+            const only = contracts[0];
+            const element = document.createElement('elements-api');
+            element.setAttribute('apiDescriptionUrl', only.openapiPath);
+            element.setAttribute('router', 'hash');
+            element.setAttribute('layout', 'sidebar');
+            element.setAttribute('hideInternal', 'true');
+            root.replaceChildren(element);
+            return;
+          }
+
+          const nav = document.createElement('nav');
+          nav.className = 'pops-docs-nav';
+          const list = document.createElement('ul');
+          for (const contract of contracts) {
+            const item = document.createElement('li');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = contract.name + ' v' + contract.version;
+            button.dataset.contractId = contract.id;
+            button.dataset.openapiPath = contract.openapiPath;
+            item.appendChild(button);
+            list.appendChild(item);
+          }
+          nav.appendChild(list);
+
+          const stage = document.createElement('section');
+          stage.className = 'pops-docs-stage';
+
+          root.replaceChildren(nav, stage);
+
+          const mount = (contract) => {
+            stage.innerHTML = '';
+            const element = document.createElement('elements-api');
+            element.setAttribute('apiDescriptionUrl', contract.openapiPath);
+            element.setAttribute('router', 'hash');
+            element.setAttribute('layout', 'sidebar');
+            element.setAttribute('hideInternal', 'true');
+            stage.appendChild(element);
+            for (const button of nav.querySelectorAll('button')) {
+              button.classList.toggle('is-active', button.dataset.contractId === contract.id);
+            }
+          };
+
+          nav.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLButtonElement)) return;
+            const match = contracts.find((c) => c.id === target.dataset.contractId);
+            if (match) mount(match);
+          });
+
+          mount(contracts[0]);
+        } catch (error) {
+          root.innerHTML =
+            '<p class="pops-docs-error">Failed to load catalog: ' +
+            (error instanceof Error ? error.message : String(error)) +
+            '</p>';
+        }
+      })();
+    </script>
+  </body>
+</html>

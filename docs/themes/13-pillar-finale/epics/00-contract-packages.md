@@ -16,7 +16,7 @@ This is the foundation for cross-pillar type safety after the registry-based dis
 | 154 | Semver enforcement CI      | CI job that diffs contract-package public surface (TS + Zod) against last git tag and blocks PRs on mismatched bumps. Includes affected-package rebuild via turbo `--filter='...[<merge-base>]'`. | Not started |
 | 155 | Manifest type generation   | Generate the union `<Pillar>Contract` interface from the per-feature exports so consumers have one entry point                                                                                    | Not started |
 | 156 | Consumer import discipline | Lint rule: "non-owning code may not import from `@pops/<pillar>-db`"; consumers go through `@pops/<pillar>-contract`                                                                              | Not started |
-| 219 | pops-docs container        | Tiny static container serving Stoplight Elements pointed at every contract's OpenAPI spec; browseable at `/docs/`                                                                                 | Not started |
+| 219 | pops-docs container        | Tiny static container serving Stoplight Elements pointed at every contract's OpenAPI spec; browseable at `/docs/`                                                                                 | Done        |
 
 PRDs 153, 154, 155, 156 can run in parallel after 153 establishes the shape. PRD-219 is independent of the rest (only depends on PRD-153 emitting OpenAPI specs); good "filler" PRD when waiting on something else.
 
