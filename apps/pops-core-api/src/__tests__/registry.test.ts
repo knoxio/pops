@@ -275,10 +275,10 @@ describe('core.registry.get', () => {
   });
 });
 
-describe('core.registry.unregister', () => {
+describe('core.registry.deregister', () => {
   it('returns ok with removed=false for an unknown pillar (idempotent)', async () => {
     const c = caller();
-    const res = await c.core.registry.unregister({ pillar: 'finance' });
+    const res = await c.core.registry.deregister({ pillar: 'finance' });
     expect(res).toEqual({ ok: true, removed: false });
   });
 
@@ -288,7 +288,7 @@ describe('core.registry.unregister', () => {
       baseUrl: 'http://finance-api:3004',
       manifest: financeManifest(),
     });
-    const res = await c.core.registry.unregister({ pillar: 'finance' });
+    const res = await c.core.registry.deregister({ pillar: 'finance' });
     expect(res).toEqual({ ok: true, removed: true });
     expect(await c.core.registry.get({ pillar: 'finance' })).toBeNull();
     expect((await c.core.registry.list()).pillars).toEqual([]);
@@ -303,7 +303,7 @@ describe('core.registry.unregister', () => {
     if (!first.ok) throw new Error('first register should succeed');
     const firstRegisteredAt = first.registeredAt;
 
-    await c.core.registry.unregister({ pillar: 'finance' });
+    await c.core.registry.deregister({ pillar: 'finance' });
 
     await new Promise((r) => setTimeout(r, 5));
 

@@ -15,7 +15,7 @@
  * of scope (PRD-162); this service only ships the persistence + read
  * path.
  */
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { pillarRegistry } from '../schema.js';
 
@@ -106,39 +106,34 @@ export function upsertPillarRegistration(
   const now = input.now ?? new Date().toISOString();
   const pillarId = input.manifest.pillar;
   const manifestJson = JSON.stringify(input.manifest);
-  const existing = getPillarRegistration(db, pillarId);
-  const registeredAt = existing?.registeredAt ?? now;
 
-  if (existing) {
-    db.update(pillarRegistry)
-      .set({
-        baseUrl: input.baseUrl,
-        manifestJson,
-        contractPackage: input.manifest.contract.package,
-        contractVersion: input.manifest.contract.version,
-        contractTag: input.manifest.contract.tag,
-        lastHeartbeatAt: now,
-        status: 'healthy',
-        statusUpdatedAt: now,
-      })
-      .where(eq(pillarRegistry.pillarId, pillarId))
-      .run();
-  } else {
-    db.insert(pillarRegistry)
-      .values({
-        pillarId,
-        baseUrl: input.baseUrl,
-        manifestJson,
-        contractPackage: input.manifest.contract.package,
-        contractVersion: input.manifest.contract.version,
-        contractTag: input.manifest.contract.tag,
-        registeredAt,
-        lastHeartbeatAt: now,
-        status: 'healthy',
-        statusUpdatedAt: now,
-      })
-      .run();
-  }
+  db.insert(pillarRegistry)
+    .values({
+      pillarId,
+      baseUrl: input.baseUrl,
+      manifestJson,
+      contractPackage: input.manifest.contract.package,
+      contractVersion: input.manifest.contract.version,
+      contractTag: input.manifest.contract.tag,
+      registeredAt: now,
+      lastHeartbeatAt: now,
+      status: 'healthy',
+      statusUpdatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: pillarRegistry.pillarId,
+      set: {
+        baseUrl: sql`excluded.base_url`,
+        manifestJson: sql`excluded.manifest_json`,
+        contractPackage: sql`excluded.contract_package`,
+        contractVersion: sql`excluded.contract_version`,
+        contractTag: sql`excluded.contract_tag`,
+        lastHeartbeatAt: sql`excluded.last_heartbeat_at`,
+        status: sql`excluded.status`,
+        statusUpdatedAt: sql`excluded.status_updated_at`,
+      },
+    })
+    .run();
 
   const persisted = getPillarRegistration(db, pillarId);
   if (!persisted) {
@@ -166,11 +161,10 @@ export function listPillarRegistrations(db: CoreDb): PillarRegistration[] {
 
 /**
  * Idempotent delete. Returns `true` if a row was removed, `false`
- * if the pillar was not registered.
+ * if the pillar was not registered. Atomic — relies on the DELETE's
+ * `changes` count rather than a read-then-delete.
  */
 export function deletePillarRegistration(db: CoreDb, pillarId: string): boolean {
-  const existed = getPillarRegistration(db, pillarId) !== null;
-  if (!existed) return false;
-  db.delete(pillarRegistry).where(eq(pillarRegistry.pillarId, pillarId)).run();
-  return true;
+  const result = db.delete(pillarRegistry).where(eq(pillarRegistry.pillarId, pillarId)).run();
+  return result.changes > 0;
 }

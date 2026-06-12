@@ -4,7 +4,7 @@
  * Wire surface for pillar registration + discovery on `pops-core-api`:
  *
  *   - `core.registry.register`   mutation  (internal-only, blocked at nginx)
- *   - `core.registry.unregister` mutation  (internal-only, blocked at nginx)
+ *   - `core.registry.deregister` mutation  (internal-only, blocked at nginx)
  *   - `core.registry.list`       query     (public — used by the shell + SDK)
  *   - `core.registry.get`        query     (public — single lookup)
  *
@@ -25,23 +25,24 @@ import { validateManifestPayload } from '@pops/pillar-sdk';
 
 import { publicProcedure, router } from '../../trpc.js';
 import {
+  DeregisterInputSchema,
+  DeregisterOutputSchema,
   GetInputSchema,
   ListOutputSchema,
   RegisterInputSchema,
   RegisterOutputSchema,
   RegistryEntrySchema,
-  UnregisterInputSchema,
-  UnregisterOutputSchema,
   type RegistryEntry,
 } from './types.js';
 
 import type { PillarRegistration } from '@pops/core-db';
 
 function toRegistryEntry(reg: PillarRegistration): RegistryEntry {
+  const manifest = RegistryEntrySchema.shape.manifest.parse(reg.manifest);
   return {
     pillarId: reg.pillarId,
     baseUrl: reg.baseUrl,
-    manifest: reg.manifest,
+    manifest,
     contract: {
       package: reg.contractPackage,
       version: reg.contractVersion,
@@ -74,9 +75,9 @@ export const registryRouter = router({
       };
     }),
 
-  unregister: publicProcedure
-    .input(UnregisterInputSchema)
-    .output(UnregisterOutputSchema)
+  deregister: publicProcedure
+    .input(DeregisterInputSchema)
+    .output(DeregisterOutputSchema)
     .mutation(({ input, ctx }) => {
       const removed = pillarRegistryService.deletePillarRegistration(ctx.coreDb, input.pillar);
       return { ok: true as const, removed };
