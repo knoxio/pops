@@ -1,13 +1,44 @@
 /**
- * Ego conversation persistence service.
+ * Ego conversation persistence service — read/write split during the
+ * PRD-182 cutover.
  *
- * Thin CRUD layer over the conversations, messages, and conversation_context
- * tables. All writes go through Drizzle ORM.
+ * Thin CRUD layer over the `conversations`, `messages`, and
+ * `conversation_context` tables. The class accepts two drizzle handles:
+ *
+ *  - `db` (BetterSQLite3Database) — the shared `pops.db` write handle.
+ *    Every write path lands here: `createConversation`,
+ *    `appendMessage` (plus the auto-title heuristic's read-after-write
+ *    hop), `upsertContext`, `deleteConversation`, `updateTitle`,
+ *    `updateScopes`, `updateAppContext`.
+ *  - `readDb` (CerebrumDb) — the cerebrum pillar's `cerebrum.db` read
+ *    handle. PRD-182 PR 2 routes pure user-facing reads through
+ *    `@pops/cerebrum-db`'s `conversationsService` namespace against this
+ *    handle: `listConversations`, `getConversation`,
+ *    `getContextEntries`. `readDb` is optional and falls back to `db`
+ *    so the existing in-memory test rigs (which inject a single SQLite
+ *    handle for both stores) keep working without churn.
+ *
+ * Cross-store consistency relies on `backfillCerebrumFromShared()` in
+ * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts`: a one-way,
+ * boot-time copy from `pops.db` -> `cerebrum.db` that idempotently
+ * fills missing rows on `conversations` + `messages` +
+ * `conversation_context`. Between boots, newly-written rows live only
+ * in `pops.db` until the next backfill, but read-after-write within the
+ * same process is preserved because `maybeAutoTitle` (the only
+ * post-write read) routes through `db`. Mirrors the read/write split
+ * landed in PRD-179 PR 2 (engrams) and PRD-168 PR 2 (watch-history).
+ *
+ * PRD-182 PR 3 flips the writes too, at which point `db` collapses
+ * into `readDb`. Heavy chat orchestration (LLM streaming, scope
+ * negotiation, auto-title heuristic, persistence-store adapter) stays
+ * in pops-api — `@pops/cerebrum-db` is pure data-access.
  */
-import { and, desc, eq, like, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
+import { conversationsService, type CerebrumDb } from '@pops/cerebrum-db';
 import { conversations, conversationContext, messages } from '@pops/db-types/schema';
 
+import { mapPackageConversation, mapPackageMessage } from './persistence-mappers.js';
 import {
   autoTitle,
   generateConversationId,
@@ -39,20 +70,37 @@ type ConversationRow = typeof conversations.$inferSelect;
 type MessageRow = typeof messages.$inferSelect;
 
 export interface ConversationPersistenceOptions {
+  /**
+   * Write handle — the shared `pops.db` drizzle wrapper. All write
+   * paths and read-after-write hops (the auto-title heuristic in
+   * particular) route through this handle until PRD-182 PR 3 flips the
+   * writes too.
+   */
   db: BetterSQLite3Database;
+  /**
+   * Read handle — the cerebrum pillar's `cerebrum.db` drizzle wrapper.
+   * Pure user-facing reads (`listConversations`, `getConversation`,
+   * `getContextEntries`) forward through `@pops/cerebrum-db`'s
+   * `conversationsService` against this handle. Defaults to `db` so
+   * test rigs that inject a single in-memory SQLite keep working
+   * without churn.
+   */
+  readDb?: CerebrumDb;
   now?: () => Date;
 }
 
 export class ConversationPersistence {
   private readonly db: BetterSQLite3Database;
+  private readonly readDb: CerebrumDb;
   private readonly now: () => Date;
 
   constructor(options: ConversationPersistenceOptions) {
     this.db = options.db;
+    this.readDb = options.readDb ?? options.db;
     this.now = options.now ?? (() => new Date());
   }
 
-  /** Create a new conversation. */
+  /** Create a new conversation. Writes to the shared `pops.db`. */
   createConversation(input: CreateConversationInput): Conversation {
     const now = this.now();
     const id = generateConversationId(now);
@@ -70,43 +118,43 @@ export class ConversationPersistence {
     return toConversation(row);
   }
 
-  /** List conversations with optional pagination and title search. */
+  /**
+   * List conversations with optional pagination and title search.
+   * Pure read — routed through `@pops/cerebrum-db`'s
+   * `conversationsService.listConversations` against `readDb`.
+   */
   listConversations(input: ListConversationsInput = {}): {
     conversations: Conversation[];
     total: number;
   } {
-    const { limit = 50, offset = 0, search } = input;
-    const where = search ? like(conversations.title, `%${search}%`) : undefined;
-    const totalResult = this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(conversations)
-      .where(where)
-      .get();
-    const rows = this.db
-      .select()
-      .from(conversations)
-      .where(where)
-      .orderBy(desc(conversations.updatedAt))
-      .limit(limit)
-      .offset(offset)
-      .all();
-    return { conversations: rows.map(toConversation), total: totalResult?.count ?? 0 };
+    const result = conversationsService.listConversations(this.readDb, {
+      search: input.search,
+      limit: input.limit ?? 50,
+      offset: input.offset ?? 0,
+    });
+    return {
+      conversations: result.conversations.map(mapPackageConversation),
+      total: result.total,
+    };
   }
 
-  /** Get a conversation with all its messages. */
+  /**
+   * Get a conversation with all its messages. Pure read — routed
+   * through `@pops/cerebrum-db`'s
+   * `conversationsService.{getConversation,listMessages}` against
+   * `readDb`. Returns `null` when the conversation is missing.
+   */
   getConversation(id: string): { conversation: Conversation; messages: Message[] } | null {
-    const row = this.db.select().from(conversations).where(eq(conversations.id, id)).get();
-    if (!row) return null;
-    const msgRows = this.db
-      .select()
-      .from(messages)
-      .where(eq(messages.conversationId, id))
-      .orderBy(messages.createdAt)
-      .all();
-    return { conversation: toConversation(row), messages: msgRows.map(toMessage) };
+    const conv = conversationsService.getConversation(this.readDb, id);
+    if (!conv) return null;
+    const msgs = conversationsService.listMessages(this.readDb, id);
+    return {
+      conversation: mapPackageConversation(conv),
+      messages: msgs.map(mapPackageMessage),
+    };
   }
 
-  /** Delete a conversation and cascade to messages + context. */
+  /** Delete a conversation and cascade to messages + context. Writes to `pops.db`. */
   deleteConversation(id: string): void {
     this.db.transaction((tx) => {
       tx.delete(conversationContext).where(eq(conversationContext.conversationId, id)).run();
@@ -117,7 +165,9 @@ export class ConversationPersistence {
 
   /**
    * Append a message to a conversation. Updates conversation.updatedAt.
-   * Auto-generates a title from the first user message when none is set.
+   * Auto-generates a title from the first user message when none is
+   * set. Writes (and the auto-title read-after-write hop) land on
+   * `pops.db`.
    */
   appendMessage(conversationId: string, input: AppendMessageInput): Message {
     const now = this.now();
@@ -144,7 +194,10 @@ export class ConversationPersistence {
     return toMessage(row);
   }
 
-  /** Insert or update a context entry linking a conversation to an engram. */
+  /**
+   * Insert or update a context entry linking a conversation to an engram.
+   * Writes to `pops.db`.
+   */
   upsertContext(conversationId: string, engramId: string, relevanceScore?: number): void {
     const iso = this.now().toISOString();
     this.db
@@ -157,7 +210,7 @@ export class ConversationPersistence {
       .run();
   }
 
-  /** Update the conversation title. */
+  /** Update the conversation title. Writes to `pops.db`. */
   updateTitle(conversationId: string, title: string): void {
     this.db
       .update(conversations)
@@ -166,7 +219,7 @@ export class ConversationPersistence {
       .run();
   }
 
-  /** Replace the conversation's active scopes. */
+  /** Replace the conversation's active scopes. Writes to `pops.db`. */
   updateScopes(conversationId: string, scopes: string[]): void {
     this.db
       .update(conversations)
@@ -175,7 +228,7 @@ export class ConversationPersistence {
       .run();
   }
 
-  /** Update the conversation's app context (US-03). */
+  /** Update the conversation's app context (US-03). Writes to `pops.db`. */
   updateAppContext(conversationId: string, appContext: unknown): void {
     this.db
       .update(conversations)
@@ -187,23 +240,30 @@ export class ConversationPersistence {
       .run();
   }
 
-  /** Get all context entries (engram associations) for a conversation (US-03). */
+  /**
+   * Get all context entries (engram associations) for a conversation
+   * (US-03). Pure read — routed through `@pops/cerebrum-db`'s
+   * `conversationsService.listConversationContext` against `readDb`.
+   */
   getContextEntries(
     conversationId: string
   ): Array<{ engramId: string; relevanceScore: number | null; loadedAt: string }> {
-    return this.db
-      .select({
-        engramId: conversationContext.engramId,
-        relevanceScore: conversationContext.relevanceScore,
-        loadedAt: conversationContext.loadedAt,
-      })
-      .from(conversationContext)
-      .where(eq(conversationContext.conversationId, conversationId))
-      .orderBy(desc(conversationContext.loadedAt))
-      .all();
+    return conversationsService
+      .listConversationContext(this.readDb, conversationId)
+      .map((entry) => ({
+        engramId: entry.engramId,
+        relevanceScore: entry.relevanceScore,
+        loadedAt: entry.loadedAt,
+      }));
   }
 
-  /** Auto-generate title from first user message when no title is set. */
+  /**
+   * Auto-generate title from first user message when no title is set.
+   * Stays on the write handle (`db`) because it is a read-after-write
+   * hop inside the `appendMessage` flow: the row we just inserted lives
+   * only on `pops.db` until the next backfill, so consulting `readDb`
+   * would silently miss it and skip the title.
+   */
   private maybeAutoTitle(conversationId: string, input: AppendMessageInput): void {
     if (input.role !== 'user') return;
     const conv = this.db

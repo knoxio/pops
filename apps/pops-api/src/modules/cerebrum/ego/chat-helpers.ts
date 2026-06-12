@@ -6,6 +6,7 @@
  * and app context comparison logic across the two code paths.
  */
 import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { getSettingValue } from '../../core/settings/service.js';
 import { ConversationEngine } from './engine.js';
 import { PersistenceStoreAdapter } from './persistence-store.js';
@@ -14,9 +15,18 @@ import { autoTitle } from './types.js';
 
 import type { AppContext, ChatResult, Conversation, Message, ScopeNegotiation } from './types.js';
 
-/** Lazily instantiated persistence service (uses the global Drizzle instance). */
+/**
+ * Lazily instantiated persistence service.
+ *
+ * `db` is the shared `pops.db` write handle; `readDb` is the cerebrum
+ * pillar's `cerebrum.db` read handle (PRD-182 PR 2 read seam — pure
+ * reads forward to `@pops/cerebrum-db`'s `conversationsService`).
+ * Writes plus read-after-write hops stay on `pops.db` until PRD-182
+ * PR 3 flips them too. See `ConversationPersistence` top-of-file JSDoc
+ * for the cross-store consistency contract.
+ */
 export function getPersistence(): ConversationPersistence {
-  return new ConversationPersistence({ db: getDrizzle() });
+  return new ConversationPersistence({ db: getDrizzle(), readDb: getCerebrumDrizzle() });
 }
 
 export function getStore(): PersistenceStoreAdapter {
