@@ -41,6 +41,16 @@ A test that exercises every page's data loader, captures tRPC calls, and asserts
 - CI assertions are hard failures.
 - The invariant set is documented in `apps/pops-shell/src/lib/trpc.invariants.md`.
 
+## Acceptance Criteria
+
+- [x] A pure runtime assertion (`assertSingleTargetBatch`) lives in `packages/api-client/src/batching-invariants.ts` and throws `CrossPillarBatchError` when a batch contains ops resolving to more than one pillar URL (or mixes a pillar with the legacy catch-all).
+- [x] A non-throwing variant (`checkSingleTargetBatch`) is exposed for dev-mode logging that returns a violation descriptor instead of throwing.
+- [x] The error message references PRD-188 and the offending paths/targets, so consumers can surface a useful warning.
+- [x] Tests at `packages/api-client/src/__tests__/batching-invariants.test.ts` cover: same-pillar batch passes, cross-pillar batch throws, mix of pillar + legacy throws, and the empty / single-op edge cases.
+- [x] `mise lint` and `mise typecheck` pass.
+
+> Audit of existing batch call sites is tracked under PRD-189. nginx dispatcher rules are tracked under PRD-190.
+
 ## Edge Cases
 
 | Case                                           | Behaviour                                    |

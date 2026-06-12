@@ -91,3 +91,17 @@ export function isNetworkError(err: unknown): boolean {
 }
 
 export type { AppRouter };
+
+export {
+  CrossPillarBatchError,
+  LEGACY_BATCH_TARGET,
+  assertSingleTargetBatch,
+  batchTargetOfPath,
+  checkSingleTargetBatch,
+} from './batching-invariants.js';
+export type {
+  BatchInvariantViolation,
+  BatchTarget,
+  BatchableOp,
+  LegacyBatchTarget,
+} from './batching-invariants.js';
