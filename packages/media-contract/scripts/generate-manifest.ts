@@ -22,8 +22,11 @@ import { MANIFEST_OUTPUT_PATH, readContractVersion, renderManifest } from './ren
 import type { MediaError } from '../src/errors.js';
 import type { MediaRouter } from '../src/router.js';
 import type { Movie } from '../src/types/movie.js';
+import type { TvShow } from '../src/types/tv-show.js';
+import type { WatchEvent } from '../src/types/watch-event.js';
+import type { WatchlistItem } from '../src/types/watchlist-item.js';
 
-export type SurfaceAssertion = [Movie, MediaError, MediaRouter];
+export type SurfaceAssertion = [Movie, TvShow, WatchlistItem, WatchEvent, MediaError, MediaRouter];
 
 const version = readContractVersion();
 const rendered = renderManifest(version);

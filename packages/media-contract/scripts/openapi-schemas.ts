@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
 import { MovieSchema } from '../src/schemas/movie.js';
+import { TvShowSchema } from '../src/schemas/tv-show.js';
+import { WatchEventSchema } from '../src/schemas/watch-event.js';
+import { MediaKindSchema, WatchlistItemSchema } from '../src/schemas/watchlist-item.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
 const PAGINATION_SCHEMA: OpenApiSchema = {
@@ -32,7 +35,11 @@ function zodToOpenApiSchema(schema: z.ZodType): OpenApiSchema {
 export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
+    MediaKind: zodToOpenApiSchema(MediaKindSchema),
     Movie: zodToOpenApiSchema(MovieSchema),
+    TvShow: zodToOpenApiSchema(TvShowSchema),
+    WatchlistItem: zodToOpenApiSchema(WatchlistItemSchema),
+    WatchEvent: zodToOpenApiSchema(WatchEventSchema),
     CreateMovieInput: zodToOpenApiSchema(CreateMovieBodySchema),
     UpdateMovieInput: zodToOpenApiSchema(UpdateMovieBodySchema),
     MovieListResponse: {

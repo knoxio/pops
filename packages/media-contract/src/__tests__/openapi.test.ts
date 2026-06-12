@@ -44,6 +44,22 @@ describe('@pops/media-contract openapi snapshot', () => {
     expect(openapi.components.schemas).toHaveProperty('Movie');
   });
 
+  it('references the TvShow entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('TvShow');
+  });
+
+  it('references the WatchlistItem entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('WatchlistItem');
+  });
+
+  it('references the WatchEvent entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('WatchEvent');
+  });
+
+  it('references the MediaKind enum under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('MediaKind');
+  });
+
   it('describes the movies list endpoint', () => {
     const op = openapi.paths['/media/movies']?.['get'];
     expect(op).toBeDefined();
