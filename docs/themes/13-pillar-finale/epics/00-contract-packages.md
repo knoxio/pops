@@ -10,14 +10,15 @@ This is the foundation for cross-pillar type safety after the registry-based dis
 
 ## PRDs
 
-| #   | PRD                        | Summary                                                                                                                   | Status      |
-| --- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 153 | Contract package scaffold  | Per-pillar `@pops/contract-<pillar>` package shape, content boundaries, build pipeline                                    | Not started |
-| 154 | Semver enforcement CI      | A new CI job that diffs contract-package public surface area and fails the build on breaking changes without a major bump | Not started |
-| 155 | Manifest type generation   | Generate the union `<Pillar>Contract` interface from the per-feature exports so consumers have one entry point            | Not started |
-| 156 | Consumer import discipline | Lint rule: "non-owning code may not import from `@pops/<pillar>-db`"; consumers go through `@pops/contract-<pillar>`      | Not started |
+| #   | PRD                        | Summary                                                                                                                                                                                           | Status      |
+| --- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 153 | Contract package scaffold  | Per-pillar `@pops/<pillar>-contract` package shape, content boundaries, build pipeline                                                                                                            | Partial     |
+| 154 | Semver enforcement CI      | CI job that diffs contract-package public surface (TS + Zod) against last git tag and blocks PRs on mismatched bumps. Includes affected-package rebuild via turbo `--filter='...[<merge-base>]'`. | Not started |
+| 155 | Manifest type generation   | Generate the union `<Pillar>Contract` interface from the per-feature exports so consumers have one entry point                                                                                    | Not started |
+| 156 | Consumer import discipline | Lint rule: "non-owning code may not import from `@pops/<pillar>-db`"; consumers go through `@pops/<pillar>-contract`                                                                              | Not started |
+| 219 | pops-docs container        | Tiny static container serving Stoplight Elements pointed at every contract's OpenAPI spec; browseable at `/docs/`                                                                                 | Not started |
 
-PRDs 153-156 can run in parallel. 153 unblocks the rest by providing the package shape.
+PRDs 153, 154, 155, 156 can run in parallel after 153 establishes the shape. PRD-219 is independent of the rest (only depends on PRD-153 emitting OpenAPI specs); good "filler" PRD when waiting on something else.
 
 ## Dependencies
 
