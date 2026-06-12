@@ -11,9 +11,12 @@
  * else (manifest blob, contract metadata, heartbeat, status) is
  * overwritten on every register.
  *
- * Heartbeat lifecycle and missed-heartbeat status transitions are out
- * of scope (PRD-162); this service only ships the persistence + read
- * path.
+ * `recordHeartbeat` updates `lastHeartbeatAt` and resets `status` →
+ * `healthy`; `applyStatusUpdates` lets the registry's reconciliation
+ * tick (PRD-162) batch transition pillars to `unavailable` once their
+ * heartbeat has lapsed past threshold. The "should this pillar still
+ * be healthy?" decision lives in the router (`computeStatus`), not in
+ * this service — keeping the persistence layer agnostic.
  */
 import { eq, sql } from 'drizzle-orm';
 
