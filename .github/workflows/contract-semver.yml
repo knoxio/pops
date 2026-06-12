@@ -119,11 +119,38 @@ jobs:
           echo "sha=$MERGE_BASE" >> "$GITHUB_OUTPUT"
           echo "Merge base: $MERGE_BASE"
 
+      - name: Build shared packages
+        run: |
+          pnpm --filter @pops/db-types build
+          pnpm --filter @pops/types build
+          pnpm --filter @pops/module-registry build
+          pnpm --filter @pops/food-contracts build
+          pnpm --filter @pops/core-db build
+          pnpm --filter @pops/finance-db build
+          pnpm --filter @pops/inventory-db build
+          pnpm --filter @pops/media-db build
+          pnpm --filter @pops/cerebrum-db build
+          pnpm --filter @pops/food-db build
+          pnpm --filter @pops/lists-db build
+          pnpm --filter @pops/app-lists-db build
+          pnpm --filter @pops/app-food-db build
+          pnpm --filter @pops/finance-contract build
+          pnpm --filter @pops/pillar-sdk build
+          pnpm --filter @pops/media-contract build
+          pnpm --filter @pops/inventory-contract build
+          pnpm --filter @pops/cerebrum-contract build
+          pnpm --filter @pops/core-contract build
+          pnpm --filter @pops/lists-contract build
+          pnpm --filter @pops/food-contract build
+
       - name: Affected package typecheck + test via turbo
         run: |
           # `...[<merge-base>]` selects every workspace package that
           # transitively depends on a package changed since merge-base.
           # If no consumers, turbo simply runs zero tasks (pass-no-consumers).
+          # The pre-build step above closes the pillar-sdk → finance-contract
+          # gap that turbo's `^build` graph cannot see (optional peer-dep,
+          # not a workspace dep — and closing it as a devDep creates a cycle).
           pnpm turbo run typecheck test --filter="...[${{ steps.merge-base.outputs.sha }}]" --concurrency=4
 
   tag-on-bump:
