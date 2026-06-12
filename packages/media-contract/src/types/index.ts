@@ -4,3 +4,7 @@
  * schema under `schemas/`. The round-trip test enforces that they agree.
  */
 export type { Movie } from './movie.js';
+export type { TvShow } from './tv-show.js';
+export type { WatchlistItem, MediaKind } from './watchlist-item.js';
+export { MEDIA_KINDS } from './watchlist-item.js';
+export type { WatchEvent } from './watch-event.js';
