@@ -36,7 +36,7 @@
   "scripts": {
     "build": "tsc && tsx scripts/generate-openapi.ts",
     "generate:openapi": "tsx scripts/generate-openapi.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },

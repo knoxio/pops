@@ -8,7 +8,7 @@ const PAGINATION_SCHEMA: OpenApiSchema = {
   required: ['total', 'limit', 'offset'],
   properties: {
     total: { type: 'integer', minimum: 0 },
-    limit: { type: 'integer', minimum: 0 },
+    limit: { type: 'integer', minimum: 1 },
     offset: { type: 'integer', minimum: 0 },
     hasMore: { type: 'boolean' },
   },

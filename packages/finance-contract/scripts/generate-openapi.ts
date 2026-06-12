@@ -34,7 +34,7 @@
  *
  * iOS Swift codegen (different theme) consumes this committed file.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -43,7 +43,10 @@ import { buildComponentSchemas } from './openapi-schemas.js';
 
 import type { OpenApiDocument } from './openapi-types.js';
 
-const CONTRACT_VERSION = '0.1.0';
+const HERE = dirname(fileURLToPath(import.meta.url));
+const PACKAGE_JSON_PATH = resolve(HERE, '..', 'package.json');
+const PACKAGE_JSON: { version?: string } = JSON.parse(readFileSync(PACKAGE_JSON_PATH, 'utf8'));
+const CONTRACT_VERSION = PACKAGE_JSON.version ?? '0.0.0';
 
 function sortJson<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -61,7 +64,7 @@ function sortJson<T>(value: T): T {
 
 function buildDocument(): OpenApiDocument {
   return {
-    openapi: '3.1.0',
+    openapi: '3.0.3',
     info: {
       title: '@pops/finance-contract',
       description:
@@ -81,8 +84,7 @@ function main(): void {
   const document = sortJson(buildDocument());
   const serialized = `${JSON.stringify(document, null, 2)}\n`;
 
-  const here = dirname(fileURLToPath(import.meta.url));
-  const outFile = resolve(here, '..', 'openapi', 'finance.openapi.json');
+  const outFile = resolve(HERE, '..', 'openapi', 'finance.openapi.json');
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, serialized, 'utf8');
   process.stdout.write(`[finance-contract] wrote OpenAPI snapshot to ${outFile}\n`);
