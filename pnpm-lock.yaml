@@ -1813,13 +1813,13 @@ importers:
       '@pops/types':
         specifier: workspace:*
         version: link:../types
+      '@trpc/server':
+        specifier: ^11.17.0
+        version: 11.17.0(typescript@6.0.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@pops/finance-api':
-        specifier: workspace:*
-        version: link:../../apps/pops-finance-api
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -2183,13 +2183,13 @@ importers:
 
   packages/pillar-sdk:
     dependencies:
-      '@pops/finance-contract':
-        specifier: workspace:*
-        version: link:../finance-contract
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@pops/finance-contract':
+        specifier: workspace:*
+        version: link:../finance-contract
       '@tanstack/react-query':
         specifier: 5.101.0
         version: 5.101.0(react@19.2.7)
