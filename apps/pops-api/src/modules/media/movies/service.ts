@@ -1,177 +1,74 @@
-import { and, count, desc, eq, like, type SQL, sql } from 'drizzle-orm';
-
 /**
- * Movie service — CRUD operations against SQLite via Drizzle ORM.
+ * Movies wrapper — resolves the media-pillar drizzle handle and forwards to
+ * `@pops/media-db`'s `moviesService` (PRD-165 PR 3 cutover).
+ *
+ * Mirrors the shelf-impressions PR 3 pattern: in-tree callers (router.ts,
+ * library/service.ts, plex sync, watchlist push, uri-handler, …) keep
+ * importing from this file unchanged. The handle now points at the media
+ * pillar's per-pillar SQLite via `getMediaDrizzle()` instead of the shared
+ * `pops.db` singleton, so every write lands in `media.db.movies`. Reads
+ * issued from the legacy mount still serve the same rows because the
+ * backfill keeps both stores in sync until PR 4 retires the shim.
+ *
+ * Error translation: the package surface throws `MovieNotFoundError` /
+ * `MovieConflictError`. We re-throw them as the in-tree `NotFoundError` /
+ * `ConflictError` so the router's `instanceof` checks (and library/plex
+ * callers that catch the same shapes) keep working without churn.
  */
-import { movies } from '@pops/db-types';
+import {
+  moviesService,
+  MovieConflictError,
+  MovieNotFoundError,
+  type MovieListResult,
+} from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
 import type { CreateMovieInput, MovieFilters, MovieRow, UpdateMovieInput } from './types.js';
 
-/** Count + rows for a paginated list. */
-export interface MovieListResult {
-  rows: MovieRow[];
-  total: number;
-}
+export type { MovieListResult };
 
-/** List movies with optional filters. */
-export function listMovies(filters: MovieFilters, limit: number, offset: number): MovieListResult {
-  const db = getDrizzle();
-  const conditions: SQL[] = [];
-
-  if (filters.search) {
-    conditions.push(like(movies.title, `%${filters.search}%`));
-  }
-  if (filters.genre) {
-    conditions.push(
-      sql`EXISTS (SELECT 1 FROM json_each(${movies.genres}) WHERE json_each.value = ${filters.genre})`
-    );
-  }
-
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const rows = db
-    .select()
-    .from(movies)
-    .where(where)
-    .orderBy(desc(movies.releaseDate))
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  const [countRow] = db.select({ total: count() }).from(movies).where(where).all();
-
-  return { rows, total: countRow?.total ?? 0 };
-}
-
-/** Get a single movie by id. Throws NotFoundError if missing. */
-export function getMovie(id: number): MovieRow {
-  const db = getDrizzle();
-  const row = db.select().from(movies).where(eq(movies.id, id)).get();
-
-  if (!row) throw new NotFoundError('Movie', String(id));
-  return row;
-}
-
-/** Get a single movie by TMDB ID. Returns null if not found. */
-export function getMovieByTmdbId(tmdbId: number): MovieRow | null {
-  const db = getDrizzle();
-  return db.select().from(movies).where(eq(movies.tmdbId, tmdbId)).get() ?? null;
-}
-
-const MOVIE_NULLABLE_INSERT_KEYS = [
-  'imdbId',
-  'originalTitle',
-  'overview',
-  'tagline',
-  'releaseDate',
-  'runtime',
-  'status',
-  'originalLanguage',
-  'budget',
-  'revenue',
-  'posterPath',
-  'backdropPath',
-  'logoPath',
-  'posterOverridePath',
-  'voteAverage',
-  'voteCount',
-] as const satisfies ReadonlyArray<keyof CreateMovieInput & keyof typeof movies.$inferInsert>;
-
-function buildMovieInsertValues(input: CreateMovieInput): typeof movies.$inferInsert {
-  const values: Record<string, unknown> = {
-    tmdbId: input.tmdbId,
-    title: input.title,
-    genres: JSON.stringify(input.genres ?? []),
-  };
-  for (const key of MOVIE_NULLABLE_INSERT_KEYS) {
-    values[key] = input[key] ?? null;
-  }
-  return values as typeof movies.$inferInsert;
-}
-
-/** Create a new movie. Returns the created row. Throws ConflictError on duplicate tmdbId. */
-export function createMovie(input: CreateMovieInput): MovieRow {
-  const db = getDrizzle();
+function translate<T>(fn: () => T): T {
   try {
-    const result = db.insert(movies).values(buildMovieInsertValues(input)).run();
-    return getMovie(Number(result.lastInsertRowid));
+    return fn();
   } catch (err) {
-    if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
-      throw new ConflictError(`Movie with tmdbId ${input.tmdbId} already exists`);
+    if (err instanceof MovieNotFoundError) {
+      throw new NotFoundError('Movie', String(err.id));
+    }
+    if (err instanceof MovieConflictError) {
+      throw new ConflictError(`Movie with tmdbId ${err.tmdbId} already exists`);
     }
     throw err;
   }
 }
 
-const MOVIE_REQUIRED_KEYS = ['tmdbId', 'title'] as const satisfies ReadonlyArray<
-  keyof UpdateMovieInput & keyof typeof movies.$inferSelect
->;
-
-const MOVIE_NULLABLE_KEYS = [
-  'imdbId',
-  'originalTitle',
-  'overview',
-  'tagline',
-  'releaseDate',
-  'runtime',
-  'status',
-  'originalLanguage',
-  'budget',
-  'revenue',
-  'posterPath',
-  'backdropPath',
-  'logoPath',
-  'posterOverridePath',
-  'voteAverage',
-  'voteCount',
-] as const satisfies ReadonlyArray<keyof UpdateMovieInput & keyof typeof movies.$inferSelect>;
-
-function buildMovieUpdate(input: UpdateMovieInput): Partial<typeof movies.$inferSelect> | null {
-  const updates: Record<string, unknown> = {};
-  let touched = false;
-
-  for (const key of MOVIE_REQUIRED_KEYS) {
-    const value = input[key];
-    if (value === undefined) continue;
-    updates[key] = value;
-    touched = true;
-  }
-
-  for (const key of MOVIE_NULLABLE_KEYS) {
-    const value = input[key];
-    if (value === undefined) continue;
-    updates[key] = value ?? null;
-    touched = true;
-  }
-
-  if (input.genres !== undefined) {
-    updates.genres = JSON.stringify(input.genres);
-    touched = true;
-  }
-
-  if (!touched) return null;
-  updates.updatedAt = new Date().toISOString();
-  return updates as Partial<typeof movies.$inferSelect>;
+/** List movies with optional filters. */
+export function listMovies(filters: MovieFilters, limit: number, offset: number): MovieListResult {
+  return moviesService.listMovies(getMediaDrizzle(), filters, limit, offset);
 }
 
-/** Update an existing movie. Returns the updated row. */
+/** Get a single movie by id. Throws `NotFoundError` if missing. */
+export function getMovie(id: number): MovieRow {
+  return translate(() => moviesService.getMovie(getMediaDrizzle(), id));
+}
+
+/** Get a single movie by TMDB ID. Returns null if not found. */
+export function getMovieByTmdbId(tmdbId: number): MovieRow | null {
+  return moviesService.getMovieByTmdbId(getMediaDrizzle(), tmdbId);
+}
+
+/** Create a new movie. Throws `ConflictError` on duplicate tmdbId. */
+export function createMovie(input: CreateMovieInput): MovieRow {
+  return translate(() => moviesService.createMovie(getMediaDrizzle(), input));
+}
+
+/** Update an existing movie. Throws `NotFoundError` if missing. */
 export function updateMovie(id: number, input: UpdateMovieInput): MovieRow {
-  getMovie(id);
-  const updates = buildMovieUpdate(input);
-  if (updates) {
-    getDrizzle().update(movies).set(updates).where(eq(movies.id, id)).run();
-  }
-  return getMovie(id);
+  return translate(() => moviesService.updateMovie(getMediaDrizzle(), id, input));
 }
 
-/** Delete a movie by ID. Throws NotFoundError if missing. */
+/** Delete a movie by ID. Throws `NotFoundError` if missing. */
 export function deleteMovie(id: number): void {
-  // Verify it exists first
-  getMovie(id);
-
-  const result = getDrizzle().delete(movies).where(eq(movies.id, id)).run();
-  if (result.changes === 0) throw new NotFoundError('Movie', String(id));
+  translate(() => moviesService.deleteMovie(getMediaDrizzle(), id));
 }
