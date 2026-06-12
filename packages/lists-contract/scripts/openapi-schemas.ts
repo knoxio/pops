@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
+import { AgendaItemSchema } from '../src/schemas/agenda-item.js';
 import { ListItemSchema } from '../src/schemas/list-item.js';
+import { ProjectSchema } from '../src/schemas/project.js';
+import { TagSchema } from '../src/schemas/tag.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
 const PAGINATION_SCHEMA: OpenApiSchema = {
@@ -31,7 +34,10 @@ function zodToOpenApiSchema(schema: z.ZodType): OpenApiSchema {
 export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
+    AgendaItem: zodToOpenApiSchema(AgendaItemSchema),
     ListItem: zodToOpenApiSchema(ListItemSchema),
+    Project: zodToOpenApiSchema(ProjectSchema),
+    Tag: zodToOpenApiSchema(TagSchema),
     CreateListItemInput: zodToOpenApiSchema(CreateListItemBodySchema),
     UpdateListItemInput: zodToOpenApiSchema(UpdateListItemBodySchema),
     ListItemListResponse: {
