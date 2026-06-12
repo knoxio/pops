@@ -1,0 +1,150 @@
+name: Contract Semver
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/*-contract/**"
+      - "scripts/contract/**"
+      - ".github/workflows/contract-semver.yml"
+  pull_request:
+    paths:
+      - "packages/*-contract/**"
+      - "scripts/contract/**"
+      - ".github/workflows/contract-semver.yml"
+
+concurrency:
+  group: contract-semver-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  semver-and-drift:
+    name: Semver + drift check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Full history + all tags so `loadBaseline()` can resolve
+          # `contract-<pillar>@v*`. PRs need merge-base to be reachable
+          # for `turbo --filter='...[merge-base]'` later.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared prerequisites
+        run: |
+          pnpm --filter @pops/db-types build
+          pnpm --filter @pops/types build
+          pnpm --filter @pops/module-registry build
+          pnpm --filter @pops/food-contracts build
+          pnpm --filter @pops/core-db build
+          pnpm --filter @pops/finance-db build
+          pnpm --filter @pops/inventory-db build
+          pnpm --filter @pops/media-db build
+          pnpm --filter @pops/cerebrum-db build
+          pnpm --filter @pops/food-db build
+          pnpm --filter @pops/lists-db build
+          pnpm --filter @pops/app-lists-db build
+          pnpm --filter @pops/app-food-db build
+          pnpm --filter @pops/pillar-sdk build
+          pnpm --filter @pops/finance-contract build
+
+      - name: Regenerate snapshots (in-place)
+        run: pnpm --filter @pops/finance-contract extract:all
+
+      - name: Fail on uncommitted snapshot drift
+        run: |
+          if ! git diff --quiet -- 'packages/*-contract/etc/'; then
+            echo "::error::Contract snapshots in etc/ drifted from a fresh emission."
+            echo "Run \`pnpm -F @pops/finance-contract extract:all\` and commit the result."
+            git --no-pager diff -- 'packages/*-contract/etc/'
+            exit 1
+          fi
+
+      - name: Fail on OpenAPI drift
+        run: |
+          if ! git diff --quiet -- 'packages/*-contract/openapi/'; then
+            echo "::error::Committed OpenAPI snapshot drifted from a fresh emission."
+            echo "Run \`pnpm -F @pops/finance-contract build\` and commit openapi/finance.openapi.json."
+            git --no-pager diff -- 'packages/*-contract/openapi/'
+            exit 1
+          fi
+
+      - name: Diff vs baseline tag
+        run: pnpm tsx scripts/contract/diff-contract.ts --pillar finance
+
+  affected-rebuild:
+    name: Affected rebuild (turbo --filter='...[<merge-base>]')
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Compute merge-base
+        id: merge-base
+        run: |
+          # PR's base ref vs HEAD. The fetch-depth: 0 above guarantees
+          # both sides are present; merge-base anchors the diff to the
+          # branch's actual fork point, not main's tip.
+          BASE_REF="origin/${{ github.event.pull_request.base.ref }}"
+          MERGE_BASE="$(git merge-base "$BASE_REF" HEAD)"
+          echo "sha=$MERGE_BASE" >> "$GITHUB_OUTPUT"
+          echo "Merge base: $MERGE_BASE"
+
+      - name: Affected package typecheck + test via turbo
+        run: |
+          # `...[<merge-base>]` selects every workspace package that
+          # transitively depends on a package changed since merge-base.
+          # If no consumers, turbo simply runs zero tasks (pass-no-consumers).
+          pnpm turbo run typecheck test --filter="...[${{ steps.merge-base.outputs.sha }}]" --concurrency=4
+
+  tag-on-bump:
+    name: Tag contract bumps
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Plan + apply tags
+        run: pnpm tsx scripts/contract/tag-on-bump.ts --rev HEAD

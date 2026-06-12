@@ -36,6 +36,10 @@
   "scripts": {
     "build": "tsc && tsx scripts/generate-openapi.ts",
     "generate:openapi": "tsx scripts/generate-openapi.ts",
+    "extract:ts": "tsc && tsx ../../scripts/contract/extract-cli.ts --pillar finance --kind ts",
+    "extract:zod": "tsc && tsx ../../scripts/contract/extract-cli.ts --pillar finance --kind zod",
+    "extract:all": "tsc && tsx ../../scripts/contract/extract-cli.ts --pillar finance --kind all",
+    "diff:contract": "tsx ../../scripts/contract/diff-contract.ts --pillar finance",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest"
