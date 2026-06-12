@@ -14,6 +14,7 @@ import { openCoreDb } from '@pops/core-db';
 
 import { createCoreApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
+import { reconcileRegistryOnBoot } from './modules/registry/boot.js';
 import { startHeartbeatTicker } from './modules/registry/ticker.js';
 import { parseBareOrigin } from './pillars/env.js';
 
@@ -39,6 +40,9 @@ const selfBaseUrl = parseBareOrigin(
 );
 
 const coreDb = openCoreDb(resolveCoreSqlitePath());
+
+reconcileRegistryOnBoot(coreDb.db);
+
 const app = createCoreApiApp({ coreDb, version, selfBaseUrl });
 
 const server = app.listen(port, () => {
