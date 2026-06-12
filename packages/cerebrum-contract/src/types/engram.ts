@@ -1,17 +1,30 @@
 /**
- * Pilot entity for `@pops/cerebrum-contract`. This is a deliberate stub
- * shape — id/content/lastEditedTime — sized to exercise the round-trip
- * tests + manifest + OpenAPI generators without committing the contract
- * to the full surface of the live cerebrum domain types. The production
- * shape migrates in a follow-up PRD-153 US-07-style content migration
- * for cerebrum.
+ * A cerebrum engram — a memory unit the cerebrum pillar stores. Mirrors
+ * the API response (camelCase) for the cerebrum pillar.
  *
- * `lastEditedTime` is an ISO-8601 timestamp validated by `EngramSchema`
- * via `.datetime()`.
+ * Contract shape is narrower than the live persistence row: the runtime
+ * type today (`apps/pops-api/src/modules/cerebrum/engrams/types.ts`)
+ * carries filesystem/template-registry/scope-rule-engine internals
+ * (`filePath`, `contentHash`, `wordCount`, `customFields`, `template`,
+ * `status`, `source`, etc.) that are deliberately not part of the wire
+ * surface. It also exposes multiple `scopes` and `tags` arrays where the
+ * contract pins a single `scopeId` reference and a stable `tagIds`
+ * reference list. The runtime API today emits the legacy fields; this
+ * contract pins the intended shape downstream consumers should code
+ * against. The row mapper translates.
  */
 export interface Engram {
   id: string;
   content: string;
+  parentId: string | null;
+  /**
+   * Stable identifiers for the tags attached to this engram. Empty array
+   * when the engram has no tags. Order is preserved from the source row.
+   */
+  tagIds: readonly string[];
+  scopeId: string | null;
+  /** ISO-8601 timestamp. Validated by `EngramSchema` via `.datetime()`. */
+  createdAt: string;
   /** ISO-8601 timestamp. Validated by `EngramSchema` via `.datetime()`. */
   lastEditedTime: string;
 }

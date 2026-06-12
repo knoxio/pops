@@ -4,3 +4,5 @@
  * schema under `schemas/`. The round-trip test enforces that they agree.
  */
 export type { Engram } from './engram.js';
+export type { Nudge, NudgeStatus } from './nudge.js';
+export type { Scope } from './scope.js';
