@@ -9,6 +9,7 @@
 import { join } from 'node:path';
 
 import { getDrizzle } from '../../db.js';
+import { getCerebrumDrizzle } from '../../db/cerebrum-handle.js';
 import { ScopeRuleEngine } from './engrams/scope-rules.js';
 import { EngramService } from './engrams/service.js';
 import { TemplateRegistry } from './templates/registry.js';
@@ -53,11 +54,21 @@ export function getScopeRuleEngine(): ScopeRuleEngine {
   return cachedScopeRuleEngine;
 }
 
-/** Build an EngramService bound to the current request's drizzle context. */
+/**
+ * Build an EngramService bound to the current request's drizzle context.
+ *
+ * `db` is the shared `pops.db` handle (writes + read-after-write);
+ * `readDb` is the cerebrum pillar's `cerebrum.db` handle (pure reads).
+ * PRD-179 PR 2 — the read seam routes through `@pops/cerebrum-db`'s
+ * `engramsService` against `readDb`; writes still land on `pops.db`
+ * until PRD-179 US-03 flips them too. See `EngramService` top-of-file
+ * JSDoc for the cross-store consistency contract.
+ */
 export function getEngramService(): EngramService {
   return new EngramService({
     root: getEngramRoot(),
     db: getDrizzle(),
+    readDb: getCerebrumDrizzle(),
     templates: getTemplateRegistry(),
     scopeRuleEngine: getScopeRuleEngine(),
   });
