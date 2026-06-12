@@ -52,7 +52,7 @@ export async function bootstrapPillar(
 
   mountHealthRoute(options.app, manifest, logger);
 
-  await registerWithRetry({
+  const registration = await registerWithRetry({
     transport,
     manifest,
     logger,
@@ -63,7 +63,7 @@ export async function bootstrapPillar(
   });
 
   return startRuntime({
-    manifest,
+    pillarId: registration.pillarId,
     transport,
     logger,
     heartbeatMs,
@@ -73,7 +73,7 @@ export async function bootstrapPillar(
 }
 
 interface StartRuntimeArgs {
-  manifest: ManifestPayload;
+  pillarId: string;
   transport: RegistryTransport;
   logger: BootstrapLogger;
   heartbeatMs: number;
@@ -85,9 +85,9 @@ function startRuntime(args: StartRuntimeArgs): PillarBootstrapHandle {
   let stopped = false;
   const interval = args.setIntervalImpl(() => {
     if (stopped) return;
-    args.transport.heartbeat(args.manifest.pillar).catch((err: unknown) => {
+    args.transport.heartbeat(args.pillarId).catch((err: unknown) => {
       args.logger.warn('[pillar-sdk] heartbeat failed', {
-        pillar: args.manifest.pillar,
+        pillar: args.pillarId,
         err: errSummary(err),
       });
     });
@@ -98,21 +98,21 @@ function startRuntime(args: StartRuntimeArgs): PillarBootstrapHandle {
   }
 
   args.logger.info('[pillar-sdk] pillar bootstrapped', {
-    pillar: args.manifest.pillar,
+    pillar: args.pillarId,
     heartbeatMs: args.heartbeatMs,
   });
 
   return {
-    pillarId: args.manifest.pillar,
+    pillarId: args.pillarId,
     async stop() {
       if (stopped) return;
       stopped = true;
       args.clearIntervalImpl(interval);
       try {
-        await args.transport.unregister(args.manifest.pillar);
+        await args.transport.unregister(args.pillarId);
       } catch (err) {
         args.logger.warn('[pillar-sdk] unregister failed (best-effort)', {
-          pillar: args.manifest.pillar,
+          pillar: args.pillarId,
           err: errSummary(err),
         });
       }

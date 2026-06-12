@@ -3,7 +3,11 @@ import {
   PillarRegistrationFailedError,
   PillarRegistrationRejectedError,
 } from './errors.js';
-import { RegistryTransportError, type RegistryTransport } from './transport.js';
+import {
+  RegistryTransportError,
+  type RegistrationResult,
+  type RegistryTransport,
+} from './transport.js';
 
 import type { ManifestPayload } from '../manifest-schema/schema.js';
 import type { BootstrapLogger } from './logger.js';
@@ -18,19 +22,19 @@ export interface RegisterWithRetryArgs {
   setTimeoutImpl: typeof setTimeout;
 }
 
-export async function registerWithRetry(args: RegisterWithRetryArgs): Promise<void> {
+export async function registerWithRetry(args: RegisterWithRetryArgs): Promise<RegistrationResult> {
   let attempt = 0;
   let lastErr: unknown;
 
   while (attempt < args.maxAttempts) {
     attempt += 1;
     try {
-      await args.transport.register(args.manifest);
+      const result = await args.transport.register(args.manifest);
       args.logger.info('[pillar-sdk] registered with registry', {
-        pillar: args.manifest.pillar,
+        pillar: result.pillarId,
         attempt,
       });
-      return;
+      return result;
     } catch (err) {
       lastErr = err;
       if (err instanceof RegistryTransportError && !err.retriable) {

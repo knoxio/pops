@@ -19,7 +19,14 @@ export interface RegistryTransport {
 export interface HttpRegistryTransportOptions {
   baseUrl: string;
   fetchImpl?: typeof fetch;
+  /**
+   * Per-request timeout in milliseconds. Prevents a hung TCP connection
+   * from blocking pillar boot or shutdown indefinitely. Defaults to 10s.
+   */
+  timeoutMs?: number;
 }
+
+const DEFAULT_TIMEOUT_MS = 10_000;
 
 export class RegistryTransportError extends Error {
   readonly status: number;
@@ -53,17 +60,23 @@ export function createHttpRegistryTransport(
 ): RegistryTransport {
   const baseUrl = options.baseUrl.replace(/\/+$/, '');
   const fetchImpl = options.fetchImpl ?? fetch;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   async function post<T>(path: string, body: unknown): Promise<T> {
     let response: Response;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       response = await fetchImpl(`${baseUrl}${path}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
     } catch (err) {
       throw new RegistryNetworkError(`POST ${path} failed`, err);
+    } finally {
+      clearTimeout(timer);
     }
 
     if (response.ok) {
