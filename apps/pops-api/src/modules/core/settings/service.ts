@@ -1,33 +1,47 @@
-import { count, eq, inArray, like } from 'drizzle-orm';
-
 /**
- * Settings service — key-value store for application configuration
+ * Settings wrapper — resolves the core-pillar drizzle handle and forwards
+ * to `@pops/core-db`'s `settingsService` (PRD-183 PR 2 cutover).
+ *
+ * Mirrors the movies / shelf-impressions cutover pattern: in-tree callers
+ * (router.ts plus ~45 modules across pops-api) keep importing from this
+ * file unchanged. The handle now points at the core pillar's per-pillar
+ * SQLite via `getCoreDrizzle()` instead of the shared `pops.db` singleton,
+ * so every settings read/write lands in `core.db.settings`. The legacy
+ * mount still serves the same rows because the core backfill keeps both
+ * stores in sync until the shim is retired.
+ *
+ * Error translation: the package surface throws `SettingNotFoundError`.
+ * We re-throw it as the in-tree `NotFoundError` so the router's
+ * `instanceof` checks (and callers that catch the same shape) keep
+ * working without churn.
  */
-import { settings } from '@pops/db-types';
+import { SettingNotFoundError, settingsService } from '@pops/core-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
 
 import type { SettingsKey } from './keys.js';
 import type { SetSettingInput, SettingRow } from './types.js';
 
+function translate<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (err instanceof SettingNotFoundError) {
+      throw new NotFoundError('Setting', err.key);
+    }
+    throw err;
+  }
+}
+
 /** Get a single setting by key */
 export function getSetting(key: SettingsKey): SettingRow {
-  const db = getDrizzle();
-  const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
-
-  if (!row) {
-    throw new NotFoundError('Setting', key);
-  }
-
-  return row;
+  return translate(() => settingsService.getSetting(getCoreDrizzle(), key));
 }
 
 /** Get a single setting by key, returning null if not found */
 export function getSettingOrNull(key: SettingsKey | string): SettingRow | null {
-  const db = getDrizzle();
-  const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
-  return row ?? null;
+  return settingsService.getSettingOrNull(getCoreDrizzle(), key);
 }
 
 /** List settings with optional search filter */
@@ -36,27 +50,12 @@ export function listSettings(
   limit: number,
   offset: number
 ): { rows: SettingRow[]; total: number } {
-  const db = getDrizzle();
-
-  const condition = search ? like(settings.key, `%${search}%`) : undefined;
-
-  const [countResult] = db.select({ count: count() }).from(settings).where(condition).all();
-
-  const rows = db
-    .select()
-    .from(settings)
-    .where(condition)
-    .orderBy(settings.key)
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  return { rows, total: countResult?.count ?? 0 };
+  return settingsService.listSettings(getCoreDrizzle(), search, limit, offset);
 }
 
 /** Set a setting value (upsert — creates or updates) */
 export function setSetting(input: SetSettingInput): SettingRow {
-  return setRawSetting(input.key, input.value);
+  return translate(() => settingsService.setSetting(getCoreDrizzle(), input));
 }
 
 /**
@@ -66,49 +65,17 @@ export function setSetting(input: SetSettingInput): SettingRow {
  * the key is one of the typed `SettingsKey` values.
  */
 export function setRawSetting(key: string, value: string): SettingRow {
-  const db = getDrizzle();
-
-  db.insert(settings)
-    .values({ key, value })
-    .onConflictDoUpdate({
-      target: settings.key,
-      set: { value },
-    })
-    .run();
-
-  const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
-  if (!row) {
-    throw new NotFoundError('Setting', key);
-  }
-  return row;
+  return translate(() => settingsService.setRawSetting(getCoreDrizzle(), key, value));
 }
 
 /** Get multiple settings by key — missing keys are omitted from the result */
 export function getBulkSettings(keys: string[]): Record<string, string> {
-  if (keys.length === 0) return {};
-  const db = getDrizzle();
-  const uniqueKeys = [...new Set(keys)];
-  const rows = db.select().from(settings).where(inArray(settings.key, uniqueKeys)).all();
-  const result: Record<string, string> = {};
-  for (const row of rows) result[row.key] = row.value;
-  return result;
+  return settingsService.getBulkSettings(getCoreDrizzle(), keys);
 }
 
 /** Write multiple settings in a single transaction — rolls back all on any failure */
 export function setBulkSettings(entries: { key: string; value: string }[]): Record<string, string> {
-  const db = getDrizzle();
-  db.transaction((tx) => {
-    for (const { key, value } of entries) {
-      tx.insert(settings)
-        .values({ key, value })
-        .onConflictDoUpdate({ target: settings.key, set: { value } })
-        .run();
-    }
-  });
-  // Echo the written values back — no re-read needed
-  const result: Record<string, string> = {};
-  for (const { key, value } of entries) result[key] = value;
-  return result;
+  return settingsService.setBulkSettings(getCoreDrizzle(), entries);
 }
 
 /**
@@ -116,21 +83,16 @@ export function setBulkSettings(entries: { key: string; value: string }[]): Reco
  * database or if the settings table is not available. This is the preferred way
  * for modules to consume settings — it avoids throwing on missing keys and
  * keeps the default co-located with the call site.
+ *
+ * Wraps the package surface in a try/catch so callers that fire early at
+ * boot (before the per-pillar handle is available, or against test
+ * fixtures that omit the settings table) gracefully degrade to the
+ * hardcoded fallback instead of bubbling a SQLite error.
  */
 export function getSettingValue<T extends string | number>(key: string, fallback: T): T {
   try {
-    const db = getDrizzle();
-    const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
-    if (!row) return fallback;
-    // Coerce to the same primitive type as the fallback.
-    if (typeof fallback === 'number') {
-      const parsed = Number(row.value);
-      return (Number.isNaN(parsed) ? fallback : parsed) as T;
-    }
-    return row.value as T;
+    return settingsService.getSettingValue(getCoreDrizzle(), key, fallback);
   } catch {
-    // Settings table may not exist in test databases or during early
-    // bootstrapping — gracefully degrade to the hardcoded fallback.
     return fallback;
   }
 }
@@ -172,10 +134,5 @@ export function getAiModel(overrideKey: AiModelOverrideKey, fallback: string): s
 
 /** Delete a setting by key */
 export function deleteSetting(key: SettingsKey): void {
-  const db = getDrizzle();
-  const result = db.delete(settings).where(eq(settings.key, key)).run();
-
-  if (result.changes === 0) {
-    throw new NotFoundError('Setting', key);
-  }
+  translate(() => settingsService.deleteSetting(getCoreDrizzle(), key));
 }
