@@ -55,6 +55,7 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 | 155 manifest type generation (finance pilot) | 4 (parallel with 158) | `a:manifest-gen`      |
 | 191 client surface                           | 5                     | `a:client-sdk`        |
 | 192 server surface                           | 5 (parallel with 191) | `a:server-sdk`        |
+| 220 CI path-filter audit                     | 1 (parallel with 153) | `a:ci-lean-1`         |
 
 **Wave 1 exit criteria:**
 
@@ -63,6 +64,7 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 - `pillar('finance').wishlist.list({})` works end-to-end from pops-shell (or a test harness)
 - Contract semver CI (PRD-154) catches at least one synthetic breaking change in tests
 - Import discipline lint (PRD-156) baseline is committed
+- Docs-only PR fires ≤ 4 required checks (PRD-220)
 
 **Wave 1 duration:** 6-8 weeks.
 
@@ -388,6 +390,89 @@ Status legend: ⏳ Not started · 🔄 In progress · ✅ Done · ⛔ Blocked
 | 219     | docs-swagger-container           | 2    | ⏳     | 153                    | dev ergonomics                 |
 | 184     | core-tag-rules-cleanup           | 3    | ⏳     | 206                    | core cleanup                   |
 | 185     | core-corrections-cleanup         | 3    | ⏳     | 206                    | core cleanup                   |
+| 220     | ci-path-filter-audit             | 1    | ⏳     | independent            | CI leanness wave 1             |
+| 221     | ci-affected-rebuild              | 2    | ⏳     | 220                    | CI leanness wave 2             |
+| 222     | ci-docs-fast-path                | 2    | ⏳     | 220                    | CI leanness wave 2             |
+| 223     | ci-pillar-isolation              | 3    | ⏳     | 221                    | CI leanness wave 3             |
+| 224     | ci-e2e-scoping                   | 3    | ⏳     | 221                    | CI leanness wave 3             |
+| 225     | ci-publish-narrowing             | 4    | ⏳     | 221                    | CI leanness wave 4             |
+| 226     | ci-budget-enforcement            | 5    | ⏳     | 220-225                | CI leanness wave 5             |
+
+---
+
+## CI leanness (continuous track, runs across all waves)
+
+The pillar split is not just a runtime decoupling — it's also the opportunity to collapse the **PR turnaround time** by making CI fire only the jobs that can plausibly fail given the diff. A finance contract bump shouldn't run media's Playwright suite or rebuild the food worker image. Hold this discipline from PR-1.
+
+This track runs in parallel with the 5 waves, with a deliverable per wave so leanness compounds.
+
+### North-star budget
+
+Steady-state targets — measured as the wall-clock time from `git push` to all required checks green on a typical PR.
+
+| Change shape                                              | Target   | Today   | Notes                                                                                     |
+| --------------------------------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------- |
+| Docs-only PR (`docs/**`, `*.md`)                          | ≤ 30s    | ~3 min  | Only docs lint + format. Everything else skipped.                                         |
+| Contract package change (`packages/<pillar>-contract/**`) | ≤ 1 min  | ~5 min  | Contract typecheck + tests + semver CI (PRD-154). No app rebuilds, no E2E.                |
+| Single-pillar API/DB change                               | ≤ 3 min  | ~6 min  | That pillar's `*-api-quality` + `*-db-quality` + workspace lint/format/module boundaries. |
+| Single FE-package change                                  | ≤ 5 min  | ~10 min | That FE quality workflow + Playwright suite scoped to that app.                           |
+| Cross-pillar refactor (worker, search, AI)                | ≤ 8 min  | ~12 min | Affected pillars + workspace gates. Still narrower than today's "everything".             |
+| `main` push (publish path)                                | ≤ 10 min | ~15 min | Required for fast watchtower-friendly rollout.                                            |
+
+The "today" column is a rough field measurement on PR #2944 (a contract-only change that nonetheless triggered E2E + Docker Build + worker-food image). Re-measure at every wave gate.
+
+### Inventory of current bloat
+
+What fires when it shouldn't, as of PR #2944:
+
+| Workflow                   | Trigger today                                                                   | Problem                                                                                     | Fix                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `quality.yml`              | every PR, no `paths`                                                            | Full workspace `pnpm lint` + format + module boundaries + duplication on docs-only PRs      | Add `paths` for code paths; keep lint cheap by routing to per-pkg lint via turbo `--filter` |
+| `fe-test-e2e.yml`          | `paths: packages/**`                                                            | Fires on every contract / DB / unrelated package change                                     | Narrow to `apps/pops-shell/**`, `apps/pops-api/**`, `packages/ui/**`, `packages/app-*/**`   |
+| `pillar-images.yml`        | `paths: packages/**` + matrix over ALL pillars                                  | A finance-only change rebuilds the media/cerebrum/inventory/food/lists/core pillar builders | Per-pillar trigger: `packages/<pillar>-*/**` → matrix-of-one (or skip with `if`)            |
+| `worker-food-image.yml`    | runs on PR; no observed `paths` skip in `Detect changes`                        | Builds the food worker image for unrelated PRs                                              | Path-filter to food touch points only                                                       |
+| `docker-build.yml`         | runs `Validate Docker builds` on any PR                                         | Validates compose for unrelated PRs                                                         | Path-filter to `Dockerfile`, `infra/docker*`, `pnpm-lock.yaml`                              |
+| Per-pillar Quality (×7)    | each fires `Detect changes` then `quality / Typecheck`/`Test` even when skipped | The `Detect changes` step costs ~5s × 14 jobs = ~70s of wasted minutes per PR               | Skip the entire job at the workflow `if:` level when filter is false                        |
+| API Tests (`api-test.yml`) | runs `Frozen Migrations Check` + Backend Tests                                  | Fires on contract-only PRs that can't break backend migrations                              | Path-filter same as `api-quality`                                                           |
+
+### Per-wave deliverables
+
+| Wave | Leanness deliverable                                                                                                                                                                                                                                                                                  | Owner agent    |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1    | **PRD-220** `ci-path-filter-audit`: extend `paths:` to every workflow (close the per-pillar filters; carve out `quality.yml`; skip whole jobs on miss)                                                                                                                                                | `a:ci-lean-1`  |
+| 2    | **PRD-221** `ci-affected-rebuild`: wire turbo `--filter='...[origin/main]'` into a single `affected-rebuild` job that decides which pillar workflows can be skipped _globally_. Replaces N per-pillar `Detect changes` jobs with one. Feeds matrix outputs to pillar-images / fe-test-e2e / api-test. | `a:ci-lean-2`  |
+| 2    | **PRD-222** `ci-docs-fast-path`: docs-only PRs (path matches `docs/**`, `*.md`, `README.md`) hit a `docs-only` workflow that runs markdown lint + link check and short-circuits everything else with a "no-op success" check that satisfies branch protection.                                        | `a:ci-lean-2b` |
+| 3    | **PRD-223** `ci-pillar-isolation`: per-pillar matrix in `pillar-images.yml` becomes `matrix: include: [{ pillar: changed }]` — driven by the affected-rebuild output, not by full enumeration.                                                                                                        | `a:ci-lean-3`  |
+| 3    | **PRD-224** `ci-e2e-scoping`: Playwright suites are tagged by pillar (`@finance`, `@media`, etc.); the E2E job runs only the tagged subset for the affected pillars. Hard requirement: a finance-only PR runs 0 media E2E tests.                                                                      | `a:ci-lean-3b` |
+| 4    | **PRD-225** `ci-publish-narrowing`: `publish-images.yml` only publishes images whose contents actually changed since the previous main commit (turbo affected-hash check). Watchtower stops thrashing on rebuilds-of-nothing.                                                                         | `a:ci-lean-4`  |
+| 5    | **PRD-226** `ci-budget-enforcement`: a CI check that fails the PR if any required check exceeds its budget (per the table above) by >50%. Forces drift detection on the leanness gains.                                                                                                               | `a:ci-lean-5`  |
+
+PRD numbers continue the global counter from PRD-219; record in the [full checklist](#full-prd-checklist) as they're added.
+
+### Per-wave gate additions
+
+These are added to the existing wave gates — they don't replace anything, they extend.
+
+- **Gate 1 → 2:** A docs-only PR shows ≤ 4 required checks (down from ~20+).
+- **Gate 2 → 3:** A single-pillar API PR shows ≤ 6 required checks; affected-rebuild orchestrator job is live on `main`.
+- **Gate 3 → 4:** Cross-pillar refactor PR triggers exactly the affected pillars' workflows — measured via the `affected` matrix output recorded in the PR description.
+- **Gate 4 → 5:** Watchtower rollout time on a single-pillar publish is ≤ 5 min (down from ~10 min today).
+- **Gate 5:** Budget enforcement check (PRD-226) is green on the final theme-13 retrospective PR.
+
+### Principles for every PRD this theme
+
+1. **Path-filter every new workflow at the trigger level.** Add `paths:` (or `paths-ignore:`) to the `pull_request:` AND `push: branches: [main]` triggers — both apply on PRs and on `main`. If the workflow is a **required** branch-protection check, also add a `dorny/paths-filter` _job-level_ gate so the workflow still runs (to mark the required check green) but skips the heavy steps when the trigger filter alone would have skipped it. Required-check workflows must always satisfy branch protection; not-required ones can skip outright via the trigger-level filter and don't need the job-level gate.
+2. **Skip at the job, not the step.** The current `_pkg-check.yml` skips individual steps with `if:` — that still spins up the runner. Skip the whole job with `if: needs.changes.outputs.relevant == 'true'` and let the dependent check pass automatically.
+3. **Don't add a new "check all pillars" matrix.** Use the affected-rebuild output once PRD-221 lands; until then, route per-pillar logic through the per-pillar workflow files.
+4. **Measure before merging.** When you open a PR, glance at the required checks list. If your "small fix" fires >10 checks, the path filter for one of them is wrong — open a follow-up PR-220-series ticket.
+5. **No "just to be safe" reruns.** A flaky test means the test is wrong, not that we should rerun on every PR. PRD-226's budget enforcement will fail PRs that rerun gratuitously.
+
+### Anti-patterns to reject in review
+
+- A new workflow file without `paths:` filter.
+- A new step in `quality.yml` that runs `pnpm <something>` across the workspace.
+- A new "for parity, also run on this branch" trigger added to fix a missed regression — that regression is a test gap, not a CI scope gap.
+- Adding `pull_request:` with no filter and explaining "it's a quick job" in the PR description.
 
 ---
 
@@ -456,3 +541,4 @@ After Theme 13, the next theme is whatever you decide. Mobile (per the existing 
 - **Each wave has hard quality gates; don't paper over failed gates.**
 - **The critical path is PRD-153 → 157 → 161 → 158 → 191 — that's the load-bearing five.**
 - **Theme 12's CI patterns + the new contract semver CI together catch ~95% of regressions before merge.**
+- **CI leanness is a parallel track, not a Wave 5 afterthought.** Every wave ships a PRD that narrows CI scope; by Wave 3 a single-pillar PR fires ≤ 6 checks (down from ~20+).
