@@ -18,6 +18,9 @@ on:
       - "packages/types/**"
       - ".github/workflows/fe-quality.yml"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
 
 jobs:
   changes:

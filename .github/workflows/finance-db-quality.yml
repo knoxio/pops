@@ -4,11 +4,15 @@ on:
   push:
     branches: [main]
     paths:
+      - "packages/finance-contract/**"
       - "packages/finance-db/**"
       - "packages/db-types/**"
       - ".github/workflows/finance-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
 
 jobs:
   changes:
@@ -24,6 +28,7 @@ jobs:
         with:
           filters: |
             relevant:
+              - 'packages/finance-contract/**'
               - 'packages/finance-db/**'
               - 'packages/db-types/**'
               - '.github/workflows/finance-db-quality.yml'

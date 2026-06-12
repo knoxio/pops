@@ -7,6 +7,9 @@ on:
       - "infra/litestream/**"
       - ".github/workflows/infra-lint.yml"
   pull_request:
+    paths:
+      - "infra/litestream/**"
+      - ".github/workflows/infra-lint.yml"
 
 jobs:
   changes:

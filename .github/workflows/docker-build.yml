@@ -2,24 +2,31 @@ name: Docker Build
 
 on:
   pull_request:
+    paths:
+      - "infra/docker*/**"
+      - "infra/docker-compose*.yml"
+      - "**/Dockerfile"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig.base.json"
+      - ".github/workflows/docker-build.yml"
   push:
     branches: [main]
     paths:
-      - "apps/pops-api/**"
-      - "apps/pops-shell/**"
-      - "apps/pops-mcp/**"
-      - "apps/pops-core-api/**"
-      - "apps/pops-finance-api/**"
-      - "apps/pops-inventory-api/**"
-      - "apps/pops-media-api/**"
-      - "apps/pops-cerebrum-api/**"
-      - "apps/pops-food-api/**"
-      - "apps/pops-lists-api/**"
-      - "packages/**"
+      - "infra/docker*/**"
       - "infra/docker-compose*.yml"
+      - "**/Dockerfile"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig.base.json"
       - ".github/workflows/docker-build.yml"
+
+# Workflow-level filter keeps `Validate Docker builds` off docs/code-only
+# PRs entirely. Per-pillar code is validated by `pillar-images.yml` and
+# the `*-api-quality.yml` workflows — this job only re-validates the
+# Dockerfile + compose surfaces. (Theme 13 PRD-220.)
 
 jobs:
   changes:
@@ -36,19 +43,12 @@ jobs:
         with:
           filters: |
             docker:
-              - 'apps/pops-api/**'
-              - 'apps/pops-shell/**'
-              - 'apps/pops-mcp/**'
-              - 'apps/pops-core-api/**'
-              - 'apps/pops-finance-api/**'
-              - 'apps/pops-inventory-api/**'
-              - 'apps/pops-media-api/**'
-              - 'apps/pops-cerebrum-api/**'
-              - 'apps/pops-food-api/**'
-              - 'apps/pops-lists-api/**'
-              - 'packages/**'
+              - '**/Dockerfile'
+              - 'infra/docker*/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'tsconfig.base.json'
               - '.github/workflows/docker-build.yml'
             compose:
               - 'infra/docker-compose*.yml'

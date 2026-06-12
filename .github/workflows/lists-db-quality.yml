@@ -10,6 +10,9 @@ on:
       - ".github/workflows/lists-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
 
 jobs:
   changes:

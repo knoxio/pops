@@ -10,10 +10,33 @@ name: Pillar Images
 
 on:
   pull_request:
+    paths:
+      - 'apps/pops-*-api/**'
+      - 'packages/*-api/**'
+      - 'packages/*-db/**'
+      - 'packages/*-contract/**'
+      - 'packages/db-types/**'
+      - 'packages/types/**'
+      - 'packages/module-registry/**'
+      - 'packages/food-contracts/**'
+      - 'infra/docker/pillar.Dockerfile'
+      - 'infra/docker-compose*.yml'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.base.json'
+      - '.github/workflows/pillar-images.yml'
   push:
     branches: [main]
     paths:
-      - 'packages/**'
+      - 'apps/pops-*-api/**'
+      - 'packages/*-api/**'
+      - 'packages/*-db/**'
+      - 'packages/*-contract/**'
+      - 'packages/db-types/**'
+      - 'packages/types/**'
+      - 'packages/module-registry/**'
+      - 'packages/food-contracts/**'
       - 'infra/docker/pillar.Dockerfile'
       - 'infra/docker-compose*.yml'
       - 'pnpm-lock.yaml'
@@ -63,10 +86,39 @@ jobs:
         pillar: ${{ fromJson(needs.discover.outputs.pillars) }}
     steps:
       - uses: actions/checkout@v6
+
+      # Per-pillar path filter: a finance-only change should not rebuild
+      # the media/inventory/cerebrum/food/lists/core builders. Shared
+      # surfaces (the Dockerfile, root manifests, the workflow file) still
+      # trigger every pillar — anything else gates by pillar prefix.
+      - id: pillar-changes
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            relevant:
+              - 'apps/pops-${{ matrix.pillar.short }}-api/**'
+              - 'packages/${{ matrix.pillar.short }}-*/**'
+              - 'packages/app-${{ matrix.pillar.short }}-*/**'
+              - 'packages/db-types/**'
+              - 'packages/types/**'
+              - 'packages/module-registry/**'
+              - 'infra/docker/pillar.Dockerfile'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'tsconfig.base.json'
+              - '.github/workflows/pillar-images.yml'
+
+      - name: Skip — ${{ matrix.pillar.short }} unchanged
+        if: github.event_name == 'pull_request' && steps.pillar-changes.outputs.relevant != 'true'
+        run: echo "No ${{ matrix.pillar.short }} sources changed — skipping build."
+
       - uses: docker/setup-buildx-action@v3
+        if: github.event_name == 'push' || steps.pillar-changes.outputs.relevant == 'true'
 
       - name: Build ${{ matrix.pillar.name }} (builder stage)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.pillar-changes.outputs.relevant == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
