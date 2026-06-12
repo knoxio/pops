@@ -1,9 +1,4 @@
-/**
- * @deprecated Theme 13 PRD-173 PR 1 — moved to
- * `apps/pops-inventory-api/src/modules/items/update-builder.ts`. Legacy
- * copy kept while the pops-api router remains mounted as fall-through.
- */
-import type { homeInventory } from '@pops/db-types';
+import type { homeInventory } from '@pops/inventory-db';
 
 import type { UpdateInventoryItemInput } from './types.js';
 

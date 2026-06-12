@@ -1,19 +1,20 @@
 /**
- * Inventory tRPC router — CRUD procedures for inventory items.
+ * Inventory items tRPC router — CRUD procedures for inventory items.
  *
- * @deprecated Theme 13 PRD-173 PR 1 — writer moved to
- * `apps/pops-inventory-api/src/modules/items/router.ts`. This legacy
- * mount stays in place as a fall-through until the dispatcher cutover
- * in a later PR of the same slice routes `inventory.items.*` traffic to
- * pops-inventory-api. Do not extend this file; new procedures land in
- * the inventory-api copy.
+ * Migrated from `apps/pops-api/src/modules/inventory/items/router.ts` as
+ * part of Theme 13 PRD-173 PR 1 (writer move). Procedure paths stay
+ * rooted at `inventory.items.*` so the dispatcher cutover in PR 3 of
+ * the slice can be a transparent URL swap rather than a path rename.
+ * The DB handle is injected via `ctx.inventoryDb` from the tRPC context
+ * rather than reached through a module-global getter — same pattern the
+ * locations writer-move (#2891) established.
  */
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { NotFoundError } from '../../shared/errors.js';
+import { paginationMeta, PaginationMetaSchema } from '../../shared/pagination.js';
+import { protectedProcedure, router } from '../../trpc.js';
 import * as service from './service.js';
 import {
   CreateInventoryItemSchema,
@@ -27,17 +28,9 @@ import {
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
-export const inventoryRouter = router({
+export const itemsRouter = router({
   /** List inventory items with optional filters and pagination. */
   list: protectedProcedure
-    .meta({
-      openapi: {
-        method: 'GET',
-        path: '/inventory/items',
-        summary: 'List inventory items',
-        tags: ['inventory-items'],
-      },
-    })
     .input(InventoryQuerySchema)
     .output(
       z.object({
@@ -46,7 +39,7 @@ export const inventoryRouter = router({
         totals: z.object({ totalReplacementValue: z.number(), totalResaleValue: z.number() }),
       })
     )
-    .query(({ input }) => {
+    .query(({ input, ctx }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
 
@@ -58,19 +51,22 @@ export const inventoryRouter = router({
       const inUse = parseTriBool(input.inUse);
       const deductible = parseTriBool(input.deductible);
 
-      const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems({
-        search: input.search,
-        room: input.room,
-        type: input.type,
-        condition: input.condition,
-        inUse,
-        deductible,
-        limit,
-        offset,
-        locationId: input.locationId,
-        assetId: input.assetId,
-        includeChildren: input.includeChildren,
-      });
+      const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems(
+        ctx.inventoryDb,
+        {
+          search: input.search,
+          room: input.room,
+          type: input.type,
+          condition: input.condition,
+          inUse,
+          deductible,
+          limit,
+          offset,
+          locationId: input.locationId,
+          assetId: input.assetId,
+          includeChildren: input.includeChildren,
+        }
+      );
 
       return {
         data: rows.map(toInventoryItem),
@@ -82,50 +78,42 @@ export const inventoryRouter = router({
   /** Search for an item by exact asset ID (case-insensitive). Returns null if not found. */
   searchByAssetId: protectedProcedure
     .input(z.object({ assetId: z.string().min(1) }))
-    .query(({ input }) => {
-      const row = service.searchByAssetId(input.assetId);
+    .query(({ input, ctx }) => {
+      const row = service.searchByAssetId(ctx.inventoryDb, input.assetId);
       return { data: row ? toInventoryItem(row) : null };
     }),
 
   /** Count items whose assetId starts with the given prefix (case-insensitive). */
   countByAssetPrefix: protectedProcedure
     .input(z.object({ prefix: z.string().min(1) }))
-    .query(({ input }) => {
-      return { data: service.countByAssetPrefix(input.prefix) };
+    .query(({ input, ctx }) => {
+      return { data: service.countByAssetPrefix(ctx.inventoryDb, input.prefix) };
     }),
 
   /** Return distinct item types from the database. */
-  distinctTypes: protectedProcedure.query(() => {
-    return { data: service.getDistinctTypes() };
+  distinctTypes: protectedProcedure.query(({ ctx }) => {
+    return { data: service.getDistinctTypes(ctx.inventoryDb) };
   }),
 
   /** Get a single inventory item by ID. */
   get: protectedProcedure
-    .meta({
-      openapi: {
-        method: 'GET',
-        path: '/inventory/items/{id}',
-        summary: 'Get inventory item by ID',
-        tags: ['inventory-items'],
-      },
-    })
     .input(z.object({ id: z.string() }))
     .output(z.object({ data: InventoryItemSchema }))
-    .query(({ input }) => {
+    .query(({ input, ctx }) => {
       try {
-        const row = service.getInventoryItem(input.id);
+        const row = service.getInventoryItem(ctx.inventoryDb, input.id);
         return { data: toInventoryItem(row) };
       } catch (err) {
         if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message, cause: err });
         }
         throw err;
       }
     }),
 
   /** Create a new inventory item. */
-  create: protectedProcedure.input(CreateInventoryItemSchema).mutation(({ input }) => {
-    const row = service.createInventoryItem(input);
+  create: protectedProcedure.input(CreateInventoryItemSchema).mutation(({ input, ctx }) => {
+    const row = service.createInventoryItem(ctx.inventoryDb, input);
     return {
       data: toInventoryItem(row),
       message: 'Inventory item created',
@@ -140,29 +128,29 @@ export const inventoryRouter = router({
         data: UpdateInventoryItemSchema,
       })
     )
-    .mutation(({ input }) => {
+    .mutation(({ input, ctx }) => {
       try {
-        const row = service.updateInventoryItem(input.id, input.data);
+        const row = service.updateInventoryItem(ctx.inventoryDb, input.id, input.data);
         return {
           data: toInventoryItem(row),
           message: 'Inventory item updated',
         };
       } catch (err) {
         if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message, cause: err });
         }
         throw err;
       }
     }),
 
   /** Delete an inventory item. */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input, ctx }) => {
     try {
-      service.deleteInventoryItem(input.id);
+      service.deleteInventoryItem(ctx.inventoryDb, input.id);
       return { message: 'Inventory item deleted' };
     } catch (err) {
       if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+        throw new TRPCError({ code: 'NOT_FOUND', message: err.message, cause: err });
       }
       throw err;
     }

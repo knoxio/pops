@@ -1,20 +1,22 @@
+/**
+ * Inventory items service — CRUD operations using Drizzle ORM against the
+ * per-pillar `inventory.db` handle.
+ *
+ * Migrated from `apps/pops-api/src/modules/inventory/items/service.ts` as
+ * part of Theme 13 PRD-173 PR 1 (writer move). The handle is passed in
+ * explicitly from the tRPC context (`ctx.inventoryDb`) rather than
+ * resolved via a module-global getter so this service stands alone of
+ * pops-api in the dep graph — matching the locations writer-move pattern
+ * (#2891).
+ */
 import crypto from 'crypto';
 
 import { and, count, eq, inArray, isNotNull, like, sql, sum, type SQL } from 'drizzle-orm';
 
-/**
- * Inventory service — CRUD operations using Drizzle ORM.
- * SQLite is the source of truth. All operations are local.
- *
- * @deprecated Theme 13 PRD-173 PR 1 — writer moved to
- * `apps/pops-inventory-api/src/modules/items/service.ts`. Legacy mount
- * stays for fall-through traffic until the slice's dispatcher cutover.
- */
-import { homeInventory } from '@pops/db-types';
-import { locationsService } from '@pops/inventory-db';
+import { homeInventory, type InventoryDb, locationsService } from '@pops/inventory-db';
 
-import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
-import { NotFoundError } from '../../../shared/errors.js';
+import { NotFoundError } from '../../shared/errors.js';
+import { buildCreateValues } from './create-builder.js';
 import { buildInventoryUpdate } from './update-builder.js';
 
 import type { CreateInventoryItemInput, InventoryRow, UpdateInventoryItemInput } from './types.js';
@@ -42,7 +44,7 @@ export interface ListInventoryItemsOptions {
   includeChildren?: boolean;
 }
 
-function buildInventoryConditions(opts: ListInventoryItemsOptions): SQL[] {
+function buildInventoryConditions(db: InventoryDb, opts: ListInventoryItemsOptions): SQL[] {
   const conditions: SQL[] = [];
   if (opts.search) conditions.push(like(homeInventory.itemName, `%${opts.search}%`));
   if (opts.room) conditions.push(eq(homeInventory.room, opts.room));
@@ -55,14 +57,18 @@ function buildInventoryConditions(opts: ListInventoryItemsOptions): SQL[] {
     conditions.push(eq(homeInventory.deductible, opts.deductible ? 1 : 0));
   }
   if (opts.locationId)
-    conditions.push(buildLocationCondition(opts.locationId, opts.includeChildren));
+    conditions.push(buildLocationCondition(db, opts.locationId, opts.includeChildren));
   if (opts.assetId) conditions.push(eq(homeInventory.assetId, opts.assetId));
   return conditions;
 }
 
-function buildLocationCondition(locationId: string, includeChildren: boolean | undefined): SQL {
+function buildLocationCondition(
+  db: InventoryDb,
+  locationId: string,
+  includeChildren: boolean | undefined
+): SQL {
   if (!includeChildren) return eq(homeInventory.locationId, locationId);
-  const descendants = locationsService.getDescendantLocationIds(getInventoryDrizzle(), locationId);
+  const descendants = locationsService.getDescendantLocationIds(db, locationId);
   return inArray(homeInventory.locationId, [locationId, ...descendants]);
 }
 
@@ -73,9 +79,10 @@ function combineConditions(conditions: SQL[]): SQL | undefined {
 }
 
 /** List inventory items with optional filters. */
-export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryListResult {
-  const db = getInventoryDrizzle();
-
+export function listInventoryItems(
+  db: InventoryDb,
+  opts: ListInventoryItemsOptions
+): InventoryListResult {
   let query = db.select().from(homeInventory).$dynamic();
   let countQuery = db.select({ total: count() }).from(homeInventory).$dynamic();
   let sumQuery = db
@@ -86,7 +93,7 @@ export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryLi
     .from(homeInventory)
     .$dynamic();
 
-  const where = combineConditions(buildInventoryConditions(opts));
+  const where = combineConditions(buildInventoryConditions(db, opts));
   if (where) {
     query = query.where(where);
     countQuery = countQuery.where(where);
@@ -109,8 +116,7 @@ export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryLi
  * Search for an inventory item by exact asset ID (case-insensitive).
  * Returns the item or null if not found.
  */
-export function searchByAssetId(assetId: string): InventoryRow | null {
-  const db = getInventoryDrizzle();
+export function searchByAssetId(db: InventoryDb, assetId: string): InventoryRow | null {
   const [row] = db
     .select()
     .from(homeInventory)
@@ -122,8 +128,7 @@ export function searchByAssetId(assetId: string): InventoryRow | null {
 /**
  * Count inventory items whose assetId starts with the given prefix (case-insensitive).
  */
-export function countByAssetPrefix(prefix: string): number {
-  const db = getInventoryDrizzle();
+export function countByAssetPrefix(db: InventoryDb, prefix: string): number {
   const [result] = db
     .select({ count: sql<number>`COUNT(*)` })
     .from(homeInventory)
@@ -133,8 +138,7 @@ export function countByAssetPrefix(prefix: string): number {
 }
 
 /** Return distinct item types that exist in the database. */
-export function getDistinctTypes(): string[] {
-  const db = getInventoryDrizzle();
+export function getDistinctTypes(db: InventoryDb): string[] {
   const rows = db
     .selectDistinct({ type: homeInventory.type })
     .from(homeInventory)
@@ -145,83 +149,21 @@ export function getDistinctTypes(): string[] {
 }
 
 /** Get a single inventory item by id. Throws NotFoundError if missing. */
-export function getInventoryItem(id: string): InventoryRow {
-  const db = getInventoryDrizzle();
+export function getInventoryItem(db: InventoryDb, id: string): InventoryRow {
   const [row] = db.select().from(homeInventory).where(eq(homeInventory.id, id)).all();
 
   if (!row) throw new NotFoundError('Inventory item', id);
   return row;
 }
 
-function buildCreateValues(
-  id: string,
-  now: string,
-  input: CreateInventoryItemInput
-): typeof homeInventory.$inferInsert {
-  return {
-    id,
-    itemName: input.itemName,
-    inUse: input.inUse ? 1 : 0,
-    deductible: input.deductible ? 1 : 0,
-    lastEditedTime: now,
-    ...nullableStringsFromInput(input),
-    ...nullableNumbersFromInput(input),
-  };
-}
-
-const CREATE_NULLABLE_STRING_KEYS = [
-  'brand',
-  'model',
-  'itemId',
-  'room',
-  'location',
-  'type',
-  'condition',
-  'purchaseDate',
-  'warrantyExpires',
-  'purchaseTransactionId',
-  'purchasedFromId',
-  'purchasedFromName',
-  'assetId',
-  'notes',
-  'locationId',
-] as const satisfies ReadonlyArray<
-  keyof CreateInventoryItemInput & keyof typeof homeInventory.$inferInsert
->;
-
-const CREATE_NULLABLE_NUMBER_KEYS = [
-  'replacementValue',
-  'resaleValue',
-] as const satisfies ReadonlyArray<
-  keyof CreateInventoryItemInput & keyof typeof homeInventory.$inferInsert
->;
-
-function nullableStringsFromInput(
-  input: CreateInventoryItemInput
-): Partial<typeof homeInventory.$inferInsert> {
-  const out: Record<string, unknown> = {};
-  for (const key of CREATE_NULLABLE_STRING_KEYS) {
-    out[key] = input[key] ?? null;
-  }
-  return out as Partial<typeof homeInventory.$inferInsert>;
-}
-
-function nullableNumbersFromInput(
-  input: CreateInventoryItemInput
-): Partial<typeof homeInventory.$inferInsert> {
-  const out: Record<string, unknown> = {};
-  for (const key of CREATE_NULLABLE_NUMBER_KEYS) {
-    out[key] = input[key] ?? null;
-  }
-  return out as Partial<typeof homeInventory.$inferInsert>;
-}
-
 /**
  * Create a new inventory item. Returns the created row.
  * Generates a local UUID and inserts directly into SQLite.
  */
-export function createInventoryItem(input: CreateInventoryItemInput): InventoryRow {
-  const db = getInventoryDrizzle();
+export function createInventoryItem(
+  db: InventoryDb,
+  input: CreateInventoryItemInput
+): InventoryRow {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
@@ -229,33 +171,33 @@ export function createInventoryItem(input: CreateInventoryItemInput): InventoryR
     .values(buildCreateValues(id, now, input))
     .run();
 
-  return getInventoryItem(id);
+  return getInventoryItem(db, id);
 }
 
 /**
  * Update an existing inventory item. Returns the updated row.
- * Updates directly in SQLite.
  */
-export function updateInventoryItem(id: string, input: UpdateInventoryItemInput): InventoryRow {
-  getInventoryItem(id);
+export function updateInventoryItem(
+  db: InventoryDb,
+  id: string,
+  input: UpdateInventoryItemInput
+): InventoryRow {
+  getInventoryItem(db, id);
 
   const updates = buildInventoryUpdate(input);
   if (updates) {
-    const db = getInventoryDrizzle();
     db.update(homeInventory).set(updates).where(eq(homeInventory.id, id)).run();
   }
 
-  return getInventoryItem(id);
+  return getInventoryItem(db, id);
 }
 
 /**
  * Delete an inventory item by ID. Throws NotFoundError if missing.
- * Deletes directly from SQLite.
  */
-export function deleteInventoryItem(id: string): void {
-  getInventoryItem(id);
+export function deleteInventoryItem(db: InventoryDb, id: string): void {
+  getInventoryItem(db, id);
 
-  const db = getInventoryDrizzle();
   const result = db.delete(homeInventory).where(eq(homeInventory.id, id)).run();
   if (result.changes === 0) throw new NotFoundError('Inventory item', id);
 }

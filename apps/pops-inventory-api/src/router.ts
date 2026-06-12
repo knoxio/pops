@@ -7,10 +7,12 @@
  * `inventory.locations.list`, and inventory-api answers on the same
  * path.
  */
+import { itemsRouter } from './modules/items/router.js';
 import { locationsRouter } from './modules/locations/router.js';
 import { router } from './trpc.js';
 
 export const inventoryRouter = router({
+  items: itemsRouter,
   locations: locationsRouter,
 });
 

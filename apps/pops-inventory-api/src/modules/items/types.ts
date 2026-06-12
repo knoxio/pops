@@ -1,8 +1,10 @@
 /**
- * @deprecated Theme 13 PRD-173 PR 1 — moved to
- * `apps/pops-inventory-api/src/modules/items/types.ts`. Legacy copy
- * kept to keep the pops-api router compiling until the slice's
- * dispatcher cutover lands.
+ * Inventory item types — API response shape, mapper, and Zod schemas.
+ *
+ * Migrated from `apps/pops-api/src/modules/inventory/items/types.ts` as
+ * part of Theme 13 PRD-173 PR 1 (writer move). The legacy copy stays in
+ * place (marked `@deprecated`) and continues to be mounted on pops-api
+ * as fall-through until a later PR flips the dispatcher.
  */
 import { z } from 'zod';
 
