@@ -19,7 +19,7 @@ Goal: a pillar's `server.ts` becomes ~20 lines of `bootstrapPillar(manifest, app
 | --- | ------------------------------- | ------------------------------------------------------------------------------------------------- | ----------- |
 | 157 | Manifest schema + Zod validator | Define the manifest shape, validate at boot, surface errors clearly                               | Not started |
 | 158 | `bootstrapPillar()` boot helper | One-call pillar bootstrap with DB open, migrations, route mount, registry registration, heartbeat | Not started |
-| 159 | Discovery client                | Server-side `lookupPillar()`, `pillarRegistry()` with caching + invalidation                      | Not started |
+| 159 | Discovery client                | Server-side `lookupPillar()`, `pillarRegistry()` with caching + invalidation                      | Done        |
 | 160 | Capability projection types     | Type-level transforms from manifest → "what callers can invoke"                                   | Not started |
 
 PRDs run mostly in parallel after 157 (manifest schema is the contract everything depends on).
