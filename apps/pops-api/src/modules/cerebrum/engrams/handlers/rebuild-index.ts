@@ -1,11 +1,10 @@
 import { readFileSync } from 'node:fs';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/db-types';
 
 import { countWords, deriveTitle, parseEngramFile } from '../file.js';
 import { absolutePath, dedupe, listEngramFiles, sha256, splitCustomFields } from './fs-helpers.js';
-
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 interface IndexEntry {
   row: typeof engramIndex.$inferInsert;
@@ -49,7 +48,7 @@ function buildEntryFromFile(root: string, relPath: string): IndexEntry | null {
   };
 }
 
-function persistEntries(db: BetterSQLite3Database, entries: IndexEntry[]): void {
+function persistEntries(db: CerebrumDb, entries: IndexEntry[]): void {
   db.transaction((tx) => {
     tx.delete(engramLinks).run();
     tx.delete(engramTags).run();
@@ -77,7 +76,7 @@ function persistEntries(db: BetterSQLite3Database, entries: IndexEntry[]): void 
   });
 }
 
-export function reindexEngrams(db: BetterSQLite3Database, root: string): { indexed: number } {
+export function reindexEngrams(db: CerebrumDb, root: string): { indexed: number } {
   const files = listEngramFiles(root);
   const entries: IndexEntry[] = [];
 

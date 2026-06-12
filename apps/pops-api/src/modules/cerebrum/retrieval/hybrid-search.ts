@@ -9,6 +9,44 @@ import { StructuredQueryService } from './structured-query.js';
  * and routes the unified `search` procedure.
  *
  * RRF formula: score = sum(1 / (k + rank_i)) where k = 60.
+ *
+ * ## Cross-store read pattern (PRD-179 PR 3)
+ *
+ * After PRD-179 PR 3 the engram CRUD path writes the `engram_index` /
+ * `engram_scopes` / `engram_tags` / `engram_links` rows exclusively to
+ * the cerebrum pillar handle (`cerebrum.db`). This service, however, is
+ * still wired to the shared `pops.db` handle (`getDrizzle()`) at every
+ * call site because both legs of the hybrid pipeline join engram
+ * metadata with cross-pillar domain tables that have **not** migrated
+ * to the cerebrum file yet:
+ *
+ *   - `StructuredQueryService` reads `engram_index` + junctions.
+ *   - `SemanticSearchService` calls `resolveEngramMetadata` in
+ *     `semantic-search-metadata.ts`, which joins `engram_index` against
+ *     `transactions`, `movies`, `tv_shows`, and `home_inventory` on
+ *     the shared handle.
+ *
+ * Switching the constructor to `getCerebrumDrizzle()` would make the
+ * engram-side reads consistent with the writes but would break the
+ * cross-pillar enrichment joins immediately. The trade-off chosen for
+ * PR 3 is to keep the shared handle and lean on
+ * `backfillCerebrumFromShared` to seed `cerebrum.db.engram_index` from
+ * `pops.db` on boot. The backfill is one-directional (pops → cerebrum),
+ * so any engram created or mutated *after* PR 3 lands only in
+ * `cerebrum.db` and is **invisible** to this service until either:
+ *
+ *   1. A boot redeploy re-runs the backfill (which does not back-copy
+ *      cerebrum → pops, so this does not actually heal the gap), or
+ *   2. PRD-179 PR 4 retires the backfill and restructures retrieval
+ *      to either (a) route engram metadata through
+ *      `getCerebrumDrizzle()` and resolve cross-pillar enrichment via
+ *      per-pillar SDK lookups instead of SQL joins, or (b) reintroduce
+ *      a cerebrum → pops mirror for the engram tables.
+ *
+ * TODO(PRD-179 PR 4): split engram metadata reads off the shared handle.
+ * The current shape is a known stale-read window between PR 3 (writes
+ * flipped) and PR 4 (retrieval flipped). Tracked under the PRD-179
+ * cutover plan.
  */
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 

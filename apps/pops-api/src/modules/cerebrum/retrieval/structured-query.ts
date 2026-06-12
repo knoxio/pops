@@ -1,6 +1,30 @@
 /**
  * StructuredQueryService — filters engram_index and junction tables using
  * parameterised SQL. Returns RetrievalResult[] with matchType: 'structured'.
+ *
+ * ## Cross-store read pattern (PRD-179 PR 3)
+ *
+ * The `db` handle injected here is the shared `pops.db` (`getDrizzle()`)
+ * at every production call site, even though PRD-179 PR 3 has already
+ * routed engram writes (`engram_index`, `engram_scopes`, `engram_tags`,
+ * `engram_links`) to `cerebrum.db`. The reason this service stays on
+ * the shared handle is the downstream `HybridSearchService` pairing
+ * with `SemanticSearchService`, whose metadata resolver joins
+ * `engram_index` with cross-pillar tables (`transactions`, `movies`,
+ * `tv_shows`, `home_inventory`) that have not migrated to `cerebrum.db`.
+ * Splitting just this service onto `getCerebrumDrizzle()` would create
+ * a structured vs. semantic store mismatch and complicate RRF merging.
+ *
+ * `backfillCerebrumFromShared` runs one-directionally on boot
+ * (pops → cerebrum), so post-PR-3 writes that land only in `cerebrum.db`
+ * are **not** mirrored back to `pops.db`. This service therefore can
+ * miss engrams created or modified after the PR 3 cutover. The known
+ * window closes with PRD-179 PR 4, which restructures retrieval to
+ * either route engram metadata through `getCerebrumDrizzle()` and
+ * resolve domain enrichment via per-pillar SDK calls, or add a
+ * cerebrum → pops mirror for the engram tables.
+ *
+ * TODO(PRD-179 PR 4): split engram metadata reads off the shared handle.
  */
 import { and, desc, eq, inArray } from 'drizzle-orm';
 

@@ -1,6 +1,28 @@
 /**
  * SemanticSearchService — wraps core semanticSearch with Thalamus metadata
  * resolution, scope/type/status filtering, and RetrievalResult shaping.
+ *
+ * ## Cross-store read pattern (PRD-179 PR 3)
+ *
+ * The `db` handle injected into this service is the shared
+ * `pops.db` (`getDrizzle()`) at every production call site, even though
+ * PRD-179 PR 3 has already moved engram writes to `cerebrum.db`. The
+ * reason is `resolveMetadata` (see `semantic-search-metadata.ts`),
+ * which joins `engram_index` against cross-pillar tables —
+ * `transactions`, `movies`, `tv_shows`, `home_inventory` — that still
+ * live in the shared file. Narrowing this handle to
+ * `getCerebrumDrizzle()` would make engram reads consistent with the
+ * new writes but break the cross-pillar enrichment.
+ *
+ * The boot-time `backfillCerebrumFromShared` is one-directional
+ * (pops → cerebrum), so post-PR-3 engram writes are **not** mirrored
+ * back to `pops.db`. Until PRD-179 PR 4 restructures retrieval to
+ * either (a) read engram metadata via `getCerebrumDrizzle()` and
+ * resolve domain enrichment via per-pillar SDK calls, or (b) add a
+ * reverse mirror, this service can return stale data for engrams
+ * created or modified after PR 3 lands.
+ *
+ * TODO(PRD-179 PR 4): split engram metadata reads off the shared handle.
  */
 import { createHash } from 'node:crypto';
 

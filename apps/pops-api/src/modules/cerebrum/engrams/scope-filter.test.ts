@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { describe, expect, it, afterEach, beforeEach } from 'vitest';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
+
 import { createTestDb } from '../../../shared/test-utils.js';
 import { TemplateRegistry } from '../templates/registry.js';
 import { seedDefaultTemplates } from '../templates/seed.js';
@@ -12,7 +14,6 @@ import { filterByScopes, inferScopesFromContext } from './scope-filter.js';
 import { EngramService } from './service.js';
 
 import type { Database } from 'better-sqlite3';
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 /** A fixed clock that advances one minute per call. */
 function makeClock(start = new Date('2026-04-18T09:00:00Z')): () => Date {
@@ -26,13 +27,13 @@ function makeClock(start = new Date('2026-04-18T09:00:00Z')): () => Date {
 
 describe('filterByScopes', () => {
   let rawDb: Database;
-  let db: BetterSQLite3Database;
+  let db: CerebrumDb;
   let service: EngramService;
   let root: string;
 
   beforeEach(() => {
     rawDb = createTestDb();
-    db = drizzle(rawDb);
+    db = drizzle<Record<string, unknown>>(rawDb);
     root = mkdtempSync(join(tmpdir(), 'scope-filter-'));
     const templatesDir = join(root, '.templates');
     seedDefaultTemplates(templatesDir);

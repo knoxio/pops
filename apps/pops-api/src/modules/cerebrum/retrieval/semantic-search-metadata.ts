@@ -1,3 +1,24 @@
+/**
+ * Engram metadata + cross-pillar enrichment resolver for
+ * SemanticSearchService.
+ *
+ * ## Cross-store read pattern (PRD-179 PR 3)
+ *
+ * The `db` handle passed in is the shared `pops.db` (`getDrizzle()`)
+ * because `fetchDomainRow` and `resolveMetadata` join `engram_index`
+ * against `transactions`, `movies`, `tv_shows`, and `home_inventory`,
+ * all of which still live in the shared file. After PRD-179 PR 3,
+ * engram writes land in `cerebrum.db`; the boot-time backfill is
+ * pops → cerebrum only, so any engram created or modified after the
+ * PR 3 cutover is invisible to this resolver until PRD-179 PR 4
+ * restructures retrieval (either: read engram metadata from
+ * `getCerebrumDrizzle()` and pull domain rows via per-pillar SDK
+ * lookups, or add a reverse cerebrum → pops mirror).
+ *
+ * TODO(PRD-179 PR 4): replace cross-pillar SQL joins with SDK-driven
+ * per-pillar lookups so this resolver can read engrams from the
+ * cerebrum handle without losing enrichment.
+ */
 import { eq } from 'drizzle-orm';
 
 import {

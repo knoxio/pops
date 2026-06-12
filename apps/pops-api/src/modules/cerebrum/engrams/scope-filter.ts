@@ -12,14 +12,14 @@ import { like, or, sql } from 'drizzle-orm';
 
 import { engramScopes } from '@pops/db-types';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { CerebrumDb } from '@pops/cerebrum-db';
 
 export interface FilterByScopesOptions {
   /** Scope prefixes to match. Empty array = no scope filter (all engrams). */
   scopes: string[];
   /** When true, secret-scoped engrams are included. Default: false. */
   includeSecret?: boolean;
-  db: BetterSQLite3Database;
+  db: CerebrumDb;
 }
 
 export interface FilterByScopesResult {
@@ -57,7 +57,7 @@ export function filterByScopes(opts: FilterByScopesOptions): FilterByScopesResul
 }
 
 /** Fetch all engram IDs that have at least one secret scope. */
-function getSecretEngramIds(db: BetterSQLite3Database): Set<string> {
+function getSecretEngramIds(db: CerebrumDb): Set<string> {
   // Any scope containing a segment exactly named 'secret' is treated as secret,
   // regardless of position. Three LIKE patterns cover middle, start, and end.
   const rows = db
@@ -75,7 +75,7 @@ function getSecretEngramIds(db: BetterSQLite3Database): Set<string> {
 }
 
 /** Fetch all engram IDs from the scopes table (distinct). */
-function getAllEngramIds(db: BetterSQLite3Database): string[] {
+function getAllEngramIds(db: CerebrumDb): string[] {
   const rows = db.selectDistinct({ engramId: engramScopes.engramId }).from(engramScopes).all();
   return rows.map((r) => r.engramId);
 }
@@ -84,7 +84,7 @@ function getAllEngramIds(db: BetterSQLite3Database): string[] {
  * Return engram IDs where at least one stored scope matches any of the
  * requested prefix patterns. Uses SQL LIKE for prefix queries.
  */
-function getScopeMatchingIds(db: BetterSQLite3Database, scopes: string[]): string[] {
+function getScopeMatchingIds(db: CerebrumDb, scopes: string[]): string[] {
   // Build a LIKE condition per prefix. A stored scope matches prefix `p` when:
   //   scope = p           (exact match)
   //   scope LIKE 'p.%'   (child scope)

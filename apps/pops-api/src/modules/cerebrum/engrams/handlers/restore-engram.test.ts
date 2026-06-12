@@ -33,7 +33,7 @@ describe('restoreEngram idempotency', () => {
     seedDefaultTemplates(templatesDir);
     service = new EngramService({
       root,
-      db: drizzle(db),
+      db: drizzle<Record<string, unknown>>(db),
       templates: new TemplateRegistry(templatesDir),
       now: makeClock(),
     });
@@ -60,6 +60,6 @@ describe('restoreEngram idempotency', () => {
 
     expect(result.moved).toBe(false);
     expect(result.filePath).toBe(archivedRel);
-    expect(getIndexRow(drizzle(db), engram.id).status).toBe('archived');
+    expect(getIndexRow(drizzle<Record<string, unknown>>(db), engram.id).status).toBe('archived');
   });
 });

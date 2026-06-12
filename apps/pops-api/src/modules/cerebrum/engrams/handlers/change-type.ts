@@ -14,16 +14,16 @@
  */
 import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
+
 import { ValidationError } from '../../../../shared/errors.js';
 import { parseEngramFile, serializeEngram } from '../file.js';
 import { absolutePath, assertSafeType, parseCustomFields, writeFileAtomic } from './fs-helpers.js';
 import { getIndexRow, upsertIndex } from './upsert-index.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-
 export type ChangeTypeDeps = {
   root: string;
-  db: BetterSQLite3Database;
+  db: CerebrumDb;
   now: () => Date;
 };
 

@@ -8,7 +8,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { engramIndex } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 
 export function hashContent(body: string): string {
   return createHash('sha256').update(body, 'utf8').digest('hex');
@@ -16,7 +16,7 @@ export function hashContent(body: string): string {
 
 export function findDuplicate(bodyHash: string): string | null {
   try {
-    const db = getDrizzle();
+    const db = getCerebrumDrizzle();
     const row = db
       .select({ id: engramIndex.id })
       .from(engramIndex)

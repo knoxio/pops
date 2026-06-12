@@ -8,12 +8,11 @@ import { join } from 'node:path';
 
 import { eq } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex } from '@pops/db-types';
 
 import { countWords, deriveTitle, parseEngramFile } from '../engrams/file.js';
 import { syncEngramLinks, syncEngramScopes, syncEngramTags } from './sync-junctions.js';
-
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { WatchEvent } from './watcher.js';
 
@@ -82,7 +81,7 @@ interface IndexValues {
 }
 
 function upsertIndexRow(
-  tx: Parameters<Parameters<BetterSQLite3Database['transaction']>[0]>[0],
+  tx: Parameters<Parameters<CerebrumDb['transaction']>[0]>[0],
   values: IndexValues
 ): void {
   tx.insert(engramIndex)
@@ -108,7 +107,7 @@ function upsertIndexRow(
 export class FrontmatterSyncService {
   constructor(
     private readonly root: string,
-    private readonly db: BetterSQLite3Database
+    private readonly db: CerebrumDb
   ) {}
 
   /**

@@ -12,7 +12,7 @@ import { eq } from 'drizzle-orm';
 
 import { engramIndex } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { DEFAULT_JOB_OPTIONS, getDefaultQueue } from '../../../jobs/queues.js';
 import { getSettingValue } from '../../core/settings/service.js';
 import { getEngramRoot } from '../instance.js';
@@ -49,7 +49,7 @@ export async function startThalamus(): Promise<void> {
     return;
   }
 
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
 
   // Build the set of paths currently in the index so the watcher can
   // reconcile files that were modified while the server was down.

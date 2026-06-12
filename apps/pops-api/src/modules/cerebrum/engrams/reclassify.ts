@@ -4,12 +4,11 @@ import { dirname, join } from 'node:path';
 
 import { eq, inArray, like, or, sql } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex, engramScopes } from '@pops/db-types';
 
 import { ValidationError } from '../../../shared/errors.js';
 import { parseEngramFile, serializeEngram } from './file.js';
-
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 interface ReclassifyTarget {
   engramId: string;
@@ -32,7 +31,7 @@ export interface ReclassifyResult {
 }
 
 function findReclassifyTargets(
-  db: BetterSQLite3Database,
+  db: CerebrumDb,
   fromScope: string,
   toScope: string
 ): ReclassifyTarget[] {
@@ -76,7 +75,7 @@ function groupByEngram(targets: ReclassifyTarget[]): Map<string, EngramReclassEn
 }
 
 function buildWorkItems(
-  db: BetterSQLite3Database,
+  db: CerebrumDb,
   root: string,
   affectedIds: string[],
   byEngram: Map<string, EngramReclassEntry>
@@ -141,7 +140,7 @@ function writeAllAtomic(work: WorkItem[]): WorkItem[] {
   return written;
 }
 
-function applyDbChanges(db: BetterSQLite3Database, work: WorkItem[]): void {
+function applyDbChanges(db: CerebrumDb, work: WorkItem[]): void {
   db.transaction((tx) => {
     for (const item of work) {
       for (const oldScope of item.oldScopeSet) {
@@ -170,7 +169,7 @@ export interface ReclassifyParams {
 }
 
 export function reclassifyScopes(
-  db: BetterSQLite3Database,
+  db: CerebrumDb,
   root: string,
   params: ReclassifyParams
 ): ReclassifyResult {

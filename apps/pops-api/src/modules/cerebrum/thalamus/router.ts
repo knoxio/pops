@@ -5,6 +5,7 @@
 import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { EMBEDDINGS_QUEUE, getEmbeddingsQueue } from '../../../jobs/queues.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { getEngramRoot } from '../instance.js';
@@ -55,7 +56,7 @@ export const indexRouter = router({
         // If forced, enqueue embeddings for all engrams in the index.
         const { FrontmatterSyncService } = await import('./sync.js');
         const { EmbeddingTrigger } = await import('./embedding-trigger.js');
-        const db = getDrizzle();
+        const db = getCerebrumDrizzle();
         const root = getEngramRoot();
         const syncService = new FrontmatterSyncService(root, db);
         const trigger = new EmbeddingTrigger();
@@ -100,7 +101,7 @@ export const indexRouter = router({
       const { engramIndex } = await import('@pops/db-types');
 
       const root = getEngramRoot();
-      const db = getDrizzle();
+      const db = getCerebrumDrizzle();
 
       if (!existsSync(root)) {
         return { missing: [], orphaned: [], dryRun: input.dryRun ?? false };

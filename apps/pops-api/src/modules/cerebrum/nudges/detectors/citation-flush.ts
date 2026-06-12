@@ -6,18 +6,17 @@
  */
 import { eq } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex } from '@pops/db-types';
 
 import { getAllCitationCounts, resetCitationCounts } from './citation-tracker.js';
-
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 /**
  * Flush citation counts to the database, updating the modifiedAt
  * timestamp to reflect recent usage. This reduces staleness scores
  * for frequently-cited engrams.
  */
-export function flushCitationsToDb(db: BetterSQLite3Database): number {
+export function flushCitationsToDb(db: CerebrumDb): number {
   let flushed = 0;
   const now = new Date().toISOString();
   const counts = getAllCitationCounts();

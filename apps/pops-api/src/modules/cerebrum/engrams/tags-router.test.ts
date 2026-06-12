@@ -8,6 +8,8 @@ import { join } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
+
 import { createTestDb } from '../../../shared/test-utils.js';
 import { TemplateRegistry } from '../templates/registry.js';
 import { seedDefaultTemplates } from '../templates/seed.js';
@@ -15,9 +17,8 @@ import { EngramService } from './service.js';
 import { listTags } from './tags-router.js';
 
 import type { Database } from 'better-sqlite3';
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
-function makeService(db: BetterSQLite3Database, root: string): EngramService {
+function makeService(db: CerebrumDb, root: string): EngramService {
   const templatesDir = join(root, '.templates');
   seedDefaultTemplates(templatesDir);
   return new EngramService({
@@ -29,13 +30,13 @@ function makeService(db: BetterSQLite3Database, root: string): EngramService {
 
 describe('listTags', () => {
   let rawDb: Database;
-  let db: BetterSQLite3Database;
+  let db: CerebrumDb;
   let service: EngramService;
   let root: string;
 
   beforeEach(() => {
     rawDb = createTestDb();
-    db = drizzle(rawDb);
+    db = drizzle<Record<string, unknown>>(rawDb);
     root = mkdtempSync(join(tmpdir(), 'tags-router-'));
     service = makeService(db, root);
   });
