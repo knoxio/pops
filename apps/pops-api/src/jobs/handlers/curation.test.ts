@@ -60,6 +60,10 @@ vi.mock('../../db.js', () => ({
   getDrizzle: () => ({}),
 }));
 
+vi.mock('../../db/cerebrum-handle.js', () => ({
+  getCerebrumDrizzle: () => ({}),
+}));
+
 const { process: processJob } = await import('./curation.js');
 
 function makeJob(data: Record<string, unknown>): Job {

@@ -11,7 +11,7 @@
  */
 import pino from 'pino';
 
-import { getDrizzle } from '../../db.js';
+import { getCerebrumDrizzle } from '../../db/cerebrum-handle.js';
 import { createScopeReconciliationService } from '../../modules/cerebrum/engrams/scope-reconciliation.js';
 import { listScopes } from '../../modules/cerebrum/engrams/scopes-router.js';
 import { CortexClassifier } from '../../modules/cerebrum/ingest/classifier.js';
@@ -156,7 +156,7 @@ async function resolveScopes(
     const reconciler = createScopeReconciliationService();
     const { suggestions } = reconciler.reconcile({
       suggestedScopes: engram.scopes,
-      knownScopes: listScopes(getDrizzle()),
+      knownScopes: listScopes(getCerebrumDrizzle()),
       dismissedSegmentSetKeys: dismissedKeys,
     });
     return { scopes: engram.scopes, reconciled: true, suggestions };

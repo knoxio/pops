@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { sql } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramLinks } from '@pops/db-types';
 
 import { ValidationError } from '../../../../shared/errors.js';
@@ -9,13 +10,11 @@ import { parseEngramFile, serializeEngram } from '../file.js';
 import { absolutePath, parseCustomFields, writeFileAtomic } from './fs-helpers.js';
 import { findIndexRow, getIndexRow, upsertIndex } from './upsert-index.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-
 import type { EngramFrontmatter } from '../schema.js';
 
 export type LinkDeps = {
   root: string;
-  db: BetterSQLite3Database;
+  db: CerebrumDb;
   now: () => Date;
 };
 

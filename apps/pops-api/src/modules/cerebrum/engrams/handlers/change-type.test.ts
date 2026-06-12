@@ -42,7 +42,7 @@ describe('EngramService.changeType (PRD-081 US-03 AC #6)', () => {
     seedDefaultTemplates(templatesDir);
     service = new EngramService({
       root,
-      db: drizzle(db),
+      db: drizzle<Record<string, unknown>>(db),
       templates: new TemplateRegistry(templatesDir),
       now: makeClock(),
     });

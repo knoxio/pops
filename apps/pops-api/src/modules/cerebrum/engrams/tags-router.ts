@@ -10,10 +10,10 @@ import { z } from 'zod';
 
 import { engramTags } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { CerebrumDb } from '@pops/cerebrum-db';
 
 export interface TagInfo {
   tag: string;
@@ -36,7 +36,7 @@ const tagPrefixSchema = z
  * Results are ordered by count desc then tag asc so the most-used tags
  * surface first in typeahead suggestions.
  */
-export function listTags(db: BetterSQLite3Database, prefix?: string, limit = 100): TagInfo[] {
+export function listTags(db: CerebrumDb, prefix?: string, limit = 100): TagInfo[] {
   const norm = prefix !== undefined && prefix.trim() !== '' ? prefix.trim().toLowerCase() : '';
   const baseQuery = db.select({ tag: engramTags.tag, total: count() }).from(engramTags).$dynamic();
   const filtered = norm ? baseQuery.where(like(engramTags.tag, `${norm}%`)) : baseQuery;
@@ -65,6 +65,6 @@ export const tagsRouter = router({
         .optional()
     )
     .query(({ input }) => {
-      return { tags: listTags(getDrizzle(), input?.prefix, input?.limit) };
+      return { tags: listTags(getCerebrumDrizzle(), input?.prefix, input?.limit) };
     }),
 });

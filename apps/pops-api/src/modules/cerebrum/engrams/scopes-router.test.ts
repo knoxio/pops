@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
+
 import { closeDb, setDb } from '../../../db.js';
 import { setCerebrumDb } from '../../../db/cerebrum-handle.js';
 import { appRouter } from '../../../router.js';
@@ -16,7 +18,6 @@ import { listScopes } from './scopes-router.js';
 import { EngramService } from './service.js';
 
 import type { Database } from 'better-sqlite3';
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 /** A fixed clock that advances one minute per call. */
 function makeClock(start = new Date('2026-04-18T09:00:00Z')): () => Date {
@@ -28,7 +29,7 @@ function makeClock(start = new Date('2026-04-18T09:00:00Z')): () => Date {
   };
 }
 
-function makeService(db: BetterSQLite3Database, root: string): EngramService {
+function makeService(db: CerebrumDb, root: string): EngramService {
   const templatesDir = join(root, '.templates');
   seedDefaultTemplates(templatesDir);
   return new EngramService({
@@ -45,13 +46,13 @@ function makeService(db: BetterSQLite3Database, root: string): EngramService {
 
 describe('listScopes', () => {
   let rawDb: Database;
-  let db: BetterSQLite3Database;
+  let db: CerebrumDb;
   let service: EngramService;
   let root: string;
 
   beforeEach(() => {
     rawDb = createTestDb();
-    db = drizzle(rawDb);
+    db = drizzle<Record<string, unknown>>(rawDb);
     root = mkdtempSync(join(tmpdir(), 'scopes-router-'));
     service = makeService(db, root);
   });
@@ -104,12 +105,12 @@ describe('listScopes', () => {
 
 describe('EngramService.create scope inference', () => {
   let rawDb: Database;
-  let db: BetterSQLite3Database;
+  let db: CerebrumDb;
   let root: string;
 
   beforeEach(() => {
     rawDb = createTestDb();
-    db = drizzle(rawDb);
+    db = drizzle<Record<string, unknown>>(rawDb);
     root = mkdtempSync(join(tmpdir(), 'scope-infer-'));
     mkdirSync(join(root, '.config'), { recursive: true });
     mkdirSync(join(root, '.templates'), { recursive: true });
@@ -158,7 +159,7 @@ describe('cerebrum.scopes tRPC procedures', () => {
   beforeEach(() => {
     rawDb = createTestDb();
     setDb(rawDb);
-    setCerebrumDb({ db: drizzle(rawDb), raw: rawDb, vecAvailable: false });
+    setCerebrumDb({ db: drizzle<Record<string, unknown>>(rawDb), raw: rawDb, vecAvailable: false });
     root = mkdtempSync(join(tmpdir(), 'scopes-trpc-'));
     previousRoot = process.env['ENGRAM_ROOT'];
     process.env['ENGRAM_ROOT'] = root;

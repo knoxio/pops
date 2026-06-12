@@ -1,28 +1,27 @@
 import { eq } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/db-types';
 
 import { NotFoundError } from '../../../../shared/errors.js';
 import { countWords, deriveTitle, serializeEngram } from '../file.js';
 import { dedupe, indexRowFromDrizzle, sha256, type IndexRow } from './fs-helpers.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-
 import type { EngramFrontmatter } from '../schema.js';
 
-export function getIndexRow(db: BetterSQLite3Database, id: string): IndexRow {
+export function getIndexRow(db: CerebrumDb, id: string): IndexRow {
   const row = findIndexRow(db, id);
   if (!row) throw new NotFoundError('Engram', id);
   return row;
 }
 
-export function findIndexRow(db: BetterSQLite3Database, id: string): IndexRow | null {
+export function findIndexRow(db: CerebrumDb, id: string): IndexRow | null {
   const [row] = db.select().from(engramIndex).where(eq(engramIndex.id, id)).all();
   return row ? indexRowFromDrizzle(row) : null;
 }
 
 export function upsertIndex(
-  db: BetterSQLite3Database,
+  db: CerebrumDb,
   args: {
     id: string;
     filePath: string;

@@ -1,10 +1,9 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramLinks, engramScopes, engramTags } from '@pops/db-types';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-
-type Tx = Parameters<Parameters<BetterSQLite3Database['transaction']>[0]>[0];
+type Tx = Parameters<Parameters<CerebrumDb['transaction']>[0]>[0];
 
 export function syncEngramScopes(tx: Tx, engramId: string, newScopes: string[]): void {
   const currentScopes = tx

@@ -11,17 +11,16 @@ import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 
 import { eq } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex, engramLinks } from '@pops/db-types';
 
 import { parseEngramFile, serializeEngram } from '../file.js';
 import { absolutePath, parseCustomFields, writeFileAtomic } from './fs-helpers.js';
 import { findIndexRow, upsertIndex } from './upsert-index.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-
 export type DeleteDeps = {
   root: string;
-  db: BetterSQLite3Database;
+  db: CerebrumDb;
   now: () => Date;
 };
 
@@ -81,7 +80,7 @@ export function deleteEngram(deps: DeleteDeps, id: string): DeleteResult {
  * actually reference the target.
  */
 function stripFrontmatterLink(
-  deps: { root: string; db: BetterSQLite3Database; now: () => Date },
+  deps: { root: string; db: CerebrumDb; now: () => Date },
   sourceId: string,
   targetId: string
 ): boolean {

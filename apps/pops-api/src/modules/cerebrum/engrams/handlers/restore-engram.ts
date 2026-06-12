@@ -7,15 +7,15 @@
  */
 import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
+
 import { parseEngramFile, serializeEngram } from '../file.js';
 import { ARCHIVE_DIR, absolutePath, parseCustomFields, writeFileAtomic } from './fs-helpers.js';
 import { getIndexRow, upsertIndex } from './upsert-index.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-
 export type RestoreDeps = {
   root: string;
-  db: BetterSQLite3Database;
+  db: CerebrumDb;
   now: () => Date;
 };
 

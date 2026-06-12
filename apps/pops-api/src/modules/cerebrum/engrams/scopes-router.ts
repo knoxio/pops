@@ -11,7 +11,7 @@ import { z } from 'zod';
 
 import { engramScopes } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { HttpError, NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { getEngramRoot, getEngramService } from '../instance.js';
@@ -20,7 +20,7 @@ import { filterByScopes } from './scope-filter.js';
 import { createScopeReconciliationService } from './scope-reconciliation.js';
 import { normaliseScope, scopeStringSchema, validateScope } from './scope-schema.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { CerebrumDb } from '@pops/cerebrum-db';
 
 const engramIdSchema = z.string().regex(/^eng_\d{8}_\d{4}_[a-z0-9-]+$/);
 const scopeInputSchema = scopeStringSchema;
@@ -61,7 +61,7 @@ export interface ScopeInfo {
  * List all distinct scopes with engram counts. If `prefix` is provided,
  * only scopes that are equal to or children of the prefix are returned.
  */
-export function listScopes(db: BetterSQLite3Database, prefix?: string): ScopeInfo[] {
+export function listScopes(db: CerebrumDb, prefix?: string): ScopeInfo[] {
   const norm = prefix !== undefined && prefix.trim() !== '' ? normaliseScope(prefix) : undefined;
   const q = db.select({ scope: engramScopes.scope, total: count() }).from(engramScopes).$dynamic();
   const rows = (
@@ -159,7 +159,7 @@ export const scopesRouter = router({
    */
   reclassify: protectedProcedure.input(reclassifyInput).mutation(({ input }) => {
     try {
-      return reclassifyScopes(getDrizzle(), getEngramRoot(), input);
+      return reclassifyScopes(getCerebrumDrizzle(), getEngramRoot(), input);
     } catch (err) {
       toTrpcError(err);
     }
@@ -171,7 +171,7 @@ export const scopesRouter = router({
   list: protectedProcedure
     .input(z.object({ prefix: scopePrefixSchema.optional() }).optional())
     .query(({ input }) => {
-      return { scopes: listScopes(getDrizzle(), input?.prefix) };
+      return { scopes: listScopes(getCerebrumDrizzle(), input?.prefix) };
     }),
 
   /**
@@ -190,7 +190,7 @@ export const scopesRouter = router({
   reconcile: protectedProcedure
     .input(z.object({ suggestedScopes: scopesArraySchema }))
     .query(({ input }) => {
-      const knownScopes = listScopes(getDrizzle());
+      const knownScopes = listScopes(getCerebrumDrizzle());
       const svc = createScopeReconciliationService();
       return svc.reconcile({ suggestedScopes: input.suggestedScopes, knownScopes });
     }),
@@ -203,7 +203,7 @@ export const scopesRouter = router({
       const { engramIds } = filterByScopes({
         scopes: input.scopes,
         includeSecret: input.includeSecret,
-        db: getDrizzle(),
+        db: getCerebrumDrizzle(),
       });
       if (engramIds.length === 0) return { engrams: [] };
       const { engrams } = getEngramService().list({ ids: engramIds });

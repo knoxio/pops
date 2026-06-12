@@ -1,10 +1,9 @@
 import { and, count, eq, inArray, like, sql } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/db-types';
 
 import { bucket, indexRowFromDrizzle, parseCustomFields, type IndexRow } from './fs-helpers.js';
-
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { EngramSource, EngramStatus } from '../schema.js';
 import type { Engram } from '../types.js';
@@ -30,7 +29,7 @@ export interface ListEngramsResult {
 }
 
 function buildConditions(
-  db: BetterSQLite3Database,
+  db: CerebrumDb,
   opts: ListEngramsOptions
 ): ReturnType<typeof and> | undefined {
   const conditions = [];
@@ -81,7 +80,7 @@ interface QueryParams {
   offset: number;
 }
 
-function fetchRows(db: BetterSQLite3Database, p: QueryParams): { rows: unknown[]; total: number } {
+function fetchRows(db: CerebrumDb, p: QueryParams): { rows: unknown[]; total: number } {
   const rowsQuery = db.select().from(engramIndex).$dynamic();
   const rows = (p.where ? rowsQuery.where(p.where) : rowsQuery)
     .orderBy(p.sortDir === 'asc' ? p.orderColumn : sql`${p.orderColumn} desc`)
@@ -100,10 +99,7 @@ function resolveLimit(opts: ListEngramsOptions): number {
   return opts.limit ?? 50;
 }
 
-export function listEngrams(
-  db: BetterSQLite3Database,
-  opts: ListEngramsOptions = {}
-): ListEngramsResult {
+export function listEngrams(db: CerebrumDb, opts: ListEngramsOptions = {}): ListEngramsResult {
   const where = buildConditions(db, opts);
   const sortField = opts.sort?.field ?? 'modified_at';
   const sortDir = opts.sort?.direction ?? 'desc';
@@ -125,7 +121,7 @@ export function listEngrams(
   };
 }
 
-export function hydrateEngrams(db: BetterSQLite3Database, rows: IndexRow[]): Engram[] {
+export function hydrateEngrams(db: CerebrumDb, rows: IndexRow[]): Engram[] {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
 

@@ -57,7 +57,7 @@ describe('executeRevert (filesystem)', () => {
     seedDefaultTemplates(templatesDir);
     service = new EngramService({
       root,
-      db: drizzle(db),
+      db: drizzle<Record<string, unknown>>(db),
       templates: new TemplateRegistry(templatesDir),
       now: makeClock(),
     });

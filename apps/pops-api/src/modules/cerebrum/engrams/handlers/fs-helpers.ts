@@ -11,11 +11,10 @@ import { dirname, join, relative, sep } from 'node:path';
 
 import { eq } from 'drizzle-orm';
 
+import { type CerebrumDb } from '@pops/cerebrum-db';
 import { engramIndex } from '@pops/db-types';
 
 import { ValidationError } from '../../../../shared/errors.js';
-
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { EngramFrontmatter } from '../schema.js';
 
@@ -168,12 +167,7 @@ export function indexRowFromDrizzle(row: typeof engramIndex.$inferSelect): Index
   };
 }
 
-export function isIdTaken(
-  db: BetterSQLite3Database,
-  root: string,
-  candidate: string,
-  type: string
-): boolean {
+export function isIdTaken(db: CerebrumDb, root: string, candidate: string, type: string): boolean {
   const [row] = db
     .select({ id: engramIndex.id })
     .from(engramIndex)

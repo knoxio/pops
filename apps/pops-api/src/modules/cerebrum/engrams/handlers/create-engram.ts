@@ -1,3 +1,5 @@
+import { type CerebrumDb } from '@pops/cerebrum-db';
+
 import { ValidationError } from '../../../../shared/errors.js';
 import { applyTemplate } from '../../templates/apply.js';
 import { serializeEngram } from '../file.js';
@@ -5,15 +7,13 @@ import { generateEngramId } from '../id.js';
 import { absolutePath, assertSafeType, dedupe, isIdTaken, writeFileAtomic } from './fs-helpers.js';
 import { upsertIndex } from './upsert-index.js';
 
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-
 import type { TemplateRegistry } from '../../templates/registry.js';
 import type { EngramFrontmatter, EngramSource } from '../schema.js';
 import type { ScopeRuleEngine } from '../scope-rules.js';
 
 export type CreateDeps = {
   root: string;
-  db: BetterSQLite3Database;
+  db: CerebrumDb;
   templates: TemplateRegistry;
   scopeRuleEngine?: ScopeRuleEngine;
   now: () => Date;
