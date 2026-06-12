@@ -5,11 +5,15 @@ on:
     branches: [main]
     paths:
       - "apps/pops-finance-api/**"
+      - "packages/finance-contract/**"
       - "packages/finance-db/**"
       - "packages/db-types/**"
       - ".github/workflows/finance-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
 
 jobs:
   changes:
@@ -26,6 +30,7 @@ jobs:
           filters: |
             relevant:
               - 'apps/pops-finance-api/**'
+              - 'packages/finance-contract/**'
               - 'packages/finance-db/**'
               - 'packages/db-types/**'
               - '.github/workflows/finance-api-quality.yml'

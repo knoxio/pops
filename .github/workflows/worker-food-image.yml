@@ -13,7 +13,8 @@ on:
     paths:
       - 'apps/pops-worker-food/**'
       - 'infra/docker/pops-worker-food/**'
-      - 'packages/food-contracts/**'
+      - 'packages/food-*/**'
+      - 'packages/app-food-db/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'turbo.json'
@@ -24,7 +25,8 @@ on:
     paths:
       - 'apps/pops-worker-food/**'
       - 'infra/docker/pops-worker-food/**'
-      - 'packages/food-contracts/**'
+      - 'packages/food-*/**'
+      - 'packages/app-food-db/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'turbo.json'

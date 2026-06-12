@@ -4,6 +4,19 @@ on:
   push:
     branches: [main, develop]
   pull_request:
+    paths:
+      - 'apps/pops-shell/**'
+      - 'apps/pops-api/**'
+      - 'packages/ui/**'
+      - 'packages/app-*/**'
+      - 'packages/api-client/**'
+      - 'packages/auth/**'
+      - 'packages/navigation/**'
+      - 'packages/widgets/**'
+      - 'packages/types/**'
+      - 'packages/db-types/**'
+      - 'packages/test-utils/**'
+      - '.github/workflows/fe-test-e2e.yml'
 
 jobs:
   changes:
@@ -21,7 +34,15 @@ jobs:
             e2e:
               - 'apps/pops-shell/**'
               - 'apps/pops-api/**'
-              - 'packages/**'
+              - 'packages/ui/**'
+              - 'packages/app-*/**'
+              - 'packages/api-client/**'
+              - 'packages/auth/**'
+              - 'packages/navigation/**'
+              - 'packages/widgets/**'
+              - 'packages/types/**'
+              - 'packages/db-types/**'
+              - 'packages/test-utils/**'
               - '.github/workflows/fe-test-e2e.yml'
 
   e2e-tests:
