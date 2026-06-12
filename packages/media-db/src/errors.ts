@@ -45,3 +45,27 @@ export class TvShowConflictError extends Error {
     this.tvdbId = tvdbId;
   }
 }
+
+export class WatchHistoryNotFoundError extends Error {
+  override readonly name = 'WatchHistoryNotFoundError' as const;
+  readonly id: number;
+
+  constructor(id: number) {
+    super(`Watch history entry '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class WatchHistoryConflictError extends Error {
+  override readonly name = 'WatchHistoryConflictError' as const;
+  readonly mediaType: 'movie' | 'episode';
+  readonly mediaId: number;
+  readonly watchedAt: string;
+
+  constructor(mediaType: 'movie' | 'episode', mediaId: number, watchedAt: string) {
+    super(`Watch history entry for ${mediaType} ${mediaId} at ${watchedAt} already exists`);
+    this.mediaType = mediaType;
+    this.mediaId = mediaId;
+    this.watchedAt = watchedAt;
+  }
+}

@@ -101,6 +101,20 @@ CREATE INDEX idx_tv_shows_name ON tv_shows (name);
 CREATE INDEX idx_tv_shows_first_air_date ON tv_shows (first_air_date);
 `;
 
+export const WATCH_HISTORY_TABLE_SQL = `
+CREATE TABLE watch_history (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  media_type text NOT NULL,
+  media_id integer NOT NULL,
+  watched_at text DEFAULT (datetime('now')) NOT NULL,
+  completed integer DEFAULT 1 NOT NULL,
+  blacklisted integer DEFAULT 0 NOT NULL
+);
+CREATE INDEX idx_watch_history_media ON watch_history (media_type, media_id);
+CREATE INDEX idx_watch_history_watched_at ON watch_history (watched_at);
+CREATE UNIQUE INDEX idx_watch_history_unique ON watch_history (media_type, media_id, watched_at);
+`;
+
 export const WISH_LIST_TABLE_SQL = `
 CREATE TABLE wish_list (
   id text PRIMARY KEY NOT NULL,

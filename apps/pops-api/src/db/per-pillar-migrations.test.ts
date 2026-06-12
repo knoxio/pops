@@ -208,7 +208,8 @@ describe('runPerPillarMigrations', () => {
     // with 0021_spooky_lockheed (media pillar Phase 1 PR 2),
     // 0022_media_movies_baseline (Theme 13 PRD-165 US-01 — movies baseline),
     // 0023_watchlist_baseline (Theme 13 PRD-167 PR 1 — watchlist baseline),
-    // and 0024_media_tv_shows_baseline (Theme 13 PRD-166 US-01 — tv-shows baseline);
+    // 0024_media_tv_shows_baseline (Theme 13 PRD-166 US-01 — tv-shows baseline),
+    // and 0025_media_watch_history_baseline (Theme 13 PRD-168 PR 1 — watch-history baseline);
     // `inventory` owns `packages/inventory-db/migrations/` with
     // 0005_fancy_crystal (inventory pillar Phase 1 PR 2),
     // 0006_inventory_pillar_baseline (inventory pillar Phase 2 PR 3 —
@@ -236,6 +237,7 @@ describe('runPerPillarMigrations', () => {
         '0022_media_movies_baseline',
         '0023_watchlist_baseline',
         '0024_media_tv_shows_baseline',
+        '0025_media_watch_history_baseline',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
         '0054_service_accounts',

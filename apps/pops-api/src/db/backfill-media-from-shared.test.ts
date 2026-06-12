@@ -25,6 +25,7 @@ import {
   MOVIES_TABLE_SQL,
   SHELF_IMPRESSIONS_TABLE_SQL,
   TV_SHOWS_TABLE_SQL,
+  WATCH_HISTORY_TABLE_SQL,
 } from './backfill-test-fixtures.js';
 
 let tmpDir: string;
@@ -446,6 +447,130 @@ describe('backfillMediaFromShared', () => {
 
       expect(() => backfillMediaFromShared()).not.toThrow();
       const count = media.raw.prepare('SELECT count(*) AS n FROM movies').get() as { n: number };
+      expect(count.n).toBe(0);
+    });
+  });
+
+  describe('watch_history (PRD-168 PR 1)', () => {
+    interface WatchHistorySeed {
+      mediaType: 'movie' | 'episode';
+      mediaId: number;
+      watchedAt: string;
+      completed?: number;
+      blacklisted?: number;
+    }
+
+    function openSharedWithWatchHistory(rows: WatchHistorySeed[]): string {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.exec(WATCH_HISTORY_TABLE_SQL);
+      const insert = raw.prepare(
+        'INSERT INTO watch_history (media_type, media_id, watched_at, completed, blacklisted) VALUES (?, ?, ?, ?, ?)'
+      );
+      for (const row of rows) {
+        insert.run(
+          row.mediaType,
+          row.mediaId,
+          row.watchedAt,
+          row.completed ?? 1,
+          row.blacklisted ?? 0
+        );
+      }
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+      return path;
+    }
+
+    it('copies fresh watch_history rows on first run and is a no-op on the second', () => {
+      openSharedWithWatchHistory([
+        { mediaType: 'movie', mediaId: 603, watchedAt: '2026-06-01 12:00:00' },
+        { mediaType: 'episode', mediaId: 42, watchedAt: '2026-06-02 18:00:00' },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      backfillMediaFromShared();
+      const after = media.raw
+        .prepare('SELECT id, media_type, media_id FROM watch_history ORDER BY id')
+        .all() as { id: number; media_type: string; media_id: number }[];
+      expect(after.map((r) => r.media_id)).toEqual([603, 42]);
+
+      backfillMediaFromShared();
+      const second = media.raw.prepare('SELECT count(*) AS n FROM watch_history').get() as {
+        n: number;
+      };
+      expect(second.n).toBe(2);
+    });
+
+    it('only inserts watch_history rows missing from the media copy', () => {
+      openSharedWithWatchHistory([
+        { mediaType: 'movie', mediaId: 603, watchedAt: '2026-06-01 12:00:00' },
+        { mediaType: 'episode', mediaId: 42, watchedAt: '2026-06-02 18:00:00' },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      // Pre-seed id=1 with a different (media_type, media_id, watched_at)
+      // tuple so the backfill skips it by id and the unique index doesn't
+      // conflict with the id=2 carry-over.
+      media.raw
+        .prepare(
+          'INSERT INTO watch_history (id, media_type, media_id, watched_at) VALUES (?, ?, ?, ?)'
+        )
+        .run(1, 'movie', 99_999, '2026-05-01 00:00:00');
+
+      backfillMediaFromShared();
+      const rows = media.raw
+        .prepare('SELECT id, media_type, media_id FROM watch_history ORDER BY id')
+        .all() as { id: number; media_type: string; media_id: number }[];
+      expect(rows).toEqual([
+        { id: 1, media_type: 'movie', media_id: 99_999 },
+        { id: 2, media_type: 'episode', media_id: 42 },
+      ]);
+    });
+
+    it('carries every column across (full-shape roundtrip)', () => {
+      openSharedWithWatchHistory([
+        {
+          mediaType: 'episode',
+          mediaId: 12_345,
+          watchedAt: '2026-06-03 21:30:00',
+          completed: 0,
+          blacklisted: 1,
+        },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      backfillMediaFromShared();
+
+      const row = media.raw
+        .prepare('SELECT * FROM watch_history WHERE media_id = ?')
+        .get(12_345) as Record<string, unknown>;
+      expect(row).toMatchObject({
+        media_type: 'episode',
+        media_id: 12_345,
+        watched_at: '2026-06-03 21:30:00',
+        completed: 0,
+        blacklisted: 1,
+      });
+    });
+
+    it('tolerates a shared DB without the watch_history table', () => {
+      // Shared DB has shelf_impressions but no watch_history — backfill
+      // copies shelf rows and skips watch_history without throwing.
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      expect(() => backfillMediaFromShared()).not.toThrow();
+      const count = media.raw.prepare('SELECT count(*) AS n FROM watch_history').get() as {
+        n: number;
+      };
       expect(count.n).toBe(0);
     });
   });
