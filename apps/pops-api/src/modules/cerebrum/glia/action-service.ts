@@ -1,23 +1,22 @@
 /**
  * GliaActionService — CRUD operations for Glia actions and trust state.
  *
- * All write operations update glia_trust_state counters atomically
- * (wrapped in transactions with the corresponding glia_actions update).
+ * All write operations update `glia_trust_state` counters atomically
+ * (wrapped in transactions with the corresponding `glia_actions` update).
  *
- * PRD-086 US-02: Approval Tracking.
- *
- * PRD-181 PR 3 (this PR) collapses the read/write split established by
- * PR 2: every path — `seedTrustStates`, `createAction`, `decideAction`,
+ * Every path — `seedTrustStates`, `createAction`, `decideAction`,
  * `executeAction`, `revertAction`, `updateTrustState`, plus the
  * read-after-write hop inside `requireAction` and every read method —
- * now routes through a single `CerebrumDb` handle wired to
- * `getCerebrumDrizzle()` in `instance.ts`. The boot-time backfill
- * (`backfillCerebrumFromShared()` in
- * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts`) carries any
- * residual rows on the legacy shared `pops.db` forward on the first
- * deploy after the cut. Subsequent boots are no-ops via the per-table
- * existence filter; a follow-up PR retires the backfill and drops the
- * shared-journal shim.
+ * routes through a single `CerebrumDb` handle wired to
+ * `getCerebrumDrizzle()` in `instance.ts`. The legacy shared `pops.db`
+ * read/write split has been collapsed: glia is fully owned by
+ * `@pops/cerebrum-db` against `cerebrum.db`.
+ *
+ * Residual rows on the legacy shared `pops.db` are carried forward by
+ * the boot-time backfill (`backfillCerebrumFromShared()` in
+ * `apps/pops-api/src/db/backfill-cerebrum-from-shared.ts`); subsequent
+ * boots are no-ops via the per-table existence filter. The backfill +
+ * shared-journal shim are retired once no shared-db deployments remain.
  *
  * The TOML config loader + threshold reads from
  * `engrams/.config/glia.toml` (see `toml-config.ts` / `types.ts`) stay
