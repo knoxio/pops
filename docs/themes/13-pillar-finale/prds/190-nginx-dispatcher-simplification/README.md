@@ -56,12 +56,21 @@ The shared `_pillar-proxy.conf` partial holds the timeouts + headers, eliminatin
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                        |
-| --- | ----------------------------------------------------------- | -------------------------------------------------------------- |
-| 01  | [us-01-shared-proxy-partial](us-01-shared-proxy-partial.md) | Author `_pillar-proxy.conf` with shared headers + timeouts     |
-| 02  | [us-02-prefix-locations](us-02-prefix-locations.md)         | Add prefix-match `location /trpc-<pillar>` for every pillar    |
-| 03  | [us-03-retire-regex-rules](us-03-retire-regex-rules.md)     | Delete the old regex rules; keep `/trpc` fallthrough           |
-| 04  | [us-04-redeploy-verify](us-04-redeploy-verify.md)           | Build new pops-shell image; deploy to capivara; verify routing |
+| #   | Story                                                       | Summary                                                        | Status      |
+| --- | ----------------------------------------------------------- | -------------------------------------------------------------- | ----------- |
+| 01  | [us-01-shared-proxy-partial](us-01-shared-proxy-partial.md) | Author `_pillar-proxy.conf` with shared headers + timeouts     | Done        |
+| 02  | [us-02-prefix-locations](us-02-prefix-locations.md)         | Add prefix-match `location /trpc-<pillar>` for every pillar    | Done        |
+| 03  | [us-03-retire-regex-rules](us-03-retire-regex-rules.md)     | Delete the old regex rules; keep `/trpc` fallthrough           | Done        |
+| 04  | [us-04-redeploy-verify](us-04-redeploy-verify.md)           | Build new pops-shell image; deploy to capivara; verify routing | Not started |
+
+## Acceptance Criteria
+
+- [x] Shared `_pillar-proxy.conf` partial authored at `apps/pops-shell/nginx/conf.d/_pillar-proxy.conf` and installed into the image at `/etc/nginx/snippets/_pillar-proxy.conf` (kept out of `conf.d/` to avoid nginx auto-loading the partial as a server block).
+- [x] One prefix-match `location /trpc-<pillar>/` per pillar (core, inventory, media, finance, food, lists, cerebrum), each rewriting `/trpc-<pillar>/<rest>` → `/trpc/<rest>` and proxying to the variable-form upstream so pops-shell still boots when a pillar container is absent.
+- [x] All five legacy regex dispatchers (`^/trpc/inventory\.locations\.[^,]+$`, `^/trpc/cerebrum\.nudges\.(list|get|dismiss|contradictions)$`, `^/trpc/media\.shelfImpressions\.`, `^/trpc/core\.serviceAccounts\.`, `^/trpc/finance\.((wishlist|budgets)\.[^,]+|transactions\.(list|get|create|update|delete|restore))$`) deleted.
+- [x] Legacy `/trpc` catch-all to pops-api retained for orchestration code and pre-PRD-187 cached SPA bundles.
+- [x] Smoke harness `apps/pops-shell/scripts/validate-nginx-conf.sh` runs `nginx -t` against the merged config inside `nginx:alpine`; skips gracefully when Docker isn't available, fails hard under `REQUIRE_DOCKER=1`.
+- [ ] US-04 redeploy/verify on capivara (out of this PR's scope; deferred to the Theme 13 deploy wave).
 
 ## Out of Scope
 
