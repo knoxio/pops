@@ -1,0 +1,20 @@
+{
+  "name": "@pops/docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static container serving Stoplight Elements pointed at every contract's OpenAPI snapshot (Theme 13 PRD-219).",
+  "type": "module",
+  "scripts": {
+    "build": "tsx scripts/collect-specs.ts",
+    "dev": "tsx scripts/dev-serve.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}
