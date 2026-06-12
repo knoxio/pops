@@ -1,8 +1,14 @@
-import { and, count, desc, eq, inArray, type SQL } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { debriefResults, debriefSessions, watchHistory } from '@pops/db-types';
+import {
+  type WatchHistoryMediaType,
+  watchHistoryService,
+  WatchHistoryNotFoundError,
+} from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
 
 import type { WatchHistoryFilters, WatchHistoryRow } from '../types.js';
@@ -15,40 +21,43 @@ export interface WatchHistoryListResult {
   total: number;
 }
 
+function narrowMediaType(value: string | undefined): WatchHistoryMediaType | undefined {
+  if (value === 'movie' || value === 'episode') return value;
+  return undefined;
+}
+
+function translate<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (err instanceof WatchHistoryNotFoundError) {
+      throw new NotFoundError('WatchHistoryEntry', String(err.id));
+    }
+    throw err;
+  }
+}
+
 export function listWatchHistory(
   filters: WatchHistoryFilters,
   limit: number,
   offset: number
 ): WatchHistoryListResult {
-  const db = getDrizzle();
-  const conditions: SQL[] = [];
-  if (filters.mediaType) {
-    conditions.push(eq(watchHistory.mediaType, filters.mediaType as 'movie' | 'episode'));
-  }
-  if (filters.mediaId) conditions.push(eq(watchHistory.mediaId, filters.mediaId));
-
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = db
-    .select()
-    .from(watchHistory)
-    .where(where)
-    .orderBy(desc(watchHistory.watchedAt))
-    .limit(limit)
-    .offset(offset)
-    .all();
-  const [countRow] = db.select({ total: count() }).from(watchHistory).where(where).all();
-  return { rows, total: countRow?.total ?? 0 };
+  return watchHistoryService.list(
+    getMediaDrizzle(),
+    {
+      mediaType: narrowMediaType(filters.mediaType),
+      mediaId: filters.mediaId,
+    },
+    limit,
+    offset
+  );
 }
 
 export function getWatchHistoryEntry(id: number): WatchHistoryRow {
-  const db = getDrizzle();
-  const row = db.select().from(watchHistory).where(eq(watchHistory.id, id)).get();
-  if (!row) throw new NotFoundError('WatchHistoryEntry', String(id));
-  return row;
+  return translate(() => watchHistoryService.getById(getMediaDrizzle(), id));
 }
 
 export function deleteWatchHistoryEntry(id: number): void {
-  // Verify the entry exists before attempting deletion (throws NotFoundError if missing).
   getWatchHistoryEntry(id);
 
   getDrizzle().transaction((tx) => {
