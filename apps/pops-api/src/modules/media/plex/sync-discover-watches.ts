@@ -1,6 +1,7 @@
 import { movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getTvdbClient } from '../thetvdb/index.js';
 import { getImageCache, getTmdbClient } from '../tmdb/index.js';
 import { getPlexToken } from './service.js';
@@ -38,7 +39,7 @@ interface MovieLookupMaps {
 }
 
 function buildMovieLookupMaps(): MovieLookupMaps {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const allMovies = db
     .select({
       id: movies.id,
