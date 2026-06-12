@@ -9,14 +9,24 @@
  * The process opens its OWN `inventory.db` connection via
  * `openInventoryDb` rather than reaching back into pops-api's
  * singleton — that's the whole point of phase 3.
+ *
+ * Theme 13 PRD-158 adds an opt-in registry handshake via
+ * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
+ * builds a hand-rolled inventory manifest (PRD-155 will generate this
+ * later) and registers with the central registry on boot. SIGTERM
+ * triggers `pillarHandle.stop()` so the heartbeat clears and the
+ * registry sees an explicit deregister.
  */
 import { openCoreDb } from '@pops/core-db';
 import { openInventoryDb } from '@pops/inventory-db';
+import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createInventoryApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
 import { parseBareOrigin } from './pillars/env.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -26,6 +36,39 @@ function resolvePort(): number {
     throw new Error(`[inventory-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
+}
+
+function buildInventoryManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'inventory',
+    version,
+    contract: {
+      package: '@pops/inventory-contract',
+      version,
+      tag: `contract-inventory@v${version}`,
+    },
+    routes: {
+      queries: [
+        'inventory.locations.tree',
+        'inventory.locations.list',
+        'inventory.locations.get',
+        'inventory.locations.getPath',
+        'inventory.locations.children',
+        'inventory.locations.deleteStats',
+      ],
+      mutations: [
+        'inventory.locations.create',
+        'inventory.locations.update',
+        'inventory.locations.delete',
+      ],
+      subscriptions: [],
+    },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    settings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
 }
 
 const port = resolvePort();
@@ -56,6 +99,11 @@ const inventoryDb = openInventoryDb(resolveInventorySqlitePath());
 const coreDb = openCoreDb(resolveCoreSqlitePath());
 const app = createInventoryApiApp({ inventoryDb, coreDb, version, selfBaseUrl });
 
+let pillarHandle: PillarBootstrapHandle | undefined;
+if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
+  pillarHandle = await bootstrapPillar({ manifest: buildInventoryManifest(version) });
+}
+
 const server = app.listen(port, () => {
   console.warn(`[inventory-api] Listening on port ${port}`);
 });
@@ -65,9 +113,11 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[inventory-api] Shutting down (${signal})`);
-  server.close(() => {
-    inventoryDb.raw.close();
-    coreDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
+    server.close(() => {
+      inventoryDb.raw.close();
+      coreDb.raw.close();
+    });
   });
 }
 

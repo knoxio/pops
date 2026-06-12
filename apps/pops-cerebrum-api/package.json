@@ -19,6 +19,7 @@
   "dependencies": {
     "@pops/cerebrum-db": "workspace:*",
     "@pops/core-db": "workspace:*",
+    "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@trpc/server": "^11.17.0",
     "drizzle-orm": "^0.45.2",

@@ -9,14 +9,25 @@
  * The process opens its OWN core.db connection via `openCoreDb` rather
  * than reaching back into pops-api's singleton — that's the whole point
  * of phase 3.
+ *
+ * Theme 13 PRD-158 adds an opt-in registry handshake via
+ * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
+ * builds a hand-rolled core manifest (PRD-155 will generate this
+ * later) and registers with its OWN registry on boot — same loop the
+ * other pillars use, just pointed at localhost. SIGTERM triggers
+ * `pillarHandle.stop()` so the heartbeat clears and the registry sees
+ * an explicit deregister before the HTTP server shuts down.
  */
 import { openCoreDb } from '@pops/core-db';
+import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createCoreApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { reconcileRegistryOnBoot } from './modules/registry/boot.js';
 import { startHeartbeatTicker } from './modules/registry/ticker.js';
 import { parseBareOrigin } from './pillars/env.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -26,6 +37,34 @@ function resolvePort(): number {
     throw new Error(`[core-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
+}
+
+function buildCoreManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'core',
+    version,
+    contract: {
+      package: '@pops/core-contract',
+      version,
+      tag: `contract-core@v${version}`,
+    },
+    routes: {
+      queries: ['core.registry.list', 'core.registry.get', 'core.serviceAccounts.list'],
+      mutations: [
+        'core.registry.register',
+        'core.registry.deregister',
+        'core.registry.heartbeat',
+        'core.serviceAccounts.create',
+        'core.serviceAccounts.revoke',
+      ],
+      subscriptions: [],
+    },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    settings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
 }
 
 const port = resolvePort();
@@ -51,14 +90,26 @@ const server = app.listen(port, () => {
 
 const stopHeartbeatTicker = startHeartbeatTicker(coreDb.db);
 
+// The bootstrap handshake registers core with its own registry once the
+// HTTP server is accepting traffic. Done after `app.listen` because the
+// SDK transport posts to `${registryUrl}/registry/...` and the registry
+// lives in this very process — registering before listen would race the
+// HTTP server up.
+let pillarHandle: PillarBootstrapHandle | undefined;
+if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
+  pillarHandle = await bootstrapPillar({ manifest: buildCoreManifest(version) });
+}
+
 let shuttingDown = false;
 function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[core-api] Shutting down (${signal})`);
   stopHeartbeatTicker();
-  server.close(() => {
-    coreDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
+    server.close(() => {
+      coreDb.raw.close();
+    });
   });
 }
 

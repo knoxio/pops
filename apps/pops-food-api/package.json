@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@pops/food-db": "workspace:*",
+    "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "express": "^5.1.0"
   },

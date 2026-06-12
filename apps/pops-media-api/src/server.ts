@@ -9,11 +9,21 @@
  * The process opens its OWN `media.db` connection via `openMediaDb`
  * rather than reaching back into pops-api's singleton — that's the whole
  * point of phase 3. Mirrors `apps/pops-core-api/src/server.ts`.
+ *
+ * Theme 13 PRD-158 adds an opt-in registry handshake via
+ * `bootstrapPillar`. When `POPS_REGISTRY_ENABLED=true`, the process
+ * builds a hand-rolled media manifest (PRD-155 will generate this
+ * later) and registers with the central registry on boot. SIGTERM
+ * triggers `pillarHandle.stop()` so the heartbeat clears and the
+ * registry sees an explicit deregister.
  */
 import { openMediaDb, shelfImpressionsService } from '@pops/media-db';
+import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createMediaApiApp } from './app.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
+
+import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api.
@@ -26,6 +36,31 @@ function resolvePort(): number {
   return parsed;
 }
 
+function buildMediaManifest(version: string): ManifestPayload {
+  return {
+    pillar: 'media',
+    version,
+    contract: {
+      package: '@pops/media-contract',
+      version,
+      tag: `contract-media@v${version}`,
+    },
+    routes: {
+      queries: [
+        'media.shelfImpressions.getRecentImpressions',
+        'media.shelfImpressions.getShelfFreshness',
+      ],
+      mutations: ['media.shelfImpressions.recordImpressions', 'media.shelfImpressions.cleanup'],
+      subscriptions: [],
+    },
+    search: { adapters: [] },
+    ai: { tools: [] },
+    uri: { types: [] },
+    settings: { keys: [] },
+    healthcheck: { path: '/health' },
+  };
+}
+
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
 
@@ -36,6 +71,11 @@ const mediaDb = openMediaDb(resolveMediaSqlitePath());
 shelfImpressionsService.initImpressionsService(mediaDb.db);
 const app = createMediaApiApp({ mediaDb, version });
 
+let pillarHandle: PillarBootstrapHandle | undefined;
+if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
+  pillarHandle = await bootstrapPillar({ manifest: buildMediaManifest(version) });
+}
+
 const server = app.listen(port, () => {
   console.warn(`[media-api] Listening on port ${port}`);
 });
@@ -45,8 +85,10 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[media-api] Shutting down (${signal})`);
-  server.close(() => {
-    mediaDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
+    server.close(() => {
+      mediaDb.raw.close();
+    });
   });
 }
 
