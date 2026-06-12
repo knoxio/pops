@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import { EngramSchema } from '../src/schemas/engram.js';
+import { NudgeSchema, NudgeStatusSchema } from '../src/schemas/nudge.js';
+import { ScopeSchema } from '../src/schemas/scope.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
 const PAGINATION_SCHEMA: OpenApiSchema = {
@@ -31,6 +33,9 @@ export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
     Engram: zodToOpenApiSchema(EngramSchema),
+    Nudge: zodToOpenApiSchema(NudgeSchema),
+    NudgeStatus: zodToOpenApiSchema(NudgeStatusSchema),
+    Scope: zodToOpenApiSchema(ScopeSchema),
     CreateEngramInput: zodToOpenApiSchema(CreateEngramBodySchema),
     UpdateEngramInput: zodToOpenApiSchema(UpdateEngramBodySchema),
     EngramListResponse: {

@@ -44,6 +44,22 @@ describe('@pops/cerebrum-contract openapi snapshot', () => {
     expect(openapi.components.schemas).toHaveProperty('Engram');
   });
 
+  it('references the Nudge entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Nudge');
+  });
+
+  it('references the Scope entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('Scope');
+  });
+
+  it('includes the canonical nudge status enum', () => {
+    const status = openapi.components.schemas['NudgeStatus'] as {
+      enum?: readonly string[];
+    };
+    expect(status).toBeDefined();
+    expect(status.enum).toEqual(expect.arrayContaining(['pending', 'sent', 'dismissed']));
+  });
+
   it('describes the engrams list endpoint', () => {
     const op = openapi.paths['/cerebrum/engrams']?.['get'];
     expect(op).toBeDefined();
