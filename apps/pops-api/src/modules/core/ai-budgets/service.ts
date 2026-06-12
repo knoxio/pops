@@ -1,8 +1,17 @@
-import { and, gte, sql } from 'drizzle-orm';
+/**
+ * AI budgets module — CRUD + budget status for `core.aiBudgets.*`.
+ *
+ * Read/write split (PRD-186 PR 2 cutover): the pure read surface forwards
+ * into `@pops/core-db`'s `aiUsageService` against `getCoreDrizzle()`, so
+ * `listBudgets` and `getBudgetStatus` resolve against `core.db`.
+ * Mutations (`upsertBudget`) still land via the shared `getDrizzle()`
+ * handle — the legacy `pops.db -> core.db` boot-time backfill bridges the
+ * gap until PRD-186 PR 3 flips the writer too. This matches the
+ * watch-history cutover precedent (PR #3008).
+ */
+import { aiBudgets, aiUsageService } from '@pops/core-db';
 
-import { aiBudgets, aiInferenceLog } from '@pops/db-types';
-
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle, getDrizzle } from '../../../db.js';
 
 export interface Budget {
   id: string;
@@ -53,10 +62,23 @@ function computeProjectedExhaustion(
   return exhaustionDate.toISOString().split('T')[0] ?? null;
 }
 
+/**
+ * READ — forwards to `aiUsageService.listBudgets` against `core.db`.
+ */
 export function listBudgets(): Budget[] {
-  return getDrizzle().select().from(aiBudgets).all();
+  return aiUsageService.listBudgets(getCoreDrizzle());
 }
 
+/**
+ * WRITE — upsert lands on the shared `pops.db` via `getDrizzle()`. The
+ * boot-time `pops.db -> core.db` backfill propagates the new row to the
+ * read store on the next boot. PRD-186 PR 3 flips this to `core.db`.
+ *
+ * The read-after-write hop deliberately uses the SAME `getDrizzle()` handle
+ * the insert went to. Routing the readback through `getCoreDrizzle()` would
+ * miss the freshly-inserted row until the next boot-time backfill, breaking
+ * both the mutation response and `migrateLegacyBudgetSettings()` at startup.
+ */
 export function upsertBudget(input: UpsertBudgetInput): Budget {
   const now = new Date().toISOString();
   const db = getDrizzle();
@@ -83,46 +105,52 @@ export function upsertBudget(input: UpsertBudgetInput): Budget {
       },
     })
     .run();
-  const row = db
-    .select()
-    .from(aiBudgets)
-    .where(sql`id = ${input.id}`)
-    .get();
+  const row = aiUsageService.getBudgetOrNull(db, input.id);
   if (!row) throw new Error(`Budget not found: ${input.id}`);
   return row;
 }
 
+/**
+ * READ — budgets come from `aiUsageService.listBudgets`; per-budget usage
+ * comes from `aiUsageService.sumInferenceLogUsage` against `core.db` so
+ * both the budget row and its rolled-up monthly usage stay on the same
+ * read handle.
+ *
+ * Staleness window: until PRD-186 PR 3 cuts the inference-log writer over
+ * to `core.db`, inference rows are still inserted into the shared `pops.db`
+ * by `apps/pops-api/src/lib/inference-middleware.ts`. The `core.db` copy is
+ * only refreshed by the boot-time backfill, so the reported monthly usage,
+ * percentage, and projected exhaustion date can under-count any inference
+ * recorded since process start. Accepted lag during the split window.
+ * TODO(PRD-186 PR 3): drop this staleness note once writes flip to core.db.
+ */
 export function getBudgetStatus(): BudgetStatus[] {
-  const db = getDrizzle();
-  const budgets = db.select().from(aiBudgets).all();
   const start = monthStart();
   const monthStartDate = new Date(start);
+  const budgets = aiUsageService.listBudgets(getCoreDrizzle());
 
-  return budgets.map((budget) => buildBudgetStatus(db, budget, start, monthStartDate));
+  return budgets.map((budget) => buildBudgetStatus(budget, start, monthStartDate));
 }
 
 type BudgetRow = typeof aiBudgets.$inferSelect;
 
 function getBudgetUsage(
-  db: ReturnType<typeof getDrizzle>,
   budget: BudgetRow,
   start: string
 ): { currentTokenUsage: number; currentCostUsage: number } {
-  const conditions = [gte(aiInferenceLog.createdAt, start)];
-  if (budget.scopeType === 'provider' && budget.scopeValue) {
-    conditions.push(sql`${aiInferenceLog.provider} = ${budget.scopeValue}`);
-  } else if (budget.scopeType === 'operation' && budget.scopeValue) {
-    conditions.push(sql`${aiInferenceLog.operation} = ${budget.scopeValue}`);
-  }
-  const [agg] = db
-    .select({
-      totalTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens} + ${aiInferenceLog.outputTokens}), 0)`,
-      totalCost: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-    })
-    .from(aiInferenceLog)
-    .where(and(...conditions))
-    .all();
-  return { currentTokenUsage: agg?.totalTokens ?? 0, currentCostUsage: agg?.totalCost ?? 0 };
+  const usage = aiUsageService.sumInferenceLogUsage(getCoreDrizzle(), {
+    since: start,
+    ...(budget.scopeType === 'provider' && budget.scopeValue
+      ? { provider: budget.scopeValue }
+      : {}),
+    ...(budget.scopeType === 'operation' && budget.scopeValue
+      ? { operation: budget.scopeValue }
+      : {}),
+  });
+  return {
+    currentTokenUsage: usage.totalInputTokens + usage.totalOutputTokens,
+    currentCostUsage: usage.totalCostUsd,
+  };
 }
 
 function computeBudgetStatusFields(
@@ -153,13 +181,8 @@ function computeBudgetStatusFields(
   return { percentageUsed: null, projectedExhaustionDate: null };
 }
 
-function buildBudgetStatus(
-  db: ReturnType<typeof getDrizzle>,
-  budget: BudgetRow,
-  start: string,
-  monthStartDate: Date
-): BudgetStatus {
-  const usage = getBudgetUsage(db, budget, start);
+function buildBudgetStatus(budget: BudgetRow, start: string, monthStartDate: Date): BudgetStatus {
+  const usage = getBudgetUsage(budget, start);
   const fields = computeBudgetStatusFields(budget, usage, monthStartDate);
   return { ...budget, ...usage, ...fields };
 }
