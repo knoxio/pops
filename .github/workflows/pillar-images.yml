@@ -103,7 +103,6 @@ jobs:
               - 'packages/db-types/**'
               - 'packages/types/**'
               - 'packages/module-registry/**'
-              - 'packages/food-contracts/**'
               - 'infra/docker/pillar.Dockerfile'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'

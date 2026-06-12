@@ -16,6 +16,9 @@ on:
       - 'packages/types/**'
       - 'packages/db-types/**'
       - 'packages/test-utils/**'
+      - 'packages/module-registry/**'
+      - 'packages/food-contracts/**'
+      - 'packages/*-db/**'
       - '.github/workflows/fe-test-e2e.yml'
 
 jobs:
@@ -43,6 +46,9 @@ jobs:
               - 'packages/types/**'
               - 'packages/db-types/**'
               - 'packages/test-utils/**'
+              - 'packages/module-registry/**'
+              - 'packages/food-contracts/**'
+              - 'packages/*-db/**'
               - '.github/workflows/fe-test-e2e.yml'
 
   e2e-tests:
