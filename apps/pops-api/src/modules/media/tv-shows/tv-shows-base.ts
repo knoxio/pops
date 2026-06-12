@@ -7,10 +7,29 @@
  * thetvdb service + refresh-episodes, …) keep importing from
  * `./tv-shows/service.js` unchanged. The handle now points at the media
  * pillar's per-pillar SQLite via `getMediaDrizzle()` instead of the
- * shared `pops.db` singleton, so every tv-shows write lands in
- * `media.db.tv_shows`. Reads issued from the legacy mount still serve
- * the same rows because the backfill keeps both stores in sync until
- * the shim retires.
+ * shared `pops.db` singleton, so every tv-shows write through this
+ * wrapper lands in `media.db.tv_shows`.
+ *
+ * Cross-store consistency during the migration window:
+ *  - `backfillMediaFromShared()` runs at boot and is one-way only
+ *    (pops.db → media.db, idempotent via NOT IN id filter). It does NOT
+ *    keep the two stores in sync at runtime; it only catches media.db
+ *    up to pops.db on each restart.
+ *  - In-tree code paths that still write tv_shows to the shared
+ *    `pops.db` (notably `library/tv-show-service.ts` for plex/library
+ *    ingestion, and `seasons-service.ts` / `episodes-service.ts` whose
+ *    FK parents live on the legacy mount) remain the source of truth
+ *    for `seasons.tv_show_id` and `episodes.season_id` joins. Until
+ *    those slices ship to `@pops/media-db`, the seasons/episodes
+ *    services intentionally read+write the shared DB so their FK joins
+ *    resolve in one store, and the boot-time backfill carries rows
+ *    written there into media.db on the next deploy.
+ *  - This means a tv_show created via `createTvShow` (media.db only)
+ *    will not satisfy an FK insert in `createSeason` (pops.db) until
+ *    the seasons/episodes cutover ships. Callers that need both must
+ *    keep going through the library ingestion path which writes to the
+ *    shared DB; this wrapper is currently used by reads + the
+ *    metadata-refresh writes that don't need new season FKs.
  *
  * Error translation: the package surface throws `TvShowNotFoundError` /
  * `TvShowConflictError`. We re-throw them as the in-tree `NotFoundError`
