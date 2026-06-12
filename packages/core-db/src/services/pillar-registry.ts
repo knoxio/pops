@@ -11,9 +11,12 @@
  * else (manifest blob, contract metadata, heartbeat, status) is
  * overwritten on every register.
  *
- * Heartbeat lifecycle and missed-heartbeat status transitions are out
- * of scope (PRD-162); this service only ships the persistence + read
- * path.
+ * `recordHeartbeat` updates `lastHeartbeatAt` and resets `status` →
+ * `healthy`; `applyStatusUpdates` lets the registry's reconciliation
+ * tick (PRD-162) batch transition pillars to `unavailable` once their
+ * heartbeat has lapsed past threshold. The "should this pillar still
+ * be healthy?" decision lives in the router (`computeStatus`), not in
+ * this service — keeping the persistence layer agnostic.
  */
 import { eq, sql } from 'drizzle-orm';
 
@@ -167,4 +170,89 @@ export function listPillarRegistrations(db: CoreDb): PillarRegistration[] {
 export function deletePillarRegistration(db: CoreDb, pillarId: string): boolean {
   const result = db.delete(pillarRegistry).where(eq(pillarRegistry.pillarId, pillarId)).run();
   return result.changes > 0;
+}
+
+export interface HeartbeatResult {
+  readonly recorded: boolean;
+  readonly registration: PillarRegistration | null;
+  readonly previousStatus: PillarStatus | null;
+  readonly statusChanged: boolean;
+}
+
+/**
+ * Idempotent heartbeat ingest (Theme 13 PRD-162).
+ *
+ * Updates `lastHeartbeatAt = now` and resets `status = 'healthy'` for
+ * the addressed pillar. Returns `recorded: false` if the pillar is not
+ * registered (cold registry, restart, deregistered). The router treats
+ * that as a soft signal — pillars retry on the next tick.
+ *
+ * `statusChanged` is true when this heartbeat flipped the persisted
+ * status (e.g. `unavailable → healthy`). `statusUpdatedAt` is rewritten
+ * only on a transition; a healthy-to-healthy heartbeat leaves it as is.
+ * The background ticker handles the healthy-staleness refresh.
+ */
+export function recordHeartbeat(
+  db: CoreDb,
+  pillarId: string,
+  options?: { now?: string }
+): HeartbeatResult {
+  const existing = getPillarRegistration(db, pillarId);
+  if (!existing) {
+    return { recorded: false, registration: null, previousStatus: null, statusChanged: false };
+  }
+  const now = options?.now ?? new Date().toISOString();
+  const previousStatus = existing.status;
+  const statusChanged = previousStatus !== 'healthy';
+
+  db.update(pillarRegistry)
+    .set({
+      lastHeartbeatAt: now,
+      status: 'healthy',
+      ...(statusChanged ? { statusUpdatedAt: now } : {}),
+    })
+    .where(eq(pillarRegistry.pillarId, pillarId))
+    .run();
+
+  const updated = getPillarRegistration(db, pillarId);
+  return {
+    recorded: true,
+    registration: updated,
+    previousStatus,
+    statusChanged,
+  };
+}
+
+export interface StatusTransition {
+  readonly pillarId: string;
+  readonly previousStatus: PillarStatus;
+  readonly nextStatus: PillarStatus;
+  readonly at: string;
+}
+
+export interface ApplyStatusUpdate {
+  readonly pillarId: string;
+  readonly status: PillarStatus;
+  readonly statusUpdatedAt: string;
+}
+
+/**
+ * Persist a batch of status updates emitted by the background ticker
+ * (Theme 13 PRD-162). One UPDATE per row, all inside a single SQLite
+ * transaction so a tick is atomic relative to concurrent heartbeats /
+ * registrations.
+ */
+export function applyStatusUpdates(db: CoreDb, updates: readonly ApplyStatusUpdate[]): void {
+  if (updates.length === 0) return;
+  db.transaction((tx) => {
+    for (const update of updates) {
+      tx.update(pillarRegistry)
+        .set({
+          status: update.status,
+          statusUpdatedAt: update.statusUpdatedAt,
+        })
+        .where(eq(pillarRegistry.pillarId, update.pillarId))
+        .run();
+    }
+  });
 }

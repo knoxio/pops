@@ -14,6 +14,7 @@ import { openCoreDb } from '@pops/core-db';
 
 import { createCoreApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
+import { startHeartbeatTicker } from './modules/registry/ticker.js';
 import { parseBareOrigin } from './pillars/env.js';
 
 function resolvePort(): number {
@@ -44,11 +45,14 @@ const server = app.listen(port, () => {
   console.warn(`[core-api] Listening on port ${port}`);
 });
 
+const stopHeartbeatTicker = startHeartbeatTicker(coreDb.db);
+
 let shuttingDown = false;
 function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[core-api] Shutting down (${signal})`);
+  stopHeartbeatTicker();
   server.close(() => {
     coreDb.raw.close();
   });

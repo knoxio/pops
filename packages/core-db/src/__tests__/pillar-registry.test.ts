@@ -11,9 +11,11 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  applyStatusUpdates,
   deletePillarRegistration,
   getPillarRegistration,
   listPillarRegistrations,
+  recordHeartbeat,
   upsertPillarRegistration,
   type PersistableManifest,
 } from '../services/pillar-registry.js';
@@ -193,5 +195,102 @@ describe('deletePillarRegistration', () => {
       now: second,
     });
     expect(reg.registeredAt).toBe(second);
+  });
+});
+
+describe('recordHeartbeat', () => {
+  let db: CoreDb;
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('returns recorded=false for an unknown pillar (does NOT auto-create rows)', () => {
+    const result = recordHeartbeat(db, 'finance', { now: '2026-06-12T12:00:00.000Z' });
+    expect(result.recorded).toBe(false);
+    expect(result.registration).toBeNull();
+    expect(getPillarRegistration(db, 'finance')).toBeNull();
+  });
+
+  it('refreshes lastHeartbeatAt and leaves status_updated_at alone when already healthy', () => {
+    const registeredAt = '2026-06-12T12:00:00.000Z';
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      now: registeredAt,
+    });
+    const beat = '2026-06-12T12:00:10.000Z';
+    const result = recordHeartbeat(db, 'finance', { now: beat });
+    expect(result.recorded).toBe(true);
+    expect(result.previousStatus).toBe('healthy');
+    expect(result.statusChanged).toBe(false);
+    expect(result.registration?.lastHeartbeatAt).toBe(beat);
+    expect(result.registration?.statusUpdatedAt).toBe(registeredAt);
+  });
+
+  it('flips status back to healthy when previously unavailable, stamping status_updated_at', () => {
+    const registeredAt = '2026-06-12T12:00:00.000Z';
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      now: registeredAt,
+    });
+    applyStatusUpdates(db, [
+      { pillarId: 'finance', status: 'unavailable', statusUpdatedAt: '2026-06-12T12:00:30.000Z' },
+    ]);
+    expect(getPillarRegistration(db, 'finance')?.status).toBe('unavailable');
+
+    const beat = '2026-06-12T12:00:35.000Z';
+    const result = recordHeartbeat(db, 'finance', { now: beat });
+    expect(result.statusChanged).toBe(true);
+    expect(result.previousStatus).toBe('unavailable');
+    expect(result.registration?.status).toBe('healthy');
+    expect(result.registration?.statusUpdatedAt).toBe(beat);
+    expect(result.registration?.lastHeartbeatAt).toBe(beat);
+  });
+});
+
+describe('applyStatusUpdates', () => {
+  let db: CoreDb;
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('is a no-op when given an empty list', () => {
+    expect(() => applyStatusUpdates(db, [])).not.toThrow();
+  });
+
+  it('writes one status row per update inside a single transaction', () => {
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      now: '2026-06-12T12:00:00.000Z',
+    });
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://media-api:3006',
+      manifest: mediaManifest(),
+      now: '2026-06-12T12:00:00.000Z',
+    });
+    const now = '2026-06-12T12:00:30.000Z';
+    applyStatusUpdates(db, [
+      { pillarId: 'finance', status: 'unavailable', statusUpdatedAt: now },
+      { pillarId: 'media', status: 'unavailable', statusUpdatedAt: now },
+    ]);
+    expect(getPillarRegistration(db, 'finance')?.status).toBe('unavailable');
+    expect(getPillarRegistration(db, 'media')?.status).toBe('unavailable');
+  });
+
+  it('silently skips updates that target an unknown pillar', () => {
+    upsertPillarRegistration(db, {
+      baseUrl: 'http://finance-api:3004',
+      manifest: financeManifest(),
+      now: '2026-06-12T12:00:00.000Z',
+    });
+    expect(() =>
+      applyStatusUpdates(db, [
+        { pillarId: 'ghost', status: 'unavailable', statusUpdatedAt: '2026-06-12T12:00:30.000Z' },
+      ])
+    ).not.toThrow();
+    expect(getPillarRegistration(db, 'ghost')).toBeNull();
+    expect(getPillarRegistration(db, 'finance')?.status).toBe('healthy');
   });
 });

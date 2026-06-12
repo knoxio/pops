@@ -22,9 +22,12 @@ export * as serviceAccountKeys from './services/service-account-keys.js';
 export * as pillarRegistryService from './services/pillar-registry.js';
 
 export type {
+  ApplyStatusUpdate,
+  HeartbeatResult,
   PersistableManifest,
   PillarRegistration,
   PillarStatus,
+  StatusTransition,
   UpsertPillarRegistrationInput,
 } from './services/pillar-registry.js';
 
