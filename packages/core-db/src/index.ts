@@ -21,6 +21,7 @@ export * as serviceAccountsService from './services/service-accounts.js';
 export * as serviceAccountKeys from './services/service-account-keys.js';
 export * as pillarRegistryService from './services/pillar-registry.js';
 export * as settingsService from './services/settings.js';
+export * as aiUsageService from './services/ai-usage.js';
 
 export type {
   ApplyStatusUpdate,
@@ -49,3 +50,17 @@ export type {
   SettingListResult,
   SettingRow,
 } from './services/settings.js';
+
+export type {
+  AiBudget,
+  AiBudgetInsert,
+  AiBudgetRow,
+  AiInferenceDaily,
+  AiInferenceDailyRow,
+  AiInferenceLog,
+  AiInferenceLogInsert,
+  AiInferenceLogRow,
+  CreateInferenceLogInput,
+  ListInferenceLogsFilter,
+  UpsertBudgetInput,
+} from './services/ai-usage.js';
