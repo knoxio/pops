@@ -7,22 +7,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PlexMediaItem } from './types.js';
 
 // Mock dependencies before imports
-vi.mock('../../../db.js', () => {
-  const mockDb = {
-    transaction: vi.fn((fn: () => unknown) => {
-      const wrapper = () => fn();
-      return wrapper;
-    }),
-  };
+vi.mock('../../../db/media-db-handle.js', () => {
+  const transactionFn = vi.fn();
   const mockDrizzle = {
     select: vi.fn(),
     insert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    transaction: transactionFn,
   };
+  transactionFn.mockImplementation((fn: (tx: unknown) => unknown) => fn(mockDrizzle));
   return {
-    getDb: vi.fn(() => mockDb),
-    getDrizzle: vi.fn(() => mockDrizzle),
+    getMediaDrizzle: vi.fn(() => mockDrizzle),
   };
 });
 
@@ -52,7 +48,7 @@ vi.mock('../library/tv-show-service.js', () => ({
   addTvShow: vi.fn(),
 }));
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getMovieByTmdbId } from '../movies/service.js';
 import { getTvdbClient } from '../thetvdb/index.js';
 import { getTmdbClient } from '../tmdb/index.js';
@@ -162,7 +158,7 @@ function mockPlexWatchlistResponse(items: PlexMediaItem[]) {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function setupDrizzleMock(existingWatchlistEntries: Array<Record<string, unknown>> = []) {
-  const mockDrizzle = vi.mocked(getDrizzle)() as any;
+  const mockDrizzle = vi.mocked(getMediaDrizzle)() as any;
   const runMock = vi.fn(() => ({ lastInsertRowid: 1, changes: 1 }));
 
   // select().from().where().get() chain for single entry lookup

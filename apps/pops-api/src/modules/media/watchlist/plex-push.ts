@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
  */
 import { mediaWatchlist } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getMovie } from '../movies/service.js';
 import { getPlexClient } from '../plex/service.js';
 import { findDiscoverMatch } from '../plex/sync-helpers.js';
@@ -73,7 +73,7 @@ export async function pushToPlexWatchlist(
     await client.addToWatchlist(ratingKey);
 
     // Persist the ratingKey so future remove operations work
-    getDrizzle()
+    getMediaDrizzle()
       .update(mediaWatchlist)
       .set({ plexRatingKey: ratingKey })
       .where(eq(mediaWatchlist.id, watchlistId))

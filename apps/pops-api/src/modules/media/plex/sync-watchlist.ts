@@ -11,7 +11,7 @@ import { and, eq, isNotNull } from 'drizzle-orm';
  */
 import { mediaWatchlist } from '@pops/db-types';
 
-import { getDb, getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getPlexClientId } from './service.js';
 import { fetchPlexWatchlist } from './sync-watchlist-fetch.js';
 import { resolveMediaItem } from './sync-watchlist-resolve.js';
@@ -49,7 +49,7 @@ async function syncSingleWatchlistItem(
   plexRatingKey: string,
   progress: WatchlistSyncProgress
 ): Promise<void> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const { resolved, skipReason } = await resolveMediaItem(item);
   if (!resolved) {
     progress.skipped++;
@@ -95,28 +95,28 @@ async function syncSingleWatchlistItem(
  * - source="both" and not in Plex → downgrade to "manual"
  */
 function handleRemovals(seenPlexRatingKeys: Set<string>, progress: WatchlistSyncProgress): void {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const plexEntries = db
     .select()
     .from(mediaWatchlist)
     .where(isNotNull(mediaWatchlist.plexRatingKey))
     .all();
 
-  getDb().transaction(() => {
+  db.transaction((tx) => {
     for (const entry of plexEntries) {
       if (!entry.plexRatingKey) continue;
       if (seenPlexRatingKeys.has(entry.plexRatingKey)) continue;
       if (entry.source === 'plex') {
-        db.delete(mediaWatchlist).where(eq(mediaWatchlist.id, entry.id)).run();
+        tx.delete(mediaWatchlist).where(eq(mediaWatchlist.id, entry.id)).run();
         progress.removed++;
       } else if (entry.source === 'both') {
-        db.update(mediaWatchlist)
+        tx.update(mediaWatchlist)
           .set({ source: 'manual', plexRatingKey: null })
           .where(eq(mediaWatchlist.id, entry.id))
           .run();
       }
     }
-  })();
+  });
 }
 
 /**
