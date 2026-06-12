@@ -78,10 +78,12 @@ describe('inventory.items (tRPC caller — CRUD happy paths)', () => {
       itemName: 'MacBook Pro',
       brand: 'Apple',
       replacementValue: 2500,
+      purchasePrice: 1999,
     });
     expect(created.data.itemName).toBe('MacBook Pro');
     expect(created.data.brand).toBe('Apple');
     expect(created.data.replacementValue).toBe(2500);
+    expect(created.data.purchasePrice).toBe(1999);
     expect(created.data.inUse).toBe(false);
     expect(created.data.deductible).toBe(false);
 
@@ -139,10 +141,11 @@ describe('inventory.items (tRPC caller — CRUD happy paths)', () => {
     });
     const updated = await admin.inventory.items.update({
       id: created.data.id,
-      data: { resaleValue: 1200 },
+      data: { resaleValue: 1200, purchasePrice: 800 },
     });
     expect(updated.data.brand).toBe('Specialized');
     expect(updated.data.resaleValue).toBe(1200);
+    expect(updated.data.purchasePrice).toBe(800);
   });
 
   it('sums replacement and resale totals across the filtered set', async () => {

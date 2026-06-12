@@ -25,6 +25,7 @@ const CREATE_NULLABLE_STRING_KEYS = [
 const CREATE_NULLABLE_NUMBER_KEYS = [
   'replacementValue',
   'resaleValue',
+  'purchasePrice',
 ] as const satisfies ReadonlyArray<
   keyof CreateInventoryItemInput & keyof typeof homeInventory.$inferInsert
 >;

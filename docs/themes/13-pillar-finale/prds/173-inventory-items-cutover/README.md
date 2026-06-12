@@ -20,7 +20,7 @@ Tables (move from shared to `packages/inventory-db`):
 - `item_uploaded_files` — generic file attachments
 - `item_fixture_connections` — fixture → item relationships
 
-Tables already exist in `inventory.db` from L4 / M4 work. PRD-173's PR 1 is largely a no-op (the schema is already there); PRs 2-4 are the journal split + cutover + shim deletion.
+Tables already exist in `inventory.db` from L4 / M4 work. PRD-173's PR 1 ports the `inventory.items.*` writer surface into `apps/pops-inventory-api` (router, service, builders, mapper + tests) so the dispatcher cutover can swap URLs without rewriting procedures; PRs 2-4 are the journal split + dispatcher cutover + shim deletion.
 
 ## API Surface
 
@@ -33,7 +33,7 @@ Tables already exist in `inventory.db` from L4 / M4 work. PRD-173's PR 1 is larg
 | `inventory.items.delete` | mutation                            |
 | `inventory.items.search` | query (delegates to search adapter) |
 
-Files today: `apps/pops-api/src/modules/inventory/items/{router.ts, service.ts, search-adapter.ts}`.
+Files today: `apps/pops-inventory-api/src/modules/items/{router.ts, service.ts, create-builder.ts, update-builder.ts, types.ts}` after PR 1. The legacy `apps/pops-api/src/modules/inventory/items/...` copies stay mounted as fall-through (marked `@deprecated`) until PR 3 flips the dispatcher and PR 4 removes them.
 
 ## Business Rules
 
@@ -52,12 +52,12 @@ Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                                          |
-| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Service exports + backfill order; schemas already in `@pops/inventory-db` |
-| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop tables from shared journal                                           |
-| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip router to `getInventoryDrizzle()`                                    |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                                                      |
+| #   | Story                                                       | Summary                                                                   |
+| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Move the `inventory.items.*` writer into `apps/pops-inventory-api` |
+| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop tables from shared journal                                    |
+| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Dispatcher / nginx cutover from pops-api to pops-inventory-api     |
+| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete the legacy pops-api items module                            |
 
 ## Out of Scope
 

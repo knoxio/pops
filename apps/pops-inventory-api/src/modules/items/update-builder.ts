@@ -28,9 +28,11 @@ const NULLABLE_STRING_KEYS = [
   'locationId',
 ] as const satisfies ReadonlyArray<keyof UpdateInventoryItemInput & keyof InventoryUpdate>;
 
-const NULLABLE_NUMBER_KEYS = ['replacementValue', 'resaleValue'] as const satisfies ReadonlyArray<
-  keyof UpdateInventoryItemInput & keyof InventoryUpdate
->;
+const NULLABLE_NUMBER_KEYS = [
+  'replacementValue',
+  'resaleValue',
+  'purchasePrice',
+] as const satisfies ReadonlyArray<keyof UpdateInventoryItemInput & keyof InventoryUpdate>;
 
 /**
  * Build the partial update payload for an inventory item from the input.
