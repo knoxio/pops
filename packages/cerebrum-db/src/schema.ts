@@ -13,9 +13,12 @@
  *   - `nudgeLog` — PRD-084 reflex/nudge audit trail.
  *   - `engramIndex` / `engramScopes` / `engramTags` / `engramLinks` —
  *     PRD-179 atomic memory units + their graph edges.
+ *   - `gliaActions` / `gliaTrustState` — PRD-181 autonomous-action
+ *     proposals + per-type trust graduation state (ADR-021 / PRD-086).
  *
- * Downstream slices (embeddings, conversations, glia_actions,
- * plexus_adapters, plexus_filters) will add their tables here as their
- * service code lands.
+ * Downstream slices (embeddings, conversations, plexus_adapters,
+ * plexus_filters) will add their tables here as their service code
+ * lands.
  */
 export { engramIndex, engramLinks, engramScopes, engramTags, nudgeLog } from '@pops/db-types';
+export { gliaActions, gliaTrustState } from '@pops/db-types/schema';
