@@ -17,7 +17,25 @@ export type { MediaDb } from './services/internal.js';
 
 export { openMediaDb, type OpenedMediaDb } from './open-media-db.js';
 
-export { TvShowConflictError, TvShowNotFoundError } from './errors.js';
+export {
+  MovieConflictError,
+  MovieNotFoundError,
+  TvShowConflictError,
+  TvShowNotFoundError,
+} from './errors.js';
+
+export type {
+  CreateMovieInput,
+  Movie,
+  MovieFilters,
+  MovieListResult,
+  MovieRow,
+  UpdateMovieInput,
+} from './services/movies.js';
+
+export * as moviesService from './services/movies.js';
+
+export * as shelfImpressionsService from './services/shelf-impressions.js';
 
 export type {
   CreateTvShowInput,
@@ -29,5 +47,3 @@ export type {
 } from './services/tv-shows.js';
 
 export * as tvShowsService from './services/tv-shows.js';
-
-export * as shelfImpressionsService from './services/shelf-impressions.js';

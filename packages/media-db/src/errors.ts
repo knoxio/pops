@@ -6,6 +6,26 @@
  * to clients. Mirrors `@pops/finance-db`'s error pattern.
  */
 
+export class MovieNotFoundError extends Error {
+  override readonly name = 'MovieNotFoundError' as const;
+  readonly id: number;
+
+  constructor(id: number) {
+    super(`Movie '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class MovieConflictError extends Error {
+  override readonly name = 'MovieConflictError' as const;
+  readonly tmdbId: number;
+
+  constructor(tmdbId: number) {
+    super(`Movie with tmdbId ${tmdbId} already exists`);
+    this.tmdbId = tmdbId;
+  }
+}
+
 export class TvShowNotFoundError extends Error {
   override readonly name = 'TvShowNotFoundError' as const;
   readonly id: number;
