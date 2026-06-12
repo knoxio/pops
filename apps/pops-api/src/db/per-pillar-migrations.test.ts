@@ -203,17 +203,22 @@ describe('runPerPillarMigrations', () => {
     // Smoke check: importing the runner under the real layout exercises
     // the workspace fallback path against an actual on-disk pillar dir.
     // `core` owns `packages/core-db/migrations/` with 0054_service_accounts
-    // (core pillar Phase 1 PR 2); `media` owns `packages/media-db/migrations/`
-    // with 0021_spooky_lockheed (media pillar Phase 1 PR 2); `inventory`
-    // owns `packages/inventory-db/migrations/` with 0005_fancy_crystal
-    // (inventory pillar Phase 1 PR 2), 0006_inventory_pillar_baseline
-    // (inventory pillar Phase 2 PR 3 — comprehensive home_inventory +
-    // fixtures + item_* baseline ahead of the cutover), AND
-    // 0007_locations_parent_sort_index (#2917 — backfill missing index
-    // carried over from shared journal 0009_red_quasimodo); `cerebrum` owns
-    // `packages/cerebrum-db/migrations/` with 0039_dry_fabian_cortez and
-    // 0044_nudge_log (cerebrum pillar Phase 1 PR 2 — nudge_log slice).
-    // Pillars without their own journal yet still skip cleanly.
+    // (core pillar Phase 1 PR 2) and 0055_pillar_registry (Theme 13 PRD-161
+    // registry endpoints); `media` owns `packages/media-db/migrations/`
+    // with 0021_spooky_lockheed (media pillar Phase 1 PR 2),
+    // 0022_media_movies_baseline (Theme 13 PRD-165 US-01 — movies baseline),
+    // 0023_watchlist_baseline (Theme 13 PRD-167 PR 1 — watchlist baseline),
+    // and 0024_media_tv_shows_baseline (Theme 13 PRD-166 US-01 — tv-shows baseline);
+    // `inventory` owns `packages/inventory-db/migrations/` with
+    // 0005_fancy_crystal (inventory pillar Phase 1 PR 2),
+    // 0006_inventory_pillar_baseline (inventory pillar Phase 2 PR 3 —
+    // comprehensive home_inventory + fixtures + item_* baseline ahead of
+    // the cutover), AND 0007_locations_parent_sort_index (#2917 — backfill
+    // missing index carried over from shared journal 0009_red_quasimodo);
+    // `cerebrum` owns `packages/cerebrum-db/migrations/` with
+    // 0039_dry_fabian_cortez and 0044_nudge_log (cerebrum pillar Phase 1
+    // PR 2 — nudge_log slice). Pillars without their own journal yet still
+    // skip cleanly.
     await withDb((db) => {
       const realPillars: PillarDescriptor[] = [
         { id: 'core', dbPackageDir: 'packages/core-db' },
@@ -229,6 +234,7 @@ describe('runPerPillarMigrations', () => {
         '0007_locations_parent_sort_index',
         '0021_spooky_lockheed',
         '0022_media_movies_baseline',
+        '0023_watchlist_baseline',
         '0024_media_tv_shows_baseline',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',

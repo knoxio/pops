@@ -18,6 +18,13 @@
     },
     {
       "idx": 2,
+      "version": "6",
+      "when": 1786291200000,
+      "tag": "0023_watchlist_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
       "version": "7",
       "when": 1788000000000,
       "tag": "0024_media_tv_shows_baseline",

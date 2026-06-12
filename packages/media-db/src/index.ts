@@ -47,3 +47,15 @@ export type {
 } from './services/tv-shows.js';
 
 export * as tvShowsService from './services/tv-shows.js';
+
+export * as watchlistService from './services/watchlist.js';
+
+export {
+  WatchlistEntryNotFoundError,
+  WatchlistReorderConflictError,
+  type AddToWatchlistInput,
+  type MediaWatchlistRow,
+  type UpdateWatchlistInput,
+  type WatchlistFilters,
+  type WatchlistListResult,
+} from './services/watchlist.js';
