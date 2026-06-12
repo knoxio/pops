@@ -110,6 +110,12 @@ RUN pnpm build
 FROM nginx:alpine
 COPY --from=builder /app/apps/pops-shell/dist /usr/share/nginx/html
 COPY apps/pops-shell/nginx.conf /etc/nginx/conf.d/default.conf
+# Shared proxy partial (Theme 13 PRD-190). Installed to /etc/nginx/snippets/
+# rather than /etc/nginx/conf.d/ because nginx auto-loads every `*.conf`
+# under `conf.d/` as a top-level server block — a partial dropped there
+# would crash boot. The source path stays under `nginx/conf.d/` per the
+# PRD's repo-layout rule.
+COPY apps/pops-shell/nginx/conf.d/_pillar-proxy.conf /etc/nginx/snippets/_pillar-proxy.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
