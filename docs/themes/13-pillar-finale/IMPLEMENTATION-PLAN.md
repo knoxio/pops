@@ -1,6 +1,6 @@
 # Theme 13 — Implementation Plan
 
-> Companion to the [theme README](README.md). The README spells out the *what*; this doc spells out the *how, when, and by whom*. Aimed at maximum parallel surface with quality gates that don't bend.
+> Companion to the [theme README](README.md). The README spells out the _what_; this doc spells out the _how, when, and by whom_. Aimed at maximum parallel surface with quality gates that don't bend.
 
 ---
 
@@ -19,13 +19,13 @@
 
 Five PRDs gate everything else. Ship in order; each unblocks the next.
 
-| Order | PRD | Why it's critical | Estimate |
-|---|---|---|---|
-| 1 | **[PRD-153](prds/153-contract-package-scaffold/)** — contract package scaffold | Every other PRD depends on the contract package shape. No exceptions. | 1 week |
-| 2 | **[PRD-157](prds/157-manifest-schema-validator/)** — manifest schema | Defines the wire format. Registry + SDK both need it. | 3 days |
-| 3 | **[PRD-161](prds/161-registry-schema-endpoints/)** — registry endpoints | The runtime backbone. SDK boot, discovery, search, AI, FE all read from here. | 1 week |
-| 4 | **[PRD-158](prds/158-bootstrap-pillar-helper/)** — bootstrap helper | The first pillar that registers proves the loop. | 1 week |
-| 5 | **[PRD-191](prds/191-client-surface/)** — `pillar()` SDK | Consumer-side API. Search + AI + FE + worker can't migrate without it. | 1 week |
+| Order | PRD                                                                            | Why it's critical                                                             | Estimate |
+| ----- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | -------- |
+| 1     | **[PRD-153](prds/153-contract-package-scaffold/)** — contract package scaffold | Every other PRD depends on the contract package shape. No exceptions.         | 1 week   |
+| 2     | **[PRD-157](prds/157-manifest-schema-validator/)** — manifest schema           | Defines the wire format. Registry + SDK both need it.                         | 3 days   |
+| 3     | **[PRD-161](prds/161-registry-schema-endpoints/)** — registry endpoints        | The runtime backbone. SDK boot, discovery, search, AI, FE all read from here. | 1 week   |
+| 4     | **[PRD-158](prds/158-bootstrap-pillar-helper/)** — bootstrap helper            | The first pillar that registers proves the loop.                              | 1 week   |
+| 5     | **[PRD-191](prds/191-client-surface/)** — `pillar()` SDK                       | Consumer-side API. Search + AI + FE + worker can't migrate without it.        | 1 week   |
 
 **Run this critical path serially against ONE pillar (finance — most mature post-Theme 12) before fanning out.** Don't try to ship E00 across all 7 contracts before E01 lands; that's how you accumulate untested foundational PRs.
 
@@ -41,21 +41,22 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 **Goal:** prove the contract → SDK → registry → bootstrap → consumption loop end-to-end on the finance pillar.
 
-| PRD | Order | Owner agent |
-|---|---|---|
-| 153 contract scaffold (finance pilot) | 1 | `a:contract-scaffold` |
-| 156 import discipline lint rule | 1 (parallel with 153) | `a:lint-rule` |
-| 157 manifest schema | 2 | `a:manifest-schema` |
-| 161 registry endpoints | 3 | `a:registry-core` |
-| 162 heartbeat lifecycle | 3 (parallel with 161) | `a:heartbeat` |
-| 158 bootstrap helper (finance pilot) | 4 | `a:bootstrap-pilot` |
-| 159 discovery client | 4 (parallel with 158) | `a:discovery` |
-| 160 capability projection types | 4 (parallel with 158) | `a:projections` |
-| 155 manifest type generation (finance pilot) | 4 (parallel with 158) | `a:manifest-gen` |
-| 191 client surface | 5 | `a:client-sdk` |
-| 192 server surface | 5 (parallel with 191) | `a:server-sdk` |
+| PRD                                          | Order                 | Owner agent           |
+| -------------------------------------------- | --------------------- | --------------------- |
+| 153 contract scaffold (finance pilot)        | 1                     | `a:contract-scaffold` |
+| 156 import discipline lint rule              | 1 (parallel with 153) | `a:lint-rule`         |
+| 157 manifest schema                          | 2                     | `a:manifest-schema`   |
+| 161 registry endpoints                       | 3                     | `a:registry-core`     |
+| 162 heartbeat lifecycle                      | 3 (parallel with 161) | `a:heartbeat`         |
+| 158 bootstrap helper (finance pilot)         | 4                     | `a:bootstrap-pilot`   |
+| 159 discovery client                         | 4 (parallel with 158) | `a:discovery`         |
+| 160 capability projection types              | 4 (parallel with 158) | `a:projections`       |
+| 155 manifest type generation (finance pilot) | 4 (parallel with 158) | `a:manifest-gen`      |
+| 191 client surface                           | 5                     | `a:client-sdk`        |
+| 192 server surface                           | 5 (parallel with 191) | `a:server-sdk`        |
 
 **Wave 1 exit criteria:**
+
 - Finance pillar boots with `bootstrapPillar(manifest, app)`
 - Registers with core-api on boot, heartbeats every 10s
 - `pillar('finance').wishlist.list({})` works end-to-end from pops-shell (or a test harness)
@@ -68,24 +69,25 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 **Goal:** roll the foundation to every pillar; ship low-risk standalone PRDs that unblock later waves.
 
-| PRD | Parallelism | Owner agent |
-|---|---|---|
-| 153 rollout (media/inventory/cerebrum/core/food/lists contracts) | 6 in parallel | `a:contract-<pillar>` × 6 |
-| 154 semver CI + affected rebuild | independent | `a:semver-ci` |
-| 155 manifest gen rollout | follows 153 | `a:manifest-gen-rollout` |
-| 158 bootstrap rollout (each pillar) | follows their 153 | `a:bootstrap-<pillar>` × 6 |
-| 163 subscription model (SSE) | independent | `a:subscriptions` |
-| 164 reconciliation on restart | follows 162 | `a:reconciliation` |
-| 193 React hooks | follows 191 | `a:react-hooks` |
-| 194 caching + invalidation | follows 193 | `a:cache-invalidation` |
-| 195 type generation pipeline | follows 191 | `a:type-pipeline` |
-| 219 docs container (Stoplight) | independent | `a:docs-container` |
-| 08a-203 directory move + namespace rename | independent (Theme 12 cleanup) | `a:reclaim-finance` |
-| 08a-204 shell call-site migration | follows 203 | `a:shell-rename` |
-| 08a-205 MCP+CLI call-site migration | follows 203 | `a:cli-rename` |
-| 08a-206 dispatcher + legacy mount delete | follows 204+205 | `a:dispatcher-cleanup` |
+| PRD                                                              | Parallelism                    | Owner agent                |
+| ---------------------------------------------------------------- | ------------------------------ | -------------------------- |
+| 153 rollout (media/inventory/cerebrum/core/food/lists contracts) | 6 in parallel                  | `a:contract-<pillar>` × 6  |
+| 154 semver CI + affected rebuild                                 | independent                    | `a:semver-ci`              |
+| 155 manifest gen rollout                                         | follows 153                    | `a:manifest-gen-rollout`   |
+| 158 bootstrap rollout (each pillar)                              | follows their 153              | `a:bootstrap-<pillar>` × 6 |
+| 163 subscription model (SSE)                                     | independent                    | `a:subscriptions`          |
+| 164 reconciliation on restart                                    | follows 162                    | `a:reconciliation`         |
+| 193 React hooks                                                  | follows 191                    | `a:react-hooks`            |
+| 194 caching + invalidation                                       | follows 193                    | `a:cache-invalidation`     |
+| 195 type generation pipeline                                     | follows 191                    | `a:type-pipeline`          |
+| 219 docs container (Stoplight)                                   | independent                    | `a:docs-container`         |
+| 08a-203 directory move + namespace rename                        | independent (Theme 12 cleanup) | `a:reclaim-finance`        |
+| 08a-204 shell call-site migration                                | follows 203                    | `a:shell-rename`           |
+| 08a-205 MCP+CLI call-site migration                              | follows 203                    | `a:cli-rename`             |
+| 08a-206 dispatcher + legacy mount delete                         | follows 204+205                | `a:dispatcher-cleanup`     |
 
 **Wave 2 exit criteria:**
+
 - Every pillar has a `@pops/<pillar>-contract` package + a working bootstrap
 - Semver CI blocks breaking changes; affected-package rebuild lights up dependents
 - SSE subscription + reconciliation tested via fault injection (kill core-api mid-stream; verify clean recovery)
@@ -98,25 +100,26 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 **Goal:** finish the cutovers. End of this wave, every table is per-pillar; legacy mounts on pops-api can be deleted.
 
-| PRD | Parallelism | Owner agent |
-|---|---|---|
-| 165 media.movies | independent | `a:cutover-movies` |
-| 166 media.tvShows | independent | `a:cutover-tv-shows` |
-| 167-172 (media: watchlist, watchHistory, library, discovery, arr, plex) | 6 in parallel | `a:cutover-media-<slice>` × 6 |
-| 173 inventory.items | independent | `a:cutover-items` |
-| 174-178 (inventory: reports, connections, documents, paperless, warranties) | 5 in parallel (gated on 173 where FKs exist) | `a:cutover-inv-<slice>` × 5 |
-| 179 cerebrum.engrams | independent | `a:cutover-engrams` |
-| 180-182 (cerebrum: plexus, glia, conversations) | 3 in parallel | `a:cutover-cere-<slice>` × 3 |
-| 183 core.settings | independent | `a:cutover-settings` |
-| 184 core.tagRules cleanup | follows Epic 08a (Wave 2) | `a:cleanup-tag-rules` |
-| 185 core.corrections cleanup | follows Epic 08a (Wave 2) | `a:cleanup-corrections` |
-| 186 core.aiUsage | independent | `a:cutover-ai-usage` |
-| 187 splitLink strategy | independent | `a:splitlink` |
-| 188 batching invariants | follows 187 | `a:batching-invariants` |
-| 189 batch call-site audit | follows 187 | `a:batch-audit` |
-| 190 nginx dispatcher simplification | follows 187 | `a:nginx-cleanup` |
+| PRD                                                                         | Parallelism                                  | Owner agent                   |
+| --------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------- |
+| 165 media.movies                                                            | independent                                  | `a:cutover-movies`            |
+| 166 media.tvShows                                                           | independent                                  | `a:cutover-tv-shows`          |
+| 167-172 (media: watchlist, watchHistory, library, discovery, arr, plex)     | 6 in parallel                                | `a:cutover-media-<slice>` × 6 |
+| 173 inventory.items                                                         | independent                                  | `a:cutover-items`             |
+| 174-178 (inventory: reports, connections, documents, paperless, warranties) | 5 in parallel (gated on 173 where FKs exist) | `a:cutover-inv-<slice>` × 5   |
+| 179 cerebrum.engrams                                                        | independent                                  | `a:cutover-engrams`           |
+| 180-182 (cerebrum: plexus, glia, conversations)                             | 3 in parallel                                | `a:cutover-cere-<slice>` × 3  |
+| 183 core.settings                                                           | independent                                  | `a:cutover-settings`          |
+| 184 core.tagRules cleanup                                                   | follows Epic 08a (Wave 2)                    | `a:cleanup-tag-rules`         |
+| 185 core.corrections cleanup                                                | follows Epic 08a (Wave 2)                    | `a:cleanup-corrections`       |
+| 186 core.aiUsage                                                            | independent                                  | `a:cutover-ai-usage`          |
+| 187 splitLink strategy                                                      | independent                                  | `a:splitlink`                 |
+| 188 batching invariants                                                     | follows 187                                  | `a:batching-invariants`       |
+| 189 batch call-site audit                                                   | follows 187                                  | `a:batch-audit`               |
+| 190 nginx dispatcher simplification                                         | follows 187                                  | `a:nginx-cleanup`             |
 
 **Wave 3 exit criteria:**
+
 - Every slice's PR 3 (cutover) is on main; reads + writes land on the per-pillar DB
 - 22 of 22 slice PRDs have at least PR 1+2 merged; PR 3+4 can lag (deferred per slice)
 - `httpBatchLink` → `splitLink` cutover proven on the shell; legacy regex rules retired
@@ -128,26 +131,27 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 **Goal:** repartition load-bearing cross-pillar code; FE registry-aware end-to-end.
 
-| PRD | Parallelism | Owner agent |
-|---|---|---|
-| 196 search adapter manifest | follows Wave 2 (registry alive) | `a:search-manifest` |
-| 197 federated query orchestrator | follows 196 | `a:search-orchestrator` |
-| 198 ranking strategy | follows 197 | `a:ranking` |
-| 199 partial failure semantics | follows 197 | `a:partial-failure` |
-| 200 AI tool manifest | follows Wave 2 | `a:ai-manifest` |
-| 201 dynamic tool list | follows 200 | `a:dynamic-tools` |
-| 202 tool call routing | follows 201 | `a:tool-routing` |
-| 207 ADR-029 decision matrix | follows Wave 3 | `a:adr-029` |
-| 208 search orchestrator relocation | follows 207 + 197 | `a:search-api-container` |
-| 209 AI orchestrator relocation | follows 207 + 202 | `a:ai-api-container` |
-| 210 worker partitioning audit | follows 207 + Wave 3 | `a:worker-audit` |
-| 211 URI dispatcher relocation | follows 207 | `a:uri-dispatcher` |
-| 215 React SDK | follows Wave 2 | `a:react-sdk` |
-| 216 PillarGuard rewrite | follows 215 | `a:pillar-guard` |
-| 217 nginx config generator | follows Wave 3 | `a:nginx-gen` |
-| 218 module-registry deprecation | follows 215 | `a:module-registry-deprecation` |
+| PRD                                | Parallelism                     | Owner agent                     |
+| ---------------------------------- | ------------------------------- | ------------------------------- |
+| 196 search adapter manifest        | follows Wave 2 (registry alive) | `a:search-manifest`             |
+| 197 federated query orchestrator   | follows 196                     | `a:search-orchestrator`         |
+| 198 ranking strategy               | follows 197                     | `a:ranking`                     |
+| 199 partial failure semantics      | follows 197                     | `a:partial-failure`             |
+| 200 AI tool manifest               | follows Wave 2                  | `a:ai-manifest`                 |
+| 201 dynamic tool list              | follows 200                     | `a:dynamic-tools`               |
+| 202 tool call routing              | follows 201                     | `a:tool-routing`                |
+| 207 ADR-029 decision matrix        | follows Wave 3                  | `a:adr-029`                     |
+| 208 search orchestrator relocation | follows 207 + 197               | `a:search-api-container`        |
+| 209 AI orchestrator relocation     | follows 207 + 202               | `a:ai-api-container`            |
+| 210 worker partitioning audit      | follows 207 + Wave 3            | `a:worker-audit`                |
+| 211 URI dispatcher relocation      | follows 207                     | `a:uri-dispatcher`              |
+| 215 React SDK                      | follows Wave 2                  | `a:react-sdk`                   |
+| 216 PillarGuard rewrite            | follows 215                     | `a:pillar-guard`                |
+| 217 nginx config generator         | follows Wave 3                  | `a:nginx-gen`                   |
+| 218 module-registry deprecation    | follows 215                     | `a:module-registry-deprecation` |
 
 **Wave 4 exit criteria:**
+
 - ADR-029 ratified
 - `pops-search-api` + `pops-ai-api` containers deployed on capivara, healthy
 - Worker writes go through the SDK (no in-process drizzle imports from sibling pillars)
@@ -160,13 +164,14 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 **Goal:** the finish line.
 
-| PRD | Parallelism | Owner agent |
-|---|---|---|
-| 212 readiness audit | first | `a:readiness-audit` |
-| 213 final drop migration | follows 212 | `a:drop-migration` |
-| 214 code retirement | follows 213 | `a:code-retirement` |
+| PRD                      | Parallelism | Owner agent         |
+| ------------------------ | ----------- | ------------------- |
+| 212 readiness audit      | first       | `a:readiness-audit` |
+| 213 final drop migration | follows 212 | `a:drop-migration`  |
+| 214 code retirement      | follows 213 | `a:code-retirement` |
 
 **Wave 5 exit criteria:**
+
 - `pops.db` no longer mounted on any container
 - `apps/pops-api/src/db.ts` deleted (no more `getDb()` / `getDrizzle()`)
 - Theme 13 acceptance criteria from the README all green
@@ -178,13 +183,13 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 ## Total timeline
 
-| Wave | Duration | Cumulative |
-|---|---|---|
-| 1 — Foundation (finance pilot) | 6-8 weeks | 8 weeks |
-| 2 — Foundation rollout + Epic 08a | 4 weeks | 12 weeks |
-| 3 — Data migrations + batching | 6 weeks | 18 weeks |
-| 4 — Cross-cutting + FE | 5 weeks | 23 weeks |
-| 5 — Drop pops.db | 2 weeks | 25 weeks |
+| Wave                              | Duration  | Cumulative |
+| --------------------------------- | --------- | ---------- |
+| 1 — Foundation (finance pilot)    | 6-8 weeks | 8 weeks    |
+| 2 — Foundation rollout + Epic 08a | 4 weeks   | 12 weeks   |
+| 3 — Data migrations + batching    | 6 weeks   | 18 weeks   |
+| 4 — Cross-cutting + FE            | 5 weeks   | 23 weeks   |
+| 5 — Drop pops.db                  | 2 weeks   | 25 weeks   |
 
 **~6 months with full parallel agent budget.** Compresses to 4-5 months if Wave 3 slice migrations run as a 30-agent fleet against the now-rehearsed pattern from Theme 12.
 
@@ -248,13 +253,13 @@ How to allocate the parallel agent budget.
 
 ### Peak parallelism per wave
 
-| Wave | Peak agents | Notes |
-|---|---|---|
-| 1 | 10 | Critical path → some serial ordering needed |
-| 2 | 14 | Foundation rollout in parallel |
-| 3 | 20-30 | Slice migrations are highly parallel |
-| 4 | 12 | Wave gated on E08a + ADR-029 |
-| 5 | 3 | Sequential |
+| Wave | Peak agents | Notes                                       |
+| ---- | ----------- | ------------------------------------------- |
+| 1    | 10          | Critical path → some serial ordering needed |
+| 2    | 14          | Foundation rollout in parallel              |
+| 3    | 20-30       | Slice migrations are highly parallel        |
+| 4    | 12          | Wave gated on E08a + ADR-029                |
+| 5    | 3           | Sequential                                  |
 
 ### Agent role taxonomy
 
@@ -332,57 +337,57 @@ Pillar A is built against `@pops/finance-contract@1.4`; consumer is built agains
 
 Status legend: ⏳ Not started · 🔄 In progress · ✅ Done · ⛔ Blocked
 
-| PRD | Slug | Wave | Status | Requires | Unblocks |
-|---|---|---|---|---|---|
-| 153 | contract-package-scaffold | 1 | ⏳ | ADR-030 | 154, 155, 156, 157, all others |
-| 154 | contract-semver-ci | 1 | ⏳ | 153 | gates breaking changes |
-| 155 | manifest-type-generation | 1 | ⏳ | 153 | 157, 158 |
-| 156 | consumer-import-discipline | 1 | ⏳ | 153 | enforces boundaries |
-| 157 | manifest-schema-validator | 1 | ⏳ | 155 | 158, 161 |
-| 158 | bootstrap-pillar-helper | 1 | ⏳ | 157 | every pillar's boot |
-| 159 | discovery-client | 1 | ⏳ | 161 | 191, 215 |
-| 160 | capability-projection-types | 1 | ⏳ | 153 | 191 |
-| 161 | registry-schema-endpoints | 1 | ⏳ | 157, ADR-027 | 158, 159, 162, 163 |
-| 162 | heartbeat-lifecycle | 1 | ⏳ | 161 | 163 |
-| 163 | subscription-model | 1 | ⏳ | 161, 162 | 194 |
-| 164 | reconciliation-on-restart | 2 | ⏳ | 162 | core-api restart resilience |
-| 165 | media-movies-cutover | 3 | ⏳ | Wave 2 | (canonical pattern) |
-| 166-186 | (slice cutovers) | 3 | ⏳ | 165 (pattern) + Wave 2 | Wave 4 |
-| 187 | splitlink-strategy | 3 | ⏳ | ADR-028 | 188, 189, 190 |
-| 188 | batching-invariants | 3 | ⏳ | 187 | regression prevention |
-| 189 | batch-call-site-audit | 3 | ⏳ | 187 | 206, 208 |
-| 190 | nginx-dispatcher-simplification | 3 | ⏳ | 187 | 217 |
-| 191 | client-surface | 1 | ⏳ | 159, 160 | 192, 193, 215 |
-| 192 | server-surface | 1 | ⏳ | 191 | 197, 209, 210 |
-| 193 | react-hooks | 2 | ⏳ | 191 | 194, 215 |
-| 194 | caching-invalidation | 2 | ⏳ | 193, 163 | 215 |
-| 195 | type-generation-pipeline | 2 | ⏳ | 191 | consumer ergonomics |
-| 196 | search-adapter-manifest | 4 | ⏳ | Wave 2 | 197 |
-| 197 | federated-query-orchestrator | 4 | ⏳ | 196, 192 | 198, 199, 208 |
-| 198 | ranking-strategy | 4 | ⏳ | 197 | 199 |
-| 199 | partial-failure-semantics | 4 | ⏳ | 197 | search UX |
-| 200 | ai-tool-manifest | 4 | ⏳ | Wave 2 | 201 |
-| 201 | dynamic-tool-list | 4 | ⏳ | 200 | 202 |
-| 202 | tool-call-routing | 4 | ⏳ | 201 | 209 |
-| 203 | directory-move-namespace-rename | 2 | ⏳ | independent | 204, 205, 206 |
-| 204 | shell-call-site-migration | 2 | ⏳ | 203 | 206 |
-| 205 | mcp-cli-call-site-migration | 2 | ⏳ | 203 | 206 |
-| 206 | dispatcher-legacy-mount-deletion | 2 | ⏳ | 204, 205 | 184, 185 |
-| 207 | adr-029-decision-matrix | 4 | ⏳ | Wave 3 | 208, 209, 210, 211 |
-| 208 | search-orchestrator-relocation | 4 | ⏳ | 207, 197 | search-api container |
-| 209 | ai-orchestrator-relocation | 4 | ⏳ | 207, 202 | ai-api container |
-| 210 | worker-partitioning-audit | 4 | ⏳ | 207, Wave 3 | worker isolation |
-| 211 | uri-dispatcher-relocation | 4 | ⏳ | 207 | URI handling |
-| 212 | readiness-audit | 5 | ⏳ | Wave 4 | 213 |
-| 213 | final-drop-migration | 5 | ⏳ | 212 | 214 |
-| 214 | code-retirement | 5 | ⏳ | 213 | theme complete |
-| 215 | react-sdk | 4 | ⏳ | 193, 194 | 216, 218 |
-| 216 | pillar-guard-rewrite | 4 | ⏳ | 215 | FE graceful degradation |
-| 217 | nginx-config-generator | 4 | ⏳ | 190 | dispatcher automation |
-| 218 | module-registry-deprecation | 4 | ⏳ | 215 | legacy retirement |
-| 219 | docs-swagger-container | 2 | ⏳ | 153 | dev ergonomics |
-| 184 | core-tag-rules-cleanup | 3 | ⏳ | 206 | core cleanup |
-| 185 | core-corrections-cleanup | 3 | ⏳ | 206 | core cleanup |
+| PRD     | Slug                             | Wave | Status | Requires               | Unblocks                       |
+| ------- | -------------------------------- | ---- | ------ | ---------------------- | ------------------------------ |
+| 153     | contract-package-scaffold        | 1    | ⏳     | ADR-030                | 154, 155, 156, 157, all others |
+| 154     | contract-semver-ci               | 1    | ⏳     | 153                    | gates breaking changes         |
+| 155     | manifest-type-generation         | 1    | ⏳     | 153                    | 157, 158                       |
+| 156     | consumer-import-discipline       | 1    | ⏳     | 153                    | enforces boundaries            |
+| 157     | manifest-schema-validator        | 1    | ⏳     | 155                    | 158, 161                       |
+| 158     | bootstrap-pillar-helper          | 1    | ⏳     | 157                    | every pillar's boot            |
+| 159     | discovery-client                 | 1    | ⏳     | 161                    | 191, 215                       |
+| 160     | capability-projection-types      | 1    | ⏳     | 153                    | 191                            |
+| 161     | registry-schema-endpoints        | 1    | ⏳     | 157, ADR-027           | 158, 159, 162, 163             |
+| 162     | heartbeat-lifecycle              | 1    | ⏳     | 161                    | 163                            |
+| 163     | subscription-model               | 1    | ⏳     | 161, 162               | 194                            |
+| 164     | reconciliation-on-restart        | 2    | ⏳     | 162                    | core-api restart resilience    |
+| 165     | media-movies-cutover             | 3    | ⏳     | Wave 2                 | (canonical pattern)            |
+| 166-186 | (slice cutovers)                 | 3    | ⏳     | 165 (pattern) + Wave 2 | Wave 4                         |
+| 187     | splitlink-strategy               | 3    | ⏳     | ADR-028                | 188, 189, 190                  |
+| 188     | batching-invariants              | 3    | ⏳     | 187                    | regression prevention          |
+| 189     | batch-call-site-audit            | 3    | ⏳     | 187                    | 206, 208                       |
+| 190     | nginx-dispatcher-simplification  | 3    | ⏳     | 187                    | 217                            |
+| 191     | client-surface                   | 1    | ⏳     | 159, 160               | 192, 193, 215                  |
+| 192     | server-surface                   | 1    | ⏳     | 191                    | 197, 209, 210                  |
+| 193     | react-hooks                      | 2    | ⏳     | 191                    | 194, 215                       |
+| 194     | caching-invalidation             | 2    | ⏳     | 193, 163               | 215                            |
+| 195     | type-generation-pipeline         | 2    | ⏳     | 191                    | consumer ergonomics            |
+| 196     | search-adapter-manifest          | 4    | ⏳     | Wave 2                 | 197                            |
+| 197     | federated-query-orchestrator     | 4    | ⏳     | 196, 192               | 198, 199, 208                  |
+| 198     | ranking-strategy                 | 4    | ⏳     | 197                    | 199                            |
+| 199     | partial-failure-semantics        | 4    | ⏳     | 197                    | search UX                      |
+| 200     | ai-tool-manifest                 | 4    | ⏳     | Wave 2                 | 201                            |
+| 201     | dynamic-tool-list                | 4    | ⏳     | 200                    | 202                            |
+| 202     | tool-call-routing                | 4    | ⏳     | 201                    | 209                            |
+| 203     | directory-move-namespace-rename  | 2    | ⏳     | independent            | 204, 205, 206                  |
+| 204     | shell-call-site-migration        | 2    | ⏳     | 203                    | 206                            |
+| 205     | mcp-cli-call-site-migration      | 2    | ⏳     | 203                    | 206                            |
+| 206     | dispatcher-legacy-mount-deletion | 2    | ⏳     | 204, 205               | 184, 185                       |
+| 207     | adr-029-decision-matrix          | 4    | ⏳     | Wave 3                 | 208, 209, 210, 211             |
+| 208     | search-orchestrator-relocation   | 4    | ⏳     | 207, 197               | search-api container           |
+| 209     | ai-orchestrator-relocation       | 4    | ⏳     | 207, 202               | ai-api container               |
+| 210     | worker-partitioning-audit        | 4    | ⏳     | 207, Wave 3            | worker isolation               |
+| 211     | uri-dispatcher-relocation        | 4    | ⏳     | 207                    | URI handling                   |
+| 212     | readiness-audit                  | 5    | ⏳     | Wave 4                 | 213                            |
+| 213     | final-drop-migration             | 5    | ⏳     | 212                    | 214                            |
+| 214     | code-retirement                  | 5    | ⏳     | 213                    | theme complete                 |
+| 215     | react-sdk                        | 4    | ⏳     | 193, 194               | 216, 218                       |
+| 216     | pillar-guard-rewrite             | 4    | ⏳     | 215                    | FE graceful degradation        |
+| 217     | nginx-config-generator           | 4    | ⏳     | 190                    | dispatcher automation          |
+| 218     | module-registry-deprecation      | 4    | ⏳     | 215                    | legacy retirement              |
+| 219     | docs-swagger-container           | 2    | ⏳     | 153                    | dev ergonomics                 |
+| 184     | core-tag-rules-cleanup           | 3    | ⏳     | 206                    | core cleanup                   |
+| 185     | core-corrections-cleanup         | 3    | ⏳     | 206                    | core cleanup                   |
 
 ---
 
@@ -390,7 +395,7 @@ Status legend: ⏳ Not started · 🔄 In progress · ✅ Done · ⛔ Blocked
 
 ### Hold the foundation tight
 
-Don't run E03 (slice migrations) in parallel with E01/E02 (foundation). The pattern from Theme 12 worked because the pattern was *known* — for Theme 13, the pattern doesn't exist yet. Wave 1 must establish it.
+Don't run E03 (slice migrations) in parallel with E01/E02 (foundation). The pattern from Theme 12 worked because the pattern was _known_ — for Theme 13, the pattern doesn't exist yet. Wave 1 must establish it.
 
 ### Ship Epic 08a in Wave 2, not later
 
@@ -409,6 +414,7 @@ Wave 3 is the highest parallel surface. 20-30 agents picking up slice PRDs simul
 ### Stage the cross-cutting work
 
 Wave 4's E08b (cross-pillar code placement) is the hardest architectural decision in the theme. Don't conflate it with the parallel slice migrations. Run them sequentially:
+
 - Wave 3 → all slices migrate (data layer per-pillar everywhere)
 - THEN write ADR-029
 - THEN ship E08b
