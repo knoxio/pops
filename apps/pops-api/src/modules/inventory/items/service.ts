@@ -1,17 +1,37 @@
-import crypto from 'crypto';
-
-import { and, count, eq, inArray, isNotNull, like, sql, sum, type SQL } from 'drizzle-orm';
-
 /**
- * Inventory service — CRUD operations using Drizzle ORM.
- * SQLite is the source of truth. All operations are local.
+ * Inventory items read/write surface — PRD-173 PR 2 cutover.
+ *
+ * Read/write split during the migration window (mirrors PRD-168 PR 2 +
+ * PRD-179 PR 2):
+ *  - `listInventoryItems`, `getInventoryItem`, `searchByAssetId`,
+ *    `countByAssetPrefix`, `getDistinctTypes` are routed through
+ *    `itemsService` from `@pops/inventory-db` against the inventory
+ *    pillar handle (`getInventoryDrizzle()`). Reads now resolve from
+ *    the canonical package implementation.
+ *  - Writes (`createInventoryItem`, `updateInventoryItem`,
+ *    `deleteInventoryItem`) keep their inline drizzle statements
+ *    against the same handle to preserve the existing read-after-write
+ *    guarantee against the inventory pillar's SQLite file. The pillar
+ *    handle is the single store for inventory writes, so there is no
+ *    cross-store TOCTOU to worry about; the inline writes stay in
+ *    place until PRD-173 PR 3 collapses them onto `itemsService.*`.
+ *
+ * The legacy router stays mounted in pops-api as a fall-through while
+ * the dispatcher cutover routes `inventory.items.*` traffic to
+ * pops-inventory-api. Consumers (router.ts here, plus the package
+ * barrel re-export in `./index.ts`) keep the same wire surface — no
+ * caller churn.
  *
  * @deprecated Theme 13 PRD-173 PR 1 — writer moved to
  * `apps/pops-inventory-api/src/modules/items/service.ts`. Legacy mount
  * stays for fall-through traffic until the slice's dispatcher cutover.
  */
+import crypto from 'crypto';
+
+import { eq } from 'drizzle-orm';
+
 import { homeInventory } from '@pops/db-types';
-import { locationsService } from '@pops/inventory-db';
+import { ItemNotFoundError, itemsService } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
@@ -42,67 +62,20 @@ export interface ListInventoryItemsOptions {
   includeChildren?: boolean;
 }
 
-function buildInventoryConditions(opts: ListInventoryItemsOptions): SQL[] {
-  const conditions: SQL[] = [];
-  if (opts.search) conditions.push(like(homeInventory.itemName, `%${opts.search}%`));
-  if (opts.room) conditions.push(eq(homeInventory.room, opts.room));
-  if (opts.type) conditions.push(eq(homeInventory.type, opts.type));
-  if (opts.condition) {
-    conditions.push(sql`lower(${homeInventory.condition}) = lower(${opts.condition})`);
+function translate<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (err instanceof ItemNotFoundError) {
+      throw new NotFoundError('Inventory item', err.id);
+    }
+    throw err;
   }
-  if (opts.inUse !== undefined) conditions.push(eq(homeInventory.inUse, opts.inUse ? 1 : 0));
-  if (opts.deductible !== undefined) {
-    conditions.push(eq(homeInventory.deductible, opts.deductible ? 1 : 0));
-  }
-  if (opts.locationId)
-    conditions.push(buildLocationCondition(opts.locationId, opts.includeChildren));
-  if (opts.assetId) conditions.push(eq(homeInventory.assetId, opts.assetId));
-  return conditions;
-}
-
-function buildLocationCondition(locationId: string, includeChildren: boolean | undefined): SQL {
-  if (!includeChildren) return eq(homeInventory.locationId, locationId);
-  const descendants = locationsService.getDescendantLocationIds(getInventoryDrizzle(), locationId);
-  return inArray(homeInventory.locationId, [locationId, ...descendants]);
-}
-
-function combineConditions(conditions: SQL[]): SQL | undefined {
-  if (conditions.length === 0) return undefined;
-  if (conditions.length === 1) return conditions[0];
-  return and(...conditions);
 }
 
 /** List inventory items with optional filters. */
 export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryListResult {
-  const db = getInventoryDrizzle();
-
-  let query = db.select().from(homeInventory).$dynamic();
-  let countQuery = db.select({ total: count() }).from(homeInventory).$dynamic();
-  let sumQuery = db
-    .select({
-      replacementSum: sum(homeInventory.replacementValue),
-      resaleSum: sum(homeInventory.resaleValue),
-    })
-    .from(homeInventory)
-    .$dynamic();
-
-  const where = combineConditions(buildInventoryConditions(opts));
-  if (where) {
-    query = query.where(where);
-    countQuery = countQuery.where(where);
-    sumQuery = sumQuery.where(where);
-  }
-
-  const rows = query.orderBy(homeInventory.itemName).limit(opts.limit).offset(opts.offset).all();
-  const [countResult] = countQuery.all();
-  const [sumResult] = sumQuery.all();
-
-  return {
-    rows,
-    total: countResult?.total ?? 0,
-    totalReplacementValue: Number(sumResult?.replacementSum) || 0,
-    totalResaleValue: Number(sumResult?.resaleSum) || 0,
-  };
+  return itemsService.list(getInventoryDrizzle(), opts);
 }
 
 /**
@@ -110,47 +83,24 @@ export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryLi
  * Returns the item or null if not found.
  */
 export function searchByAssetId(assetId: string): InventoryRow | null {
-  const db = getInventoryDrizzle();
-  const [row] = db
-    .select()
-    .from(homeInventory)
-    .where(sql`LOWER(${homeInventory.assetId}) = LOWER(${assetId})`)
-    .all();
-  return row ?? null;
+  return itemsService.searchByAssetId(getInventoryDrizzle(), assetId);
 }
 
 /**
  * Count inventory items whose assetId starts with the given prefix (case-insensitive).
  */
 export function countByAssetPrefix(prefix: string): number {
-  const db = getInventoryDrizzle();
-  const [result] = db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(homeInventory)
-    .where(sql`LOWER(${homeInventory.assetId}) LIKE LOWER(${prefix + '%'})`)
-    .all();
-  return result?.count ?? 0;
+  return itemsService.countByAssetPrefix(getInventoryDrizzle(), prefix);
 }
 
 /** Return distinct item types that exist in the database. */
 export function getDistinctTypes(): string[] {
-  const db = getInventoryDrizzle();
-  const rows = db
-    .selectDistinct({ type: homeInventory.type })
-    .from(homeInventory)
-    .where(isNotNull(homeInventory.type))
-    .orderBy(homeInventory.type)
-    .all();
-  return rows.map((r) => r.type).filter((t): t is string => t !== null);
+  return itemsService.distinctTypes(getInventoryDrizzle());
 }
 
 /** Get a single inventory item by id. Throws NotFoundError if missing. */
 export function getInventoryItem(id: string): InventoryRow {
-  const db = getInventoryDrizzle();
-  const [row] = db.select().from(homeInventory).where(eq(homeInventory.id, id)).all();
-
-  if (!row) throw new NotFoundError('Inventory item', id);
-  return row;
+  return translate(() => itemsService.get(getInventoryDrizzle(), id));
 }
 
 function buildCreateValues(
