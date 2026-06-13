@@ -103,15 +103,16 @@ export function usePillarQuery<TOutput>(
   return { ...query, ...flags } as UsePillarQueryResult<TOutput>;
 }
 
-export type UsePillarMutationOptions<TInput, TOutput> = Omit<
-  UseMutationOptions<TOutput, PillarCallError, TInput>,
+export type UsePillarMutationOptions<TInput, TOutput, TContext = unknown> = Omit<
+  UseMutationOptions<TOutput, PillarCallError, TInput, TContext>,
   'mutationFn'
 >;
 
-export type UsePillarMutationResult<TInput, TOutput> = UseMutationResult<
+export type UsePillarMutationResult<TInput, TOutput, TContext = unknown> = UseMutationResult<
   TOutput,
   PillarCallError,
-  TInput
+  TInput,
+  TContext
 > &
   FailureFlags;
 
@@ -123,22 +124,29 @@ export type UsePillarMutationResult<TInput, TOutput> = UseMutationResult<
  * invalidates `wishlist.list`, `wishlist.get`, etc. Top-level procedures
  * (single-segment paths) invalidate the entire `[pillarId]` prefix.
  *
- * Pass `options.onSuccess` to layer additional behaviour; the built-in
- * invalidation runs first. The hook does not maintain its own cache —
- * only the mutation lifecycle (pending / error) plus the failure-flag
- * mapping.
+ * Optimistic updates: pass `onMutate` to snapshot + apply optimistic
+ * cache writes (typically through {@link usePillarUtils}) and return a
+ * `previousData` blob. `onError` then receives that blob as its third
+ * argument so callers can roll back. `onSettled` fires on both success
+ * and failure paths. All four lifecycle callbacks (`onMutate`,
+ * `onSuccess`, `onError`, `onSettled`) are forwarded verbatim to React
+ * Query; the SDK only layers the prefix-invalidation onto `onSuccess`.
+ *
+ * The third generic, `TContext`, types the value returned from
+ * `onMutate` (i.e. the rollback blob) so the call site doesn't have to
+ * cast inside `onError`.
  */
-export function usePillarMutation<TInput = unknown, TOutput = unknown>(
+export function usePillarMutation<TInput = unknown, TOutput = unknown, TContext = unknown>(
   pillarId: string,
   path: ProcedurePath,
-  options: UsePillarMutationOptions<TInput, TOutput> = {}
-): UsePillarMutationResult<TInput, TOutput> {
+  options: UsePillarMutationOptions<TInput, TOutput, TContext> = {}
+): UsePillarMutationResult<TInput, TOutput, TContext> {
   const sdkOptions = usePillarSdkOptions();
   const queryClient = useQueryClient();
   const { onSuccess, ...rest } = options;
 
   const handleSuccess = useCallback<
-    NonNullable<UseMutationOptions<TOutput, PillarCallError, TInput>['onSuccess']>
+    NonNullable<UseMutationOptions<TOutput, PillarCallError, TInput, TContext>['onSuccess']>
   >(
     (data, variables, onMutateResult, context) => {
       const routerPrefix = path.length > 1 ? [pillarId, ...path.slice(0, -1)] : [pillarId];
@@ -148,7 +156,7 @@ export function usePillarMutation<TInput = unknown, TOutput = unknown>(
     [queryClient, pillarId, path, onSuccess]
   );
 
-  const mutation = useMutation<TOutput, PillarCallError, TInput>({
+  const mutation = useMutation<TOutput, PillarCallError, TInput, TContext>({
     mutationFn: async (input: TInput) => {
       const result = await callProcedure<TOutput>(pillarId, path, input, sdkOptions);
       if (result.kind === 'ok') return result.value;
@@ -163,7 +171,93 @@ export function usePillarMutation<TInput = unknown, TOutput = unknown>(
       ? failureFlagsFrom(mutation.error.result)
       : NO_FAILURE;
 
-  return { ...mutation, ...flags } as UsePillarMutationResult<TInput, TOutput>;
+  return { ...mutation, ...flags } as UsePillarMutationResult<TInput, TOutput, TContext>;
+}
+
+export type PillarUpdater<TData> = (previous: TData | undefined) => TData | undefined;
+
+export type UsePillarUtilsResult = {
+  /**
+   * Imperatively write to the cache slot keyed by
+   * `pillarQueryKey(pillarId, routerPath, input)`. `updater` receives the
+   * current value (or `undefined` if the slot is empty) and returns the
+   * next value. Returning `undefined` removes the slot.
+   *
+   * Returns the snapshot of the previous value, suitable to stash in the
+   * `onMutate` context for rollback.
+   */
+  setData: <TData>(
+    routerPath: ProcedurePath,
+    input: unknown,
+    updater: PillarUpdater<TData>
+  ) => TData | undefined;
+  /**
+   * Invalidate cached queries under this pillar. With no argument,
+   * invalidates everything under `[pillarId]`. With `routerPath`,
+   * invalidates everything under `[pillarId, ...routerPath]` — pass the
+   * router prefix (e.g. `['wishlist']`) or the full procedure path
+   * (e.g. `['wishlist', 'list']`).
+   *
+   * Returns the underlying React Query promise so callers can `await`
+   * the invalidation if they want refetches to settle before continuing.
+   */
+  invalidate: (routerPath?: readonly string[]) => Promise<void>;
+};
+
+/**
+ * Cache-write surface for a given pillar. Use alongside
+ * {@link usePillarQuery} / {@link usePillarMutation} to drive optimistic
+ * updates without hand-rolling query keys at the call site.
+ *
+ * Typical optimistic-update flow:
+ * ```ts
+ * const utils = usePillarUtils('media');
+ * usePillarMutation<Input, Output, { previous: Item[] | undefined }>(
+ *   'media',
+ *   ['watchlist', 'toggle'],
+ *   {
+ *     onMutate: (vars) => {
+ *       const previous = utils.setData<Item[]>(
+ *         ['watchlist', 'list'],
+ *         { limit: 10 },
+ *         (prev) => applyToggle(prev, vars)
+ *       );
+ *       return { previous };
+ *     },
+ *     onError: (_err, _vars, ctx) => {
+ *       utils.setData(['watchlist', 'list'], { limit: 10 }, () => ctx?.previous);
+ *     },
+ *   }
+ * );
+ * ```
+ */
+export function usePillarUtils(pillarId: string): UsePillarUtilsResult {
+  const queryClient = useQueryClient();
+
+  const setData = useCallback(
+    <TData>(
+      routerPath: ProcedurePath,
+      input: unknown,
+      updater: PillarUpdater<TData>
+    ): TData | undefined => {
+      const key = pillarQueryKey(pillarId, routerPath, input);
+      const previous = queryClient.getQueryData<TData>(key);
+      const next = updater(previous);
+      queryClient.setQueryData<TData>(key, next);
+      return previous;
+    },
+    [queryClient, pillarId]
+  );
+
+  const invalidate = useCallback(
+    async (routerPath?: readonly string[]): Promise<void> => {
+      const queryKey = routerPath && routerPath.length > 0 ? [pillarId, ...routerPath] : [pillarId];
+      await queryClient.invalidateQueries({ queryKey });
+    },
+    [queryClient, pillarId]
+  );
+
+  return { setData, invalidate };
 }
 
 export type UsePillarCallDynamicQueryOptions = UsePillarQueryOptions<unknown>;
