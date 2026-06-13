@@ -3,11 +3,13 @@ export type { PillarSdkProviderProps } from './provider.js';
 export {
   usePillarCallDynamic,
   usePillarCallDynamicMutation,
+  usePillarInfiniteQuery,
   usePillarMutation,
   usePillarQuery,
   usePillarUtils,
 } from './hooks.js';
 export type {
+  PillarInfiniteBuildInput,
   PillarUpdater,
   UsePillarCallDynamicMutationArgs,
   UsePillarCallDynamicMutationOptions,
@@ -15,6 +17,8 @@ export type {
   UsePillarCallDynamicQueryArgs,
   UsePillarCallDynamicQueryOptions,
   UsePillarCallDynamicQueryResult,
+  UsePillarInfiniteQueryOptions,
+  UsePillarInfiniteQueryResult,
   UsePillarMutationOptions,
   UsePillarMutationResult,
   UsePillarQueryOptions,
