@@ -4,8 +4,20 @@
  * Staleness models how "stale" a comparison score is relative to the user's
  * current preferences. Each mark compounds by ×0.5 (floor 0.01). Watching
  * the media resets staleness to 1.0 (fresh).
+ *
+ * Reads + writes route through `getMediaDrizzle()` — `comparison_staleness`
+ * is a media-only side effect of the watch/rating loop. The reset helper
+ * accepts an optional drizzle handle so callers running inside a
+ * `getMediaDrizzle().transaction(...)` can reuse the same tx (logWatch +
+ * batchLogWatch).
  */
-import { getDb } from '../../../db.js';
+import { and, eq, sql } from 'drizzle-orm';
+
+import { comparisonStaleness } from '@pops/db-types';
+
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
+
+import type { MediaDb } from '@pops/media-db';
 
 const STALENESS_DECAY = 0.5;
 const STALENESS_FLOOR = 0.01;
@@ -15,26 +27,29 @@ const STALENESS_FLOOR = 0.01;
  * or multiplies existing staleness by 0.5 (floor 0.01).
  */
 export function markStale(mediaType: string, mediaId: number): number {
-  const db = getDb();
+  const db = getMediaDrizzle();
 
   const existing = db
-    .prepare(`SELECT staleness FROM comparison_staleness WHERE media_type = ? AND media_id = ?`)
-    .get(mediaType, mediaId) as { staleness: number } | undefined;
+    .select({ staleness: comparisonStaleness.staleness })
+    .from(comparisonStaleness)
+    .where(
+      and(eq(comparisonStaleness.mediaType, mediaType), eq(comparisonStaleness.mediaId, mediaId))
+    )
+    .get();
 
   if (!existing) {
-    db.prepare(
-      `INSERT INTO comparison_staleness (media_type, media_id, staleness, updated_at)
-       VALUES (?, ?, ?, datetime('now'))`
-    ).run(mediaType, mediaId, STALENESS_DECAY);
+    db.insert(comparisonStaleness).values({ mediaType, mediaId, staleness: STALENESS_DECAY }).run();
     return STALENESS_DECAY;
   }
 
   const newStaleness = Math.max(existing.staleness * STALENESS_DECAY, STALENESS_FLOOR);
 
-  db.prepare(
-    `UPDATE comparison_staleness SET staleness = ?, updated_at = datetime('now')
-     WHERE media_type = ? AND media_id = ?`
-  ).run(newStaleness, mediaType, mediaId);
+  db.update(comparisonStaleness)
+    .set({ staleness: newStaleness, updatedAt: sql`(datetime('now'))` })
+    .where(
+      and(eq(comparisonStaleness.mediaType, mediaType), eq(comparisonStaleness.mediaId, mediaId))
+    )
+    .run();
 
   return newStaleness;
 }
@@ -43,23 +58,35 @@ export function markStale(mediaType: string, mediaId: number): number {
  * Get the staleness value for a media item. Returns 1.0 (fresh) if no row.
  */
 export function getStaleness(mediaType: string, mediaId: number): number {
-  const db = getDb();
+  const db = getMediaDrizzle();
 
   const row = db
-    .prepare(`SELECT staleness FROM comparison_staleness WHERE media_type = ? AND media_id = ?`)
-    .get(mediaType, mediaId) as { staleness: number } | undefined;
+    .select({ staleness: comparisonStaleness.staleness })
+    .from(comparisonStaleness)
+    .where(
+      and(eq(comparisonStaleness.mediaType, mediaType), eq(comparisonStaleness.mediaId, mediaId))
+    )
+    .get();
 
   return row?.staleness ?? 1.0;
 }
 
 /**
  * Reset staleness for a media item (delete the row so it defaults to 1.0).
+ * Accepts an optional drizzle-compatible handle so writers inside a
+ * `getMediaDrizzle().transaction(...)` (logWatch, batchLogWatch) can run
+ * the delete on the same tx.
  */
-export function resetStaleness(mediaType: string, mediaId: number): void {
-  const db = getDb();
+export function resetStaleness(
+  mediaType: string,
+  mediaId: number,
+  drizzleInstance?: MediaDb
+): void {
+  const db = drizzleInstance ?? getMediaDrizzle();
 
-  db.prepare(`DELETE FROM comparison_staleness WHERE media_type = ? AND media_id = ?`).run(
-    mediaType,
-    mediaId
-  );
+  db.delete(comparisonStaleness)
+    .where(
+      and(eq(comparisonStaleness.mediaType, mediaType), eq(comparisonStaleness.mediaId, mediaId))
+    )
+    .run();
 }

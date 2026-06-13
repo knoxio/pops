@@ -1,13 +1,14 @@
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 
 /**
  * Comparisons service — dimensions, 1v1 comparisons, and Elo scores.
  *
  * Core orchestrators live here; extracted modules in lib/ handle specific domains.
  */
-import { comparisons } from '@pops/db-types';
+import { comparisons, watchHistory } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getDimension } from './dimensions.service.js';
 import { sourceRank } from './lib/batch-record.js';
@@ -187,19 +188,30 @@ function findAffectedDimensionIds(mediaType: string, mediaId: number): number[] 
 
 /**
  * Blacklist a movie: mark all its watch_history rows as blacklisted,
- * delete all comparisons involving it, and recalculate ELO for affected dimensions.
+ * delete all comparisons involving it, and recalculate ELO for affected
+ * dimensions. The `watch_history` UPDATE runs on the media handle; the
+ * `comparisons` delete + ELO recalc stay on the shared handle (Track L2
+ * scope). The outer transaction stays bound to the shared `pops.db` for
+ * the comparisons writes — the media UPDATE is a single, idempotent
+ * statement that can be replayed safely if a subsequent step fails.
  */
 export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMovieResult {
   const drizzleDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
   const rawDb = getDb();
 
   return rawDb.transaction(() => {
-    const blacklistResult = rawDb
-      .prepare(
-        `UPDATE watch_history SET blacklisted = 1
-         WHERE media_type = ? AND media_id = ? AND blacklisted = 0`
+    const blacklistResult = mediaDb
+      .update(watchHistory)
+      .set({ blacklisted: 1 })
+      .where(
+        and(
+          sql`${watchHistory.mediaType} = ${mediaType}`,
+          eq(watchHistory.mediaId, mediaId),
+          eq(watchHistory.blacklisted, 0)
+        )
       )
-      .run(mediaType, mediaId);
+      .run();
     const blacklistedCount = blacklistResult.changes;
 
     const affectedDimensionIds = findAffectedDimensionIds(mediaType, mediaId);

@@ -1,36 +1,40 @@
 /**
- * `logWatch` — mixed-table writer. PRD-168 PR3 left this on `getDrizzle()`
- * deliberately: the transaction inserts into `watchHistory`, then for an
- * episode resolves `episodes` -> `seasons` -> `tv_show` to seed debrief
- * state, deletes from `mediaWatchlist`, and resequences watchlist
- * priorities. Splitting any of those reads/writes across a different
- * SQLite file would break atomicity, so the whole transaction stays on
- * `pops.db` until `episodes`, `seasons`, and `mediaWatchlist` move into
- * `@pops/media-db` (and `debriefSessions` / `debriefStatus` move into
- * the cerebrum pillar). At that point this orchestrator either fans out
- * to per-pillar services or, more likely, becomes a router-layer call
- * sequencing distinct transactions per store.
- *
- * `autoRemoveTvShowIfFullyWatched` is exported only for `batchLogWatch`
- * and runs inside the same `getDrizzle()` transaction.
+ * `logWatch` — Option D step 3 (MEDIA FULL EXIT). The media-only writes
+ * (watch_history insert, watchlist removal, episodes/seasons resolution,
+ * comparison_staleness reset, watchlist priority resequence) run inside a
+ * single `getMediaDrizzle().transaction(...)`. After commit we fan out to
+ * `cerebrum.debrief.logWatchCompletion` via the in-process SDK; failures
+ * are logged and swallowed because the writer is idempotent on
+ * `(watchHistoryId, mediaType, mediaId)`. No fan-out for already-existing
+ * rows (no fresh completion) or incomplete watches.
  */
-import { and, countDistinct, eq, inArray } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { resetStaleness } from '../../comparisons/staleness.js';
-import { createDebriefSession, queueDebriefStatus } from '../../debrief/service.js';
 import { resequencePriorities } from '../../watchlist/service.js';
+import { autoRemoveTvShowIfFullyWatched } from './auto-remove-show.js';
+import { fanOutDebriefCompletion } from './cerebrum-fan-out.js';
+
+import type { MediaDb } from '@pops/media-db';
+
+export { autoRemoveTvShowIfFullyWatched } from './auto-remove-show.js';
 
 import type { LogWatchInput, WatchHistoryRow } from '../types.js';
 
-type Tx = Parameters<Parameters<ReturnType<typeof getDrizzle>['transaction']>[0]>[0];
+type Tx = Parameters<Parameters<MediaDb['transaction']>[0]>[0];
 
 export interface LogWatchResult {
   entry: WatchHistoryRow;
   created: boolean;
   watchlistRemoved: boolean;
+}
+
+interface MediaTxOutcome extends LogWatchResult {
+  fanOutCompletion: boolean;
+  completionMediaType: 'movie' | 'episode';
 }
 
 function findBlacklistedEntry(
@@ -87,11 +91,9 @@ function resolveCompTarget(tx: Tx, input: LogWatchInput): { type: string; id: nu
   return { type: 'tv_show', id: season.tvShowId };
 }
 
-function handleCompletion(tx: Tx, entryId: number, input: LogWatchInput): void {
+function resetStalenessOnCompletion(tx: Tx, input: LogWatchInput): void {
   const target = resolveCompTarget(tx, input);
-  resetStaleness(target.type, target.id);
-  createDebriefSession(entryId);
-  queueDebriefStatus(target.type, target.id);
+  resetStaleness(target.type, target.id, tx);
 }
 
 function removeFromWatchlist(tx: Tx, input: LogWatchInput): boolean {
@@ -108,16 +110,24 @@ function removeFromWatchlist(tx: Tx, input: LogWatchInput): boolean {
   return false;
 }
 
-export function logWatch(input: LogWatchInput): LogWatchResult {
-  const db = getDrizzle();
-  const completed = input.completed ?? 1;
-  const watchedAt = input.watchedAt ?? new Date().toISOString();
+function noFanOut(entry: WatchHistoryRow, mediaType: 'movie' | 'episode'): MediaTxOutcome {
+  return {
+    entry,
+    created: false,
+    watchlistRemoved: false,
+    fanOutCompletion: false,
+    completionMediaType: mediaType,
+  };
+}
 
-  return db.transaction((tx) => {
+function runMediaTx(
+  input: LogWatchInput,
+  completed: number,
+  watchedAt: string
+): (tx: Tx) => MediaTxOutcome {
+  return (tx) => {
     const blacklisted = findBlacklistedEntry(tx, input, watchedAt);
-    if (blacklisted) {
-      return { entry: blacklisted, created: false, watchlistRemoved: false };
-    }
+    if (blacklisted) return noFanOut(blacklisted, input.mediaType);
 
     const result = tx
       .insert(watchHistory)
@@ -128,7 +138,7 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
     if (result.changes === 0) {
       const existing = findExistingEntry(tx, input, watchedAt);
       if (!existing) throw new Error('Watch history entry not found after conflict');
-      return { entry: existing, created: false, watchlistRemoved: false };
+      return noFanOut(existing, input.mediaType);
     }
 
     const entry = tx
@@ -138,9 +148,7 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
       .get();
     if (!entry) throw new Error('Watch history entry not found after insert');
 
-    if (completed === 1) {
-      handleCompletion(tx, entry.id, input);
-    }
+    if (completed === 1) resetStalenessOnCompletion(tx, input);
 
     let watchlistRemoved = false;
     if (completed === 1 && input.source !== 'plex_sync') {
@@ -148,55 +156,34 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
       if (watchlistRemoved) resequencePriorities(tx);
     }
 
-    return { entry, created: true, watchlistRemoved };
-  });
+    return {
+      entry,
+      created: true,
+      watchlistRemoved,
+      fanOutCompletion: completed === 1,
+      completionMediaType: input.mediaType,
+    };
+  };
 }
 
-export function autoRemoveTvShowIfFullyWatched(tx: Tx, episodeId: number): boolean {
-  const episode = tx
-    .select({ seasonId: episodes.seasonId })
-    .from(episodes)
-    .where(eq(episodes.id, episodeId))
-    .get();
-  if (!episode) return false;
+export function logWatch(input: LogWatchInput): LogWatchResult {
+  const db = getMediaDrizzle();
+  const completed = input.completed ?? 1;
+  const watchedAt = input.watchedAt ?? new Date().toISOString();
 
-  const season = tx
-    .select({ tvShowId: seasons.tvShowId })
-    .from(seasons)
-    .where(eq(seasons.id, episode.seasonId))
-    .get();
-  if (!season) return false;
+  const outcome = db.transaction(runMediaTx(input, completed, watchedAt));
 
-  const tvShowId = season.tvShowId;
-  const showEpisodeIds = tx
-    .select({ id: episodes.id })
-    .from(episodes)
-    .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
-    .where(eq(seasons.tvShowId, tvShowId))
-    .all()
-    .map((r) => r.id);
-
-  if (showEpisodeIds.length === 0) return false;
-
-  const watchedRow = tx
-    .select({ watched: countDistinct(watchHistory.mediaId) })
-    .from(watchHistory)
-    .where(
-      and(
-        eq(watchHistory.mediaType, 'episode'),
-        eq(watchHistory.completed, 1),
-        inArray(watchHistory.mediaId, showEpisodeIds)
-      )
-    )
-    .all()[0];
-  const watched = watchedRow?.watched ?? 0;
-
-  if (watched >= showEpisodeIds.length) {
-    const deleteResult = tx
-      .delete(mediaWatchlist)
-      .where(and(eq(mediaWatchlist.mediaType, 'tv_show'), eq(mediaWatchlist.mediaId, tvShowId)))
-      .run();
-    return deleteResult.changes > 0;
+  if (outcome.fanOutCompletion) {
+    fanOutDebriefCompletion({
+      mediaType: outcome.completionMediaType,
+      mediaId: outcome.entry.mediaId,
+      watchHistoryId: outcome.entry.id,
+    });
   }
-  return false;
+
+  return {
+    entry: outcome.entry,
+    created: outcome.created,
+    watchlistRemoved: outcome.watchlistRemoved,
+  };
 }

@@ -215,7 +215,9 @@ describe('runPerPillarMigrations', () => {
     // 0025_media_watch_history_baseline (Theme 13 PRD-168 PR 1 — watch-history baseline),
     // 0026_media_dismissed_discover_baseline (Theme 13 PRD-170 — dismissed-discover baseline),
     // 0027_media_seasons_baseline + 0028_media_episodes_baseline (Theme 13 PRD-166 PR 4
-    // prep — seasons + episodes scaffolded so the addTvShow mixed-tx can move atomically);
+    // prep — seasons + episodes scaffolded so the addTvShow mixed-tx can move atomically),
+    // 0029_media_comparison_staleness_baseline (Theme 13 MEDIA FULL EXIT —
+    // comparison_staleness lives on the media handle alongside watch_history);
     // `inventory` owns `packages/inventory-db/migrations/` with
     // 0005_fancy_crystal (inventory pillar Phase 1 PR 2),
     // 0006_inventory_pillar_baseline (inventory pillar Phase 2 PR 3 —
@@ -251,6 +253,7 @@ describe('runPerPillarMigrations', () => {
         '0026_media_dismissed_discover_baseline',
         '0027_media_seasons_baseline',
         '0028_media_episodes_baseline',
+        '0029_media_comparison_staleness_baseline',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
         '0050_engrams_baseline',

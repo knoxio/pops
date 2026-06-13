@@ -12,6 +12,7 @@
  * subsequent Phase 1 PRs migrate additional media tables into this package.
  */
 export {
+  comparisonStaleness,
   dismissedDiscover,
   episodes,
   mediaWatchlist,
