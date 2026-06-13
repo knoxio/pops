@@ -61,6 +61,8 @@ export type {
   AiInferenceLogInsert,
   AiInferenceLogRow,
   CreateInferenceLogInput,
+  InferenceDailyAggregate,
+  InferenceLogRetentionRow,
   ListInferenceLogsFilter,
   UpsertBudgetInput,
 } from './services/ai-usage.js';

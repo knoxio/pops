@@ -331,6 +331,17 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/lib/inference-middleware.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/core/ai-budgets/enforcement.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
@@ -346,6 +357,39 @@
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
     "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/ai-observability/retention-db.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/ai-observability/retention.test.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/ai-observability/retention.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"

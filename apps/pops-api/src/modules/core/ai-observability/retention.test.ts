@@ -5,7 +5,10 @@
  * input rows, once end-to-end against an in-memory SQLite DB to validate
  * the upsert + delete cycle and idempotency.
  */
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { type CoreDb } from '@pops/core-db';
 
 import { seedAiUsage, setupTestContext } from '../../../shared/test-utils.js';
 import {
@@ -19,9 +22,11 @@ import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;
+let coreDb: CoreDb;
 
 beforeEach(() => {
   ({ db } = ctx.setup());
+  coreDb = drizzle(db);
 });
 
 afterEach(() => {
@@ -155,7 +160,7 @@ describe('runRetention end-to-end', () => {
     const result = runRetention({
       retentionDays: 90,
       now: new Date('2026-05-11T12:00:00Z'),
-      db,
+      db: coreDb,
     });
 
     expect(result.rowsAggregated).toBe(50);
@@ -185,7 +190,7 @@ describe('runRetention end-to-end', () => {
     const second = runRetention({
       retentionDays: 90,
       now: new Date('2026-05-11T12:00:00Z'),
-      db,
+      db: coreDb,
     });
     expect(second.rowsAggregated).toBe(0);
     expect(second.bucketsWritten).toBe(0);
@@ -200,7 +205,7 @@ describe('runRetention end-to-end', () => {
     const result = runRetention({
       retentionDays: 90,
       now: new Date('2026-05-11T12:00:00Z'),
-      db,
+      db: coreDb,
     });
 
     expect(result.rowsAggregated).toBe(1);
@@ -228,7 +233,7 @@ describe('runRetention end-to-end', () => {
     runRetention({
       retentionDays: 90,
       now: new Date('2026-05-11T12:00:00Z'),
-      db,
+      db: coreDb,
     });
 
     // Second batch: 3 more rows on the SAME day, same tuple, with different
@@ -248,7 +253,7 @@ describe('runRetention end-to-end', () => {
     runRetention({
       retentionDays: 90,
       now: new Date('2026-05-11T12:00:00Z'),
-      db,
+      db: coreDb,
     });
 
     const rows = db.prepare('SELECT * FROM ai_inference_daily').all() as {
@@ -278,7 +283,7 @@ describe('runRetention end-to-end', () => {
       retentionDays: 90,
       batchSize: 10,
       now: new Date('2026-05-11T12:00:00Z'),
-      db,
+      db: coreDb,
     });
 
     expect(result.rowsAggregated).toBe(25);

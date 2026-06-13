@@ -17,17 +17,21 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AiBudgetNotFoundError } from '../errors.js';
-import { aiInferenceDaily } from '../schema.js';
+import { aiInferenceDaily, aiInferenceLog } from '../schema.js';
 import {
   createInferenceLog,
   deleteBudget,
+  deleteInferenceLogsByIds,
+  fetchAgedInferenceLogs,
   getBudget,
   getBudgetOrNull,
   listBudgets,
   listInferenceDaily,
   listInferenceLogs,
+  recordInferenceDaily,
   sumInferenceLogUsage,
   upsertBudget,
+  type InferenceDailyAggregate,
 } from '../services/ai-usage.js';
 
 import type { CoreDb } from '../services/internal.js';
@@ -253,6 +257,132 @@ describe('listInferenceDaily', () => {
   it('honours start/end date window', () => {
     const rows = listInferenceDaily(db, { startDate: '2026-06-01', endDate: '2026-06-04' });
     expect(rows.map((r) => r.date)).toEqual(['2026-06-01']);
+  });
+});
+
+describe('fetchAgedInferenceLogs', () => {
+  let db: CoreDb;
+  beforeEach(() => {
+    db = freshDb();
+    createInferenceLog(db, logBase({ createdAt: '2026-01-01T00:00:00.000Z' }));
+    createInferenceLog(db, logBase({ createdAt: '2026-02-01T00:00:00.000Z' }));
+    createInferenceLog(db, logBase({ createdAt: '2026-06-01T00:00:00.000Z' }));
+  });
+
+  it('returns rows older than or equal to the cutoff', () => {
+    const batch = fetchAgedInferenceLogs(db, '2026-02-01T00:00:00.000Z', 10);
+    expect(batch.map((b) => b.row.createdAt).toSorted()).toEqual([
+      '2026-01-01T00:00:00.000Z',
+      '2026-02-01T00:00:00.000Z',
+    ]);
+  });
+
+  it('honours batchSize as a hard ceiling', () => {
+    const batch = fetchAgedInferenceLogs(db, '2026-12-31T00:00:00.000Z', 2);
+    expect(batch).toHaveLength(2);
+  });
+
+  it('returns rows ordered by id ascending so consecutive batches make progress', () => {
+    const batch = fetchAgedInferenceLogs(db, '2026-12-31T00:00:00.000Z', 10);
+    const ids = batch.map((b) => b.id);
+    expect(ids).toEqual([...ids].toSorted((a, b) => a - b));
+  });
+});
+
+describe('recordInferenceDaily', () => {
+  let db: CoreDb;
+  const baseAgg: InferenceDailyAggregate = {
+    date: '2026-05-01',
+    provider: 'claude',
+    model: 'sonnet',
+    operation: 'classify',
+    domain: 'finance',
+    totalCalls: 10,
+    totalInputTokens: 1000,
+    totalOutputTokens: 500,
+    totalCostUsd: 0.01,
+    avgLatencyMs: 100,
+    errorCount: 1,
+    timeoutCount: 0,
+    cacheHitCount: 2,
+    budgetBlockedCount: 0,
+  };
+
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('inserts a fresh aggregate row', () => {
+    recordInferenceDaily(db, baseAgg);
+    const rows = listInferenceDaily(db, {});
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.totalCalls).toBe(10);
+    expect(rows[0]?.avgLatencyMs).toBe(100);
+  });
+
+  it('folds new counters into an existing bucket on the same natural key', () => {
+    recordInferenceDaily(db, baseAgg);
+    recordInferenceDaily(db, {
+      ...baseAgg,
+      totalCalls: 5,
+      totalInputTokens: 500,
+      totalCostUsd: 0.005,
+      avgLatencyMs: 200,
+      errorCount: 2,
+      cacheHitCount: 1,
+    });
+
+    const rows = listInferenceDaily(db, {});
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.totalCalls).toBe(15);
+    expect(rows[0]?.totalInputTokens).toBe(1500);
+    expect(rows[0]?.totalCostUsd).toBeCloseTo(0.015, 6);
+    expect(rows[0]?.errorCount).toBe(3);
+    expect(rows[0]?.cacheHitCount).toBe(3);
+  });
+
+  it('computes weighted-mean avgLatencyMs across folds', () => {
+    recordInferenceDaily(db, { ...baseAgg, totalCalls: 5, avgLatencyMs: 100 });
+    recordInferenceDaily(db, { ...baseAgg, totalCalls: 3, avgLatencyMs: 200 });
+
+    const rows = listInferenceDaily(db, {});
+    // ((5*100) + (3*200)) / 8 = 137.5 → CAST AS INTEGER → 137
+    expect(rows[0]?.avgLatencyMs).toBe(137);
+  });
+
+  it('treats different domains as distinct buckets', () => {
+    recordInferenceDaily(db, { ...baseAgg, domain: 'finance' });
+    recordInferenceDaily(db, { ...baseAgg, domain: 'media' });
+    recordInferenceDaily(db, { ...baseAgg, domain: null });
+
+    const rows = listInferenceDaily(db, {});
+    expect(rows).toHaveLength(3);
+  });
+});
+
+describe('deleteInferenceLogsByIds', () => {
+  let db: CoreDb;
+  let ids: number[];
+  beforeEach(() => {
+    db = freshDb();
+    const a = createInferenceLog(db, logBase({ createdAt: '2026-01-01T00:00:00.000Z' }));
+    const b = createInferenceLog(db, logBase({ createdAt: '2026-02-01T00:00:00.000Z' }));
+    const c = createInferenceLog(db, logBase({ createdAt: '2026-03-01T00:00:00.000Z' }));
+    ids = [a.id, b.id, c.id];
+  });
+
+  it('removes only the rows whose ids are supplied', () => {
+    const [first, , third] = ids;
+    deleteInferenceLogsByIds(db, [first as number, third as number]);
+
+    const remaining = db.select({ id: aiInferenceLog.id }).from(aiInferenceLog).all();
+    expect(remaining.map((r) => r.id)).toEqual([ids[1]]);
+  });
+
+  it('is a no-op for an empty id list', () => {
+    deleteInferenceLogsByIds(db, []);
+    const remaining = db.select({ id: aiInferenceLog.id }).from(aiInferenceLog).all();
+    expect(remaining).toHaveLength(3);
   });
 });
 

@@ -262,6 +262,19 @@ export function getCoreDrizzle(): CoreDb {
 }
 
 /**
+ * Resolve the core pillar's raw better-sqlite3 handle. Same lazy open
+ * behaviour as `getCoreDrizzle()` — exposed for the lower-level needs
+ * (`.transaction()`, `.prepare()`, `.pragma()`) that the drizzle wrapper
+ * hides. Prefer `getCoreDrizzle()` for everything that doesn't need it.
+ */
+export function getCoreRawDb(): BetterSqlite3.Database {
+  if (!coreDb) {
+    coreDb = openCoreDb(resolveCoreSqlitePath());
+  }
+  return coreDb.raw;
+}
+
+/**
  * Close the core pillar's connection if it was opened. Idempotent —
  * safe to call from {@link closeDb} on shutdown even when the core
  * handle was never resolved.
