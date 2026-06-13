@@ -2,7 +2,7 @@
 
 > Status: In progress (audit only). Snapshot date: 2026-06-13.
 >
-> Parent: [PRD-212 README](README.md). Gates: [PRD-213](../213-drop-pops-db/README.md).
+> Parent: [PRD-212 README](README.md). Gates: [PRD-213](../213-final-drop-migration/README.md).
 
 This matrix enumerates every table still referenced by the pops-api
 boot-time backfill arrays (`TABLE_COPIES`) inside
@@ -21,8 +21,9 @@ input to PRD-213 (drop `pops.db`): every row must reach the green
 - **PR3 shipped?**: writer cutover landed (writes now target the pillar
   DB). Sourced from `git log` on `main`.
 - **PR4 shipped?**: the corresponding `pops.db` table dropped + the
-  backfill entry removed. _None of these have shipped yet_ — this is
-  the gate PRD-212 is auditing.
+  backfill entry removed. _Only `movies` (PRD-165) has shipped its PR4
+  so far_ (commit `39dfdaae`); the remaining slices are the gate PRD-212
+  is auditing.
 - **Blocks PRD-213?**: `Yes` if the row would prevent dropping `pops.db`
   today (writer cutover not landed, or backfill still active, or a
   non-test caller still reads via `getDrizzle()`).
@@ -118,21 +119,21 @@ Sourced from `git log --all`.
 | PRD-168 | media.watchHistory        | Done                                       | Done             | Not started     |
 | PRD-169 | media.library (read-flip) | Done (c7219031)                            | n/a              | n/a             |
 | PRD-170 | media.discovery           | PR1 only                                   | Not started      | Not started     |
-| PRD-171 | media.arr                 | Re-scoped: no slice to move                |
-| PRD-172 | media.plex                | Deferred: no schema to move                |
+| PRD-171 | media.arr                 | Re-scoped: no slice to move                | n/a              | n/a             |
+| PRD-172 | media.plex                | Deferred: no schema to move                | n/a              | n/a             |
 | PRD-173 | inventory.items           | Done                                       | Not started      | Not started     |
-| PRD-174 | inventory.reports         | Done by construction (runtime aggregation) |
+| PRD-174 | inventory.reports         | Done by construction (runtime aggregation) | n/a              | n/a             |
 | PRD-175 | inventory.connections     | Done                                       | Done             | Not started     |
 | PRD-176 | inventory.documents       | Done                                       | Done             | Not started     |
-| PRD-177 | inventory.paperless       | Done by construction (no tables)           |
-| PRD-178 | inventory.warranties      | Done by construction (no schema)           |
+| PRD-177 | inventory.paperless       | Done by construction (no tables)           | n/a              | n/a             |
+| PRD-178 | inventory.warranties      | Done by construction (no schema)           | n/a              | n/a             |
 | PRD-179 | cerebrum.engrams          | Done                                       | Done             | Not started     |
 | PRD-180 | cerebrum.plexus           | Done                                       | Done             | Not started     |
 | PRD-181 | cerebrum.glia             | Done                                       | Done             | Not started     |
 | PRD-182 | cerebrum.conversations    | Done                                       | Done             | Not started     |
 | PRD-183 | core.settings             | Done                                       | Done             | Not started     |
-| PRD-184 | core.tagRules cleanup     | Pending Epic 08a verification              |
-| PRD-185 | core.corrections cleanup  | Pending Epic 08a verification              |
+| PRD-184 | core.tagRules cleanup     | Pending Epic 08a verification              | n/a              | n/a             |
+| PRD-185 | core.corrections cleanup  | Pending Epic 08a verification              | n/a              | n/a             |
 | PRD-186 | core.aiUsage              | Done                                       | Done             | Not started     |
 
 ## Blockers for PRD-213
@@ -153,8 +154,8 @@ zero non-test `getDrizzle()` calls remain. As of 2026-06-13:
    jobs, embeddings, inference-pricing, health, tag-suggester, ai-budget
    enforcement. These need owners assigned (or a dedicated PRD spun out
    under Epic 09) before PRD-213 can ship.
-4. **Three documentation-only / deferred PRDs** (171, 172, 174, 177, 178) carry no work. PRD-184 and PRD-185 still need Epic 08a
-   verification.
+4. **Five documentation-only / deferred PRDs** (171, 172, 174, 177, 178)
+   carry no work. PRD-184 and PRD-185 still need Epic 08a verification.
 
 ## Recommended sequence into PRD-213
 
