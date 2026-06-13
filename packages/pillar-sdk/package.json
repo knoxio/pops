@@ -50,6 +50,10 @@
       "types": "./dist/ranking/index.d.ts",
       "default": "./dist/ranking/index.js"
     },
+    "./orchestrator": {
+      "types": "./dist/orchestrator/index.d.ts",
+      "default": "./dist/orchestrator/index.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

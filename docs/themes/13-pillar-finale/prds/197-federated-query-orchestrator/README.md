@@ -19,7 +19,7 @@ export async function search(query: {
   text?: string;
   tags?: string[];
   dateRange?: { from: Date; to: Date };
-  scope?: string[];
+  scope?: Record<string, string>;
   pillars?: string[]; // optional — defaults to all
   limit?: number;
 }): Promise<SearchResult[]>;
@@ -27,11 +27,26 @@ export async function search(query: {
 
 Internally:
 
-1. Snapshot the registry; collect adapters matching the query shape.
-2. Fan out to each adapter via `pillar('<id>').<router>.<proc>({...})`.
-3. Each pillar returns scored results.
+1. Snapshot the registry; collect every pillar whose manifest advertises
+   at least one entry under `manifest.search.adapters`.
+2. Fan out to each `(pillarId, adapterName)` pair via the injected
+   `SearchAdapterInvoker` (in production resolved to
+   `pillar('<id>').<router>.<proc>({...})`).
+3. Each adapter returns scored results, or `[]` if the query is
+   unsupported by that adapter.
 4. Merge via ranking strategy (PRD-198).
 5. Return top-N.
+
+**Interim limitation — query-shape pre-filtering (PRD-196).** The shipped
+orchestrator does **not** filter adapters by query shape. The current
+manifest's `search.adapters` field is `readonly string[]` — adapter
+names only — so the orchestrator cannot know which dimensions
+(`text` / `tags` / `dateRange` / `scope`) an adapter advertises. Every
+adapter on every selected pillar is invoked unconditionally; each
+adapter must return `[]` for queries it does not support. Once PRD-196
+lands the richer adapter descriptor (`procedurePath`, `queryShape`,
+`entityType`, `rankFieldName`), the pre-filter belongs in
+`runFederatedSearch` so adapters do not pay the parse-and-reject cost.
 
 ## Business Rules
 
