@@ -4,6 +4,7 @@ import {
   checkAiToolAllowedUriTypesAreDeclared,
   checkContractPackageMatchesPillar,
   checkContractTagMatchesVersion,
+  checkSearchAdapterProceduresAreDeclared,
   pathToDotted,
   validateManifestPayload,
 } from '../manifest-schema/validate.js';
@@ -253,6 +254,56 @@ describe('cross-field checkers (pure)', () => {
       const fields = issues.map((i) => i.field).toSorted();
       expect(fields).toEqual(['ai.tools[0].allowedUriTypes[0]', 'ai.tools[1].allowedUriTypes[1]']);
     });
+  });
+});
+
+describe('checkSearchAdapterProceduresAreDeclared', () => {
+  it('returns [] when every adapter procedurePath is declared', () => {
+    expect(checkSearchAdapterProceduresAreDeclared(validManifest())).toEqual([]);
+  });
+
+  it('emits an issue when an adapter references an undeclared procedure', () => {
+    const m = validManifest();
+    m.search.adapters[0]!.procedurePath = 'finance.transactions.missing';
+    const issues = checkSearchAdapterProceduresAreDeclared(m);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.field).toBe('search.adapters[0].procedurePath');
+    expect(issues[0]!.got).toBe('finance.transactions.missing');
+    expect(issues[0]!.reason).toContain('not declared in routes.queries or routes.mutations');
+    expect(issues[0]!.schemaPath).toEqual(['search', 'adapters', 0, 'procedurePath']);
+  });
+
+  it('accepts a procedurePath declared in routes.mutations', () => {
+    const m = validManifest();
+    m.search.adapters[0]!.procedurePath = 'finance.transactions.create';
+    expect(checkSearchAdapterProceduresAreDeclared(m)).toEqual([]);
+  });
+
+  it('reports across multiple adapters without short-circuiting', () => {
+    const m = validManifest();
+    m.search.adapters[0]!.procedurePath = 'finance.transactions.missingA';
+    m.search.adapters[1]!.procedurePath = 'finance.budgets.missingB';
+    const issues = checkSearchAdapterProceduresAreDeclared(m);
+    expect(issues).toHaveLength(2);
+    const fields = issues.map((i) => i.field).toSorted();
+    expect(fields).toEqual([
+      'search.adapters[0].procedurePath',
+      'search.adapters[1].procedurePath',
+    ]);
+  });
+});
+
+describe('validateManifestPayload — search adapter cross-field rules', () => {
+  it('rejects a manifest whose adapter references an undeclared procedure', () => {
+    const m = validManifest();
+    m.search.adapters[0]!.procedurePath = 'finance.transactions.notDeclared';
+    const result = validateManifestPayload(m);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues).toHaveLength(1);
+      expect(result.issues[0]!.field).toBe('search.adapters[0].procedurePath');
+      expect(result.issues[0]!.got).toBe('finance.transactions.notDeclared');
+    }
   });
 });
 

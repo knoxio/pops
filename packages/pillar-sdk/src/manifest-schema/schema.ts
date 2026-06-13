@@ -13,6 +13,10 @@ const PROCEDURE_PATH = z
 
 const CAMEL_IDENTIFIER = z.string().regex(/^[a-z][a-zA-Z0-9]*$/, 'must be camelCase identifier');
 
+const KEBAB_IDENTIFIER = z
+  .string()
+  .regex(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/, 'must be lowercase kebab-case identifier');
+
 const URI_TYPE = z
   .string()
   .regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/, 'must be <pillar>/<entity>');
@@ -55,9 +59,28 @@ const ROUTES = z
   })
   .strict();
 
+const QUERY_SHAPE = z
+  .object({
+    supportsText: z.boolean(),
+    supportsTags: z.boolean(),
+    supportsDateRange: z.boolean(),
+    supportsScope: z.array(CAMEL_IDENTIFIER),
+  })
+  .strict();
+
+const SEARCH_ADAPTER = z
+  .object({
+    name: CAMEL_IDENTIFIER,
+    entityType: KEBAB_IDENTIFIER,
+    queryShape: QUERY_SHAPE,
+    procedurePath: PROCEDURE_PATH,
+    rankFieldName: CAMEL_IDENTIFIER.optional(),
+  })
+  .strict();
+
 const SEARCH = z
   .object({
-    adapters: z.array(CAMEL_IDENTIFIER),
+    adapters: z.array(SEARCH_ADAPTER),
   })
   .strict();
 

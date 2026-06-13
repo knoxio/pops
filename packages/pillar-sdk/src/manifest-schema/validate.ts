@@ -27,6 +27,7 @@ export function validateManifestPayload(input: unknown): ValidationResult {
     ...checkContractPackageMatchesPillar(parsed.data),
     ...checkContractTagMatchesVersion(parsed.data),
     ...checkAiToolAllowedUriTypesAreDeclared(parsed.data),
+    ...checkSearchAdapterProceduresAreDeclared(parsed.data),
   ];
 
   if (crossFieldIssues.length > 0) {
@@ -119,6 +120,30 @@ export function checkContractTagMatchesVersion(payload: ManifestPayload): Valida
       schemaPath: ['contract', 'tag'],
     },
   ];
+}
+
+/**
+ * Each search adapter's `procedurePath` must reference a procedure the
+ * pillar actually exposes (a `routes.queries` or `routes.mutations` entry).
+ * PRD-196 business rule: an adapter cannot fan out to a procedure the
+ * pillar doesn't serve.
+ */
+export function checkSearchAdapterProceduresAreDeclared(
+  payload: ManifestPayload
+): ValidationIssue[] {
+  const declared = new Set<string>([...payload.routes.queries, ...payload.routes.mutations]);
+  const issues: ValidationIssue[] = [];
+  payload.search.adapters.forEach((adapter, adapterIndex) => {
+    if (declared.has(adapter.procedurePath)) return;
+    const path: (string | number)[] = ['search', 'adapters', adapterIndex, 'procedurePath'];
+    issues.push({
+      field: pathToDotted(path),
+      reason: `procedurePath '${adapter.procedurePath}' is not declared in routes.queries or routes.mutations`,
+      got: adapter.procedurePath,
+      schemaPath: path,
+    });
+  });
+  return issues;
 }
 
 /**

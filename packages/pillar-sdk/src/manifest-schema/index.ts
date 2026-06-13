@@ -4,6 +4,7 @@ export {
   checkContractPackageMatchesPillar,
   checkContractTagMatchesVersion,
   checkAiToolAllowedUriTypesAreDeclared,
+  checkSearchAdapterProceduresAreDeclared,
   pathToDotted,
   type ValidationResult,
   type ValidationIssue,
