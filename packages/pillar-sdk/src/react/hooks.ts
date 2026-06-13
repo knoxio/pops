@@ -148,7 +148,12 @@ export {
   type UsePillarInfiniteQueryResult,
 } from './use-pillar-infinite-query.js';
 
-export { pillarQueryArg, usePillarQueries, type PillarQueryArg } from './use-pillar-queries.js';
+export {
+  pillarQueryArg,
+  usePillarQueries,
+  type PillarParallelQueryOptions,
+  type PillarQueryArg,
+} from './use-pillar-queries.js';
 
 export type UsePillarCallDynamicQueryOptions = UsePillarQueryOptions<unknown>;
 export type UsePillarCallDynamicQueryResult = UsePillarQueryResult<unknown>;

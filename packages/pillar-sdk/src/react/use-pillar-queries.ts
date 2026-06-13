@@ -10,9 +10,44 @@ import {
 import { usePillarSdkOptions } from './provider.js';
 import { pillarQueryKey } from './query-key.js';
 
-import type { UsePillarQueryOptions, UsePillarQueryResult } from './hooks.js';
+import type { NetworkMode, QueryMeta } from '@tanstack/react-query';
+
+import type { UsePillarQueryResult } from './hooks.js';
+
+type RetryValue = boolean | number | ((failureCount: number, error: PillarCallError) => boolean);
+type RetryDelayValue = number | ((failureCount: number, error: PillarCallError) => number);
 
 declare const pillarQueryArgOutput: unique symbol;
+
+/**
+ * Per-element React Query options accepted by {@link pillarQueryArg}.
+ *
+ * Deliberately narrower than `UsePillarQueryOptions<TOutput>` so that
+ * `PillarQueryArg<TOutput>` is covariant on `TOutput`. The omitted fields
+ * (`select`, `placeholderData`, the function form of `enabled`, the
+ * function form of `refetchOn{Mount,WindowFocus,Reconnect}`, etc.) all
+ * place `TOutput` in a contravariant callback argument position. Including
+ * any of them collapses the type to invariant, which breaks the common
+ * `ids.map((id) => pillarQueryArg<T>(...))` pattern (the resulting
+ * `PillarQueryArg<T>[]` would not satisfy `readonly PillarQueryArg<unknown>[]`).
+ *
+ * Consumers needing those callbacks should reach for the single-query
+ * `usePillarQuery` hook — those features are awkward in a parallel-array
+ * context anyway (per-element memoised projection, etc.).
+ */
+export type PillarParallelQueryOptions<out TOutput> = {
+  enabled?: boolean;
+  staleTime?: number;
+  gcTime?: number;
+  refetchInterval?: number | false;
+  refetchIntervalInBackground?: boolean;
+  retry?: RetryValue;
+  retryDelay?: RetryDelayValue;
+  networkMode?: NetworkMode;
+  initialData?: TOutput | (() => TOutput | undefined);
+  initialDataUpdatedAt?: number | (() => number | undefined);
+  meta?: QueryMeta;
+};
 
 /**
  * A typed descriptor for a single query inside {@link usePillarQueries}.
@@ -21,12 +56,19 @@ declare const pillarQueryArgOutput: unique symbol;
  * (`[pillarQueryArgOutput]`) — it never exists at runtime, but lets the
  * compiler propagate per-element output types through the `usePillarQueries`
  * tuple result. Build one with {@link pillarQueryArg}.
+ *
+ * Marked `out TOutput` so the type is covariant — a
+ * `PillarQueryArg<Ingredient>` is assignable to `PillarQueryArg<unknown>`,
+ * which is the constraint `usePillarQueries` requires. This is why
+ * {@link PillarParallelQueryOptions} omits callback fields that take
+ * `TOutput` in contravariant position; if any of them were re-introduced
+ * the variance modifier would force a type error.
  */
-export type PillarQueryArg<TOutput> = {
+export type PillarQueryArg<out TOutput> = {
   pillarId: string;
   path: ProcedurePath;
   input: unknown;
-  options?: UsePillarQueryOptions<TOutput>;
+  options?: PillarParallelQueryOptions<TOutput>;
   readonly [pillarQueryArgOutput]?: TOutput;
 };
 
@@ -44,12 +86,16 @@ export type PillarQueryArg<TOutput> = {
  * // results[0]: UsePillarQueryResult<Ingredient>
  * // results[1]: UsePillarQueryResult<Unit>
  * ```
+ *
+ * Because `PillarQueryArg<TOutput>` is covariant on `TOutput`, the
+ * `ids.map((id) => pillarQueryArg<T>(...))` pattern also works without
+ * a structural cast at the call site.
  */
 export function pillarQueryArg<TOutput>(arg: {
   pillarId: string;
   path: ProcedurePath;
   input: unknown;
-  options?: UsePillarQueryOptions<TOutput>;
+  options?: PillarParallelQueryOptions<TOutput>;
 }): PillarQueryArg<TOutput> {
   return arg as PillarQueryArg<TOutput>;
 }

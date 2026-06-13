@@ -10,7 +10,7 @@ import {
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
 import { __resetSharedPillarClient } from '../../client/factory.js';
-import { pillarQueryArg, usePillarQueries } from '../hooks.js';
+import { pillarQueryArg, usePillarQueries, type PillarQueryArg } from '../hooks.js';
 import { PillarSdkProvider } from '../provider.js';
 
 import type { ReactNode } from 'react';
@@ -207,5 +207,28 @@ describe('usePillarQueries', () => {
     expect(result.current[1].fetchStatus).toBe('idle');
     expect(result.current[1].isPending).toBe(true);
     expect(harness.calls).toHaveLength(1);
+  });
+
+  it('is covariant on TOutput so .map()-produced arrays satisfy the readonly PillarQueryArg<unknown>[] constraint', () => {
+    type IngredientsGetOutput = { id: string; variants: readonly { id: number; name: string }[] };
+
+    const ids: readonly number[] = [1, 2, 3];
+    const args = ids.map((id) =>
+      pillarQueryArg<IngredientsGetOutput>({
+        pillarId: 'food',
+        path: ['ingredients', 'get'],
+        input: { idOrSlug: id },
+      })
+    ) satisfies readonly PillarQueryArg<unknown>[];
+
+    const single: PillarQueryArg<IngredientsGetOutput> = pillarQueryArg<IngredientsGetOutput>({
+      pillarId: 'food',
+      path: ['ingredients', 'get'],
+      input: { idOrSlug: 1 },
+    });
+    const widened: PillarQueryArg<unknown> = single;
+
+    expect(args).toHaveLength(3);
+    expect(widened.pillarId).toBe('food');
   });
 });
