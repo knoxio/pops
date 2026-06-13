@@ -1,14 +1,13 @@
 /**
  * Lazily-initialised handle to the lists pillar's SQLite file.
  *
- * Phase 2 PR 2 of the lists pillar migration: opens the connection
- * (and applies the in-package migrations journal) at boot but does NOT
- * yet route any production traffic through it. PR 3 of phase 2 flips
- * the list_items slice (and subsequent slices) over with a single
- * edit to `getDrizzle()` → `getListsDrizzle()` plus an ATTACH-based
- * backfill of any existing rows from the shared pops.db; PR 4 drops
- * the lists-owned tags from the shared journal + adds the Litestream
- * config.
+ * Phase 2 PR 2 opened the connection (and applied the in-package
+ * migrations journal) at boot. PR 3 routed every lists module read +
+ * write (`lists.list.*` and `lists.items.*`) through
+ * `getListsDrizzle()` and ran a one-shot ATTACH-based backfill from
+ * the legacy shared pops.db. PR 4 (Theme 13) retired the backfill —
+ * every lists-owned table now writes directly to `lists.db`, so the
+ * boot bridge has nothing left to carry forward.
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
  * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts` /
@@ -20,7 +19,6 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openListsDb, type ListsDb, type OpenedListsDb } from '@pops/lists-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
-import { backfillListsFromShared } from './backfill-lists-from-shared.js';
 import { resolveListsSqlitePath } from './lists-sqlite-path.js';
 
 let listsDb: OpenedListsDb | null = null;
@@ -86,16 +84,4 @@ export function setListsDb(next: OpenedListsDb | null): OpenedListsDb | null {
   const prev = listsDb;
   listsDb = next;
   return prev;
-}
-
-/**
- * Run the one-shot ATTACH backfill from the legacy shared pops.db into
- * the lists pillar's lists.db. No-op if the lists handle isn't open
- * (e.g. boot still resolving). Idempotent against repeated boots via
- * per-table `WHERE id NOT IN (...)` filters. See
- * `backfill-lists-from-shared.ts` for the table-by-table behaviour.
- */
-export function backfillListsFromSharedDb(sharedPath: string): void {
-  if (!listsDb) return;
-  backfillListsFromShared(listsDb, sharedPath);
 }

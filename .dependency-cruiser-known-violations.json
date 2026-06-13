@@ -870,17 +870,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/db/backfill-lists-from-shared.ts",
-    "to": "packages/lists-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/lists-db",
-    "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-lists"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/lists-handle.ts",
     "to": "packages/lists-db/dist/index.d.ts",
     "unresolvedTo": "@pops/lists-db",

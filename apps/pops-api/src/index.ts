@@ -11,7 +11,7 @@ import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-
 import { backfillFinanceFromSharedDb, getFinanceDrizzle } from './db/finance-handle.js';
 import { getFoodDrizzle } from './db/food-handle.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
-import { backfillListsFromSharedDb, getListsDrizzle } from './db/lists-handle.js';
+import { getListsDrizzle } from './db/lists-handle.js';
 import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { closeQueues } from './jobs/queues.js';
@@ -123,14 +123,12 @@ try {
 }
 
 // Eagerly open the lists pillar's SQLite + apply its journal at boot.
-// Every lists module read + write now resolves against this handle
-// (phase 2 PR 3); the one-shot `backfillListsFromSharedDb` carries any
-// `lists` + `list_items` rows that still live in the legacy pops.db
-// across. The backfill is idempotent (per-table `WHERE id NOT IN (...)`
-// filters) and non-fatal (partial failure logs + continues).
+// Every lists-owned table (`lists` + `list_items`) now writes directly
+// to lists.db via getListsDrizzle(), so the boot-time ATTACH bridge
+// from the shared pops.db has been retired — there is nothing left to
+// carry forward.
 try {
   getListsDrizzle();
-  backfillListsFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the lists pillar SQLite:', err);
   throw err;

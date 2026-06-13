@@ -67,63 +67,19 @@ docker compose -f infra/docker-compose.yml start lists-api
 
 Within ~30s the healthcheck reports healthy. Re-running the probes in Step 1 returns the same shapes. `PillarGuard` re-promotes lists from `'unavailable'` back to `'healthy'` on the next status-context refresh; the lists UI hydrates without a hard navigation.
 
-### Step 4 — verify the boot-time backfill is idempotent
-
-`backfillListsFromShared()` (in `apps/pops-api/src/db/backfill-lists-from-shared.ts`) carries `lists` + `list_items` rows from the legacy `pops.db` into `lists.db` at boot, in FK-safe order (parent `lists` first, children `list_items` second — `list_items.list_id` has `foreign_keys = ON` and the child INSERT requires the parent row to exist). Each table copy uses an explicit `WHERE id NOT IN (...)` filter and is wrapped in `tryCopyTable` so a missing source table on a stale on-disk `pops.db` (post-PR-4 drop scenario, or a partial post-cutover cleanup) is non-fatal — the failure is logged and swallowed, the next deploy retries, and the idempotent filter picks up only the still-missing rows.
-
-The drill:
-
-```sh
-# Restart pops-api a second time after step 3.
-docker compose -f infra/docker-compose.yml restart pops-api
-
-# Inspect the row counts in both DBs. The backfill is idempotent via
-# the per-table `WHERE id NOT IN (...)` filter — re-running must not
-# duplicate rows.
-docker compose -f infra/docker-compose.yml exec pops-api \
-  node -e "
-const Database = require('better-sqlite3');
-const a = new Database('/data/sqlite/lists.db', { readonly: true });
-const b = new Database('/data/sqlite/pops.db', { readonly: true });
-const listsLists = a.prepare('SELECT count(*) AS n FROM lists').get().n;
-const listsItems = a.prepare('SELECT count(*) AS n FROM list_items').get().n;
-const sharedLists = b.prepare(
-  \"SELECT count(*) AS n FROM sqlite_master WHERE type='table' AND name='lists'\"
-).get().n
-  ? b.prepare('SELECT count(*) AS n FROM lists').get().n
-  : null;
-const sharedItems = b.prepare(
-  \"SELECT count(*) AS n FROM sqlite_master WHERE type='table' AND name='list_items'\"
-).get().n
-  ? b.prepare('SELECT count(*) AS n FROM list_items').get().n
-  : null;
-console.log({ listsLists, listsItems, sharedLists, sharedItems });
-"
-# Expected: listsLists >= sharedLists AND listsItems >= sharedItems
-# (every row that lives in the shared copy must also live in lists.db;
-# the lists copy may have more rows after the cutover since new writes
-# go there exclusively).
-```
-
-If the backfill encounters a stale on-disk `pops.db` that's already had its `lists` or `list_items` table dropped or renamed (e.g. after a partial post-cutover cleanup, or after the Track L shared-journal cleanup window runs), `tryCopyTable` logs `[db] Lists backfill of <table> failed (non-fatal): <err>` and continues with the remaining table. The next deploy retries the same copy with no duplication risk — the `WHERE id NOT IN (...)` filter is the single source of idempotency. A whole-ATTACH failure (e.g. missing `pops.db` file on disk) is also non-fatal: it logs `[db] Lists backfill ATTACH failed (non-fatal):` and the boot path proceeds.
-
-### Step 5 — write up surprises
+### Step 4 — write up surprises
 
 Record any unexpected behaviour in the **Lessons captured** section of `.claude/pillar-migration-roadmap.md` before flipping Track K to ✅ Done. That file is gitignored — it only exists in local clones / sibling workspaces, so it isn't linkable from GitHub. Examples worth flagging:
 
 - pops-api hard-crashes when lists-api is down (it shouldn't — should degrade per-route).
 - The shell's "lists unavailable" placeholder paints over working non-lists routes (PillarGuard scoping is too broad).
 - `lists.db` writes succeed against a stopped lists-api container (proves the shared-volume caveat noted in Step 2 — Phase 5 follow-up: convert lists-api to the sole writer once tRPC routers move into it).
-- The boot-time backfill duplicates rows (the `WHERE id NOT IN (...)` filter is supposed to dedupe — a failure here is a real bug).
-- `list_items` backfill runs **before** `lists` and trips the FK (the `TABLE_COPIES` order in `backfill-lists-from-shared.ts` is supposed to enforce parent-first — a failure here means the array got reordered).
-- `lists.list.*` reads return empty on a fresh boot when the shared `pops.db` still has rows (proves the backfill silently skipped — check `pops-api` logs for `[db] Lists backfill of lists failed (non-fatal):` lines and fix the root cause before the next deploy's retry).
 
 ## Reference
 
 - ADR-026: per-domain pillar architecture
 - `apps/pops-lists-api/src/server.ts` — boot sequence
 - `apps/pops-api/src/db/lists-handle.ts` — lazy open + env-aware handle
-- `apps/pops-api/src/db/backfill-lists-from-shared.ts` — table-by-table backfill
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
 - `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
 - `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar
