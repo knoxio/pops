@@ -5,24 +5,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the database so settings table lookups return nothing by default
 vi.mock('../../../db.js', () => ({
-  getDrizzle: vi.fn(() => ({
-    select: () => ({
-      from: () => ({
-        where: () => ({
-          get: () => undefined,
-        }),
-      }),
-    }),
-    insert: () => ({
-      values: () => ({
-        onConflictDoUpdate: () => ({ run: vi.fn() }),
-        onConflictDoNothing: () => ({ run: vi.fn() }),
-      }),
-    }),
-    delete: () => ({
-      where: () => ({ run: vi.fn() }),
-    }),
-  })),
+  getCoreDrizzle: vi.fn(() => ({})),
+}));
+
+vi.mock('@pops/core-db', () => ({
+  SettingNotFoundError: class SettingNotFoundError extends Error {
+    constructor(public readonly key: string) {
+      super(`Setting not found: ${key}`);
+    }
+  },
+  settingsService: {
+    getSettingOrNull: vi.fn(() => null),
+    setRawSetting: vi.fn(),
+    deleteSetting: vi.fn(),
+  },
 }));
 
 import { clearStatusCache, getArrConfig, getRadarrClient, getSonarrClient } from './service.js';

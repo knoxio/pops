@@ -2,9 +2,10 @@ import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
-import { rotationCandidates, rotationSources, settings } from '@pops/db-types';
+import { settingsService } from '@pops/core-db';
+import { rotationCandidates, rotationSources } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle, getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
 
 // Mock external services used by downloadCandidate
@@ -52,8 +53,7 @@ function insertCandidate(
 }
 
 function insertSetting(key: string, value: string) {
-  const db = getDrizzle();
-  db.insert(settings).values({ key, value }).run();
+  settingsService.setRawSetting(getCoreDrizzle(), key, value);
 }
 
 // ---------------------------------------------------------------------------

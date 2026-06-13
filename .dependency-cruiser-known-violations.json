@@ -397,7 +397,161 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/ai-inference.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/core/settings/service.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/arr/download-and-protect.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/arr/service-settings.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/plex/plex-auth.test.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/plex/router-auth.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/plex/router-connection.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/plex/scheduler.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/plex/service.test.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/plex/service.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/rotation/addition-gating.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/rotation/candidate-queue.test.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/rotation/download-candidate.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/rotation/rotation-config-router.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/rotation/scheduler.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
     "dependencyTypes": ["undetermined", "import"],

@@ -1,8 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { SettingNotFoundError, settingsService } from '@pops/core-db';
 
-import { settings } from '@pops/db-types';
-
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
 import { SETTINGS_KEYS, type SettingsKey } from '../../core/settings/keys.js';
 import { RadarrClient } from './radarr-client.js';
@@ -25,10 +23,8 @@ export interface ArrSettingsUpdate {
 }
 
 function getSetting(key: SettingsKey): string | null {
-  const db = getDrizzle();
-  const record = db.select().from(settings).where(eq(settings.key, key)).get();
-  if (record?.value) return record.value;
-  return null;
+  const row = settingsService.getSettingOrNull(getCoreDrizzle(), key);
+  return row?.value ?? null;
 }
 
 export function getArrSetting(key: SettingsKey, envName: string): string | null {
@@ -36,16 +32,15 @@ export function getArrSetting(key: SettingsKey, envName: string): string | null 
 }
 
 function saveSetting(key: SettingsKey, value: string): void {
-  const db = getDrizzle();
-  db.insert(settings)
-    .values({ key, value })
-    .onConflictDoUpdate({ target: settings.key, set: { value } })
-    .run();
+  settingsService.setRawSetting(getCoreDrizzle(), key, value);
 }
 
 function deleteSetting(key: SettingsKey): void {
-  const db = getDrizzle();
-  db.delete(settings).where(eq(settings.key, key)).run();
+  try {
+    settingsService.deleteSetting(getCoreDrizzle(), key);
+  } catch (err) {
+    if (!(err instanceof SettingNotFoundError)) throw err;
+  }
 }
 
 function applySetting(key: SettingsKey, value: string | undefined): void {

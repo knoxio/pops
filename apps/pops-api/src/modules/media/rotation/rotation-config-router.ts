@@ -1,9 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { settings } from '@pops/db-types';
+import { settingsService } from '@pops/core-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { protectedProcedure } from '../../../trpc.js';
 
 /** All rotation setting keys and their defaults. */
@@ -20,10 +19,10 @@ export const ROTATION_SETTING_KEYS = {
 export const rotationConfigProcedures = {
   /** Get all rotation settings with defaults. */
   getSettings: protectedProcedure.query(() => {
-    const db = getDrizzle();
+    const coreDb = getCoreDrizzle();
     const result: Record<string, string> = {};
     for (const [name, def] of Object.entries(ROTATION_SETTING_KEYS)) {
-      const record = db.select().from(settings).where(eq(settings.key, def.key)).get();
+      const record = settingsService.getSettingOrNull(coreDb, def.key);
       result[name] = record?.value ?? def.default;
     }
     return result;
@@ -42,27 +41,39 @@ export const rotationConfigProcedures = {
       })
     )
     .mutation(({ input }) => {
-      const db = getDrizzle();
-      const entries: [string, string][] = [];
+      const entries: { key: string; value: string }[] = [];
       if (input.cronExpression !== undefined)
-        entries.push([ROTATION_SETTING_KEYS.cronExpression.key, input.cronExpression]);
+        entries.push({
+          key: ROTATION_SETTING_KEYS.cronExpression.key,
+          value: input.cronExpression,
+        });
       if (input.targetFreeGb !== undefined)
-        entries.push([ROTATION_SETTING_KEYS.targetFreeGb.key, String(input.targetFreeGb)]);
+        entries.push({
+          key: ROTATION_SETTING_KEYS.targetFreeGb.key,
+          value: String(input.targetFreeGb),
+        });
       if (input.leavingDays !== undefined)
-        entries.push([ROTATION_SETTING_KEYS.leavingDays.key, String(input.leavingDays)]);
+        entries.push({
+          key: ROTATION_SETTING_KEYS.leavingDays.key,
+          value: String(input.leavingDays),
+        });
       if (input.dailyAdditions !== undefined)
-        entries.push([ROTATION_SETTING_KEYS.dailyAdditions.key, String(input.dailyAdditions)]);
+        entries.push({
+          key: ROTATION_SETTING_KEYS.dailyAdditions.key,
+          value: String(input.dailyAdditions),
+        });
       if (input.avgMovieGb !== undefined)
-        entries.push([ROTATION_SETTING_KEYS.avgMovieGb.key, String(input.avgMovieGb)]);
+        entries.push({
+          key: ROTATION_SETTING_KEYS.avgMovieGb.key,
+          value: String(input.avgMovieGb),
+        });
       if (input.protectedDays !== undefined)
-        entries.push([ROTATION_SETTING_KEYS.protectedDays.key, String(input.protectedDays)]);
+        entries.push({
+          key: ROTATION_SETTING_KEYS.protectedDays.key,
+          value: String(input.protectedDays),
+        });
 
-      for (const [key, value] of entries) {
-        db.insert(settings)
-          .values({ key, value })
-          .onConflictDoUpdate({ target: settings.key, set: { value } })
-          .run();
-      }
+      settingsService.setBulkSettings(getCoreDrizzle(), entries);
 
       return { success: true, updated: entries.length };
     }),

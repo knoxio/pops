@@ -1,5 +1,4 @@
 import { CronExpressionParser } from 'cron-parser';
-import { eq } from 'drizzle-orm';
 import cron, { type ScheduledTask } from 'node-cron';
 
 /**
@@ -10,9 +9,9 @@ import cron, { type ScheduledTask } from 'node-cron';
  *
  * PRD-070 US-06
  */
-import { settings } from '@pops/db-types';
+import { SettingNotFoundError, settingsService } from '@pops/core-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { isEnabled } from '../../core/features/index.js';
 import { emptyResult } from './rotation-cycle-types.js';
 import { executeRotationCycle } from './rotation-cycle.js';
@@ -52,22 +51,20 @@ let lastCycleAt: string | null = null;
 let lastCycleError: string | null = null;
 
 function getSetting(key: string): string | null {
-  const db = getDrizzle();
-  const record = db.select().from(settings).where(eq(settings.key, key)).get();
+  const record = settingsService.getSettingOrNull(getCoreDrizzle(), key);
   return record?.value ?? null;
 }
 
 function saveSetting(key: string, value: string): void {
-  const db = getDrizzle();
-  db.insert(settings)
-    .values({ key, value })
-    .onConflictDoUpdate({ target: settings.key, set: { value } })
-    .run();
+  settingsService.setRawSetting(getCoreDrizzle(), key, value);
 }
 
 function deleteSetting(key: string): void {
-  const db = getDrizzle();
-  db.delete(settings).where(eq(settings.key, key)).run();
+  try {
+    settingsService.deleteSetting(getCoreDrizzle(), key);
+  } catch (err) {
+    if (!(err instanceof SettingNotFoundError)) throw err;
+  }
 }
 
 function getTargetFreeGb(): number {

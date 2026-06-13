@@ -13,7 +13,14 @@ vi.mock('../../../env.js', () => ({
 }));
 
 vi.mock('../../../db.js', () => ({
-  getDrizzle: vi.fn(),
+  getCoreDrizzle: vi.fn(),
+}));
+
+vi.mock('@pops/core-db', () => ({
+  settingsService: {
+    getSettingOrNull: vi.fn(),
+    setRawSetting: vi.fn(),
+  },
 }));
 
 vi.mock('../library/service.js', () => ({
@@ -43,7 +50,6 @@ vi.mock('../watch-history/service.js', () => ({
 vi.mock('@pops/db-types', () => ({
   episodes: { seasonId: 'seasonId', episodeNumber: 'episodeNumber', id: 'id' },
   seasons: { tvShowId: 'tvShowId', seasonNumber: 'seasonNumber', id: 'id' },
-  settings: { key: 'key', value: 'value' },
 }));
 
 vi.mock('drizzle-orm', () => ({
@@ -51,30 +57,21 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
 }));
 
-import { getDrizzle } from '../../../db.js';
+import { settingsService, type CoreDb } from '@pops/core-db';
+
+import { getCoreDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
 import { PlexClient } from './client.js';
 import { getPlexClient, getSyncStatus, testConnection } from './service.js';
 
-// Now import the service
-import type { BetterSQLite3Database } from '../../../db.js';
-
 const mockGetEnv = vi.mocked(getEnv);
-const mockGetDrizzle = vi.mocked(getDrizzle);
-
-function createMockDrizzle(getReturnValue: unknown = undefined): BetterSQLite3Database {
-  const chain = {
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    get: vi.fn().mockReturnValue(getReturnValue),
-  };
-  return chain as unknown as BetterSQLite3Database;
-}
+const mockGetCoreDrizzle = vi.mocked(getCoreDrizzle);
+const mockGetSettingOrNull = vi.mocked(settingsService.getSettingOrNull);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockGetDrizzle.mockReturnValue(createMockDrizzle());
+  mockGetCoreDrizzle.mockReturnValue({} as CoreDb);
+  mockGetSettingOrNull.mockReturnValue(null);
 });
 
 afterEach(() => {
@@ -100,7 +97,7 @@ describe('getPlexClient', () => {
       return undefined;
     });
 
-    mockGetDrizzle.mockReturnValue(createMockDrizzle({ value: 'abc123' }));
+    mockGetSettingOrNull.mockReturnValue({ key: 'plex_token', value: 'abc123' });
 
     const client = getPlexClient();
     expect(client).toBeInstanceOf(PlexClient);

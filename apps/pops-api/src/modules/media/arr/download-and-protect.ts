@@ -1,9 +1,10 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 
-import { movies, settings } from '@pops/db-types';
+import { settingsService } from '@pops/core-db';
+import { movies } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
 import { getImageCache, getTmdbClient } from '../tmdb/index.js';
@@ -27,17 +28,15 @@ interface RotationDefaults {
 }
 
 function loadRotationDefaults(): RotationDefaults {
-  const db = getDrizzle();
-  const qualityProfileId = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, 'rotation_quality_profile_id'))
-    .get()?.value;
-  const rootFolderPath = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, 'rotation_root_folder_path'))
-    .get()?.value;
+  const coreDb = getCoreDrizzle();
+  const qualityProfileId = settingsService.getSettingOrNull(
+    coreDb,
+    'rotation_quality_profile_id'
+  )?.value;
+  const rootFolderPath = settingsService.getSettingOrNull(
+    coreDb,
+    'rotation_root_folder_path'
+  )?.value;
 
   if (!qualityProfileId || !rootFolderPath) {
     throw new TRPCError({
