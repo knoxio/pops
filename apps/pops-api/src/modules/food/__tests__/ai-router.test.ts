@@ -1,38 +1,20 @@
 /**
  * PRD-133 — integration tests for `food.ai.logInference`.
  *
- * In-memory SQLite seeded with the ai_inference_log table. Internal
- * caller token gates the mutation; public callers must be rejected.
+ * The writer routes through the core pillar handle (Theme 13 PR4
+ * unblock), so the test opens a fresh per-pillar core DB via
+ * `openCoreDb(':memory:')` and asserts against that. The shared handle
+ * is still swapped because the tRPC context resolution touches it.
  */
 import BetterSqlite3, { type Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { closeDb, setDb } from '../../../db.js';
+import { openCoreDb, type OpenedCoreDb } from '@pops/core-db';
+
+import { closeDb, setCoreDb, setDb } from '../../../db.js';
 import { appRouter } from '../../../router.js';
 
 import type { Context } from '../../../trpc.js';
-
-function createAiInferenceLogTable(db: Database): void {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS ai_inference_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      provider TEXT NOT NULL,
-      model TEXT NOT NULL,
-      operation TEXT NOT NULL,
-      domain TEXT,
-      input_tokens INTEGER NOT NULL DEFAULT 0,
-      output_tokens INTEGER NOT NULL DEFAULT 0,
-      cost_usd REAL NOT NULL DEFAULT 0,
-      latency_ms INTEGER NOT NULL DEFAULT 0,
-      status TEXT NOT NULL DEFAULT 'success',
-      cached INTEGER NOT NULL DEFAULT 0,
-      context_id TEXT,
-      error_message TEXT,
-      metadata TEXT,
-      created_at TEXT NOT NULL
-    );
-  `);
-}
 
 function createInternalCaller(): ReturnType<typeof appRouter.createCaller> {
   const ctx: Context = { user: null, serviceAccount: null, internalCaller: true };
@@ -66,22 +48,30 @@ interface LoggedRow {
   created_at: string;
 }
 
-function readRows(db: Database): LoggedRow[] {
-  return db.prepare('SELECT * FROM ai_inference_log ORDER BY id ASC').all() as LoggedRow[];
-}
-
-let db: Database;
+let sharedDb: Database;
+let coreHandle: OpenedCoreDb | null = null;
 
 beforeEach(() => {
-  db = new BetterSqlite3(':memory:');
-  db.pragma('foreign_keys = ON');
-  createAiInferenceLogTable(db);
-  setDb(db);
+  sharedDb = new BetterSqlite3(':memory:');
+  sharedDb.pragma('foreign_keys = ON');
+  setDb(sharedDb);
+  coreHandle = openCoreDb(':memory:');
+  setCoreDb(coreHandle);
 });
 
 afterEach(() => {
+  setCoreDb(null);
+  coreHandle?.raw.close();
+  coreHandle = null;
   closeDb();
 });
+
+function readRows(): LoggedRow[] {
+  if (!coreHandle) throw new Error('core handle not initialised');
+  return coreHandle.raw
+    .prepare('SELECT * FROM ai_inference_log ORDER BY id ASC')
+    .all() as LoggedRow[];
+}
 
 describe('food.ai.logInference', () => {
   it('writes a success row with domain=food and merged metadata', async () => {
@@ -103,7 +93,7 @@ describe('food.ai.logInference', () => {
 
     expect(result).toEqual({ ok: true });
 
-    const rows = readRows(db);
+    const rows = readRows();
     expect(rows).toHaveLength(1);
     const row = rows[0]!;
     expect(row.domain).toBe('food');
@@ -139,7 +129,7 @@ describe('food.ai.logInference', () => {
       metadata: { cost_missing: true },
     });
 
-    const rows = readRows(db);
+    const rows = readRows();
     expect(rows).toHaveLength(1);
     const row = rows[0]!;
     expect(row.status).toBe('error');
@@ -166,7 +156,7 @@ describe('food.ai.logInference', () => {
       })
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
 
-    expect(readRows(db)).toHaveLength(0);
+    expect(readRows()).toHaveLength(0);
   });
 
   it('rejects invalid operation strings at the schema boundary', async () => {

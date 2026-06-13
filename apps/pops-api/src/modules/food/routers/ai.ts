@@ -20,7 +20,7 @@ import { z } from 'zod';
  */
 import { aiInferenceLog } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
 import { internalProcedure, router } from '../../../trpc.js';
 
@@ -66,7 +66,7 @@ export const aiRouter = router({
       };
 
       try {
-        getDrizzle()
+        getCoreDrizzle()
           .insert(aiInferenceLog)
           .values({
             provider: input.provider,
