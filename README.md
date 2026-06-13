@@ -28,6 +28,10 @@ External APIs
   Media:   Plex (local + Discover) | TMDB | TheTVDB | Radarr | Sonarr
 ```
 
+### Wire Format
+
+Pillar-to-pillar and consumer-to-pillar communication uses a versioned JSON-over-HTTP wire format. See [`WIRE-FORMAT.md`](WIRE-FORMAT.md) for the TL;DR and the canonical spec.
+
 ### Docker Networks
 
 | Network          | Services                       | Purpose                      |
