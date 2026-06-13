@@ -4,63 +4,67 @@
 
 ## Overview
 
-Move discovery-related tables + `media.discovery.*` procedures into `media.db`. Follows the canonical N-track pattern from [PRD-165](../165-media-movies-cutover/README.md).
+Move the `dismissed_discover` table + the `media.discovery.*` read paths onto the media pillar's SQLite handle (`getMediaDrizzle()`). Follows the canonical N-track pattern from [PRD-165](../165-media-movies-cutover/README.md).
 
-Discovery covers context collections, genre spotlights, the dismiss-pile, recommendation flags, and the shelf-impressions surface (already migrated as M3 PR 1). This PRD finishes the discovery slice's data move.
+The discovery surface is overwhelmingly an orchestration layer over already-migrated tables (`movies`, `tv_shows`, `mediaWatchlist`, `watchHistory`, `shelf_impressions`). The only state it persists itself is the dismiss-pile. Context collections are static TS data (`context-collections.ts`); genre spotlight and the "flags" service are computed on demand from TMDB + the preference profile — no tables.
 
 ## Data Model
 
-Tables (move from shared to `packages/media-db`):
+The only discovery-owned table is `dismissed_discover` (PK `tmdb_id`, `dismissed_at text` defaulted to `datetime('now')`). It moves into `packages/media-db`:
 
-- `context_collections` — saved discovery collections; { id, label, criteria_json, created_at }
-- `dismissed_items` — { id, item_type, item_id, dismissed_at, reason }
-- `discovery_flags` — { id, item_type, item_id, flag, value, updated_at }
-- `genre_spotlights` — generated/curated featured items per genre
+- Schema re-export in `packages/media-db/src/schema.ts`.
+- Baseline migration `0026_media_dismissed_discover_baseline.sql` so `openMediaDb()` provisions the table.
+- `dismissedDiscoverService` (db-arg pattern): `dismiss`, `undismiss`, `listDismissedTmdbIds`, `getDismissedTmdbIdSet`, `listDismissed`.
 
-(`shelf_impressions` already lives in media.db from M3 PR 1.)
+`shelf_impressions` already lives in media.db from M3 PR 1.
 
 ## API Surface
 
-| Procedure                                   | Kind              |
-| ------------------------------------------- | ----------------- |
-| `media.discovery.contextCollections.list`   | query             |
-| `media.discovery.contextCollections.create` | mutation          |
-| `media.discovery.contextCollections.delete` | mutation          |
-| `media.discovery.dismissed.list`            | query             |
-| `media.discovery.dismissed.add`             | mutation          |
-| `media.discovery.dismissed.restore`         | mutation          |
-| `media.discovery.flags.list`                | query             |
-| `media.discovery.flags.set`                 | mutation          |
-| `media.discovery.genreSpotlight.get`        | query             |
-| `media.discovery.assembleSession`           | query (composite) |
+| Procedure                                   | Kind              | Backing data                            |
+| ------------------------------------------- | ----------------- | --------------------------------------- |
+| `media.discovery.dismiss`                   | mutation          | `dismissed_discover`                    |
+| `media.discovery.undismiss`                 | mutation          | `dismissed_discover`                    |
+| `media.discovery.getDismissed`              | query             | `dismissed_discover`                    |
+| `media.discovery.profile`                   | query             | `movies`, `mediaScores`, `comparisons`  |
+| `media.discovery.quickPick`                 | query             | `movies`, `watchHistory`, `watchlist`   |
+| `media.discovery.fromYourServer`            | query             | `movies`, `watchHistory`                |
+| `media.discovery.rewatchSuggestions`        | query             | `movies`, `watchHistory`, `mediaScores` |
+| `media.discovery.trending` / `trendingPlex` | query             | TMDB / Plex (no DB)                     |
+| `media.discovery.recommendations`           | query             | TMDB + preference profile               |
+| `media.discovery.contextPicks`              | query             | TMDB (static collections in code)       |
+| `media.discovery.genreSpotlight` / `Page`   | query             | TMDB + preference profile               |
+| `media.discovery.assembleSession`           | query (composite) | `shelf_impressions` + everything above  |
 
-Files today: `apps/pops-api/src/modules/media/discovery/{context-collections.ts, dismissed.ts, flags.ts, genre-spotlight-service.ts, shelf/}`.
+Files today: `apps/pops-api/src/modules/media/discovery/{service*.ts, context-picks-service.ts, genre-spotlight-service.ts, plex-service.ts, tmdb-service.ts, shelf/}`.
 
 ## Business Rules
 
-Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business-rules--the-n-track-4-pr-sequence). Slice specifics:
+Follows [PRD-165's N-track sequence](../165-media-movies-cutover/README.md#business-rules--the-n-track-4-pr-sequence). Slice specifics:
 
-- `assembleSession` composes from many tables (movies, tv_shows, watchlist, watch_history, dismissed, flags, genre_spotlights). After PRDs 165-169 land, every read source lives in `media.db`; assembleSession's in-process joins work.
-- Four small tables; backfill is fast.
+- **Cross-store joins block a single-shot handle flip.** `service-preference-profile.ts`, `service-rewatch.ts`, and `shelf/local-score-shelves.ts` join `movies` (already in media.db) against `mediaScores` / `comparisons` / `comparisonDimensions` (still in the shared journal). Flipping those readers to `getMediaDrizzle()` would break the joins. They wait for the comparisons / mediaScores cutovers.
+- **Handle-safe reads can flip immediately** in PR 2: `service-library.ts` (`getQuickPickMovies`, `getUnwatchedLibraryMovies`) and `router-tmdb.ts::getLibraryTmdbIds` touch only `movies` / `watchHistory` / `mediaWatchlist`, all on media.db.
+- `assembleSession` already uses `getMediaDrizzle()` for `shelfImpressionsService`. It composes shelves whose internal queries each run on whichever handle their backing table lives on. Behaviour is preserved as long as each backing table's read handle matches its actual location.
+- Backfill: the dismiss-pile is small (one row per dismissal); the existing `backfillMediaFromShared()` pattern from the movies/watchlist cutovers copies rows on first boot.
 
 ## Edge Cases
 
-| Case                                                                            | Behaviour                                                                                                                     |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `assembleSession` runs during partial cutover (some sources migrated, some not) | Behaviour preserved as long as each source's read handle is correct. PRD-3 (cutover) lands all assembleSession reads at once. |
-| Dismissed item references a movie that's been deleted                           | Soft reference; assembleSession filters on existence.                                                                         |
+| Case                                                                            | Behaviour                                                                                           |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `assembleSession` runs during partial cutover (some sources migrated, some not) | Behaviour preserved as long as each source's read handle matches its actual backing-table location. |
+| Dismissed item references a movie that's been deleted                           | Soft reference; the discovery filter pipeline drops missing TMDB ids when joining against `movies`. |
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                      |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------------ |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — 4 schemas + services into `@pops/media-db`            |
-| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal                              |
-| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip routers + assembleSession to `getMediaDrizzle()` |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                                  |
+| #   | Story                                                       | Summary                                                                                                             |
+| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — `dismissed_discover` schema + service + baseline migration into `@pops/media-db`. No consumer flip.          |
+| 02  | [us-02-pr2-reads-cutover](us-02-pr2-reads-cutover.md)       | PR 2 — Flip handle-safe readers (`service-library`, `router-tmdb::getLibraryTmdbIds`, dismiss readers) to media.db. |
+| 03  | [us-03-pr3-writes-cutover](us-03-pr3-writes-cutover.md)     | PR 3 — Flip the dismiss writer + remaining cross-store readers once `mediaScores` / `comparisons` are on media.db.  |
+| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Drop `dismissed_discover` from the shared journal and delete the shim.                                       |
 
 ## Out of Scope
 
 - Recommender / scoring algorithm changes.
 - New discovery surfaces beyond what exists.
 - AI-generated discovery prompts (separate AI Ops concern).
+- `mediaScores` / `comparisons` / `comparisonDimensions` cutovers (own PRDs).

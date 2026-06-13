@@ -36,6 +36,13 @@
       "when": 1790000000000,
       "tag": "0025_media_watch_history_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792000000000,
+      "tag": "0026_media_dismissed_discover_baseline",
+      "breakpoints": true
     }
   ]
 }

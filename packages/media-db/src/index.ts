@@ -39,6 +39,10 @@ export * as moviesService from './services/movies.js';
 
 export * as shelfImpressionsService from './services/shelf-impressions.js';
 
+export type { DismissedDiscoverRow } from './services/dismissed-discover.js';
+
+export * as dismissedDiscoverService from './services/dismissed-discover.js';
+
 export type {
   CreateTvShowInput,
   TvShow,
