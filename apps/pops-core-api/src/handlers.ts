@@ -25,8 +25,10 @@ export interface CoreApiDeps {
 
 export interface HealthResponse {
   ok: true;
+  status: 'ok';
   pillar: 'core';
   version: string;
+  ts: string;
 }
 
 export interface PillarsResponse {
@@ -43,7 +45,13 @@ export function makeRequestHandler(deps: CoreApiDeps): {
       // (caught by the Express error pipeline -> 500) rather than a
       // bogus 200 OK that hides a broken connection.
       deps.coreDb.raw.prepare('SELECT 1').get();
-      return { ok: true, pillar: 'core', version: deps.version };
+      return {
+        ok: true,
+        status: 'ok',
+        pillar: 'core',
+        version: deps.version,
+        ts: new Date().toISOString(),
+      };
     },
     pillars(): PillarsResponse {
       return { pillars: getPillarRegistry({ selfBaseUrl: deps.selfBaseUrl }) };

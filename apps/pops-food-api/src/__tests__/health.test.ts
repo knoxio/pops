@@ -3,7 +3,7 @@
  *
  * Boots the app against a per-test temp-dir food.db (mkdtemp +
  * cleanup in afterEach) and confirms the `/health` route returns the
- * agreed `{ ok, pillar, version }` shape.
+ * agreed `{ ok, status, pillar, version, ts }` shape.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe('GET /health', () => {
-  it('returns ok + pillar + version', async () => {
+  it('returns ok + status + pillar + version + ts', async () => {
     const app = createFoodApiApp({
       foodDb,
       version: '0.0.1-test',
@@ -38,7 +38,14 @@ describe('GET /health', () => {
     });
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true, pillar: 'food', version: '0.0.1-test' });
+    expect(res.body).toEqual({
+      ok: true,
+      status: 'ok',
+      pillar: 'food',
+      version: '0.0.1-test',
+      ts: expect.any(String),
+    });
+    expect(new Date(res.body.ts as string).toISOString()).toBe(res.body.ts);
   });
 
   it('fails closed when the food handle is closed', async () => {

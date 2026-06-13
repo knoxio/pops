@@ -20,8 +20,10 @@ export interface MediaApiDeps {
 
 export interface HealthResponse {
   ok: true;
+  status: 'ok';
   pillar: 'media';
   version: string;
+  ts: string;
 }
 
 export function makeRequestHandler(deps: MediaApiDeps): {
@@ -33,7 +35,13 @@ export function makeRequestHandler(deps: MediaApiDeps): {
       // (caught by the Express error pipeline -> 500) rather than a
       // bogus 200 OK that hides a broken connection.
       deps.mediaDb.raw.prepare('SELECT 1').get();
-      return { ok: true, pillar: 'media', version: deps.version };
+      return {
+        ok: true,
+        status: 'ok',
+        pillar: 'media',
+        version: deps.version,
+        ts: new Date().toISOString(),
+      };
     },
   };
 }
