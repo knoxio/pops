@@ -1,15 +1,36 @@
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { useDebouncedValue } from '@pops/ui';
 
 import { UNDO_DELAY_MS } from './UndoToast';
 
+import type { ComparisonRowData } from './ComparisonRow';
+
 const PAGE_SIZE = 20;
 
+interface ComparisonRowWithDimension extends ComparisonRowData {
+  dimensionId: number;
+}
+
+interface ComparisonsListAllResult {
+  data: ComparisonRowWithDimension[];
+  pagination?: { total: number };
+}
+
+interface Dimension {
+  id: number;
+  name: string;
+  active: boolean;
+}
+
+interface DimensionsListResult {
+  data: Dimension[];
+}
+
 export interface UseComparisonHistoryModelReturn {
-  data: ReturnType<typeof trpc.media.comparisons.listAll.useQuery>['data'];
+  data: ComparisonsListAllResult | undefined;
   isLoading: boolean;
   page: number;
   setPage: React.Dispatch<React.SetStateAction<number>>;
@@ -18,24 +39,22 @@ export interface UseComparisonHistoryModelReturn {
   searchInput: string;
   setSearchInput: (v: string) => void;
   pendingDeletes: Set<number>;
-  dimensions: { id: number; name: string }[];
+  dimensions: Dimension[];
   totalPages: number;
   handleDelete: (id: number) => void;
   handleUndo: (id: number, toastId: string | number) => void;
 }
 
 function useDeleteMutation(setPendingDeletes: React.Dispatch<React.SetStateAction<Set<number>>>) {
-  const utils = trpc.useUtils();
-  return trpc.media.comparisons.delete.useMutation({
+  const utils = usePillarUtils('media');
+  return usePillarMutation<{ id: number }, unknown>('media', ['comparisons', 'delete'], {
     onSuccess: (_data, variables) => {
       setPendingDeletes((prev) => {
         const next = new Set(prev);
         next.delete(variables.id);
         return next;
       });
-      void utils.media.comparisons.listAll.invalidate();
-      void utils.media.comparisons.scores.invalidate();
-      void utils.media.comparisons.rankings.invalidate();
+      void utils.invalidate(['comparisons']);
     },
     onError: (_error, variables) => {
       setPendingDeletes((prev) => {
@@ -102,19 +121,27 @@ function useDeleteFlow(
 
 export function useComparisonHistoryModel(
   renderToast: (id: number, onUndo: (toastId: string | number) => void) => string | number
-) {
+): UseComparisonHistoryModelReturn {
   const filters = useFilters();
   const { pendingDeletes, handleDelete, handleUndo } = useDeleteFlow(renderToast);
 
-  const { data: dimensionsData } = trpc.media.comparisons.listDimensions.useQuery();
+  const { data: dimensionsData } = usePillarQuery<DimensionsListResult>(
+    'media',
+    ['comparisons', 'listDimensions'],
+    undefined
+  );
   const dimensions = dimensionsData?.data ?? [];
 
-  const { data, isLoading } = trpc.media.comparisons.listAll.useQuery({
-    dimensionId: filters.dimensionFilter ? Number(filters.dimensionFilter) : undefined,
-    search: filters.debouncedSearch.trim() || undefined,
-    limit: PAGE_SIZE,
-    offset: filters.page * PAGE_SIZE,
-  });
+  const { data, isLoading } = usePillarQuery<ComparisonsListAllResult>(
+    'media',
+    ['comparisons', 'listAll'],
+    {
+      dimensionId: filters.dimensionFilter ? Number(filters.dimensionFilter) : undefined,
+      search: filters.debouncedSearch.trim() || undefined,
+      limit: PAGE_SIZE,
+      offset: filters.page * PAGE_SIZE,
+    }
+  );
 
   const totalPages = data?.pagination ? Math.ceil(data.pagination.total / PAGE_SIZE) : 0;
 

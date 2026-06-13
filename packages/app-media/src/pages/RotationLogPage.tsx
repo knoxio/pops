@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * RotationLogPage — paginated history of rotation cycle events.
  *
@@ -84,18 +84,33 @@ function LogList({ isLoading, items }: { isLoading: boolean; items: LogEntryData
   );
 }
 
+interface RotationLogResult {
+  items: LogEntryData[];
+  total: number;
+}
+
+interface RotationLogStats {
+  totalRotated: number;
+  avgPerDay: number;
+  streak: number;
+}
+
 export function RotationLogPage() {
   const [page, setPage] = useState(0);
 
-  const { data, isLoading } = trpc.media.rotation.listRotationLog.useQuery({
-    limit: PAGE_SIZE,
-    offset: page * PAGE_SIZE,
-  });
+  const { data, isLoading } = usePillarQuery<RotationLogResult>(
+    'media',
+    ['rotation', 'listRotationLog'],
+    { limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+  );
 
-  const { data: stats, isLoading: statsLoading } =
-    trpc.media.rotation.getRotationLogStats.useQuery();
+  const { data: stats, isLoading: statsLoading } = usePillarQuery<RotationLogStats>(
+    'media',
+    ['rotation', 'getRotationLogStats'],
+    undefined
+  );
 
-  const items = (data?.items ?? []) as LogEntryData[];
+  const items = data?.items ?? [];
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
 
   return (

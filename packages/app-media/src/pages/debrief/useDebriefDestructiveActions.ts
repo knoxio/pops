@@ -1,18 +1,37 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 interface UseDebriefDestructiveActionsArgs {
-  movieId: number;
   currentDimensionId: number | null;
   resolveTitle: (id: number) => string;
 }
 
-/**
- * markStale, N/A exclude, and blacklist (Not Watched) mutations for the
- * Debrief flow. Returns mutation handlers and blacklist dialog state.
- */
+interface MarkStaleResult {
+  data: { staleness: number };
+}
+
+interface MarkStaleInput {
+  mediaType: 'movie';
+  mediaId: number;
+}
+
+interface ExcludeInput {
+  mediaType: 'movie';
+  mediaId: number;
+  dimensionId: number;
+}
+
+interface BlacklistInput {
+  mediaType: 'movie';
+  mediaId: number;
+}
+
+interface ComparisonsListResult {
+  pagination?: { total: number };
+}
+
 function useStaleAndExclude({
   invalidateDebrief,
   resolveTitle,
@@ -22,14 +41,18 @@ function useStaleAndExclude({
   resolveTitle: (id: number) => string;
   currentDimensionId: number | null;
 }) {
-  const markStaleMutation = trpc.media.comparisons.markStale.useMutation({
-    onSuccess: (data: { data: { staleness: number } }, variables: { mediaId: number }) => {
-      const staleness = data.data.staleness;
-      const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
-      toast.success(`${resolveTitle(variables.mediaId)} marked stale (×${timesMarked})`);
-      invalidateDebrief();
-    },
-  });
+  const markStaleMutation = usePillarMutation<MarkStaleInput, MarkStaleResult>(
+    'media',
+    ['comparisons', 'markStale'],
+    {
+      onSuccess: (data, variables) => {
+        const staleness = data.data.staleness;
+        const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
+        toast.success(`${resolveTitle(variables.mediaId)} marked stale (×${timesMarked})`);
+        invalidateDebrief();
+      },
+    }
+  );
 
   const handleMarkStale = useCallback(
     (id: number) => {
@@ -39,7 +62,10 @@ function useStaleAndExclude({
     [markStaleMutation]
   );
 
-  const excludeMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
+  const excludeMutation = usePillarMutation<ExcludeInput, unknown>('media', [
+    'comparisons',
+    'excludeFromDimension',
+  ]);
 
   const handleNA = useCallback(
     (id: number) => {
@@ -71,19 +97,25 @@ function useBlacklistFlow({
     null
   );
 
-  const { data: blacklistComparisonData } = trpc.media.comparisons.listForMedia.useQuery(
+  const { data: blacklistComparisonData } = usePillarQuery<ComparisonsListResult>(
+    'media',
+    ['comparisons', 'listForMedia'],
     { mediaType: 'movie', mediaId: blacklistTarget?.id ?? 0, limit: 1 },
     { enabled: blacklistTarget !== null }
   );
   const comparisonsToPurge = blacklistComparisonData?.pagination?.total ?? null;
 
-  const blacklistMutation = trpc.media.comparisons.blacklistMovie.useMutation({
-    onSuccess: (_data, variables) => {
-      toast.success(`${resolveTitle(variables.mediaId)} marked as not watched`);
-      setBlacklistTarget(null);
-      invalidateDebrief();
-    },
-  });
+  const blacklistMutation = usePillarMutation<BlacklistInput, unknown>(
+    'media',
+    ['comparisons', 'blacklistMovie'],
+    {
+      onSuccess: (_data, variables) => {
+        toast.success(`${resolveTitle(variables.mediaId)} marked as not watched`);
+        setBlacklistTarget(null);
+        invalidateDebrief();
+      },
+    }
+  );
 
   const openBlacklist = useCallback((movie: { id: number; title: string }) => {
     setBlacklistTarget(movie);
@@ -105,15 +137,14 @@ function useBlacklistFlow({
 }
 
 export function useDebriefDestructiveActions({
-  movieId,
   currentDimensionId,
   resolveTitle,
 }: UseDebriefDestructiveActionsArgs) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
 
   const invalidateDebrief = useCallback(() => {
-    void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
-  }, [utils, movieId]);
+    void utils.invalidate(['comparisons', 'getDebrief']);
+  }, [utils]);
 
   const stale = useStaleAndExclude({ invalidateDebrief, resolveTitle, currentDimensionId });
   const blacklist = useBlacklistFlow({ invalidateDebrief, resolveTitle });

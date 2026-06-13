@@ -1,7 +1,7 @@
 import { Trophy } from 'lucide-react';
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
 
 import { RankingRow } from './RankingRow';
@@ -72,14 +72,19 @@ function PaginationFooter({
   );
 }
 
+interface RankingsResult {
+  data: RankingEntry[];
+  pagination?: { total: number; hasMore: boolean };
+}
+
 export function RankingsList({ dimensionId }: { dimensionId?: number }) {
   const [offset, setOffset] = useState(0);
 
-  const { data, isLoading, error } = trpc.media.comparisons.rankings.useQuery({
-    dimensionId,
-    limit: PAGE_SIZE,
-    offset,
-  });
+  const { data, isLoading, error } = usePillarQuery<RankingsResult>(
+    'media',
+    ['comparisons', 'rankings'],
+    { dimensionId, limit: PAGE_SIZE, offset }
+  );
 
   if (error) {
     return (
@@ -91,7 +96,7 @@ export function RankingsList({ dimensionId }: { dimensionId?: number }) {
   }
   if (isLoading) return <RankingsSkeleton />;
 
-  const entries = (data?.data ?? []) as RankingEntry[];
+  const entries = data?.data ?? [];
   const pagination = data?.pagination;
 
   if (entries.length === 0 && offset === 0) return <EmptyState />;

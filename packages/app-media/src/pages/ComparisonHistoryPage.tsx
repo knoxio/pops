@@ -143,9 +143,7 @@ export function ComparisonHistoryPage() {
   const model = useComparisonHistoryModel(renderUndoToast);
 
   const allComparisons = model.data?.data ?? [];
-  const comparisons = allComparisons.filter(
-    (c: { id: number }) => !model.pendingDeletes.has(c.id)
-  ) as (ComparisonRowData & { dimensionId: number })[];
+  const comparisons = allComparisons.filter((c) => !model.pendingDeletes.has(c.id));
 
   const dimensionOptions = [
     { label: 'All dimensions', value: '' },

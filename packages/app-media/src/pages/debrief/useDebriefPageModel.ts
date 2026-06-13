@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { useDebriefDestructiveActions } from './useDebriefDestructiveActions';
 import { useDebriefWatchlist } from './useDebriefWatchlist';
@@ -16,6 +16,14 @@ interface DebriefRecordVars {
   opponentId: number;
   winnerId: number;
   drawTier?: 'high' | 'mid' | 'low';
+}
+
+interface RecordResult {
+  data: { sessionComplete: boolean };
+}
+
+interface GetDebriefResult {
+  data: Debrief | undefined;
 }
 
 function useRecordHandlers({
@@ -60,13 +68,15 @@ function useRecordHandlers({
 }
 
 function useDebriefData(movieId: number) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
   const {
     data: debriefData,
     isLoading,
     error,
     refetch,
-  } = trpc.media.comparisons.getDebrief.useQuery(
+  } = usePillarQuery<GetDebriefResult>(
+    'media',
+    ['comparisons', 'getDebrief'],
     { mediaType: 'movie', mediaId: movieId },
     { enabled: !Number.isNaN(movieId) && movieId > 0 }
   );
@@ -76,14 +86,18 @@ function useDebriefData(movieId: number) {
   const allComplete = debrief ? pendingDimensions.length === 0 : false;
   const currentDimension = pendingDimensions[0] ?? null;
 
-  const recordMutation = trpc.media.comparisons.recordDebriefComparison.useMutation({
-    onSuccess: (result) => {
-      toast.success(result.data.sessionComplete ? 'Debrief complete!' : 'Comparison recorded');
-      void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
-      void utils.media.comparisons.getPendingDebriefs.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const recordMutation = usePillarMutation<DebriefRecordVars, RecordResult>(
+    'media',
+    ['comparisons', 'recordDebriefComparison'],
+    {
+      onSuccess: (result) => {
+        toast.success(result.data.sessionComplete ? 'Debrief complete!' : 'Comparison recorded');
+        void utils.invalidate(['comparisons', 'getDebrief']);
+        void utils.invalidate(['comparisons', 'getPendingDebriefs']);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
   return {
     utils,
@@ -114,7 +128,6 @@ export function useDebriefPageModel(movieId: number) {
 
   const watchlist = useDebriefWatchlist({ enabled: !!debrief, resolveTitle });
   const destructive = useDebriefDestructiveActions({
-    movieId,
     currentDimensionId: currentDimension?.dimensionId ?? null,
     resolveTitle,
   });
@@ -126,8 +139,8 @@ export function useDebriefPageModel(movieId: number) {
   });
 
   const handleDimensionSkipped = useCallback(() => {
-    void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
-  }, [utils, movieId]);
+    void utils.invalidate(['comparisons', 'getDebrief']);
+  }, [utils]);
 
   const handleDoAnother = useCallback(() => navigate('/media/compare'), [navigate]);
 

@@ -2,7 +2,7 @@ import { Calendar } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * CalendarPage — upcoming episodes calendar from Sonarr.
  */
@@ -66,8 +66,20 @@ interface CalendarEpisode {
   posterUrl: string | null;
 }
 
+interface ArrConfigResult {
+  data: { sonarrConfigured: boolean; radarrConfigured: boolean };
+}
+
+interface CalendarResult {
+  data: CalendarEpisode[];
+}
+
 function useCalendarPageModel() {
-  const { data: configData } = trpc.media.arr.getConfig.useQuery();
+  const { data: configData } = usePillarQuery<ArrConfigResult>(
+    'media',
+    ['arr', 'getConfig'],
+    undefined
+  );
   const config = configData?.data;
 
   const now = new Date();
@@ -78,7 +90,9 @@ function useCalendarPageModel() {
     data: calendarData,
     isLoading,
     error,
-  } = trpc.media.arr.getCalendar.useQuery(
+  } = usePillarQuery<CalendarResult>(
+    'media',
+    ['arr', 'getCalendar'],
     { start, end },
     {
       enabled: config?.sonarrConfigured === true,

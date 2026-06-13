@@ -1,9 +1,23 @@
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
-import { PAGE_SIZE, type MediaTypeFilter } from './types';
+import { PAGE_SIZE, type HistoryEntry, type MediaTypeFilter } from './types';
+
+interface WatchHistoryListResult {
+  data: HistoryEntry[];
+  pagination?: { total: number };
+}
+
+interface PendingDebriefEntry {
+  movieId: number;
+  sessionId: number;
+}
+
+interface PendingDebriefsResult {
+  data: PendingDebriefEntry[];
+}
 
 function useDeleteFlow({
   entriesLength,
@@ -14,23 +28,26 @@ function useDeleteFlow({
   offset: number;
   setOffset: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  const deleteMutation = trpc.media.watchHistory.delete.useMutation({
-    onSuccess: () => {
-      toast.success('Watch event removed');
-      void utils.media.watchHistory.listRecent.invalidate();
-      void utils.media.watchHistory.list.invalidate();
-      void utils.media.watchlist.list.invalidate();
-      if (entriesLength === 1 && offset > 0) {
-        setOffset(Math.max(0, offset - PAGE_SIZE));
-      }
-    },
-    onError: (err) => {
-      toast.error(`Failed to delete watch event: ${err.message}`);
-    },
-  });
+  const deleteMutation = usePillarMutation<{ id: number }, unknown>(
+    'media',
+    ['watchHistory', 'delete'],
+    {
+      onSuccess: () => {
+        toast.success('Watch event removed');
+        void utils.invalidate(['watchHistory']);
+        void utils.invalidate(['watchlist']);
+        if (entriesLength === 1 && offset > 0) {
+          setOffset(Math.max(0, offset - PAGE_SIZE));
+        }
+      },
+      onError: (err) => {
+        toast.error(`Failed to delete watch event: ${err.message}`);
+      },
+    }
+  );
 
   const handleDeleteClick = useCallback((id: number) => setDeleteTarget(id), []);
   const handleDeleteConfirm = useCallback(() => {
@@ -52,8 +69,16 @@ export function useHistoryPageModel() {
     offset,
   };
 
-  const { data, isLoading, error } = trpc.media.watchHistory.listRecent.useQuery(queryInput);
-  const { data: pendingDebriefs } = trpc.media.comparisons.getPendingDebriefs.useQuery();
+  const { data, isLoading, error } = usePillarQuery<WatchHistoryListResult>(
+    'media',
+    ['watchHistory', 'listRecent'],
+    queryInput
+  );
+  const { data: pendingDebriefs } = usePillarQuery<PendingDebriefsResult>(
+    'media',
+    ['comparisons', 'getPendingDebriefs'],
+    undefined
+  );
 
   const debriefByMovieId = useMemo(() => {
     const map = new Map<number, number>();
