@@ -26,13 +26,13 @@ import { listsRouter } from './modules/lists/index.js';
 import { mediaRouter } from './modules/media/index.js';
 import { router } from './trpc.js';
 
-import type { MODULES } from '@pops/module-registry';
+import type { InstalledModule } from '@pops/module-registry';
 
 /**
  * The full mapping of module id → tRPC router for every module the API
  * binary knows how to mount. Keys must match the corresponding manifest
  * `id`. `core` is included so the same lookup table powers the composition
- * step below; it's always mounted regardless of `MODULES`.
+ * step below; it's always mounted regardless of `InstalledModule`.
  *
  * Per-property types are preserved (not widened to a common Router base)
  * so the literal shape we project to `appRouter` carries the exact nested
@@ -59,7 +59,7 @@ type KnownRouterId = keyof KnownRouters;
  * this collapses to `'core' | 'finance'` and the `AppRouter` type below
  * narrows automatically.
  */
-type InstalledRouterId = ('core' | (typeof MODULES)[number]['id']) & KnownRouterId;
+type InstalledRouterId = ('core' | InstalledModule['id']) & KnownRouterId;
 
 /**
  * The precise install set the root router exposes. `Pick` narrows the
