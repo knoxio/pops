@@ -1,6 +1,8 @@
 # PRD-189: Batch call-site audit
 
 > Epic: [Batching fix](../../epics/04-batching-fix.md)
+>
+> Status: **Partial** — audit tooling + inventory shipped; per-site follow-up resolutions tracked separately.
 
 ## Overview
 
@@ -40,12 +42,12 @@ Audit produces a report at `docs/themes/13-pillar-finale/prds/189-batch-call-sit
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                                                                      |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 01  | [us-01-grep-audit](us-01-grep-audit.md)                     | Scan every shell + app-package source file for `trpc.<pillar>.*` calls; emit per-file report                 |
-| 02  | [us-02-classify-call-sites](us-02-classify-call-sites.md)   | For each cross-pillar site, classify: single-pillar / cross-pillar-documented / cross-pillar-refactor-needed |
-| 03  | [us-03-refactor-high-volume](us-03-refactor-high-volume.md) | Refactor the 3-5 highest-volume cross-pillar pages (likely Dashboard, Cerebrum context view, etc.)           |
-| 04  | [us-04-write-audit-report](us-04-write-audit-report.md)     | Final report committed alongside this PRD                                                                    |
+| #   | Story                                                                                                       | Status      |
+| --- | ----------------------------------------------------------------------------------------------------------- | ----------- |
+| 01  | Scan every shell + app-package source file for `trpc.<pillar>.*` calls; emit per-file report                | Done        |
+| 02  | For each cross-pillar site, classify: single-pillar / cross-pillar-documented / cross-pillar-refactor-needed | Done        |
+| 03  | Refactor the 3-5 highest-volume cross-pillar pages (likely Dashboard, Cerebrum context view, etc.)          | Not started |
+| 04  | Final report committed alongside this PRD ([`inventory.md`](./inventory.md))                                | Done        |
 
 ## Out of Scope
 
