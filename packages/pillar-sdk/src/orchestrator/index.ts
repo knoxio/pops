@@ -20,3 +20,11 @@ export type {
 } from './types.js';
 export { summarisePartialFailures } from './partial.js';
 export type { PartialFailureSummary, FailedPillarSummary } from './partial.js';
+export { publishEvent } from './sinks.js';
+export type {
+  PublishEventOptions,
+  SinkDispatchFailure,
+  SinkDispatchResult,
+  SinkPoster,
+  SinkSchemaRegistry,
+} from './sinks.js';

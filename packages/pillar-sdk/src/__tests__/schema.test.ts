@@ -393,4 +393,95 @@ describe('ManifestPayloadSchema', () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe('sinks dimension (PRD-236)', () => {
+    const validSink = () => ({
+      eventType: 'finance.balance.low',
+      description: 'Subscribes to low-balance events.',
+      schema: { type: 'object' },
+    });
+
+    it('accepts a manifest with sinks omitted (backwards-compatible)', () => {
+      const result = ManifestPayloadSchema.safeParse(validManifest());
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a manifest with a valid sink descriptor', () => {
+      const m = { ...validManifest(), sinks: { descriptors: [validSink()] } };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts an empty sinks descriptors array', () => {
+      const m = { ...validManifest(), sinks: { descriptors: [] } };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it.each([
+      'finance.balance',
+      'finance',
+      'Finance.balance.low',
+      'finance.Balance.low',
+      'finance..low',
+      'finance.balance.',
+      '.balance.low',
+      'finance.balance.low.extra',
+      'finance-pillar.balance.low',
+    ])('rejects malformed eventType %s', (eventType) => {
+      const m = {
+        ...validManifest(),
+        sinks: { descriptors: [{ ...validSink(), eventType }] },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it.each([
+      'finance.balance.low',
+      'media.watch.completed',
+      'inventory.item.added',
+      'a.b.c',
+      'finance.balance2.lowAlert',
+    ])('accepts well-formed eventType %s', (eventType) => {
+      // dotted lowercase only — the second/third segments allow [a-z0-9]+ but no camelCase
+      const stripped = eventType
+        .split('.')
+        .map((seg) => seg.toLowerCase().replace(/[^a-z0-9]/g, ''))
+        .join('.');
+      const m = {
+        ...validManifest(),
+        sinks: { descriptors: [{ ...validSink(), eventType: stripped }] },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects unknown field on sink descriptor (strict mode)', () => {
+      const m = {
+        ...validManifest(),
+        sinks: { descriptors: [{ ...validSink(), sneaky: true }] },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects unknown field on sinks block (strict mode)', () => {
+      const m = {
+        ...validManifest(),
+        sinks: { descriptors: [validSink()], sneaky: true },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects short description', () => {
+      const m = {
+        ...validManifest(),
+        sinks: { descriptors: [{ ...validSink(), description: 'short' }] },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+  });
 });
