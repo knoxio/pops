@@ -14,7 +14,7 @@
  * / `availableTags` and the entire `imports` subrouter stay on the
  * legacy pops-api router as fall-through because they reach into
  * cross-pillar surfaces (`core/corrections`, `core/tag-rules`,
- * `core/ai-usage`, `core/settings`, `shared/tag-suggester`, and the
+ * `core/ai-usage`, `core/settings`, `modules/finance/tag-suggester`, and the
  * legacy unified `pops.db` drizzle handle) that haven't moved yet —
  * see the procedure-by-procedure breakdown in `modules/transactions/router.ts`.
  */

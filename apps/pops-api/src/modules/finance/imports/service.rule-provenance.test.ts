@@ -8,7 +8,7 @@ vi.mock('../../core/corrections/service.js', () => {
   };
 });
 
-vi.mock('../../../shared/tag-suggester.js', () => {
+vi.mock('../tag-suggester/index.js', () => {
   return {
     suggestTags: () => [],
   };

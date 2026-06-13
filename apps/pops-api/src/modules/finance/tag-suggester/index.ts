@@ -6,18 +6,27 @@
  * 2. Tag rules — tags from transaction_tag_rules (source: "rule")
  * 3. AI tags — returned directly by AI or validated category string (source: "ai")
  * 4. Entity defaults — from entity.default_tags (source: "entity")
+ *
+ * PRD-212 hot-path move: this module is finance-owned (it reads
+ * `transaction_tag_rules` and `entities`, both finance-pillar tables) so it
+ * lives next to the finance routers and reads through `getFinanceDrizzle()`.
+ * Corrections are owned by the finance pillar too (the `transaction_corrections`
+ * table lives in finance-db); the in-tree `findAllMatchingCorrections` helper
+ * — a thin shim over `@pops/finance-db`'s `transactionCorrectionsService` —
+ * stays the call site so the core/corrections namespace keeps its single
+ * read-API entry point.
  */
 import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 
 import { entities, transactionTagRules } from '@pops/db-types';
 
-import { getDrizzle } from '../db.js';
-import { logger } from '../lib/logger.js';
-import { findAllMatchingCorrections } from '../modules/core/corrections/service.js';
-import { normalizeDescription } from '../modules/core/corrections/types-base.js';
-import { parseJsonStringArray } from './json.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
+import { logger } from '../../../lib/logger.js';
+import { parseJsonStringArray } from '../../../shared/json.js';
+import { findAllMatchingCorrections } from '../../core/corrections/service.js';
+import { normalizeDescription } from '../../core/corrections/types-base.js';
 
-import type { SuggestedTag } from '../modules/finance/imports/types.js';
+import type { SuggestedTag } from '../imports/types.js';
 
 export interface SuggestTagsOptions {
   description: string;
@@ -65,7 +74,7 @@ function buildEntityFilter(entityId: string | null): ReturnType<typeof or> {
 }
 
 function findMatchingTagRules(description: string, entityId: string | null): TagRuleRow[] {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   const norm = normalizeDescription(description);
   const ef = buildEntityFilter(entityId);
   const cols = {
@@ -167,7 +176,7 @@ function addAiTags(args: AddAiTagsArgs): void {
 
 function addEntityTags(entityId: string | null, seen: Set<string>, result: SuggestedTag[]): void {
   if (!entityId) return;
-  const entity = getDrizzle()
+  const entity = getFinanceDrizzle()
     .select({ defaultTags: entities.defaultTags })
     .from(entities)
     .where(eq(entities.id, entityId))

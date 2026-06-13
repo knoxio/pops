@@ -13,9 +13,10 @@
  * router as fall-through because their implementations reach into
  * cross-pillar surfaces still living in pops-api:
  *
- *   - `suggestTags`               — uses `shared/tag-suggester.ts`, which
- *     pulls in `core/corrections/{service,types-base}` and the entities
- *     table via the legacy unified-db drizzle handle.
+ *   - `suggestTags`               — uses `modules/finance/tag-suggester`,
+ *     which pulls in `core/corrections/{service,types-base}` and now reads
+ *     `entities` + `transaction_tag_rules` via the finance pillar handle
+ *     (PRD-212 hot-path move).
  *   - `listDescriptionsForPreview` — issues raw drizzle reads against the
  *     `transactions` table via `getDrizzle()` (legacy pops.db); the
  *     equivalent helper isn't exposed by `@pops/finance-db` yet.

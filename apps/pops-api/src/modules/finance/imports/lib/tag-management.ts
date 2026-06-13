@@ -3,7 +3,7 @@ import { and, eq, isNotNull, ne } from 'drizzle-orm';
 import { tagVocabulary, transactions } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
-import { suggestTags } from '../../../../shared/tag-suggester.js';
+import { suggestTags } from '../../tag-suggester/index.js';
 
 import type { SuggestedTag } from '../types.js';
 
