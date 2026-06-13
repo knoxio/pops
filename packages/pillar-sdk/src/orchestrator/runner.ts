@@ -188,8 +188,8 @@ function collectTargets(
     if (!pillar.registered) continue;
     if (allowed !== undefined && !allowed.has(pillar.pillarId)) continue;
 
-    for (const adapterName of pillar.manifest.search.adapters) {
-      targets.push({ pillarId: pillar.pillarId, adapterName });
+    for (const adapter of pillar.manifest.search.adapters) {
+      targets.push({ pillarId: pillar.pillarId, adapterName: adapter.name });
     }
   }
 
