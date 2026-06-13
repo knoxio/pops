@@ -1,17 +1,25 @@
+import { trpc } from '@/lib/trpc';
 /**
  * NudgeIndicator — notification bell showing pending nudge count (#2244).
  *
- * Polls the `cerebrum.nudges.list` procedure through the pillar SDK and
- * displays a badge on the bell icon when there are pending nudges.
- * Clicking navigates to the cerebrum nudges page.
+ * Polls the `cerebrum.nudges.list` procedure and displays a badge on the
+ * bell icon when there are pending nudges. Clicking navigates to the
+ * cerebrum nudges page.
  *
- * Migrated from `trpc.cerebrum.nudges.list.useQuery` to
- * `usePillarQuery('cerebrum', …)` as the FE canary for PRD-227 (US-02).
+ * Routing: PRD-227 (US-02) keeps the SDK migration behind a runtime gate.
+ * When a {@link PillarSdkProvider} is mounted above this component
+ * (i.e. {@link usePillarSdkOptions} returns options with a `transport`
+ * configured), this component uses {@link usePillarQuery} against the
+ * cerebrum pillar. Otherwise — the current state of `pops-shell` on
+ * `main` — it falls back to the existing tRPC query so the indicator
+ * keeps working in the browser (the SDK's default registry URL points
+ * at the container-network hostname, which is unreachable from a
+ * browser).
  */
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { usePillarQuery, usePillarSdkOptions } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 const POLL_BASE_MS = 60_000;
@@ -33,18 +41,39 @@ export function nudgeRefetchInterval(query: {
   return POLL_BASE_MS * 2 ** failures;
 }
 
-export function NudgeIndicator() {
-  const navigate = useNavigate();
+function useSdkPendingCount(enabled: boolean): { pendingCount: number; hidden: boolean } {
   const { data, isUnavailable, isContractMismatch } = usePillarQuery<NudgeListResult>(
     'cerebrum',
     ['nudges', 'list'],
     { status: 'pending', limit: 1 },
-    { retry: false, staleTime: 30_000, refetchInterval: nudgeRefetchInterval }
+    { retry: false, staleTime: 30_000, refetchInterval: nudgeRefetchInterval, enabled }
   );
 
-  if (isUnavailable || isContractMismatch) return null;
+  return {
+    pendingCount: data?.total ?? 0,
+    hidden: enabled && (isUnavailable || isContractMismatch),
+  };
+}
 
-  const pendingCount = data?.total ?? 0;
+function useTrpcPendingCount(enabled: boolean): number {
+  const { data } = trpc.cerebrum.nudges.list.useQuery(
+    { status: 'pending', limit: 1 },
+    { retry: false, staleTime: 30_000, refetchInterval: nudgeRefetchInterval, enabled }
+  );
+  return data?.total ?? 0;
+}
+
+export function NudgeIndicator() {
+  const navigate = useNavigate();
+  const sdkOptions = usePillarSdkOptions();
+  const sdkEnabled = sdkOptions.transport !== undefined;
+
+  const sdk = useSdkPendingCount(sdkEnabled);
+  const trpcCount = useTrpcPendingCount(!sdkEnabled);
+
+  if (sdk.hidden) return null;
+
+  const pendingCount = sdkEnabled ? sdk.pendingCount : trpcCount;
 
   return (
     <Button

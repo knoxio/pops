@@ -1,3 +1,4 @@
+import { trpc, trpcClient } from '@/lib/trpc';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
@@ -96,11 +97,27 @@ function renderWithSdk(opts: { transport: DiscoveryTransport; fetchImpl: typeof 
   });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <MemoryRouter>
-      <QueryClientProvider client={queryClient}>
-        <PillarSdkProvider options={{ transport: opts.transport, fetchImpl: opts.fetchImpl }}>
-          {children}
-        </PillarSdkProvider>
-      </QueryClientProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <PillarSdkProvider options={{ transport: opts.transport, fetchImpl: opts.fetchImpl }}>
+            {children}
+          </PillarSdkProvider>
+        </QueryClientProvider>
+      </trpc.Provider>
+    </MemoryRouter>
+  );
+  render(<NudgeIndicator />, { wrapper });
+}
+
+function renderWithoutSdk(): void {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <MemoryRouter>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </trpc.Provider>
     </MemoryRouter>
   );
   render(<NudgeIndicator />, { wrapper });
@@ -176,5 +193,12 @@ describe('NudgeIndicator', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
+  });
+
+  it('falls back to the tRPC query when no PillarSdkProvider is mounted', async () => {
+    renderWithoutSdk();
+
+    const button = await screen.findByRole('button', { name: /Nudges: \d+ pending/ });
+    expect(button).toBeInTheDocument();
   });
 });

@@ -12,7 +12,7 @@ As a shell developer, I want one production component to consume the cerebrum nu
 - [ ] The retry / staleTime / refetchInterval options carry over verbatim.
 - [ ] Existing `nudgeRefetchInterval` helper continues to receive the React Query `query` argument shape unchanged.
 - [ ] When the cerebrum pillar is `unavailable` or returns `contract-mismatch`, the indicator hides instead of crashing — covered by a new vitest.
-- [ ] The component test in `apps/pops-shell/src/app/layout/top-bar/__tests__/NudgeIndicator.test.tsx` exercises both the success path (1 pending nudge → badge renders) and the failure path (SDK returns `unavailable` → no badge).
+- [ ] The component test in `apps/pops-shell/src/app/layout/top-bar/NudgeIndicator.test.tsx` exercises both the success path (1 pending nudge → badge renders) and the failure path (SDK returns `unavailable` → no badge).
 - [ ] `pnpm --filter @pops/shell typecheck` + `pnpm --filter @pops/shell test` pass.
 
 ## Notes
