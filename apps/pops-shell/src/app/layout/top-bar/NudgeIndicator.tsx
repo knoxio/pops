@@ -1,17 +1,23 @@
 /**
  * NudgeIndicator — notification bell showing pending nudge count (#2244).
  *
- * Polls the nudges.list endpoint and displays a badge on the bell icon
- * when there are pending nudges. Clicking navigates to the cerebrum nudges page.
+ * Polls the `cerebrum.nudges.list` procedure through the pillar SDK and
+ * displays a badge on the bell icon when there are pending nudges.
+ * Clicking navigates to the cerebrum nudges page.
+ *
+ * Migrated from `trpc.cerebrum.nudges.list.useQuery` to
+ * `usePillarQuery('cerebrum', …)` as the FE canary for PRD-227 (US-02).
  */
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 const POLL_BASE_MS = 60_000;
 const MAX_FAILURES = 5;
+
+type NudgeListResult = { total: number };
 
 /**
  * Exponential backoff for the nudges poller.
@@ -29,10 +35,14 @@ export function nudgeRefetchInterval(query: {
 
 export function NudgeIndicator() {
   const navigate = useNavigate();
-  const { data } = trpc.cerebrum.nudges.list.useQuery(
+  const { data, isUnavailable, isContractMismatch } = usePillarQuery<NudgeListResult>(
+    'cerebrum',
+    ['nudges', 'list'],
     { status: 'pending', limit: 1 },
     { retry: false, staleTime: 30_000, refetchInterval: nudgeRefetchInterval }
   );
+
+  if (isUnavailable || isContractMismatch) return null;
 
   const pendingCount = data?.total ?? 0;
 
