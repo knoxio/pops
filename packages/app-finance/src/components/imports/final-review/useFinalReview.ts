@@ -1,9 +1,15 @@
 import { useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
-import { buildCommitPayload } from '../../../lib/commit-payload';
+import { buildCommitPayload, type CommitPayload } from '../../../lib/commit-payload';
 import { useImportStore } from '../../../store/importStore';
+
+import type { CommitResult } from '@pops/api/modules/finance/imports';
+
+interface CommitResponse {
+  data: CommitResult;
+}
 
 function useStoreSlice() {
   return {
@@ -58,16 +64,20 @@ export function useFinalReview() {
   const slice = useStoreSlice();
   const counts = useDerivedCounts(slice);
   const [commitError, setCommitError] = useState<string | null>(null);
-  const commitMutation = trpc.finance.imports.commitImport.useMutation({
-    onSuccess: (response) => {
-      slice.setCommitResult(response.data);
-      setCommitError(null);
-      // SummaryStep owns the post-commit UI; auto-advance there instead of
-      // showing an inline panel + manual Continue click.
-      slice.nextStep();
-    },
-    onError: (err) => setCommitError(err.message),
-  });
+  const commitMutation = usePillarMutation<CommitPayload, CommitResponse>(
+    'finance',
+    ['imports', 'commitImport'],
+    {
+      onSuccess: (response) => {
+        slice.setCommitResult(response.data);
+        setCommitError(null);
+        // SummaryStep owns the post-commit UI; auto-advance there instead of
+        // showing an inline panel + manual Continue click.
+        slice.nextStep();
+      },
+      onError: (err) => setCommitError(err.message),
+    }
+  );
   const handleCommit = () => {
     setCommitError(null);
     commitMutation.mutate(

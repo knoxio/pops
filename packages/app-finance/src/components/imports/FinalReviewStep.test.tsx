@@ -23,21 +23,17 @@ let mutationCallbacks: {
 } = {};
 let mockIsPending = false;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    finance: {
-      imports: {
-        commitImport: {
-          useMutation: (opts: typeof mutationCallbacks) => {
-            mutationCallbacks = opts;
-            return {
-              mutate: mockMutate,
-              isPending: mockIsPending,
-            };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: typeof mutationCallbacks
+  ) => {
+    if (path.join('.') === 'imports.commitImport') {
+      mutationCallbacks = opts ?? {};
+      return { mutate: mockMutate, isPending: mockIsPending };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
 }));
 

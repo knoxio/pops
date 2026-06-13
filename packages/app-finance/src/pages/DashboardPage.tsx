@@ -1,11 +1,22 @@
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { ErrorAlert, PageHeader } from '@pops/ui';
 
 import { ActiveBudgets } from './dashboard/ActiveBudgets';
 import { RecentTransactions } from './dashboard/RecentTransactions';
 import { computeStats, StatsGrid } from './dashboard/StatsGrid';
+
+import type { Budget } from '@pops/api/modules/finance/budgets/types';
+import type { Transaction } from '@pops/api/modules/finance/transactions/types';
+
+interface TransactionsListResult {
+  data: Transaction[];
+  pagination: { total: number };
+}
+interface BudgetsListResult {
+  data: Budget[];
+}
 
 export function DashboardPage() {
   const { t } = useTranslation('finance');
@@ -13,10 +24,12 @@ export function DashboardPage() {
     data: transactions,
     isLoading: transactionsLoading,
     error: transactionsError,
-  } = trpc.finance.transactions.list.useQuery({ limit: 10 });
-  const { data: budgets, isLoading: budgetsLoading } = trpc.finance.budgets.list.useQuery({
-    limit: 5,
-  });
+  } = usePillarQuery<TransactionsListResult>('finance', ['transactions', 'list'], { limit: 10 });
+  const { data: budgets, isLoading: budgetsLoading } = usePillarQuery<BudgetsListResult>(
+    'finance',
+    ['budgets', 'list'],
+    { limit: 5 }
+  );
 
   const stats = computeStats(transactions?.data, transactions?.pagination.total);
 

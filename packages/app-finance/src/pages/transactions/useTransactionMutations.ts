@@ -1,8 +1,10 @@
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { type Transaction } from './types';
+
+import type { TransactionSnapshot } from '@pops/api/modules/finance/transactions/types';
 
 export interface MutationDeps {
   setIsDialogOpen: (v: boolean) => void;
@@ -10,48 +12,87 @@ export interface MutationDeps {
   setDeletingTx: (t: Transaction | null) => void;
 }
 
+interface CreateInput {
+  description: string;
+  account: string;
+  amount: number;
+  date: string;
+  type: string;
+  tags: string[];
+  entityId: string | null;
+  entityName: string | null;
+  notes: string | null;
+}
+interface UpdateInput {
+  id: string;
+  data: Partial<CreateInput>;
+}
+interface DeleteInput {
+  id: string;
+}
+interface MutationResponse {
+  data?: Transaction;
+  message?: string;
+}
+interface DeleteResponse {
+  message: string;
+  snapshot: TransactionSnapshot;
+}
+
+function useCreateUpdateMutations(deps: MutationDeps) {
+  const createMutation = usePillarMutation<CreateInput, MutationResponse>(
+    'finance',
+    ['transactions', 'create'],
+    {
+      onSuccess: () => {
+        toast.success('Transaction created');
+        deps.setIsDialogOpen(false);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  const updateMutation = usePillarMutation<UpdateInput, MutationResponse>(
+    'finance',
+    ['transactions', 'update'],
+    {
+      onSuccess: () => {
+        toast.success('Transaction updated');
+        deps.setIsDialogOpen(false);
+        deps.setEditingTransaction(null);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  return { createMutation, updateMutation };
+}
+
+function useRestoreDeleteMutations(deps: MutationDeps) {
+  const restoreMutation = usePillarMutation<TransactionSnapshot, MutationResponse>(
+    'finance',
+    ['transactions', 'restore'],
+    {
+      onSuccess: () => {
+        toast.success('Transaction restored');
+      },
+      onError: (err) => toast.error(`Failed to restore transaction: ${err.message}`),
+    }
+  );
+  const deleteMutation = usePillarMutation<DeleteInput, DeleteResponse>(
+    'finance',
+    ['transactions', 'delete'],
+    {
+      onSuccess: () => {
+        deps.setDeletingTx(null);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  return { restoreMutation, deleteMutation };
+}
+
 export function useTransactionMutations(deps: MutationDeps) {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.finance.transactions.create.useMutation({
-    onSuccess: () => {
-      toast.success('Transaction created');
-      void utils.finance.transactions.list.invalidate();
-      void utils.finance.transactions.availableTags.invalidate();
-      deps.setIsDialogOpen(false);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const updateMutation = trpc.finance.transactions.update.useMutation({
-    onSuccess: () => {
-      toast.success('Transaction updated');
-      void utils.finance.transactions.list.invalidate();
-      void utils.finance.transactions.availableTags.invalidate();
-      deps.setIsDialogOpen(false);
-      deps.setEditingTransaction(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  // Restore re-inserts via a dedicated server endpoint that preserves the
-  // original id, checksum, raw_row, and notion_id — fields that the list
-  // shape strips. Routing through `create` would generate a fresh id and
-  // drop dedup metadata, breaking re-import deduplication.
-  const restoreMutation = trpc.finance.transactions.restore.useMutation({
-    onSuccess: () => {
-      toast.success('Transaction restored');
-      void utils.finance.transactions.list.invalidate();
-      void utils.finance.transactions.availableTags.invalidate();
-    },
-    onError: (err) => toast.error(`Failed to restore transaction: ${err.message}`),
-  });
-
-  const deleteMutation = trpc.finance.transactions.delete.useMutation({
-    onSuccess: () => {
-      void utils.finance.transactions.list.invalidate();
-      deps.setDeletingTx(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const { createMutation, updateMutation } = useCreateUpdateMutations(deps);
+  const { restoreMutation, deleteMutation } = useRestoreDeleteMutations(deps);
 
   /**
    * Confirm a delete: hard-delete on the server, capture the full snapshot

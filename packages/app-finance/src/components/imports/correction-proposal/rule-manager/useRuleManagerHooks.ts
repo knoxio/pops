@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useImportStore } from '../../../../store/importStore';
+
+interface DescriptionsForPreviewResult {
+  data: Array<{ description: string; checksum: string }>;
+  total: number;
+  truncated: boolean;
+}
 import { type PreviewView } from '../../CorrectionProposalDialogPanels';
 import { useLocalOps } from '../../hooks/useLocalOps';
 import { usePreviewEffects } from '../../hooks/usePreviewEffects';
@@ -43,10 +49,15 @@ export function useRuleManagerHooks(props: RuleManagerInputs) {
     proposeData: undefined,
   });
   const dialogState = useDialogState(open);
-  const dbTxnsQuery = trpc.finance.transactions.listDescriptionsForPreview.useQuery(undefined, {
-    enabled: open,
-    staleTime: 60_000,
-  });
+  const dbTxnsQuery = usePillarQuery<DescriptionsForPreviewResult>(
+    'finance',
+    ['transactions', 'listDescriptionsForPreview'],
+    undefined,
+    {
+      enabled: open,
+      staleTime: 60_000,
+    }
+  );
   const previewHook = usePreviewEffects(
     {
       open,

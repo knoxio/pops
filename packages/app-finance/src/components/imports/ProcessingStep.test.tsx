@@ -6,21 +6,17 @@ const mockReset = vi.fn();
 const mockMutation = vi.fn();
 const mockProgressQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    finance: {
-      imports: {
-        processImport: {
-          useMutation: (opts: unknown) => {
-            mockMutation(opts);
-            return mockMutationReturn();
-          },
-        },
-        getImportProgress: {
-          useQuery: (...args: unknown[]) => mockProgressQuery(...args),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (_pillarId: string, path: readonly string[], opts?: unknown) => {
+    if (path.join('.') === 'imports.processImport') {
+      mockMutation(opts);
+      return mockMutationReturn();
+    }
+    return { mutate: vi.fn(), reset: vi.fn(), isPending: false, isSuccess: false, isError: false };
+  },
+  usePillarQuery: (_pillarId: string, path: readonly string[], input?: unknown) => {
+    if (path.join('.') === 'imports.getImportProgress') return mockProgressQuery(input);
+    return { data: undefined };
   },
 }));
 

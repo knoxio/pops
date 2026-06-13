@@ -7,6 +7,31 @@ const mockAnalyzeCorrectionMutateAsync = vi.fn();
 const mockEntitiesQuery = vi.fn();
 const mockReevaluateMutate = vi.fn();
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    if (path.join('.') === 'transactions.listDescriptionsForPreview') {
+      return { data: { data: [], total: 0, truncated: false }, isLoading: false };
+    }
+    return { data: undefined };
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    if (path.join('.') === 'imports.reevaluateWithPendingRules') {
+      return {
+        mutate: (
+          _input: unknown,
+          opts?: {
+            onSuccess?: (data: { result: unknown; affectedCount: number }) => void;
+            onError?: (err: Error) => void;
+          }
+        ) => mockReevaluateMutate(_input, opts),
+        mutateAsync: vi.fn(),
+        isPending: false,
+      };
+    }
+    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+  },
+}));
+
 vi.mock('@pops/api-client', () => ({
   trpc: {
     core: {
@@ -51,28 +76,6 @@ vi.mock('@pops/api-client', () => ({
         },
         rejectChangeSet: {
           useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-      },
-    },
-    finance: {
-      imports: {
-        reevaluateWithPendingRules: {
-          useMutation: () => ({
-            mutate: (
-              _input: unknown,
-              opts?: {
-                onSuccess?: (data: { result: unknown; affectedCount: number }) => void;
-                onError?: (err: Error) => void;
-              }
-            ) => mockReevaluateMutate(_input, opts),
-            mutateAsync: vi.fn(),
-            isPending: false,
-          }),
-        },
-      },
-      transactions: {
-        listDescriptionsForPreview: {
-          useQuery: () => ({ data: { data: [], total: 0, truncated: false }, isLoading: false }),
         },
       },
     },

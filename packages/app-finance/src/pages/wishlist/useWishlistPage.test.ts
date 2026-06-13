@@ -9,40 +9,25 @@ const mockListQuery = vi.fn();
 const mockCreateMutate = vi.fn();
 const mockUpdateMutate = vi.fn();
 const mockDeleteMutate = vi.fn();
-const mockInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    finance: {
-      wishlist: {
-        list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-        create: {
-          useMutation: () => ({
-            mutate: (...args: unknown[]) => mockCreateMutate(...args),
-            isPending: false,
-          }),
-        },
-        update: {
-          useMutation: () => ({
-            mutate: (...args: unknown[]) => mockUpdateMutate(...args),
-            isPending: false,
-          }),
-        },
-        delete: {
-          useMutation: () => ({
-            mutate: (...args: unknown[]) => mockDeleteMutate(...args),
-            isPending: false,
-          }),
-        },
-      },
-    },
-    useUtils: () => ({
-      finance: {
-        wishlist: {
-          list: { invalidate: mockInvalidate },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input?: unknown) => {
+    const key = path.join('.');
+    if (key === 'wishlist.list') return mockListQuery(input);
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'wishlist.create') {
+      return { mutate: (...args: unknown[]) => mockCreateMutate(...args), isPending: false };
+    }
+    if (key === 'wishlist.update') {
+      return { mutate: (...args: unknown[]) => mockUpdateMutate(...args), isPending: false };
+    }
+    if (key === 'wishlist.delete') {
+      return { mutate: (...args: unknown[]) => mockDeleteMutate(...args), isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
 }));
 

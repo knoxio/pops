@@ -11,58 +11,40 @@ const mockEntitiesListQuery = vi.fn();
 const mockCreateMutate = vi.fn();
 const mockUpdateMutate = vi.fn();
 const mockDeleteMutate = vi.fn();
-const mockInvalidate = vi.fn();
-const mockSuggestTagsFetch = vi.fn();
 const mockRestoreMutate = vi.fn();
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input?: unknown) => {
+    const key = path.join('.');
+    if (key === 'transactions.list') return mockListQuery(input);
+    if (key === 'transactions.availableTags') return mockAvailableTagsQuery(input);
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'transactions.create') {
+      return { mutate: (...args: unknown[]) => mockCreateMutate(...args), isPending: false };
+    }
+    if (key === 'transactions.update') {
+      return { mutate: (...args: unknown[]) => mockUpdateMutate(...args), isPending: false };
+    }
+    if (key === 'transactions.delete') {
+      return { mutate: (...args: unknown[]) => mockDeleteMutate(...args), isPending: false };
+    }
+    if (key === 'transactions.restore') {
+      return { mutate: (...args: unknown[]) => mockRestoreMutate(...args), isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+}));
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
-    finance: {
-      transactions: {
-        list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-        availableTags: {
-          useQuery: (...args: unknown[]) => mockAvailableTagsQuery(...args),
-        },
-        create: {
-          useMutation: () => ({
-            mutate: (...args: unknown[]) => mockCreateMutate(...args),
-            isPending: false,
-          }),
-        },
-        update: {
-          useMutation: () => ({
-            mutate: (...args: unknown[]) => mockUpdateMutate(...args),
-            isPending: false,
-          }),
-        },
-        delete: {
-          useMutation: () => ({
-            mutate: (...args: unknown[]) => mockDeleteMutate(...args),
-            isPending: false,
-          }),
-        },
-        restore: {
-          useMutation: () => ({
-            mutate: (...args: unknown[]) => mockRestoreMutate(...args),
-            isPending: false,
-          }),
-        },
-      },
-    },
     core: {
       entities: {
         list: { useQuery: (...args: unknown[]) => mockEntitiesListQuery(...args) },
       },
     },
-    useUtils: () => ({
-      finance: {
-        transactions: {
-          list: { invalidate: mockInvalidate },
-          availableTags: { invalidate: mockInvalidate },
-          suggestTags: { fetch: (...args: unknown[]) => mockSuggestTagsFetch(...args) },
-        },
-      },
-    }),
   },
 }));
 

@@ -2,10 +2,11 @@ import { Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
 import { useSetPageContext } from '@pops/navigation';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Alert, Button, DataTable, PageHeader, Skeleton } from '@pops/ui';
 
+import { usePillarCall } from '../lib/pillar-call';
 import { buildColumns, buildTransactionFilters, type Transaction } from './transactions/columns';
 import { DeleteTransactionDialog } from './transactions/DeleteTransactionDialog';
 import { TransactionFormDialog } from './transactions/TransactionFormDialog';
@@ -82,11 +83,20 @@ function useSubtitle(t: TFunction<'finance'>, total: number | undefined) {
   return { description, setFilteredCount };
 }
 
+interface UpdateInput {
+  id: string;
+  data: { tags: string[] };
+}
+interface SuggestTagsResult {
+  tags: string[];
+}
+
 function useTagHandlers() {
-  const utils = trpc.useUtils();
-  const updateMutation = trpc.finance.transactions.update.useMutation({
-    onSuccess: () => void utils.finance.transactions.list.invalidate(),
-  });
+  const pillarCall = usePillarCall();
+  const updateMutation = usePillarMutation<UpdateInput, unknown>('finance', [
+    'transactions',
+    'update',
+  ]);
   const onTagSave = useCallback(
     (transactionId: string, _entityId: string | null, _description: string) =>
       async (tags: string[]) => {
@@ -96,13 +106,15 @@ function useTagHandlers() {
   );
   const onTagSuggest = useCallback(
     (description: string, entityId: string | null) => async () => {
-      const result = await utils.finance.transactions.suggestTags.fetch({
-        description,
-        entityId: entityId ?? null,
-      });
-      return result.tags;
+      const result = await pillarCall<SuggestTagsResult>(
+        'finance',
+        ['transactions', 'suggestTags'],
+        { description, entityId: entityId ?? null }
+      );
+      if (result.kind !== 'ok') return [];
+      return result.value.tags;
     },
-    [utils]
+    [pillarCall]
   );
   return { onTagSave, onTagSuggest };
 }
