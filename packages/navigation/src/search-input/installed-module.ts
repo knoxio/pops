@@ -7,12 +7,13 @@
  * build, a stale cache, or a future code path that bypasses the engine still
  * can't render results that link into a module the shell doesn't mount.
  */
-import { isModuleId } from '@pops/module-registry';
+import { isModuleId } from '@pops/pillar-sdk';
 
 /**
- * `core` is the always-mounted shell module (PRD-100) — its id is not in the
- * `MODULES` constant (which lists optional modules), so the filter exempts
- * it explicitly. Any other id must pass `isModuleId`.
+ * `core` is the always-mounted shell module (PRD-100). `isModuleId` checks
+ * membership of the static `ALL_MODULE_IDS` superset (pillars plus the two
+ * transitional sub-modules `ai`/`ego`), so `core` is already covered; the
+ * explicit branch is kept for clarity at the call boundary.
  */
 export function isInstalledModule(moduleId: string): boolean {
   return moduleId === 'core' || isModuleId(moduleId);

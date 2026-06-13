@@ -10,7 +10,7 @@
 import { Suspense } from 'react';
 import { createBrowserRouter, Link, Navigate, Outlet, useLocation } from 'react-router';
 
-import { KNOWN_MODULES } from '@pops/module-registry';
+import { ALL_MODULE_IDS } from '@pops/pillar-sdk';
 
 import { IndexRedirect } from './IndexRedirect';
 import { installedAppManifests } from './installed-modules';
@@ -24,19 +24,20 @@ import { PillarGuard, pillarIdForModule } from './pillars';
 import type { RouteObject } from 'react-router';
 
 /**
- * Catch-all element: if the URL's first path segment names a known
- * buildable module (`KNOWN_MODULES`) that isn't installed in this build,
+ * Catch-all element: if the URL's first path segment names a routable
+ * module id (`ALL_MODULE_IDS`) that isn't installed in this build,
  * render `NotInstalledPage`. Otherwise fall through to `NotFoundPage`.
  *
- * Using the full `KNOWN_MODULES` set (rather than just `MODULES`) here
+ * Using the full `ALL_MODULE_IDS` set (rather than just `MODULES`) here
  * means the "not installed" message fires for any module the codebase
  * could ship — including ones excluded by `POPS_APPS` — while truly
- * unknown paths still get a proper 404.
+ * unknown paths still get a proper 404. The superset includes the two
+ * transitional sub-module ids (`ai`, `ego`) so they remain routable.
  */
 function UnmatchedRoute() {
   const { pathname } = useLocation();
   const first = pathname.split('/').find((s) => s.length > 0) ?? '';
-  const knownModules: readonly string[] = KNOWN_MODULES;
+  const knownModules: readonly string[] = ALL_MODULE_IDS;
   if (first.length > 0 && knownModules.includes(first)) {
     return <NotInstalledPage />;
   }
@@ -118,8 +119,8 @@ export const router = createBrowserRouter([
       { path: 'cerebrum/admin/cache', element: <Navigate to="/ai/cache" replace /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'features', element: <FeaturesPage /> },
-      // Catch-all: if the first path segment names a buildable module
-      // (`KNOWN_MODULES`) the operator excluded via `POPS_APPS`, render
+      // Catch-all: if the first path segment names a routable module id
+      // (`ALL_MODULE_IDS`) the operator excluded via `POPS_APPS`, render
       // NotInstalledPage. Genuinely unknown paths render NotFoundPage.
       // Both decisions happen inside `UnmatchedRoute` so the route table
       // stays free of inline module-id literals.
