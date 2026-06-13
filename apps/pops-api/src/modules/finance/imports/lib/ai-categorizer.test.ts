@@ -26,18 +26,24 @@ vi.mock('@anthropic-ai/sdk', () => {
 // Mock the database
 const mockDbRun = vi.fn();
 vi.mock('../../../../db.js', () => {
-  return {
-    getDrizzle: vi.fn(() => ({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          run: mockDbRun,
-        })),
+  const stubDrizzle = {
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        run: mockDbRun,
       })),
     })),
+  };
+  return {
+    getDrizzle: vi.fn(() => stubDrizzle),
+    getCoreDrizzle: vi.fn(() => stubDrizzle),
     // Always return false: tests exercise the real API path, not the named-env skip
     isNamedEnvContext: vi.fn().mockReturnValue(false),
   };
 });
+
+vi.mock('../../../../lib/inference-middleware.js', () => ({
+  trackInference: <T>(_params: unknown, fn: () => Promise<T>) => fn(),
+}));
 
 // Mock node:fs so disk I/O doesn't interfere with unit tests
 vi.mock('node:fs', () => ({
