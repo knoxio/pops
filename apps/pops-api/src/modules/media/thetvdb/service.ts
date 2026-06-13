@@ -6,10 +6,14 @@ import { eq } from 'drizzle-orm';
  *
  * Implementation is split across:
  *  - `refresh-episodes.ts` — episode upsert + season episode-count update
+ *
+ * As of Theme 13 PR4 round 4 prep, the `seasons` upserts run against the
+ * media pillar handle (`getMediaDrizzle()`) — `seasons` now lives in
+ * `@pops/media-db`, mirroring the `addTvShow` cutover (#3098).
  */
-import { seasons } from '@pops/db-types';
+import { seasons } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { selectBestArtwork } from '../library/tv-show-service.js';
 import * as tvShowsService from '../tv-shows/service.js';
 import { refreshEpisodesForAllSeasons } from './refresh-episodes.js';
@@ -41,7 +45,7 @@ function upsertSeason(
   showId: number,
   seasonSummary: TvdbSeasonSummary
 ): { seasonId: number; added: boolean } {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const existing = db.select().from(seasons).where(eq(seasons.tvdbId, seasonSummary.tvdbId)).get();
   const episodeCount = seasonSummary.episodeCount || null;
 
