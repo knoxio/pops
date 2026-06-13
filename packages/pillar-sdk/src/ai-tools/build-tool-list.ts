@@ -116,13 +116,25 @@ function projectTools(
 }
 
 /**
+ * Resolve the effective availability of a pillar for tool-list
+ * purposes.
+ *
+ * `registered=false` is authoritative — call-time `guardAvailability`
+ * in the client factory treats an unregistered pillar as unavailable
+ * regardless of `status`, so the tool list must not advertise tools
+ * the orchestrator will then refuse to route. This matters during
+ * PRD-162 reconciliation windows where a snapshot can carry
+ * `status: 'healthy'` from the last heartbeat while the registry has
+ * already flipped `registered` to false.
+ *
  * Snapshots from PRD-161 carry an explicit `status`; older ones don't.
- * When status is missing, fall back to the discovery `registered` flag
- * (false === pillar removed itself from the registry).
+ * When `status` is missing we fall back to the same `registered`
+ * signal.
  */
 function resolveStatus(pillar: PillarSnapshot): PillarStatus {
+  if (!pillar.registered) return 'unavailable';
   if (pillar.status !== undefined) return pillar.status;
-  return pillar.registered ? 'healthy' : 'unavailable';
+  return 'healthy';
 }
 
 function makeCacheKey(fetchedAt: Date, opts: BuildToolListOptions): CacheKey {

@@ -115,6 +115,21 @@ describe('buildToolList', () => {
     expect(await buildToolList({ includeUnavailable: true })).toHaveLength(1);
   });
 
+  it('treats registered=false as unavailable even when status is "healthy"', async () => {
+    const reconciling: PillarSnapshot = {
+      ...withTools(pillar('media', 'http://media:3005'), [makeTool('searchMovies', 'find')]),
+      status: 'healthy',
+      registered: false,
+    };
+    currentSnapshot = snapshot([reconciling]);
+
+    expect(await buildToolList()).toEqual([]);
+
+    const diagnostic = await buildToolList({ includeUnavailable: true });
+    expect(diagnostic).toHaveLength(1);
+    expect(diagnostic[0]).toMatchObject({ pillar: 'media', pillarStatus: 'unavailable' });
+  });
+
   it('falls back to the registered flag when status is missing', async () => {
     const legacyHealthy: PillarSnapshot = {
       ...withTools(pillar('finance', 'http://finance:3004'), [makeTool('createTransaction', 'go')]),
