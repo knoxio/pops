@@ -12,7 +12,7 @@
  */
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { rankSubstitutionCandidates, type RankableCandidate } from './substitution-ranking.js';
 
@@ -42,7 +42,9 @@ export interface UseSubstitutionResolutionResult {
 export function useSubstitutionResolution(
   args: UseSubstitutionResolutionArgs
 ): UseSubstitutionResolutionResult {
-  const query = trpc.food.substitutions.resolveForLine.useQuery(
+  const query = usePillarQuery<SubResolution>(
+    'food',
+    ['substitutions', 'resolveForLine'],
     { recipeVersionId: args.recipeVersionId, lineIndex: args.lineIndex },
     { enabled: args.enabled }
   );

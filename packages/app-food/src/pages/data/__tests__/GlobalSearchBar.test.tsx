@@ -8,13 +8,11 @@ import { GlobalSearchBar } from '../GlobalSearchBar';
 
 const mockSearch = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      slugs: {
-        search: { useQuery: (input: unknown, opts: unknown) => mockSearch(input, opts) },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
+    const key = path.join('.');
+    if (key === 'slugs.search') return mockSearch(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

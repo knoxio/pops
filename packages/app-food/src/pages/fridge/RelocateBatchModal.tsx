@@ -7,12 +7,19 @@
  */
 import { useEffect, useState, type ReactElement } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
 import { FormError } from './form-controls.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { BatchLocation } from '@pops/app-food-db';
+
+type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];
+type BatchesRelocateInput = inferRouterInputs<AppRouter>['food']['batches']['relocate'];
+type BatchesRelocateOutput = inferRouterOutputs<AppRouter>['food']['batches']['relocate'];
 
 const LOCATIONS: { value: BatchLocation; label: string }[] = [
   { value: 'pantry', label: 'Pantry' },
@@ -27,13 +34,36 @@ export interface RelocateBatchModalProps {
   onClose: () => void;
 }
 
+function useRelocateMutation(args: {
+  onClose: () => void;
+  setError: (msg: string | null) => void;
+}) {
+  const utils = usePillarUtils('food');
+  return usePillarMutation<BatchesRelocateInput, BatchesRelocateOutput>(
+    'food',
+    ['batches', 'relocate'],
+    {
+      onSuccess: (res) => {
+        if (res.ok) {
+          void utils.invalidate(['fridge', 'view']);
+          args.onClose();
+        } else {
+          args.setError(res.reason);
+        }
+      },
+      onError: (err) => args.setError(err.message),
+    }
+  );
+}
+
 export function RelocateBatchModal({
   batchId,
   isOpen,
   onClose,
 }: RelocateBatchModalProps): ReactElement {
-  const utils = trpc.useUtils();
-  const detail = trpc.food.batches.get.useQuery(
+  const detail = usePillarQuery<BatchesGetOutput>(
+    'food',
+    ['batches', 'get'],
     { id: batchId ?? 0 },
     { enabled: isOpen && batchId !== null }
   );
@@ -48,17 +78,7 @@ export function RelocateBatchModal({
     }
   }, [detail.data, isOpen]);
 
-  const relocateMutation = trpc.food.batches.relocate.useMutation({
-    onSuccess: (res) => {
-      if (res.ok) {
-        void utils.food.fridge.view.invalidate();
-        onClose();
-      } else {
-        setError(res.reason);
-      }
-    },
-    onError: (err) => setError(err.message),
-  });
+  const relocateMutation = useRelocateMutation({ onClose, setError });
 
   function handleSave(): void {
     if (batchId === null) return;

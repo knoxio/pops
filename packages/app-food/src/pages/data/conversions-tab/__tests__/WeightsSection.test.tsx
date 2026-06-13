@@ -32,32 +32,35 @@ let createOpts: MutationOpts = {};
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
-    food: {
-      conversions: {
-        listWeights: { useQuery: (input: unknown) => mockListWeights(input) },
-        createWeight: {
-          useMutation: (opts: MutationOpts) => {
-            createOpts = opts;
-            return { mutate: mockCreateMutate, isPending: false };
-          },
-        },
-        updateWeight: {
-          useMutation: () => ({ mutate: mockUpdateMutate, isPending: false }),
-        },
-        deleteWeight: {
-          useMutation: () => ({ mutate: mockDeleteMutate, isPending: false }),
-        },
-      },
-      ingredients: {
-        list: { useQuery: (input: unknown) => mockListIngredients(input) },
-        get: { useQuery: (input: unknown, opts: unknown) => mockGetIngredient(input, opts) },
-      },
-    },
-    useUtils: () => ({
-      food: { conversions: { listWeights: { invalidate: vi.fn() } } },
-    }),
     useQueries: (builder: unknown) => mockUseQueries(builder),
   },
+}));
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
+    const key = path.join('.');
+    if (key === 'conversions.listWeights') return mockListWeights(input);
+    if (key === 'ingredients.list') return mockListIngredients(input);
+    if (key === 'ingredients.get') return mockGetIngredient(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[], opts: MutationOpts) => {
+    const key = path.join('.');
+    if (key === 'conversions.createWeight') {
+      createOpts = opts;
+      return { mutate: mockCreateMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    if (key === 'conversions.updateWeight') {
+      return { mutate: mockUpdateMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    if (key === 'conversions.deleteWeight') {
+      return { mutate: mockDeleteMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: vi.fn(),
+  }),
 }));
 
 function row(overrides: Partial<IngredientWeightRow> & { id: number }): IngredientWeightRow {

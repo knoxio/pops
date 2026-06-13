@@ -8,9 +8,17 @@
  */
 import { useCallback } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { validateRange } from './range-helpers.js';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type PreviewFromPlanOutput = inferRouterOutputs<AppRouter>['food']['shopping']['previewFromPlan'];
+type GenerateFromPlanInput = inferRouterInputs<AppRouter>['food']['shopping']['generateFromPlan'];
+type GenerateFromPlanOutput = inferRouterOutputs<AppRouter>['food']['shopping']['generateFromPlan'];
 
 export interface UseFromPlanPageOpts {
   startDate: string;
@@ -18,19 +26,24 @@ export interface UseFromPlanPageOpts {
 }
 
 export function useFromPlanPage(opts: UseFromPlanPageOpts) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const isValid = validateRange(opts.startDate, opts.endDate).ok;
-  const previewQuery = trpc.food.shopping.previewFromPlan.useQuery(
+  const previewQuery = usePillarQuery<PreviewFromPlanOutput>(
+    'food',
+    ['shopping', 'previewFromPlan'],
     { startDate: opts.startDate, endDate: opts.endDate },
     {
       enabled: isValid,
       staleTime: 30_000,
     }
   );
-  const generateMutation = trpc.food.shopping.generateFromPlan.useMutation();
+  const generateMutation = usePillarMutation<GenerateFromPlanInput, GenerateFromPlanOutput>(
+    'food',
+    ['shopping', 'generateFromPlan']
+  );
 
   const refresh = useCallback(() => {
-    void utils.food.shopping.previewFromPlan.invalidate();
+    void utils.invalidate(['shopping', 'previewFromPlan']);
   }, [utils]);
 
   return { previewQuery, generateMutation, refresh } as const;

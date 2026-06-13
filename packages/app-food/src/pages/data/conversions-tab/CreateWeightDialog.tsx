@@ -6,11 +6,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
 import { DialogActions, FormError } from './dialog-helpers';
 import { NumberFieldRow, SelectFieldRow, TextareaFieldRow, TextFieldRow } from './form-fields';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
 
 export interface IngredientOption {
   id: number;
@@ -35,7 +41,9 @@ const INITIAL: FormState = {
 };
 
 function useVariantsFor(ingredientId: number | null) {
-  return trpc.food.ingredients.get.useQuery(
+  return usePillarQuery<IngredientsGetOutput>(
+    'food',
+    ['ingredients', 'get'],
     { idOrSlug: ingredientId ?? 0 },
     { enabled: ingredientId !== null }
   );

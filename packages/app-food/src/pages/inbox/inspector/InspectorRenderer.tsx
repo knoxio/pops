@@ -9,9 +9,15 @@
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { RecipeRenderer } from '../../../components/RecipeRenderer.js';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type GetForRenderingOutput = inferRouterOutputs<AppRouter>['food']['recipes']['getForRendering'];
 
 interface Props {
   slug: string;
@@ -38,7 +44,10 @@ interface BodyProps {
 }
 
 function RendererBody({ slug, versionNo, t }: BodyProps): ReactElement {
-  const query = trpc.food.recipes.getForRendering.useQuery({ slug, versionNo });
+  const query = usePillarQuery<GetForRenderingOutput>('food', ['recipes', 'getForRendering'], {
+    slug,
+    versionNo,
+  });
   if (query.isLoading) {
     return <p className="text-sm text-muted-foreground">{t('inbox.inspector.renderer.loading')}</p>;
   }

@@ -15,7 +15,14 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type TagsSetInput = inferRouterInputs<AppRouter>['food']['ingredients']['tags']['set'];
+type TagsSetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['set'];
 
 export interface TagsDraft {
   tags: readonly string[];
@@ -36,7 +43,7 @@ export interface UseTagsDraftInput {
 }
 
 export function useTagsDraft({ ingredientId, remoteTags }: UseTagsDraftInput): TagsDraft {
-  const setMutation = useSetMutation(ingredientId);
+  const setMutation = useSetMutation();
   const stableRemote = useMemo(() => remoteTags ?? [], [remoteTags]);
   const [tags, setTags] = useState<string[]>(stableRemote.slice());
   const [pending, setPending] = useState('');
@@ -88,14 +95,14 @@ export function useTagsDraft({ ingredientId, remoteTags }: UseTagsDraftInput): T
   };
 }
 
-function useSetMutation(ingredientId: number) {
-  const utils = trpc.useUtils();
-  return trpc.food.ingredients.tags.set.useMutation({
+function useSetMutation() {
+  const utils = usePillarUtils('food');
+  return usePillarMutation<TagsSetInput, TagsSetOutput>('food', ['ingredients', 'tags', 'set'], {
     onSuccess: async (result) => {
       if (result.ok) {
         await Promise.all([
-          utils.food.ingredients.tags.list.invalidate({ ingredientId }),
-          utils.food.ingredients.tags.distinct.invalidate(),
+          utils.invalidate(['ingredients', 'tags', 'list']),
+          utils.invalidate(['ingredients', 'tags', 'distinct']),
         ]);
       }
     },

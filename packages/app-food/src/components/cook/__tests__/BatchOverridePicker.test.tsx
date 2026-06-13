@@ -17,20 +17,12 @@ import type { BatchForConsumeRow } from '@pops/app-food-db';
 const mockSearchForConsume = vi.fn();
 const mockResolveForLine = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      batches: {
-        searchForConsume: {
-          useQuery: (input: unknown, opts?: unknown) => mockSearchForConsume(input, opts),
-        },
-      },
-      substitutions: {
-        resolveForLine: {
-          useQuery: (input: unknown, opts?: unknown) => mockResolveForLine(input, opts),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts?: unknown) => {
+    const key = path.join('.');
+    if (key === 'batches.searchForConsume') return mockSearchForConsume(input, opts);
+    if (key === 'substitutions.resolveForLine') return mockResolveForLine(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

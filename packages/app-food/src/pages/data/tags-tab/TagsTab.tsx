@@ -14,10 +14,17 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { TagDistinctRow } from '@pops/app-food-db';
+
+type TagsDistinctOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['distinct'];
+type TagsFindByTagOutput =
+  inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['findByTag'];
 
 const NO_NAMESPACE = '__none__';
 
@@ -53,7 +60,11 @@ function formatTimestamp(value: string): string {
 
 export function TagsTab() {
   const { t } = useTranslation('food');
-  const distinctQuery = trpc.food.ingredients.tags.distinct.useQuery({ limit: 500 });
+  const distinctQuery = usePillarQuery<TagsDistinctOutput>(
+    'food',
+    ['ingredients', 'tags', 'distinct'],
+    { limit: 500 }
+  );
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   if (distinctQuery.isLoading) {
@@ -163,7 +174,9 @@ function TagDetailsPanel({
 }) {
   const { t } = useTranslation('food');
   const enabled = selectedTag !== null;
-  const findQuery = trpc.food.ingredients.tags.findByTag.useQuery(
+  const findQuery = usePillarQuery<TagsFindByTagOutput>(
+    'food',
+    ['ingredients', 'tags', 'findByTag'],
     { tag: selectedTag ?? '' },
     { enabled }
   );

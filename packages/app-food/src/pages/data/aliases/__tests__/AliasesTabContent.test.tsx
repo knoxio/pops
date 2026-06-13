@@ -35,57 +35,64 @@ const state: MutableState = {
   slugMatches: [],
 };
 
-function makeMutation<TArgs>(handler: (input: TArgs) => void) {
+function makeMutationHandler<TArgs>(
+  handler: (input: TArgs) => void,
+  opts?: { onSuccess?: () => void }
+) {
   return {
-    useMutation: (opts?: { onSuccess?: () => void }) => ({
-      mutate: (input: TArgs) => {
-        handler(input);
-        opts?.onSuccess?.();
-      },
-      isPending: false,
-    }),
+    mutate: (input: TArgs) => {
+      handler(input);
+      opts?.onSuccess?.();
+    },
+    mutateAsync: vi.fn(),
+    isPending: false,
   };
 }
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        aliases: {
-          list: { invalidate: () => Promise.resolve() },
-          listWithTargets: { invalidate: () => Promise.resolve() },
-        },
-      },
-    }),
-    food: {
-      aliases: {
-        list: { useQuery: () => ({ data: undefined, isLoading: false, isError: false }) },
-        listWithTargets: {
-          useQuery: (input: Record<string, unknown>) => {
-            state.lastListQuery = input;
-            return { data: { items: state.items }, isLoading: false, isError: false };
-          },
-        },
-        create: makeMutation((input: never) => state.createCalls.push(input)),
-        updateText: makeMutation((input: never) => state.updateTextCalls.push(input)),
-        delete: makeMutation((input: never) => state.deleteCalls.push(input)),
-        merge: makeMutation((input: never) => state.mergeCalls.push(input)),
-        bulkApprove: makeMutation((input: never) => state.bulkApproveCalls.push(input)),
-      },
-      ingredients: {
-        get: { useQuery: () => ({ data: { variants: [] }, isLoading: false, isError: false }) },
-      },
-      slugs: {
-        search: {
-          useQuery: () => ({
-            data: { items: state.slugMatches },
-            isLoading: false,
-            isError: false,
-          }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'aliases.list') {
+      return { data: undefined, isLoading: false, isError: false };
+    }
+    if (key === 'aliases.listWithTargets') {
+      state.lastListQuery = input as Record<string, unknown>;
+      return { data: { items: state.items }, isLoading: false, isError: false };
+    }
+    if (key === 'ingredients.get') {
+      return { data: { variants: [] }, isLoading: false, isError: false };
+    }
+    if (key === 'slugs.search') {
+      return { data: { items: state.slugMatches }, isLoading: false, isError: false };
+    }
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: () => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'aliases.create') {
+      return makeMutationHandler((input: never) => state.createCalls.push(input), opts);
+    }
+    if (key === 'aliases.updateText') {
+      return makeMutationHandler((input: never) => state.updateTextCalls.push(input), opts);
+    }
+    if (key === 'aliases.delete') {
+      return makeMutationHandler((input: never) => state.deleteCalls.push(input), opts);
+    }
+    if (key === 'aliases.merge') {
+      return makeMutationHandler((input: never) => state.mergeCalls.push(input), opts);
+    }
+    if (key === 'aliases.bulkApprove') {
+      return makeMutationHandler((input: never) => state.bulkApproveCalls.push(input), opts);
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: () => Promise.resolve(),
+  }),
 }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));

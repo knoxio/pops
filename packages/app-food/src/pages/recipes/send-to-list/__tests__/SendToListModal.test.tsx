@@ -62,18 +62,6 @@ vi.mock('@pops/api-client', () => ({
     food: {
       recipes: {
         prepareSendToList: { useQuery: (...args: unknown[]) => mockPrepare(...args) },
-        sendToList: {
-          useMutation: (opts: {
-            onSuccess?: (result: SendResult) => void;
-            onError?: (err: Error) => void;
-          }) => {
-            capturedSendOptions = opts;
-            return {
-              mutate: (input: unknown) => mockSendMutate(input),
-              isPending: mockSendPending,
-            };
-          },
-        },
       },
     },
     lists: {
@@ -81,6 +69,27 @@ vi.mock('@pops/api-client', () => ({
         list: { useQuery: (...args: unknown[]) => mockListsList(...args) },
       },
     },
+  },
+}));
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: {
+      onSuccess?: (result: SendResult) => void;
+      onError?: (err: Error) => void;
+    }
+  ) => {
+    const key = path.join('.');
+    if (key === 'recipes.sendToList') {
+      capturedSendOptions = opts;
+      return {
+        mutate: (input: unknown) => mockSendMutate(input),
+        isPending: mockSendPending,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
   },
 }));
 

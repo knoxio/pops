@@ -3,12 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { DslEditor } from '../../components/DslEditor.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
 import type { CompileEditorIssue } from '../../components/dsl-editor/issues-types.js';
+
+type RecipesCreateInput = inferRouterInputs<AppRouter>['food']['recipes']['create'];
+type RecipesCreateOutput = inferRouterOutputs<AppRouter>['food']['recipes']['create'];
 
 const EMPTY_DSL = '@recipe(slug="", title="")\n@yield(_, 1:count)\n';
 
@@ -23,23 +30,27 @@ export function RecipeNewPage(): ReactElement {
   const [dsl, setDsl] = useState(EMPTY_DSL);
   const [issues, setIssues] = useState<readonly CompileEditorIssue[]>([]);
 
-  const createMutation = trpc.food.recipes.create.useMutation({
-    onSuccess: (result) => {
-      const compile = result.compile;
-      if (compile.ok === true) {
-        toast.success(t('recipes.new.saved'));
-      } else {
-        setIssues(compileErrorsToIssues(compile.errors));
-        toast.error(t('recipes.new.compileError'));
-      }
-      // Redirect in both paths — the draft exists either way, and the
-      // edit page surfaces compile errors inline via PRD-120-C `issues`.
-      void navigate(`/food/recipes/${result.slug}/edit`);
-    },
-    onError: (err) => {
-      toast.error(t('recipes.new.error', { message: err.message }));
-    },
-  });
+  const createMutation = usePillarMutation<RecipesCreateInput, RecipesCreateOutput>(
+    'food',
+    ['recipes', 'create'],
+    {
+      onSuccess: (result) => {
+        const compile = result.compile;
+        if (compile.ok === true) {
+          toast.success(t('recipes.new.saved'));
+        } else {
+          setIssues(compileErrorsToIssues(compile.errors));
+          toast.error(t('recipes.new.compileError'));
+        }
+        // Redirect in both paths — the draft exists either way, and the
+        // edit page surfaces compile errors inline via PRD-120-C `issues`.
+        void navigate(`/food/recipes/${result.slug}/edit`);
+      },
+      onError: (err) => {
+        toast.error(t('recipes.new.error', { message: err.message }));
+      },
+    }
+  );
 
   const onSave = useCallback(() => {
     setIssues([]);

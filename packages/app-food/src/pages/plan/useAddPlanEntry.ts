@@ -4,7 +4,15 @@
  */
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type RecipesListOutput = inferRouterOutputs<AppRouter>['food']['recipes']['list'];
+type PlanAddEntryInput = inferRouterInputs<AppRouter>['food']['plan']['addEntry'];
+type PlanAddEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['addEntry'];
 
 interface Opts {
   date: string;
@@ -58,24 +66,30 @@ function useAddFormState(): FormState {
 
 export function useAddPlanEntry({ date, slot, isOpen, onAdded, onClose }: Opts) {
   const f = useAddFormState();
-  const utils = trpc.useUtils();
-  const recipesQuery = trpc.food.recipes.list.useQuery(
+  const utils = usePillarUtils('food');
+  const recipesQuery = usePillarQuery<RecipesListOutput>(
+    'food',
+    ['recipes', 'list'],
     { search: f.search || undefined, includeArchived: false, limit: 25 },
     { enabled: isOpen }
   );
-  const addEntry = trpc.food.plan.addEntry.useMutation({
-    onSuccess: (res) => {
-      if (res.ok) {
-        void utils.food.plan.weekView.invalidate();
-        if (onAdded) onAdded(res.id);
-        f.reset();
-        onClose();
-        return;
-      }
-      f.setError(`Could not add: ${res.reason}`);
-    },
-    onError: (err) => f.setError(err.message),
-  });
+  const addEntry = usePillarMutation<PlanAddEntryInput, PlanAddEntryOutput>(
+    'food',
+    ['plan', 'addEntry'],
+    {
+      onSuccess: (res) => {
+        if (res.ok) {
+          void utils.invalidate(['plan', 'weekView']);
+          if (onAdded) onAdded(res.id);
+          f.reset();
+          onClose();
+          return;
+        }
+        f.setError(`Could not add: ${res.reason}`);
+      },
+      onError: (err) => f.setError(err.message),
+    }
+  );
   const submit = () => {
     if (f.recipeId === null) return;
     addEntry.mutate({

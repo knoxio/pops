@@ -3,9 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { RecipeRenderer } from '../../components/RecipeRenderer.js';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
+
+type RecipeVersionRow = RecipeVersionWithCompiledData['version'];
+
+type RestoreVersionInput = inferRouterInputs<AppRouter>['food']['recipes']['restoreVersion'];
+type RestoreVersionOutput = inferRouterOutputs<AppRouter>['food']['recipes']['restoreVersion'];
 import { RecipeScaleProvider, useRecipeScale } from './RecipeScaleProvider.js';
 import { useRecipeDetailData } from './useRecipeDetailData.js';
 
@@ -49,15 +59,19 @@ function RecipeVersionDetailBody({ slug, versionNo }: BodyProps): ReactElement {
     includeDrafts: false,
   });
 
-  const restoreMutation = trpc.food.recipes.restoreVersion.useMutation({
-    onSuccess: () => {
-      toast.success(t('recipes.versionDetail.restore.success'));
-      void navigate(`/food/recipes/${slug}/edit`);
-    },
-    onError: (err) => {
-      toast.error(t('recipes.versionDetail.restore.error', { message: err.message }));
-    },
-  });
+  const restoreMutation = usePillarMutation<RestoreVersionInput, RestoreVersionOutput>(
+    'food',
+    ['recipes', 'restoreVersion'],
+    {
+      onSuccess: () => {
+        toast.success(t('recipes.versionDetail.restore.success'));
+        void navigate(`/food/recipes/${slug}/edit`);
+      },
+      onError: (err) => {
+        toast.error(t('recipes.versionDetail.restore.error', { message: err.message }));
+      },
+    }
+  );
 
   const onRestore = useCallback(() => {
     if (data === undefined) return;
@@ -79,31 +93,58 @@ function RecipeVersionDetailBody({ slug, versionNo }: BodyProps): ReactElement {
 
   return (
     <div className="space-y-4 p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3">
-        <div className="space-y-1">
-          <p className="text-sm">
-            {t('recipes.versionDetail.viewing', {
-              versionNo,
-              status: t(`recipes.versionDetail.status.${data.version.status}`),
-            })}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {t('recipes.versionDetail.created', { date: data.version.createdAt })}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onRestore}
-          disabled={restoreMutation.isPending}
-          className="rounded-md border bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          {restoreMutation.isPending
-            ? t('recipes.versionDetail.restore.pending')
-            : t('recipes.versionDetail.restore.cta')}
-        </button>
-      </header>
+      <VersionDetailHeader
+        versionNo={versionNo}
+        status={data.version.status}
+        createdAt={data.version.createdAt}
+        onRestore={onRestore}
+        isRestoring={restoreMutation.isPending}
+      />
       <RecipeRenderer recipeVersion={data} scaleFactor={scaleFactor} variant="detail" />
     </div>
+  );
+}
+
+interface VersionDetailHeaderProps {
+  versionNo: number;
+  status: RecipeVersionRow['status'];
+  createdAt: RecipeVersionRow['createdAt'];
+  onRestore: () => void;
+  isRestoring: boolean;
+}
+
+function VersionDetailHeader({
+  versionNo,
+  status,
+  createdAt,
+  onRestore,
+  isRestoring,
+}: VersionDetailHeaderProps): ReactElement {
+  const { t } = useTranslation('food');
+  return (
+    <header className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3">
+      <div className="space-y-1">
+        <p className="text-sm">
+          {t('recipes.versionDetail.viewing', {
+            versionNo,
+            status: t(`recipes.versionDetail.status.${status}`),
+          })}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {t('recipes.versionDetail.created', { date: createdAt })}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onRestore}
+        disabled={isRestoring}
+        className="rounded-md border bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+      >
+        {isRestoring
+          ? t('recipes.versionDetail.restore.pending')
+          : t('recipes.versionDetail.restore.cta')}
+      </button>
+    </header>
   );
 }
 

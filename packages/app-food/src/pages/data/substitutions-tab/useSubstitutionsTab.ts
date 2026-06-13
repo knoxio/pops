@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { mapMutationError } from './mapSubstitutionsError';
 import {
@@ -10,6 +10,18 @@ import {
   type SubstitutionsFilterState,
   type UpdateSubstitutionFormInput,
 } from './types';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type ListHydratedOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['listHydrated'];
+type CreateInput = inferRouterInputs<AppRouter>['food']['substitutions']['create'];
+type CreateOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['create'];
+type UpdateInput = inferRouterInputs<AppRouter>['food']['substitutions']['update'];
+type UpdateOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['update'];
+type DeleteInput = inferRouterInputs<AppRouter>['food']['substitutions']['delete'];
+type DeleteOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['delete'];
 
 function buildListInput(filters: SubstitutionsFilterState) {
   return {
@@ -53,41 +65,57 @@ function useSubstitutionMutations(
   setRowError: (msg: string | null) => void
 ) {
   const { t } = useTranslation('food');
-  const createMutation = trpc.food.substitutions.create.useMutation({
-    onSuccess: () => {
-      setCreateError(null);
-      invalidate();
-    },
-    onError: (err) => setCreateError(mapMutationError(err, t)),
-  });
-  const updateMutation = trpc.food.substitutions.update.useMutation({
-    onSuccess: () => {
-      setRowError(null);
-      invalidate();
-    },
-    onError: (err) => setRowError(mapMutationError(err, t)),
-  });
-  const deleteMutation = trpc.food.substitutions.delete.useMutation({
-    onSuccess: () => {
-      setRowError(null);
-      invalidate();
-    },
-    onError: (err) => setRowError(mapMutationError(err, t)),
-  });
+  const createMutation = usePillarMutation<CreateInput, CreateOutput>(
+    'food',
+    ['substitutions', 'create'],
+    {
+      onSuccess: () => {
+        setCreateError(null);
+        invalidate();
+      },
+      onError: (err) => setCreateError(mapMutationError(err, t)),
+    }
+  );
+  const updateMutation = usePillarMutation<UpdateInput, UpdateOutput>(
+    'food',
+    ['substitutions', 'update'],
+    {
+      onSuccess: () => {
+        setRowError(null);
+        invalidate();
+      },
+      onError: (err) => setRowError(mapMutationError(err, t)),
+    }
+  );
+  const deleteMutation = usePillarMutation<DeleteInput, DeleteOutput>(
+    'food',
+    ['substitutions', 'delete'],
+    {
+      onSuccess: () => {
+        setRowError(null);
+        invalidate();
+      },
+      onError: (err) => setRowError(mapMutationError(err, t)),
+    }
+  );
   return { createMutation, updateMutation, deleteMutation };
 }
 
 export function useSubstitutionsTab() {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const [filters, setFilters] = useState<SubstitutionsFilterState>(EMPTY_FILTERS);
   const [createError, setCreateError] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
 
   const listInput = useMemo(() => buildListInput(filters), [filters]);
-  const listQuery = trpc.food.substitutions.listHydrated.useQuery(listInput);
+  const listQuery = usePillarQuery<ListHydratedOutput>(
+    'food',
+    ['substitutions', 'listHydrated'],
+    listInput
+  );
 
   const invalidate = useCallback(
-    () => void utils.food.substitutions.listHydrated.invalidate(),
+    () => void utils.invalidate(['substitutions', 'listHydrated']),
     [utils]
   );
 

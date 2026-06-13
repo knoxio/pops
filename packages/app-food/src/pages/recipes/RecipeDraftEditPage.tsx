@@ -2,9 +2,15 @@ import { useMemo, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { RecipeEditShell } from './RecipeEditPage.js';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type ListDraftsOutput = inferRouterOutputs<AppRouter>['food']['recipes']['listDrafts'];
 
 /**
  * `/food/recipes/:slug/drafts/:draftNo` — same edit surface as
@@ -32,7 +38,9 @@ export function RecipeDraftEditPage(): ReactElement {
 
 function RecipeDraftEditBody({ slug, draftNo }: { slug: string; draftNo: number }): ReactElement {
   const { t } = useTranslation('food');
-  const draftsQuery = trpc.food.recipes.listDrafts.useQuery({ slug });
+  const draftsQuery = usePillarQuery<ListDraftsOutput>('food', ['recipes', 'listDrafts'], {
+    slug,
+  });
   const match = useMemo(
     () => draftsQuery.data?.drafts.find((d) => d.versionNo === draftNo) ?? null,
     [draftNo, draftsQuery.data]

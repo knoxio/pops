@@ -15,13 +15,19 @@ import { type ReactElement, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { DslEditor } from '../../../components/DslEditor.js';
 import { InspectorRenderer } from './InspectorRenderer.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { InspectorDraftView } from '@pops/app-food-db';
+
+type SaveDraftInput = inferRouterInputs<AppRouter>['food']['recipes']['saveDraft'];
+type SaveDraftOutput = inferRouterOutputs<AppRouter>['food']['recipes']['saveDraft'];
 
 type EditorTab = 'editor' | 'renderer';
 
@@ -112,14 +118,19 @@ interface EditorTabBodyProps {
 
 function EditorTab(props: EditorTabBodyProps): ReactElement {
   const { draft, body, onChange, isReadOnly, onSaved, pendingCursor, t } = props;
-  const saveMutation = trpc.food.recipes.saveDraft.useMutation({
-    onSuccess: (res) => {
-      if (res.compile.ok) toast.success(t('inbox.inspector.editor.savedOk'));
-      else toast.error(t('inbox.inspector.editor.savedFailed'));
-      onSaved();
-    },
-    onError: (err) => toast.error(t('inbox.inspector.editor.saveError', { message: err.message })),
-  });
+  const saveMutation = usePillarMutation<SaveDraftInput, SaveDraftOutput>(
+    'food',
+    ['recipes', 'saveDraft'],
+    {
+      onSuccess: (res) => {
+        if (res.compile.ok) toast.success(t('inbox.inspector.editor.savedOk'));
+        else toast.error(t('inbox.inspector.editor.savedFailed'));
+        onSaved();
+      },
+      onError: (err) =>
+        toast.error(t('inbox.inspector.editor.saveError', { message: err.message })),
+    }
+  );
   return (
     <div className="space-y-2">
       <DslEditor

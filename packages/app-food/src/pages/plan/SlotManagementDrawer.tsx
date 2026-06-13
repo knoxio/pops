@@ -8,10 +8,22 @@
  */
 import { useState, type ReactElement } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { SlotRow } from './SlotRow.js';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type PlanListSlotsOutput = inferRouterOutputs<AppRouter>['food']['plan']['listSlots'];
+type PlanUpdateSlotInput = inferRouterInputs<AppRouter>['food']['plan']['updateSlot'];
+type PlanUpdateSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['updateSlot'];
+type PlanDeleteSlotInput = inferRouterInputs<AppRouter>['food']['plan']['deleteSlot'];
+type PlanDeleteSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['deleteSlot'];
+type PlanAddSlotInput = inferRouterInputs<AppRouter>['food']['plan']['addSlot'];
+type PlanAddSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['addSlot'];
 
 const SLUG_RE = /^[a-z][a-z0-9-]{0,31}$/;
 
@@ -21,21 +33,33 @@ export interface SlotManagementDrawerProps {
 }
 
 function useSlotMutations() {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const invalidate = () => {
-    void utils.food.plan.listSlots.invalidate();
-    void utils.food.plan.weekView.invalidate();
+    void utils.invalidate(['plan', 'listSlots']);
+    void utils.invalidate(['plan', 'weekView']);
   };
   return {
-    updateSlot: trpc.food.plan.updateSlot.useMutation({ onSuccess: invalidate }),
-    deleteSlot: trpc.food.plan.deleteSlot.useMutation({ onSuccess: invalidate }),
-    addSlot: trpc.food.plan.addSlot.useMutation({ onSuccess: invalidate }),
+    updateSlot: usePillarMutation<PlanUpdateSlotInput, PlanUpdateSlotOutput>(
+      'food',
+      ['plan', 'updateSlot'],
+      { onSuccess: invalidate }
+    ),
+    deleteSlot: usePillarMutation<PlanDeleteSlotInput, PlanDeleteSlotOutput>(
+      'food',
+      ['plan', 'deleteSlot'],
+      { onSuccess: invalidate }
+    ),
+    addSlot: usePillarMutation<PlanAddSlotInput, PlanAddSlotOutput>('food', ['plan', 'addSlot'], {
+      onSuccess: invalidate,
+    }),
   };
 }
 
 export function SlotManagementDrawer(props: SlotManagementDrawerProps): ReactElement | null {
   const { isOpen, onClose } = props;
-  const slotsQuery = trpc.food.plan.listSlots.useQuery(undefined, { enabled: isOpen });
+  const slotsQuery = usePillarQuery<PlanListSlotsOutput>('food', ['plan', 'listSlots'], undefined, {
+    enabled: isOpen,
+  });
   const { updateSlot, deleteSlot, addSlot } = useSlotMutations();
   if (!isOpen) return null;
   const slots = slotsQuery.data?.slots ?? [];

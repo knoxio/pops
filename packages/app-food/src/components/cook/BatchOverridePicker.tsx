@@ -17,18 +17,23 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { SameVariantSection } from './BatchOverridePicker.same-variant.js';
 import { SubstitutionsSection } from './BatchOverridePicker.substitutions.js';
 import { useSubstitutionResolution } from './useSubstitutionResolution.js';
 
+import type { inferRouterOutputs } from '@trpc/server';
 import type { ReactNode } from 'react';
 
+import type { AppRouter } from '@pops/api-client';
 import type { BatchForConsumeRow } from '@pops/app-food-db';
 
 import type { SubCandidate, SubCandidateBatch } from './useSubstitutionResolution.js';
+
+type BatchesSearchForConsumeOutput =
+  inferRouterOutputs<AppRouter>['food']['batches']['searchForConsume'];
 
 export type BatchPickerSelection =
   | { kind: 'same-variant'; batch: BatchForConsumeRow }
@@ -66,7 +71,9 @@ export function BatchOverridePicker(props: BatchOverridePickerProps): ReactNode 
   const { t } = useTranslation('food');
   const [search, setSearch] = useState('');
 
-  const query = trpc.food.batches.searchForConsume.useQuery(
+  const query = usePillarQuery<BatchesSearchForConsumeOutput>(
+    'food',
+    ['batches', 'searchForConsume'],
     { ingredientId, limit: 20 },
     { enabled: ingredientId !== undefined }
   );

@@ -2,8 +2,14 @@ import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Label, TextInput, useDebouncedValue } from '@pops/ui';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type SlugSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
 
 interface SearchItem {
   slug: string;
@@ -96,7 +102,12 @@ export function GlobalSearchBar() {
   const [query, setQuery] = useState('');
   const debounced = useDebouncedValue(query.trim(), 200);
   const enabled = debounced.length > 0;
-  const searchQuery = trpc.food.slugs.search.useQuery({ query: debounced, limit: 8 }, { enabled });
+  const searchQuery = usePillarQuery<SlugSearchOutput>(
+    'food',
+    ['slugs', 'search'],
+    { query: debounced, limit: 8 },
+    { enabled }
+  );
   const items = useMemo<readonly SearchItem[]>(
     () => (searchQuery.data?.items as readonly SearchItem[] | undefined) ?? [],
     [searchQuery.data]

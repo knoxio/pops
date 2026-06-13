@@ -2,8 +2,17 @@ import { type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type PromoteInput = inferRouterInputs<AppRouter>['food']['recipes']['promote'];
+type PromoteOutput = inferRouterOutputs<AppRouter>['food']['recipes']['promote'];
+type ArchiveVersionInput = inferRouterInputs<AppRouter>['food']['recipes']['archiveVersion'];
+type ArchiveVersionOutput = inferRouterOutputs<AppRouter>['food']['recipes']['archiveVersion'];
 
 export interface DraftRow {
   versionId: number;
@@ -52,27 +61,35 @@ function useDraftRowMutations(
   t: (key: string, opts?: Record<string, unknown>) => string
 ): DraftRowMutations {
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
-  const promoteMutation = trpc.food.recipes.promote.useMutation({
-    onSuccess: (res) => {
-      if (res.ok === true) {
-        toast.success(t('recipes.drafts.row.promoted'));
-        void utils.food.recipes.list.invalidate();
+  const utils = usePillarUtils('food');
+  const promoteMutation = usePillarMutation<PromoteInput, PromoteOutput>(
+    'food',
+    ['recipes', 'promote'],
+    {
+      onSuccess: (res) => {
+        if (res.ok === true) {
+          toast.success(t('recipes.drafts.row.promoted'));
+          void utils.invalidate(['recipes', 'list']);
+          void refetch();
+          void navigate(`/food/recipes/${slug}`);
+        } else {
+          toast.error(t(`recipes.edit.promoteFailed.${res.reason}` as const));
+        }
+      },
+      onError: (err) => toast.error(t('recipes.drafts.row.promoteError', { message: err.message })),
+    }
+  );
+  const discardMutation = usePillarMutation<ArchiveVersionInput, ArchiveVersionOutput>(
+    'food',
+    ['recipes', 'archiveVersion'],
+    {
+      onSuccess: () => {
+        toast.success(t('recipes.drafts.row.discarded'));
         void refetch();
-        void navigate(`/food/recipes/${slug}`);
-      } else {
-        toast.error(t(`recipes.edit.promoteFailed.${res.reason}` as const));
-      }
-    },
-    onError: (err) => toast.error(t('recipes.drafts.row.promoteError', { message: err.message })),
-  });
-  const discardMutation = trpc.food.recipes.archiveVersion.useMutation({
-    onSuccess: () => {
-      toast.success(t('recipes.drafts.row.discarded'));
-      void refetch();
-    },
-    onError: (err) => toast.error(t('recipes.drafts.row.discardError', { message: err.message })),
-  });
+      },
+      onError: (err) => toast.error(t('recipes.drafts.row.discardError', { message: err.message })),
+    }
+  );
   return {
     promote: (versionId) => promoteMutation.mutate({ versionId }),
     discard: (versionId) => discardMutation.mutate({ versionId }),

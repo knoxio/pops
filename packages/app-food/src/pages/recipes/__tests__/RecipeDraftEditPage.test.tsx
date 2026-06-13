@@ -9,13 +9,11 @@ import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/f
 
 const mockListDrafts = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      recipes: {
-        listDrafts: { useQuery: (input: unknown) => mockListDrafts(input) },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'recipes.listDrafts') return mockListDrafts(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

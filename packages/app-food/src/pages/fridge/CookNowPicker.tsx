@@ -9,12 +9,17 @@
 import { type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
 import { formatQty } from './format.js';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { BatchUnit, RecipeForCookRow } from '@pops/app-food-db';
+
+type RecipesUsingBatchOutput = inferRouterOutputs<AppRouter>['food']['fridge']['recipesUsingBatch'];
 
 export interface CookNowPickerProps {
   batchId: number | null;
@@ -30,7 +35,9 @@ export function CookNowPicker({
   onClose,
 }: CookNowPickerProps): ReactElement {
   const navigate = useNavigate();
-  const result = trpc.food.fridge.recipesUsingBatch.useQuery(
+  const result = usePillarQuery<RecipesUsingBatchOutput>(
+    'food',
+    ['fridge', 'recipesUsingBatch'],
     { batchId: batchId ?? 0 },
     { enabled: isOpen && batchId !== null }
   );

@@ -20,18 +20,12 @@ import enAUFood from '../../../../../../../apps/pops-shell/src/i18n/locales/en-A
 const mockDistinctUseQuery = vi.fn();
 const mockFindByTagUseQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      ingredients: {
-        tags: {
-          distinct: { useQuery: (input: unknown) => mockDistinctUseQuery(input) },
-          findByTag: {
-            useQuery: (input: unknown, opts: unknown) => mockFindByTagUseQuery(input, opts),
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
+    const key = path.join('.');
+    if (key === 'ingredients.tags.distinct') return mockDistinctUseQuery(input);
+    if (key === 'ingredients.tags.findByTag') return mockFindByTagUseQuery(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

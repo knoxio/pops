@@ -10,7 +10,13 @@
  * Exposes `invalidate()` so callers can refresh after Save, Approve, Reject,
  * Undo, or Re-run pipeline mutations.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type InboxGetForReviewOutput = inferRouterOutputs<AppRouter>['food']['inbox']['getForReview'];
 
 const POLL_INTERVAL_MS = 60_000;
 
@@ -19,14 +25,12 @@ export interface UseInspectorOptions {
 }
 
 export function useInspector({ sourceId }: UseInspectorOptions) {
-  const utils = trpc.useUtils();
-  const query = trpc.food.inbox.getForReview.useQuery(
+  const utils = usePillarUtils('food');
+  const query = usePillarQuery<InboxGetForReviewOutput>(
+    'food',
+    ['inbox', 'getForReview'],
     { sourceId },
     {
-      // PRD-135 — poll only while the source state is non-terminal. Direct
-      // URL navigation to an in-flight source is the only path that
-      // surfaces a `processing` source today; Drafts-tab clicks always land
-      // on terminal rows.
       refetchInterval: (latest) => {
         const data = latest.state.data;
         if (data === undefined || !data.ok) return false;
@@ -43,6 +47,6 @@ export function useInspector({ sourceId }: UseInspectorOptions) {
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,
-    invalidate: () => utils.food.inbox.getForReview.invalidate({ sourceId }),
+    invalidate: () => utils.invalidate(['inbox', 'getForReview']),
   };
 }

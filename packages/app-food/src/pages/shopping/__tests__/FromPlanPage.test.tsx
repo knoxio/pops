@@ -10,28 +10,26 @@ const mockPreview = vi.fn();
 const mockGenerateMutate = vi.fn();
 const mockPreviewInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        shopping: {
-          previewFromPlan: { invalidate: mockPreviewInvalidate },
-        },
-      },
-    }),
-    food: {
-      shopping: {
-        previewFromPlan: { useQuery: (input: unknown) => mockPreview(input) },
-        generateFromPlan: {
-          useMutation: () => ({
-            mutate: mockGenerateMutate,
-            mutateAsync: async (vars: unknown) => mockGenerateMutate(vars),
-            isPending: false,
-          }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'shopping.previewFromPlan') return mockPreview(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'shopping.generateFromPlan') {
+      return {
+        mutate: mockGenerateMutate,
+        mutateAsync: async (vars: unknown) => mockGenerateMutate(vars),
+        isPending: false,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: (path: readonly string[]) => mockPreviewInvalidate(path),
+  }),
 }));
 
 import { FromPlanPage } from '../FromPlanPage.js';

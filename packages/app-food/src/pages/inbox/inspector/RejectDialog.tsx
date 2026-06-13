@@ -9,8 +9,15 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@pops/ui';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type InboxRejectInput = inferRouterInputs<AppRouter>['food']['inbox']['reject'];
+type InboxRejectOutput = inferRouterOutputs<AppRouter>['food']['inbox']['reject'];
 
 const REASONS = [
   'wrong-recipe',
@@ -29,18 +36,18 @@ interface Props {
   onRejected: () => void;
 }
 
-export function RejectDialog({ open, onOpenChange, versionId, onRejected }: Props): ReactElement {
+function useRejectMutation(args: {
+  onRejected: () => void;
+  onOpenChange: (next: boolean) => void;
+}) {
   const { t } = useTranslation('food');
   const navigate = useNavigate();
-  const [reason, setReason] = useState<Reason>('wrong-recipe');
-  const [note, setNote] = useState('');
-  const noteRequired = reason === 'other' && note.trim().length === 0;
-  const mutation = trpc.food.inbox.reject.useMutation({
+  return usePillarMutation<InboxRejectInput, InboxRejectOutput>('food', ['inbox', 'reject'], {
     onSuccess: (res) => {
       if (res.ok) {
         toast.success(t('inbox.inspector.decision.reject.success'));
-        onRejected();
-        onOpenChange(false);
+        args.onRejected();
+        args.onOpenChange(false);
         void navigate('/food/inbox?tab=drafts');
       } else {
         toast.error(t(`inbox.inspector.decision.reject.error.${res.reason}` as const));
@@ -49,6 +56,14 @@ export function RejectDialog({ open, onOpenChange, versionId, onRejected }: Prop
     onError: (err) =>
       toast.error(t('inbox.inspector.decision.reject.error.generic', { message: err.message })),
   });
+}
+
+export function RejectDialog({ open, onOpenChange, versionId, onRejected }: Props): ReactElement {
+  const { t } = useTranslation('food');
+  const [reason, setReason] = useState<Reason>('wrong-recipe');
+  const [note, setNote] = useState('');
+  const noteRequired = reason === 'other' && note.trim().length === 0;
+  const mutation = useRejectMutation({ onRejected, onOpenChange });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="inspector-reject-dialog">

@@ -50,72 +50,72 @@ let mockData: InspectorResult | undefined;
 let mockIsLoading = false;
 let mockIsError = false;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: { inbox: { getForReview: { invalidate: vi.fn() } } },
-    }),
-    food: {
-      inbox: {
-        getForReview: {
-          useQuery: () => ({
-            data: mockData,
-            isLoading: mockIsLoading,
-            isError: mockIsError,
-            error: null,
-          }),
-        },
-        approve: {
-          useMutation: (opts: { onSuccess?: (res: unknown) => void }) => ({
-            mutate: (input: unknown) => {
-              approveMutation(input);
-              opts.onSuccess?.({ ok: true, recipeSlug: 'web-recipe', promotedVersionNo: 1 });
-            },
-            isPending: false,
-          }),
-        },
-        reject: {
-          useMutation: (opts: { onSuccess?: (res: unknown) => void }) => ({
-            mutate: (input: unknown) => {
-              rejectMutation(input);
-              opts.onSuccess?.({ ok: true });
-            },
-            isPending: false,
-          }),
-        },
-        unreject: {
-          useMutation: (opts: { onSuccess?: (res: unknown) => void }) => ({
-            mutate: (input: unknown) => {
-              unrejectMutation(input);
-              opts.onSuccess?.({ ok: true, restoredAs: 'draft' });
-            },
-            isPending: false,
-          }),
-        },
-      },
-      recipes: {
-        saveDraft: {
-          useMutation: (opts: { onSuccess?: (res: unknown) => void }) => ({
-            mutate: (input: unknown) => {
-              saveDraftMutation(input);
-              opts.onSuccess?.({
-                compile: { ok: true, lineCount: 1, stepCount: 1, creationCount: 0 },
-              });
-            },
-            isPending: false,
-          }),
-        },
-        getForRendering: {
-          useQuery: () => ({ data: undefined, isLoading: true, isError: false, error: null }),
-        },
-      },
-      ingest: {
-        retry: {
-          useMutation: () => ({ mutate: retryMutation, isPending: false }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'inbox.getForReview') {
+      return {
+        data: mockData,
+        isLoading: mockIsLoading,
+        isError: mockIsError,
+        error: null,
+      };
+    }
+    if (key === 'recipes.getForRendering') {
+      return { data: undefined, isLoading: true, isError: false, error: null };
+    }
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: { onSuccess?: (res: unknown) => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'inbox.approve') {
+      return {
+        mutate: (input: unknown) => {
+          approveMutation(input);
+          opts.onSuccess?.({ ok: true, recipeSlug: 'web-recipe', promotedVersionNo: 1 });
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'inbox.reject') {
+      return {
+        mutate: (input: unknown) => {
+          rejectMutation(input);
+          opts.onSuccess?.({ ok: true });
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'inbox.unreject') {
+      return {
+        mutate: (input: unknown) => {
+          unrejectMutation(input);
+          opts.onSuccess?.({ ok: true, restoredAs: 'draft' });
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'recipes.saveDraft') {
+      return {
+        mutate: (input: unknown) => {
+          saveDraftMutation(input);
+          opts.onSuccess?.({
+            compile: { ok: true, lineCount: 1, stepCount: 1, creationCount: 0 },
+          });
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'ingest.retry') {
+      return { mutate: retryMutation, isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({ invalidate: vi.fn() }),
 }));
 
 import { InspectorPage } from '../InspectorPage.js';

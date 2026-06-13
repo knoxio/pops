@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { DslEditor } from '../../components/DslEditor.js';
@@ -12,7 +12,16 @@ import { AutoCreatedBanner } from './AutoCreatedBanner.js';
 import { buildEditorIssues } from './compile-result-issues.js';
 import { useRecipeEditMutations } from './useRecipeEditMutations.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { CompileResult } from '@pops/app-food-db';
+
+type GetForRenderingOutput = inferRouterOutputs<AppRouter>['food']['recipes']['getForRendering'];
+type ListProposedSlugsOutput =
+  inferRouterOutputs<AppRouter>['food']['recipes']['listProposedSlugs'];
+type CreateNewDraftInput = inferRouterInputs<AppRouter>['food']['recipes']['createNewDraft'];
+type CreateNewDraftOutput = inferRouterOutputs<AppRouter>['food']['recipes']['createNewDraft'];
 
 /**
  * `/food/recipes/:slug/edit` — edits the latest draft of `:slug`. If the
@@ -65,9 +74,11 @@ export function RecipeEditShell({
   const [dsl, setDsl] = useState<string>('');
   const dslSeeded = useRef(false);
   const [latestCompile, setLatestCompile] = useState<CompileResult | null>(null);
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
 
-  const renderingQuery = trpc.food.recipes.getForRendering.useQuery(
+  const renderingQuery = usePillarQuery<GetForRenderingOutput>(
+    'food',
+    ['recipes', 'getForRendering'],
     { slug, versionNo: versionNo ?? undefined },
     { enabled: versionNo !== null }
   );
@@ -78,7 +89,9 @@ export function RecipeEditShell({
     }
   }, [renderingQuery.data]);
 
-  const proposedSlugsQuery = trpc.food.recipes.listProposedSlugs.useQuery(
+  const proposedSlugsQuery = usePillarQuery<ListProposedSlugsOutput>(
+    'food',
+    ['recipes', 'listProposedSlugs'],
     { versionId: versionId ?? 0 },
     { enabled: versionId !== null }
   );
@@ -94,11 +107,8 @@ export function RecipeEditShell({
 
   const recipe = renderingQuery.data.recipe;
   const refreshHero = (): void => {
-    void utils.food.recipes.getForRendering.invalidate({
-      slug,
-      versionNo: versionNo ?? undefined,
-    });
-    void utils.food.recipes.list.invalidate();
+    void utils.invalidate(['recipes', 'getForRendering']);
+    void utils.invalidate(['recipes', 'list']);
   };
 
   return (
@@ -124,10 +134,14 @@ export function RecipeEditShell({
  */
 function useOpenDraftOnMount(slug: string, onOpen: (next: DraftState) => void): void {
   const { t } = useTranslation('food');
-  const mutation = trpc.food.recipes.createNewDraft.useMutation({
-    onSuccess: (res) => onOpen({ versionId: res.versionId, versionNo: res.versionNo }),
-    onError: (err) => toast.error(t('recipes.edit.openError', { message: err.message })),
-  });
+  const mutation = usePillarMutation<CreateNewDraftInput, CreateNewDraftOutput>(
+    'food',
+    ['recipes', 'createNewDraft'],
+    {
+      onSuccess: (res) => onOpen({ versionId: res.versionId, versionNo: res.versionNo }),
+      onError: (err) => toast.error(t('recipes.edit.openError', { message: err.message })),
+    }
+  );
   const opened = useRef<string | null>(null);
   useEffect(() => {
     if (opened.current === slug) return;

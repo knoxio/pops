@@ -12,7 +12,7 @@ import { type ReactElement, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useLocation, useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { decodeFiltersHash, encodeFiltersHash, type DraftsFiltersState } from './drafts-filters.js';
 import { DraftsTab } from './DraftsTab.js';
@@ -21,7 +21,12 @@ import { DEFAULT_INBOX_TAB, type InboxTabKey, parseTabKey } from './inbox-tabs.j
 import { InboxLayout } from './InboxLayout.js';
 import { RejectedTab } from './RejectedTab.js';
 
+import type { inferRouterOutputs } from '@trpc/server';
 import type { NavigateFunction } from 'react-router';
+
+import type { AppRouter } from '@pops/api-client';
+
+type InboxPendingCountOutput = inferRouterOutputs<AppRouter>['food']['inbox']['pendingCount'];
 
 interface Props {
   /** Override "now" so tests can pin relative-time strings. */
@@ -67,10 +72,15 @@ export function InboxPage({ now }: Props = {}): ReactElement {
 }
 
 function usePendingCount(): number | null {
-  const query = trpc.food.inbox.pendingCount.useQuery(undefined, {
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
-  });
+  const query = usePillarQuery<InboxPendingCountOutput>(
+    'food',
+    ['inbox', 'pendingCount'],
+    undefined,
+    {
+      refetchInterval: 60_000,
+      refetchIntervalInBackground: false,
+    }
+  );
   return query.data?.count ?? null;
 }
 

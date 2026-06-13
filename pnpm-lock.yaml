@@ -1323,6 +1323,9 @@ importers:
       '@pops/food-contracts':
         specifier: workspace:*
         version: link:../food-contracts
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../types

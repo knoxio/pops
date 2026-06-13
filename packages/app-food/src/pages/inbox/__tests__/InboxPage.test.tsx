@@ -66,8 +66,6 @@ vi.mock('@pops/api-client', () => ({
     }),
     food: {
       inbox: {
-        list: { useQuery: (i: unknown) => mockListQuery(i) },
-        pendingCount: { useQuery: () => mockPendingCount() },
         listRejected: { useQuery: (i: unknown) => mockListRejected(i) },
         listFailed: { useQuery: (i: unknown) => mockListFailed(i) },
         failedErrorCodes: { useQuery: () => mockFailedErrorCodes() },
@@ -81,6 +79,15 @@ vi.mock('@pops/api-client', () => ({
         },
       },
     },
+  },
+}));
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'inbox.list') return mockListQuery(input);
+    if (key === 'inbox.pendingCount') return mockPendingCount();
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

@@ -29,23 +29,19 @@ const graphViewState: {
   lastInput: undefined,
 };
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      substitutions: {
-        graphView: {
-          useQuery: (input: unknown, _opts?: unknown) => {
-            graphViewState.lastInput = input;
-            return {
-              data: graphViewState.data,
-              isLoading: graphViewState.isLoading,
-              isError: graphViewState.isError,
-              refetch: refetchFn,
-            };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'substitutions.graphView') {
+      graphViewState.lastInput = input;
+      return {
+        data: graphViewState.data,
+        isLoading: graphViewState.isLoading,
+        isError: graphViewState.isError,
+        refetch: refetchFn,
+      };
+    }
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

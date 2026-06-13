@@ -28,32 +28,35 @@ function ensure(): PrepStatesMockApi {
   return current;
 }
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: { prepStates: { list: { invalidate: () => Promise.resolve() } } },
-    }),
-    food: {
-      prepStates: {
-        list: {
-          useQuery: () => ({
-            data: { items: ensure().items },
-            isLoading: false,
-            isError: false,
-          }),
-        },
-        create: {
-          useMutation: (opts?: { onSuccess?: () => void }) => ({
-            mutate: (input: unknown) => {
-              ensure().createCalls.push(input as never);
-              opts?.onSuccess?.();
-            },
-            isPending: false,
-          }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'prepStates.list') {
+      return { data: { items: ensure().items }, isLoading: false, isError: false };
+    }
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: () => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'prepStates.create') {
+      return {
+        mutate: (input: unknown) => {
+          ensure().createCalls.push(input as never);
+          opts?.onSuccess?.();
+        },
+        mutateAsync: vi.fn(),
+        isPending: false,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: () => Promise.resolve(),
+  }),
 }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));

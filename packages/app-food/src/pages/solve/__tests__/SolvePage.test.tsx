@@ -55,18 +55,14 @@ let nextResult: SolveResult | undefined = undefined;
 let nextLoading = false;
 let nextError: Error | null = null;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      solver: {
-        canICook: {
-          useQuery: (input: unknown) => {
-            lastInput(input);
-            return { data: nextResult, isLoading: nextLoading, error: nextError };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'solver.canICook') {
+      lastInput(input);
+      return { data: nextResult, isLoading: nextLoading, error: nextError };
+    }
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

@@ -7,11 +7,21 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { TFunction } from 'i18next';
 
+import type { AppRouter } from '@pops/api-client';
+
 import type { CreateUnitInput, UpdateUnitInput } from './types';
+
+type CreateUnitMutationInput = inferRouterInputs<AppRouter>['food']['conversions']['createUnit'];
+type CreateUnitMutationOutput = inferRouterOutputs<AppRouter>['food']['conversions']['createUnit'];
+type UpdateUnitMutationInput = inferRouterInputs<AppRouter>['food']['conversions']['updateUnit'];
+type UpdateUnitMutationOutput = inferRouterOutputs<AppRouter>['food']['conversions']['updateUnit'];
+type DeleteUnitMutationInput = inferRouterInputs<AppRouter>['food']['conversions']['deleteUnit'];
+type DeleteUnitMutationOutput = inferRouterOutputs<AppRouter>['food']['conversions']['deleteUnit'];
 
 function mapMutationError(
   err: { data?: { code?: string } | null; message: string },
@@ -23,42 +33,66 @@ function mapMutationError(
   return t('data.conversions.units.error.generic');
 }
 
+type SetError = (msg: string | null) => void;
+
+function useCreateUnit(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
+  return usePillarMutation<CreateUnitMutationInput, CreateUnitMutationOutput>(
+    'food',
+    ['conversions', 'createUnit'],
+    {
+      onSuccess: () => {
+        setErrorMessage(null);
+        invalidate();
+      },
+      onError: (err) => setErrorMessage(mapMutationError(err, t)),
+    }
+  );
+}
+
+function useUpdateUnit(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
+  return usePillarMutation<UpdateUnitMutationInput, UpdateUnitMutationOutput>(
+    'food',
+    ['conversions', 'updateUnit'],
+    {
+      onSuccess: () => {
+        setErrorMessage(null);
+        invalidate();
+      },
+      onError: (err) => setErrorMessage(mapMutationError(err, t)),
+    }
+  );
+}
+
+function useDeleteUnit(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
+  return usePillarMutation<DeleteUnitMutationInput, DeleteUnitMutationOutput>(
+    'food',
+    ['conversions', 'deleteUnit'],
+    {
+      onSuccess: (result) => {
+        if (result.ok) {
+          setErrorMessage(null);
+          invalidate();
+          return;
+        }
+        setErrorMessage(t('data.conversions.units.error.seeded'));
+      },
+      onError: (err) => setErrorMessage(mapMutationError(err, t)),
+    }
+  );
+}
+
 export function useUnitMutations() {
   const { t } = useTranslation('food');
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const invalidate = useCallback(() => {
-    void utils.food.conversions.listUnits.invalidate();
+    void utils.invalidate(['conversions', 'listUnits']);
   }, [utils]);
 
-  const create = trpc.food.conversions.createUnit.useMutation({
-    onSuccess: () => {
-      setErrorMessage(null);
-      invalidate();
-    },
-    onError: (err) => setErrorMessage(mapMutationError(err, t)),
-  });
-
-  const update = trpc.food.conversions.updateUnit.useMutation({
-    onSuccess: () => {
-      setErrorMessage(null);
-      invalidate();
-    },
-    onError: (err) => setErrorMessage(mapMutationError(err, t)),
-  });
-
-  const remove = trpc.food.conversions.deleteUnit.useMutation({
-    onSuccess: (result) => {
-      if (result.ok) {
-        setErrorMessage(null);
-        invalidate();
-        return;
-      }
-      setErrorMessage(t('data.conversions.units.error.seeded'));
-    },
-    onError: (err) => setErrorMessage(mapMutationError(err, t)),
-  });
+  const create = useCreateUnit(invalidate, setErrorMessage, t);
+  const update = useUpdateUnit(invalidate, setErrorMessage, t);
+  const remove = useDeleteUnit(invalidate, setErrorMessage, t);
 
   const clearError = useCallback(() => setErrorMessage(null), []);
 

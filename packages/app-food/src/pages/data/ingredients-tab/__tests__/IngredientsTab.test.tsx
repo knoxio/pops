@@ -66,56 +66,56 @@ function resetStubs() {
   }
 }
 
-function buildUseMutation(key: string) {
-  return (opts: CallStub['options']) => {
-    stubs[key].options = opts;
-    return { mutate: stubs[key].mutate, isPending: stubs[key].isPending };
-  };
+function recordMutation(key: string, opts: CallStub['options']): CallStub {
+  stubs[key].options = opts;
+  return stubs[key];
 }
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      ingredients: {
-        list: { useQuery: (input: unknown) => mockListQuery(input) },
-        get: { useQuery: (input: unknown, opts: unknown) => mockGetQuery(input, opts) },
-        blockers: { useQuery: (input: unknown, opts: unknown) => mockBlockersQuery(input, opts) },
-        recipeRefs: {
-          useQuery: (input: unknown, opts: unknown) => mockRecipeRefsQuery(input, opts),
-        },
-        create: { useMutation: buildUseMutation('createIngredient') },
-        rename: { useMutation: buildUseMutation('renameIngredient') },
-        changeParent: { useMutation: buildUseMutation('changeParent') },
-        delete: { useMutation: buildUseMutation('deleteIngredient') },
-        // PRD-151 — detail-panel renders IngredientTagsEditor which calls into
-        // these. Stable references (NOT a fresh literal per call) avoid an
-        // infinite render loop in the editor's `useEffect`-on-remote-tags.
-        tags: {
-          list: { useQuery: () => TAGS_LIST_RESULT },
-          distinct: { useQuery: () => TAGS_DISTINCT_RESULT },
-          set: { useMutation: buildUseMutation('setTags') },
-        },
-      },
-      variants: {
-        create: { useMutation: buildUseMutation('createVariant') },
-        update: { useMutation: buildUseMutation('updateVariant') },
-        delete: { useMutation: buildUseMutation('deleteVariant') },
-      },
-    },
-    useUtils: () => ({
-      food: {
-        ingredients: {
-          list: { invalidate: mockInvalidateList },
-          get: { invalidate: mockInvalidateGet },
-          blockers: { invalidate: mockInvalidateBlockers },
-          tags: {
-            list: { invalidate: mockInvalidateTagsList },
-            distinct: { invalidate: mockInvalidateTagsDistinct },
-          },
-        },
-      },
-    }),
+const QUERY_HANDLERS: Record<string, (input: unknown, opts: unknown) => unknown> = {
+  'ingredients.list': (input) => mockListQuery(input),
+  'ingredients.get': (input, opts) => mockGetQuery(input, opts),
+  'ingredients.blockers': (input, opts) => mockBlockersQuery(input, opts),
+  'ingredients.recipeRefs': (input, opts) => mockRecipeRefsQuery(input, opts),
+  'ingredients.tags.list': () => TAGS_LIST_RESULT,
+  'ingredients.tags.distinct': () => TAGS_DISTINCT_RESULT,
+};
+
+const MUTATION_KEYS: Record<string, string> = {
+  'ingredients.create': 'createIngredient',
+  'ingredients.rename': 'renameIngredient',
+  'ingredients.changeParent': 'changeParent',
+  'ingredients.delete': 'deleteIngredient',
+  'ingredients.tags.set': 'setTags',
+  'variants.create': 'createVariant',
+  'variants.update': 'updateVariant',
+  'variants.delete': 'deleteVariant',
+};
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
+    const key = path.join('.');
+    const handler = QUERY_HANDLERS[key];
+    if (handler) return handler(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[], opts: CallStub['options']) => {
+    const key = path.join('.');
+    const stubKey = MUTATION_KEYS[key];
+    if (!stubKey) throw new Error(`Unexpected pillar mutation: ${key}`);
+    const stub = recordMutation(stubKey, opts);
+    return { mutate: stub.mutate, mutateAsync: vi.fn(), isPending: stub.isPending };
+  },
+  usePillarUtils: () => ({
+    invalidate: (path: readonly string[]) => {
+      const key = path.join('.');
+      if (key === 'ingredients.list') return mockInvalidateList();
+      if (key === 'ingredients.get') return mockInvalidateGet();
+      if (key === 'ingredients.blockers') return mockInvalidateBlockers();
+      if (key === 'ingredients.tags.list') return mockInvalidateTagsList();
+      if (key === 'ingredients.tags.distinct') return mockInvalidateTagsDistinct();
+      return undefined;
+    },
+  }),
 }));
 
 interface ListItem {

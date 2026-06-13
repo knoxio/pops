@@ -7,9 +7,13 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { sortAliases } from './format.js';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 import type {
   AliasesFilter,
@@ -19,6 +23,9 @@ import type {
   SortDirection,
   SortState,
 } from './types.js';
+
+type AliasesListWithTargetsOutput =
+  inferRouterOutputs<AppRouter>['food']['aliases']['listWithTargets'];
 
 const DEFAULT_SORT: SortState = { key: 'alias', direction: 'asc' };
 
@@ -74,7 +81,11 @@ export function useAliasesData(): UseAliasesData {
     return input;
   }, [filter]);
 
-  const query = trpc.food.aliases.listWithTargets.useQuery(queryInput);
+  const query = usePillarQuery<AliasesListWithTargetsOutput>(
+    'food',
+    ['aliases', 'listWithTargets'],
+    queryInput
+  );
 
   const rows = useMemo(() => {
     if (query.data === undefined) return [];

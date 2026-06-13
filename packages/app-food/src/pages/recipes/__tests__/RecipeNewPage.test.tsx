@@ -19,22 +19,19 @@ let mockOnSuccess:
   | undefined;
 let mockOnError: ((err: Error) => void) | undefined;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      recipes: {
-        create: {
-          useMutation: (opts: {
-            onSuccess?: typeof mockOnSuccess;
-            onError?: typeof mockOnError;
-          }) => {
-            mockOnSuccess = opts.onSuccess;
-            mockOnError = opts.onError;
-            return { mutate: mockCreateMutate, isPending: false };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: { onSuccess?: typeof mockOnSuccess; onError?: typeof mockOnError }
+  ) => {
+    const key = path.join('.');
+    if (key === 'recipes.create') {
+      mockOnSuccess = opts.onSuccess;
+      mockOnError = opts.onError;
+      return { mutate: mockCreateMutate, isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
   },
 }));
 

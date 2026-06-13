@@ -26,13 +26,11 @@ import type { InboxDraftRow } from '@pops/app-food-db';
 
 const mockListQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      inbox: {
-        list: { useQuery: (input: unknown) => mockListQuery(input) },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'inbox.list') return mockListQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 
