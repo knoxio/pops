@@ -2,9 +2,10 @@ import { createHash } from 'node:crypto';
 
 import { eq, sql } from 'drizzle-orm';
 
-import { embeddings } from '@pops/db-types';
+import { embeddings } from '@pops/cerebrum-db';
 
-import { getDrizzle, getDb, isVecAvailable } from '../../../db.js';
+import { getDb, isVecAvailable } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { embedContent } from '../../../jobs/embed-content.js';
 import { logger } from '../../../lib/logger.js';
 import { getEmbeddingConfig, getEmbedding } from '../../../shared/embedding-client.js';
@@ -115,7 +116,7 @@ export async function semanticSearch(
 
 /** Return embedding coverage stats for a source type (or all types). */
 export function getEmbeddingStatus(sourceType?: string): EmbeddingStatus {
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
   const baseQuery = db.select({ count: sql<number>`count(*)` }).from(embeddings);
   const rows = sourceType
     ? baseQuery.where(eq(embeddings.sourceType, sourceType)).all()
@@ -134,7 +135,7 @@ export function getEmbeddingStatus(sourceType?: string): EmbeddingStatus {
  * Returns the number of jobs enqueued.
  */
 export async function reindexEmbeddings(sourceType: string, sourceIds?: string[]): Promise<number> {
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
 
   let ids: string[];
   if (sourceIds && sourceIds.length > 0) {
