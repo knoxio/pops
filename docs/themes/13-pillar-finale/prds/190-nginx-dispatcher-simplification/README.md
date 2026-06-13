@@ -1,6 +1,8 @@
 # PRD-190: nginx dispatcher simplification
 
 > Epic: [Batching fix](../../epics/04-batching-fix.md)
+>
+> Status: **Partial** — config rewritten and locally validated; capivara redeploy verification deferred.
 
 ## Overview
 
