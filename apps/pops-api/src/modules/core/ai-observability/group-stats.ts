@@ -2,7 +2,7 @@ import { sql, type SQL } from 'drizzle-orm';
 
 import { aiInferenceLog } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 
 import type { ObservabilityFilters } from './types.js';
 
@@ -31,7 +31,7 @@ function makeAggregates(keyExpr: SQL<string>): {
 }
 
 function groupBySqlExpression(where: SQL | undefined, keyExpr: SQL<string>): GroupRow[] {
-  return getDrizzle()
+  return getCoreDrizzle()
     .select(makeAggregates(keyExpr))
     .from(aiInferenceLog)
     .where(where)

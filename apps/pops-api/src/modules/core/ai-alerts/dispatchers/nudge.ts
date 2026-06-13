@@ -12,7 +12,7 @@
  */
 import { nudgeLog } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
 import { logger } from '../../../../lib/logger.js';
 
 import type { FiredAlert } from '../types.js';
@@ -40,7 +40,7 @@ export interface DispatchNudgeOptions {
  */
 export function dispatchNudge(alert: FiredAlert, options: DispatchNudgeOptions = {}): boolean {
   const now = options.now ?? (() => new Date());
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
   const id = buildNudgeId(now(), alert.id);
   const title = `AI alert: ${alert.type}`;
   const body = alert.scopeDetail ? `${alert.message} (${alert.scopeDetail})` : alert.message;

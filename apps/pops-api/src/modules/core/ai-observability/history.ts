@@ -10,7 +10,7 @@ import { and, gte, lte, sql } from 'drizzle-orm';
 
 import { aiInferenceDaily, aiInferenceLog } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 
 import type { HistoryOutput, ObservabilityFilters } from './types.js';
 
@@ -71,7 +71,7 @@ function buildDailyWhere(filters: ObservabilityFilters): ReturnType<typeof and> 
  * day) values are summed.
  */
 export function getHistory(filters: ObservabilityFilters = {}): HistoryOutput {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const where = buildLogWhere(filters);
 
   const rawRecords = db

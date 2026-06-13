@@ -2,7 +2,7 @@ import { and, desc, gte, lte, sql } from 'drizzle-orm';
 
 import { aiInferenceLog } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { buildGroupings } from './group-stats.js';
 
 import type { LatencyStats, ObservabilityFilters, QualityMetrics, StatsOutput } from './types.js';
@@ -57,7 +57,7 @@ const EMPTY_OVERALL: OverallStats = {
 };
 
 function fetchOverallStats(where: ReturnType<typeof buildWhere>): OverallStats {
-  const [row] = getDrizzle()
+  const [row] = getCoreDrizzle()
     .select({
       totalCalls: sql<number>`COUNT(*)`,
       totalInputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
@@ -101,7 +101,7 @@ function percentile(sorted: number[], p: number): number {
 }
 
 export function getLatencyStats(filters: ObservabilityFilters = {}): LatencyStats {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const where = buildWhere(filters);
 
   const latencies = db
@@ -156,7 +156,7 @@ export function getLatencyStats(filters: ObservabilityFilters = {}): LatencyStat
 }
 
 export function getQualityMetrics(filters: ObservabilityFilters = {}): QualityMetrics {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const where = buildWhere(filters);
 
   const rows = db
