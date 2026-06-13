@@ -54,8 +54,10 @@ export interface FederatedSearchQuery {
 }
 
 /**
- * One pillar's contribution to the fan-out. Both ids are camelCase
- * identifiers (PRD-196's manifest schema constraint on `adapters`).
+ * One pillar's contribution to the fan-out. `pillarId` is a kebab-case
+ * identifier (per the manifest schema's pillar id constraint);
+ * `adapterName` is camelCase (PRD-196's manifest schema constraint on
+ * `search.adapters`).
  */
 export interface PillarAdapterTarget {
   readonly pillarId: string;
@@ -86,8 +88,15 @@ export type SearchAdapterInvoker = (
 
 /**
  * Discriminated failure record reported per pillar+adapter pair when
- * fan-out does not yield results. The orchestrator emits one record per
- * failed target so PRD-199 partial-failure surfacing has full context.
+ * fan-out fails — meaning the adapter promise rejected (including via
+ * abort) or hit the per-adapter timeout. An adapter that resolves with
+ * an empty `ScoredResult[]` is *not* a failure: empty is a valid
+ * "nothing matched" answer and produces no record here. Contract
+ * violations (non-array return values) are currently warned and
+ * dropped without producing a failure record either; that should be
+ * tightened as part of PRD-199 plumbing. The orchestrator emits one
+ * record per failed target so PRD-199 partial-failure surfacing has
+ * full context.
  */
 export type FederatedSearchFailure =
   | { readonly pillarId: string; readonly adapterName: string; readonly reason: 'timeout' }
