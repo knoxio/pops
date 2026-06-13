@@ -2,12 +2,13 @@ FROM node:22-slim AS builder
 WORKDIR /app
 
 # Copy workspace root files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./
 
 # Copy workspace package.json files (for dep resolution)
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
 COPY packages/core-db/package.json ./packages/core-db/
+COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY apps/pops-core-api/package.json ./apps/pops-core-api/
 
@@ -23,6 +24,7 @@ COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/tsconfig.json ./packages/core-db/
 COPY packages/core-db/migrations ./packages/core-db/migrations
+COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/
 
@@ -36,6 +38,8 @@ RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/core-db
+RUN pnpm build
+WORKDIR /app/packages/finance-contract
 RUN pnpm build
 WORKDIR /app/packages/pillar-sdk
 RUN pnpm build

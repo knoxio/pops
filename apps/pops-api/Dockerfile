@@ -2,7 +2,7 @@ FROM node:22-slim AS builder
 WORKDIR /app
 
 # Copy workspace root files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./
 
 # Copy all workspace packages
 COPY packages/db-types/package.json ./packages/db-types/
@@ -13,6 +13,8 @@ COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-db/package.json ./packages/finance-db/
+COPY packages/finance-contract/package.json ./packages/finance-contract/
+COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
@@ -59,6 +61,8 @@ COPY packages/food-db/migrations ./packages/food-db/migrations
 COPY packages/lists-db/src ./packages/lists-db/src
 COPY packages/lists-db/tsconfig.json ./packages/lists-db/
 COPY packages/lists-db/migrations ./packages/lists-db/migrations
+COPY packages/finance-contract/ ./packages/finance-contract/
+COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
@@ -88,6 +92,10 @@ RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/app-food-db
+RUN pnpm build
+WORKDIR /app/packages/finance-contract
+RUN pnpm build
+WORKDIR /app/packages/pillar-sdk
 RUN pnpm build
 
 # Build pops-api
