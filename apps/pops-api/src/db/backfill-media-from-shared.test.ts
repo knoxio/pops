@@ -22,6 +22,7 @@ import { openMediaDb } from '@pops/media-db';
 
 import { backfillMediaFromShared, closeMediaDb, setMediaDb } from '../db/media-db-handle.js';
 import {
+  DISMISSED_DISCOVER_TABLE_SQL,
   SHELF_IMPRESSIONS_TABLE_SQL,
   TV_SHOWS_TABLE_SQL,
   WATCH_HISTORY_TABLE_SQL,
@@ -530,6 +531,100 @@ describe('backfillMediaFromShared', () => {
 
       expect(() => backfillMediaFromShared()).not.toThrow();
       const count = media.raw.prepare('SELECT count(*) AS n FROM watchlist').get() as {
+        n: number;
+      };
+      expect(count.n).toBe(0);
+    });
+  });
+
+  describe('dismissed_discover (PRD-170 PR 3)', () => {
+    interface DismissedSeed {
+      tmdbId: number;
+      dismissedAt?: string;
+    }
+
+    function openSharedWithDismissed(rows: DismissedSeed[]): string {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.exec(DISMISSED_DISCOVER_TABLE_SQL);
+      const insert = raw.prepare(
+        'INSERT INTO dismissed_discover (tmdb_id, dismissed_at) VALUES (?, ?)'
+      );
+      for (const row of rows) {
+        insert.run(row.tmdbId, row.dismissedAt ?? '2026-06-10 12:00:00');
+      }
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+      return path;
+    }
+
+    it('copies fresh dismissed rows on first run and is a no-op on the second', () => {
+      openSharedWithDismissed([
+        { tmdbId: 550, dismissedAt: '2026-06-10 12:00:00' },
+        { tmdbId: 603, dismissedAt: '2026-06-10 12:00:01' },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      backfillMediaFromShared();
+      const after = media.raw
+        .prepare('SELECT tmdb_id, dismissed_at FROM dismissed_discover ORDER BY tmdb_id')
+        .all() as { tmdb_id: number; dismissed_at: string }[];
+      expect(after.map((r) => r.tmdb_id)).toEqual([550, 603]);
+
+      backfillMediaFromShared();
+      const second = media.raw.prepare('SELECT count(*) AS n FROM dismissed_discover').get() as {
+        n: number;
+      };
+      expect(second.n).toBe(2);
+    });
+
+    it('only inserts dismissed rows missing from the media copy', () => {
+      openSharedWithDismissed([
+        { tmdbId: 550, dismissedAt: '2026-06-10 12:00:00' },
+        { tmdbId: 603, dismissedAt: '2026-06-10 12:00:01' },
+      ]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      media.raw
+        .prepare('INSERT INTO dismissed_discover (tmdb_id, dismissed_at) VALUES (?, ?)')
+        .run(550, '2026-06-09 09:00:00');
+
+      backfillMediaFromShared();
+      const rows = media.raw
+        .prepare('SELECT tmdb_id, dismissed_at FROM dismissed_discover ORDER BY tmdb_id')
+        .all() as { tmdb_id: number; dismissed_at: string }[];
+      expect(rows).toEqual([
+        { tmdb_id: 550, dismissed_at: '2026-06-09 09:00:00' },
+        { tmdb_id: 603, dismissed_at: '2026-06-10 12:00:01' },
+      ]);
+    });
+
+    it('carries the dismissed_at timestamp across (full-shape roundtrip)', () => {
+      openSharedWithDismissed([{ tmdbId: 42, dismissedAt: '2026-06-10 23:59:59' }]);
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+      backfillMediaFromShared();
+
+      const row = media.raw
+        .prepare('SELECT * FROM dismissed_discover WHERE tmdb_id = ?')
+        .get(42) as Record<string, unknown>;
+      expect(row).toMatchObject({ tmdb_id: 42, dismissed_at: '2026-06-10 23:59:59' });
+    });
+
+    it('tolerates a shared DB without the dismissed_discover table', () => {
+      const path = join(tmpDir, 'pops.db');
+      const raw = new BetterSqlite3(path);
+      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
+      raw.close();
+      process.env['SQLITE_PATH'] = path;
+
+      const media = openMediaDb(join(tmpDir, 'media.db'));
+      setMediaDb(media);
+
+      expect(() => backfillMediaFromShared()).not.toThrow();
+      const count = media.raw.prepare('SELECT count(*) AS n FROM dismissed_discover').get() as {
         n: number;
       };
       expect(count.n).toBe(0);
