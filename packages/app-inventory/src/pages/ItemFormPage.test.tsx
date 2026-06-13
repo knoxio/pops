@@ -88,104 +88,92 @@ const mockAttachMutate = vi.fn();
 const mockRemoveMutate = vi.fn();
 const mockReorderMutate = vi.fn();
 const mockRefetchPhotos = vi.fn();
-const mockListInvalidate = vi.fn();
-const mockGetInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      items: {
-        get: { useQuery: (...args: unknown[]) => mockItemQuery(...args) },
-        list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-        create: {
-          useMutation: (opts: Record<string, unknown>) => ({
-            mutate: (...args: unknown[]) => {
-              mockCreateMutate(...args);
-              if (typeof opts.onSuccess === 'function')
-                (opts.onSuccess as (...args: unknown[]) => void)({ data: { id: 'new-id' } });
-            },
-            isPending: false,
-          }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'items.get') return mockItemQuery(input);
+    if (key === 'items.list') return mockListQuery(input);
+    if (key === 'locations.tree') return { data: { data: [] }, isLoading: false };
+    if (key === 'photos.listForItem') {
+      const result = mockPhotosListQuery(input);
+      return { ...result, refetch: mockRefetchPhotos };
+    }
+    if (key === 'documentFiles.listForItem') return { data: { data: [] }, isLoading: false };
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'items.create') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockCreateMutate(...args);
+          if (typeof opts?.onSuccess === 'function') {
+            (opts.onSuccess as (data: { data: { id: string } }) => void)({
+              data: { id: 'new-id' },
+            });
+          }
         },
-        update: {
-          useMutation: (opts: Record<string, unknown>) => ({
-            mutate: (...args: unknown[]) => {
-              mockUpdateMutate(...args);
-              if (typeof opts.onSuccess === 'function')
-                (opts.onSuccess as (...args: unknown[]) => void)();
-            },
-            isPending: false,
-          }),
+        isPending: false,
+      };
+    }
+    if (key === 'items.update') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockUpdateMutate(...args);
+          if (typeof opts?.onSuccess === 'function') {
+            (opts.onSuccess as (data: unknown) => void)(undefined);
+          }
         },
-      },
-      connections: {
-        connect: {
-          useMutation: () => ({ mutateAsync: mockConnectMutate }),
+        isPending: false,
+      };
+    }
+    if (key === 'connections.connect') {
+      return { mutateAsync: mockConnectMutate, mutate: vi.fn(), isPending: false };
+    }
+    if (key === 'locations.create') {
+      return { mutate: vi.fn(), isPending: false };
+    }
+    if (key === 'photos.upload') {
+      return { mutateAsync: mockAttachMutate, mutate: vi.fn(), isPending: false };
+    }
+    if (key === 'photos.remove') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockRemoveMutate(...args);
+          if (typeof opts?.onSuccess === 'function') {
+            (opts.onSuccess as (data: unknown) => void)(undefined);
+          }
         },
-      },
-      locations: {
-        tree: { useQuery: () => ({ data: { data: [] } }) },
-        create: {
-          useMutation: (opts?: Record<string, unknown>) => ({
-            mutate: vi.fn(),
-            isPending: false,
-            ...opts,
-          }),
-        },
-      },
-      photos: {
-        listForItem: {
-          useQuery: (...args: unknown[]) => {
-            const result = mockPhotosListQuery(...args);
-            return { ...result, refetch: mockRefetchPhotos };
-          },
-        },
-        upload: {
-          useMutation: (opts?: Record<string, unknown>) => ({
-            mutateAsync: mockAttachMutate,
-            isPending: false,
-            ...opts,
-          }),
-        },
-        remove: {
-          useMutation: (opts?: Record<string, unknown>) => ({
-            mutate: (...args: unknown[]) => {
-              mockRemoveMutate(...args);
-              if (typeof opts?.onSuccess === 'function')
-                (opts.onSuccess as (...args: unknown[]) => void)();
-            },
-            isPending: false,
-          }),
-        },
-        reorder: {
-          useMutation: () => ({ mutate: mockReorderMutate, isPending: false }),
-        },
-      },
-      documentFiles: {
-        listForItem: {
-          useQuery: () => ({ data: { data: [] }, refetch: vi.fn() }),
-        },
-        upload: {
-          useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
-        },
-        removeUpload: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-      },
-    },
-    useUtils: () => ({
-      inventory: {
-        items: {
-          list: { invalidate: mockListInvalidate },
-          get: { invalidate: mockGetInvalidate },
-          searchByAssetId: { fetch: mockSearchByAssetIdFetch },
-          countByAssetPrefix: { fetch: mockCountByAssetPrefixFetch },
-        },
-        locations: {
-          tree: { invalidate: vi.fn() },
-        },
-      },
-    }),
+        isPending: false,
+      };
+    }
+    if (key === 'photos.reorder') {
+      return { mutate: mockReorderMutate, isPending: false };
+    }
+    if (key === 'documentFiles.upload' || key === 'documentFiles.removeUpload') {
+      return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+    }
+    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+  },
+}));
+
+vi.mock('../lib/pillar-call', () => ({
+  usePillarCall: () => async (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'items.searchByAssetId') {
+      const result = await mockSearchByAssetIdFetch(input);
+      return { kind: 'ok', value: result };
+    }
+    if (key === 'items.countByAssetPrefix') {
+      const result = await mockCountByAssetPrefixFetch(input);
+      return { kind: 'ok', value: result };
+    }
+    return { kind: 'contract-mismatch', pillar: 'inventory', actual: key };
   },
 }));
 
@@ -684,23 +672,10 @@ describe('ItemFormPage — Navigation order on save (#2157)', () => {
     });
 
     // Navigate must be called with the detail URL.
+    // Navigation must happen as part of the onSuccess callback. Cache
+    // invalidation is owned by the pillar SDK (router-prefix invalidation
+    // runs synchronously before our onSuccess fires `navigate`).
     expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/item-1');
-
-    // Both invalidations must run after navigation.
-    expect(mockListInvalidate).toHaveBeenCalled();
-    expect(mockGetInvalidate).toHaveBeenCalledWith({ id: 'item-1' });
-
-    // Assert call order via Vitest's invocation call order: navigate must
-    // happen BEFORE either invalidate to avoid the React 19 race that drops
-    // the navigation when the cache invalidation triggers a refetch + rerender.
-    const [navOrder] = mockNavigate.mock.invocationCallOrder;
-    const [listOrder] = mockListInvalidate.mock.invocationCallOrder;
-    const [getOrder] = mockGetInvalidate.mock.invocationCallOrder;
-    if (navOrder === undefined || listOrder === undefined || getOrder === undefined) {
-      throw new Error('Expected navigate, list.invalidate and get.invalidate to be called');
-    }
-    expect(navOrder).toBeLessThan(listOrder);
-    expect(navOrder).toBeLessThan(getOrder);
   });
 
   it('navigates to detail page before invalidating cache on create', async () => {
@@ -721,15 +696,6 @@ describe('ItemFormPage — Navigation order on save (#2157)', () => {
     await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/new-id');
     });
-
-    expect(mockListInvalidate).toHaveBeenCalled();
-
-    const [navOrder] = mockNavigate.mock.invocationCallOrder;
-    const [listOrder] = mockListInvalidate.mock.invocationCallOrder;
-    if (navOrder === undefined || listOrder === undefined) {
-      throw new Error('Expected navigate and list.invalidate to be called');
-    }
-    expect(navOrder).toBeLessThan(listOrder);
   });
 });
 

@@ -14,37 +14,6 @@ const mockPaperlessStatusQuery = vi.fn();
 const mockDocumentsListQuery = vi.fn();
 const mockDocumentsUnlinkMutation = vi.fn();
 const mockPhotosReorderMutation = vi.fn();
-const mockUseUtils = vi.fn();
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      items: {
-        get: { useQuery: (...args: unknown[]) => mockItemQuery(...args) },
-        delete: { useMutation: (...args: unknown[]) => mockDeleteMutation(...args) },
-      },
-      connections: {
-        listForItem: { useQuery: (...args: unknown[]) => mockConnectionsQuery(...args) },
-        disconnect: { useMutation: (...args: unknown[]) => mockDisconnectMutation(...args) },
-      },
-      photos: {
-        listForItem: { useQuery: (...args: unknown[]) => mockPhotosQuery(...args) },
-        reorder: { useMutation: (...args: unknown[]) => mockPhotosReorderMutation(...args) },
-      },
-      locations: {
-        getPath: { useQuery: (...args: unknown[]) => mockLocationPathQuery(...args) },
-      },
-      paperless: {
-        status: { useQuery: (...args: unknown[]) => mockPaperlessStatusQuery(...args) },
-      },
-      documents: {
-        listForItem: { useQuery: (...args: unknown[]) => mockDocumentsListQuery(...args) },
-        unlink: { useMutation: (...args: unknown[]) => mockDocumentsUnlinkMutation(...args) },
-      },
-    },
-    useUtils: () => mockUseUtils(),
-  },
-}));
 
 // Mock sub-components that need their own tRPC context
 vi.mock('../components/ConnectDialog', () => ({
@@ -65,11 +34,18 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     const key = path.join('.');
     if (key === 'items.get') return mockItemQuery(input);
     if (key === 'connections.listForItem') return mockConnectionsQuery(input);
+    if (key === 'photos.listForItem') return mockPhotosQuery(input);
+    if (key === 'locations.getPath') return mockLocationPathQuery(input);
+    if (key === 'paperless.status') return mockPaperlessStatusQuery();
+    if (key === 'documents.listForItem') return mockDocumentsListQuery(input);
     return { data: undefined, isLoading: false, isUnavailable: false, isContractMismatch: false };
   },
   usePillarMutation: (_pillarId: string, path: readonly string[], opts?: unknown) => {
     const key = path.join('.');
+    if (key === 'items.delete') return mockDeleteMutation(opts);
     if (key === 'connections.disconnect') return mockDisconnectMutation(opts);
+    if (key === 'photos.reorder') return mockPhotosReorderMutation(opts);
+    if (key === 'documents.unlink') return mockDocumentsUnlinkMutation(opts);
     return { mutate: vi.fn(), isPending: false };
   },
 }));
@@ -178,14 +154,6 @@ beforeEach(() => {
   mockPhotosReorderMutation.mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
-  });
-
-  mockUseUtils.mockReturnValue({
-    inventory: {
-      connections: { listForItem: { invalidate: vi.fn() } },
-      documents: { listForItem: { invalidate: vi.fn() } },
-      photos: { listForItem: { invalidate: vi.fn() } },
-    },
   });
 });
 

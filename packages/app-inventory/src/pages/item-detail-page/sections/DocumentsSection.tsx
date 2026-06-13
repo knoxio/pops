@@ -1,11 +1,27 @@
 import { FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { LinkDocumentDialog } from '../../../components/LinkDocumentDialog';
-import { DocumentsBody } from './DocumentsSection.parts';
+import { DocumentsBody, type LinkedDoc } from './DocumentsSection.parts';
+
+interface DocumentsListResult {
+  data: LinkedDoc[];
+}
+
+interface PaperlessStatusResult {
+  data: {
+    configured: boolean;
+    available: boolean;
+    baseUrl: string | null;
+  } | null;
+}
+
+interface UnlinkInput {
+  id: number;
+}
 
 function DocumentsList({
   itemId,
@@ -14,16 +30,22 @@ function DocumentsList({
   itemId: string;
   paperlessBaseUrl: string | null;
 }) {
-  const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.inventory.documents.listForItem.useQuery({ itemId });
+  const { data, isLoading } = usePillarQuery<DocumentsListResult>(
+    'inventory',
+    ['documents', 'listForItem'],
+    { itemId }
+  );
 
-  const unlinkMutation = trpc.inventory.documents.unlink.useMutation({
-    onSuccess: () => {
-      toast.success('Document unlinked');
-      void utils.inventory.documents.listForItem.invalidate({ itemId });
-    },
-    onError: (err: { message: string }) => toast.error(`Failed to unlink: ${err.message}`),
-  });
+  const unlinkMutation = usePillarMutation<UnlinkInput, unknown>(
+    'inventory',
+    ['documents', 'unlink'],
+    {
+      onSuccess: () => {
+        toast.success('Document unlinked');
+      },
+      onError: (err) => toast.error(`Failed to unlink: ${err.message}`),
+    }
+  );
 
   const docs = data?.data ?? [];
 
@@ -39,7 +61,9 @@ function DocumentsList({
         </h2>
         <LinkDocumentDialog
           itemId={itemId}
-          onLinked={() => void utils.inventory.documents.listForItem.invalidate({ itemId })}
+          onLinked={() => {
+            /* Pillar SDK auto-invalidates the `inventory.documents` router prefix on success. */
+          }}
         />
       </div>
       <DocumentsBody
@@ -70,7 +94,11 @@ interface DocumentsSectionProps {
 }
 
 export function DocumentsSection({ itemId }: DocumentsSectionProps) {
-  const { data: statusData, isLoading: statusLoading } = trpc.inventory.paperless.status.useQuery();
+  const { data: statusData, isLoading: statusLoading } = usePillarQuery<PaperlessStatusResult>(
+    'inventory',
+    ['paperless', 'status'],
+    undefined
+  );
   const status = statusData?.data;
 
   if (!statusLoading && !status?.configured) return null;

@@ -2,9 +2,16 @@ import { toast } from 'sonner';
 
 import { blobToBase64 } from './upload-helpers';
 
-import type { trpc } from '@pops/api-client';
-
 import type { PendingDocumentFile } from '../../components/DocumentUpload';
+
+export interface DocumentUploadMutation {
+  mutateAsync: (input: {
+    itemId: string;
+    fileName: string;
+    mimeType: string;
+    fileBase64: string;
+  }) => Promise<unknown>;
+}
 
 /** Patch a single tracked file by `localId`. */
 export function patchDocumentFile(
@@ -19,11 +26,11 @@ interface UploadOneDocumentArgs {
   pendingEntry: PendingDocumentFile;
   isEditMode: boolean;
   id: string | undefined;
-  uploadMutation: ReturnType<typeof trpc.inventory.documentFiles.upload.useMutation>;
+  uploadMutation: DocumentUploadMutation;
   setUploadFiles: React.Dispatch<React.SetStateAction<PendingDocumentFile[]>>;
 }
 
-/** Upload one document via the tRPC mutation, updating local progress as it goes. */
+/** Upload one document via the pillar mutation, updating local progress as it goes. */
 export async function uploadOneDocument(args: UploadOneDocumentArgs): Promise<void> {
   const { pendingEntry, isEditMode, id, uploadMutation, setUploadFiles } = args;
   const { localId, file } = pendingEntry;
@@ -65,7 +72,7 @@ interface ProcessAndUploadDocumentsArgs {
   setUploadFiles: React.Dispatch<React.SetStateAction<PendingDocumentFile[]>>;
   isEditMode: boolean;
   id: string | undefined;
-  uploadMutation: ReturnType<typeof trpc.inventory.documentFiles.upload.useMutation>;
+  uploadMutation: DocumentUploadMutation;
 }
 
 /** Sequentially upload each pending document. */

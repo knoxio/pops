@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import type { LocationTreeNode } from './utils';
 
@@ -24,55 +24,82 @@ export interface LocationMutationsArgs {
   nodeMap: Map<string, LocationTreeNode>;
 }
 
+interface CreateLocationInput {
+  name: string;
+  parentId: string | null;
+}
+
+interface UpdateLocationInput {
+  id: string;
+  data: { name?: string; parentId?: string | null };
+}
+
+interface DeleteLocationInput {
+  id: string;
+  force?: boolean;
+}
+
+interface DeleteLocationResult {
+  requiresConfirmation?: boolean;
+  stats?: DeleteConfirmState['stats'];
+}
+
 function useDeleteFlow(
   args: LocationMutationsArgs,
   pendingDeleteRef: React.MutableRefObject<{ id: string; name: string } | null>,
   setDeleteConfirm: (v: DeleteConfirmState | null) => void
 ) {
-  const utils = trpc.useUtils();
-  return trpc.inventory.locations.delete.useMutation({
-    onSuccess: (result) => {
-      if ('requiresConfirmation' in result && result.requiresConfirmation && result.stats) {
-        const node = pendingDeleteRef.current;
-        if (node) setDeleteConfirm({ id: node.id, name: node.name, stats: result.stats });
-        return;
-      }
-      toast.success('Location deleted');
-      void utils.inventory.locations.tree.invalidate();
-      if (args.selectedId === pendingDeleteRef.current?.id) args.setSelectedId(null);
-      setDeleteConfirm(null);
-      pendingDeleteRef.current = null;
-    },
-    onError: (err) => {
-      toast.error(`Failed to delete: ${err.message}`);
-      setDeleteConfirm(null);
-      pendingDeleteRef.current = null;
-    },
-  });
+  return usePillarMutation<DeleteLocationInput, DeleteLocationResult>(
+    'inventory',
+    ['locations', 'delete'],
+    {
+      onSuccess: (result) => {
+        if (result.requiresConfirmation && result.stats) {
+          const node = pendingDeleteRef.current;
+          if (node) setDeleteConfirm({ id: node.id, name: node.name, stats: result.stats });
+          return;
+        }
+        toast.success('Location deleted');
+        if (args.selectedId === pendingDeleteRef.current?.id) args.setSelectedId(null);
+        setDeleteConfirm(null);
+        pendingDeleteRef.current = null;
+      },
+      onError: (err) => {
+        toast.error(`Failed to delete: ${err.message}`);
+        setDeleteConfirm(null);
+        pendingDeleteRef.current = null;
+      },
+    }
+  );
 }
 
 export function useLocationMutations(args: LocationMutationsArgs) {
-  const utils = trpc.useUtils();
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState | null>(null);
   const pendingDeleteRef = useRef<{ id: string; name: string } | null>(null);
 
-  const createMutation = trpc.inventory.locations.create.useMutation({
-    onSuccess: () => {
-      toast.success('Location created');
-      void utils.inventory.locations.tree.invalidate();
-      args.setAddingChildOf(null);
-      args.setAddingRoot(false);
-    },
-    onError: (err) => toast.error(`Failed to create location: ${err.message}`),
-  });
+  const createMutation = usePillarMutation<CreateLocationInput, unknown>(
+    'inventory',
+    ['locations', 'create'],
+    {
+      onSuccess: () => {
+        toast.success('Location created');
+        args.setAddingChildOf(null);
+        args.setAddingRoot(false);
+      },
+      onError: (err) => toast.error(`Failed to create location: ${err.message}`),
+    }
+  );
 
-  const updateMutation = trpc.inventory.locations.update.useMutation({
-    onSuccess: () => {
-      toast.success('Location updated');
-      void utils.inventory.locations.tree.invalidate();
-    },
-    onError: (err) => toast.error(`Failed to update location: ${err.message}`),
-  });
+  const updateMutation = usePillarMutation<UpdateLocationInput, unknown>(
+    'inventory',
+    ['locations', 'update'],
+    {
+      onSuccess: () => {
+        toast.success('Location updated');
+      },
+      onError: (err) => toast.error(`Failed to update location: ${err.message}`),
+    }
+  );
 
   const deleteMutation = useDeleteFlow(args, pendingDeleteRef, setDeleteConfirm);
 

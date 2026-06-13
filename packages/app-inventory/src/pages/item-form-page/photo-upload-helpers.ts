@@ -2,12 +2,18 @@ import { toast } from 'sonner';
 
 import { blobToBase64 } from './upload-helpers';
 
-import type { trpc } from '@pops/api-client';
-
 import type { UploadedFile } from '../../components/PhotoUpload';
 import type { ProcessedFile } from '../../hooks/useImageProcessor';
 
 export { blobToBase64 };
+
+export interface PhotoUploadMutation {
+  mutateAsync: (input: {
+    itemId: string;
+    fileBase64: string;
+    sortOrder: number;
+  }) => Promise<unknown>;
+}
 
 export function patchFile(
   prev: UploadedFile[],
@@ -44,7 +50,7 @@ interface UploadOnePhotoArgs {
   id: string | undefined;
   existingPhotosLength: number;
   index: number;
-  uploadMutation: ReturnType<typeof trpc.inventory.photos.upload.useMutation>;
+  uploadMutation: PhotoUploadMutation;
   setUploadFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
 }
 
@@ -89,7 +95,7 @@ interface ProcessAndUploadArgs {
   isEditMode: boolean;
   id: string | undefined;
   existingPhotosLength: number;
-  uploadMutation: ReturnType<typeof trpc.inventory.photos.upload.useMutation>;
+  uploadMutation: PhotoUploadMutation;
 }
 
 export async function processAndUpload(args: ProcessAndUploadArgs): Promise<void> {

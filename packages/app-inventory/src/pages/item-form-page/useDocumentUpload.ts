@@ -1,32 +1,52 @@
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
-import { processAndUploadDocuments } from './document-upload-helpers';
+import { processAndUploadDocuments, type DocumentUploadMutation } from './document-upload-helpers';
 
 import type { DocumentItem } from '../../components/DocumentList';
 import type { PendingDocumentFile } from '../../components/DocumentUpload';
+
+interface DocumentsListResult {
+  data: DocumentItem[];
+}
+
+interface DocumentUploadInput {
+  itemId: string;
+  fileName: string;
+  mimeType: string;
+  fileBase64: string;
+}
+
+interface DocumentRemoveInput {
+  id: number;
+}
 
 function useDocumentMutations(
   id: string | undefined,
   isEditMode: boolean,
   setDeleteConfirmId: (v: number | null) => void
 ) {
-  const { data: documentsData, refetch: refetchDocuments } =
-    trpc.inventory.documentFiles.listForItem.useQuery(
-      { itemId: id ?? '' },
-      { enabled: isEditMode }
-    );
+  const { data: documentsData } = usePillarQuery<DocumentsListResult>(
+    'inventory',
+    ['documentFiles', 'listForItem'],
+    { itemId: id ?? '' },
+    { enabled: isEditMode }
+  );
   const existingDocuments: DocumentItem[] = documentsData?.data ?? [];
-  const uploadMutation = trpc.inventory.documentFiles.upload.useMutation({
-    onSuccess: () => void refetchDocuments(),
-  });
-  const removeMutation = trpc.inventory.documentFiles.removeUpload.useMutation({
-    onSuccess: () => {
-      void refetchDocuments();
-      setDeleteConfirmId(null);
-    },
-  });
+  const uploadMutation = usePillarMutation<DocumentUploadInput, unknown>('inventory', [
+    'documentFiles',
+    'upload',
+  ]);
+  const removeMutation = usePillarMutation<DocumentRemoveInput, unknown>(
+    'inventory',
+    ['documentFiles', 'removeUpload'],
+    {
+      onSuccess: () => {
+        setDeleteConfirmId(null);
+      },
+    }
+  );
   return { existingDocuments, uploadMutation, removeMutation };
 }
 
@@ -63,7 +83,7 @@ export function useDocumentUploadState(id: string | undefined, isEditMode: boole
         setUploadFiles,
         isEditMode,
         id,
-        uploadMutation,
+        uploadMutation: uploadMutation satisfies DocumentUploadMutation,
       });
     },
     [isEditMode, id, uploadMutation]
