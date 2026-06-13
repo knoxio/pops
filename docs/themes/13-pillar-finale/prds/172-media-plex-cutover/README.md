@@ -1,61 +1,68 @@
 # PRD-172: media.plex cutover
 
 > Epic: [Remaining data migrations](../../epics/03-remaining-data-migrations.md)
+>
+> **Status:** Done (documentation-only). No N-track sequence applies — see [Decision](#decision).
 
 ## Overview
 
-Move `media.plex.*` (Plex integration) procedures + related tables into `media.db`. Follows the canonical N-track pattern from [PRD-165](../165-media-movies-cutover/README.md).
+The Plex integration has no tables to move. Every piece of state it owns lives in `core.settings` (encrypted token, server URL, Plex.tv username, client identifier, encryption seed, library section IDs, scheduler keys), and every table it orchestrates against — `movies`, `tv_shows`, `seasons`, `episodes`, `media_watchlist`, `watch_history` — is owned by a different slice. The Plex auth, scheduler, encryption, and HTTP-client surfaces stay on pops-api per the Theme 13 framework for orchestration code.
 
-The Plex surface holds the Plex server registration, Plex tokens, friends mapping, and the bridge between Plex's library and pops's library.
+This PRD records the finding so future agents do not scaffold a `packages/media-db/src/services/plex.ts` that has nothing to host.
 
 ## Data Model
 
-Tables (move from shared to `packages/media-db`):
+None. The codebase has no `plex_servers`, `plex_friends`, or `plex_sync_state` tables. Earlier theme planning assumed a multi-server / multi-user model that was never implemented; pops runs against one Plex server with state pinned in `core.settings`. Friends are fetched live from Plex.tv's GraphQL API; there is no friends table to migrate.
 
-- `plex_servers` — { id, server_url, plex_token (encrypted), enabled }
-- `plex_friends` — { id, plex_username, mapped_pops_user (if multi-user; today: NULL), shared_libraries_json }
-- `plex_sync_state` — last-sync watermarks per surface (libraries, watchlist, ratings)
+If a future requirement introduces a Plex-only table (multi-server registry, per-friend mapping, per-source watermarks), open a new PRD at that point. As of today there is nothing to migrate.
 
 ## API Surface
 
-| Procedure                   | Kind                                               |
-| --------------------------- | -------------------------------------------------- |
-| `media.plex.servers.list`   | query                                              |
-| `media.plex.servers.add`    | mutation                                           |
-| `media.plex.servers.remove` | mutation                                           |
-| `media.plex.friends.list`   | query                                              |
-| `media.plex.friends.sync`   | mutation (calls Plex API)                          |
-| `media.plex.libraries.sync` | mutation (calls Plex API)                          |
-| `media.plex.watchlist.push` | mutation (calls Plex API; integrates with PRD-167) |
+| Procedure group                | Location today                           | Decision                                                      |
+| ------------------------------ | ---------------------------------------- | ------------------------------------------------------------- |
+| Auth (PIN OAuth, disconnect)   | pops-api `plex/router-auth.ts`           | Stays. Writes encrypted token to `core.settings` (PRD-183).   |
+| Connection (URL, libraries)    | pops-api `plex/router-connection.ts`     | Stays. Writes URL to `core.settings`.                         |
+| Sync (enqueue, poll, list)     | pops-api `plex/router-sync.ts`           | Stays. Reads `sync_job_results` — worker-orchestration table. |
+| Scheduler                      | pops-api `plex/router-scheduler.ts`      | Stays. Persists schedule + last-run in `core.settings`.       |
+| HTTP clients + friends GraphQL | pops-api `plex/{client*.ts, friends.ts}` | Stays. DB-free.                                               |
 
-Files today: `apps/pops-api/src/modules/media/plex/{client-discover.ts, client-http.ts, client-mappers.ts, client.ts, friends.ts}`.
+## Decision
 
-## Business Rules
+**No N-track sequence for `media.plex.*`.**
 
-Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business-rules--the-n-track-4-pr-sequence). Slice specifics:
+The 4-PR canonical pattern (scaffold → journal split → cutover → shim delete) does not apply: there is no schema to scaffold, no journal entry to split, no router whose handle to flip, no shim to delete. The orchestration writes that Plex sync produces (movies, tv_shows, watchlist, watch_history) are owned by their respective slices' PRDs:
 
-- Plex HTTP client is independent of DB; only persistence (servers, friends, sync_state) moves.
-- Token encryption is the same as `arr` (PRD-171): centralised on core; encrypted blob is opaque to media-api.
+- Movies writes → PRD-165 PR3 (done in #3018)
+- TV shows writes → PRD-166 PR3 (done in #3019)
+- Watchlist writes → PRD-167 PR3 (done in #3020)
+- Watch-history writes → PRD-168 PR3 (done in #3026)
+
+The Plex auth/encryption/scheduler stay on pops-api because they orchestrate against `core.settings` (encryption seed, token, scheduler config) and the BullMQ worker queue. Moving them into `apps/pops-media-api` would split the encryption surface across pillars, which contradicts the centralised-key-management direction in [PRD-171](../171-media-arr-cutover/README.md).
 
 ## Edge Cases
 
 | Case                                                | Behaviour                                                                       |
 | --------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Plex token expires mid-sync                         | Existing error handling preserved; status surfaced to user.                     |
-| Friend mapping is incomplete (multi-user scenarios) | Single-user assumption; friends listed but not mapped.                          |
-| Watchlist push from pops to Plex fails              | Existing retry logic preserved; only the read source (watchlist table) changes. |
+| Plex token expires mid-sync                         | Handled in `client.ts` / `router-auth.ts`; unchanged.                           |
+| Friend mapping is incomplete (multi-user scenarios) | Single-user assumption preserved; friends fetched live from Plex.tv GraphQL.    |
+| Watchlist push from pops to Plex fails              | Handled by `sync-watchlist.ts`; unchanged. Writes go to `media.db` per PRD-167. |
+| `core.settings` cutover lands (PRD-183)             | `service.ts` lookups follow whatever handle the settings service points at.     |
 
-## User Stories
+## Follow-ups (not in this PRD)
 
-| #   | Story                                                       | Summary                                         |
-| --- | ----------------------------------------------------------- | ----------------------------------------------- |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Schemas + services into `@pops/media-db` |
-| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal                 |
-| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip router to `getMediaDrizzle()`       |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                     |
+Audit items surfaced by this investigation, owned elsewhere:
+
+1. **Dead transaction wrappers** in `plex/sync-movies.ts`, `plex/sync-tv.ts`, `plex/sync-watch-history.ts`, `plex/sync-watchlist-resolve.ts`. Several `getDb().transaction(() => …)` calls wrap operations whose underlying writes now land in `media.db` via `getMediaDrizzle()`. The shared-DB transaction provides no atomicity for those calls. Idempotency of the wrapped operations (`createMovie` throws on conflict; `logMovieWatch` short-circuits on near-duplicates) means this is a latent gap rather than a today-bug. Collapse to the correct single handle when [PRD-168 PR4](../168-media-watch-history-cutover/) retires `logWatch`'s shared handle.
+2. **`sync_job_results` reads** in `router-sync.ts`. Worker-orchestration table; relocation decided by Epic 08b (orchestrator placement) or PRD-186 (core.aiUsage pattern).
+3. **`tv_shows` + `seasons`/`episodes` co-mutation** in `library/tv-show-service.ts`. Owned by PRD-166 / PRD-169, not by this PRD.
 
 ## Out of Scope
 
-- Plex token encryption mechanics (stays on core).
-- Plex API contract changes (upstream-controlled).
-- Multi-user / shared-library expansion.
+- Moving any router file into `apps/pops-media-api`.
+- Creating `packages/media-db/src/services/plex.ts`.
+- Touching encryption mechanics in `service.ts`.
+- The `sync_job_results` table — separate slice.
+
+## User Stories
+
+None. This PRD is documentation-only.
