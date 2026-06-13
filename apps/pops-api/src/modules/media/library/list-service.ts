@@ -2,7 +2,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import { movies, tvShows } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 import type { LibraryItem, LibraryListInput, LibrarySortOption } from './types.js';
 
@@ -116,7 +116,7 @@ function rowToLibraryItem(row: LibraryRawRow): LibraryItem {
  * Uses a SQL UNION ALL query for efficiency.
  */
 export function listLibrary(input: LibraryListInput): { items: LibraryItem[]; total: number } {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const baseSql = libraryUnionSql();
   const whereClause = buildWhereClause(input);
   const orderBy = sortClause(input.sort);
@@ -138,7 +138,7 @@ export function listLibrary(input: LibraryListInput): { items: LibraryItem[]; to
 
 /** Get all unique genres across movies and TV shows. */
 export function listLibraryGenres(): string[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const rows = db.all<{ genre: string }>(sql`
     SELECT DISTINCT je.value AS genre
     FROM (

@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 
 import { movies, watchHistory } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { createMovie, getMovie, getMovieByTmdbId, updateMovie } from '../movies/service.js';
 import { toMovie } from '../movies/types.js';
 
@@ -120,7 +120,7 @@ export async function refreshMovie(
  * Uses SQLite's RANDOM() for ordering.
  */
 export function getQuickPicks(count: number): Movie[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const rows = db
     .select()
     .from(movies)
