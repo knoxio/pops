@@ -4,8 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SeasonDetailPage } from './SeasonDetailPage';
 
-// --- tRPC mock setup ---
-
 const {
   mockShowQuery,
   mockSeasonsQuery,
@@ -20,9 +18,7 @@ const {
   mockSeasonMonitorMutation,
   mockEpisodeMonitorMutation,
   mockInvalidate,
-  mockCancel,
-  mockSetProgressData,
-  mockSetListData,
+  mockSetData,
 } = vi.hoisted(() => ({
   mockShowQuery: vi.fn(),
   mockSeasonsQuery: vi.fn(),
@@ -37,12 +33,8 @@ const {
   mockSeasonMonitorMutation: vi.fn(),
   mockEpisodeMonitorMutation: vi.fn(),
   mockInvalidate: vi.fn(),
-  mockCancel: vi.fn(),
-  mockSetProgressData: vi.fn(),
-  mockSetListData: vi.fn(),
+  mockSetData: vi.fn(),
 }));
-
-let _batchLogOpts: Record<string, unknown> = {};
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
@@ -79,18 +71,6 @@ vi.mock('@pops/api-client', () => ({
               if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
             });
             return { mutate: mockDeleteMutation, isPending: false };
-          },
-        },
-        batchLog: {
-          useMutation: (opts: Record<string, unknown>) => {
-            _batchLogOpts = opts;
-            mockBatchLogMutation.mockImplementation(() => {
-              if (typeof opts.onMutate === 'function') (opts.onMutate as () => void)();
-              if (typeof opts.onSuccess === 'function')
-                (opts.onSuccess as (r: unknown) => void)({ data: { logged: 5 } });
-              if (typeof opts.onSettled === 'function') (opts.onSettled as () => void)();
-            });
-            return { mutate: mockBatchLogMutation, isPending: false };
           },
         },
         invalidate: mockInvalidate,
@@ -134,15 +114,15 @@ vi.mock('@pops/api-client', () => ({
         watchHistory: {
           list: {
             invalidate: mockInvalidate,
-            cancel: mockCancel,
+            cancel: vi.fn().mockResolvedValue(undefined),
             getData: vi.fn(),
-            setData: mockSetListData,
+            setData: vi.fn(),
           },
           progress: {
             invalidate: mockInvalidate,
-            cancel: mockCancel,
+            cancel: vi.fn().mockResolvedValue(undefined),
             getData: vi.fn(),
-            setData: mockSetProgressData,
+            setData: vi.fn(),
           },
           invalidate: mockInvalidate,
         },
@@ -158,11 +138,31 @@ vi.mock('@pops/api-client', () => ({
   },
 }));
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: () => ({ data: undefined, isLoading: false }),
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'watchHistory.batchLog') {
+      mockBatchLogMutation.mockImplementation(() => {
+        if (typeof opts.onMutate === 'function') (opts.onMutate as () => void)();
+        if (typeof opts.onSuccess === 'function')
+          (opts.onSuccess as (r: { data: { logged: number } }) => void)({ data: { logged: 5 } });
+        if (typeof opts.onSettled === 'function') (opts.onSettled as () => void)();
+      });
+      return { mutate: mockBatchLogMutation, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({ setData: mockSetData, invalidate: mockInvalidate }),
+}));
+
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
-
-// --- Test data ---
 
 const SHOW = {
   id: 1,
@@ -243,8 +243,6 @@ const PROGRESS = {
   seasons: [{ seasonId: 11, seasonNumber: 1, watched: 2, total: 3, percentage: 67 }],
   nextEpisode: { seasonNumber: 1, episodeNumber: 3, episodeName: "...And the Bag's in the River" },
 };
-
-// --- Helpers ---
 
 function renderPage(showId = '1', seasonNum = '1') {
   return render(
@@ -359,11 +357,8 @@ function setupQueries(
   });
 }
 
-// --- Tests ---
-
 beforeEach(() => {
   vi.clearAllMocks();
-  _batchLogOpts = {};
   mockShowQuery.mockReturnValue({ data: null, isLoading: false, error: null });
   mockSeasonsQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
   mockEpisodesQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
@@ -478,6 +473,24 @@ describe('SeasonDetailPage — monitoring', () => {
       });
     });
 
+    it('writes optimistic progress via SDK setData on batch mark', () => {
+      setupQueries();
+      renderPage();
+      fireEvent.click(screen.getByText('Mark Season Watched'));
+      expect(mockSetData).toHaveBeenCalledWith(
+        ['watchHistory', 'progress'],
+        { tvShowId: 1 },
+        expect.any(Function)
+      );
+    });
+
+    it('invalidates watchHistory after settle', () => {
+      setupQueries();
+      renderPage();
+      fireEvent.click(screen.getByText('Mark Season Watched'));
+      expect(mockInvalidate).toHaveBeenCalledWith(['watchHistory']);
+    });
+
     it('shows All Watched when season is complete', () => {
       setupQueries({
         progress: {
@@ -507,50 +520,6 @@ describe('SeasonDetailPage — monitoring', () => {
       });
       renderPage('999');
       expect(screen.getByText('Show not found')).toBeInTheDocument();
-    });
-  });
-
-  describe('batch mark watched — optimistic updates', () => {
-    it('shows Mark Season Watched button when not fully watched', () => {
-      setupQueries();
-      renderPage();
-      expect(screen.getByRole('button', { name: /Mark Season Watched/ })).toBeInTheDocument();
-    });
-
-    it('shows All Watched when season is fully watched', () => {
-      setupQueries({
-        progress: {
-          ...PROGRESS,
-          seasons: [{ seasonId: 11, seasonNumber: 1, watched: 3, total: 3, percentage: 100 }],
-        },
-      });
-      renderPage();
-      expect(screen.queryByRole('button', { name: /Mark Season Watched/ })).not.toBeInTheDocument();
-      expect(screen.getByText('All Watched')).toBeInTheDocument();
-    });
-
-    it('calls batchLog mutation when Mark Season Watched is clicked', () => {
-      setupQueries();
-      renderPage();
-      fireEvent.click(screen.getByRole('button', { name: /Mark Season Watched/ }));
-      expect(mockBatchLogMutation).toHaveBeenCalledWith({
-        mediaType: 'season',
-        mediaId: 11,
-      });
-    });
-
-    it('triggers optimistic progress cancel on batch mark', () => {
-      setupQueries();
-      renderPage();
-      fireEvent.click(screen.getByRole('button', { name: /Mark Season Watched/ }));
-      expect(mockCancel).toHaveBeenCalled();
-    });
-
-    it('invalidates watch history after batch mark settles', () => {
-      setupQueries();
-      renderPage();
-      fireEvent.click(screen.getByRole('button', { name: /Mark Season Watched/ }));
-      expect(mockInvalidate).toHaveBeenCalled();
     });
   });
 
@@ -595,7 +564,6 @@ describe('SeasonDetailPage — monitoring', () => {
       renderPage();
       const ep1Toggle = screen.getByRole('switch', { name: 'Monitor episode 1' });
       fireEvent.click(ep1Toggle);
-      // After clicking, ep1 should show unchecked optimistically
       expect(ep1Toggle).not.toBeChecked();
     });
   });

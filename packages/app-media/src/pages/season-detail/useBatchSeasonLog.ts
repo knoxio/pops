@@ -1,7 +1,9 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
 
 interface UseBatchSeasonLogArgs {
   showId: number;
@@ -10,26 +12,53 @@ interface UseBatchSeasonLogArgs {
   episodes: Array<{ id: number }>;
 }
 
-type Utils = ReturnType<typeof trpc.useUtils>;
+type ProgressSeason = {
+  seasonNumber: number;
+  watched: number;
+  total: number;
+  percentage: number;
+};
+
+type ProgressEnvelope = {
+  data: {
+    overall: { watched: number; total: number; percentage: number };
+    seasons?: ProgressSeason[];
+    nextEpisode?: unknown;
+  } | null;
+};
+
+type WatchHistoryEntry = {
+  id: number;
+  mediaType: 'episode';
+  mediaId: number;
+  watchedAt: string;
+  completed: number;
+};
+
+type WatchHistoryEnvelope = {
+  data: WatchHistoryEntry[];
+  pagination?: unknown;
+};
+
+type BatchLogContext = {
+  previousProgress: ProgressEnvelope | undefined;
+  previousList: WatchHistoryEnvelope | undefined;
+};
+
+const LIST_INPUT = { mediaType: 'episode' as const, limit: 500 };
 
 function buildProgressUpdater(seasonNum: number) {
-  return (
-    old: Parameters<Utils['media']['watchHistory']['progress']['setData']>[1] extends infer T
-      ? T extends (input: infer I) => unknown
-        ? I
-        : never
-      : never
-  ) => {
-    if (!old?.data) return old;
-    const updatedSeasons = old.data.seasons.map((s) =>
+  return (envelope: ProgressEnvelope | undefined): ProgressEnvelope | undefined => {
+    if (!envelope?.data) return envelope;
+    const updatedSeasons = (envelope.data.seasons ?? []).map((s) =>
       s.seasonNumber === seasonNum ? { ...s, watched: s.total, percentage: 100 } : s
     );
     const totalWatched = updatedSeasons.reduce((sum, s) => sum + s.watched, 0);
     const totalEpisodes = updatedSeasons.reduce((sum, s) => sum + s.total, 0);
     return {
-      ...old,
+      ...envelope,
       data: {
-        ...old.data,
+        ...envelope.data,
         seasons: updatedSeasons,
         overall: {
           watched: totalWatched,
@@ -41,85 +70,88 @@ function buildProgressUpdater(seasonNum: number) {
   };
 }
 
+function buildListUpdater(episodes: Array<{ id: number }>) {
+  return (envelope: WatchHistoryEnvelope | undefined): WatchHistoryEnvelope | undefined => {
+    if (!envelope?.data) return envelope;
+    const existingIds = new Set(envelope.data.map((e) => e.mediaId));
+    const newEntries: WatchHistoryEntry[] = episodes
+      .filter((ep) => !existingIds.has(ep.id))
+      .map((ep) => ({
+        id: -ep.id,
+        mediaType: 'episode',
+        mediaId: ep.id,
+        watchedAt: new Date().toISOString(),
+        completed: 1,
+      }));
+    return { ...envelope, data: [...envelope.data, ...newEntries] };
+  };
+}
+
 function applyOptimistic(
-  utils: Utils,
+  utils: UsePillarUtilsResult,
   showId: number,
   seasonNum: number,
   episodes: Array<{ id: number }>
-) {
-  utils.media.watchHistory.progress.setData({ tvShowId: showId }, buildProgressUpdater(seasonNum));
-
+): BatchLogContext {
+  const previousProgress = utils.setData<ProgressEnvelope>(
+    ['watchHistory', 'progress'],
+    { tvShowId: showId },
+    buildProgressUpdater(seasonNum)
+  );
+  let previousList: WatchHistoryEnvelope | undefined;
   if (episodes.length > 0) {
-    utils.media.watchHistory.list.setData({ mediaType: 'episode', limit: 500 }, (old) => {
-      if (!old?.data) return old;
-      const existingIds = new Set(old.data.map((e: { mediaId: number }) => e.mediaId));
-      const newEntries = episodes
-        .filter((ep) => !existingIds.has(ep.id))
-        .map((ep) => ({
-          id: -ep.id,
-          mediaType: 'episode' as const,
-          mediaId: ep.id,
-          watchedAt: new Date().toISOString(),
-          completed: 1,
-        }));
-      return { ...old, data: [...old.data, ...newEntries] };
-    });
+    previousList = utils.setData<WatchHistoryEnvelope>(
+      ['watchHistory', 'list'],
+      LIST_INPUT,
+      buildListUpdater(episodes)
+    );
+  }
+  return { previousProgress, previousList };
+}
+
+function rollbackOptimistic(
+  utils: UsePillarUtilsResult,
+  showId: number,
+  context: BatchLogContext | undefined
+) {
+  if (!context) return;
+  if (context.previousProgress !== undefined) {
+    utils.setData<ProgressEnvelope | undefined>(
+      ['watchHistory', 'progress'],
+      { tvShowId: showId },
+      () => context.previousProgress
+    );
+  }
+  if (context.previousList !== undefined) {
+    utils.setData<WatchHistoryEnvelope | undefined>(
+      ['watchHistory', 'list'],
+      LIST_INPUT,
+      () => context.previousList
+    );
   }
 }
 
-function useOptimisticUpdates({
-  showId,
-  seasonNum,
-  episodes,
-}: Omit<UseBatchSeasonLogArgs, 'season'>) {
-  const utils = trpc.useUtils();
-  const progressSnapshot =
-    useRef<ReturnType<typeof utils.media.watchHistory.progress.getData>>(undefined);
-  const listSnapshot = useRef<ReturnType<typeof utils.media.watchHistory.list.getData>>(undefined);
-
-  const apply = async () => {
-    await utils.media.watchHistory.progress.cancel({ tvShowId: showId });
-    await utils.media.watchHistory.list.cancel();
-    progressSnapshot.current = utils.media.watchHistory.progress.getData({ tvShowId: showId });
-    listSnapshot.current = utils.media.watchHistory.list.getData({
-      mediaType: 'episode',
-      limit: 500,
-    });
-    applyOptimistic(utils, showId, seasonNum, episodes);
-  };
-
-  const rollback = () => {
-    if (progressSnapshot.current !== undefined) {
-      utils.media.watchHistory.progress.setData({ tvShowId: showId }, progressSnapshot.current);
-    }
-    if (listSnapshot.current !== undefined) {
-      utils.media.watchHistory.list.setData(
-        { mediaType: 'episode', limit: 500 },
-        listSnapshot.current
-      );
-    }
-  };
-
-  return { utils, apply, rollback };
-}
-
 export function useBatchSeasonLog({ showId, seasonNum, season, episodes }: UseBatchSeasonLogArgs) {
-  const { utils, apply, rollback } = useOptimisticUpdates({ showId, seasonNum, episodes });
+  const utils = usePillarUtils('media');
 
-  const batchLogMutation = trpc.media.watchHistory.batchLog.useMutation({
-    onMutate: apply,
-    onSuccess: (result: { data: { logged: number } }) => {
+  const batchLogMutation = usePillarMutation<
+    { mediaType: 'season'; mediaId: number },
+    { data: { logged: number } },
+    BatchLogContext
+  >('media', ['watchHistory', 'batchLog'], {
+    onMutate: () => applyOptimistic(utils, showId, seasonNum, episodes),
+    onSuccess: (result) => {
       toast.success(
         `Marked ${result.data.logged} episode${result.data.logged !== 1 ? 's' : ''} as watched`
       );
     },
-    onError: (err: { message: string }) => {
-      rollback();
+    onError: (err, _vars, context) => {
+      rollbackOptimistic(utils, showId, context);
       toast.error(`Failed to mark season: ${err.message}`);
     },
     onSettled: () => {
-      void utils.media.watchHistory.invalidate();
-      void utils.media.tvShows.listSeasons.invalidate();
+      void utils.invalidate(['watchHistory']);
+      void utils.invalidate(['tvShows', 'listSeasons']);
     },
   });
 
