@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import { episodes, seasons } from '@pops/db-types';
+import { episodes, seasons } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import * as tvShowsService from '../tv-shows/service.js';
 
 import type { TheTvdbClient } from './client.js';
@@ -10,7 +10,7 @@ import type { TvdbEpisode } from './types.js';
 
 function updateSeasonEpisodeCount(seasonId: number, episodeCount: number): void {
   if (episodeCount <= 0) return;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   db.update(seasons).set({ episodeCount }).where(eq(seasons.id, seasonId)).run();
 }
 
@@ -19,7 +19,7 @@ function upsertEpisodeRow(
   seasonId: number,
   counters: { added: number; updated: number }
 ): void {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const existingEp = db.select().from(episodes).where(eq(episodes.tvdbId, ep.tvdbId)).get();
   if (existingEp) {
     db.update(episodes)
@@ -83,7 +83,7 @@ export async function refreshEpisodesForAllSeasons(
     updateSeasonEpisodeCount(seasonId, tvdbEpisodes.length);
   }
 
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const totalEpisodes = db
     .select()
     .from(episodes)
