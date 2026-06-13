@@ -21,13 +21,21 @@ vi.mock('@anthropic-ai/sdk', () => ({
 
 // Mock the database
 const mockDbRun = vi.fn();
-vi.mock('../../../../db.js', () => ({
-  getDrizzle: vi.fn(() => ({
+vi.mock('../../../../db.js', () => {
+  const stubDrizzle = {
     insert: vi.fn(() => ({
       values: vi.fn(() => ({ run: mockDbRun })),
     })),
-  })),
-  isNamedEnvContext: vi.fn().mockReturnValue(false),
+  };
+  return {
+    getDrizzle: vi.fn(() => stubDrizzle),
+    getCoreDrizzle: vi.fn(() => stubDrizzle),
+    isNamedEnvContext: vi.fn().mockReturnValue(false),
+  };
+});
+
+vi.mock('../../../../lib/inference-middleware.js', () => ({
+  trackInference: <T>(_params: unknown, fn: () => Promise<T>) => fn(),
 }));
 
 let tmpDir: string;
