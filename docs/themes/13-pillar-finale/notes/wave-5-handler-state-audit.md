@@ -130,6 +130,44 @@ historical cutover. Matches the inventory pattern from `#3180`.
 
 **Count delta: 3 → 3** (audit-doc row only; no code changes required).
 
+### Media (this branch — `feat/theme13-media-core-handlers-migrate`)
+
+Raw `getDrizzle()` references under `apps/pops-api/src/modules/media/`: **185**.
+
+| Category                                        | Count | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| JSDoc-only comment lines                        | 8     | `watch-history/handlers/query-helpers.ts:11`, `discovery/flags.ts:10`, `discovery/shelf/local-shelves.test.ts:4`, `plex/sync-watchlist.ts:20,27`, `tv-shows/tv-shows-base.ts:40`, `__integration__/media-handle-coverage.test.ts:24`, `watchlist/plex-push.ts:58`. All cross-pillar-pin rationale or PR-defer prose.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Documented intentional pins (mixed-tx)          | 3     | `watch-history/handlers/query-helpers.ts:98` (`deleteWatchHistoryEntry` cross-table tx across `watchHistory` + `debriefSessions` + `debriefResults`), `comparisons/service.ts:73-199` (the `blacklistMovie` + Elo recalc cluster — 7 call sites in one file; documented in `media-watch-history-mixed-tx-design.md`), `watchlist/plex-push.ts:84` (writes `mediaWatchlist.plexRatingKey` back through the shared handle for cross-app visibility). All blocked behind the watch-history mixed-tx design.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Shared-only schema pins (per-table PR4 pending) | 141   | Every remaining production hit. Touches tables not yet re-exported from `@pops/media-db`: `comparisons`, `comparisonDimensions`, `comparisonSkipCooloffs`, `mediaScores`, `rotationCandidates`, `rotationExclusions`, `rotationSources`, `rotationLog`, `syncLogs`, `syncJobResults`, `debriefSessions`, `debriefResults`, `debriefStatus`. Affected dirs: `comparisons/{dimensions.service,lib/*,pairs/*,rankings-overall,scores.service,service}` (50), `debrief/*` (6), `discovery/{flags,context-picks-service,plex-service,router-tmdb,service-library,service-preference-profile,service-rewatch,shelf/*,tmdb-service}` (28), `library/*` (3), `plex/{router-sync,scheduler-sync-logs,sync-discover-watches,sync-helpers}` (7), `rotation/*` (24), `search/{movies,tv-shows}-adapter` (2), `tv-shows/{episodes,seasons}-service` (8), `watch-history/handlers/{list-recent,progress}` (5), `watch-history/handlers/query-helpers.ts:83,94` (the residual `getDrizzle()` reads on the deleter — pinned by the same mixed-tx). |
+| Test-side direct callers                        | 33    | `__integration__/media-handle-coverage.test.ts` plus 14 `*.test.ts` files under `comparisons/lib/`, `rotation/`, `discovery/shelf/`. None are `vi.mock` shapes — media tests exercise routers against `setupTestContext()`'s in-memory DB and call `getDrizzle()` directly for setup/assert. Each fixture suite is a candidate for the "verify-side handle hygiene" follow-up PR per table.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **Real handler migration candidates**           | **0** | Every production-side hit is either a documented mixed-tx pin (3) or a shared-only schema pin against tables that still write to `pops.db` (141). Flipping any of them in isolation today would either split a cross-table transaction across two SQLite files or silently lose writes in production until the matching per-table PR4 (backfill + barrel + shared drop) ships. The pattern matches the food pillar long tail.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+**Count delta: 185 → 185** (no production migrations in this branch). The 141
+production-side shared-only schema pins unblock incrementally as each
+media sub-slice's PR4 ships, on the same pattern as `prep_states` already did
+for food. The 3 mixed-tx pins unblock when the cerebrum-owned
+`debriefSessions` / `debriefResults` / `debriefStatus` slices ship to
+`@pops/cerebrum-db` (per `media-watch-history-mixed-tx-design.md`).
+
+### Core (this branch — `feat/theme13-media-core-handlers-migrate`)
+
+Raw `getDrizzle()` references under `apps/pops-api/src/modules/core/`: **52**.
+
+| Category                               | Count | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| JSDoc-only comment lines               | 4     | `ai-budgets/enforcement.ts:12,227`, `corrections/handlers/pattern-match.ts:6`, `corrections/handlers/query-helpers.ts:6`. All cross-pillar-pin rationale.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Documented intentional pins (mixed-DB) | 1     | `ai-budgets/enforcement.ts:233` — `findFallbackProvider` joins `aiProviders` (NOT in core-db) with `aiModelPricing` (IN core-db). Unlocks when ai_providers ships its PR4.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Shared-only schema pins                | 28    | `ai-alerts/{alerts-store,evaluator,service}` (7 — `aiAlerts` + `aiAlertRules` not in core-db), `ai-providers/service.ts` (5 — `aiProviders` not in core-db, mixed with `aiModelPricing`), `corrections/handlers/{pattern-match,query-helpers}` (9 — `transaction_corrections` belongs to finance-db, shimmed via shared until N6 imports pipeline cuts over), `embeddings/service.ts` (2 — `embeddings` not in core-db), `features/user-settings.ts` (3 — `userSettings` not in core-db), `tag-rules/tag-rules.test.ts` (9 — test setup; same kind of fixture pin as food). Two more lines from the JSDoc bucket overlap. |
+| Test-side direct callers               | 10    | `tag-rules/tag-rules.test.ts` (9 direct setup hits) + `ai-alerts/evaluator.test.ts:494` (one fixture hit). No `vi.mock` shapes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Real handler migration candidates**  | **9** | All on tables that ARE re-exported from `@pops/core-db` (or `@pops/cerebrum-db`) AND whose writes already route through the per-pillar handle: `ai-observability/{group-stats.ts:34, history.ts:74, summary.ts:81/106/131, service.ts:60/104/159}` — 8 sites reading `aiInferenceLog` + `aiInferenceDaily` (both core-db, written via `getCoreDrizzle()`); `ai-alerts/dispatchers/nudge.ts:43` — writes `nudgeLog` (cerebrum-db, same shape as the cerebrum #3167 migration).                                                                                                                                             |
+
+All 9 candidates were flipped on this branch:
+
+- 8 ai-observability reads (`group-stats.ts`, `history.ts`, `summary.ts`, `service.ts`) now resolve via `getCoreDrizzle()` — matches the writer path (`inference-middleware.ts`, `food/routers/ai.ts`, retention pipeline) which already targets `core.db`. Removes a read-split bug where the dashboard was querying the empty shared `ai_inference_log` instead of the live one.
+- 1 nudge dispatcher write (`ai-alerts/dispatchers/nudge.ts`) now resolves via `getCerebrumDrizzle()` — mirrors the cerebrum `glia/digest-channels.ts` migration shipped in #3167, since `nudgeLog` is owned by `@pops/cerebrum-db`.
+
+**Count delta: 52 → 43** (9 migrated, 28 shared-only pins, 1 documented mixed-DB pin, 4 JSDoc-only, 10 test-side).
+
 ## Methodology lesson
 
 When sizing future pillar cutovers off `getDrizzle()` grep counts:
@@ -145,49 +183,91 @@ When sizing future pillar cutovers off `getDrizzle()` grep counts:
    shared-only, the call site cannot move until that table migrates or
    the join is refactored to per-pillar SDK lookups.
 
-Applying this filter to finance, cerebrum, inventory, food, and lists
-reduced raw counts from 18, 26, 0, 183, and 3 (total: **230**) to
-**0 + 2 + 0 + 0 + 0 = 2 real handler-real-caller migrations** across
-all five pillars audited. The original "~485 callers" Wave 5 sizing is
-inflated by **two orders of magnitude** against the real
-handler-candidate surface, and even the raw-grep total across the long
-tail does not approach the original estimate. The dominant cost in the
-food pillar is per-table backfill PR4 ships, not handler flips — the
-89 shared-only schema pins each move one-by-one as their underlying
-table migrates into `@pops/food-db` and the shared `pops.db` copy is
-dropped.
+Applying this filter to all seven pillars — finance, cerebrum, inventory,
+food, lists, media, core — reduced raw counts from 18, 26, 0, 183, 3,
+185, and 52 (total: **467**) to
+**0 + 2 + 0 + 0 + 0 + 0 + 9 = 11 real handler-real-caller migrations**
+across the full long-tail audit. The original "~485 callers" Wave 5
+sizing is inflated by roughly **two orders of magnitude** against the
+real handler-candidate surface — the raw-grep total of 467 lines up
+with the original estimate, but only 11 of those 467 are actionable
+handler flips today. The dominant cost in the food and media pillars
+is per-table backfill PR4 ships, not handler flips — every shared-only
+schema pin moves one-by-one as its underlying table migrates into the
+per-pillar `*-db` package and the shared `pops.db` copy is dropped.
+
+### Final rollup (all 7 pillars audited)
+
+| Pillar    | Raw grep | Real candidates | Migrated | PR          |
+| --------- | -------- | --------------- | -------- | ----------- |
+| Finance   | 18       | 0               | 0        | #3162       |
+| Cerebrum  | 26       | 2               | 2        | #3167       |
+| Inventory | 0        | 0               | 0        | #3180       |
+| Food      | 183      | 0               | 0        | #3183       |
+| Lists     | 3        | 0               | 0        | #3183       |
+| Media     | 185      | 0               | 0        | this branch |
+| Core      | 52       | 9               | 9        | this branch |
+| **Total** | **467**  | **11**          | **11**   | —           |
+
+Real candidate identification rate: **11 / 467 = 2.4%**. Migration completion rate against real candidates: **11 / 11 = 100%**.
 
 ## Recommendation for next audits
 
-Before opening any further Wave 5 migration PR:
+The 7-pillar long-tail audit is now complete. Future per-table cutover
+PRs (food + media in particular) should:
 
-1. Re-run the raw grep against the remaining pillars
-   (`core`, `media`, `app-*`).
-2. Bucket every hit into the four categories above (test-mock,
-   documented-pin, shared-only schema, real-handler-candidate).
-3. Only the **real-handler-candidate** bucket is in scope for the
-   pillar cutover commit. Test-mock work belongs in a separate
-   "verify-side handle hygiene" PR per pillar; documented pins belong
-   to the PRD that owns the cross-pillar refactor.
-4. Publish the per-pillar table so Wave 5 sizing converges to a real
-   number rather than a grep total.
+1. Subtract `__tests__/`, `__integration__/`, `*.test.ts`, and
+   `*.integration.test.ts` matches up front — these are test fixtures,
+   not handler callers.
+2. Read inline JSDoc on each remaining hit. Documented pins (cross-
+   pillar joins, shared-only schema tables) are work for the dependent
+   PRD, not the current pillar.
+3. For each handler-real caller, check whether every table it touches
+   is exposed by the per-pillar `*-db` package. If even one table is
+   shared-only, the call site cannot move until that table migrates or
+   the join is refactored to per-pillar SDK lookups.
+4. Only the **real-handler-candidate** bucket is in scope for a pillar
+   cutover commit. Test-mock work belongs in a separate "verify-side
+   handle hygiene" PR per pillar; documented pins belong to the PRD
+   that owns the cross-pillar refactor.
 
 ## What this branch changed
 
-`docs/theme-13-wave5-food-lists-audit` is documentation-only — both
-food and lists came in with **0 real handler-real-caller migration
-candidates** under the audit rules:
+`feat/theme13-media-core-handlers-migrate` ships nine real handler
+migrations — all in the core pillar:
 
-- Lists: every production handler is already on `getListsDrizzle()`;
-  the three raw-grep hits are all JSDoc prose referencing the legacy
-  shared handle.
-- Food: only the `prep_states` slice has completed its PR4 cutover.
-  The remaining 89 production-side `getDrizzle()` calls each await
-  their own per-table backfill PR (the same shape as commit
-  `3439c8d3` for prep_states) before they become safely flippable. One
-  documented mixed-DB pin (`routers/slugs.ts:48`) is intentional and
-  unlocks when ingredients + recipes complete their PR4s. Flipping any
-  of these in isolation today would silently lose writes in production.
+- 8 ai-observability reads (`apps/pops-api/src/modules/core/ai-observability/{group-stats,history,summary,service}.ts`)
+  now resolve `aiInferenceLog` + `aiInferenceDaily` queries via
+  `getCoreDrizzle()`. Both tables are core-db owned (`packages/core-db/migrations/0057_ai_usage_baseline.sql`)
+  and every writer (`inference-middleware.ts`, `food/routers/ai.ts`,
+  retention pipeline) already targets `core.db`, so the previous shared
+  reads were a split-brain bug — the dashboard was querying the empty
+  shared `ai_inference_log` while the live rows lived in `core.db`.
+- 1 nudge dispatcher write (`apps/pops-api/src/modules/core/ai-alerts/dispatchers/nudge.ts`)
+  now writes `nudgeLog` via `getCerebrumDrizzle()` — mirrors the
+  cerebrum `glia/digest-channels.ts` migration shipped in #3167, since
+  `nudgeLog` is owned by `@pops/cerebrum-db`.
 
-Prior branches in this audit series shipped two real migrations
-(both on the cerebrum pillar — see the cerebrum section above).
+Media came in with **0 real handler-real-caller migration candidates**
+under the audit rules — every production-side hit is either a
+documented mixed-tx pin (3 sites, blocked behind
+`media-watch-history-mixed-tx-design.md`) or a shared-only schema pin
+(141 sites) against tables that still write to `pops.db` until the
+matching per-table PR4 ships (same shape as food's `prep_states`).
+
+Prior branches in this audit series shipped two real migrations on
+cerebrum (see the cerebrum section above) and zero on finance,
+inventory, food, and lists.
+
+### Follow-up PRs flagged by this audit
+
+| Item                                         | Pillar  | Tracking                                                                                                              |
+| -------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| Media mixed-tx writer cutover                | media   | `media-watch-history-mixed-tx-design.md` — depends on cerebrum debrief tables shipping to `@pops/cerebrum-db`.        |
+| Per-table PR4 sweep for media (141 sites)    | media   | Per-table backfill PRs against `comparisons*`, `mediaScores`, `rotation*`, `syncLogs`, etc. Same shape as `3439c8d3`. |
+| `ai_providers` PR4 (5+1 sites unlock)        | core    | Lift `aiProviders` into `@pops/core-db` so `ai-providers/service.ts` + `ai-budgets/enforcement.ts:233` can flip.      |
+| `ai_alerts` / `ai_alert_rules` PR4 (7 sites) | core    | Lift `aiAlerts` + `aiAlertRules` into `@pops/core-db`.                                                                |
+| `embeddings` PR4 (2 sites)                   | core    | Lift `embeddings` into `@pops/core-db` (or own package — TBD).                                                        |
+| `user_settings` PR4 (3 sites)                | core    | Lift `userSettings` into `@pops/core-db`.                                                                             |
+| Finance corrections shim N6 cleanup          | finance | `corrections/handlers/{pattern-match,query-helpers}.ts` (9 sites) flip to `getFinanceDrizzle()` after N6 ships.       |
+| Verify-side handle hygiene per pillar        | all     | 33 media test-side + 10 core test-side + 91 food test-side + 1 cerebrum test-side = 135 `*.test.ts` lines.            |

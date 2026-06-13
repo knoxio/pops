@@ -2,7 +2,7 @@ import { and, asc, desc, gte, lt, sql, type SQL } from 'drizzle-orm';
 
 import { aiInferenceLog } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
 import { setRawSetting } from '../settings/service.js';
 
@@ -78,7 +78,7 @@ function windowWhere(windowStartIso: string, windowEndIso: string): SQL | undefi
 }
 
 function fetchOverall(windowStartIso: string, windowEndIso: string): OverallRow {
-  const [row] = getDrizzle()
+  const [row] = getCoreDrizzle()
     .select({
       totalCalls: sql<number>`COUNT(*)`,
       totalInputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
@@ -103,7 +103,7 @@ function fetchOverall(windowStartIso: string, windowEndIso: string): OverallRow 
 }
 
 function fetchByProvider(windowStartIso: string, windowEndIso: string): ProviderBreakdown[] {
-  const rows = getDrizzle()
+  const rows = getCoreDrizzle()
     .select({
       provider: aiInferenceLog.provider,
       calls: sql<number>`COUNT(*)`,
@@ -128,7 +128,7 @@ function fetchByProvider(windowStartIso: string, windowEndIso: string): Provider
 
 function fetchByModel(windowStartIso: string, windowEndIso: string): ModelBreakdown[] {
   // avgLatencyMs filter mirrors the live dashboard so cached and live numbers reconcile.
-  const rows = getDrizzle()
+  const rows = getCoreDrizzle()
     .select({
       provider: aiInferenceLog.provider,
       model: aiInferenceLog.model,
