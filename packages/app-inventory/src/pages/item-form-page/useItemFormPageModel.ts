@@ -3,76 +3,33 @@ import { useForm } from 'react-hook-form';
 import { useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
+import { itemToFormValues, type ItemQueryResult } from './item-record';
 import { defaultValues, type ItemFormValues, type PendingConnection } from './types';
 import { useAssetIdValidation } from './useAssetIdValidation';
 import { useDocumentUploadState } from './useDocumentUpload';
 import { useItemMutations } from './useItemMutations';
 import { usePhotoUploadState } from './usePhotoUpload';
 
+import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+
 import type { LocationTreeNode } from '../location-tree-page/utils';
 
 export type { ItemFormValues, PendingConnection };
 export { extractPrefix } from './types';
 
-interface ItemRecord {
-  itemName: string;
-  brand: string | null;
-  model: string | null;
-  itemId: string | null;
-  type: string | null;
-  condition: string | null;
-  locationId: string | null;
-  inUse: boolean;
-  deductible: boolean;
-  purchaseDate: string | null;
-  warrantyExpires: string | null;
-  purchasePrice: number | null;
-  replacementValue: number | null;
-  resaleValue: number | null;
-  assetId: string | null;
-  notes: string | null;
+interface LocationsTreeResult {
+  data: LocationTreeNode[];
 }
 
-interface ItemQueryResult {
-  data?: ItemRecord;
+interface ItemsListResult {
+  data: InventoryItem[];
 }
 
-function s(v: string | null | undefined): string {
-  return v ?? '';
-}
-
-/** Normalise a stored condition value to title-case so it matches the select options. */
-function normalizeCondition(v: string | null | undefined): string {
-  const raw = v ?? '';
-  if (!raw) return raw;
-  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
-}
-
-function n(v: number | null | undefined): string {
-  return v?.toString() ?? '';
-}
-
-function itemToFormValues(item: ItemRecord): ItemFormValues {
-  return {
-    itemName: item.itemName,
-    brand: s(item.brand),
-    model: s(item.model),
-    itemId: s(item.itemId),
-    type: s(item.type),
-    condition: normalizeCondition(item.condition),
-    locationId: s(item.locationId),
-    inUse: item.inUse,
-    deductible: item.deductible,
-    purchaseDate: s(item.purchaseDate),
-    warrantyExpires: s(item.warrantyExpires),
-    purchasePrice: n(item.purchasePrice),
-    replacementValue: n(item.replacementValue),
-    resaleValue: n(item.resaleValue),
-    assetId: s(item.assetId),
-    notes: s(item.notes),
-  };
+interface CreateLocationInput {
+  name: string;
+  parentId: string | null;
 }
 
 function useResetFromItem(
@@ -121,17 +78,37 @@ function useLocationIdPrefill(
 }
 
 function useLocationsAndCreate() {
-  const utils = trpc.useUtils();
-  const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
+  const { data: locationsData } = usePillarQuery<LocationsTreeResult>(
+    'inventory',
+    ['locations', 'tree'],
+    undefined
+  );
   const locationTree = locationsData?.data ?? [];
-  const createLocationMutation = trpc.inventory.locations.create.useMutation({
-    onSuccess: () => {
-      toast.success('Location created');
-      void utils.inventory.locations.tree.invalidate();
-    },
-    onError: (err) => toast.error(`Failed to create location: ${err.message}`),
-  });
+  const createLocationMutation = usePillarMutation<CreateLocationInput, unknown>(
+    'inventory',
+    ['locations', 'create'],
+    {
+      onSuccess: () => {
+        toast.success('Location created');
+      },
+      onError: (err) => toast.error(`Failed to create location: ${err.message}`),
+    }
+  );
   return { locationTree, createLocationMutation };
+}
+
+function useLocalFormState() {
+  const [notesPreview, setNotesPreview] = useState(false);
+  const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([]);
+  const [connectionSearch, setConnectionSearch] = useState('');
+  return {
+    notesPreview,
+    setNotesPreview,
+    pendingConnections,
+    setPendingConnections,
+    connectionSearch,
+    setConnectionSearch,
+  };
 }
 
 export function useItemFormPageModel() {
@@ -147,18 +124,21 @@ export function useItemFormPageModel() {
   } = form;
   const typeValue = watch('type');
 
-  const [notesPreview, setNotesPreview] = useState(false);
-  const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([]);
-  const [connectionSearch, setConnectionSearch] = useState('');
-
+  const local = useLocalFormState();
   const photoState = usePhotoUploadState(id, isEditMode);
   const documentState = useDocumentUploadState(id, isEditMode);
   const assetId = useAssetIdValidation({ id, typeValue, setValue });
-  const mutations = useItemMutations({ id, isEditMode, pendingConnections });
+  const mutations = useItemMutations({
+    id,
+    isEditMode,
+    pendingConnections: local.pendingConnections,
+  });
 
-  const { data: searchResults, isLoading: searchLoading } = trpc.inventory.items.list.useQuery(
-    { search: connectionSearch, limit: 10 },
-    { enabled: !isEditMode && connectionSearch.length >= 2 }
+  const { data: searchResults, isLoading: searchLoading } = usePillarQuery<ItemsListResult>(
+    'inventory',
+    ['items', 'list'],
+    { search: local.connectionSearch, limit: 10 },
+    { enabled: !isEditMode && local.connectionSearch.length >= 2 }
   );
   const { locationTree, createLocationMutation } = useLocationsAndCreate();
   useLocationIdPrefill(isEditMode, locationTree, setValue);
@@ -167,7 +147,12 @@ export function useItemFormPageModel() {
     data: itemData,
     isLoading,
     error,
-  } = trpc.inventory.items.get.useQuery({ id: id ?? '' }, { enabled: isEditMode });
+  } = usePillarQuery<ItemQueryResult>(
+    'inventory',
+    ['items', 'get'],
+    { id: id ?? '' },
+    { enabled: isEditMode }
+  );
 
   useResetFromItem(itemData, reset);
   useUnsavedChangesGuard(isDirty);
@@ -177,12 +162,7 @@ export function useItemFormPageModel() {
     isEditMode,
     form,
     typeValue,
-    notesPreview,
-    setNotesPreview,
-    pendingConnections,
-    setPendingConnections,
-    connectionSearch,
-    setConnectionSearch,
+    ...local,
     searchResults,
     searchLoading,
     locationTree,

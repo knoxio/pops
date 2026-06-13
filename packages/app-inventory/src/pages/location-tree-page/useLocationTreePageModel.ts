@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useDragHandlers } from './useDragHandlers';
 import { useLocationMutations, type DeleteConfirmState } from './useLocationMutations';
@@ -8,8 +8,16 @@ import { buildNodeMap, type LocationTreeNode } from './utils';
 
 export type { DeleteConfirmState };
 
+interface LocationsTreeResult {
+  data: LocationTreeNode[];
+}
+
 function useLocationTree() {
-  const { data, isLoading, error } = trpc.inventory.locations.tree.useQuery();
+  const { data, isLoading, error } = usePillarQuery<LocationsTreeResult>(
+    'inventory',
+    ['locations', 'tree'],
+    undefined
+  );
   const treeNodes = useMemo(() => data?.data ?? [], [data]);
   const nodeMap = useMemo(() => {
     const map = new Map<string, LocationTreeNode>();

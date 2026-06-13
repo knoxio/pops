@@ -1,8 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
-
+import { usePillarCall } from '../../lib/pillar-call';
 import { extractPrefix, type ItemFormValues } from './types';
 
 import type { UseFormSetValue } from 'react-hook-form';
@@ -13,13 +12,23 @@ interface UseAssetIdValidationArgs {
   setValue: UseFormSetValue<ItemFormValues>;
 }
 
-export function useAssetIdValidation({ id, typeValue, setValue }: UseAssetIdValidationArgs) {
-  const utils = trpc.useUtils();
-  const [assetIdError, setAssetIdError] = useState<string | null>(null);
-  const [assetIdChecking, setAssetIdChecking] = useState(false);
-  const [generating, setGenerating] = useState(false);
+interface SearchByAssetIdResult {
+  data: { id: string; itemName: string } | null;
+}
 
-  const validateAssetIdUniqueness = useCallback(
+interface CountByAssetPrefixResult {
+  data: number;
+}
+
+type PillarCall = ReturnType<typeof usePillarCall>;
+
+function useValidateAssetIdUniqueness(
+  id: string | undefined,
+  pillarCall: PillarCall,
+  setAssetIdError: (v: string | null) => void,
+  setAssetIdChecking: (v: boolean) => void
+) {
+  return useCallback(
     async (value: string) => {
       if (!value.trim()) {
         setAssetIdError(null);
@@ -27,28 +36,62 @@ export function useAssetIdValidation({ id, typeValue, setValue }: UseAssetIdVali
       }
       setAssetIdChecking(true);
       try {
-        const result = await utils.inventory.items.searchByAssetId.fetch({ assetId: value.trim() });
-        if (result.data && result.data.id !== id) {
-          setAssetIdError(`Asset ID already in use by ${result.data.itemName}`);
-        } else {
+        const result = await pillarCall<SearchByAssetIdResult>(
+          'inventory',
+          ['items', 'searchByAssetId'],
+          { assetId: value.trim() }
+        );
+        if (result.kind !== 'ok') {
           setAssetIdError(null);
+          return;
         }
+        const match = result.value.data;
+        setAssetIdError(
+          match && match.id !== id ? `Asset ID already in use by ${match.itemName}` : null
+        );
       } catch {
         setAssetIdError(null);
       } finally {
         setAssetIdChecking(false);
       }
     },
-    [id, utils]
+    [id, pillarCall, setAssetIdError, setAssetIdChecking]
   );
+}
 
-  const handleAutoGenerate = useCallback(async () => {
+interface AutoGenerateArgs {
+  typeValue: string;
+  pillarCall: PillarCall;
+  setValue: UseFormSetValue<ItemFormValues>;
+  setAssetIdError: (v: string | null) => void;
+  setGenerating: (v: boolean) => void;
+  validateAssetIdUniqueness: (value: string) => Promise<void>;
+}
+
+function useHandleAutoGenerate(args: AutoGenerateArgs) {
+  const {
+    typeValue,
+    pillarCall,
+    setValue,
+    setAssetIdError,
+    setGenerating,
+    validateAssetIdUniqueness,
+  } = args;
+  return useCallback(async () => {
     if (!typeValue) return;
     setGenerating(true);
     try {
       const prefix = extractPrefix(typeValue);
-      const result = await utils.inventory.items.countByAssetPrefix.fetch({ prefix });
-      const nextNum = result.data + 1;
+      const result = await pillarCall<CountByAssetPrefixResult>(
+        'inventory',
+        ['items', 'countByAssetPrefix'],
+        { prefix }
+      );
+      if (result.kind !== 'ok') {
+        toast.error('Failed to generate asset ID');
+        return;
+      }
+      const nextNum = result.value.data + 1;
       const padded = nextNum >= 100 ? String(nextNum) : String(nextNum).padStart(2, '0');
       const newAssetId = `${prefix}${padded}`;
       setValue('assetId', newAssetId, { shouldDirty: true });
@@ -59,7 +102,29 @@ export function useAssetIdValidation({ id, typeValue, setValue }: UseAssetIdVali
     } finally {
       setGenerating(false);
     }
-  }, [typeValue, utils, setValue, validateAssetIdUniqueness]);
+  }, [typeValue, pillarCall, setValue, setAssetIdError, setGenerating, validateAssetIdUniqueness]);
+}
+
+export function useAssetIdValidation({ id, typeValue, setValue }: UseAssetIdValidationArgs) {
+  const pillarCall = usePillarCall();
+  const [assetIdError, setAssetIdError] = useState<string | null>(null);
+  const [assetIdChecking, setAssetIdChecking] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  const validateAssetIdUniqueness = useValidateAssetIdUniqueness(
+    id,
+    pillarCall,
+    setAssetIdError,
+    setAssetIdChecking
+  );
+  const handleAutoGenerate = useHandleAutoGenerate({
+    typeValue,
+    pillarCall,
+    setValue,
+    setAssetIdError,
+    setGenerating,
+    validateAssetIdUniqueness,
+  });
 
   return {
     assetIdError,

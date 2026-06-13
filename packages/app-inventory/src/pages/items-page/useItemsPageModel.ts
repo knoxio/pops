@@ -1,9 +1,22 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
 import { useSetPageContext } from '@pops/navigation';
-import { type LocationSegment, type SelectOption, useDebouncedValue } from '@pops/ui';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+import { type SelectOption } from '@pops/ui';
+
+import { usePillarCall } from '../../lib/pillar-call';
+import {
+  buildQueryInput,
+  hasAnyActiveFilter,
+  useItemsPageFilters,
+  type Filters,
+} from './useItemsPageFilters';
+import {
+  buildLocationPathMap,
+  flattenLocations,
+  type LocationTreeNodeShape,
+} from './useItemsPageLocations';
 
 import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
 
@@ -23,95 +36,49 @@ export function getInitialView(): ViewMode {
 
 export const VIEW_STORAGE = VIEW_STORAGE_KEY;
 
-type TreeNode = { id: string; name: string; children: TreeNode[] };
+export { useItemsPageFilters };
 
-function flattenLocations(nodes: TreeNode[]): SelectOption[] {
-  const opts: SelectOption[] = [{ value: '', label: 'All Locations' }];
-  function walk(items: TreeNode[], depth: number): void {
-    for (const node of items) {
-      const indent = depth > 0 ? '\u00A0\u00A0'.repeat(depth) + '└ ' : '';
-      opts.push({ value: node.id, label: `${indent}${node.name}` });
-      walk(node.children, depth + 1);
-    }
-  }
-  walk(nodes, 0);
-  return opts;
+interface DistinctTypesResult {
+  data: string[];
 }
-
-function buildLocationPathMap(nodes: TreeNode[]): ReadonlyMap<string, LocationSegment[]> {
-  const map = new Map<string, LocationSegment[]>();
-  function walk(items: TreeNode[], ancestors: LocationSegment[]): void {
-    for (const node of items) {
-      const path = [...ancestors, { id: node.id, name: node.name }];
-      map.set(node.id, path);
-      walk(node.children, path);
-    }
-  }
-  walk(nodes, []);
-  return map;
+interface LocationsTreeResult {
+  data: LocationTreeNodeShape[];
 }
-
-export function useItemsPageFilters() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const search = searchParams.get('q') ?? '';
-  const debouncedSearch = useDebouncedValue(search, 300);
-  const typeFilter = searchParams.get('type') ?? '';
-  const conditionFilter = searchParams.get('condition') ?? '';
-  const inUseFilter = searchParams.get('inUse') ?? '';
-  const locationFilter = searchParams.get('locationId') ?? '';
-
-  const setParam = useCallback(
-    (key: string, value: string) => {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        if (value) next.set(key, value);
-        else next.delete(key);
-        return next;
-      });
-    },
-    [setSearchParams]
-  );
-
-  const clearFilters = useCallback(() => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete('type');
-      next.delete('condition');
-      next.delete('inUse');
-      next.delete('locationId');
-      return next;
-    });
-  }, [setSearchParams]);
-
-  return {
-    search,
-    debouncedSearch,
-    typeFilter,
-    conditionFilter,
-    inUseFilter,
-    locationFilter,
-    setParam,
-    clearFilters,
-  };
+interface ItemsListResult {
+  data: InventoryItem[];
+  pagination?: { total?: number };
+  totals?: { totalReplacementValue?: number; totalResaleValue?: number };
 }
-
-type Filters = ReturnType<typeof useItemsPageFilters>;
+interface SearchByAssetIdResult {
+  data: { id: string } | null;
+}
+interface DeleteItemInput {
+  id: string;
+}
 
 function useItemsPageOptions() {
-  const { data: typesData } = trpc.inventory.items.distinctTypes.useQuery();
+  const { data: typesData } = usePillarQuery<DistinctTypesResult>(
+    'inventory',
+    ['items', 'distinctTypes'],
+    undefined
+  );
   const typeOptions = useMemo<SelectOption[]>(() => {
     const opts: SelectOption[] = [{ value: '', label: 'All Types' }];
     for (const t of typesData?.data ?? []) opts.push({ value: t, label: t });
     return opts;
   }, [typesData]);
 
-  const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
+  const { data: locationsData } = usePillarQuery<LocationsTreeResult>(
+    'inventory',
+    ['locations', 'tree'],
+    undefined
+  );
   const locationOptions = useMemo(
-    () => flattenLocations((locationsData?.data ?? []) as TreeNode[]),
+    () => flattenLocations(locationsData?.data ?? []),
     [locationsData]
   );
   const locationPathMap = useMemo(
-    () => buildLocationPathMap((locationsData?.data ?? []) as TreeNode[]),
+    () => buildLocationPathMap(locationsData?.data ?? []),
     [locationsData]
   );
   return { typeOptions, locationOptions, locationPathMap };
@@ -119,55 +86,35 @@ function useItemsPageOptions() {
 
 function useAssetIdSearchHandler(filters: Filters) {
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
+  const pillarCall = usePillarCall();
   const [, setAssetIdSearching] = useState(false);
   return useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== 'Enter' || !filters.search.trim()) return;
       setAssetIdSearching(true);
       try {
-        const result = await utils.inventory.items.searchByAssetId.fetch({
-          assetId: filters.search.trim(),
-        });
-        if (result.data) void navigate(`/inventory/items/${result.data.id}`);
+        const result = await pillarCall<SearchByAssetIdResult>(
+          'inventory',
+          ['items', 'searchByAssetId'],
+          { assetId: filters.search.trim() }
+        );
+        if (result.kind === 'ok' && result.value.data) {
+          void navigate(`/inventory/items/${result.value.data.id}`);
+        }
       } finally {
         setAssetIdSearching(false);
       }
     },
-    [filters.search, utils, navigate]
+    [filters.search, pillarCall, navigate]
   );
 }
 
-function buildQueryInput(filters: Filters) {
+function summarize(data: ItemsListResult | undefined) {
   return {
-    search: filters.debouncedSearch || undefined,
-    type: filters.typeFilter || undefined,
-    condition: filters.conditionFilter || undefined,
-    inUse: (filters.inUseFilter || undefined) as 'true' | 'false' | undefined,
-    locationId: filters.locationFilter || undefined,
-    limit: 200,
-  };
-}
-
-function hasAnyActiveFilter(filters: Filters): boolean {
-  return Boolean(
-    filters.typeFilter || filters.conditionFilter || filters.inUseFilter || filters.locationFilter
-  );
-}
-
-interface ItemsQueryData {
-  data?: unknown[];
-  pagination?: { total?: number };
-  totals?: { totalReplacementValue?: number; totalResaleValue?: number };
-}
-
-function summarize(data: unknown) {
-  const d = data as ItemsQueryData | undefined;
-  return {
-    items: (d?.data ?? []) as InventoryItem[],
-    totalCount: d?.pagination?.total ?? 0,
-    totalReplacementValue: d?.totals?.totalReplacementValue ?? 0,
-    totalResaleValue: d?.totals?.totalResaleValue ?? 0,
+    items: data?.data ?? [],
+    totalCount: data?.pagination?.total ?? 0,
+    totalReplacementValue: data?.totals?.totalReplacementValue ?? 0,
+    totalResaleValue: data?.totals?.totalResaleValue ?? 0,
   };
 }
 
@@ -195,16 +142,22 @@ export function useItemsPageModel() {
   const handleSearchKeyDown = useAssetIdSearchHandler(filters);
 
   const queryInput = useMemo(() => buildQueryInput(filters), [filters]);
-  const { data, isLoading } = trpc.inventory.items.list.useQuery(queryInput);
+  const { data, isLoading } = usePillarQuery<ItemsListResult>(
+    'inventory',
+    ['items', 'list'],
+    queryInput
+  );
   const summary = summarize(data);
 
-  const utils = trpc.useUtils();
-  const deleteMutation = trpc.inventory.items.delete.useMutation({
-    onSuccess: () => {
-      void utils.inventory.items.list.invalidate();
-      setDeletingItemId(null);
-    },
-  });
+  const deleteMutation = usePillarMutation<DeleteItemInput, unknown>(
+    'inventory',
+    ['items', 'delete'],
+    {
+      onSuccess: () => {
+        setDeletingItemId(null);
+      },
+    }
+  );
 
   return {
     navigate,

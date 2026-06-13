@@ -8,38 +8,43 @@ const mocks = vi.hoisted(() => ({
   treeQuery: vi.fn(),
   searchByAssetId: vi.fn(),
   deleteItem: vi.fn(),
-  invalidateList: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      items: {
-        list: { useQuery: (input: unknown) => mocks.itemsQuery(input) },
-        distinctTypes: { useQuery: () => mocks.typesQuery() },
-        searchByAssetId: { fetch: mocks.searchByAssetId },
-        delete: {
-          useMutation: (opts?: { onSuccess?: () => void }) => ({
-            mutate: (input: { id: string }) => {
-              mocks.deleteItem(input);
-              opts?.onSuccess?.();
-            },
-            isPending: false,
-          }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'items.list') return mocks.itemsQuery(input);
+    if (key === 'items.distinctTypes') return mocks.typesQuery();
+    if (key === 'locations.tree') return mocks.treeQuery();
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: () => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'items.delete') {
+      return {
+        mutate: (input: { id: string }) => {
+          mocks.deleteItem(input);
+          opts?.onSuccess?.();
         },
-      },
-      locations: {
-        tree: { useQuery: () => mocks.treeQuery() },
-      },
-    },
-    useUtils: () => ({
-      inventory: {
-        items: {
-          list: { invalidate: mocks.invalidateList },
-          searchByAssetId: { fetch: mocks.searchByAssetId },
-        },
-      },
-    }),
+        isPending: false,
+      };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+}));
+
+vi.mock('../lib/pillar-call', () => ({
+  usePillarCall: () => async (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'items.searchByAssetId') {
+      const result = await mocks.searchByAssetId(input);
+      return { kind: 'ok', value: result };
+    }
+    return { kind: 'contract-mismatch', pillar: 'inventory', actual: key };
   },
 }));
 

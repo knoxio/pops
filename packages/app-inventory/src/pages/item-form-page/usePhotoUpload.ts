@@ -1,35 +1,61 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useImageProcessor } from '../../hooks/useImageProcessor';
-import { processAndUpload } from './photo-upload-helpers';
+import { processAndUpload, type PhotoUploadMutation } from './photo-upload-helpers';
 
 import type { PhotoItem } from '../../components/PhotoGallery';
 import type { UploadedFile } from '../../components/PhotoUpload';
+
+interface PhotosListResult {
+  data: PhotoItem[];
+}
+
+interface PhotoUploadInput {
+  itemId: string;
+  fileBase64: string;
+  sortOrder: number;
+}
+
+interface PhotoDeleteInput {
+  id: number;
+}
+
+interface PhotoReorderInput {
+  itemId: string;
+  orderedIds: number[];
+}
 
 function usePhotoMutations(
   id: string | undefined,
   isEditMode: boolean,
   setDeleteConfirmId: (v: number | null) => void
 ) {
-  const { data: photosData, refetch: refetchPhotos } = trpc.inventory.photos.listForItem.useQuery(
+  const { data: photosData } = usePillarQuery<PhotosListResult>(
+    'inventory',
+    ['photos', 'listForItem'],
     { itemId: id ?? '' },
     { enabled: isEditMode }
   );
   const existingPhotos: PhotoItem[] = photosData?.data ?? [];
-  const uploadMutation = trpc.inventory.photos.upload.useMutation({
-    onSuccess: () => void refetchPhotos(),
-  });
-  const photoDeleteMutation = trpc.inventory.photos.remove.useMutation({
-    onSuccess: () => {
-      void refetchPhotos();
-      setDeleteConfirmId(null);
-    },
-  });
-  const reorderMutation = trpc.inventory.photos.reorder.useMutation({
-    onSuccess: () => void refetchPhotos(),
-  });
+  const uploadMutation = usePillarMutation<PhotoUploadInput, unknown>('inventory', [
+    'photos',
+    'upload',
+  ]);
+  const photoDeleteMutation = usePillarMutation<PhotoDeleteInput, unknown>(
+    'inventory',
+    ['photos', 'remove'],
+    {
+      onSuccess: () => {
+        setDeleteConfirmId(null);
+      },
+    }
+  );
+  const reorderMutation = usePillarMutation<PhotoReorderInput, unknown>('inventory', [
+    'photos',
+    'reorder',
+  ]);
   return { existingPhotos, uploadMutation, photoDeleteMutation, reorderMutation };
 }
 
@@ -75,7 +101,7 @@ export function usePhotoUploadState(id: string | undefined, isEditMode: boolean)
         isEditMode,
         id,
         existingPhotosLength: existingPhotos.length,
-        uploadMutation,
+        uploadMutation: uploadMutation satisfies PhotoUploadMutation,
       });
     },
     [processFiles, isEditMode, id, uploadMutation, existingPhotos.length, setUploadFiles]

@@ -9,42 +9,29 @@ const mockTreeQuery = vi.fn();
 const mockCreateMutate = vi.fn();
 const mockUpdateMutate = vi.fn();
 const mockDeleteMutate = vi.fn();
-const mockInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      locations: {
-        tree: {
-          useQuery: (...args: unknown[]) => mockTreeQuery(...args),
-        },
-        create: {
-          useMutation: (opts: Record<string, unknown>) => {
-            (mockCreateMutate as unknown as Record<string, unknown>).__opts = opts;
-            return { mutate: mockCreateMutate, isPending: false };
-          },
-        },
-        update: {
-          useMutation: (opts: Record<string, unknown>) => {
-            (mockUpdateMutate as unknown as Record<string, unknown>).__opts = opts;
-            return { mutate: mockUpdateMutate, isPending: false };
-          },
-        },
-        delete: {
-          useMutation: (opts: Record<string, unknown>) => {
-            (mockDeleteMutate as unknown as Record<string, unknown>).__opts = opts;
-            return { mutate: mockDeleteMutate, isPending: false };
-          },
-        },
-      },
-    },
-    useUtils: () => ({
-      inventory: {
-        locations: {
-          tree: { invalidate: mockInvalidate },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'locations.tree') return mockTreeQuery(input);
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'locations.create') {
+      return { mutate: mockCreateMutate, isPending: false, ...opts };
+    }
+    if (key === 'locations.update') {
+      return { mutate: mockUpdateMutate, isPending: false, ...opts };
+    }
+    if (key === 'locations.delete') {
+      return { mutate: mockDeleteMutate, isPending: false, ...opts };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
 }));
 

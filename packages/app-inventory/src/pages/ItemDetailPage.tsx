@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 
+import { PillarCallError } from '@pops/pillar-sdk/client';
 import { Alert, AlertDescription, AlertTitle, PageHeader, Skeleton } from '@pops/ui';
 
 import { ConnectionsSection } from './item-detail-page/sections/ConnectionsSection';
@@ -23,12 +24,23 @@ function ItemDetailSkeleton() {
   );
 }
 
-function ErrorState({
-  error,
-}: {
-  error: { data?: { code?: string | undefined } | null; message: string };
-}) {
-  const is404 = error.data?.code === 'NOT_FOUND';
+function hasNotFoundCode(error: Error): boolean {
+  if (!('data' in error)) return false;
+  const data = error.data;
+  if (!data || typeof data !== 'object') return false;
+  if (!('code' in data)) return false;
+  return data.code === 'NOT_FOUND';
+}
+
+function errorIsNotFound(error: Error): boolean {
+  if (error instanceof PillarCallError) {
+    return error.result.kind === 'unavailable' || error.result.kind === 'contract-mismatch';
+  }
+  return hasNotFoundCode(error);
+}
+
+function ErrorState({ error }: { error: Error }) {
+  const is404 = errorIsNotFound(error);
   return (
     <div>
       <Alert variant="destructive">
@@ -67,7 +79,7 @@ function ItemTitle({
 }
 
 type Model = ReturnType<typeof useItemDetailPageModel>;
-type Item = NonNullable<Model['itemData']>['data'];
+type Item = NonNullable<NonNullable<Model['itemData']>['data']>;
 
 function DetailContent({ model, id, item }: { model: Model; id: string; item: Item }) {
   const {
@@ -79,7 +91,6 @@ function DetailContent({ model, id, item }: { model: Model; id: string; item: It
     reorderPhotosMutation,
     deleteMutation,
     disconnectMutation,
-    utils,
   } = model;
   const connectionsCount = connectionsData?.data.length ?? 0;
   const photosCount = photosData?.pagination?.total ?? 0;
@@ -114,7 +125,9 @@ function DetailContent({ model, id, item }: { model: Model; id: string; item: It
         connections={connectionsData?.data ?? []}
         connectionsLoading={connectionsLoading}
         isDisconnecting={disconnectMutation.isPending}
-        onConnected={() => void utils.inventory.connections.listForItem.invalidate({ itemId: id })}
+        onConnected={() => {
+          /* Pillar SDK auto-invalidates the `inventory.connections` router prefix on success. */
+        }}
         onDisconnect={(conn) =>
           disconnectMutation.mutate({ itemAId: conn.itemAId, itemBId: conn.itemBId })
         }
@@ -128,6 +141,6 @@ export function ItemDetailPage() {
   const model = useItemDetailPageModel();
   if (model.isLoading) return <ItemDetailSkeleton />;
   if (model.error) return <ErrorState error={model.error} />;
-  if (!model.itemData || !model.id) return null;
+  if (!model.itemData?.data || !model.id) return null;
   return <DetailContent model={model} id={model.id} item={model.itemData.data} />;
 }

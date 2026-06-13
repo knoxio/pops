@@ -2,12 +2,17 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import type { ItemFormValues, PendingConnection } from './types';
 
+interface ConnectInput {
+  itemAId: string;
+  itemBId: string;
+}
+
 interface ConnectMutation {
-  mutateAsync: (input: { itemAId: string; itemBId: string }) => Promise<unknown>;
+  mutateAsync: (input: ConnectInput) => Promise<unknown>;
 }
 
 async function applyConnections(
@@ -43,7 +48,27 @@ function parseNumber(v: string): number | null {
   return v ? parseFloat(v) : null;
 }
 
-function buildItemPayload(values: ItemFormValues) {
+interface ItemPayload {
+  itemName: string;
+  brand: string | null;
+  model: string | null;
+  itemId: string | null;
+  type: string | null;
+  condition: string | null;
+  room: null;
+  locationId: string | null;
+  inUse: boolean;
+  deductible: boolean;
+  purchaseDate: string | null;
+  warrantyExpires: string | null;
+  purchasePrice: number | null;
+  replacementValue: number | null;
+  resaleValue: number | null;
+  assetId: string | null;
+  notes: string | null;
+}
+
+function buildItemPayload(values: ItemFormValues): ItemPayload {
   return {
     itemName: values.itemName.trim(),
     brand: values.brand || null,
@@ -71,35 +96,49 @@ interface UseItemMutationsArgs {
   pendingConnections: PendingConnection[];
 }
 
+interface CreateResult {
+  data: { id: string };
+}
+
+interface UpdateInput {
+  id: string;
+  data: ItemPayload;
+}
+
 export function useItemMutations({ id, isEditMode, pendingConnections }: UseItemMutationsArgs) {
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
-  const connectMutation = trpc.inventory.connections.connect.useMutation();
+  const connectMutation = usePillarMutation<ConnectInput, unknown>('inventory', [
+    'connections',
+    'connect',
+  ]);
 
-  const createMutation = trpc.inventory.items.create.useMutation({
-    onSuccess: async (result) => {
-      const newItemId = result.data.id;
-      const connected = await applyConnections(newItemId, pendingConnections, connectMutation);
-      reportCreateSuccess(connected, pendingConnections.length > 0);
-      // Navigate BEFORE invalidations to avoid a race where the cache invalidation
-      // triggers a refetch + re-render of the current page that drops the
-      // navigate call (observed in React 19; see issue #2157).
-      void navigate(`/inventory/items/${newItemId}`);
-      void utils.inventory.items.list.invalidate();
-    },
-    onError: (err) => toast.error(`Failed to create: ${err.message}`),
-  });
+  const createMutation = usePillarMutation<ItemPayload, CreateResult>(
+    'inventory',
+    ['items', 'create'],
+    {
+      onSuccess: async (result) => {
+        const newItemId = result.data.id;
+        const connected = await applyConnections(newItemId, pendingConnections, connectMutation);
+        reportCreateSuccess(connected, pendingConnections.length > 0);
+        // Navigate BEFORE invalidations to avoid a race where the cache invalidation
+        // triggers a refetch + re-render of the current page that drops the
+        // navigate call (observed in React 19; see issue #2157). The pillar SDK
+        // already invalidates the `inventory.items` router prefix on success.
+        void navigate(`/inventory/items/${newItemId}`);
+      },
+      onError: (err) => toast.error(`Failed to create: ${err.message}`),
+    }
+  );
 
-  const updateMutation = trpc.inventory.items.update.useMutation({
+  const updateMutation = usePillarMutation<UpdateInput, unknown>('inventory', ['items', 'update'], {
     onSuccess: () => {
       toast.success('Item updated');
       // Navigate BEFORE invalidations to avoid a race where the cache invalidation
       // triggers a refetch + re-render of the edit page that silently drops the
       // navigate call (observed in React 19; see issue #2157). The destination
-      // detail page fetches fresh data on mount via its own queries.
+      // detail page fetches fresh data on mount via its own queries. The pillar
+      // SDK already invalidates the `inventory.items` router prefix on success.
       void navigate(`/inventory/items/${id}`);
-      void utils.inventory.items.list.invalidate();
-      void utils.inventory.items.get.invalidate({ id: id ?? '' });
     },
     onError: (err) => toast.error(`Failed to update: ${err.message}`),
   });
