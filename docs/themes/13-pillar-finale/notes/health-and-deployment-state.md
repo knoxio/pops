@@ -1,7 +1,7 @@
 # Health & Deployment State — Theme 13 investigation
 
 Snapshot taken 2026-06-13. Branch under audit: `origin/main` at
-`8c614881 feat(media): drop movies backfill entry (Theme 13 PR4) (#3050)`.
+`da50d6dc feat(pillar-sdk): tool-call routing (PRD-202) (#3049)`.
 
 The session goal is "pops is healthy and deployed". This note records the
 current state of the pipeline and the gaps blocking that claim.
@@ -9,27 +9,23 @@ current state of the pipeline and the gaps blocking that claim.
 ## TL;DR
 
 **pops is not deployable from `main` right now.** The Publish Images
-workflow has been failing on every push to main for at least the last 5
+workflow has been failing on every push to main for at least the last 6
 runs. Watchtower-based prod rollout (the only deploy mechanism — see §1)
 therefore picks up nothing new. The most recent successful production image
 is whatever was tagged before the breakage landed.
 
-Two independent regressions are responsible:
+Root cause: `packages/pillar-sdk` is now a transitive runtime dep of
+`packages/api-client` (via `"@pops/pillar-sdk": "workspace:*"` in
+`packages/api-client/package.json`) but no app `Dockerfile` copies
+`packages/pillar-sdk/package.json` into the build context. `pnpm install`
+aborts inside the pops-api image build with
+`ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`. Every app Dockerfile that builds an
+image whose dep tree reaches `@pops/api-client` is affected — see §5.
 
-1. `packages/pillar-sdk` is now a runtime dep of `packages/api-client` but
-   no app Dockerfile copies the `pillar-sdk/package.json` into the build
-   context. `pnpm install` aborts inside the pops-api image build with
-   `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`.
-2. `packages/pillar-sdk/src/orchestrator/runner.ts:191-192` iterates
-   `pillar.manifest.search.adapters` as if they were strings, but
-   PRD-196 (already merged) changed the manifest schema so each adapter
-   is an object `{ name, entityType, queryShape, procedurePath, ... }`.
-   `tsc` fails with `TS2322` and that takes down API Tests + API Quality
-   workflows on main.
-
-The contract-package PRs (PRD-197 orchestrator, PRD-196 manifest, PRD-201
-AI tool builder) landed without the cross-cuts that would have kept CI
-green.
+(An earlier regression in `packages/pillar-sdk/src/orchestrator/runner.ts`
+— iterating `manifest.search.adapters` as strings after PRD-196 turned
+them into objects — was fixed in-place by PRD-202 #3049 and is no longer
+load-bearing. The Dockerfile gap is independent and predates PRD-202.)
 
 ## 1 — Deployment pipeline
 
@@ -51,13 +47,14 @@ No "Deploy" workflow exists. Production rollout is **GHCR pull + Watchtower**:
 
 | Run         | Status  | Commit                                                           |
 | ----------- | ------- | ---------------------------------------------------------------- |
+| 27457114002 | failure | feat(pillar-sdk): tool-call routing (PRD-202) (#3049)            |
 | 27456827841 | failure | feat(media): drop movies backfill entry (#3050)                  |
 | 27456825113 | failure | docs(theme-13): rewrite PRD-174                                  |
 | 27456823530 | failure | feat(pillar-sdk): dynamic AI tool list builder (PRD-201) (#3045) |
 | 27456575685 | failure | test(per-pillar-migrations)                                      |
 | 27456430257 | failure | docs(theme-13): PRD-178 inventory.warranties                     |
 
-Root cause (from the run log of 27456827841 step "Build and push pops-api"):
+Root cause (from the run log of 27457114002 step "Build and push pops-api"):
 
 ```
 #89 ERR_PNPM_WORKSPACE_PKG_NOT_FOUND  In ../../packages/api-client:
@@ -187,33 +184,33 @@ A CI job that:
 
 Without this, "pops is healthy and deployed" can only be asserted
 visually against the running prod stack. The current published-images
-state on prod is whatever rolled before #3045 broke the build — so the
-prod containers are healthy by accident, not by gating.
+state on prod is whatever rolled before the Dockerfile gap broke the
+build — so the prod containers are healthy by accident, not by gating.
 
-## 5 — Recommended fixes (low-hanging)
+## 5 — Recommended fix (low-hanging)
 
-These two would unstick `publish-images.yml` on main and let watchtower
-start rolling again. They are not part of this investigation note's PR
-— file separately:
+**Add `pillar-sdk` to every Dockerfile** that builds a workspace image
+whose dep tree reaches `@pops/api-client` (transitively pulls
+`@pops/pillar-sdk`). Specifically, each affected `apps/<app>/Dockerfile`
+needs both:
 
-1. **Fix `packages/pillar-sdk/src/orchestrator/runner.ts`** lines 191-192
-   to pull `adapter.name` from the iterated `SearchAdapter` object:
+```dockerfile
+COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
+# … then later, alongside the other source copies:
+COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
+COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/
+# … and a build step before the dependent app builds:
+WORKDIR /app/packages/pillar-sdk
+RUN pnpm build
+# … and a final-stage copy into node_modules:
+COPY --from=builder /app/packages/pillar-sdk/dist ./node_modules/@pops/pillar-sdk/dist
+COPY --from=builder /app/packages/pillar-sdk/package.json ./node_modules/@pops/pillar-sdk/
+```
 
-   ```ts
-   for (const adapter of pillar.manifest.search.adapters) {
-     targets.push({ pillarId: pillar.pillarId, adapterName: adapter.name });
-   }
-   ```
-
-   This is the regression caused by PRD-196's schema change being
-   merged before PRD-197's runner was retyped.
-
-2. **Add `pillar-sdk` to every Dockerfile** that builds a workspace
-   image whose dep tree reaches `@pops/api-client` (transitively pulls
-   `@pops/pillar-sdk`). At minimum `apps/pops-api/Dockerfile` — but a
-   sweep across all 11 Dockerfiles (`apps/*/Dockerfile`) is warranted,
-   because the api-client → pillar-sdk edge propagates through every
-   shell and pillar Dockerfile that depends on api-client.
+The api-client → pillar-sdk edge propagates through every shell and
+pillar Dockerfile that depends on api-client, so a sweep across all 11
+`apps/*/Dockerfile` files is warranted. Filing this fix in a separate
+PR is appropriate — it is mechanical but touches every image.
 
 The deeper gap — no end-to-end multi-pillar boot smoke — is a new
 roadmap item; not a quick fix, but worth scoping under Theme 13 if
