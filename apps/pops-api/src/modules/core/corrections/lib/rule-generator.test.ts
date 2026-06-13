@@ -12,15 +12,19 @@ vi.mock('../../../../env.js', () => ({
   getEnv: vi.fn((key: string) => (key === 'ANTHROPIC_API_KEY' ? 'test-key' : undefined)),
 }));
 
-vi.mock('../../../../db.js', () => ({
-  getDrizzle: () => ({
+vi.mock('../../../../db.js', () => {
+  const stubDrizzle = {
     insert: () => ({
       values: () => ({
         run: vi.fn(),
       }),
     }),
-  }),
-}));
+  };
+  return {
+    getDrizzle: () => stubDrizzle,
+    getCoreDrizzle: () => stubDrizzle,
+  };
+});
 
 vi.mock('@pops/db-types', () => ({
   aiUsage: {},
@@ -33,6 +37,10 @@ vi.mock('../../../../lib/logger.js', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+vi.mock('../../../../lib/inference-middleware.js', () => ({
+  trackInference: <T>(_params: unknown, fn: () => Promise<T>) => fn(),
 }));
 
 import { analyzeCorrection, patternMatchesDescription } from './rule-generator.js';
