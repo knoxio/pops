@@ -1,6 +1,8 @@
 # PRD-188: Batching invariants
 
 > Epic: [Batching fix](../../epics/04-batching-fix.md)
+>
+> Status: **Done**
 
 ## Overview
 
@@ -60,11 +62,11 @@ A test that exercises every page's data loader, captures tRPC calls, and asserts
 
 ## User Stories
 
-| #   | Story                                                     | Summary                                                                   |
-| --- | --------------------------------------------------------- | ------------------------------------------------------------------------- |
-| 01  | [us-01-runtime-assertion](us-01-runtime-assertion.md)     | Dev-mode assertion logging cross-pillar batches                           |
-| 02  | [us-02-ci-invariant-test](us-02-ci-invariant-test.md)     | E2E test: scan every page's tRPC traffic; assert single-namespace batches |
-| 03  | [us-03-document-invariants](us-03-document-invariants.md) | Author `trpc.invariants.md` with the invariant list + rationale           |
+| #   | Story                                                                                                            | Status      |
+| --- | ---------------------------------------------------------------------------------------------------------------- | ----------- |
+| 01  | Pure assertion (`assertSingleTargetBatch` / `checkSingleTargetBatch`) + `CrossPillarBatchError` in `api-client`   | Done        |
+| 02  | E2E test: scan every page's tRPC traffic; assert single-namespace batches (superseded by PRD-189 audit inventory) | Deferred    |
+| 03  | Author `trpc.invariants.md` with the invariant list + rationale (this PRD now carries the invariant list inline) | Not started |
 
 ## Out of Scope
 

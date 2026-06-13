@@ -1,6 +1,8 @@
 # PRD-187: splitLink strategy
 
 > Epic: [Batching fix](../../epics/04-batching-fix.md)
+>
+> Status: **Done**
 
 ## Overview
 
@@ -80,14 +82,23 @@ export const trpc = createTRPCReact<AppRouter>({
 | Procedure namespaced under a non-existent pillar                | Same as no-namespace: falls through to legacy.                                         |
 | User calls a procedure during a deploy where one pillar is down | The pillar's batch URL fails; SDK error semantics preserved. Other pillars unaffected. |
 
+## Acceptance Criteria
+
+- [x] `createPillarSplitLink` lives in `packages/api-client/src/split-link.ts` and consumes `PILLARS` from `@pops/pillar-sdk` so adding a pillar to the SDK constant grows the link chain automatically.
+- [x] Per-pillar URL map (`PILLAR_TRPC_URLS`) exports `/trpc-<pillar>` prefixes for every known pillar; the legacy `/trpc` URL is exposed as `LEGACY_TRPC_URL` for non-pillar paths.
+- [x] The default terminal link is `httpBatchLink` with `maxURLLength: 2083`, overridable via `CreateSplitLinkOptions.linkFor` for tests.
+- [x] Non-pillar paths (`pops.health`, bare `health`, anything whose first segment isn't a known pillar id) fall through to the legacy `/trpc` link.
+- [x] The shell's `trpcClient` (`packages/api-client/src/index.ts`, re-exported from `apps/pops-shell/src/lib/trpc.ts`) uses `createPillarSplitLink` as its only link.
+- [x] Routing decisions are covered by `packages/api-client/src/__tests__/split-link.test.ts` (per-pillar dispatch, legacy fallthrough, namespace-only / missing-namespace edge cases).
+
 ## User Stories
 
-| #   | Story                                                   | Summary                                                                                          |
-| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 01  | [us-01-pillar-list-import](us-01-pillar-list-import.md) | Import `PILLARS` from `@pops/pillar-sdk`; generate per-pillar batch links                        |
-| 02  | [us-02-splitlink-config](us-02-splitlink-config.md)     | Wire `splitLink` with namespace-based routing                                                    |
-| 03  | [us-03-legacy-fallthrough](us-03-legacy-fallthrough.md) | Confirm non-pillar procedures route to `/trpc`                                                   |
-| 04  | [us-04-integration-tests](us-04-integration-tests.md)   | Test: every pillar's procedures hit the right URL; cross-pillar code paths use separate requests |
+| #   | Story                                                                                            | Status |
+| --- | ------------------------------------------------------------------------------------------------ | ------ |
+| 01  | Import `PILLARS` from `@pops/pillar-sdk`; generate per-pillar batch links                        | Done   |
+| 02  | Wire `splitLink` with namespace-based routing                                                    | Done   |
+| 03  | Confirm non-pillar procedures route to `/trpc`                                                   | Done   |
+| 04  | Test: every pillar's procedures hit the right URL; cross-pillar code paths use separate requests | Done   |
 
 ## Out of Scope
 
