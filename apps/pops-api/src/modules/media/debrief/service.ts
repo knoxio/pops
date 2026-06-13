@@ -2,18 +2,23 @@ import { and, asc, eq, inArray } from 'drizzle-orm';
 
 /**
  * Debrief service — auto-queue and manage post-watch debrief sessions.
+ * Theme-13 Wave-5 cascade: debrief tables routed through
+ * `getCerebrumDrizzle()`, `watch_history` / `movies` via `getMediaDrizzle()`,
+ * `comparison_dimensions` still on shared `getDrizzle()`.
  */
-import {
-  comparisonDimensions,
-  debriefResults,
-  debriefSessions,
-  movies,
-  watchHistory,
-} from '@pops/db-types';
+import { debriefResults, debriefSessions } from '@pops/cerebrum-db';
+import { comparisonDimensions } from '@pops/db-types';
+import { movies, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { getDebriefOpponent } from '../comparisons/service.js';
+
+import type { DebriefDimension, DebriefResponse, MovieMetaRow } from './types.js';
+
+export type { DebriefDimension, DebriefResponse } from './types.js';
 
 /**
  * Create a pending debrief session for a watch history entry.
@@ -23,17 +28,19 @@ import { getDebriefOpponent } from '../comparisons/service.js';
  * Returns the new session ID.
  */
 export function createDebriefSession(watchHistoryId: number): number {
-  const db = getDrizzle();
+  const mediaDb = getMediaDrizzle();
+  const cerebrumDb = getCerebrumDrizzle();
 
-  // Look up the watch history entry to find media info
-  const entry = db.select().from(watchHistory).where(eq(watchHistory.id, watchHistoryId)).get();
+  const entry = mediaDb
+    .select()
+    .from(watchHistory)
+    .where(eq(watchHistory.id, watchHistoryId))
+    .get();
   if (!entry) {
     throw new Error(`Watch history entry ${watchHistoryId} not found`);
   }
 
-  // Find and delete any existing pending/active sessions for this same media
-  // (re-watch resets debrief state)
-  const existingWatchIds = db
+  const existingWatchIds = mediaDb
     .select({ id: watchHistory.id })
     .from(watchHistory)
     .where(
@@ -43,7 +50,8 @@ export function createDebriefSession(watchHistoryId: number): number {
     .map((r) => r.id);
 
   if (existingWatchIds.length > 0) {
-    db.delete(debriefSessions)
+    cerebrumDb
+      .delete(debriefSessions)
       .where(
         and(
           inArray(debriefSessions.watchHistoryId, existingWatchIds),
@@ -53,7 +61,7 @@ export function createDebriefSession(watchHistoryId: number): number {
       .run();
   }
 
-  const result = db
+  const result = cerebrumDb
     .insert(debriefSessions)
     .values({
       watchHistoryId,
@@ -66,52 +74,21 @@ export function createDebriefSession(watchHistoryId: number): number {
   return Number(result.lastInsertRowid);
 }
 
-/** Response shape for a debrief dimension entry. */
-export interface DebriefDimension {
-  dimensionId: number;
-  name: string;
-  status: 'pending' | 'complete';
-  comparisonId: number | null;
-  opponent: {
-    id: number;
-    title: string;
-    posterPath: string | null;
-    posterUrl: string | null;
-  } | null;
-}
-
-/** Response shape for the getDebrief endpoint. */
-export interface DebriefResponse {
-  sessionId: number;
-  status: 'pending' | 'active' | 'complete';
-  movie: {
-    mediaType: string;
-    mediaId: number;
-    title: string;
-    posterPath: string | null;
-    posterUrl: string | null;
-  };
-  dimensions: DebriefDimension[];
-}
-
-interface MovieMetaRow {
-  id: number;
-  title: string;
-  posterPath: string | null;
-  tmdbId: number;
-  posterOverridePath: string | null;
-}
-
 function loadDebriefSessionEntities(sessionId: number): {
   session: typeof debriefSessions.$inferSelect;
   watchEntry: typeof watchHistory.$inferSelect;
   movieRow: MovieMetaRow;
 } {
-  const db = getDrizzle();
-  const session = db.select().from(debriefSessions).where(eq(debriefSessions.id, sessionId)).get();
+  const cerebrumDb = getCerebrumDrizzle();
+  const mediaDb = getMediaDrizzle();
+  const session = cerebrumDb
+    .select()
+    .from(debriefSessions)
+    .where(eq(debriefSessions.id, sessionId))
+    .get();
   if (!session) throw new NotFoundError('Debrief session', String(sessionId));
 
-  const watchEntry = db
+  const watchEntry = mediaDb
     .select()
     .from(watchHistory)
     .where(eq(watchHistory.id, session.watchHistoryId))
@@ -120,7 +97,7 @@ function loadDebriefSessionEntities(sessionId: number): {
     throw new NotFoundError('Watch history entry', String(session.watchHistoryId));
   }
 
-  const movieRow = db
+  const movieRow = mediaDb
     .select({
       id: movies.id,
       title: movies.title,
@@ -140,15 +117,16 @@ function buildDebriefDimensions(
   sessionId: number,
   watchEntry: typeof watchHistory.$inferSelect
 ): DebriefDimension[] {
-  const db = getDrizzle();
-  const dims = db
+  const sharedDb = getDrizzle();
+  const cerebrumDb = getCerebrumDrizzle();
+  const dims = sharedDb
     .select()
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))
     .orderBy(asc(comparisonDimensions.sortOrder))
     .all();
 
-  const results = db
+  const results = cerebrumDb
     .select()
     .from(debriefResults)
     .where(eq(debriefResults.sessionId, sessionId))
@@ -180,8 +158,9 @@ function activateIfPending(
   status: typeof debriefSessions.$inferSelect.status
 ): typeof debriefSessions.$inferSelect.status {
   if (status !== 'pending') return status;
-  const db = getDrizzle();
-  db.update(debriefSessions)
+  const cerebrumDb = getCerebrumDrizzle();
+  cerebrumDb
+    .update(debriefSessions)
     .set({ status: 'active' })
     .where(eq(debriefSessions.id, sessionId))
     .run();
@@ -220,24 +199,14 @@ export function getDebrief(sessionId: number): DebriefResponse {
 
 /**
  * Look up the most recent pending/active/complete debrief session for a
- * media item and return its full debrief response.
- *
- * PR #3119 (Option D step 1) denormalised `(media_type, media_id)` onto
- * `debrief_sessions`; this read now hits the row directly instead of
- * inner-joining `watch_history`. That removes the only cross-pillar join
- * blocking the MEDIA pillar exit — the cerebrum-side write surface that
- * populates the columns lives in the `cerebrum.debrief.logWatchCompletion`
- * router (Option D step 2). Existing rows were backfilled by the
- * `0071_debrief_media_denorm` migration; `createDebriefSession` sets both
- * columns on insert for new rows.
- *
- * Throws NotFoundError if no session exists for this media.
+ * media item via the denormalised `(media_type, media_id)` columns (PR
+ * #3119). Throws NotFoundError if no session exists for this media.
  */
 export function getDebriefByMedia(
   mediaType: 'movie' | 'episode',
   mediaId: number
 ): DebriefResponse {
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
 
   const session = db
     .select({ id: debriefSessions.id })

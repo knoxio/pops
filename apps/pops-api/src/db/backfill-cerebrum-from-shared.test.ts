@@ -66,14 +66,75 @@ CREATE UNIQUE INDEX uq_embeddings_source_chunk
   ON embeddings (source_type, source_id, chunk_index);
 `;
 
+const DEBRIEF_SQL = `
+CREATE TABLE debrief_sessions (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  watch_history_id integer NOT NULL,
+  media_type text,
+  media_id integer,
+  status text DEFAULT 'pending' NOT NULL,
+  created_at text DEFAULT (datetime('now')) NOT NULL
+);
+CREATE INDEX idx_debrief_sessions_media ON debrief_sessions (media_type, media_id);
+CREATE TABLE debrief_results (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  session_id integer NOT NULL,
+  dimension_id integer NOT NULL,
+  comparison_id integer,
+  created_at text DEFAULT (datetime('now')) NOT NULL
+);
+CREATE TABLE debrief_status (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  media_type text NOT NULL,
+  media_id integer NOT NULL,
+  dimension_id integer NOT NULL,
+  debriefed integer DEFAULT 0 NOT NULL,
+  dismissed integer DEFAULT 0 NOT NULL,
+  created_at text DEFAULT (datetime('now')) NOT NULL,
+  updated_at text DEFAULT (datetime('now')) NOT NULL
+);
+CREATE UNIQUE INDEX debrief_status_media_dimension_idx
+  ON debrief_status (media_type, media_id, dimension_id);
+`;
+
 function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string {
   const path = join(tmpDir, 'pops.db');
   const raw = new BetterSqlite3(path);
   raw.exec(NUDGE_LOG_SQL);
   raw.exec(EMBEDDINGS_SQL);
+  raw.exec(DEBRIEF_SQL);
   seed(raw);
   raw.close();
   return path;
+}
+
+function insertDebriefSession(
+  raw: BetterSqlite3.Database,
+  watchHistoryId: number,
+  mediaId: number
+): number {
+  const result = raw
+    .prepare(
+      `INSERT INTO debrief_sessions
+        (watch_history_id, media_type, media_id, status, created_at)
+       VALUES (?, 'movie', ?, 'pending', '2026-06-13T00:00:00Z')`
+    )
+    .run(watchHistoryId, mediaId);
+  return Number(result.lastInsertRowid);
+}
+
+function insertDebriefStatus(
+  raw: BetterSqlite3.Database,
+  mediaId: number,
+  dimensionId: number
+): void {
+  raw
+    .prepare(
+      `INSERT INTO debrief_status
+        (media_type, media_id, dimension_id, debriefed, dismissed, created_at, updated_at)
+       VALUES ('movie', ?, ?, 0, 0, '2026-06-13T00:00:00Z', '2026-06-13T00:00:00Z')`
+    )
+    .run(mediaId, dimensionId);
 }
 
 function insertEmbedding(raw: BetterSqlite3.Database, sourceId: string, chunkIndex = 0): void {
@@ -186,6 +247,100 @@ describe('backfillCerebrumFromShared', () => {
         n: number;
       };
       expect(n).toBe(0);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('copies debrief_sessions / debrief_results / debrief_status rows on first run', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      const sessionId = insertDebriefSession(raw, 11, 101);
+      raw
+        .prepare(
+          `INSERT INTO debrief_results (session_id, dimension_id, comparison_id, created_at)
+           VALUES (?, 1, NULL, '2026-06-13T00:00:00Z')`
+        )
+        .run(sessionId);
+      insertDebriefStatus(raw, 101, 1);
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      const sessions = cerebrum.raw.prepare('SELECT count(*) AS n FROM debrief_sessions').get() as {
+        n: number;
+      };
+      const results = cerebrum.raw.prepare('SELECT count(*) AS n FROM debrief_results').get() as {
+        n: number;
+      };
+      const status = cerebrum.raw.prepare('SELECT count(*) AS n FROM debrief_status').get() as {
+        n: number;
+      };
+      expect(sessions.n).toBe(1);
+      expect(results.n).toBe(1);
+      expect(status.n).toBe(1);
+
+      const result = cerebrum.raw.prepare('SELECT session_id FROM debrief_results').get() as {
+        session_id: number;
+      };
+      const session = cerebrum.raw.prepare('SELECT id FROM debrief_sessions').get() as {
+        id: number;
+      };
+      expect(result.session_id).toBe(session.id);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('debrief backfill is idempotent across re-runs', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertDebriefSession(raw, 11, 101);
+      insertDebriefStatus(raw, 101, 1);
+      insertDebriefStatus(raw, 101, 2);
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+
+      const { n: sessions } = cerebrum.raw
+        .prepare('SELECT count(*) AS n FROM debrief_sessions')
+        .get() as { n: number };
+      const { n: status } = cerebrum.raw
+        .prepare('SELECT count(*) AS n FROM debrief_status')
+        .get() as { n: number };
+      expect(sessions).toBe(1);
+      expect(status).toBe(2);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('debrief_status dedupes on (media_type, media_id, dimension_id) under mixed state', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertDebriefStatus(raw, 101, 1);
+      insertDebriefStatus(raw, 101, 2);
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      cerebrum.raw
+        .prepare(
+          `INSERT INTO debrief_status (media_type, media_id, dimension_id) VALUES ('movie', 101, 1)`
+        )
+        .run();
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+
+      const rows = cerebrum.raw
+        .prepare(
+          'SELECT media_id, dimension_id FROM debrief_status ORDER BY media_id, dimension_id'
+        )
+        .all() as { media_id: number; dimension_id: number }[];
+      expect(rows).toEqual([
+        { media_id: 101, dimension_id: 1 },
+        { media_id: 101, dimension_id: 2 },
+      ]);
     } finally {
       cerebrum.raw.close();
     }

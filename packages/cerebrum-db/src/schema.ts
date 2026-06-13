@@ -26,11 +26,20 @@
  *     when the extension is available; it has no drizzle table object
  *     because virtual tables cannot be represented in the schema
  *     builder.
+ *   - `debriefSessions` / `debriefResults` / `debriefStatus` — Theme-13
+ *     Wave 5 debrief slice (post-watch reflection, see
+ *     `0055_debrief_baseline.sql`). The cross-pillar `watch_history_id`
+ *     reference is a soft pointer into `media.db.watch_history`;
+ *     `media_type` + `media_id` carry the denormalised media tuple per
+ *     PR #3119 so the `getDebriefByMedia` read no longer joins media.
  */
 export { engramIndex, engramLinks, engramScopes, engramTags, nudgeLog } from '@pops/db-types';
 export {
   conversationContext,
   conversations,
+  debriefResults,
+  debriefSessions,
+  debriefStatus,
   embeddings,
   gliaActions,
   gliaTrustState,

@@ -24,10 +24,10 @@
  * onto the shared pops.db connection so the writes are genuinely atomic
  * today, and in production it becomes a real cross-table boundary once
  * step 3 lands and `debrief_sessions` / `debrief_status` are physically
- * owned by `cerebrum.db`. Until then the inner services continue to
- * resolve `getDrizzle()` (pops.db) directly — the transaction is a
- * forward-compatible scaffold, not a runtime atomicity guarantee on
- * production yet.
+ * owned by `cerebrum.db`. After the Theme-13 Wave-5 cascade the inner
+ * services resolve `getCerebrumDrizzle()` themselves — atomicity within
+ * the cerebrum-side fan-out is therefore guaranteed on the same singleton
+ * connection.
  */
 import { z } from 'zod';
 

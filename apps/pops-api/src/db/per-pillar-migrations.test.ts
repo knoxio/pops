@@ -246,9 +246,11 @@ describe('runPerPillarMigrations', () => {
     // engrams baseline), 0051_glia_baseline (PRD-181 US-01 — glia
     // baseline), 0052_conversations_baseline (PRD-182 US-01 —
     // conversations baseline), 0053_plexus_baseline (PRD-180 US-01 —
-    // plexus baseline), and 0054_embeddings_baseline (PRD-186 Wave 5 unblock
-    // — embeddings + embeddings_vec slice). Pillars without their own journal
-    // yet still skip cleanly.
+    // plexus baseline), 0054_embeddings_baseline (PRD-186 Wave 5 unblock
+    // — embeddings + embeddings_vec slice), and 0055_debrief_baseline
+    // (Theme-13 Wave 5 cascade — debrief_sessions + debrief_results +
+    // debrief_status mirrored from the shared journal ahead of the MEDIA
+    // exit). Pillars without their own journal yet still skip cleanly.
     await withDb((db) => {
       const realPillars: PillarDescriptor[] = [
         { id: 'core', dbPackageDir: 'packages/core-db' },
@@ -279,6 +281,7 @@ describe('runPerPillarMigrations', () => {
         '0053_plexus_baseline',
         '0054_embeddings_baseline',
         '0054_service_accounts',
+        '0055_debrief_baseline',
         '0055_pillar_registry',
         '0056_settings_baseline',
         '0057_ai_usage_baseline',

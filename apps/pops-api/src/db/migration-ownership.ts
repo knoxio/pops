@@ -43,9 +43,14 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   '0015_condemned_anthem': 'media',
   '0016_certain_namor': 'media',
   '0017_loose_doomsday': 'media',
-  '0018_high_excalibur': 'media',
+  // Theme-13 Wave-5 cascade — debrief_results + debrief_sessions originally
+  // shipped under 0018; the cerebrum baseline (`0055_debrief_baseline.sql`)
+  // now mirrors them on the cerebrum handle. Marked cerebrum-owned so the
+  // shared journal entry retires when the table copies drop from pops.db.
+  '0018_high_excalibur': 'cerebrum',
   '0019_little_diamondback': 'media',
-  '0020_melodic_major_mapleleaf': 'media',
+  // Theme-13 Wave-5 cascade — debrief_status. Same reasoning as 0018.
+  '0020_melodic_major_mapleleaf': 'cerebrum',
   '0022_elo_deltas': 'media',
   '0023_kind_james_howlett': 'media',
   '0024_dedupe_comparisons': 'media',
