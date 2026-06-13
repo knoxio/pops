@@ -30,6 +30,11 @@ export interface SubscriberLogger {
   warn(msg: string, meta?: Record<string, unknown>): void;
 }
 
+export const NOOP_SUBSCRIBER_LOGGER: SubscriberLogger = {
+  info: () => undefined,
+  warn: () => undefined,
+};
+
 export interface HaWebSocketSubscriberOptions {
   db: OpenedHaBridgeDb;
   url: string | undefined;
@@ -42,4 +47,11 @@ export interface HaWebSocketSubscriberOptions {
   clearTimeoutImpl?: typeof clearTimeout;
   now?: () => number;
   logger?: SubscriberLogger;
+  /**
+   * PRD-237 US-02: cap for the outbound `fire_event` reconnect queue.
+   * Frames pushed while the WS is reconnecting are buffered up to this
+   * many entries; at-cap pushes drop the oldest. Defaults to 100 per
+   * the PRD heuristic.
+   */
+  sinkQueueCap?: number;
 }

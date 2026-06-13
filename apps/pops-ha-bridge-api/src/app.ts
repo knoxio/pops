@@ -9,6 +9,8 @@
  */
 import express, { type Express, type Request, type Response } from 'express';
 
+import { createSinkRouter } from './sinks/router.js';
+
 import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 import type { ConnectionState, HaWebSocketSubscriber } from './ws-subscriber.js';
@@ -16,7 +18,8 @@ import type { ConnectionState, HaWebSocketSubscriber } from './ws-subscriber.js'
 export interface HaBridgeAppDeps {
   manifest: ManifestPayload;
   version: string;
-  subscriber: Pick<HaWebSocketSubscriber, 'state'>;
+  subscriber: Pick<HaWebSocketSubscriber, 'state' | 'sinks'>;
+  logger?: { warn(msg: string, meta?: Record<string, unknown>): void };
 }
 
 export interface HealthResponse {
@@ -49,6 +52,14 @@ export function createHaBridgeApiApp(deps: HaBridgeAppDeps): Express {
   app.get('/manifest.json', (_req: Request, res: Response) => {
     res.json(deps.manifest);
   });
+
+  app.use(
+    createSinkRouter({
+      fireEvent: (eventType, haEventName, eventData) =>
+        deps.subscriber.sinks.send(eventType, haEventName, eventData),
+      logger: deps.logger,
+    })
+  );
 
   return app;
 }

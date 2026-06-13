@@ -19,12 +19,7 @@
  * `HA_TOKEN` is never logged, never returned, and never serialised into
  * the manifest — it is only ever passed to the auth frame.
  */
-import {
-  appendHistory,
-  upsertEntity,
-  type HaEntityMirrorInput,
-  type OpenedHaBridgeDb,
-} from '@pops/ha-bridge-db';
+import { appendHistory, upsertEntity, type OpenedHaBridgeDb } from '@pops/ha-bridge-db';
 
 import {
   parseFrame,
@@ -33,13 +28,22 @@ import {
   type HaStateObject,
 } from './ha-frame.js';
 import { HistoryDebouncer } from './history-debouncer.js';
-
-import type {
-  ConnectionState,
-  HaWebSocketFactory,
-  HaWebSocketLike,
-  HaWebSocketSubscriberOptions,
-  SubscriberLogger,
+import {
+  createFireEventSenderForSubscriber,
+  type FireEventSender,
+} from './sinks/fire-event-sender.js';
+import {
+  isPostAuthFailureClose,
+  transitionToAuthFailed,
+  transitionToReconnecting,
+} from './ws-state.js';
+import {
+  NOOP_SUBSCRIBER_LOGGER,
+  type ConnectionState,
+  type HaWebSocketFactory,
+  type HaWebSocketLike,
+  type HaWebSocketSubscriberOptions,
+  type SubscriberLogger,
 } from './ws-subscriber-types.js';
 
 export type {
@@ -48,6 +52,8 @@ export type {
   HaWebSocketLike,
   HaWebSocketSubscriberOptions,
 } from './ws-subscriber-types.js';
+
+export type { SendFireEventOutcome } from './sinks/fire-event-sender.js';
 
 const DEFAULT_DEBOUNCE_MS = 200;
 const DEFAULT_INITIAL_BACKOFF_MS = 1_000;
@@ -65,13 +71,13 @@ export class HaWebSocketSubscriber {
   private readonly clearTimeoutImpl: typeof clearTimeout;
   private readonly now: () => number;
   private readonly logger: SubscriberLogger;
-
+  private readonly debouncer: HistoryDebouncer;
+  private readonly fireEventSender: FireEventSender;
   private socket: HaWebSocketLike | undefined;
   private connectionState: ConnectionState;
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   private commandId = 1;
-  private readonly debouncer: HistoryDebouncer;
   private stopped = false;
   private subscribed = false;
 
@@ -86,15 +92,7 @@ export class HaWebSocketSubscriber {
     this.setTimeoutImpl = options.setTimeoutImpl ?? setTimeout;
     this.clearTimeoutImpl = options.clearTimeoutImpl ?? clearTimeout;
     this.now = options.now ?? (() => Date.now());
-    // Default to a no-op logger so degraded mode (missing config / auth
-    // failure / reconnect churn) really is silent unless the caller opts
-    // in by injecting their own logger. The PR/PRD describe this surface
-    // as "degrades silently" — wiring `console.warn` here contradicted
-    // that contract and spammed unconfigured deployments.
-    this.logger = options.logger ?? {
-      info: () => undefined,
-      warn: () => undefined,
-    };
+    this.logger = options.logger ?? NOOP_SUBSCRIBER_LOGGER;
     this.connectionState =
       this.url === undefined || this.token === undefined
         ? { kind: 'offline', reason: 'no-config', lastEventAt: 0 }
@@ -107,10 +105,30 @@ export class HaWebSocketSubscriber {
         appendHistory(this.db.db, observation);
       },
     });
+    this.fireEventSender = createFireEventSenderForSubscriber({
+      liveSocket: {
+        isReady: () =>
+          this.connectionState.kind === 'connected' && this.socket !== undefined && this.subscribed,
+        send: (data) => this.socket?.send(data),
+      },
+      nextCommandId: () => {
+        const id = this.commandId;
+        this.commandId += 1;
+        return id;
+      },
+      logger: this.logger,
+      now: this.now,
+      queueCap: options.sinkQueueCap,
+    });
   }
 
   state(): ConnectionState {
     return { ...this.connectionState };
+  }
+
+  /** PRD-237 US-02: outbound sink — `sendFireEvent` + queue introspection. */
+  get sinks(): FireEventSender {
+    return this.fireEventSender;
   }
 
   start(): void {
@@ -120,7 +138,6 @@ export class HaWebSocketSubscriber {
     }
     this.openSocket();
   }
-
   stop(): void {
     this.stopped = true;
     if (this.reconnectTimer !== undefined) {
@@ -183,6 +200,7 @@ export class HaWebSocketSubscriber {
     if (!this.subscribed) {
       this.subscribed = true;
       this.sendCommand({ type: 'subscribe_events', event_type: 'state_changed' });
+      this.fireEventSender.flush();
     }
     return true;
   }
@@ -196,53 +214,35 @@ export class HaWebSocketSubscriber {
     if (input === undefined) return;
     upsertEntity(this.db.db, input);
     this.connectionState = { kind: 'connected', lastEventAt: now };
-    this.scheduleHistoryDebounced(input);
-  }
-
-  private markAuthFailed(): void {
-    this.logger.warn('HA auth rejected — switching to degraded mode');
-    const lastEventAt =
-      this.connectionState.kind === 'offline' ? this.connectionState.lastEventAt : 0;
-    this.connectionState = { kind: 'offline', reason: 'auth-failed', lastEventAt };
-    this.socket?.close();
-    this.socket = undefined;
-  }
-
-  private handleClose(code: number, reason: string): void {
-    this.socket = undefined;
-    if (this.stopped) return;
-    if (this.connectionState.kind === 'offline' && this.connectionState.reason === 'auth-failed') {
-      return;
-    }
-    const lastEventAt =
-      this.connectionState.kind === 'connected' ? this.connectionState.lastEventAt : 0;
-    const delay = this.nextBackoffMs();
-    this.connectionState = { kind: 'reconnecting', lastEventAt, nextAttemptInMs: delay };
-    this.logger.warn('HA socket closed — scheduling reconnect', { code, reason, delay });
-    this.reconnectTimer = this.setTimeoutImpl(() => {
-      this.reconnectTimer = undefined;
-      this.openSocket();
-    }, delay);
-  }
-
-  private nextBackoffMs(): number {
-    const exp = Math.min(this.maxBackoffMs, this.initialBackoffMs * 2 ** this.reconnectAttempt);
-    this.reconnectAttempt += 1;
-    return exp;
-  }
-
-  private sendCommand(payload: Record<string, unknown>): void {
-    const id = this.commandId;
-    this.commandId += 1;
-    this.socket?.send(JSON.stringify({ id, ...payload }));
-  }
-
-  private scheduleHistoryDebounced(input: HaEntityMirrorInput): void {
     this.debouncer.observe({
       entityId: input.entityId,
       state: input.state,
       attributes: input.attributes,
       observedAt: input.lastChanged,
     });
+  }
+
+  private markAuthFailed(): void {
+    this.logger.warn('HA auth rejected — switching to degraded mode');
+    this.connectionState = transitionToAuthFailed(this.connectionState);
+    this.socket?.close();
+    this.socket = undefined;
+  }
+  private handleClose(code: number, reason: string): void {
+    this.socket = undefined;
+    if (this.stopped || isPostAuthFailureClose(this.connectionState)) return;
+    const delay = Math.min(this.maxBackoffMs, this.initialBackoffMs * 2 ** this.reconnectAttempt);
+    this.reconnectAttempt += 1;
+    this.connectionState = transitionToReconnecting(this.connectionState, delay);
+    this.logger.warn('HA socket closed — scheduling reconnect', { code, reason, delay });
+    this.reconnectTimer = this.setTimeoutImpl(() => {
+      this.reconnectTimer = undefined;
+      this.openSocket();
+    }, delay);
+  }
+  private sendCommand(payload: Record<string, unknown>): void {
+    const id = this.commandId;
+    this.commandId += 1;
+    this.socket?.send(JSON.stringify({ id, ...payload }));
   }
 }
