@@ -11,6 +11,7 @@ By the end of this epic, every table is owned by exactly one pillar's DB and the
 **Slice list:**
 
 - **Media (8):** movies, tvShows, watchlist, watchHistory, library, discovery, arr, plex
+  - `plex` ([PRD-172](../prds/172-media-plex-cutover/)) is documentation-only — no tables to move, slice has no N-track sequence.
 - **Inventory (6):** items, reports, connections, documents, paperless, warranties
 - **Cerebrum (4):** engrams, plexus, glia, conversations
 - **Core (4):** settings, tagRules (already shimmed), corrections (already shimmed), aiUsage
