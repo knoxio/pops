@@ -67,64 +67,19 @@ docker compose -f infra/docker-compose.yml start food-api
 
 Within ~30s the healthcheck reports healthy. Re-running the probes in Step 1 returns the same shapes. `PillarGuard` re-promotes food from `'unavailable'` back to `'healthy'` on the next status-context refresh; the food UI hydrates without a hard navigation.
 
-### Step 4 — verify the boot-time backfill is idempotent
-
-`backfillFoodFromSharedDb()` (in `apps/pops-api/src/db/backfill-food-from-shared.ts`) carries `prep_states` rows + the `kind='prep_state'` slice of `slug_registry` from the legacy `pops.db` into `food.db` at boot. Each table copy uses an explicit `WHERE id NOT IN (...)` filter and is wrapped in `tryCopyTable` so a missing source table on a stale on-disk `pops.db` is non-fatal — the failure is logged and swallowed, the next deploy retries, and the idempotent filter picks up only the still-missing rows.
-
-The drill:
-
-```sh
-# Restart pops-api a second time after step 3.
-docker compose -f infra/docker-compose.yml restart pops-api
-
-# Inspect the row counts in both DBs. The backfill is idempotent via
-# the per-table `WHERE id NOT IN (...)` filter — re-running must not
-# duplicate rows.
-docker compose -f infra/docker-compose.yml exec pops-api \
-  node -e "
-const Database = require('better-sqlite3');
-const a = new Database('/data/sqlite/food.db', { readonly: true });
-const b = new Database('/data/sqlite/pops.db', { readonly: true });
-const foodPrep = a.prepare('SELECT count(*) AS n FROM prep_states').get().n;
-const foodSlug = a
-  .prepare(\"SELECT count(*) AS n FROM slug_registry WHERE kind='prep_state'\")
-  .get().n;
-const sharedPrep = b.prepare(
-  \"SELECT count(*) AS n FROM sqlite_master WHERE type='table' AND name='prep_states'\"
-).get().n
-  ? b.prepare('SELECT count(*) AS n FROM prep_states').get().n
-  : null;
-const sharedSlug = b.prepare(
-  \"SELECT count(*) AS n FROM sqlite_master WHERE type='table' AND name='slug_registry'\"
-).get().n
-  ? b.prepare(\"SELECT count(*) AS n FROM slug_registry WHERE kind='prep_state'\").get().n
-  : null;
-console.log({ foodPrep, foodSlug, sharedPrep, sharedSlug });
-"
-# Expected: foodPrep >= sharedPrep AND foodSlug >= sharedSlug (every
-# row that lives in the shared copy must also live in food.db; the
-# food copy may have more rows after the cutover since new writes go
-# there exclusively).
-```
-
-If the backfill encounters a stale on-disk `pops.db` that's already had its `prep_states` or `slug_registry` table dropped or renamed (e.g. after a partial post-cutover cleanup), `tryCopyTable` logs `[db] Food backfill of <table> failed (non-fatal): <err>` and continues. The next deploy retries the same copy with no duplication risk — the `WHERE id NOT IN (...)` filter is the single source of idempotency.
-
-### Step 5 — write up surprises
+### Step 4 — write up surprises
 
 Record any unexpected behaviour in the **Lessons captured** section of `.claude/pillar-migration-roadmap.md` before flipping Track J to ✅ Done. That file is gitignored — it only exists in local clones / sibling workspaces, so it isn't linkable from GitHub. Examples worth flagging:
 
 - pops-api hard-crashes when food-api is down (it shouldn't — should degrade per-route).
 - The shell's "food unavailable" placeholder paints over working non-food routes (PillarGuard scoping is too broad).
 - `food.db` writes succeed against a stopped food-api container (proves the shared-volume caveat noted in Step 2 — phase 5 follow-up: convert food-api to the sole writer once tRPC routers move into it).
-- The boot-time backfill duplicates rows (the `WHERE id NOT IN (...)` filter is supposed to dedupe — a failure here is a real bug).
-- `prep_states` reads return empty on a fresh boot when the shared `pops.db` still has rows (proves the backfill silently skipped — check `pops-api` logs for `[db] Food backfill of prep_states failed (non-fatal):` lines and fix the root cause before the next deploy's retry).
 
 ## Reference
 
 - ADR-026: per-domain pillar architecture
 - `apps/pops-food-api/src/server.ts` — boot sequence
 - `apps/pops-api/src/db/food-handle.ts` — lazy open + env-aware handle
-- `apps/pops-api/src/db/backfill-food-from-shared.ts` — table-by-table backfill
 - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts` — soft-fallback behaviour (shared with core)
 - `docs/runbooks/core-api-pillar-verification.md` — sibling runbook for the core pillar
 - `docs/runbooks/inventory-api-pillar-verification.md` — sibling runbook for the inventory pillar

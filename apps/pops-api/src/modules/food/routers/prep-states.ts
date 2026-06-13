@@ -20,10 +20,10 @@ import { protectedProcedure, router } from '../../../trpc.js';
  * `@pops/app-food-db` because the slug-registry transaction helpers
  * haven't been extracted into the pillar package yet, but both reads
  * and writes now resolve through `getFoodDrizzle()` so they land on
- * `food.db`. The boot-time `backfillFoodFromSharedDb` carries the
- * existing prep_states rows + their `kind='prep_state'` slug_registry
- * entries across so the mutation's slug-availability checks see the
- * full pre-cutover history.
+ * `food.db`. The boot-time backfill that carried existing prep_states
+ * rows + their `kind='prep_state'` slug_registry entries across from
+ * the shared `pops.db` has been retired (Theme 13 PR 4) now that the
+ * cutover has been deployed.
  */
 export const prepStatesRouter = router({
   list: protectedProcedure.query(() => ({
