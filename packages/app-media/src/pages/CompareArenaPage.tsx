@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { ButtonPrimitive } from '@pops/ui';
 
 import { BlacklistConfirmDialog } from '../components/BlacklistConfirmDialog';
@@ -37,20 +37,32 @@ function ArenaSkeleton() {
   );
 }
 
+interface DimensionsResult {
+  data?: Dimension[];
+}
+
+interface SmartPairResult {
+  data?: PairData | null;
+}
+
 function useCompareArenaPageModel() {
   const [manualDimensionId, setManualDimensionId] = useState<number | null>(null);
 
-  const { data: dimensionsData, isLoading: dimsLoading } =
-    trpc.media.comparisons.listDimensions.useQuery();
-  const activeDimensions: Dimension[] =
-    dimensionsData?.data?.filter((d: { active: boolean }) => d.active) ?? [];
+  const { data: dimensionsData, isLoading: dimsLoading } = usePillarQuery<DimensionsResult>(
+    'media',
+    ['comparisons', 'listDimensions'],
+    undefined
+  );
+  const activeDimensions: Dimension[] = dimensionsData?.data?.filter((d) => d.active) ?? [];
 
-  const pairQuery = trpc.media.comparisons.getSmartPair.useQuery(
+  const pairQuery = usePillarQuery<SmartPairResult>(
+    'media',
+    ['comparisons', 'getSmartPair'],
     manualDimensionId ? { dimensionId: manualDimensionId } : {},
     { enabled: activeDimensions.length > 0, refetchOnWindowFocus: false, gcTime: 0, staleTime: 0 }
   );
 
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
   const pair: PairData | null | undefined = pairQuery.data?.data;
   const dimensionId = pair?.dimensionId ?? null;
 
@@ -75,7 +87,7 @@ function useCompareArenaPageModel() {
     (id: number) => {
       setManualDimensionId(id);
       actions.setScoreDelta(null);
-      void utils.media.comparisons.getSmartPair.invalidate();
+      void utils.invalidate(['comparisons', 'getSmartPair']);
     },
     [actions, utils]
   );

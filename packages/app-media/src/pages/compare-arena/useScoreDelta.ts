@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { buildScoreDelta } from './scoreDelta';
 
-import type { trpc } from '@pops/api-client';
+import type { usePillarUtils } from '@pops/pillar-sdk/react';
 
 import type { DrawTier, ScoreDelta } from './types';
 
 const DELTA_DISPLAY_MS = 1500;
+
+export type MediaUtils = ReturnType<typeof usePillarUtils>;
 
 export interface RecordVariables {
   mediaAId: number;
@@ -15,16 +17,17 @@ export interface RecordVariables {
   drawTier?: DrawTier | null;
 }
 
+interface ScoresResult {
+  data?: { dimensionId: number; score: number }[];
+}
+
 interface FetchScoresArgs {
   variables: RecordVariables;
   dimensionId: number | null;
-  utils: ReturnType<typeof trpc.useUtils>;
+  utils: MediaUtils;
 }
 
-function getScoreFor(
-  data: { data?: { dimensionId: number; score: number }[] | undefined } | undefined,
-  dimensionId: number | null
-): number {
+function getScoreFor(data: ScoresResult | undefined, dimensionId: number | null): number {
   return data?.data?.find((s) => s.dimensionId === dimensionId)?.score ?? 1500;
 }
 
@@ -34,12 +37,12 @@ async function fetchPairScores({ variables, dimensionId, utils }: FetchScoresArg
   const loserId = variables.mediaAId === winnerId ? variables.mediaBId : variables.mediaAId;
 
   const [scoresA, scoresB] = await Promise.all([
-    utils.media.comparisons.scores.fetch({
+    utils.fetchQuery<ScoresResult>(['comparisons', 'scores'], {
       mediaType: 'movie',
       mediaId: winnerId,
       dimensionId: dimensionId ?? undefined,
     }),
-    utils.media.comparisons.scores.fetch({
+    utils.fetchQuery<ScoresResult>(['comparisons', 'scores'], {
       mediaType: 'movie',
       mediaId: loserId,
       dimensionId: dimensionId ?? undefined,
@@ -82,7 +85,7 @@ export function useScoreDeltaTimer() {
 
 export function useFetchScoreDelta(
   dimensionId: number | null,
-  utils: ReturnType<typeof trpc.useUtils>,
+  utils: MediaUtils,
   setScoreDelta: (d: ScoreDelta) => void
 ) {
   return useCallback(

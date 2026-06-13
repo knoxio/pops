@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { useArenaRecord } from './useArenaRecord';
 import { useFetchScoreDelta, useScoreDeltaTimer } from './useScoreDelta';
@@ -26,7 +26,7 @@ export function useArenaActions({
   resolveTitle,
   onAfterAction,
 }: UseArenaActionsArgs) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
   const [sessionCount, setSessionCount] = useState(0);
   const { scoreDelta, setScoreDelta, scheduleClear } = useScoreDeltaTimer();
   const fetchScoreDelta = useFetchScoreDelta(dimensionId, utils, setScoreDelta);

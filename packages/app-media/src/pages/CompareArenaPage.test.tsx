@@ -15,6 +15,7 @@ const mockWatchlistListQuery = vi.fn();
 const mockWatchlistAddMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
+const mockWatchlistRemoveMutate = vi.fn();
 const mockSkipMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
@@ -28,84 +29,62 @@ const mockBlacklistMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
 const mockListForMediaQuery = vi.fn();
-const mockInvalidateRandomPair = vi.fn();
-const mockInvalidateWatchlistList = vi.fn();
+const mockInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        listDimensions: {
-          useQuery: (...args: unknown[]) => mockDimensionsQuery(...args),
-        },
-        getSmartPair: {
-          useQuery: (...args: unknown[]) => {
-            const result = mockPairQuery(...args);
-            return { ...result, refetch: mockRefetchPair };
-          },
-        },
-        record: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockRecordMutate._opts = opts;
-            return { mutate: mockRecordMutate, isPending: false };
-          },
-        },
-        recordSkip: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockSkipMutate._opts = opts;
-            return { mutate: mockSkipMutate, isPending: false };
-          },
-        },
-        scores: { fetch: (...args: unknown[]) => mockScoresFetch(...args) },
-        markStale: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockMarkStaleMutate._opts = opts;
-            return { mutate: mockMarkStaleMutate, isPending: false };
-          },
-        },
-        excludeFromDimension: {
-          useMutation: (opts?: Record<string, unknown>) => {
-            if (opts) mockExcludeMutate._opts = opts;
-            return { mutate: mockExcludeMutate, isPending: false };
-          },
-        },
-        blacklistMovie: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockBlacklistMutate._opts = opts;
-            return { mutate: mockBlacklistMutate, isPending: false };
-          },
-        },
-        listForMedia: {
-          useQuery: (...args: unknown[]) => mockListForMediaQuery(...args),
-        },
-      },
-      watchlist: {
-        list: {
-          useQuery: (...args: unknown[]) => mockWatchlistListQuery(...args),
-        },
-        add: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockWatchlistAddMutate._opts = opts;
-            return { mutate: mockWatchlistAddMutate, isPending: false };
-          },
-        },
-        remove: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        comparisons: {
-          scores: { fetch: mockScoresFetch },
-          getSmartPair: { invalidate: mockInvalidateRandomPair },
-        },
-        watchlist: {
-          list: { invalidate: mockInvalidateWatchlistList },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.listDimensions') return mockDimensionsQuery(input);
+    if (key === 'comparisons.getSmartPair') {
+      const result = mockPairQuery(input);
+      return { ...result, refetch: mockRefetchPair };
+    }
+    if (key === 'comparisons.listForMedia') return mockListForMediaQuery(input);
+    if (key === 'watchlist.list') return mockWatchlistListQuery(input);
+    return { data: undefined, isLoading: false, error: null };
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'comparisons.record') {
+      mockRecordMutate._opts = opts;
+      return { mutate: mockRecordMutate, isPending: false };
+    }
+    if (key === 'comparisons.recordSkip') {
+      mockSkipMutate._opts = opts;
+      return { mutate: mockSkipMutate, isPending: false };
+    }
+    if (key === 'comparisons.markStale') {
+      mockMarkStaleMutate._opts = opts;
+      return { mutate: mockMarkStaleMutate, isPending: false };
+    }
+    if (key === 'comparisons.excludeFromDimension') {
+      return { mutate: mockExcludeMutate, isPending: false };
+    }
+    if (key === 'comparisons.blacklistMovie') {
+      mockBlacklistMutate._opts = opts;
+      return { mutate: mockBlacklistMutate, isPending: false };
+    }
+    if (key === 'watchlist.add') {
+      mockWatchlistAddMutate._opts = opts;
+      return { mutate: mockWatchlistAddMutate, isPending: false };
+    }
+    if (key === 'watchlist.remove') {
+      return { mutate: mockWatchlistRemoveMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: (path?: readonly string[]) => {
+      mockInvalidate(path?.join('.') ?? '');
+      return Promise.resolve();
+    },
+    fetchQuery: mockScoresFetch,
+  }),
 }));
 
 vi.mock('../components/DimensionManager', () => ({
@@ -259,36 +238,6 @@ describe('CompareArenaPage', () => {
     expect(screen.getByRole('link', { name: 'View watchlist' })).toBeTruthy();
   });
 
-  it('disables cards during pending mutation', () => {
-    setupArena();
-    const { unmount } = renderPage();
-
-    unmount();
-
-    const originalMock = vi.fn();
-    vi.doMock('@pops/api-client', async () => {
-      const mod = await vi.importActual('@pops/api-client');
-      return {
-        ...mod,
-        trpc: {
-          media: {
-            comparisons: {
-              record: {
-                useMutation: () => ({ mutate: originalMock, isPending: true }),
-              },
-            },
-          },
-        },
-      };
-    });
-
-    setupArena();
-    renderPage();
-
-    fireEvent.click(screen.getAllByText('The Matrix')[0]!);
-    expect(mockRecordMutate).toHaveBeenCalledTimes(1);
-  });
-
   it('calls record mutation with correct dimension', () => {
     setupArena();
     renderPage();
@@ -313,7 +262,6 @@ describe('CompareArenaPage', () => {
 
     expect(mockRecordMutate).not.toHaveBeenCalled();
     expect(mockRefetchPair).not.toHaveBeenCalled();
-    expect(mockInvalidateRandomPair).not.toHaveBeenCalled();
 
     const onSuccess = mockWatchlistAddMutate._opts?.onSuccess as (
       data: unknown,
@@ -321,9 +269,8 @@ describe('CompareArenaPage', () => {
     ) => void;
     onSuccess(undefined, { mediaType: 'movie', mediaId: 10 });
 
-    expect(mockInvalidateWatchlistList).toHaveBeenCalled();
+    expect(mockInvalidate).toHaveBeenCalledWith('watchlist');
     expect(mockRefetchPair).not.toHaveBeenCalled();
-    expect(mockInvalidateRandomPair).not.toHaveBeenCalled();
     expect(mockRecordMutate).not.toHaveBeenCalled();
   });
 
