@@ -21,7 +21,7 @@ As a maintainer needing to point external pillar authors at the wire-format spec
 - [ ] The spec is published at the chosen target with stable internal anchor links (`#single-call-procedure`, `#batched-procedure`, etc.) so future docs can deep-link.
 - [ ] ADR-033's `Related` section is updated to link directly to `wire-format-spec.md` at the chosen URL (currently it only references "PRD-231" by number).
 - [ ] The theme README's `## References` and Epic 14's `## Dependencies` are updated to reference the spec at the chosen URL.
-- [ ] If option (a) is chosen: a top-level `WIRE-FORMAT.md` or equivalent visible-from-the-repo-root pointer exists so engineers browsing the GitHub repo find the spec without spelunking through `packages/pillar-sdk/docs/`.
+- [x] If option (a) is chosen: a top-level `WIRE-FORMAT.md` or equivalent visible-from-the-repo-root pointer exists so engineers browsing the GitHub repo find the spec without spelunking through `packages/pillar-sdk/docs/`.
 - [ ] If option (b) is chosen: the standalone repo is initialised with a README pointing at POPS, a license, and the spec doc itself. CI is set up to validate links inside the spec.
 
 ## Notes
