@@ -2,7 +2,7 @@ import pino from 'pino';
 
 import { PERSISTED_SYNC_TYPES, syncResultsService } from '@pops/core-db';
 
-import { getDrizzle } from '../db.js';
+import { getCoreDrizzle } from '../db.js';
 
 import type { SyncQueueJobData } from './types.js';
 
@@ -25,10 +25,9 @@ export interface PersistSyncResultParams {
  * Plex job types in {@link PERSISTED_SYNC_TYPES} are written; everything
  * else is observed via Redis and short-circuits here.
  *
- * The handle is the shared `pops.db` for now because the underlying
- * table cutover into `core.db` is sequenced behind PRD-186 PR 4. After
- * that lands the only line that changes is `getDrizzle()` ->
- * `getCoreDrizzle()`.
+ * Writes resolve against the core pillar handle (`getCoreDrizzle()`)
+ * now that PRD-186 PR 4 cut the `sync_job_results` table over into
+ * `core.db`. The shared `pops.db` copy still exists for fallback.
  */
 export function persistSyncResult(params: PersistSyncResultParams): void {
   const { jobId, data, status, result, error, processedOn, finishedOn, progress } = params;
@@ -42,7 +41,7 @@ export function persistSyncResult(params: PersistSyncResultParams): void {
       progress != null ? JSON.stringify(progress) : JSON.stringify({ processed: 0, total: 0 });
     const resultJson = result != null ? JSON.stringify(result) : null;
 
-    syncResultsService.persist(getDrizzle(), {
+    syncResultsService.persist(getCoreDrizzle(), {
       id: jobId,
       jobType: data.type,
       status,
