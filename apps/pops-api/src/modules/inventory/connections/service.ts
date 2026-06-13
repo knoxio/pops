@@ -1,28 +1,34 @@
 /**
- * Inventory connections read/write surface — PRD-175 PR 2 cutover.
+ * Inventory connections read/write surface — PRD-175 PR 3 cutover.
  *
- * Read/write split during the migration window (mirrors PRD-173 PR 2 +
- * PRD-179 PR 2):
- *  - `listConnectionsForItem`, `traceConnections`, and `getConnectionGraph`
- *    are routed through `connectionsService` from `@pops/inventory-db`
- *    against the inventory pillar handle (`getInventoryDrizzle()`). Reads
- *    now resolve from the canonical package implementation.
- *  - Writes (`connectItems`, `disconnectItems`) keep their inline drizzle
- *    statements against the same handle to preserve the existing
- *    read-after-write guarantee on the inventory pillar's SQLite file.
- *    Both calls validate via in-line reads against the same handle, so
- *    the writes stay inline until PRD-175 PR 3 collapses them onto
- *    `connectionsService.{create, delete}`.
+ * All five operations (`listConnectionsForItem`, `traceConnections`,
+ * `getConnectionGraph`, `connectItems`, `disconnectItems`) now delegate to
+ * `connectionsService` from `@pops/inventory-db`, resolved against the
+ * inventory pillar handle (`getInventoryDrizzle()`). The legacy inline
+ * drizzle writes have been removed — `connectionsService.create` /
+ * `connectionsService.delete` own the wire surface end-to-end (mirrors
+ * PRD-179 PR 3 + PRD-165 PR 3).
+ *
+ * Typed errors from the package layer are translated back to the in-tree
+ * `NotFoundError` / `ConflictError` instances so the router's `instanceof`
+ * checks keep working (mirrors the items #3014 / engrams #3021 pattern):
+ *  - `ConnectionItemNotFoundError`  -> `NotFoundError('Inventory item', id)`
+ *  - `ConnectionNotFoundError`      -> `NotFoundError('Item connection', 'A-B')`
+ *  - `ConnectionConflictError`      -> `ConflictError(<existing-pair message>)`
+ *  - `SelfConnectionError`          -> `ConflictError('Cannot connect an item to itself')`
  *
  * The legacy router stays mounted in pops-api as a fall-through while the
  * dispatcher cutover routes `inventory.connections.*` traffic to
  * pops-inventory-api. Consumers (router.ts here) keep the same wire
  * surface — no caller churn.
  */
-import { and, eq } from 'drizzle-orm';
-
-import { homeInventory, itemConnections } from '@pops/db-types';
-import { ConnectionItemNotFoundError, connectionsService } from '@pops/inventory-db';
+import {
+  ConnectionConflictError,
+  ConnectionItemNotFoundError,
+  ConnectionNotFoundError,
+  connectionsService,
+  SelfConnectionError,
+} from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
@@ -42,57 +48,25 @@ function translate<T>(fn: () => T): T {
     if (err instanceof ConnectionItemNotFoundError) {
       throw new NotFoundError('Inventory item', err.id);
     }
+    if (err instanceof ConnectionNotFoundError) {
+      throw new NotFoundError('Item connection', `${err.itemAId}-${err.itemBId}`);
+    }
+    if (err instanceof ConnectionConflictError || err instanceof SelfConnectionError) {
+      throw new ConflictError(err.message);
+    }
     throw err;
   }
 }
 
 /**
  * Connect two inventory items. Enforces itemAId < itemBId ordering.
- * Validates both items exist. Throws ConflictError on duplicate.
+ * Validates both items exist. Throws ConflictError on duplicate or
+ * self-connection.
  */
 export function connectItems(inputA: string, inputB: string): ItemConnectionRow {
-  const db = getInventoryDrizzle();
-
-  if (inputA === inputB) {
-    throw new ConflictError('Cannot connect an item to itself');
-  }
-
-  const [itemAId, itemBId] = inputA < inputB ? [inputA, inputB] : [inputB, inputA];
-
-  const [itemA] = db
-    .select({ id: homeInventory.id })
-    .from(homeInventory)
-    .where(eq(homeInventory.id, itemAId))
-    .all();
-  if (!itemA) throw new NotFoundError('Inventory item', itemAId);
-
-  const [itemB] = db
-    .select({ id: homeInventory.id })
-    .from(homeInventory)
-    .where(eq(homeInventory.id, itemBId))
-    .all();
-  if (!itemB) throw new NotFoundError('Inventory item', itemBId);
-
-  const [existing] = db
-    .select({ id: itemConnections.id })
-    .from(itemConnections)
-    .where(and(eq(itemConnections.itemAId, itemAId), eq(itemConnections.itemBId, itemBId)))
-    .all();
-
-  if (existing) {
-    throw new ConflictError(`Connection between '${itemAId}' and '${itemBId}' already exists`);
-  }
-
-  db.insert(itemConnections).values({ itemAId, itemBId }).run();
-
-  const [created] = db
-    .select()
-    .from(itemConnections)
-    .where(and(eq(itemConnections.itemAId, itemAId), eq(itemConnections.itemBId, itemBId)))
-    .all();
-
-  if (!created) throw new NotFoundError('Item connection', `${itemAId}-${itemBId}`);
-  return created;
+  return translate(() =>
+    connectionsService.create(getInventoryDrizzle(), { itemAId: inputA, itemBId: inputB })
+  );
 }
 
 /**
@@ -100,21 +74,7 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
  * Throws NotFoundError if no connection exists between the two items.
  */
 export function disconnectItems(inputA: string, inputB: string): void {
-  const db = getInventoryDrizzle();
-
-  const [itemAId, itemBId] = inputA < inputB ? [inputA, inputB] : [inputB, inputA];
-
-  const [row] = db
-    .select({ id: itemConnections.id })
-    .from(itemConnections)
-    .where(and(eq(itemConnections.itemAId, itemAId), eq(itemConnections.itemBId, itemBId)))
-    .all();
-
-  if (!row) {
-    throw new NotFoundError('Item connection', `${itemAId}-${itemBId}`);
-  }
-
-  db.delete(itemConnections).where(eq(itemConnections.id, row.id)).run();
+  translate(() => connectionsService.delete(getInventoryDrizzle(), inputA, inputB));
 }
 
 /** List all connections for a given item (checking both A and B columns). */
