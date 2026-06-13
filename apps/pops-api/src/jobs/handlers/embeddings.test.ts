@@ -34,6 +34,11 @@ vi.mock('../../db.js', () => ({
   closeDb: vi.fn(),
 }));
 
+vi.mock('../../db/cerebrum-handle.js', () => ({
+  getCerebrumDrizzle: () => testDrizzle,
+  getCerebrumRawDb: () => testDb,
+}));
+
 import { processEmbeddingJob } from './embeddings.js';
 
 // ---------------------------------------------------------------------------
