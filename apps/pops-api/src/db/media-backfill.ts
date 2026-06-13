@@ -26,6 +26,19 @@ import { resolveSqlitePath } from './sqlite-path.js';
  * is retired here. Same deploy-order constraint as movies — the writer
  * cutover must be live in prod before this drop ships.
  *
+ * PRD-166 tv_shows joins the same club post-#3098: `addTvShow`'s
+ * insert transaction and the Plex discover-show `discoverRatingKey`
+ * update both land on `getMediaDrizzle()`, and
+ * `tvShowsService.{create,update,delete}` already routed there. With
+ * every `tv_shows` write site on the media handle, the boot bridge has
+ * nothing left to carry for this table, so the entry is retired.
+ * Sibling `seasons` and `episodes` stay on the bridge —
+ * `thetvdb/service.ts` still upserts them via `getDrizzle()` during a
+ * refresh, so the shared store can still receive new rows between
+ * boots. Same deploy-order constraint as movies and shelf_impressions:
+ * #3098 must already be live in prod before this drop ships, otherwise
+ * late-arriving rows on `pops.db.tv_shows` would be stranded.
+ *
  * No FK relationships exist between the listed media tables, so order
  * is independent — but each entry is wrapped in `tryCopyTable` so a
  * missing source table (post-PR-4 drop scenario, or a stale on-disk
@@ -74,35 +87,6 @@ interface TableCopy {
 }
 
 const TABLE_COPIES: readonly TableCopy[] = [
-  {
-    table: 'tv_shows',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'tvdb_id',
-      'name',
-      'original_name',
-      'overview',
-      'first_air_date',
-      'last_air_date',
-      'status',
-      'original_language',
-      'number_of_seasons',
-      'number_of_episodes',
-      'episode_run_time',
-      'poster_path',
-      'backdrop_path',
-      'logo_path',
-      'poster_override_path',
-      'discover_rating_key',
-      'vote_average',
-      'vote_count',
-      'genres',
-      'networks',
-      'created_at',
-      'updated_at',
-    ],
-  },
   {
     table: 'seasons',
     idColumn: 'id',
