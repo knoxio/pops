@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ManifestPayloadSchema, validateManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
-import { ENTITY_LIST_TOOL_NAME } from '../ai-tools/index.js';
+import { ENTITY_GET_STATE_TOOL_NAME, ENTITY_LIST_TOOL_NAME } from '../ai-tools/index.js';
 import { buildHaBridgeManifest, HA_BRIDGE_PILLAR_ID } from '../manifest.js';
 import {
   HA_ENTITIES_ADAPTER_NAME,
@@ -16,11 +16,14 @@ describe('buildHaBridgeManifest', () => {
     const parsed = ManifestPayloadSchema.parse(manifest);
     expect(parsed.pillar).toBe(HA_BRIDGE_PILLAR_ID);
     expect(parsed.contract.tag).toBe('contract-ha-bridge@v0.1.0');
-    expect(parsed.ai.tools.map((t) => t.name)).toEqual([ENTITY_LIST_TOOL_NAME]);
+    expect(parsed.ai.tools.map((t) => t.name)).toEqual([
+      ENTITY_LIST_TOOL_NAME,
+      ENTITY_GET_STATE_TOOL_NAME,
+    ]);
     expect(parsed.sinks?.descriptors.length).toBeGreaterThan(0);
   });
 
-  it('publishes the entityList AI tool descriptor (US-03 partial)', () => {
+  it('publishes the entityList AI tool descriptor (US-03)', () => {
     const manifest = buildHaBridgeManifest('0.1.0');
     const tool = manifest.ai.tools.find((t) => t.name === ENTITY_LIST_TOOL_NAME);
     if (tool === undefined) throw new Error('entityList descriptor missing');
@@ -29,6 +32,29 @@ describe('buildHaBridgeManifest', () => {
     const parameters = tool.parameters as { properties?: Record<string, unknown> };
     const props = parameters.properties ?? {};
     expect(Object.keys(props).toSorted()).toEqual(['area', 'cursor', 'domain', 'limit']);
+  });
+
+  it('publishes the entityGetState AI tool descriptor (US-03)', () => {
+    const manifest = buildHaBridgeManifest('0.1.0');
+    const tool = manifest.ai.tools.find((t) => t.name === ENTITY_GET_STATE_TOOL_NAME);
+    if (tool === undefined) throw new Error('entityGetState descriptor missing');
+    expect(tool.description.length).toBeGreaterThanOrEqual(10);
+    expect(tool.parameters).toMatchObject({ type: 'object' });
+    const parameters = tool.parameters as {
+      properties?: Record<string, unknown>;
+      required?: string[];
+    };
+    const props = parameters.properties ?? {};
+    expect(Object.keys(props).toSorted()).toEqual(['entityId']);
+    expect(parameters.required).toContain('entityId');
+  });
+
+  it('every published AI tool name matches the manifest schema camelCase regex', () => {
+    const manifest = buildHaBridgeManifest('0.1.0');
+    const camelCase = /^[a-z][a-zA-Z0-9]*$/;
+    for (const tool of manifest.ai.tools) {
+      expect(tool.name).toMatch(camelCase);
+    }
   });
 
   it('declares the haEntities search adapter (US-02)', () => {

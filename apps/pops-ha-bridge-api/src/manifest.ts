@@ -16,9 +16,9 @@ import { validateSinkMappings } from './sinks/validator.js';
  * over the FTS5 virtual table (`ha_entities_fts`). The remaining
  * dimensions land in subsequent stories:
  *
- *   - US-03 (this slice — partial) fills `ai.tools` with the
- *     read-only `entityList` descriptor. `entityGetState` lands in a
- *     follow-up; `ha.entity.callService` (US-04) stays out of scope.
+ *   - US-03 fills `ai.tools` with the read-only `entityList` and
+ *     `entityGetState` descriptors. `ha.entity.callService` (US-04)
+ *     stays out of scope.
  *
  * PRD-237 US-01 derives the `sinks.descriptors` block from the mapping
  * config (`src/sinks/mapping.ts`) — the same array drives the runtime
