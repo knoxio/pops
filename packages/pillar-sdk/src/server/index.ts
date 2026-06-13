@@ -10,6 +10,8 @@ export {
 export type { ServerSdkConfig } from './config.js';
 export { PillarServerSdkError } from './errors.js';
 export { InternalBaseUrlTransport } from './transport.js';
+export { createSinkHandler } from './sinks.js';
+export type { SinkHandler, SinkHandlerOptions, SinkInvocationResult } from './sinks.js';
 
 export type {
   PillarHandle,

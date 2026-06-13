@@ -43,6 +43,42 @@ const AI_TOOL = z
   })
   .strict();
 
+/**
+ * Event-type identifier convention (ADR-034 / PRD-236).
+ *
+ * `<source>.<entity>.<action>` — flat dotted namespace shared across every
+ * pillar in the federation. Each segment must be lowercase, start with a
+ * letter, and contain only `[a-z0-9]`. Examples:
+ *
+ *     finance.balance.low
+ *     media.watch.completed
+ *     inventory.item.added
+ *
+ * Naming discipline is enforced at manifest-validation time so that two
+ * pillars cannot accidentally pick the same event type with diverging
+ * payload shapes.
+ */
+const SINK_EVENT_TYPE = z
+  .string()
+  .regex(
+    /^[a-z][a-z0-9]*\.[a-z][a-z0-9]*\.[a-z][a-z0-9]*$/,
+    'must match <source>.<entity>.<action> (lowercase dotted)'
+  );
+
+const SINK_DESCRIPTOR = z
+  .object({
+    eventType: SINK_EVENT_TYPE,
+    description: z.string().min(10).max(500),
+    schema: z.record(z.string(), z.unknown()),
+  })
+  .strict();
+
+const SINKS = z
+  .object({
+    descriptors: z.array(SINK_DESCRIPTOR),
+  })
+  .strict();
+
 const CONTRACT = z
   .object({
     package: CONTRACT_PACKAGE,
@@ -116,10 +152,13 @@ export const ManifestPayloadSchema = z
     routes: ROUTES,
     search: SEARCH,
     ai: AI,
+    sinks: SINKS.optional(),
     uri: URI,
     settings: SETTINGS,
     healthcheck: HEALTHCHECK,
   })
   .strict();
+
+export type SinkDescriptor = z.infer<typeof SINK_DESCRIPTOR>;
 
 export type ManifestPayload = z.infer<typeof ManifestPayloadSchema>;
