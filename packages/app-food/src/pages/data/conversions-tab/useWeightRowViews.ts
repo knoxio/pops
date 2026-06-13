@@ -9,10 +9,16 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { pillarQueryArg, usePillarQueries, type PillarQueryArg } from '@pops/pillar-sdk/react';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 import type { IngredientWeightRow } from './types';
 import type { WeightRowView } from './WeightsTable';
+
+type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
 
 interface IngredientLookup {
   byId: Map<number, { name: string; slug: string }>;
@@ -24,18 +30,28 @@ function uniqueIngredientIds(rows: readonly IngredientWeightRow[]): readonly num
   return Array.from(set);
 }
 
+function isIngredientsGetOutput(data: unknown): data is IngredientsGetOutput {
+  if (data === null || typeof data !== 'object') return false;
+  return 'variants' in data && Array.isArray((data as { variants: unknown }).variants);
+}
+
 function useVariantLookup(ingredientIds: readonly number[]): Map<number, string> {
-  // `trpc.useQueries` runs a known-length array in parallel; the array
+  // `usePillarQueries` runs a known-length array in parallel; the array
   // shape is stable across renders (memoised by caller). React Query
   // dedupes identical queries so repeated mounts are free.
-  const queries = trpc.useQueries((tt) =>
-    ingredientIds.map((id) => tt.food.ingredients.get({ idOrSlug: id }))
+  const args: readonly PillarQueryArg<unknown>[] = ingredientIds.map((id) =>
+    pillarQueryArg<unknown>({
+      pillarId: 'food',
+      path: ['ingredients', 'get'],
+      input: { idOrSlug: id },
+    })
   );
+  const queries = usePillarQueries(args);
   return useMemo(() => {
     const map = new Map<number, string>();
     for (const q of queries) {
       const data = q.data;
-      if (data === undefined) continue;
+      if (!isIngredientsGetOutput(data)) continue;
       for (const variant of data.variants) map.set(variant.id, `${variant.name} (${variant.slug})`);
     }
     return map;
