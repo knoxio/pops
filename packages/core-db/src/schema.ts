@@ -14,7 +14,9 @@ export {
   aiBudgets,
   aiInferenceDaily,
   aiInferenceLog,
+  aiModelPricing,
   pillarRegistry,
   serviceAccounts,
   settings,
+  syncJobResults,
 } from '@pops/db-types';

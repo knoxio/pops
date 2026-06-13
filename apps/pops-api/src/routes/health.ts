@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { type Router as ExpressRouter, Router } from 'express';
 
-import { getDrizzle } from '../db.js';
+import { getCoreDrizzle } from '../db.js';
 import { getRedisStatus } from '../redis.js';
 
 const router: ExpressRouter = Router();
@@ -21,7 +21,7 @@ const SELF_PILLAR_ID = 'core';
 
 router.get('/health', (_req, res) => {
   try {
-    const db = getDrizzle();
+    const db = getCoreDrizzle();
     const rows = db.all<{ ok: number }>(sql`SELECT 1 AS ok`);
     if (rows[0]?.ok === 1) {
       const redisStatus = getRedisStatus();
