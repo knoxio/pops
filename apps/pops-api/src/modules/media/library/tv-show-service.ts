@@ -8,6 +8,24 @@ import { getTvShowByTvdbId } from '../tv-shows/service.js';
 /**
  * Add TV show to library — fetches TheTVDB metadata and inserts
  * show + seasons + episodes in a single transaction.
+ *
+ * Cross-store note (PRD-169): `addTvShow` stays on the shared
+ * `getDrizzle()` handle. The atomic insert spans `tv_shows`, `seasons`,
+ * and `episodes` — seasons and episodes have not been migrated to
+ * `@pops/media-db` yet (see the doc on `tv-shows/tv-shows-base.ts` —
+ * "Out of scope (per PRD-166): seasons-service.ts and episodes-service.ts
+ * still route through getDrizzle()"). Wrapping the show insert on the
+ * media handle and the seasons/episodes inserts on the shared handle
+ * would split the transaction across two SQLite files and break the
+ * atomicity guarantee callers rely on.
+ *
+ * The library list-/quick-picks-side reads in `service.ts` and
+ * `list-service.ts` therefore also stay on `getDrizzle()` until the
+ * seasons/episodes (PRD-166 follow-up) and watch-history (PRD-168 PR 3)
+ * writer cutovers land. Flipping just the reads would make newly-added
+ * TV shows and watch events invisible to the library list, genres list,
+ * and quick-picks until the next boot-time `backfillMediaFromShared()`.
+ * The handle flip happens once the matching writers are on `media.db`.
  */
 import type { SeasonRow, TvShowRow } from '@pops/db-types';
 
