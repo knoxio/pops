@@ -53,8 +53,15 @@ export function createDebriefSession(watchHistoryId: number): number {
       .run();
   }
 
-  // Create new pending session
-  const result = db.insert(debriefSessions).values({ watchHistoryId, status: 'pending' }).run();
+  const result = db
+    .insert(debriefSessions)
+    .values({
+      watchHistoryId,
+      mediaType: entry.mediaType,
+      mediaId: entry.mediaId,
+      status: 'pending',
+    })
+    .run();
 
   return Number(result.lastInsertRowid);
 }
@@ -212,10 +219,19 @@ export function getDebrief(sessionId: number): DebriefResponse {
 }
 
 /**
- * Look up the most recent pending or active debrief session for a media item
- * and return its full debrief response.
+ * Look up the most recent pending/active/complete debrief session for a
+ * media item and return its full debrief response.
  *
- * Throws NotFoundError if no pending/active session exists for this media.
+ * PR #3119 (Option D step 1) denormalised `(media_type, media_id)` onto
+ * `debrief_sessions`; this read now hits the row directly instead of
+ * inner-joining `watch_history`. That removes the only cross-pillar join
+ * blocking the MEDIA pillar exit — the cerebrum-side write surface that
+ * populates the columns lives in the `cerebrum.debrief.logWatchCompletion`
+ * router (Option D step 2). Existing rows were backfilled by the
+ * `0071_debrief_media_denorm` migration; `createDebriefSession` sets both
+ * columns on insert for new rows.
+ *
+ * Throws NotFoundError if no session exists for this media.
  */
 export function getDebriefByMedia(
   mediaType: 'movie' | 'episode',
@@ -223,16 +239,13 @@ export function getDebriefByMedia(
 ): DebriefResponse {
   const db = getDrizzle();
 
-  // Find the most recent session for this media (including complete,
-  // so the completion summary can render after the last comparison)
   const session = db
     .select({ id: debriefSessions.id })
     .from(debriefSessions)
-    .innerJoin(watchHistory, eq(debriefSessions.watchHistoryId, watchHistory.id))
     .where(
       and(
-        eq(watchHistory.mediaType, mediaType),
-        eq(watchHistory.mediaId, mediaId),
+        eq(debriefSessions.mediaType, mediaType),
+        eq(debriefSessions.mediaId, mediaId),
         inArray(debriefSessions.status, ['pending', 'active', 'complete'])
       )
     )

@@ -6,6 +6,7 @@ import { cerebrumManifest } from '@pops/module-registry/settings';
 
 import { mergeRouters, router } from '../../trpc.js';
 import { cerebrumAiTools } from './ai-tools/index.js';
+import { debriefRouter } from './debrief/router.js';
 import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';
 import { scopesRouter } from './engrams/scopes-router.js';
@@ -38,6 +39,7 @@ export const cerebrumRouter = router({
   nudges: nudgesRouter,
   plexus: plexusRouter,
   reflex: reflexRouter,
+  debrief: debriefRouter,
 });
 
 /** PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader. */
