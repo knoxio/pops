@@ -48,7 +48,12 @@ export async function invokeTool(
   const parsed = parseToolName(toolName);
   if (parsed === null) return { kind: 'unknown-tool', toolName };
 
-  const handle = internals.pillarFactory(parsed.pillarId, internals.clientOptions) as Record<
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TOOL_TIMEOUT_MS;
+  const clientOptions: PillarClientOptions = {
+    ...internals.clientOptions,
+    callTimeoutMs: timeoutMs,
+  };
+  const handle = internals.pillarFactory(parsed.pillarId, clientOptions) as Record<
     string,
     Record<string, (input: unknown) => Promise<CallResult<unknown>>>
   >;
@@ -58,8 +63,13 @@ export async function invokeTool(
   if (typeof procedure !== 'function') {
     return { kind: 'tool-error', reason: 'tool not exposed by pillar' };
   }
+  // Note: the `pillar()` proxy returns a callable for any property path, so
+  // the check above is only a defensive guard for non-proxy factories used in
+  // tests. In production, a missing/removed tool surfaces as a
+  // `contract-mismatch` CallResult (typically a 404 on the pillar) and is
+  // mapped below to the same `tool-error` reason for a stable AI-facing
+  // surface.
 
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TOOL_TIMEOUT_MS;
   const callResult = await withTimeout(procedure(parameters), timeoutMs);
   if (callResult === TIMEOUT) {
     return { kind: 'tool-error', reason: 'timeout' };
