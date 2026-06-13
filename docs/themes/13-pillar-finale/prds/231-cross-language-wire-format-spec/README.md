@@ -2,7 +2,9 @@
 
 > Epic: [Cross-language interop](../../epics/14-cross-language-interop.md)
 
-> Status: Not started
+> Status: Partial — US-01 done, US-02/US-03 follow-up
+
+> Spec: [`pillar-wire-format-v1.md`](../../specs/pillar-wire-format-v1.md)
 
 ## Overview
 
