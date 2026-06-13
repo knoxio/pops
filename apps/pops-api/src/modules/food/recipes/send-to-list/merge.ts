@@ -8,8 +8,7 @@
  */
 import { and, eq } from 'drizzle-orm';
 
-import { type FoodDb } from '@pops/app-food-db';
-import { addItem, listItems } from '@pops/app-lists-db';
+import { addItem, type ListsDb, listItems } from '@pops/app-lists-db';
 
 import { appendNote, MAX_NOTES_LENGTH } from './notes-helpers.js';
 import { relabelAfterMerge, type SendItem } from './send-items.js';
@@ -19,7 +18,7 @@ export interface MergeOutcome {
 }
 
 export function processItem(
-  tx: FoodDb,
+  tx: ListsDb,
   listId: number,
   item: SendItem,
   recipeTitle: string
@@ -43,7 +42,7 @@ interface ExistingRow {
 }
 
 function findExistingMatch(
-  tx: FoodDb,
+  tx: ListsDb,
   listId: number,
   refKind: 'ingredient' | 'variant' | 'free',
   refId: number
@@ -61,7 +60,7 @@ function findExistingMatch(
 }
 
 function mergeIntoExisting(
-  tx: FoodDb,
+  tx: ListsDb,
   existing: ExistingRow,
   item: SendItem,
   noteFragment: string
@@ -79,7 +78,7 @@ function mergeIntoExisting(
     .run();
 }
 
-function insertFresh(tx: FoodDb, listId: number, item: SendItem, noteFragment: string): void {
+function insertFresh(tx: ListsDb, listId: number, item: SendItem, noteFragment: string): void {
   addItem(tx, {
     listId,
     label: item.preview.label,

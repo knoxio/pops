@@ -27,6 +27,7 @@
 import { TRPCError } from '@trpc/server';
 
 import { getDrizzle } from '../../../db.js';
+import { getListsDrizzle } from '../../../db/lists-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { createNewDraftForSlug, createNewRecipe, restoreVersionAsDraft } from './create.js';
 import { getForRendering } from './get-for-rendering.js';
@@ -111,11 +112,11 @@ export const recipesRouter = router({
   }),
 
   prepareSendToList: protectedProcedure.input(PrepareSendToListInputSchema).query(({ input }) => {
-    return prepareSendToList(getDrizzle(), input.versionId, input.scaleFactor);
+    return prepareSendToList(getDrizzle(), getListsDrizzle(), input.versionId, input.scaleFactor);
   }),
 
   sendToList: protectedProcedure.input(SendToListInputSchema).mutation(({ input }) => {
-    return sendToList(getDrizzle(), {
+    return sendToList(getDrizzle(), getListsDrizzle(), {
       versionId: input.versionId,
       scaleFactor: input.scaleFactor,
       target: input.target,

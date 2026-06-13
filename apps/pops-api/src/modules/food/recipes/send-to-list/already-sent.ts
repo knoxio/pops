@@ -10,12 +10,11 @@
  */
 import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 
-import { type FoodDb } from '@pops/app-food-db';
-import { listItems, lists } from '@pops/app-lists-db';
+import { type ListsDb, listItems, lists } from '@pops/app-lists-db';
 
 import { escapeLike } from './notes-helpers.js';
 
-export function findListsAlreadyMentioning(db: FoodDb, recipeTitle: string): number[] {
+export function findListsAlreadyMentioning(db: ListsDb, recipeTitle: string): number[] {
   if (recipeTitle.length === 0) return [];
   const pattern = `%${escapeLike(recipeTitle)}%`;
   const rows = db

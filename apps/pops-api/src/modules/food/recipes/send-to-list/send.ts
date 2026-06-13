@@ -7,6 +7,7 @@
  * insert/merge loop runs inside a single Drizzle transaction per PRD §AC.
  */
 import { type FoodDb } from '@pops/app-food-db';
+import { type ListsDb } from '@pops/app-lists-db';
 
 import { aggregateLinesForSend } from './aggregate.js';
 import { processItem } from './merge.js';
@@ -21,18 +22,22 @@ export interface SendToListInput {
   target: SendTarget;
 }
 
-export function sendToList(db: FoodDb, input: SendToListInput): SendToListResult {
-  const loaded = loadVersionForSend(db, input.versionId);
+export function sendToList(
+  foodDb: FoodDb,
+  listsDb: ListsDb,
+  input: SendToListInput
+): SendToListResult {
+  const loaded = loadVersionForSend(foodDb, input.versionId);
   if (!loaded.ok) return { ok: false, reason: loaded.reason };
   const scaleFactor = clampScaleFactor(input.scaleFactor);
-  const aggregate = aggregateLinesForSend(db, input.versionId, scaleFactor);
+  const aggregate = aggregateLinesForSend(foodDb, input.versionId, scaleFactor);
   const items = buildSendItems(aggregate);
   if (items.length === 0) return { ok: false, reason: 'NoIngredients' };
-  return db.transaction((tx) => writeItems(tx, items, input.target, loaded.version.title));
+  return listsDb.transaction((tx) => writeItems(tx, items, input.target, loaded.version.title));
 }
 
 function writeItems(
-  tx: FoodDb,
+  tx: ListsDb,
   items: readonly SendItem[],
   target: SendTarget,
   recipeTitle: string
