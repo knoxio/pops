@@ -2,7 +2,7 @@ import { and, eq, isNotNull, ne } from 'drizzle-orm';
 
 import { tagVocabulary, transactions } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { suggestTags } from '../../tag-suggester/index.js';
 
 import type { SuggestedTag } from '../types.js';
@@ -26,7 +26,7 @@ export function parseCorrectionTags(raw: string): string[] {
  * repeated identical queries for every transaction.
  */
 export function loadKnownTags(): string[] {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   const rows = db
     .select({ tags: transactions.tags })
     .from(transactions)

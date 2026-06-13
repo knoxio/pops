@@ -8,7 +8,6 @@ import {
   transactionsService,
 } from '@pops/finance-db';
 
-import { getDrizzle } from '../../../db.js';
 import { getFinanceDrizzle, getFinanceRawDb } from '../../../db/finance-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
@@ -200,7 +199,7 @@ export const transactionsRouter = router({
     )
     .query(({ input }) => {
       const limit = input?.limit ?? PREVIEW_DESCRIPTIONS_LIMIT;
-      const db = getDrizzle();
+      const db = getFinanceDrizzle();
       const rows = db
         .select({
           description: transactionsTable.description,

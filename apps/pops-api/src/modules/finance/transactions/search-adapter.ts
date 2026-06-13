@@ -2,7 +2,7 @@ import { like, sql } from 'drizzle-orm';
 
 import { transactions } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 
@@ -64,7 +64,7 @@ export const transactionsSearchAdapter: SearchAdapter<TransactionHitData> = {
     const text = query.text.trim();
     if (!text) return [];
 
-    const db = getDrizzle();
+    const db = getFinanceDrizzle();
     const rows = db
       .select({
         id: transactions.id,
