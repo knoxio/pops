@@ -222,6 +222,7 @@ describe('inventory.documents.listForItem', () => {
     });
 
     expect(page1.data).toHaveLength(2);
+    expect(page1.data.map((r) => r.paperlessDocumentId)).toEqual([1, 2]);
     expect(page1.pagination.total).toBe(3);
     expect(page1.pagination.hasMore).toBe(true);
 
@@ -232,6 +233,7 @@ describe('inventory.documents.listForItem', () => {
     });
 
     expect(page2.data).toHaveLength(1);
+    expect(page2.data.map((r) => r.paperlessDocumentId)).toEqual([3]);
     expect(page2.pagination.hasMore).toBe(false);
   });
 });
