@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 
 import { transactionCorrections, transactions } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { parseJsonStringArray } from '../../../../shared/json.js';
 import {
   applyChangeSetToRules,
@@ -42,7 +42,7 @@ function fetchCandidates(
   const sqlPrefilterExpression =
     matchType === 'regex' ? sqlNormalizedDescription : sqlCollapsedSpaces;
 
-  return getDrizzle()
+  return getFinanceDrizzle()
     .select({
       id: transactions.id,
       description: transactions.description,
@@ -114,7 +114,7 @@ export function computeChangeSetImpact(args: ImpactPreviewArgs): {
   rulesBefore: CorrectionRow[];
 } {
   const candidates = fetchCandidates(args.matchType, args.normalizedPattern, args.maxPreviewItems);
-  const rulesBefore = getDrizzle().select().from(transactionCorrections).all();
+  const rulesBefore = getFinanceDrizzle().select().from(transactionCorrections).all();
   const rulesAfter = applyChangeSetToRules(rulesBefore, args.changeSet);
 
   const affected: ChangeSetImpactItem[] = [];

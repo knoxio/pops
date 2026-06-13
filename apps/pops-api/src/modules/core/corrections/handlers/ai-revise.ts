@@ -2,7 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { transactionCorrections } from '@pops/db-types';
 
-import { getDrizzle, isNamedEnvContext } from '../../../../db.js';
+import { isNamedEnvContext } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
 import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
@@ -146,7 +147,7 @@ function parseAndValidate(text: string): { changeSet: ChangeSet; rationale: stri
 }
 
 export async function reviseChangeSet(args: ReviseArgs): Promise<ReviseResult> {
-  const rulesBefore = getDrizzle().select().from(transactionCorrections).all();
+  const rulesBefore = getFinanceDrizzle().select().from(transactionCorrections).all();
 
   if (isNamedEnvContext()) {
     return {

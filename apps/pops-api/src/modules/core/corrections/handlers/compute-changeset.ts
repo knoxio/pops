@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { transactionCorrections } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { buildTargetRulesMap } from '../pure-service.js';
 import { normalizeDescription } from '../types.js';
 import { interpretRejectionFeedback, loadLatestRejectedFeedback } from './ai-inference.js';
@@ -44,7 +44,7 @@ function findExistingRule(
   matchType: 'exact' | 'contains' | 'regex',
   normalizedPattern: string
 ): CorrectionRow | undefined {
-  return getDrizzle()
+  return getFinanceDrizzle()
     .select()
     .from(transactionCorrections)
     .where(

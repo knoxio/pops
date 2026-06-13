@@ -2,7 +2,7 @@ import { and, isNotNull, ne } from 'drizzle-orm';
 
 import { transactions as transactionsTable } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 
 function parseTagsColumn(raw: string): string[] {
   try {
@@ -18,7 +18,7 @@ function parseTagsColumn(raw: string): string[] {
 
 export function loadAvailableTagsFromDb(): string[] {
   try {
-    const rows = getDrizzle()
+    const rows = getFinanceDrizzle()
       .select({ tags: transactionsTable.tags })
       .from(transactionsTable)
       .where(and(isNotNull(transactionsTable.tags), ne(transactionsTable.tags, '[]')))
