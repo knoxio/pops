@@ -1,20 +1,49 @@
-import { and, count, eq, or } from 'drizzle-orm';
-
 /**
- * Item connections service — connect/disconnect inventory items using Drizzle ORM.
- * Enforces A<B ordering to prevent duplicate bidirectional pairs.
+ * Inventory connections read/write surface — PRD-175 PR 2 cutover.
+ *
+ * Read/write split during the migration window (mirrors PRD-173 PR 2 +
+ * PRD-179 PR 2):
+ *  - `listConnectionsForItem`, `traceConnections`, and `getConnectionGraph`
+ *    are routed through `connectionsService` from `@pops/inventory-db`
+ *    against the inventory pillar handle (`getInventoryDrizzle()`). Reads
+ *    now resolve from the canonical package implementation.
+ *  - Writes (`connectItems`, `disconnectItems`) keep their inline drizzle
+ *    statements against the same handle to preserve the existing
+ *    read-after-write guarantee on the inventory pillar's SQLite file.
+ *    Both calls validate via in-line reads against the same handle, so
+ *    the writes stay inline until PRD-175 PR 3 collapses them onto
+ *    `connectionsService.{create, delete}`.
+ *
+ * The legacy router stays mounted in pops-api as a fall-through while the
+ * dispatcher cutover routes `inventory.connections.*` traffic to
+ * pops-inventory-api. Consumers (router.ts here) keep the same wire
+ * surface — no caller churn.
  */
+import { and, eq } from 'drizzle-orm';
+
 import { homeInventory, itemConnections } from '@pops/db-types';
+import { ConnectionItemNotFoundError, connectionsService } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
-import type { ItemConnectionRow, TraceNode } from './types.js';
+import type { GraphData, ItemConnectionRow, TraceNode } from './types.js';
 
 /** Count + rows for a paginated list. */
 export interface ConnectionListResult {
   rows: ItemConnectionRow[];
   total: number;
+}
+
+function translate<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (err instanceof ConnectionItemNotFoundError) {
+      throw new NotFoundError('Inventory item', err.id);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -28,10 +57,8 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
     throw new ConflictError('Cannot connect an item to itself');
   }
 
-  // Enforce A<B ordering
   const [itemAId, itemBId] = inputA < inputB ? [inputA, inputB] : [inputB, inputA];
 
-  // Validate both items exist
   const [itemA] = db
     .select({ id: homeInventory.id })
     .from(homeInventory)
@@ -46,7 +73,6 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
     .all();
   if (!itemB) throw new NotFoundError('Inventory item', itemBId);
 
-  // Check for existing connection
   const [existing] = db
     .select({ id: itemConnections.id })
     .from(itemConnections)
@@ -59,7 +85,6 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
 
   db.insert(itemConnections).values({ itemAId, itemBId }).run();
 
-  // Fetch the created row
   const [created] = db
     .select()
     .from(itemConnections)
@@ -77,7 +102,6 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
 export function disconnectItems(inputA: string, inputB: string): void {
   const db = getInventoryDrizzle();
 
-  // Enforce A<B ordering (same normalisation as connectItems)
   const [itemAId, itemBId] = inputA < inputB ? [inputA, inputB] : [inputB, inputA];
 
   const [row] = db
@@ -93,23 +117,13 @@ export function disconnectItems(inputA: string, inputB: string): void {
   db.delete(itemConnections).where(eq(itemConnections.id, row.id)).run();
 }
 
-/**
- * List all connections for a given item (checking both A and B columns).
- */
+/** List all connections for a given item (checking both A and B columns). */
 export function listConnectionsForItem(
   itemId: string,
   limit: number,
   offset: number
 ): ConnectionListResult {
-  const db = getInventoryDrizzle();
-
-  const condition = or(eq(itemConnections.itemAId, itemId), eq(itemConnections.itemBId, itemId));
-
-  const rows = db.select().from(itemConnections).where(condition).limit(limit).offset(offset).all();
-
-  const [countResult] = db.select({ total: count() }).from(itemConnections).where(condition).all();
-
-  return { rows, total: countResult?.total ?? 0 };
+  return connectionsService.list(getInventoryDrizzle(), itemId, limit, offset);
 }
 
 /**
@@ -118,78 +132,10 @@ export function listConnectionsForItem(
  * references by tracking visited nodes.
  */
 export function traceConnections(itemId: string, maxDepth: number): TraceNode {
-  const db = getInventoryDrizzle();
-
-  // Validate the starting item exists
-  const [startItem] = db
-    .select({
-      id: homeInventory.id,
-      itemName: homeInventory.itemName,
-      assetId: homeInventory.assetId,
-      type: homeInventory.type,
-    })
-    .from(homeInventory)
-    .where(eq(homeInventory.id, itemId))
-    .all();
-
-  if (!startItem) throw new NotFoundError('Inventory item', itemId);
-
-  const root: TraceNode = {
-    id: startItem.id,
-    itemName: startItem.itemName,
-    assetId: startItem.assetId,
-    type: startItem.type,
-    children: [],
-  };
-
-  const visited = new Set<string>([itemId]);
-  const queue: { node: TraceNode; depth: number }[] = [{ node: root, depth: 0 }];
-
-  while (queue.length > 0) {
-    const entry = queue.shift();
-    if (!entry) break;
-    const { node, depth } = entry;
-    if (depth >= maxDepth) continue;
-
-    // Find all connections for this node
-    const connections = db
-      .select()
-      .from(itemConnections)
-      .where(or(eq(itemConnections.itemAId, node.id), eq(itemConnections.itemBId, node.id)))
-      .all();
-
-    for (const conn of connections) {
-      const neighborId = conn.itemAId === node.id ? conn.itemBId : conn.itemAId;
-      if (visited.has(neighborId)) continue;
-      visited.add(neighborId);
-
-      const [neighbor] = db
-        .select({
-          id: homeInventory.id,
-          itemName: homeInventory.itemName,
-          assetId: homeInventory.assetId,
-          type: homeInventory.type,
-        })
-        .from(homeInventory)
-        .where(eq(homeInventory.id, neighborId))
-        .all();
-
-      if (!neighbor) continue;
-
-      const childNode: TraceNode = {
-        id: neighbor.id,
-        itemName: neighbor.itemName,
-        assetId: neighbor.assetId,
-        type: neighbor.type,
-        children: [],
-      };
-
-      node.children.push(childNode);
-      queue.push({ node: childNode, depth: depth + 1 });
-    }
-  }
-
-  return root;
+  return translate(() => connectionsService.trace(getInventoryDrizzle(), itemId, maxDepth));
 }
 
-export { getConnectionGraph } from './graph.js';
+/** Get the connection subgraph for an item as nodes + edges. */
+export function getConnectionGraph(itemId: string, maxDepth: number): GraphData {
+  return translate(() => connectionsService.graph(getInventoryDrizzle(), itemId, maxDepth));
+}
