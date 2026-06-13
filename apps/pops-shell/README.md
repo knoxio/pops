@@ -86,25 +86,50 @@ per-surface change.
 
 ## Event-driven nginx reload (PRD-228 US-03)
 
-`pnpm gen:nginx:watch` runs `scripts/watch-registry-and-reload.ts` —
-a long-lived process that subscribes to `GET /registry/subscribe`
+`pnpm gen:nginx:watch` runs `scripts/watch-registry-and-reload-cli.ts`
+— a long-lived process that subscribes to `GET /registry/subscribe`
 (PRD-163) and, on each `pillar.registered`, `pillar.deregistered`, or
 `pillar.health-changed` frame, regenerates `nginx.conf` from the live
-registry (`pnpm gen:nginx:dynamic` logic) and executes a reload
-command. A trailing 250ms debounce coalesces bursts (multi-pillar
-boot, eviction-storms) into a single regen + reload. The initial
+registry (`pnpm gen:nginx:dynamic` logic), runs `nginx -t` to validate
+the rendered conf, and on pass executes the reload command. A
+trailing 250ms debounce coalesces bursts (multi-pillar boot,
+eviction-storms) into a single regen + reload. The initial
 `pillar.snapshot` frame is intentionally ignored — the dispatcher
 already reflects boot state.
 
+If `nginx -t` rejects the new conf, the reload is skipped (the
+previous conf stays live) and the optional health endpoint flips to
+503 with `nginx_generator_last_error_at` set until the next clean
+cycle.
+
 ### Env
 
-| Var                      | Default                      | Purpose                                                          |
-| ------------------------ | ---------------------------- | ---------------------------------------------------------------- |
-| `CORE_REGISTRY_URL`      | `http://core-api:3001`       | Core-api base URL; SSE consumed from `<url>/registry/subscribe`. |
-| `POPS_NGINX_OUTPUT`      | `apps/pops-shell/nginx.conf` | Where the regenerated conf is written.                           |
-| `POPS_NGINX_RELOAD_CMD`  | `nginx -s reload`            | Shell command run after each successful regen.                   |
-| `POPS_NGINX_DEBOUNCE_MS` | `250`                        | Trailing-debounce window for coalescing bursts.                  |
-| `POPS_NGINX_BACKOFF_MS`  | `1000`                       | Initial reconnect backoff (caps at 30s, doubles per failure).    |
+| Var                          | Default                      | Purpose                                                                                                |
+| ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `CORE_REGISTRY_URL`          | `http://core-api:3001`       | Core-api base URL; SSE consumed from `<url>/registry/subscribe`.                                       |
+| `POPS_NGINX_OUTPUT`          | `apps/pops-shell/nginx.conf` | Where the regenerated conf is written.                                                                 |
+| `POPS_NGINX_RELOAD_CMD`      | `nginx -s reload`            | Shell command run after each successful validate.                                                      |
+| `POPS_NGINX_CONFIG_TEST_CMD` | `nginx -t -c <output>`       | Pre-reload validation. Empty string disables the gate (e.g. when nginx runs in a different container). |
+| `POPS_NGINX_DEBOUNCE_MS`     | `250`                        | Trailing-debounce window for coalescing bursts.                                                        |
+| `POPS_NGINX_BACKOFF_MS`      | `1000`                       | Initial reconnect backoff (caps at 30s, doubles per failure).                                          |
+| `POPS_NGINX_HEALTH_PORT`     | (unset)                      | If set + positive, expose a JSON health endpoint with `nginx_generator_last_error_at`.                 |
+| `POPS_NGINX_HEALTH_HOST`     | `0.0.0.0`                    | Health endpoint bind host.                                                                             |
+| `POPS_NGINX_HEALTH_PATH`     | `/health`                    | Health endpoint path.                                                                                  |
+
+### Health endpoint payload
+
+```jsonc
+{
+  "status": "ok" | "degraded",
+  "lastSuccessAt": 1718328000000 | null,
+  "lastError": { "stage": "validate" | "regenerate" | "reload", "message": "...", "at": 1718327900000 } | null,
+  "nginx_generator_last_error_at": 1718327900000 | null
+}
+```
+
+`nginx_generator_last_error_at` is a unix-epoch-ms timestamp while the
+last cycle failed, `null` while healthy. Returns 200 when `status` is
+`ok`, 503 when `degraded`.
 
 ### Deploy shape (follow-up)
 

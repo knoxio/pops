@@ -4,6 +4,7 @@ import {
   createReloadHandler,
   isWatchedEvent,
   WATCHED_EVENTS,
+  type ReloadErrorEvent,
   type ReloadLogger,
 } from './nginx-event-reload.ts';
 
@@ -211,5 +212,182 @@ describe('createReloadHandler', () => {
     expect(triggerLine).toBeDefined();
     expect(triggerLine).toContain('pillar.registered');
     expect(triggerLine).toContain('pillar.health-changed');
+  });
+
+  it('runs validateConfig between regenerate and reload', async () => {
+    const calls: string[] = [];
+    const regenerate = vi.fn(async () => {
+      calls.push('regen');
+    });
+    const validateConfig = vi.fn(async () => {
+      calls.push('validate');
+    });
+    const reload = vi.fn(async () => {
+      calls.push('reload');
+    });
+    const handler = createReloadHandler({
+      regenerate,
+      validateConfig,
+      reload,
+      debounceMs: 10,
+    });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(calls).toEqual(['regen', 'validate', 'reload']);
+  });
+
+  it('skips reload when validateConfig rejects (nginx -t failed)', async () => {
+    const regenerate = vi.fn().mockResolvedValue(undefined);
+    const validateConfig = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValue(new Error('nginx: [emerg] invalid number of arguments'));
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const { logger, errors } = createSilentLogger();
+    const handler = createReloadHandler({
+      regenerate,
+      validateConfig,
+      reload,
+      debounceMs: 10,
+      logger,
+    });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(regenerate).toHaveBeenCalledTimes(1);
+    expect(validateConfig).toHaveBeenCalledTimes(1);
+    expect(reload).not.toHaveBeenCalled();
+    expect(errors.some((e) => e.includes('nginx -t validation failed'))).toBe(true);
+  });
+
+  it('emits onError with stage=validate when validateConfig rejects', async () => {
+    const regenerate = vi.fn().mockResolvedValue(undefined);
+    const validateConfig = vi.fn<() => Promise<void>>().mockRejectedValue(new Error('bad conf'));
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const errors: ReloadErrorEvent[] = [];
+    const handler = createReloadHandler({
+      regenerate,
+      validateConfig,
+      reload,
+      debounceMs: 10,
+      onError: (e) => errors.push(e),
+    });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.stage).toBe('validate');
+    expect(errors[0]?.message).toBe('bad conf');
+    expect(errors[0]?.at).toBeInstanceOf(Date);
+  });
+
+  it('emits onError with stage=regenerate when regenerate rejects', async () => {
+    const regenerate = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValue(new Error('snapshot fetch failed'));
+    const validateConfig = vi.fn().mockResolvedValue(undefined);
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const errors: ReloadErrorEvent[] = [];
+    const handler = createReloadHandler({
+      regenerate,
+      validateConfig,
+      reload,
+      debounceMs: 10,
+      onError: (e) => errors.push(e),
+    });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.stage).toBe('regenerate');
+    expect(validateConfig).not.toHaveBeenCalled();
+  });
+
+  it('emits onError with stage=reload when reload rejects', async () => {
+    const regenerate = vi.fn().mockResolvedValue(undefined);
+    const validateConfig = vi.fn().mockResolvedValue(undefined);
+    const reload = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValue(new Error('SIGHUP target missing'));
+    const errors: ReloadErrorEvent[] = [];
+    const handler = createReloadHandler({
+      regenerate,
+      validateConfig,
+      reload,
+      debounceMs: 10,
+      onError: (e) => errors.push(e),
+    });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.stage).toBe('reload');
+  });
+
+  it('fires onSuccess only after the full regen + validate + reload cycle passes', async () => {
+    const regenerate = vi.fn().mockResolvedValue(undefined);
+    const validateConfig = vi.fn().mockResolvedValue(undefined);
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const onSuccess = vi.fn();
+    const handler = createReloadHandler({
+      regenerate,
+      validateConfig,
+      reload,
+      debounceMs: 10,
+      onSuccess,
+    });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fire onSuccess when validateConfig rejects', async () => {
+    const regenerate = vi.fn().mockResolvedValue(undefined);
+    const validateConfig = vi.fn<() => Promise<void>>().mockRejectedValue(new Error('bad'));
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const onSuccess = vi.fn();
+    const handler = createReloadHandler({
+      regenerate,
+      validateConfig,
+      reload,
+      debounceMs: 10,
+      onSuccess,
+    });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('preserves pre-PRD-228 behaviour when validateConfig is omitted', async () => {
+    const calls: string[] = [];
+    const regenerate = vi.fn(async () => {
+      calls.push('regen');
+    });
+    const reload = vi.fn(async () => {
+      calls.push('reload');
+    });
+    const handler = createReloadHandler({ regenerate, reload, debounceMs: 10 });
+
+    handler.trigger('pillar.registered');
+    await vi.advanceTimersByTimeAsync(10);
+    await handler.flush();
+
+    expect(calls).toEqual(['regen', 'reload']);
   });
 });

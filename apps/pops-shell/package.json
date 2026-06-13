@@ -17,7 +17,7 @@
     "gen:nginx": "tsx scripts/generate-nginx-conf.ts",
     "gen:nginx:check": "tsx scripts/generate-nginx-conf.ts --check",
     "gen:nginx:dynamic": "tsx scripts/generate-nginx-conf.ts --dynamic",
-    "gen:nginx:watch": "tsx scripts/watch-registry-and-reload.ts",
+    "gen:nginx:watch": "tsx scripts/watch-registry-and-reload-cli.ts",
     "registry:register": "tsx scripts/register-with-registry.ts"
   },
   "dependencies": {
