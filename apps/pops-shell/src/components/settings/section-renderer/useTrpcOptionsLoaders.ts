@@ -1,6 +1,7 @@
-import { trpc } from '@/lib/trpc';
-import { traverseTrpcPath } from '@/lib/trpc-traverse';
 import { useMemo, useRef } from 'react';
+
+import { pillar } from '@pops/pillar-sdk/client';
+import { usePillarSdkOptions } from '@pops/pillar-sdk/react';
 
 import type { SettingsManifest } from '@pops/types';
 
@@ -8,18 +9,19 @@ type Options = { value: string; label: string }[];
 type Loaders = Record<string, () => Promise<Options>>;
 
 /**
- * PRD-204 follow-up: this site builds tRPC procedure paths from manifest data at runtime,
- * which is now supported by `@pops/pillar-sdk` `pillar(id).callDynamic(router, proc, input)`.
- * Migration off the legacy `@/lib/trpc` traversal helper is tracked separately so the SDK
- * affordance can ship in isolation.
+ * Builds per-field option loaders for `select` settings whose options come
+ * from a runtime procedure. The procedure string is supplied by manifest
+ * data in the shape `pillarId.routerName.procName`, which is why the SDK's
+ * typed proxy can't be used directly here — `pillar(id).callDynamic(router,
+ * proc, input)` (PRD-204 + PR #3131) is the supported escape hatch.
+ *
+ * The procedure is expected to return `{ data: Record<string, unknown>[] }`
+ * (the same envelope the legacy tRPC traversal expected).
  */
 export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
-  const utils = trpc.useUtils();
-  // Keep a ref so loader closures always see the latest utils without causing
-  // the memo to invalidate on every render (utils identity is not stable in tests
-  // and can vary across render cycles in production too).
-  const utilsRef = useRef(utils);
-  utilsRef.current = utils;
+  const sdkOptions = usePillarSdkOptions();
+  const sdkOptionsRef = useRef(sdkOptions);
+  sdkOptionsRef.current = sdkOptions;
 
   return useMemo(() => {
     const loaders: Loaders = {};
@@ -29,15 +31,27 @@ export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
         const { procedure, valueKey, labelKey } = field.optionsLoader;
         const key = field.key;
         loaders[key] = async () => {
-          const node = traverseTrpcPath(utilsRef.current.client, procedure);
-          let raw: unknown;
-          if (typeof node.query === 'function') {
-            raw = await (node.query as () => Promise<unknown>)();
-          } else {
-            throw new Error(`Procedure is not a query: ${procedure}`);
+          const parts = procedure.split('.');
+          if (parts.length !== 3) {
+            throw new Error(`Cannot call procedure: ${procedure}`);
           }
-          const result = raw as { data?: Record<string, unknown>[] };
-          const items = result?.data ?? [];
+          const [pillarId, routerName, procName] = parts as [string, string, string];
+
+          const handle = pillar(pillarId, sdkOptionsRef.current);
+          const result = await handle.callDynamic(routerName, procName, undefined, 'query');
+
+          if (result.kind === 'unavailable') {
+            throw new Error(`Pillar '${pillarId}' is unavailable`);
+          }
+          if (result.kind === 'degraded') {
+            throw new Error(`Pillar '${pillarId}' is degraded (${result.reason})`);
+          }
+          if (result.kind === 'contract-mismatch') {
+            throw new Error(`Cannot call procedure: ${procedure}`);
+          }
+
+          const envelope = result.value as { data?: Record<string, unknown>[] } | null;
+          const items = envelope?.data ?? [];
           return items.map((item) => ({
             value: String(item[valueKey]),
             label: String(item[labelKey]),
@@ -46,5 +60,5 @@ export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
       }
     }
     return loaders;
-  }, [manifest]); // manifest only — utils accessed via ref to avoid reference churn
+  }, [manifest]);
 }
