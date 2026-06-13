@@ -34,6 +34,7 @@ Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business
 
 - `plex-push.ts` writes to Plex API based on watchlist additions — that integration is preserved; only the read source (the table query) changes.
 - Backfill is simple — one table, no FK ordering.
+- **Writer cutover is sequenced with watch-history.** `media_watchlist` writes are touched by cross-module writers in `watch-history/handlers/log-watch-event.ts`, `plex/sync-watchlist.ts`, and `rotation/removal-selection.ts`. Once both `watch_history` and `media_watchlist` live on the media handle, the writes flip together. Sequencing + the `logWatch ↔ debrief` cross-pillar split that unblocks this are specified in [notes/media-watch-history-mixed-tx-design.md](../../notes/media-watch-history-mixed-tx-design.md).
 
 ## Edge Cases
 
