@@ -8,7 +8,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 import { createApp } from './app.js';
 import { closeDb, getCoreDrizzle } from './db.js';
 import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
-import { backfillFinanceFromSharedDb, getFinanceDrizzle } from './db/finance-handle.js';
+import { getFinanceDrizzle } from './db/finance-handle.js';
 import { getFoodDrizzle } from './db/food-handle.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { getListsDrizzle } from './db/lists-handle.js';
@@ -68,15 +68,14 @@ try {
   throw err;
 }
 
-// Eagerly open the finance pillar's SQLite + apply its journal at
-// boot. The wish-list slice now reads/writes against this handle
-// (phase 2 PR 3); the one-shot `backfillFinanceFromSharedDb` carries
-// any rows that still live in the legacy pops.db across. The backfill
-// is idempotent (per-table `WHERE id NOT IN (...)` filters) and
-// non-fatal (partial failure logs + continues).
+// Eagerly open the finance pillar's SQLite + apply its journal at boot.
+// Every finance-owned table (`entities`, `transactions`,
+// `transaction_corrections`, `transaction_tag_rules`, `tag_vocabulary`,
+// `budgets`, `wish_list`) now writes directly to finance.db via
+// getFinanceDrizzle(), so the boot-time ATTACH bridge from the shared
+// pops.db has been retired — there is nothing left to carry forward.
 try {
   getFinanceDrizzle();
-  backfillFinanceFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the finance pillar SQLite:', err);
   throw err;

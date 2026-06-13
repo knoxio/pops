@@ -8,12 +8,12 @@
  * `apps/pops-api/src/db/drizzle-migrations/` and
  * `packages/<id>-db/migrations/`.
  *
- * Split across per-pillar siblings (`backfill-test-fixtures-media.ts`,
- * `-finance.ts`) so each file stays under the 200-line lint cap. The
- * core pillar's fixtures sibling was retired alongside the core PR4
- * drop — every core-owned table writes directly to core.db. This
- * barrel keeps the existing import surface stable for the remaining
- * pillars.
+ * Split across per-pillar siblings (`backfill-test-fixtures-media.ts`)
+ * so each file stays under the 200-line lint cap. The core and finance
+ * pillars' fixtures siblings were retired alongside their PR4 FULL
+ * EXIT drops — every core- and finance-owned table writes directly to
+ * its pillar DB. This barrel keeps the existing import surface stable
+ * for the remaining pillars.
  */
 export {
   DISMISSED_DISCOVER_TABLE_SQL,
@@ -23,11 +23,3 @@ export {
   WATCH_HISTORY_TABLE_SQL,
   WATCHLIST_TABLE_SQL,
 } from './backfill-test-fixtures-media.js';
-export {
-  BUDGETS_TABLE_SQL,
-  ENTITIES_TABLE_SQL,
-  TAG_VOCABULARY_TABLE_SQL,
-  TRANSACTION_CORRECTIONS_TABLE_SQL,
-  TRANSACTION_TAG_RULES_TABLE_SQL,
-  TRANSACTIONS_TABLE_SQL,
-} from './backfill-test-fixtures-finance.js';

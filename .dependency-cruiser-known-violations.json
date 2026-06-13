@@ -606,17 +606,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/db/backfill-finance-from-shared.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/finance-handle.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
