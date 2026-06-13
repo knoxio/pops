@@ -2,55 +2,49 @@
 
 > Epic: [Remaining data migrations](../../epics/03-remaining-data-migrations.md)
 
+## Status
+
+**Done by construction.** No N-track sequence to run.
+
 ## Overview
 
-Move `inventory.warranties.*` procedures + the `warranties` table into `inventory.db`. Follows the canonical N-track pattern from [PRD-165](../165-media-movies-cutover/README.md).
+The earlier draft of this PRD assumed a standalone `warranties` table with its own `inventory.warranties.*` procedures. Neither exists in the codebase.
 
-Warranties track per-item coverage windows + linked documents. Read-heavy with periodic write on purchase. Small slice.
+Warranty coverage is modelled as a denormalised column on the existing `home_inventory` row:
 
-## Data Model
+- `home_inventory.warranty_expires text` — single ISO date, indexed by `idx_inventory_warranty`.
+- Linked warranty paperwork is tracked through `item_documents.document_type = 'warranty'` (owned by PRD-176).
 
-Tables (move from shared to `packages/inventory-db`):
+Both `home_inventory` and `item_documents` already live in `packages/inventory-db` (`packages/inventory-db/migrations/0006_inventory_pillar_baseline.sql`). There is no shared-journal handle to drop, no router to flip, no shim to delete.
 
-- `warranties` — { id, item_id (FK), provider, coverage_start, coverage_end, contact, claim_url, document_ref, notes }
+## What ships the warranty surface today
 
-## API Surface
+| Surface                              | Lives in                                                              | Storage                                                                                  |
+| ------------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `inventory.reports.warranties` query | `apps/pops-api/src/modules/inventory/reports/router.ts`               | Reads `home_inventory.warranty_expires` + LEFT JOIN `item_documents` (type = 'warranty') |
+| `inventory.reports.dashboard` widget | `apps/pops-api/src/modules/inventory/reports/service.ts`              | `warrantiesExpiringSoon` count derived from `home_inventory.warranty_expires`            |
+| Item create/update `warrantyExpires` | `packages/inventory-db/src/services/items-{create,update}-builder.ts` | Column on `home_inventory`                                                               |
+| Warranty document linking            | `packages/inventory-db/src/services/documents-*.ts`                   | `item_documents.document_type = 'warranty'`                                              |
+| `/inventory/warranties` UI           | `packages/app-inventory/src/routes.tsx`                               | Calls `inventory.reports.warranties` over the SDK                                        |
 
-| Procedure                           | Kind                 |
-| ----------------------------------- | -------------------- |
-| `inventory.warranties.list`         | query                |
-| `inventory.warranties.byItem`       | query                |
-| `inventory.warranties.create`       | mutation             |
-| `inventory.warranties.update`       | mutation             |
-| `inventory.warranties.delete`       | mutation             |
-| `inventory.warranties.expiringSoon` | query (next 90 days) |
+All paths already hit `inventory.db` via `getInventoryDrizzle()` (or via the per-pillar service in `@pops/inventory-db`). The cutover this PRD was scoped to perform has been performed implicitly by PRD-173 (items) and PRD-176 (documents).
 
-Files today: `apps/pops-api/src/modules/inventory/warranties/` (router + service).
+## Why no standalone `warranties` table
 
-## Business Rules
+The earlier draft proposed promoting warranty coverage into its own table with provider, coverage windows, claim URL, and per-warranty document refs. That is a product change, not a data migration:
 
-Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business-rules--the-n-track-4-pr-sequence). Slice specifics:
+- Today there is exactly one warranty per item (a single expiry date on the item row).
+- Multiple warranty providers, claim portals, or overlapping coverage windows are not currently modelled or surfaced anywhere in the app.
+- Promoting this is feature work — write a fresh PRD scoped to that product change, with its own data model, API surface, and UI plan. Do not relitigate it under a Theme 13 cutover ticket.
 
-- Cutover gated on PRD-173 (items) due to FK.
-- `expiringSoon` is a date-range query; preserve index on `coverage_end` in the per-pillar baseline.
+## Decision
 
-## Edge Cases
+Mark PRD-178 **Done by construction**. No PRs to ship under this slice.
 
-| Case                                            | Behaviour                                                                |
-| ----------------------------------------------- | ------------------------------------------------------------------------ |
-| Warranty references an item that's been deleted | Existing FK rule preserved (CASCADE or SET NULL — match current schema). |
-| `expiringSoon` query timezone semantics         | Server timezone used; preserved across cutover.                          |
-
-## User Stories
-
-| #   | Story                                                       | Summary                                         |
-| --- | ----------------------------------------------------------- | ----------------------------------------------- |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Schema + service in `@pops/inventory-db` |
-| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal                 |
-| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip router to `getInventoryDrizzle()`   |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                     |
+If/when a standalone `warranties` table is added later, it is a new PRD outside Theme 13 — Theme 13's remit is moving existing tables into per-pillar packages, not introducing new product surface.
 
 ## Out of Scope
 
-- Reminder notification logic.
-- External warranty registries.
+- Introducing a standalone `warranties` table or `inventory.warranties.*` procedures.
+- Reminder/notification logic for expiring coverage.
+- External warranty registry integrations.
