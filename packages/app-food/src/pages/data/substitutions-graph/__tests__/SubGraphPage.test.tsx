@@ -3,8 +3,8 @@
  *
  * Drives the page through `createMemoryRouter` so the `useSearchParams`
  * + URL-state machinery exercises React Router's real resolution path.
- * The `food.substitutions.graphView` tRPC query is mocked at the
- * `@pops/api-client` module boundary; the force-directed canvas is
+ * The `food.substitutions.graphView` query is mocked at the
+ * `@pops/pillar-sdk` module boundary; the force-directed canvas is
  * substituted via `forceGraphRenderImpl` so vitest doesn't need a real
  * `HTMLCanvasElement`.
  */

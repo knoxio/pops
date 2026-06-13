@@ -7,7 +7,7 @@ import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { CompileResult } from '@pops/app-food-db';
 
 type SaveDraftInput = inferRouterInputs<AppRouter>['food']['recipes']['saveDraft'];

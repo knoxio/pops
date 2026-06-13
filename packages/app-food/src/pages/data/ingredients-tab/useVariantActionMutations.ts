@@ -13,7 +13,7 @@ import { mapVariantMutationError } from './errors';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type CreateVariantInput = inferRouterInputs<AppRouter>['food']['variants']['create'];
 type CreateVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['create'];

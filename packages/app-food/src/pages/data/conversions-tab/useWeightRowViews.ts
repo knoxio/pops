@@ -13,7 +13,7 @@ import { pillarQueryArg, usePillarQueries, type PillarQueryArg } from '@pops/pil
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { IngredientWeightRow } from './types';
 import type { WeightRowView } from './WeightsTable';

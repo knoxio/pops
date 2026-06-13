@@ -9,7 +9,7 @@ import { RecipeEditShell } from './RecipeEditPage.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type ListDraftsOutput = inferRouterOutputs<AppRouter>['food']['recipes']['listDrafts'];
 

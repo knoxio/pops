@@ -14,7 +14,7 @@ import { validateRange } from './range-helpers.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type PreviewFromPlanOutput = inferRouterOutputs<AppRouter>['food']['shopping']['previewFromPlan'];
 type GenerateFromPlanInput = inferRouterInputs<AppRouter>['food']['shopping']['generateFromPlan'];

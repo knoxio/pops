@@ -26,7 +26,7 @@ import { useSubGraphState } from './useSubGraphState';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { ForceGraphInternalProps } from './ForceGraphCanvas';
 import type { SubGraphView } from './types';

@@ -14,7 +14,7 @@ import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle 
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type InboxRejectInput = inferRouterInputs<AppRouter>['food']['inbox']['reject'];
 type InboxRejectOutput = inferRouterOutputs<AppRouter>['food']['inbox']['reject'];

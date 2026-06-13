@@ -17,7 +17,7 @@ import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { buildSubmitInput } from './cook-modal-helpers.js';
 import type { CookedSuccess } from './CookModal.js';

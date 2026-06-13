@@ -12,7 +12,7 @@ import { BadClientDateError, toIsoMonday } from './iso-week.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type PlanWeekViewOutput = inferRouterOutputs<AppRouter>['food']['plan']['weekView'];
 type PlanListSlotsOutput = inferRouterOutputs<AppRouter>['food']['plan']['listSlots'];

@@ -1,7 +1,7 @@
 /**
  * PRD-123 Phase C — UnitsSection smoke tests.
  *
- * Mocks `@pops/api-client` so the section renders against controlled data
+ * Mocks `@pops/pillar-sdk` so the section renders against controlled data
  * and asserts:
  *   - the seeded badge + disabled delete render for seeded rows
  *   - the search input feeds into the listUnits query input

@@ -20,7 +20,7 @@ import { mapMutationError } from './errors';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { TFunction } from 'i18next';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type RenameInput = inferRouterInputs<AppRouter>['food']['ingredients']['rename'];
 type RenameOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['rename'];

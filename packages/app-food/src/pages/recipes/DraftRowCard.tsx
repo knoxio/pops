@@ -7,7 +7,7 @@ import { Button } from '@pops/ui';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type PromoteInput = inferRouterInputs<AppRouter>['food']['recipes']['promote'];
 type PromoteOutput = inferRouterOutputs<AppRouter>['food']['recipes']['promote'];

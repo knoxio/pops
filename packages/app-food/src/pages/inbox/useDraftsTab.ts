@@ -13,7 +13,7 @@ import { type DraftsFiltersState, toQueryInput } from './drafts-filters.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type InboxListOutput = inferRouterOutputs<AppRouter>['food']['inbox']['list'];
 

@@ -17,28 +17,6 @@ let mockArchivePending = false;
 let mockArchiveOnSuccess: (() => void) | undefined;
 let mockArchiveOnError: ((err: Error) => void) | undefined;
 
-const idleQuery = {
-  isLoading: false as const,
-  data: undefined,
-  error: null,
-  refetch: vi.fn(),
-};
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      recipes: {
-        prepareSendToList: { useQuery: () => idleQuery },
-      },
-    },
-    lists: {
-      list: {
-        list: { useQuery: () => idleQuery },
-      },
-    },
-  },
-}));
-
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
     const key = path.join('.');

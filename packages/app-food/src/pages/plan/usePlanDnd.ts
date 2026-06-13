@@ -23,7 +23,7 @@ import { resolveGridDrop } from './plan-grid-dnd.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { WirePlanEntryRow } from '@pops/app-food-db';
 
 type PlanMoveEntryInput = inferRouterInputs<AppRouter>['food']['plan']['moveEntry'];

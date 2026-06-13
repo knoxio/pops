@@ -19,7 +19,7 @@ import { Button } from '@pops/ui';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { TagDistinctRow } from '@pops/app-food-db';
 
 type TagsDistinctOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['distinct'];

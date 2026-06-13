@@ -1314,9 +1314,9 @@ importers:
       '@lezer/lr':
         specifier: ^1.4.10
         version: 1.4.10
-      '@pops/api-client':
+      '@pops/api':
         specifier: workspace:*
-        version: link:../api-client
+        version: link:../../apps/pops-api
       '@pops/app-food-db':
         specifier: workspace:*
         version: link:../app-food-db

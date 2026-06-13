@@ -1,7 +1,7 @@
 /**
  * PRD-142 — RTL coverage for the send-to-list modal.
  *
- * Mocks `@pops/api-client` so the prepare query, lists query, and send
+ * Mocks `@pops/pillar-sdk` so the prepare query, lists query, and send
  * mutation are all controllable per test. Covers the modal contract: the
  * preview, picker (existing vs new), submit-disabled rules, success +
  * error paths, and the close-mid-flight non-cancellation behaviour.

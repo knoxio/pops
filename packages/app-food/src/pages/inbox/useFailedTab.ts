@@ -15,7 +15,7 @@ import { type FailedFiltersState } from './FailedFilters.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
 
 type ListFailedOutput = inferRouterOutputs<AppRouter>['food']['inbox']['listFailed'];

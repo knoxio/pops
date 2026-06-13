@@ -17,7 +17,7 @@ import { useTagsDraft, type TagsDraft } from './useTagsDraft.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type TagsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['list'];
 type TagsDistinctOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['distinct'];

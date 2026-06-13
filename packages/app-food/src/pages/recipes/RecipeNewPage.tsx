@@ -10,7 +10,7 @@ import { DslEditor } from '../../components/DslEditor.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { CompileEditorIssue } from '../../components/dsl-editor/issues-types.js';
 

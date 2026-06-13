@@ -1,7 +1,7 @@
 /**
  * PRD-123 Phase C — WeightsSection smoke tests.
  *
- * Mocks `@pops/api-client` so the section renders against controlled data
+ * Mocks `@pops/pillar-sdk` so the section renders against controlled data
  * and asserts:
  *   - rows render with the resolved ingredient + variant labels
  *   - the seeded badge + disabled delete render for seeded rows

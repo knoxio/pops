@@ -15,7 +15,7 @@ import { type RejectedFiltersState } from './RejectedFilters.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
 
 type ListRejectedOutput = inferRouterOutputs<AppRouter>['food']['inbox']['listRejected'];

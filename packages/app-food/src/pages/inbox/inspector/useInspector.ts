@@ -14,7 +14,7 @@ import { usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type InboxGetForReviewOutput = inferRouterOutputs<AppRouter>['food']['inbox']['getForReview'];
 

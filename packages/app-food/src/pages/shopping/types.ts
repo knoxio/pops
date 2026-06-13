@@ -5,7 +5,7 @@ import type { inferRouterOutputs } from '@trpc/server';
  * inferred router outputs so they always stay in lockstep with the
  * `food.shopping.*` procedures (PRD-152).
  */
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type ShoppingOutputs = inferRouterOutputs<AppRouter>['food']['shopping'];
 

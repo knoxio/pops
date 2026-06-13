@@ -1,7 +1,7 @@
 /**
  * PRD-144 — RTL coverage for `CookModal`.
  *
- * Mocks `@pops/api-client` so `prepareCook` and `markCooked` are both
+ * Mocks `@pops/pillar-sdk` so `prepareCook` and `markCooked` are both
  * controllable per test. Covers: open-from-recipe-detail pre-fill,
  * yieldless-recipe field hiding, submit happy path, server-error
  * surfacing, submit-disabled when scale is empty.

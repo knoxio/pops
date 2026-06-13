@@ -7,7 +7,7 @@ import type { RouteObject } from 'react-router';
  * Local mirror of the shell's `IconName` union. The shell owns the canonical
  * vocabulary in `@pops/navigation/src/types.ts`; this copy is kept in sync
  * because depending on `@pops/navigation` would re-introduce a build cycle
- * with `@pops/api` via `@pops/api-client`. If a new icon ships in
+ * with `@pops/api`. If a new icon ships in
  * `@pops/navigation`, mirror it here when this package needs to reference it.
  */
 type IconName =

@@ -30,7 +30,7 @@ import { AddPrepStateDialog } from './AddPrepStateDialog.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
 type PrepStatesCreateInput = inferRouterInputs<AppRouter>['food']['prepStates']['create'];

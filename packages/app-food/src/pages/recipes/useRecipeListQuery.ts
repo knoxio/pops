@@ -4,7 +4,7 @@ import { usePillarInfiniteQuery } from '@pops/pillar-sdk/react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { RecipeListFilterState, RecipeType } from './recipe-list-types.js';
 
