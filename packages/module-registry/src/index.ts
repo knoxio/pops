@@ -1,17 +1,24 @@
 /**
- * @pops/module-registry — build-time module registry (PRD-101 US-02).
+ * @pops/module-registry — build-time module registry (PRD-101 US-02) with
+ * a runtime install-set shim layered on top (PRD-218 US-01).
  *
- * Re-exports the generated `MODULES` constant aggregating every installed
- * module manifest, plus consumer helpers. The aggregation logic, validation,
- * and emission live in `scripts/build.ts`; this entry point is read-only at
- * runtime and tree-shakeable.
+ * `MODULES` / `KNOWN_MODULES` come from `generated.ts` and reflect the set
+ * of modules selected at registry build time (see `scripts/build.ts`).
+ *
+ * `INSTALLED_MODULES` / `isInstalledModule` re-evaluate `POPS_APPS` /
+ * `POPS_OVERLAYS` at module-load time so consumers that need the live
+ * install set (per-deploy gating) do not have to read `process.env`
+ * themselves and risk semantic drift. The runtime shim is necessary
+ * because a single registry build is reused across deploys that may scope
+ * the install set differently via env.
  *
  * The `MODULES` constant is `as const` so consumers narrow on the exact
  * installed module-id union via `(typeof MODULES)[number]['id']`.
  */
 export { KNOWN_MODULES, MODULES } from './generated.js';
 
-import { MODULES } from './generated.js';
+import { MODULES, KNOWN_MODULES } from './generated.js';
+import { resolveInstalledIds } from './install-set.js';
 
 /**
  * Exact union of installed module ids. Narrows automatically when a module
@@ -49,4 +56,46 @@ export function findModule(id: string): RegisteredModule | undefined {
  */
 export function isModuleId(value: string): value is ModuleId {
   return MODULES.some((m) => m.id === value);
+}
+
+/**
+ * `core` is the always-mounted platform shell (PRD-100). It stays in the
+ * runtime install set even when `POPS_APPS` would otherwise exclude it.
+ */
+const ALWAYS_INSTALLED: readonly string[] = ['core'];
+
+interface MaybeProcess {
+  readonly env?: Readonly<Record<string, string | undefined>>;
+}
+
+function readEnv(): Readonly<Record<string, string | undefined>> {
+  const globals: { process?: MaybeProcess } = globalThis;
+  return globals.process?.env ?? {};
+}
+
+/**
+ * Runtime-filtered module ids. Computed once at module load from
+ * `POPS_APPS` / `POPS_OVERLAYS` against the build-time `KNOWN_MODULES`
+ * superset. Unset env → returns `KNOWN_MODULES` verbatim.
+ *
+ * This is the export PRD-218 batch-2 consumers should switch to when they
+ * need "is this module live on this deploy?". They previously read
+ * `KNOWN_MODULES` directly and re-implemented the env gate inline.
+ */
+export const INSTALLED_MODULES: readonly string[] = resolveInstalledIds(
+  KNOWN_MODULES,
+  readEnv(),
+  ALWAYS_INSTALLED
+);
+
+/**
+ * Runtime equivalent of `isModuleId`. Returns true only when `id` is in
+ * the per-deploy install set computed from `POPS_APPS` / `POPS_OVERLAYS`.
+ *
+ * Prefer this over `isModuleId` for install-set gating (feature
+ * availability, navigation, search adapter dispatch). Use `isModuleId`
+ * when you need the type-level narrowing to `ModuleId`.
+ */
+export function isInstalledModule(value: string): boolean {
+  return INSTALLED_MODULES.includes(value);
 }

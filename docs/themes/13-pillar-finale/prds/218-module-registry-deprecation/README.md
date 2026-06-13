@@ -64,21 +64,21 @@ Offline seed is a JSON file committed for dev use; production reads the runtime 
 
 ### `apps/pops-api` — 13 files
 
-| File                                        | Symbols used                                                  | Migration target                                         | Status      |
-| ------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------- | ----------- |
-| `src/router.ts`                             | `type MODULES`                                                | `RegisteredModule` / runtime registry type               | Not started |
-| `src/modules/installed-modules.ts`          | `MODULES`                                                     | runtime registry aggregator                              | Not started |
-| `src/modules/search-adapters.ts`            | `isModuleId`                                                  | `isKnownPillarId` from `@pops/pillar-sdk`                | Not started |
-| `src/modules/manifests.ts`                  | (comment ref)                                                 | update docstring after shim lands                        | Not started |
-| `src/modules/core/uri/resolver.ts`          | (comment ref)                                                 | update docstring after shim lands                        | Not started |
-| `src/modules/core/features/credentials.ts`  | `MODULES`                                                     | runtime registry                                         | Not started |
-| `src/modules/core/features/service.test.ts` | `vi.mock(...)`                                                | mock runtime registry                                    | Not started |
+| File                                        | Symbols used                                                   | Migration target                                         | Status      |
+| ------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------- | ----------- |
+| `src/router.ts`                             | `type MODULES`                                                 | `RegisteredModule` / runtime registry type               | Not started |
+| `src/modules/installed-modules.ts`          | `MODULES`                                                      | runtime registry aggregator                              | Not started |
+| `src/modules/search-adapters.ts`            | `isModuleId`                                                   | `isKnownPillarId` from `@pops/pillar-sdk`                | Not started |
+| `src/modules/manifests.ts`                  | (comment ref)                                                  | update docstring after shim lands                        | Not started |
+| `src/modules/core/uri/resolver.ts`          | (comment ref)                                                  | update docstring after shim lands                        | Not started |
+| `src/modules/core/features/credentials.ts`  | `MODULES`                                                      | runtime registry                                         | Not started |
+| `src/modules/core/features/service.test.ts` | `vi.mock(...)`                                                 | mock runtime registry                                    | Not started |
 | `src/modules/core/index.ts`                 | `coreOperationalManifest`, `aiConfigManifest` from `/settings` | per-pillar settings module (post-Epic 02 settings split) | Not started |
-| `src/modules/finance/index.ts`              | `financeManifest` from `/settings`                            | finance pillar's own settings module                     | Not started |
-| `src/modules/inventory/index.ts`            | `inventoryManifest` from `/settings`                          | inventory pillar's own settings module                   | Not started |
-| `src/modules/cerebrum/index.ts`             | `cerebrumManifest` from `/settings`                           | cerebrum pillar's own settings module                    | Not started |
-| `src/modules/cerebrum/ego/index.ts`         | `egoManifest` from `/settings`                                | cerebrum pillar's own settings module                    | Not started |
-| `src/modules/media/index.ts`                | settings manifests from `/settings`                           | media pillar's own settings module                       | Not started |
+| `src/modules/finance/index.ts`              | `financeManifest` from `/settings`                             | finance pillar's own settings module                     | Not started |
+| `src/modules/inventory/index.ts`            | `inventoryManifest` from `/settings`                           | inventory pillar's own settings module                   | Not started |
+| `src/modules/cerebrum/index.ts`             | `cerebrumManifest` from `/settings`                            | cerebrum pillar's own settings module                    | Not started |
+| `src/modules/cerebrum/ego/index.ts`         | `egoManifest` from `/settings`                                 | cerebrum pillar's own settings module                    | Not started |
+| `src/modules/media/index.ts`                | settings manifests from `/settings`                            | media pillar's own settings module                       | Not started |
 
 ### `packages/navigation` — 2 files
 
@@ -99,11 +99,11 @@ All three remain in place until the shim ships (US-01) and consumers move (US-03
 
 ## User Stories
 
-| #   | Story                                                     | Summary                                                       | Status      |
-| --- | --------------------------------------------------------- | ------------------------------------------------------------- | ----------- |
-| 01  | [us-01-shim-implementation](us-01-shim-implementation.md) | Rewrite `@pops/module-registry` to fetch + fallback           | Not started |
-| 02  | [us-02-deprecation-notice](us-02-deprecation-notice.md)   | Mark exports as `@deprecated` with migration notes            | Not started |
-| 03  | [us-03-consumer-migration](us-03-consumer-migration.md)   | Migrate shell consumers from `MODULES` to `PILLARS` + runtime | Not started |
+| #   | Story                                                     | Summary                                                                   | Status      |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------- | ----------- |
+| 01  | [us-01-shim-implementation](us-01-shim-implementation.md) | Runtime install-set shim: `INSTALLED_MODULES` + `isInstalledModule`       | Done        |
+| 02  | [us-02-deprecation-notice](us-02-deprecation-notice.md)   | Migrate the 20 deferred consumers from `KNOWN_MODULES` filter to the shim | Not started |
+| 03  | [us-03-consumer-migration](us-03-consumer-migration.md)   | Migrate shell consumers from `MODULES` to `PILLARS` + runtime             | Not started |
 
 ## Out of Scope
 
