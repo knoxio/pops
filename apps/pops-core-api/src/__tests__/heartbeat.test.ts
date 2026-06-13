@@ -70,11 +70,25 @@ function financeManifest(): ManifestPayload {
       tag: 'contract-finance@v1.2.3',
     },
     routes: {
-      queries: ['finance.transactions.list'],
+      queries: ['finance.transactions.list', 'finance.transactions.search'],
       mutations: ['finance.transactions.create'],
       subscriptions: [],
     },
-    search: { adapters: ['transactionsAdapter'] },
+    search: {
+      adapters: [
+        {
+          name: 'transactionsAdapter',
+          entityType: 'transaction',
+          queryShape: {
+            supportsText: true,
+            supportsTags: false,
+            supportsDateRange: false,
+            supportsScope: [],
+          },
+          procedurePath: 'finance.transactions.search',
+        },
+      ],
+    },
     ai: { tools: [] },
     uri: { types: ['finance/transaction'] },
     settings: { keys: [] },
@@ -91,8 +105,26 @@ function mediaManifest(): ManifestPayload {
       version: '0.5.0',
       tag: 'contract-media@v0.5.0',
     },
-    routes: { queries: ['media.library.list'], mutations: [], subscriptions: [] },
-    search: { adapters: ['libraryAdapter'] },
+    routes: {
+      queries: ['media.library.list', 'media.library.search'],
+      mutations: [],
+      subscriptions: [],
+    },
+    search: {
+      adapters: [
+        {
+          name: 'libraryAdapter',
+          entityType: 'movie',
+          queryShape: {
+            supportsText: true,
+            supportsTags: false,
+            supportsDateRange: false,
+            supportsScope: [],
+          },
+          procedurePath: 'media.library.search',
+        },
+      ],
+    },
     ai: { tools: [] },
     uri: { types: ['media/movie'] },
     settings: { keys: [] },

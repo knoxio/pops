@@ -55,9 +55,28 @@ const ROUTES = z
   })
   .strict();
 
+const QUERY_SHAPE = z
+  .object({
+    supportsText: z.boolean(),
+    supportsTags: z.boolean(),
+    supportsDateRange: z.boolean(),
+    supportsScope: z.array(CAMEL_IDENTIFIER),
+  })
+  .strict();
+
+const SEARCH_ADAPTER = z
+  .object({
+    name: CAMEL_IDENTIFIER,
+    entityType: CAMEL_IDENTIFIER,
+    queryShape: QUERY_SHAPE,
+    procedurePath: PROCEDURE_PATH,
+    rankFieldName: CAMEL_IDENTIFIER.optional(),
+  })
+  .strict();
+
 const SEARCH = z
   .object({
-    adapters: z.array(CAMEL_IDENTIFIER),
+    adapters: z.array(SEARCH_ADAPTER),
   })
   .strict();
 

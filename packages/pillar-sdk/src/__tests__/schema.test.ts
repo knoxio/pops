@@ -142,11 +142,101 @@ describe('ManifestPayloadSchema', () => {
     });
   });
 
-  describe('search adapters regex', () => {
-    it.each(['Foo', 'foo-bar', '1foo', ''])('rejects %s', (adapter) => {
+  describe('search adapters', () => {
+    it.each(['Foo', 'foo-bar', '1foo', ''])('rejects non-camelCase name %s', (name) => {
       const m = validManifest();
-      m.search.adapters = [adapter];
+      m.search.adapters[0]!.name = name;
       const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it.each(['Transaction', 'transaction-type', '1type', ''])(
+      'rejects non-camelCase entityType %s',
+      (entityType) => {
+        const m = validManifest();
+        m.search.adapters[0]!.entityType = entityType;
+        const result = ManifestPayloadSchema.safeParse(m);
+        expect(result.success).toBe(false);
+      }
+    );
+
+    it.each([
+      'finance.transactions',
+      'finance',
+      'Finance.transactions.search',
+      'finance.transactions.search.extra',
+    ])('rejects malformed procedurePath %s', (procedurePath) => {
+      const m = validManifest();
+      m.search.adapters[0]!.procedurePath = procedurePath;
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('accepts adapter with rankFieldName omitted', () => {
+      const result = ManifestPayloadSchema.safeParse(validManifest());
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts adapter with rankFieldName set', () => {
+      const m = validManifest();
+      m.search.adapters[0]!.rankFieldName = 'createdAt';
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects non-camelCase rankFieldName', () => {
+      const m = validManifest();
+      m.search.adapters[0]!.rankFieldName = 'created_at';
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects non-camelCase queryShape.supportsScope entry', () => {
+      const m = validManifest();
+      m.search.adapters[0]!.queryShape.supportsScope = ['Account-Id'];
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects unknown adapter field (strict mode)', () => {
+      const m = validManifest();
+      const input = {
+        ...m,
+        search: {
+          adapters: [{ ...m.search.adapters[0]!, sneaky: true }, m.search.adapters[1]!],
+        },
+      };
+      const result = ManifestPayloadSchema.safeParse(input);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects unknown queryShape field (strict mode)', () => {
+      const m = validManifest();
+      const input = {
+        ...m,
+        search: {
+          adapters: [
+            {
+              ...m.search.adapters[0]!,
+              queryShape: { ...m.search.adapters[0]!.queryShape, sneaky: true },
+            },
+            m.search.adapters[1]!,
+          ],
+        },
+      };
+      const result = ManifestPayloadSchema.safeParse(input);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects missing queryShape fields', () => {
+      const m = validManifest();
+      const input = {
+        ...m,
+        search: {
+          adapters: [{ ...m.search.adapters[0]!, queryShape: { supportsText: true } }],
+        },
+      };
+      const result = ManifestPayloadSchema.safeParse(input);
       expect(result.success).toBe(false);
     });
   });

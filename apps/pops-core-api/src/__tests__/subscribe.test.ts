@@ -73,11 +73,25 @@ function financeManifest(): ManifestPayload {
       tag: 'contract-finance@v1.2.3',
     },
     routes: {
-      queries: ['finance.transactions.list'],
+      queries: ['finance.transactions.list', 'finance.transactions.search'],
       mutations: ['finance.transactions.create'],
       subscriptions: [],
     },
-    search: { adapters: ['transactionsAdapter'] },
+    search: {
+      adapters: [
+        {
+          name: 'transactionsAdapter',
+          entityType: 'transaction',
+          queryShape: {
+            supportsText: true,
+            supportsTags: false,
+            supportsDateRange: false,
+            supportsScope: [],
+          },
+          procedurePath: 'finance.transactions.search',
+        },
+      ],
+    },
     ai: {
       tools: [
         {
