@@ -4,13 +4,20 @@ import { resolveSqlitePath } from './sqlite-path.js';
  * Boot-time backfill from the legacy shared `pops.db` into the media
  * pillar's `media.db`.
  *
- * Each slice cutover (Phase 2 PR 3 shelf-impressions, PRD-165 movies,
- * PRD-166 tv-shows, PRD-168 watch history, …) flips its handle to
- * `getMediaDrizzle()`. The first deploy after each cutover needs to
- * carry the existing rows from the shared DB across before any reads
- * come from the new file. Subsequent boots find the media copy already
- * populated and become a no-op via the `WHERE id NOT IN (...)`
- * existence filter on every table.
+ * Each slice cutover (Phase 2 PR 3 shelf-impressions, PRD-166 tv-shows,
+ * PRD-168 watch history, …) flips its handle to `getMediaDrizzle()`.
+ * The first deploy after each cutover needs to carry the existing rows
+ * from the shared DB across before any reads come from the new file.
+ * Subsequent boots find the media copy already populated and become a
+ * no-op via the `WHERE id NOT IN (...)` existence filter on every
+ * table.
+ *
+ * PRD-165 movies finished its writer cutover in PR 3 (#3018) — every
+ * write site now lands on `getMediaDrizzle()` directly, so the boot
+ * bridge no longer has anything to carry forward and the `movies` entry
+ * has been retired from `TABLE_COPIES`. Depends on PR 3 being deployed
+ * to prod first; otherwise late-arriving rows on `pops.db.movies` would
+ * be stranded.
  *
  * No FK relationships exist between the listed media tables, so order
  * is independent — but each entry is wrapped in `tryCopyTable` so a
@@ -64,38 +71,6 @@ const TABLE_COPIES: readonly TableCopy[] = [
     table: 'shelf_impressions',
     idColumn: 'id',
     columns: ['id', 'shelf_id', 'shown_at'],
-  },
-  {
-    table: 'movies',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'tmdb_id',
-      'imdb_id',
-      'title',
-      'original_title',
-      'overview',
-      'tagline',
-      'release_date',
-      'runtime',
-      'status',
-      'original_language',
-      'budget',
-      'revenue',
-      'poster_path',
-      'backdrop_path',
-      'logo_path',
-      'poster_override_path',
-      'discover_rating_key',
-      'vote_average',
-      'vote_count',
-      'genres',
-      'created_at',
-      'updated_at',
-      'rotation_status',
-      'rotation_expires_at',
-      'rotation_marked_at',
-    ],
   },
   {
     table: 'tv_shows',
