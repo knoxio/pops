@@ -8,8 +8,8 @@ import {
   transactionsService,
 } from '@pops/finance-db';
 
-import { getDb, getDrizzle } from '../../../db.js';
-import { getFinanceDrizzle } from '../../../db/finance-handle.js';
+import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle, getFinanceRawDb } from '../../../db/finance-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
 import { suggestTags } from '../../../shared/tag-suggester.js';
@@ -211,7 +211,9 @@ export const transactionsRouter = router({
         .all();
       const truncated = rows.length > limit;
       const data = truncated ? rows.slice(0, limit) : rows;
-      const totalCount = getDb().prepare('SELECT COUNT(*) as c FROM transactions').get() as {
+      const totalCount = getFinanceRawDb()
+        .prepare('SELECT COUNT(*) as c FROM transactions')
+        .get() as {
         c: number;
       };
       return {
@@ -230,7 +232,7 @@ export const transactionsRouter = router({
 });
 
 function collectAvailableTags(): string[] {
-  const db = getDb();
+  const db = getFinanceRawDb();
   const rows = db
     .prepare("SELECT tags FROM transactions WHERE tags IS NOT NULL AND tags != '[]'")
     .all() as { tags: string }[];
