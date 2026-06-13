@@ -46,6 +46,10 @@
       "types": "./dist/contracts/index.d.ts",
       "default": "./dist/contracts/index.js"
     },
+    "./ranking": {
+      "types": "./dist/ranking/index.d.ts",
+      "default": "./dist/ranking/index.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

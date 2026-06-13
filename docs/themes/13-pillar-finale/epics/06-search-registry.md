@@ -16,7 +16,7 @@ Open design question: cross-pillar relevance scoring. Each pillar returns its ow
 | --- | ---------------------------- | ------------------------------------------------------------------------ | ----------- |
 | 196 | Search adapter manifest      | What a pillar declares in its manifest; types + Zod schema               | Not started |
 | 197 | Federated query orchestrator | Fan-out, timeout, partial-failure handling                               | Not started |
-| 198 | Ranking strategy             | Per-pillar weights, merge algorithm, fallback when one pillar times out  | Not started |
+| 198 | Ranking strategy             | Per-pillar weights, merge algorithm, fallback when one pillar times out  | Done        |
 | 199 | Partial-failure semantics    | Surface to caller: "got 4/5 pillar responses; results may be incomplete" | Not started |
 
 ## Dependencies

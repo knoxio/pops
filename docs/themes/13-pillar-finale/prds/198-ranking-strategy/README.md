@@ -42,11 +42,13 @@ Algorithm:
 
 ## User Stories
 
-| #   | Story                                             | Summary                                      |
-| --- | ------------------------------------------------- | -------------------------------------------- |
-| 01  | [us-01-merge-impl](us-01-merge-impl.md)           | The weighted-sum merge function              |
-| 02  | [us-02-settings-tuning](us-02-settings-tuning.md) | Settings key for per-pillar weights          |
-| 03  | [us-03-tests](us-03-tests.md)                     | Merge tests with various score distributions |
+| #   | Story                                             | Summary                                      | Status |
+| --- | ------------------------------------------------- | -------------------------------------------- | ------ |
+| 01  | [us-01-merge-impl](us-01-merge-impl.md)           | The weighted-sum merge function              | Done   |
+| 02  | [us-02-settings-tuning](us-02-settings-tuning.md) | Settings key for per-pillar weights          | Done   |
+| 03  | [us-03-tests](us-03-tests.md)                     | Merge tests with various score distributions | Done   |
+
+Shipped in `@pops/pillar-sdk/ranking` (`mergeResults`, `pillarWeightSettingKey`). Consumed by the federated orchestrator (PRD-197) once it lands.
 
 ## Out of Scope
 
