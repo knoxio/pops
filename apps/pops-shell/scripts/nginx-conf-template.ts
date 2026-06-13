@@ -133,6 +133,31 @@ export const NGINX_CONF_TAIL = `    # Legacy tRPC catch-all → pops-api.
         proxy_send_timeout 10s;
     }
 
+    # External pillar registration HTTP-JSON surface (Theme 13 PRD-228).
+    #
+    # External services (pillars shipped from a different repo, running
+    # on the same docker network) POST a manifest + shared API key to
+    # \`/core.registry.register\` to appear in the dispatcher with no code
+    # change in \`pops/\`. The internal \`/trpc/core.registry.*\` surface
+    # stays blocked from external traffic; this sibling path is the
+    # explicit allow-list.
+    #
+    # US-02 adds \`/core.registry.heartbeat\` (per-tick liveness ping) and
+    # US-04 adds \`/core.registry.deregister\` (clean shutdown). All three
+    # are gated by the same shared \`POPS_INTERNAL_API_KEY\` in core-api.
+    location ~ ^/core\\.registry\\.(register|heartbeat|deregister)$ {
+        set $core_registry_upstream http://core-api:3001;
+        proxy_pass $core_registry_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 10s;
+        proxy_send_timeout 10s;
+    }
+
     location ~ ^/pillars/health/?$ {
         proxy_pass http://pops-api:3000;
         proxy_http_version 1.1;

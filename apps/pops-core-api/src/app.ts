@@ -15,6 +15,8 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express, { type Express, type Request, type Response } from 'express';
 
 import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
+import { createExternalDeregisterHandler } from './modules/external-registry/deregister.js';
+import { createExternalHeartbeatHandler } from './modules/external-registry/heartbeat.js';
 import { createExternalRegisterHandler } from './modules/external-registry/register.js';
 import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js';
 import { appRouter } from './router.js';
@@ -44,11 +46,29 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
 
+  const resolveApiKey = deps.resolveApiKey ?? defaultResolveApiKey;
+
   app.post(
     '/core.registry.register',
     createExternalRegisterHandler({
       coreDb: deps.coreDb.db,
-      resolveApiKey: deps.resolveApiKey ?? defaultResolveApiKey,
+      resolveApiKey,
+    })
+  );
+
+  app.post(
+    '/core.registry.heartbeat',
+    createExternalHeartbeatHandler({
+      coreDb: deps.coreDb.db,
+      resolveApiKey,
+    })
+  );
+
+  app.post(
+    '/core.registry.deregister',
+    createExternalDeregisterHandler({
+      coreDb: deps.coreDb.db,
+      resolveApiKey,
     })
   );
 

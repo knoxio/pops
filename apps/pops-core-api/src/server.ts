@@ -24,6 +24,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { createCoreApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { reconcileRegistryOnBoot } from './modules/registry/boot.js';
+import { startEvictionTicker } from './modules/registry/eviction-ticker.js';
 import { startHeartbeatTicker } from './modules/registry/ticker.js';
 import { parseBareOrigin } from './pillars/env.js';
 
@@ -89,6 +90,7 @@ const server = app.listen(port, () => {
 });
 
 const stopHeartbeatTicker = startHeartbeatTicker(coreDb.db);
+const stopEvictionTicker = startEvictionTicker(coreDb.db);
 
 // The bootstrap handshake registers core with its own registry once the
 // HTTP server is accepting traffic. Done after `app.listen` because the
@@ -106,6 +108,7 @@ function shutdown(signal: NodeJS.Signals): void {
   shuttingDown = true;
   console.warn(`[core-api] Shutting down (${signal})`);
   stopHeartbeatTicker();
+  stopEvictionTicker();
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       coreDb.raw.close();

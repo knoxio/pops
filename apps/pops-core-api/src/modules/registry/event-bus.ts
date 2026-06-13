@@ -15,11 +15,28 @@ import type { RegistryEntry } from './types.js';
 
 export type RegistryEventName = 'registered' | 'deregistered' | 'health-changed';
 
+/**
+ * PRD-228 deregister reasons. `requested` is a clean shutdown via the
+ * external deregister endpoint; the two eviction reasons come from the
+ * background ticker that hard-evicts stale external rows.
+ */
+export type DeregisterReason = 'requested' | 'never-heartbeated' | 'lost-heartbeat';
+
+export type PillarOriginWire = 'internal' | 'external';
+
 export interface RegistryEventPayload {
   event: RegistryEventName;
   pillarId: string;
   entry: RegistryEntry | null;
   emittedAt: string;
+  /** Origin of the pillar at emission time (PRD-228). Optional so
+   *  pre-PRD-228 emitters keep type-checking; new emitters set it. */
+  origin?: PillarOriginWire;
+  /** Populated on `deregistered` events (PRD-228). */
+  reason?: DeregisterReason;
+  /** Populated on `deregistered` events from the eviction ticker —
+   *  the wall-clock the row was hard-evicted. */
+  evictedAt?: string;
 }
 
 const EVENT_KEY = 'registry:event' as const;
