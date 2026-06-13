@@ -1,4 +1,4 @@
-import { MODULES } from '@pops/module-registry';
+import { INSTALLED_MODULES } from '@pops/module-registry';
 /**
  * Shell-level overlay registry (PRD-101 US-07).
  *
@@ -64,12 +64,13 @@ export function selectInstalledOverlays(
 
 /**
  * Overlay modules that are both registered in this shell build AND in the
- * env-narrowed install set emitted by `@pops/module-registry`. Re-evaluated
- * once at module load; the install set is build-time constant.
+ * runtime install set emitted by `@pops/module-registry` (PRD-218 US-01:
+ * the `INSTALLED_MODULES` shim re-evaluates `POPS_APPS` / `POPS_OVERLAYS`
+ * at module load against the build-time `KNOWN_MODULES` superset).
  */
 export const installedOverlays: readonly InstalledOverlay[] = selectInstalledOverlays(
   SHELL_OVERLAY_MANIFESTS,
-  new Set(MODULES.map((m) => m.id))
+  new Set(INSTALLED_MODULES)
 );
 
 export { SHELL_OVERLAY_MANIFESTS };

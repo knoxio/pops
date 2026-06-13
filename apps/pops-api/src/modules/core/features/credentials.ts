@@ -1,4 +1,4 @@
-import { MODULES } from '@pops/module-registry';
+import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
 
 import { getEnv } from '../../../env.js';
 import { getSettingOrNull } from '../settings/service.js';
@@ -13,15 +13,19 @@ import type {
 /**
  * Find the `SettingsField` for a given key by scanning every installed
  * module's declared settings sections. Reads from the build-time module
- * registry (PRD-101 US-04 follow-up): `MODULES.flatMap(m => m.settings ?? [])`.
+ * registry (PRD-101 US-04 follow-up) intersected with the runtime
+ * `INSTALLED_MODULES` shim (PRD-218 US-01) so a deploy that gates a
+ * module out via `POPS_APPS` / `POPS_OVERLAYS` cannot leak that module's
+ * setting field schema into credential resolution.
  *
  * The flatMap callback widens each module's narrow `settings` tuple back to
  * the contract type — the `satisfies readonly SettingsManifest[]` clause in
  * `generated.ts` already guards structural compatibility at codegen time.
  */
 function findSettingsField(key: string): SettingsField | null {
-  const sections = MODULES.flatMap((m): readonly SettingsManifest[] =>
-    'settings' in m && m.settings !== undefined ? m.settings : []
+  const sections = MODULES.filter((m) => INSTALLED_MODULES.includes(m.id)).flatMap(
+    (m): readonly SettingsManifest[] =>
+      'settings' in m && m.settings !== undefined ? m.settings : []
   );
   for (const manifest of sections) {
     for (const group of manifest.groups) {

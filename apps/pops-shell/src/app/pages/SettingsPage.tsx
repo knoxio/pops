@@ -2,7 +2,7 @@ import { SectionRenderer } from '@/components/settings/SectionRenderer';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { MODULES } from '@pops/module-registry';
+import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
 import { Select } from '@pops/ui';
 
 import { SectionNav } from './settings-page/SectionNav';
@@ -29,15 +29,19 @@ function ManifestPanel({
 
 /**
  * Aggregate every installed module's settings sections (PRD-101 US-04 follow-up).
- * `MODULES` is the build-time install set — sections from absent modules are
- * elided at compile time, not filtered at runtime. The per-module narrow
- * tuple types are widened back to `SettingsManifest` via the inner-callback
- * return annotation so the sort comparator gets the contract type.
+ * `MODULES` carries the build-time data; `INSTALLED_MODULES` (PRD-218 US-01)
+ * is the per-deploy install set computed from `POPS_APPS` / `POPS_OVERLAYS`
+ * at module load. The intersection means a deploy that gates out a module
+ * never renders its settings sections. The per-module narrow tuple types
+ * are widened back to `SettingsManifest` via the inner-callback return
+ * annotation so the sort comparator gets the contract type.
  */
 function getManifests(): SettingsManifest[] {
-  return MODULES.flatMap((m): readonly SettingsManifest[] =>
-    'settings' in m && m.settings !== undefined ? m.settings : []
-  ).toSorted((a, b) => a.order - b.order);
+  return MODULES.filter((m) => INSTALLED_MODULES.includes(m.id))
+    .flatMap((m): readonly SettingsManifest[] =>
+      'settings' in m && m.settings !== undefined ? m.settings : []
+    )
+    .toSorted((a, b) => a.order - b.order);
 }
 
 export function SettingsPage() {

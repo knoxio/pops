@@ -19,9 +19,11 @@
  *
  * Output shape mirrors `@pops/module-registry`'s public surface that
  * the shell actually imports (`KNOWN_MODULES`, `MODULES`, `findModule`,
- * `isModuleId`). Settings sub-exports are intentionally not emitted —
- * the shell does not consume them at runtime; only the API does, and
- * the API does not switch install sets per Playwright project.
+ * `isModuleId`, plus `INSTALLED_MODULES` / `isInstalledModule` from the
+ * PRD-218 US-01 runtime shim). Settings sub-exports are intentionally
+ * not emitted — the shell does not consume them at runtime; only the
+ * API does, and the API does not switch install sets per Playwright
+ * project.
  *
  * Usage:
  *   tsx scripts/build-registry-snapshot.ts <output-file>
@@ -46,9 +48,11 @@ import {
 
 function renderSnapshot(
   projected: readonly SerialisableModule[],
-  knownIds: readonly string[]
+  knownIds: readonly string[],
+  installedIds: readonly string[]
 ): string {
   const knownIdsLiteral = JSON.stringify(knownIds);
+  const installedIdsLiteral = JSON.stringify(installedIds);
   const modulesLiteral = JSON.stringify(projected, null, 2);
   return `/**
  * GENERATED — E2E install-set snapshot for @pops/module-registry.
@@ -61,12 +65,18 @@ export const KNOWN_MODULES = Object.freeze(${knownIdsLiteral});
 
 export const MODULES = Object.freeze(${modulesLiteral});
 
+export const INSTALLED_MODULES = Object.freeze(${installedIdsLiteral});
+
 export function findModule(id) {
   return MODULES.find((m) => m.id === id);
 }
 
 export function isModuleId(value) {
   return MODULES.some((m) => m.id === value);
+}
+
+export function isInstalledModule(value) {
+  return INSTALLED_MODULES.includes(value);
 }
 `;
 }
@@ -80,12 +90,12 @@ async function main(): Promise<void> {
   const outputPath = resolve(outputArg);
 
   validateManifests(MANIFEST_SOURCES);
-  const installed = new Set(
-    resolveInstalledIds(KNOWN_MODULE_IDS, process.env, ALWAYS_INSTALLED_IDS)
-  );
+  const installedIds = resolveInstalledIds(KNOWN_MODULE_IDS, process.env, ALWAYS_INSTALLED_IDS);
+  const installed = new Set(installedIds);
   const selected = MANIFEST_SOURCES.filter((m) => installed.has(m.id));
   const sorted = selected.toSorted((a, b) => a.id.localeCompare(b.id, 'en'));
   const projected = sorted.map(project);
+  const installedIdsSorted = [...installedIds].toSorted((a, b) => a.localeCompare(b, 'en'));
 
   // Emit `KNOWN_MODULES` as the FULL known id list (every module the
   // monorepo can build) rather than just the install set. The shell's
@@ -98,7 +108,11 @@ async function main(): Promise<void> {
   const knownIdsSorted = [...KNOWN_MODULE_IDS].toSorted((a, b) => a.localeCompare(b, 'en'));
 
   await mkdir(dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, renderSnapshot(projected, knownIdsSorted), 'utf8');
+  await writeFile(
+    outputPath,
+    renderSnapshot(projected, knownIdsSorted, installedIdsSorted),
+    'utf8'
+  );
   process.stdout.write(
     `build-registry-snapshot: wrote ${projected.length} module${
       projected.length === 1 ? '' : 's'

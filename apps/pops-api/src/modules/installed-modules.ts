@@ -17,7 +17,7 @@
  *     (m) => m.features ?? []
  *   );
  */
-import { MODULES } from '@pops/module-registry';
+import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
 
 import { manifest as egoManifest } from './cerebrum/ego/index.js';
 import { manifest as cerebrumManifest } from './cerebrum/index.js';
@@ -61,31 +61,35 @@ function liveManifestById(id: string): ModuleManifest | undefined {
 
 /**
  * Test-only override. When set, `installedManifests()` returns this list
- * verbatim instead of computing from the build-time registry. Must be reset
- * between tests via `__resetInstalledManifestsOverride()`.
+ * verbatim instead of computing from the registry intersection. Must be
+ * reset between tests via `__resetInstalledManifestsOverride()`.
  *
- * The override exists because `MODULES` is `as const` literal data emitted
- * at build time — there is no public API for tests to inject synthetic
- * module manifests into it. This shim is the smallest seam that lets unit
- * tests exercise the resolver against arbitrary feature manifests without
- * spinning up the whole module graph.
+ * The override exists because `MODULES` / `INSTALLED_MODULES` are
+ * computed at build / module-load time — there is no public API for
+ * tests to inject synthetic module manifests into either. This shim is
+ * the smallest seam that lets unit tests exercise the resolver against
+ * arbitrary feature manifests without spinning up the whole module graph.
  */
 let testOverride: readonly ModuleManifest[] | null = null;
 
 /**
  * The list of manifests considered "installed" for this process — i.e.
- * present both in `MODULES` (build-time install set) and in the local
- * `LIVE_MANIFESTS` map.
+ * present in `MODULES` (build-time superset), inside `INSTALLED_MODULES`
+ * (the runtime `POPS_APPS` / `POPS_OVERLAYS` install set per PRD-218
+ * US-01), and bound in the local `LIVE_MANIFESTS` map.
  *
  * Intersection semantics: anything in `MODULES` that has no live
  * counterpart is silently skipped (not an error — frontend-only modules
  * such as `ai` are valid registry entries with no backend manifest).
+ * Anything gated out of `INSTALLED_MODULES` by env is also skipped so a
+ * deploy with `POPS_APPS=finance` mounts only `core` + `finance` here.
  */
 export function installedManifests(): readonly ModuleManifest[] {
   if (testOverride !== null) return testOverride;
 
   const out: ModuleManifest[] = [];
   for (const m of MODULES) {
+    if (!INSTALLED_MODULES.includes(m.id)) continue;
     const live = liveManifestById(m.id);
     if (live !== undefined) out.push(live);
   }
@@ -94,7 +98,8 @@ export function installedManifests(): readonly ModuleManifest[] {
 
 /**
  * Test-only: replace the installed-manifest source with `manifests`. Pass
- * `null` to restore the production behaviour (read from `MODULES`).
+ * `null` to restore the production behaviour (read from `MODULES`
+ * intersected with `INSTALLED_MODULES`).
  */
 export function __setInstalledManifestsOverride(manifests: readonly ModuleManifest[] | null): void {
   testOverride = manifests;

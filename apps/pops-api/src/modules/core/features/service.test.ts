@@ -3,14 +3,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { seedSetting, setupTestContext } from '../../../shared/test-utils.js';
 
 // `credentials.ts` reads settings fields from `@pops/module-registry`'s
-// build-time `MODULES` constant (PRD-101 US-04 follow-up). Tests inject
+// build-time `MODULES` constant (PRD-101 US-04 follow-up), intersected
+// with the runtime `INSTALLED_MODULES` shim (PRD-218 US-01). Tests inject
 // synthetic settings manifests through a mocked registry; the mutable
-// `mockModules` array (kept hoisted so the factory captures it) lets each
-// test push manifests with `registerSettingsManifest()` and have
-// `findSettingsField()` resolve them.
-const { mockModules } = vi.hoisted(() => ({ mockModules: [] as { settings?: unknown }[] }));
+// `mockModules` array (kept hoisted so the factory captures it) lets
+// each test push manifests with `registerSettingsManifest()`.
+// `mockInstalledIds` is kept in lock-step with `mockModules` so the
+// runtime filter sees every test-pushed module as installed; install-set
+// gating is exercised separately in the search-engine matrix tests.
+const { mockModules, mockInstalledIds } = vi.hoisted(() => ({
+  mockModules: [] as { id: string; settings?: unknown }[],
+  mockInstalledIds: [] as string[],
+}));
 vi.mock('@pops/module-registry', () => ({
   MODULES: mockModules,
+  INSTALLED_MODULES: mockInstalledIds,
 }));
 
 import {
@@ -52,6 +59,7 @@ beforeEach(() => {
   installed = [];
   applyInstalled();
   mockModules.length = 0;
+  mockInstalledIds.length = 0;
 });
 
 afterEach(() => {
@@ -59,6 +67,7 @@ afterEach(() => {
   ctx.teardown();
   vi.unstubAllEnvs();
   mockModules.length = 0;
+  mockInstalledIds.length = 0;
 });
 
 /**
@@ -112,10 +121,12 @@ function registerSettingsManifest(fieldKeys: { key: string; envFallback?: string
       },
     ],
   };
-  // `credentials.ts` reads from the mocked `MODULES` (see top-of-file
-  // `vi.mock`). `installed`/`installedManifests` still drives the feature
-  // aggregator path; both surfaces have to agree on what's installed.
-  mockModules.push({ settings: [manifest] });
+  // `credentials.ts` reads from the mocked `MODULES` intersected with
+  // `INSTALLED_MODULES` (see top-of-file `vi.mock`).
+  // `installed`/`installedManifests` still drives the feature aggregator
+  // path; both surfaces have to agree on what's installed.
+  mockModules.push({ id: manifest.id, settings: [manifest] });
+  mockInstalledIds.push(manifest.id);
   installed.push({
     id: manifest.id,
     name: manifest.title,
