@@ -20,20 +20,20 @@ The only discovery-owned table is `dismissed_discover` (PK `tmdb_id`, `dismissed
 
 ## API Surface
 
-| Procedure                                   | Kind              | Backing data                            |
-| ------------------------------------------- | ----------------- | --------------------------------------- |
-| `media.discovery.dismiss`                   | mutation          | `dismissed_discover`                    |
-| `media.discovery.undismiss`                 | mutation          | `dismissed_discover`                    |
-| `media.discovery.getDismissed`              | query             | `dismissed_discover`                    |
-| `media.discovery.profile`                   | query             | `movies`, `mediaScores`, `comparisons`  |
-| `media.discovery.quickPick`                 | query             | `movies`, `watchHistory`, `watchlist`   |
-| `media.discovery.fromYourServer`            | query             | `movies`, `watchHistory`                |
-| `media.discovery.rewatchSuggestions`        | query             | `movies`, `watchHistory`, `mediaScores` |
-| `media.discovery.trending` / `trendingPlex` | query             | TMDB / Plex (no DB)                     |
-| `media.discovery.recommendations`           | query             | TMDB + preference profile               |
-| `media.discovery.contextPicks`              | query             | TMDB (static collections in code)       |
-| `media.discovery.genreSpotlight` / `Page`   | query             | TMDB + preference profile               |
-| `media.discovery.assembleSession`           | query (composite) | `shelf_impressions` + everything above  |
+| Procedure                                   | Kind              | Backing data                               |
+| ------------------------------------------- | ----------------- | ------------------------------------------ |
+| `media.discovery.dismiss`                   | mutation          | `dismissed_discover`                       |
+| `media.discovery.undismiss`                 | mutation          | `dismissed_discover`                       |
+| `media.discovery.getDismissed`              | query             | `dismissed_discover`                       |
+| `media.discovery.profile`                   | query             | `movies`, `mediaScores`, `comparisons`     |
+| `media.discovery.quickPick`                 | query             | `movies`, `watchHistory`, `mediaWatchlist` |
+| `media.discovery.fromYourServer`            | query             | `movies`, `watchHistory`                   |
+| `media.discovery.rewatchSuggestions`        | query             | `movies`, `watchHistory`, `mediaScores`    |
+| `media.discovery.trending` / `trendingPlex` | query             | TMDB / Plex (no DB)                        |
+| `media.discovery.recommendations`           | query             | TMDB + preference profile                  |
+| `media.discovery.contextPicks`              | query             | TMDB (static collections in code)          |
+| `media.discovery.genreSpotlight` / `Page`   | query             | TMDB + preference profile                  |
+| `media.discovery.assembleSession`           | query (composite) | `shelf_impressions` + everything above     |
 
 Files today: `apps/pops-api/src/modules/media/discovery/{service*.ts, context-picks-service.ts, genre-spotlight-service.ts, plex-service.ts, tmdb-service.ts, shelf/}`.
 
@@ -55,12 +55,14 @@ Follows [PRD-165's N-track sequence](../165-media-movies-cutover/README.md#busin
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                                                                             |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — `dismissed_discover` schema + service + baseline migration into `@pops/media-db`. No consumer flip.          |
-| 02  | [us-02-pr2-reads-cutover](us-02-pr2-reads-cutover.md)       | PR 2 — Flip handle-safe readers (`service-library`, `router-tmdb::getLibraryTmdbIds`, dismiss readers) to media.db. |
-| 03  | [us-03-pr3-writes-cutover](us-03-pr3-writes-cutover.md)     | PR 3 — Flip the dismiss writer + remaining cross-store readers once `mediaScores` / `comparisons` are on media.db.  |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Drop `dismissed_discover` from the shared journal and delete the shim.                                       |
+| #   | Story                | Summary                                                                                                             |
+| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 01  | pr1-package-scaffold | PR 1 — `dismissed_discover` schema + service + baseline migration into `@pops/media-db`. No consumer flip.          |
+| 02  | pr2-reads-cutover    | PR 2 — Flip handle-safe readers (`service-library`, `router-tmdb::getLibraryTmdbIds`, dismiss readers) to media.db. |
+| 03  | pr3-writes-cutover   | PR 3 — Flip the dismiss writer + remaining cross-store readers once `mediaScores` / `comparisons` are on media.db.  |
+| 04  | pr4-shim-deletion    | PR 4 — Drop `dismissed_discover` from the shared journal and delete the shim.                                       |
+
+User story files will be added when each PR is scoped; this PRD is a scaffold investigation and tracks acceptance criteria inline at the PRD level for now.
 
 ## Out of Scope
 
