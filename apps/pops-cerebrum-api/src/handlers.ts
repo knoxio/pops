@@ -28,8 +28,10 @@ export interface CerebrumApiDeps {
 
 export interface HealthResponse {
   ok: true;
+  status: 'ok';
   pillar: 'cerebrum';
   version: string;
+  ts: string;
 }
 
 export function makeRequestHandler(deps: CerebrumApiDeps): {
@@ -41,7 +43,13 @@ export function makeRequestHandler(deps: CerebrumApiDeps): {
       // (caught by the Express error pipeline -> 500) rather than a
       // bogus 200 OK that hides a broken connection.
       deps.cerebrumDb.raw.prepare('SELECT 1').get();
-      return { ok: true, pillar: 'cerebrum', version: deps.version };
+      return {
+        ok: true,
+        status: 'ok',
+        pillar: 'cerebrum',
+        version: deps.version,
+        ts: new Date().toISOString(),
+      };
     },
   };
 }

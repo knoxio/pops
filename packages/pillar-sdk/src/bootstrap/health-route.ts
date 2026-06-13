@@ -22,8 +22,10 @@ export function mountHealthRoute(
     app.get(manifest.healthcheck.path, (_req, res) => {
       res.json({
         ok: true,
+        status: 'ok',
         pillar: manifest.pillar,
         version: manifest.version,
+        ts: new Date().toISOString(),
         contract: {
           package: manifest.contract.package,
           version: manifest.contract.version,

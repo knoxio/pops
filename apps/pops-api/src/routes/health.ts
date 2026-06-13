@@ -26,13 +26,15 @@ router.get('/health', (_req, res) => {
     if (rows[0]?.ok === 1) {
       const redisStatus = getRedisStatus();
       // `ok: true` and `pillar` are the ADR-026 P2 pillar-health contract
-      // fields. `status: 'ok'`, `version`, `redis` are kept for backwards
-      // compatibility with existing Docker healthchecks and dashboards.
+      // fields. `status: 'ok'`, `version`, `ts`, `redis` are kept for
+      // backwards compatibility with existing Docker healthchecks and
+      // dashboards.
       res.json({
         ok: true,
         pillar: SELF_PILLAR_ID,
         status: 'ok',
         version: apiVersion,
+        ts: new Date().toISOString(),
         redis: redisStatus === 'ready' ? 'ok' : 'down',
       });
     } else {

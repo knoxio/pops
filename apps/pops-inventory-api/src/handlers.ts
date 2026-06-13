@@ -36,8 +36,10 @@ export interface InventoryApiDeps {
 
 export interface HealthResponse {
   ok: true;
+  status: 'ok';
   pillar: 'inventory';
   version: string;
+  ts: string;
 }
 
 export interface PillarsResponse {
@@ -54,7 +56,13 @@ export function makeRequestHandler(deps: InventoryApiDeps): {
       // (caught by the Express error pipeline -> 500) rather than a
       // bogus 200 OK that hides a broken connection.
       deps.inventoryDb.raw.prepare('SELECT 1').get();
-      return { ok: true, pillar: 'inventory', version: deps.version };
+      return {
+        ok: true,
+        status: 'ok',
+        pillar: 'inventory',
+        version: deps.version,
+        ts: new Date().toISOString(),
+      };
     },
     pillars(): PillarsResponse {
       return { pillars: getPillarRegistry({ selfBaseUrl: deps.selfBaseUrl }) };

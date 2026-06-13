@@ -3,7 +3,7 @@
  *
  * Boots the app against a per-test temp-dir media.db (mkdtemp + cleanup
  * in afterEach) and confirms the `/health` route returns the agreed
- * `{ ok, pillar, version }` shape.
+ * `{ ok, status, pillar, version, ts }` shape.
  *
  * Mirrors `apps/pops-core-api/src/__tests__/health.test.ts`.
  */
@@ -32,11 +32,18 @@ afterEach(() => {
 });
 
 describe('GET /health', () => {
-  it('returns ok + pillar + version', async () => {
+  it('returns ok + status + pillar + version + ts', async () => {
     const app = createMediaApiApp({ mediaDb, version: '0.0.1-test' });
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true, pillar: 'media', version: '0.0.1-test' });
+    expect(res.body).toEqual({
+      ok: true,
+      status: 'ok',
+      pillar: 'media',
+      version: '0.0.1-test',
+      ts: expect.any(String),
+    });
+    expect(new Date(res.body.ts as string).toISOString()).toBe(res.body.ts);
   });
 
   it('fails closed when the media handle is closed', async () => {
