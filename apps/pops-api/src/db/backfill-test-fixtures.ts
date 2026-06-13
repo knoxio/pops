@@ -28,5 +28,4 @@ export {
   TRANSACTION_CORRECTIONS_TABLE_SQL,
   TRANSACTION_TAG_RULES_TABLE_SQL,
   TRANSACTIONS_TABLE_SQL,
-  WISH_LIST_TABLE_SQL,
 } from './backfill-test-fixtures-finance.js';
