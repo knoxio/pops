@@ -9,6 +9,7 @@
 import { TRPCError } from '@trpc/server';
 
 import { type FoodDb } from '@pops/app-food-db';
+import { type ListsDb } from '@pops/app-lists-db';
 
 import { aggregateLinesForSend } from './aggregate.js';
 import { findListsAlreadyMentioning } from './already-sent.js';
@@ -17,11 +18,12 @@ import { type SendPreview } from './types.js';
 import { clampScaleFactor, loadVersionForSend } from './version-load.js';
 
 export function prepareSendToList(
-  db: FoodDb,
+  foodDb: FoodDb,
+  listsDb: ListsDb,
   versionId: number,
   scaleFactorIn: number | undefined
 ): SendPreview {
-  const loaded = loadVersionForSend(db, versionId);
+  const loaded = loadVersionForSend(foodDb, versionId);
   if (!loaded.ok) {
     if (loaded.reason === 'CompileNotReady') {
       throw new TRPCError({
@@ -35,7 +37,7 @@ export function prepareSendToList(
     });
   }
   const scaleFactor = clampScaleFactor(scaleFactorIn);
-  const aggregate = aggregateLinesForSend(db, versionId, scaleFactor);
+  const aggregate = aggregateLinesForSend(foodDb, versionId, scaleFactor);
   const canonicalItems = aggregate.canonical.map(buildCanonicalItem);
   const unconvertedItems = aggregate.unconverted.map(buildUnconvertedItem);
   return {
@@ -43,6 +45,6 @@ export function prepareSendToList(
     scaleFactor,
     canonicalItems,
     unconvertedItems,
-    alreadySentToListIds: findListsAlreadyMentioning(db, loaded.version.title),
+    alreadySentToListIds: findListsAlreadyMentioning(listsDb, loaded.version.title),
   };
 }

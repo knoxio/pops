@@ -9,9 +9,11 @@
  * append + truncation, target resolution + error mapping.
  */
 import { type Database } from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { closeDb, setDb } from '../../../db.js';
+import { setListsDb } from '../../../db/lists-handle.js';
 import { createCaller } from '../../../shared/test-utils.js';
 import { MAX_NOTES_LENGTH } from '../recipes/send-to-list/notes-helpers.js';
 import {
@@ -32,11 +34,13 @@ let caller: ReturnType<typeof createCaller>;
 beforeEach(() => {
   db = createSendToListTestDb();
   setDb(db);
+  setListsDb({ db: drizzle(db), raw: db });
   caller = createCaller(true);
 });
 
 afterEach(() => {
   closeDb();
+  setListsDb(null);
 });
 
 interface BasicSeed {
