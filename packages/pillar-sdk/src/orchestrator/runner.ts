@@ -13,9 +13,9 @@
  * orchestrator does not need to know how the underlying procedure is
  * transported.
  *
- * See {@link FederatedSearchQuery} for the interim-shape limitation note
- * (the manifest currently exposes only adapter names; PRD-196 will add
- * `procedurePath` + `queryShape` so the orchestrator can pre-filter).
+ * See {@link FederatedSearchQuery} for the remaining limitation note
+ * (the manifest already carries `procedurePath` and `queryShape`, but
+ * the orchestrator does not yet pre-filter targets by `queryShape`).
  */
 
 import { mergeResults } from '../ranking/merge.js';
@@ -198,7 +198,11 @@ function collectTargets(
     if (allowed !== undefined && !allowed.has(pillar.pillarId)) continue;
 
     for (const adapter of pillar.manifest.search.adapters) {
-      targets.push({ pillarId: pillar.pillarId, adapterName: adapter.name });
+      targets.push({
+        pillarId: pillar.pillarId,
+        adapterName: adapter.name,
+        procedurePath: adapter.procedurePath,
+      });
     }
   }
 

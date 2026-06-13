@@ -18,6 +18,7 @@ function result(score: number, entityName: string): ScoredResult {
 const target = (pillarId: string, adapterName: string): PillarAdapterTarget => ({
   pillarId,
   adapterName,
+  procedurePath: `${pillarId}.routerA.${adapterName}`,
 });
 
 describe('summarisePartialFailures', () => {
