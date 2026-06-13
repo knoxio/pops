@@ -1,5 +1,6 @@
-import { trpc } from '@/lib/trpc';
 import { Navigate } from 'react-router';
+
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 /**
  * `/` redirect that respects the installed-modules manifest (PRD-100).
@@ -12,15 +13,26 @@ import { Navigate } from 'react-router';
  */
 const APP_ORDER = ['finance', 'media', 'inventory', 'cerebrum'] as const;
 
-export function IndexRedirect() {
-  const { data } = trpc.core.shell.manifest.useQuery(undefined, {
-    staleTime: Infinity,
-  });
+type ShellManifest = {
+  apps: readonly string[];
+  overlays: readonly string[];
+};
 
-  // Manifest hasn't loaded yet — optimistically pick the historical default
-  // so the URL change is instant. The router's catch-all (`UnmatchedRoute`)
-  // will flip to NotInstalledPage if finance turns out to be absent.
-  if (!data) return <Navigate to="/finance" replace />;
+export function IndexRedirect() {
+  const { data, isUnavailable, isContractMismatch } = usePillarQuery<ShellManifest>(
+    'core',
+    ['shell', 'manifest'],
+    undefined,
+    { staleTime: Infinity }
+  );
+
+  // Manifest hasn't loaded yet, the pillar is unreachable, or the contract
+  // shape has drifted — optimistically pick the historical default so the
+  // URL change is instant. The router's catch-all (`UnmatchedRoute`) will
+  // flip to NotInstalledPage if finance turns out to be absent.
+  if (!data || isUnavailable || isContractMismatch) {
+    return <Navigate to="/finance" replace />;
+  }
 
   const target = APP_ORDER.find((id) => data.apps.includes(id));
   return <Navigate to={target ? `/${target}` : '/settings'} replace />;

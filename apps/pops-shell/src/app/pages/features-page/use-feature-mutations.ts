@@ -1,4 +1,4 @@
-import { trpc } from '@/lib/trpc';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import type { FeatureStatus } from '@pops/types';
 
@@ -9,17 +9,32 @@ interface FeatureToggleHandlers {
   pending: boolean;
 }
 
+type SetEnabledInput = { key: string; enabled: boolean };
+type SetEnabledResult = { enabled: boolean };
+type ClearPreferenceInput = { key: string };
+type ClearPreferenceResult = { cleared: boolean };
+
 /**
- * Bundles the trpc mutations a feature card needs (system enable, per-user
+ * Bundles the SDK mutations a feature card needs (system enable, per-user
  * override, user override clear) so the card stays small.
+ *
+ * `usePillarMutation` auto-invalidates the `[core, features]` router prefix
+ * on success — that covers `features.list`, `features.getManifests`, and
+ * `features.isEnabled`, so no manual `utils.*.invalidate()` is required.
  */
 export function useFeatureMutations(feature: FeatureStatus): FeatureToggleHandlers {
-  const utils = trpc.useUtils();
-  const onSuccess = () => utils.core.features.list.invalidate();
-
-  const setEnabled = trpc.core.features.setEnabled.useMutation({ onSuccess });
-  const setUserPreference = trpc.core.features.setUserPreference.useMutation({ onSuccess });
-  const clearUserPreference = trpc.core.features.clearUserPreference.useMutation({ onSuccess });
+  const setEnabled = usePillarMutation<SetEnabledInput, SetEnabledResult>('core', [
+    'features',
+    'setEnabled',
+  ]);
+  const setUserPreference = usePillarMutation<SetEnabledInput, SetEnabledResult>('core', [
+    'features',
+    'setUserPreference',
+  ]);
+  const clearUserPreference = usePillarMutation<ClearPreferenceInput, ClearPreferenceResult>(
+    'core',
+    ['features', 'clearUserPreference']
+  );
 
   const toggle = (checked: boolean) => {
     if (feature.scope === 'user') {
