@@ -19,6 +19,13 @@ import { resolveSqlitePath } from './sqlite-path.js';
  * to prod first; otherwise late-arriving rows on `pops.db.movies` would
  * be stranded.
  *
+ * PRD-170 shelf_impressions has the same story: every read and write of
+ * `shelf_impressions` routes through `shelfImpressionsService` on the
+ * media pillar handle (Phase 2 PR 3). The boot bridge no longer has a
+ * source of new rows to carry across, so the `shelf_impressions` entry
+ * is retired here. Same deploy-order constraint as movies — the writer
+ * cutover must be live in prod before this drop ships.
+ *
  * No FK relationships exist between the listed media tables, so order
  * is independent — but each entry is wrapped in `tryCopyTable` so a
  * missing source table (post-PR-4 drop scenario, or a stale on-disk
@@ -67,11 +74,6 @@ interface TableCopy {
 }
 
 const TABLE_COPIES: readonly TableCopy[] = [
-  {
-    table: 'shelf_impressions',
-    idColumn: 'id',
-    columns: ['id', 'shelf_id', 'shown_at'],
-  },
   {
     table: 'tv_shows',
     idColumn: 'id',
