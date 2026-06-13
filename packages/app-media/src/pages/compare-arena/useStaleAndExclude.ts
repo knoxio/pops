@@ -1,11 +1,28 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
+
+import type { MediaUtils } from './useScoreDelta';
+
+interface MarkStaleInput {
+  mediaType: 'movie';
+  mediaId: number;
+}
+
+interface MarkStaleResult {
+  data: { staleness: number };
+}
+
+interface ExcludeInput {
+  mediaType: 'movie';
+  mediaId: number;
+  dimensionId: number;
+}
 
 interface Args {
   dimensionId: number | null;
-  utils: ReturnType<typeof trpc.useUtils>;
+  utils: MediaUtils;
   resolveTitle: (id: number) => string;
   onAfterAction: () => void;
 }
@@ -16,15 +33,19 @@ export function useStaleAndExcludeMutations({
   resolveTitle,
   onAfterAction,
 }: Args) {
-  const markStaleMutation = trpc.media.comparisons.markStale.useMutation({
-    onSuccess: (data: { data: { staleness: number } }, variables: { mediaId: number }) => {
-      const staleness = data.data.staleness;
-      const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
-      toast.success(`${resolveTitle(variables.mediaId)} marked stale (×${timesMarked})`);
-      onAfterAction();
-      void utils.media.comparisons.getSmartPair.invalidate();
-    },
-  });
+  const markStaleMutation = usePillarMutation<MarkStaleInput, MarkStaleResult>(
+    'media',
+    ['comparisons', 'markStale'],
+    {
+      onSuccess: (data, variables) => {
+        const staleness = data.data.staleness;
+        const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
+        toast.success(`${resolveTitle(variables.mediaId)} marked stale (×${timesMarked})`);
+        onAfterAction();
+        void utils.invalidate(['comparisons', 'getSmartPair']);
+      },
+    }
+  );
 
   const handleMarkStale = useCallback(
     (movieId: number) => {
@@ -34,7 +55,10 @@ export function useStaleAndExcludeMutations({
     [markStaleMutation]
   );
 
-  const excludeMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
+  const excludeMutation = usePillarMutation<ExcludeInput, unknown>('media', [
+    'comparisons',
+    'excludeFromDimension',
+  ]);
 
   const handleNA = useCallback(
     (movieId: number) => {
@@ -44,7 +68,7 @@ export function useStaleAndExcludeMutations({
         {
           onSuccess: () => {
             toast.success(`${resolveTitle(movieId)} excluded from this dimension`);
-            void utils.media.comparisons.getSmartPair.invalidate();
+            void utils.invalidate(['comparisons', 'getSmartPair']);
           },
         }
       );

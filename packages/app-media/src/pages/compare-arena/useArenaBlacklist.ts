@@ -1,11 +1,20 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 interface UseArenaBlacklistArgs {
   resolveTitle: (mediaId: number) => string;
   onAfterAction: () => void;
+}
+
+interface ComparisonsListResult {
+  pagination?: { total: number };
+}
+
+interface BlacklistInput {
+  mediaType: 'movie';
+  mediaId: number;
 }
 
 /**
@@ -13,23 +22,29 @@ interface UseArenaBlacklistArgs {
  * the target movie, comparison-count lookup, and the destructive mutation.
  */
 export function useArenaBlacklist({ resolveTitle, onAfterAction }: UseArenaBlacklistArgs) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
   const [target, setTarget] = useState<{ id: number; title: string } | null>(null);
 
-  const { data: blacklistComparisonData } = trpc.media.comparisons.listForMedia.useQuery(
+  const { data: blacklistComparisonData } = usePillarQuery<ComparisonsListResult>(
+    'media',
+    ['comparisons', 'listForMedia'],
     { mediaType: 'movie', mediaId: target?.id ?? 0, limit: 1 },
     { enabled: target !== null }
   );
   const comparisonsToPurge = blacklistComparisonData?.pagination?.total ?? null;
 
-  const blacklistMutation = trpc.media.comparisons.blacklistMovie.useMutation({
-    onSuccess: (_data, variables) => {
-      toast.success(`${resolveTitle(variables.mediaId)} marked as not watched`);
-      setTarget(null);
-      onAfterAction();
-      void utils.media.comparisons.getSmartPair.invalidate();
-    },
-  });
+  const blacklistMutation = usePillarMutation<BlacklistInput, unknown>(
+    'media',
+    ['comparisons', 'blacklistMovie'],
+    {
+      onSuccess: (_data, variables) => {
+        toast.success(`${resolveTitle(variables.mediaId)} marked as not watched`);
+        setTarget(null);
+        onAfterAction();
+        void utils.invalidate(['comparisons', 'getSmartPair']);
+      },
+    }
+  );
 
   const open = useCallback((movie: { id: number; title: string }) => {
     setTarget(movie);

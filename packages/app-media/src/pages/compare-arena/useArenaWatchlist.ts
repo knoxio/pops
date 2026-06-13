@@ -1,11 +1,26 @@
 import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 interface UseArenaWatchlistArgs {
   enabled: boolean;
   resolveTitle: (mediaId: number) => string;
+}
+
+interface WatchlistEntry {
+  id: number;
+  mediaType: string;
+  mediaId: number;
+}
+
+interface WatchlistListResult {
+  data: WatchlistEntry[];
+}
+
+interface AddInput {
+  mediaType: 'movie';
+  mediaId: number;
 }
 
 /**
@@ -13,39 +28,47 @@ interface UseArenaWatchlistArgs {
  * watchlisted movies and a toggle that mutates add/remove with toasts.
  */
 export function useArenaWatchlist({ enabled, resolveTitle }: UseArenaWatchlistArgs) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
 
-  const { data: watchlistData } = trpc.media.watchlist.list.useQuery(
+  const { data: watchlistData } = usePillarQuery<WatchlistListResult>(
+    'media',
+    ['watchlist', 'list'],
     { mediaType: 'movie' },
     { enabled }
   );
 
   const watchlistedMovies = useMemo(
     () =>
-      new Map(
+      new Map<number, number>(
         (watchlistData?.data ?? [])
-          .filter((e: { mediaType: string }) => e.mediaType === 'movie')
-          .map((e: { mediaId: number; id: number }) => [e.mediaId, e.id])
+          .filter((e) => e.mediaType === 'movie')
+          .map((e) => [e.mediaId, e.id])
       ),
     [watchlistData]
   );
 
-  const addMutation = trpc.media.watchlist.add.useMutation({
+  const addMutation = usePillarMutation<AddInput, unknown>('media', ['watchlist', 'add'], {
     onSuccess: (_data, variables) => {
-      void utils.media.watchlist.list.invalidate();
+      void utils.invalidate(['watchlist']);
       toast.success(`${resolveTitle(variables.mediaId)} added to watchlist`);
     },
   });
 
-  const removeMutation = trpc.media.watchlist.remove.useMutation({
-    onSuccess: (_data, variables) => {
-      void utils.media.watchlist.list.invalidate();
-      const mediaId = [...watchlistedMovies.entries()].find(
-        ([, entryId]) => entryId === variables.id
-      )?.[0];
-      toast.success(`${mediaId != null ? resolveTitle(mediaId) : 'Movie'} removed from watchlist`);
-    },
-  });
+  const removeMutation = usePillarMutation<{ id: number }, unknown>(
+    'media',
+    ['watchlist', 'remove'],
+    {
+      onSuccess: (_data, variables) => {
+        void utils.invalidate(['watchlist']);
+        const mediaId = [...watchlistedMovies.entries()].find(
+          ([, entryId]) => entryId === variables.id
+        )?.[0];
+        toast.success(
+          `${mediaId != null ? resolveTitle(mediaId) : 'Movie'} removed from watchlist`
+        );
+      },
+    }
+  );
 
   const handleToggleWatchlist = useCallback(
     (movieId: number) => {

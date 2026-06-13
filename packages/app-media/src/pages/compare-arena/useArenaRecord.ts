@@ -1,15 +1,34 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import type { DrawTier, PairData } from './types';
-import type { RecordVariables } from './useScoreDelta';
+import type { MediaUtils, RecordVariables } from './useScoreDelta';
+
+interface RecordInput {
+  dimensionId: number;
+  mediaAType: 'movie';
+  mediaAId: number;
+  mediaBType: 'movie';
+  mediaBId: number;
+  winnerType: 'movie';
+  winnerId: number;
+  drawTier?: DrawTier;
+}
+
+interface SkipInput {
+  dimensionId: number;
+  mediaAType: 'movie';
+  mediaAId: number;
+  mediaBType: 'movie';
+  mediaBId: number;
+}
 
 interface RecordArgs {
   pair: PairData | null | undefined;
   dimensionId: number | null;
-  utils: ReturnType<typeof trpc.useUtils>;
+  utils: MediaUtils;
   fetchScoreDelta: (v: RecordVariables) => Promise<void>;
   onAfterAction: () => void;
   setSessionCount: React.Dispatch<React.SetStateAction<number>>;
@@ -23,23 +42,31 @@ function useArenaMutations({
   setSessionCount,
   scheduleClear,
 }: Omit<RecordArgs, 'pair' | 'dimensionId'>) {
-  const recordMutation = trpc.media.comparisons.record.useMutation({
-    onSuccess: async (_data: unknown, variables: RecordVariables) => {
-      await fetchScoreDelta(variables);
-      setSessionCount((c) => c + 1);
-      onAfterAction();
-      void utils.media.comparisons.getSmartPair.invalidate();
-      scheduleClear();
-    },
-  });
+  const recordMutation = usePillarMutation<RecordInput, unknown>(
+    'media',
+    ['comparisons', 'record'],
+    {
+      onSuccess: async (_data, variables) => {
+        await fetchScoreDelta(variables);
+        setSessionCount((c) => c + 1);
+        onAfterAction();
+        void utils.invalidate(['comparisons', 'getSmartPair']);
+        scheduleClear();
+      },
+    }
+  );
 
-  const skipMutation = trpc.media.comparisons.recordSkip.useMutation({
-    onSuccess: () => {
-      toast.success('Pair skipped');
-      onAfterAction();
-      void utils.media.comparisons.getSmartPair.invalidate();
-    },
-  });
+  const skipMutation = usePillarMutation<SkipInput, unknown>(
+    'media',
+    ['comparisons', 'recordSkip'],
+    {
+      onSuccess: () => {
+        toast.success('Pair skipped');
+        onAfterAction();
+        void utils.invalidate(['comparisons', 'getSmartPair']);
+      },
+    }
+  );
 
   return { recordMutation, skipMutation };
 }
