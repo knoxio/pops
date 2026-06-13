@@ -15,7 +15,7 @@ describe('fetchRegistrySnapshot', () => {
     });
 
     expect(fetchImpl).toHaveBeenCalledWith(
-      'http://core-api:3001/trpc/core.registry.snapshot',
+      'http://core-api:3001/trpc/core.registry.list',
       expect.objectContaining({ method: 'GET' })
     );
     expect(result.pillars).toHaveLength(2);
@@ -54,7 +54,7 @@ describe('fetchRegistrySnapshot', () => {
       fetchImpl,
     });
     expect(fetchImpl).toHaveBeenCalledWith(
-      'http://core-api:3001/trpc/core.registry.snapshot',
+      'http://core-api:3001/trpc/core.registry.list',
       expect.anything()
     );
   });

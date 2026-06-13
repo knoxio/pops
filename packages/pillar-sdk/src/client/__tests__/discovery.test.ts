@@ -25,7 +25,7 @@ describe('HttpDiscoveryTransport', () => {
     });
 
     const snapshot = await transport.fetchSnapshot();
-    expect(calledUrl).toBe('http://core-api:3001/trpc/core.registry.snapshot');
+    expect(calledUrl).toBe('http://core-api:3001/trpc/core.registry.list');
     expect(snapshot).toHaveLength(1);
     expect(snapshot[0]?.pillarId).toBe('finance');
   });
@@ -50,7 +50,7 @@ describe('HttpDiscoveryTransport', () => {
       fetchImpl,
     });
     await transport.fetchSnapshot();
-    expect(calledUrl).toBe('http://core-api:3001/trpc/core.registry.snapshot');
+    expect(calledUrl).toBe('http://core-api:3001/trpc/core.registry.list');
   });
 
   it('throws PillarSdkError on a non-2xx HTTP response', async () => {

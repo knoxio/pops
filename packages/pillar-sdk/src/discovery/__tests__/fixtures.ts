@@ -36,7 +36,7 @@ export function fetchResult(...pillars: PillarSnapshot[]): RegistryFetchResult {
 
 /**
  * Build the registry-side wire payload as PRD-161 emits it from
- * `core.registry.snapshot`. Tests that exercise the HTTP fetcher use
+ * `core.registry.list`. Tests that exercise the HTTP fetcher use
  * this to round-trip the schema.
  */
 export function wirePayload(...pillars: PillarSnapshot[]): unknown {
