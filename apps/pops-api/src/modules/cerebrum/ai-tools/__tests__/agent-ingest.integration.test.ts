@@ -28,13 +28,14 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 // ---------------------------------------------------------------------------
 
 let testDrizzle: BetterSQLite3Database;
+let testRawDb: Database;
 
 vi.mock('../../../../db.js', () => ({
   getDrizzle: () => testDrizzle,
-  getDb: () => {
-    throw new Error('getDb should not be called in this integration test');
-  },
+  getDb: () => testRawDb,
   isVecAvailable: () => false,
+  isNamedEnvContext: () => true,
+  getCoreDrizzle: () => testDrizzle,
 }));
 
 vi.mock('../../../../env.js', () => ({
@@ -149,6 +150,7 @@ beforeEach(() => {
   enqueued.length = 0;
 
   rawDb = createTestDb();
+  testRawDb = rawDb;
   testDrizzle = drizzle(rawDb);
 
   tmpEngramRoot = join(

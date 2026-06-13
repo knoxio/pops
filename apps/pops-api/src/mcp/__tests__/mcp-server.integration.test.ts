@@ -35,13 +35,15 @@ import type { RetrievalResult } from '../../modules/cerebrum/retrieval/types.js'
 
 /** Injected test drizzle instance, set during beforeEach. */
 let testDrizzle: BetterSQLite3Database;
+/** Raw test sqlite handle, set during beforeEach. Backs the mocked `getDb`. */
+let testRawDb: Database;
 
 vi.mock('../../db.js', () => ({
   getDrizzle: () => testDrizzle,
-  getDb: () => {
-    throw new Error('getDb should not be called in MCP integration tests');
-  },
+  getDb: () => testRawDb,
   isVecAvailable: () => false,
+  isNamedEnvContext: () => true,
+  getCoreDrizzle: () => testDrizzle,
 }));
 
 // --- HybridSearchService mock ---
@@ -183,6 +185,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   rawDb = createTestDb();
+  testRawDb = rawDb;
   testDrizzle = drizzle(rawDb);
 
   // Create a temp engram root for file I/O tests.
