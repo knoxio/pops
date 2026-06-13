@@ -152,6 +152,7 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 | 217 nginx config generator         | follows Wave 3                   | `a:nginx-gen`                   |
 | 218 module-registry deprecation    | follows 215                      | `a:module-registry-deprecation` |
 | 227 SDK consumer migration audit   | follows Wave 2 (parallel w/ 215) | `a:sdk-consumer-audit`          |
+| 228 dynamic pillar registration    | follows 217 (final BE-lego step) | `a:dynamic-registration`        |
 
 **Wave 4 exit criteria:**
 
@@ -239,6 +240,7 @@ Each gate must hold before the next wave starts. **Don't paper over a failed gat
 - [ ] AI tool list dynamically reflects registered pillars
 - [ ] PillarGuard renders unavailable placeholder when a pillar is stopped; route stays usable when pillar restarts
 - [ ] nginx config generated from registry on image build; no hand-maintained per-pillar dispatcher rules
+- [ ] PRD-228 closes the final BE-lego gap: an external repo can register a pillar via `POST /core.registry.register` and that pillar appears in the dispatcher with no code change in `pops/`
 - [ ] Worker no longer imports `@pops/<pillar>-db` from sibling pillars (uses SDK)
 
 ### Gate 5 (theme complete)
@@ -399,6 +401,7 @@ Status legend: ⏳ Not started · 🔄 In progress · ✅ Done · ⛔ Blocked
 | 225     | ci-publish-narrowing             | 4    | ⏳     | 221                    | CI leanness wave 4             |
 | 226     | ci-budget-enforcement            | 5    | ⏳     | 220-225                | CI leanness wave 5             |
 | 227     | sdk-consumer-migration-audit     | 4    | ⏳     | 193, 215               | FE + Node `pillar()` rollout   |
+| 228     | dynamic-pillar-registration      | 4    | ⏳     | 161, 162, 163, 217     | external-pillar drop-in (final BE-lego step) |
 
 ---
 

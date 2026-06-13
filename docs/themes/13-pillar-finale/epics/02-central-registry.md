@@ -23,11 +23,12 @@ The registry is the source of truth for _what's running and what it can do_. Con
 | 162 | Heartbeat lifecycle                | TTL semantics, missed-heartbeat → unavailable transition, recovery on reconnect | Not started |
 | 163 | Subscription model                 | SSE channel for change notifications; consumers invalidate caches on receive    | Not started |
 | 164 | Reconciliation on core-api restart | Initial `unknown` state, grace window, eventually-consistent recovery           | Not started |
+| 228 | Dynamic pillar registration        | External-pillar drop-in: shared-key register/heartbeat/deregister + nginx regen | Not started |
 
 ## Dependencies
 
 - **Requires:** Epic 00 (contract packages — the registry serves contract versions per pillar), Epic 01 (SDK provides the `register` + `heartbeat` client side), ADR-027 (registry shape)
-- **Unlocks:** Epic 05 (consumption SDK can route via registry), Epic 06 + 07 (search + AI read registry to discover capabilities), Epic 10 (nginx dispatcher generated from registry)
+- **Unlocks:** Epic 05 (consumption SDK can route via registry), Epic 06 + 07 (search + AI read registry to discover capabilities), Epic 10 (nginx dispatcher generated from registry). PRD-228 is the final BE-lego step — once it ships, an external repo can drop a pillar onto the docker network with no code change in `pops/`.
 
 ## Out of Scope
 

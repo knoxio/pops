@@ -61,9 +61,12 @@ PRD picks **image build time** initially — simpler, no runtime dep.
 
 ## Implementation Status
 
-> Status: **Done (phase 1)** — generator scaffolded for the canonical seven
-> pillars. Dynamic external-pillar registration tracked as the follow-up
-> below. Last updated: 2026-06-13 on `feat/theme13-prd-217-nginx-generator`.
+> Status: **Partial** — static-pillars half done in #3110 (the canonical
+> seven, generated from the SDK's `PILLARS` constant). Dynamic
+> external-pillar registration deferred to
+> [PRD-228](../228-dynamic-pillar-registration/README.md), which makes the
+> generator read from the runtime registry instead of the compile-time SDK
+> list. Last updated: 2026-06-13.
 
 ### Shipped state
 
@@ -91,8 +94,10 @@ PRD picks **image build time** initially — simpler, no runtime dep.
 ### Follow-ups (out of scope for phase 1)
 
 - **Dynamic external pillars.** Reading a registry snapshot (per the
-  original PRD body) instead of the static SDK list. Lands when the
-  pillar SDK exposes a runtime-augmentable registry.
+  original PRD body) instead of the static SDK list. Tracked as
+  [PRD-228](../228-dynamic-pillar-registration/README.md) — the final
+  BE-lego step that makes an external repo's pillar appear in the
+  dispatcher without a code change in `pops/`.
 - **Runtime init-container option.** Generator runs at image build today;
   a sidecar that polls the registry and `nginx reload`s is still the
   documented alternative.
