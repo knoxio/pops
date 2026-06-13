@@ -4,11 +4,9 @@
  */
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID, scryptSync } from 'node:crypto';
 
-import { eq } from 'drizzle-orm';
+import { settingsService } from '@pops/core-db';
 
-import { settings } from '@pops/db-types';
-
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 import { PlexClient } from './client.js';
@@ -37,26 +35,14 @@ function getEncryptionKey(): Buffer {
   if (envKey) {
     return scryptSync(envKey, 'pops-plex-token', 32);
   }
-  const db = getDrizzle();
-  const record = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED))
-    .get();
-  if (record) {
-    return scryptSync(record.value, 'pops-plex-token', 32);
+  const coreDb = getCoreDrizzle();
+  const existing = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED);
+  if (existing) {
+    return scryptSync(existing.value, 'pops-plex-token', 32);
   }
   const seed = randomBytes(32).toString('hex');
-  db.insert(settings)
-    .values({ key: SETTINGS_KEYS.PLEX_ENCRYPTION_SEED, value: seed })
-    .onConflictDoNothing()
-    .run();
-  const finalRecord = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED))
-    .get();
-  return scryptSync(finalRecord?.value ?? seed, 'pops-plex-token', 32);
+  const persisted = settingsService.ensureSetting(coreDb, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED, seed);
+  return scryptSync(persisted.value, 'pops-plex-token', 32);
 }
 
 export function encryptToken(plaintext: string): string {
@@ -84,32 +70,22 @@ export function decryptToken(ciphertext: string): string {
 // ---------------------------------------------------------------------------
 
 export function getPlexClientId(): string {
-  const db = getDrizzle();
-  const record = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER))
-    .get();
-  if (!record) {
-    const newId = randomUUID();
-    console.warn(`[Plex] Generating new client identifier: ${newId}`);
-    db.insert(settings)
-      .values({ key: SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER, value: newId })
-      .onConflictDoNothing()
-      .run();
-    const finalRecord = db
-      .select()
-      .from(settings)
-      .where(eq(settings.key, SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER))
-      .get();
-    return finalRecord?.value ?? newId;
-  }
-  return record.value;
+  const coreDb = getCoreDrizzle();
+  const existing = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER);
+  if (existing) return existing.value;
+
+  const newId = randomUUID();
+  console.warn(`[Plex] Generating new client identifier: ${newId}`);
+  const persisted = settingsService.ensureSetting(
+    coreDb,
+    SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER,
+    newId
+  );
+  return persisted.value;
 }
 
 export function getPlexUrl(): string | null {
-  const db = getDrizzle();
-  const record = db.select().from(settings).where(eq(settings.key, SETTINGS_KEYS.PLEX_URL)).get();
+  const record = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_URL);
   if (record?.value) return record.value;
   return getEnv('PLEX_URL') ?? null;
 }
@@ -121,12 +97,7 @@ export function getPlexClient(): PlexClient | null {
     return null;
   }
 
-  const db = getDrizzle();
-  const tokenRecord = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_TOKEN))
-    .get();
+  const tokenRecord = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
   const encryptedToken = tokenRecord?.value;
 
   if (!encryptedToken) {
@@ -145,12 +116,7 @@ export function getPlexClient(): PlexClient | null {
 
 /** Get the decrypted Plex token (for cloud API calls that don't use PlexClient). */
 export function getPlexToken(): string | null {
-  const db = getDrizzle();
-  const tokenRecord = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_TOKEN))
-    .get();
+  const tokenRecord = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
   const encryptedToken = tokenRecord?.value;
   if (!encryptedToken) return null;
 
@@ -162,12 +128,7 @@ export function getPlexToken(): string | null {
 }
 
 export function getPlexUsername(): string | null {
-  const db = getDrizzle();
-  const record = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_USERNAME))
-    .get();
+  const record = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_USERNAME);
   return record?.value ?? null;
 }
 
@@ -181,17 +142,9 @@ export interface PlexSectionIds {
 }
 
 export function getPlexSectionIds(): PlexSectionIds {
-  const db = getDrizzle();
-  const movieRecord = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID))
-    .get();
-  const tvRecord = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_TV_SECTION_ID))
-    .get();
+  const coreDb = getCoreDrizzle();
+  const movieRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID);
+  const tvRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_TV_SECTION_ID);
   return {
     movieSectionId: movieRecord?.value ?? null,
     tvSectionId: tvRecord?.value ?? null,
@@ -199,18 +152,12 @@ export function getPlexSectionIds(): PlexSectionIds {
 }
 
 export function savePlexSectionIds(movieSectionId?: string, tvSectionId?: string): void {
-  const db = getDrizzle();
+  const coreDb = getCoreDrizzle();
   if (movieSectionId) {
-    db.insert(settings)
-      .values({ key: SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID, value: movieSectionId })
-      .onConflictDoUpdate({ target: settings.key, set: { value: movieSectionId } })
-      .run();
+    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID, movieSectionId);
   }
   if (tvSectionId) {
-    db.insert(settings)
-      .values({ key: SETTINGS_KEYS.PLEX_TV_SECTION_ID, value: tvSectionId })
-      .onConflictDoUpdate({ target: settings.key, set: { value: tvSectionId } })
-      .run();
+    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_TV_SECTION_ID, tvSectionId);
   }
 }
 
@@ -228,8 +175,7 @@ export async function testConnection(client: PlexClient): Promise<boolean> {
 }
 
 export function getSyncStatus(client: PlexClient | null): PlexSyncStatus {
-  const db = getDrizzle();
-  const token = db.select().from(settings).where(eq(settings.key, SETTINGS_KEYS.PLEX_TOKEN)).get();
+  const token = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
   const url = getPlexUrl();
 
   return {

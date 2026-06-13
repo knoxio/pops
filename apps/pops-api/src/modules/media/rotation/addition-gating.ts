@@ -8,9 +8,10 @@ import { eq } from 'drizzle-orm';
  *
  * PRD-070 US-05
  */
-import { rotationCandidates, settings } from '@pops/db-types';
+import { settingsService } from '@pops/core-db';
+import { rotationCandidates } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle, getDrizzle } from '../../../db.js';
 import { getRadarrClient } from '../arr/service.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
 import { getImageCache, getTmdbClient } from '../tmdb/index.js';
@@ -31,8 +32,7 @@ const DEFAULT_DAILY_ADDITIONS = 2;
 const DEFAULT_AVG_MOVIE_GB = 15;
 
 function getSetting(key: string): string | null {
-  const db = getDrizzle();
-  const record = db.select().from(settings).where(eq(settings.key, key)).get();
+  const record = settingsService.getSettingOrNull(getCoreDrizzle(), key);
   return record?.value ?? null;
 }
 

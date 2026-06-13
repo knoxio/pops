@@ -1,9 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { eq } from 'drizzle-orm';
 
-import { settings } from '@pops/db-types';
+import { settingsService } from '@pops/core-db';
 
-import { getDrizzle, isNamedEnvContext } from '../../../../db.js';
+import { getCoreDrizzle, isNamedEnvContext } from '../../../../db.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
 import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
@@ -68,12 +67,7 @@ export function loadLatestRejectedFeedback(args: {
   matchType: 'exact' | 'contains' | 'regex';
   normalizedPattern: string;
 }): RejectedChangeSetFeedbackRecord | null {
-  const row =
-    getDrizzle()
-      .select()
-      .from(settings)
-      .where(eq(settings.key, feedbackKey(args)))
-      .get() ?? null;
+  const row = settingsService.getSettingOrNull(getCoreDrizzle(), feedbackKey(args));
   if (!row) return null;
   return parseFeedbackRecord(row.value);
 }
@@ -85,7 +79,6 @@ export function persistRejectedChangeSetFeedback(args: {
   impactSummary: RejectedChangeSetFeedbackRecord['impactSummary'];
   userEmail: string;
 }): void {
-  const db = getDrizzle();
   const normalizedPattern = normalizeDescription(args.signal.descriptionPattern);
 
   const record: RejectedChangeSetFeedbackRecord = {
@@ -96,16 +89,11 @@ export function persistRejectedChangeSetFeedback(args: {
     impactSummary: args.impactSummary,
   };
 
-  db.insert(settings)
-    .values({
-      key: feedbackKey({ matchType: args.signal.matchType, normalizedPattern }),
-      value: JSON.stringify(record),
-    })
-    .onConflictDoUpdate({
-      target: settings.key,
-      set: { value: JSON.stringify(record) },
-    })
-    .run();
+  settingsService.setRawSetting(
+    getCoreDrizzle(),
+    feedbackKey({ matchType: args.signal.matchType, normalizedPattern }),
+    JSON.stringify(record)
+  );
 }
 
 function buildInterpretPrompt(

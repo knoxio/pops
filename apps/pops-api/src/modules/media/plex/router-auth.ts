@@ -1,9 +1,9 @@
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { settings } from '@pops/db-types';
+import { SettingNotFoundError, settingsService } from '@pops/core-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure } from '../../../trpc.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
@@ -16,18 +16,20 @@ interface PlexPinResponse {
 }
 
 function persistAuthSettings(authToken: string, username: string | null): void {
-  const db = getDrizzle();
+  const coreDb = getCoreDrizzle();
   console.warn(`[Plex] Encrypting and saving token to database...`);
   const encryptedToken = plexService.encryptToken(authToken);
-  db.insert(settings)
-    .values({ key: SETTINGS_KEYS.PLEX_TOKEN, value: encryptedToken })
-    .onConflictDoUpdate({ target: settings.key, set: { value: encryptedToken } })
-    .run();
+  settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_TOKEN, encryptedToken);
   if (username) {
-    db.insert(settings)
-      .values({ key: SETTINGS_KEYS.PLEX_USERNAME, value: username })
-      .onConflictDoUpdate({ target: settings.key, set: { value: username } })
-      .run();
+    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_USERNAME, username);
+  }
+}
+
+function deleteSettingIfExists(key: string): void {
+  try {
+    settingsService.deleteSetting(getCoreDrizzle(), key);
+  } catch (err) {
+    if (!(err instanceof SettingNotFoundError)) throw err;
   }
 }
 
@@ -87,10 +89,8 @@ export const authProcedures = {
     }),
 
   disconnect: protectedProcedure.mutation(() => {
-    const db = getDrizzle();
-    db.delete(settings)
-      .where(inArray(settings.key, [SETTINGS_KEYS.PLEX_TOKEN, SETTINGS_KEYS.PLEX_USERNAME]))
-      .run();
+    deleteSettingIfExists(SETTINGS_KEYS.PLEX_TOKEN);
+    deleteSettingIfExists(SETTINGS_KEYS.PLEX_USERNAME);
     return { message: 'Disconnected from Plex' };
   }),
 };

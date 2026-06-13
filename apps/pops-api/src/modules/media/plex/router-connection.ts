@@ -1,9 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { settings } from '@pops/db-types';
+import { settingsService } from '@pops/core-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure } from '../../../trpc.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
@@ -58,12 +57,7 @@ async function validateConnection(url: string, token: string | undefined): Promi
 }
 
 function lookupToken(): string | undefined {
-  const db = getDrizzle();
-  const tokenRecord = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, SETTINGS_KEYS.PLEX_TOKEN))
-    .get();
+  const tokenRecord = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
   return tokenRecord?.value;
 }
 
@@ -106,11 +100,7 @@ export const connectionProcedures = {
       await validateConnection(finalUrl, token);
 
       console.warn(`[Plex] Updating server URL to: ${finalUrl}`);
-      const db = getDrizzle();
-      db.insert(settings)
-        .values({ key: SETTINGS_KEYS.PLEX_URL, value: finalUrl })
-        .onConflictDoUpdate({ target: settings.key, set: { value: finalUrl } })
-        .run();
+      settingsService.setRawSetting(getCoreDrizzle(), SETTINGS_KEYS.PLEX_URL, finalUrl);
       return { message: 'Plex URL updated and validated' };
     }),
 

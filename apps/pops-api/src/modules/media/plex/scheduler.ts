@@ -1,5 +1,3 @@
-import { eq } from 'drizzle-orm';
-
 /**
  * Plex sync scheduler — BullMQ repeatable job for periodic library polling.
  *
@@ -10,9 +8,9 @@ import { eq } from 'drizzle-orm';
  *
  * PRD-074 US-05
  */
-import { settings } from '@pops/db-types';
+import { SettingNotFoundError, settingsService } from '@pops/core-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { getSyncQueue } from '../../../jobs/queues.js';
 import { isEnabled } from '../../core/features/index.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
@@ -67,22 +65,20 @@ let movieSectionId: string | null = null;
 let tvSectionId: string | null = null;
 
 function saveSetting(key: string, value: string): void {
-  const db = getDrizzle();
-  db.insert(settings)
-    .values({ key, value })
-    .onConflictDoUpdate({ target: settings.key, set: { value } })
-    .run();
+  settingsService.setRawSetting(getCoreDrizzle(), key, value);
 }
 
 function getSetting(key: string): string | null {
-  const db = getDrizzle();
-  const record = db.select().from(settings).where(eq(settings.key, key)).get();
+  const record = settingsService.getSettingOrNull(getCoreDrizzle(), key);
   return record?.value ?? null;
 }
 
 function deleteSetting(key: string): void {
-  const db = getDrizzle();
-  db.delete(settings).where(eq(settings.key, key)).run();
+  try {
+    settingsService.deleteSetting(getCoreDrizzle(), key);
+  } catch (err) {
+    if (!(err instanceof SettingNotFoundError)) throw err;
+  }
 }
 
 function persistSchedulerConfig(): void {

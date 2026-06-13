@@ -18,6 +18,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { SettingNotFoundError } from '../errors.js';
 import {
   deleteSetting,
+  ensureSetting,
   getBulkSettings,
   getSetting,
   getSettingOrNull,
@@ -209,6 +210,31 @@ describe('getSettingValue', () => {
   it('returns the fallback when the persisted value is not a number', () => {
     setSetting(db, { key: 'limit', value: 'oops' });
     expect(getSettingValue(db, 'limit', 10)).toBe(10);
+  });
+});
+
+describe('ensureSetting', () => {
+  let db: CoreDb;
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('inserts a new key and returns the persisted row', () => {
+    const row = ensureSetting(db, 'plex.encryption.seed', 'seed-a');
+    expect(row).toEqual({ key: 'plex.encryption.seed', value: 'seed-a' });
+  });
+
+  it('preserves the existing value on a second call with a different value', () => {
+    ensureSetting(db, 'plex.encryption.seed', 'seed-a');
+    const row = ensureSetting(db, 'plex.encryption.seed', 'seed-b');
+    expect(row.value).toBe('seed-a');
+    expect(getSetting(db, 'plex.encryption.seed').value).toBe('seed-a');
+  });
+
+  it('does not clobber values written via setSetting', () => {
+    setSetting(db, { key: 'plex.client.id', value: 'original' });
+    const row = ensureSetting(db, 'plex.client.id', 'replacement');
+    expect(row.value).toBe('original');
   });
 });
 

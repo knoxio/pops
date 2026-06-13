@@ -38,15 +38,9 @@ vi.mock('./service.js', () => ({
 }));
 
 vi.mock('../../../db.js', () => ({
-  getDrizzle: vi.fn(() => ({
+  getCoreDrizzle: vi.fn(() => ({
     select: () => ({
-      from: (_table: unknown) => ({
-        where: (key: string) => ({
-          get: () => {
-            const val = settingsStore.get(key);
-            return val !== undefined ? { value: val } : undefined;
-          },
-        }),
+      from: () => ({
         orderBy: () => ({
           limit: () => ({
             get: (): unknown => null,
@@ -57,25 +51,50 @@ vi.mock('../../../db.js', () => ({
     }),
     insert: () => ({
       values: (vals: Record<string, unknown>) => {
-        if ('syncedAt' in vals) {
-          mockInsertSyncLog(vals);
-          return { run: vi.fn() };
-        }
-        if ('key' in vals && 'value' in vals) {
-          settingsStore.set(vals.key as string, vals.value as string);
-        }
-        return {
-          onConflictDoUpdate: () => ({ run: vi.fn() }),
-          run: vi.fn(),
-        };
+        if ('syncedAt' in vals) mockInsertSyncLog(vals);
+        return { run: vi.fn() };
       },
     }),
-    delete: () => ({
-      where: (key: string) => ({
-        run: () => settingsStore.delete(key),
+  })),
+  getDrizzle: vi.fn(() => ({
+    select: () => ({
+      from: () => ({
+        orderBy: () => ({
+          limit: () => ({
+            get: (): unknown => null,
+            all: (): unknown[] => mockSelectSyncLogs() as unknown[],
+          }),
+        }),
       }),
     }),
+    insert: () => ({
+      values: (vals: Record<string, unknown>) => {
+        if ('syncedAt' in vals) mockInsertSyncLog(vals);
+        return { run: vi.fn() };
+      },
+    }),
   })),
+}));
+
+vi.mock('@pops/core-db', () => ({
+  SettingNotFoundError: class SettingNotFoundError extends Error {
+    constructor(public readonly key: string) {
+      super(`Setting not found: ${key}`);
+    }
+  },
+  settingsService: {
+    getSettingOrNull: vi.fn((_db: unknown, key: string) => {
+      const val = settingsStore.get(key);
+      return val !== undefined ? { key, value: val } : null;
+    }),
+    setRawSetting: vi.fn((_db: unknown, key: string, value: string) => {
+      settingsStore.set(key, value);
+      return { key, value };
+    }),
+    deleteSetting: vi.fn((_db: unknown, key: string) => {
+      settingsStore.delete(key);
+    }),
+  },
 }));
 
 vi.mock('drizzle-orm', () => ({
@@ -84,7 +103,6 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 vi.mock('@pops/db-types', () => ({
-  settings: { key: 'key', value: 'value' },
   syncLogs: { syncedAt: 'synced_at', id: 'id', errors: 'errors' },
 }));
 

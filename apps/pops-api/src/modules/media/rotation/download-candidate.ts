@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
 
-import { movies, rotationCandidates, settings } from '@pops/db-types';
+import { settingsService } from '@pops/core-db';
+import { movies, rotationCandidates } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle, getDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { getRadarrClient } from '../arr/service.js';
@@ -33,17 +34,15 @@ function loadCandidate(candidateId: number): typeof rotationCandidates.$inferSel
 }
 
 function loadRadarrConfig(): RadarrConfig {
-  const db = getDrizzle();
-  const qualityProfileId = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, 'rotation_quality_profile_id'))
-    .get()?.value;
-  const rootFolderPath = db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, 'rotation_root_folder_path'))
-    .get()?.value;
+  const coreDb = getCoreDrizzle();
+  const qualityProfileId = settingsService.getSettingOrNull(
+    coreDb,
+    'rotation_quality_profile_id'
+  )?.value;
+  const rootFolderPath = settingsService.getSettingOrNull(
+    coreDb,
+    'rotation_root_folder_path'
+  )?.value;
   if (!qualityProfileId || !rootFolderPath) {
     throw trpcError('PRECONDITION_FAILED', 'media.rotation.radarrConfigMissing');
   }

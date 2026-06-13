@@ -1,14 +1,13 @@
 /**
  * Settings wrapper — resolves the core-pillar drizzle handle and forwards
- * to `@pops/core-db`'s `settingsService` (PRD-183 PR 2 cutover).
+ * to `@pops/core-db`'s `settingsService`.
  *
- * Mirrors the movies / shelf-impressions cutover pattern: in-tree callers
- * (router.ts plus ~45 modules across pops-api) keep importing from this
- * file unchanged. The handle now points at the core pillar's per-pillar
- * SQLite via `getCoreDrizzle()` instead of the shared `pops.db` singleton,
- * so every settings read/write lands in `core.db.settings`. The legacy
- * mount still serves the same rows because the core backfill keeps both
- * stores in sync until the shim is retired.
+ * Every settings read and write — through this wrapper or through the
+ * direct `settingsService` consumers in `media/plex`, `media/rotation`,
+ * `media/arr`, and `core/corrections` — lands on the core pillar handle
+ * (`core.db.settings`). The shared `pops.db` table is no longer written;
+ * the boot-time backfill keeps the legacy mount in sync until the shim
+ * is retired.
  *
  * Error translation: the package surface throws `SettingNotFoundError`.
  * We re-throw it as the in-tree `NotFoundError` so the router's
