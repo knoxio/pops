@@ -25,6 +25,11 @@ See [readiness-matrix.md](readiness-matrix.md) for the table-by-table
 matrix, residual call-site list, Wave-3 PRD cross-reference, and the
 recommended sequence into PRD-213.
 
+See [wave-5-blocked.md](../../notes/wave-5-blocked.md) for the
+2026-06-13 re-audit of `getDrizzle()` call sites by pillar, the live
+shared-journal tables still backing them, and the four-condition
+acceptance gate that PRD-213 / PRD-214 must clear before shipping.
+
 ## Overview
 
 Before dropping the legacy `pops.db`, confirm every table is owned by a pillar and no code still reaches into the shared DB. Uses Q1 schema-coverage CI data + grep audit + smoke harness.
