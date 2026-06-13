@@ -13,12 +13,12 @@
  * without opening a real network connection.
  *
  * Contract — `regenerate()` MUST resolve once the new conf has been
- * written. `reload()` MUST resolve once nginx has been signalled. Either
- * may reject; rejections are surfaced through the optional `logger`
- * but never propagate out of `trigger()` (the watcher must stay up).
- * `nginx -t` validation lives inside the caller-supplied `reload` so
- * the watcher stays transport-agnostic (in-container nginx vs sidecar
- * vs SIGHUP to a docker container).
+ * written. `validateConfig()` (optional) MUST resolve if the rendered
+ * conf passes `nginx -t`; rejection skips the reload entirely so a bad
+ * conf cannot crash a running nginx. `reload()` MUST resolve once
+ * nginx has been signalled. Any step may reject; rejections are
+ * surfaced through the optional `logger` + `onError` hook but never
+ * propagate out of `trigger()` (the watcher must stay up).
  */
 
 export type WatchedEventName =
@@ -41,13 +41,36 @@ export interface ReloadLogger {
   readonly error: (message: string, error?: unknown) => void;
 }
 
+export type ReloadStage = 'regenerate' | 'validate' | 'reload';
+
+export interface ReloadErrorEvent {
+  readonly stage: ReloadStage;
+  readonly message: string;
+  readonly at: Date;
+}
+
 export interface CreateReloadHandlerOptions {
   readonly regenerate: () => Promise<void>;
+  /**
+   * Optional `nginx -t` (or equivalent) gate. Runs AFTER `regenerate()`
+   * and BEFORE `reload()`. Rejection skips the reload — the previous
+   * conf stays live. Omit to fold gating into the reload command
+   * itself (e.g. `nginx -t && nginx -s reload`).
+   */
+  readonly validateConfig?: () => Promise<void>;
   readonly reload: () => Promise<void>;
   readonly debounceMs?: number;
   readonly logger?: ReloadLogger;
   readonly setTimer?: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>;
   readonly clearTimer?: (handle: ReturnType<typeof setTimeout>) => void;
+  /**
+   * Fired AFTER a successful regen + validate + reload cycle. The
+   * watcher uses this to clear `nginx_generator_last_error_at` on the
+   * health surface once recovery has been observed.
+   */
+  readonly onSuccess?: () => void;
+  /** Fired on any stage failure with a structured payload for the health surface. */
+  readonly onError?: (event: ReloadErrorEvent) => void;
 }
 
 export interface ReloadHandler {
@@ -77,7 +100,10 @@ interface HandlerState {
   readonly setTimer: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>;
   readonly clearTimer: (handle: ReturnType<typeof setTimeout>) => void;
   readonly regenerate: () => Promise<void>;
+  readonly validateConfig: (() => Promise<void>) | null;
   readonly reload: () => Promise<void>;
+  readonly onSuccess: (() => void) | null;
+  readonly onError: ((event: ReloadErrorEvent) => void) | null;
 }
 
 function scheduleRun(state: HandlerState): void {
@@ -107,19 +133,45 @@ async function startRun(state: HandlerState): Promise<void> {
   }
 }
 
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err === undefined || err === null) return '';
+  return String(err);
+}
+
+function emitError(state: HandlerState, stage: ReloadStage, err: unknown): void {
+  if (state.onError === null) return;
+  state.onError({ stage, message: describeError(err), at: new Date() });
+}
+
 async function executeRun(state: HandlerState, run: PendingRun): Promise<void> {
   state.logger.info(`nginx-event-reload: regen triggered by [${run.events.join(',')}]`);
   try {
     await state.regenerate();
   } catch (err: unknown) {
     state.logger.error('nginx-event-reload: regenerate failed; skipping reload', err);
+    emitError(state, 'regenerate', err);
     return;
+  }
+  if (state.validateConfig !== null) {
+    try {
+      await state.validateConfig();
+    } catch (err: unknown) {
+      state.logger.error(
+        'nginx-event-reload: nginx -t validation failed; skipping reload (previous conf stays live)',
+        err
+      );
+      emitError(state, 'validate', err);
+      return;
+    }
   }
   try {
     await state.reload();
     state.logger.info('nginx-event-reload: reload signalled');
+    if (state.onSuccess !== null) state.onSuccess();
   } catch (err: unknown) {
     state.logger.error('nginx-event-reload: reload failed', err);
+    emitError(state, 'reload', err);
   }
 }
 
@@ -143,7 +195,10 @@ export function createReloadHandler(options: CreateReloadHandlerOptions): Reload
     setTimer: options.setTimer ?? setTimeout,
     clearTimer: options.clearTimer ?? clearTimeout,
     regenerate: options.regenerate,
+    validateConfig: options.validateConfig ?? null,
     reload: options.reload,
+    onSuccess: options.onSuccess ?? null,
+    onError: options.onError ?? null,
   };
   return {
     trigger: (event: WatchedEventName) => {

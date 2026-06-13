@@ -214,11 +214,10 @@ post-mutation hook) is deferred to implementation.
 | 04  | [us-04-deregister-endpoint](us-04-deregister-endpoint.md)               | `POST /core.registry.deregister` with key-hash verification, idempotent DELETE, and nginx regen trigger.                                  | blocked by us-01                     |
 | 05  | [us-05-e2e-external-pillar-dropin](us-05-e2e-external-pillar-dropin.md) | End-to-end test: spin up a throwaway pillar container, register via the HTTP endpoint, hit it through the shell dispatcher, deregister.   | blocked by us-01..04                 |
 
-Status: US-01 / US-02 / US-04 / US-05 done; US-03 partial (core
-debounced event-driven regen + reload watcher landed via #3149;
-explicit `nginx -t` gating and the `nginx_generator_last_error_at`
-health surface remain). The two register/deregister end-to-end
-integration tests originally folded into US-03 ship as US-05.
+Status: all user stories done. US-03's deferred ACs (explicit
+`nginx -t` gating, `nginx_generator_last_error_at` health surface,
+register/deregister end-to-end watcher tests) land in the follow-up
+shipping `nginx-generator-health.ts` and the watcher e2e harness.
 
 ## Out of Scope
 

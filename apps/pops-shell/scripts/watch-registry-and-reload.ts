@@ -1,36 +1,19 @@
-#!/usr/bin/env tsx
 /**
  * Long-running watcher that ties PRD-163's registry SSE stream to
  * PRD-232's dynamic nginx generator (Theme 13 PRD-228 US-03).
  *
- * On startup it opens `GET <registry-url>/registry/subscribe`, ignores
- * the initial `pillar.snapshot` frame (the dispatcher already reflects
- * boot state), and on every subsequent `pillar.registered`,
- * `pillar.deregistered`, or `pillar.health-changed` event triggers a
- * trailing-debounced regen + nginx reload (250ms window).
+ * Opens `GET <registry-url>/registry/subscribe`, ignores the initial
+ * `pillar.snapshot` frame, and on every subsequent registered /
+ * deregistered / health-changed event triggers a trailing-debounced
+ * regen + nginx -t + reload cycle. The `nginx -t` gate runs between
+ * regen and reload so a bad rendered conf cannot crash a live nginx;
+ * on failure the reload is skipped and `nginx_generator_last_error_at`
+ * flips on the optional health endpoint until the next clean cycle.
  *
- * Deploy shape — DEFERRED. Two viable shapes:
- *   1. Sidecar inside the nginx container. The watcher writes
- *      `/etc/nginx/conf.d/default.conf` and runs `nginx -s reload`.
- *      Lowest latency; same container so `nginx` is local.
- *   2. Standalone Node container on the docker network. The watcher
- *      writes a shared volume mounted into nginx, then issues
- *      `docker kill -s HUP nginx` (or hits the in-cluster nginx admin
- *      endpoint). Cleanly separated; needs a docker socket OR an
- *      `nginx_status`-style reload trigger.
- *
- * The current implementation defaults to shape (1) — invoking `nginx`
- * via `child_process.spawn`. To use shape (2), override `RELOAD_CMD`
- * in the environment (e.g. `docker kill -s HUP pops-nginx`). The
- * docker-compose wiring for either shape is a follow-up; this PR
- * ships the script, the unit tests, and the deploy note.
- *
- * Env:
- *   CORE_REGISTRY_URL       default http://core-api:3001
- *   POPS_NGINX_OUTPUT       default <repo>/apps/pops-shell/nginx.conf
- *   POPS_NGINX_RELOAD_CMD   shell command run on each reload; default `nginx -s reload`
- *   POPS_NGINX_DEBOUNCE_MS  default 250
- *   POPS_NGINX_BACKOFF_MS   initial reconnect backoff; default 1000 (capped at 30s)
+ * Env: CORE_REGISTRY_URL, POPS_NGINX_OUTPUT, POPS_NGINX_RELOAD_CMD,
+ * POPS_NGINX_CONFIG_TEST_CMD (default `nginx -t -c <output>`; empty
+ * string disables the gate), POPS_NGINX_DEBOUNCE_MS, POPS_NGINX_BACKOFF_MS,
+ * POPS_NGINX_HEALTH_PORT / _HOST / _PATH.
  */
 import { spawn } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
@@ -38,7 +21,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DEFAULT_REGISTRY_URL, renderNginxConfDynamic } from './generate-nginx-conf.ts';
-import { createReloadHandler, isWatchedEvent, type ReloadLogger } from './nginx-event-reload.ts';
+import {
+  createReloadHandler,
+  isWatchedEvent,
+  type ReloadErrorEvent,
+  type ReloadLogger,
+} from './nginx-event-reload.ts';
+import { type NginxGeneratorHealth } from './nginx-generator-health.ts';
 import { consumeSse } from './registry-sse-client.ts';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -50,8 +39,12 @@ interface WatcherConfig {
   readonly registryUrl: string;
   readonly outputPath: string;
   readonly reloadCmd: string;
+  readonly configTestCmd: string;
   readonly debounceMs: number;
   readonly backoffMs: number;
+  readonly healthPort: number | null;
+  readonly healthHost: string;
+  readonly healthPath: string;
 }
 
 function parseIntEnv(value: string | undefined, fallback: number): number {
@@ -60,29 +53,36 @@ function parseIntEnv(value: string | undefined, fallback: number): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function parseOptionalPortEnv(value: string | undefined): number | null {
+  if (value === undefined || value.length === 0) return null;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) return null;
+  return parsed;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function defaultConfigTestCmd(outputPath: string): string {
+  return `nginx -t -c ${shellQuote(outputPath)}`;
+}
+
 function readConfig(env: NodeJS.ProcessEnv): WatcherConfig {
+  const outputPath = env['POPS_NGINX_OUTPUT'] ?? DEFAULT_OUTPUT_PATH;
+  const rawConfigTestCmd = env['POPS_NGINX_CONFIG_TEST_CMD'];
   return {
     registryUrl: env['CORE_REGISTRY_URL'] ?? DEFAULT_REGISTRY_URL,
-    outputPath: env['POPS_NGINX_OUTPUT'] ?? DEFAULT_OUTPUT_PATH,
+    outputPath,
     reloadCmd: env['POPS_NGINX_RELOAD_CMD'] ?? DEFAULT_RELOAD_CMD,
+    configTestCmd: rawConfigTestCmd ?? defaultConfigTestCmd(outputPath),
     debounceMs: parseIntEnv(env['POPS_NGINX_DEBOUNCE_MS'], 250),
     backoffMs: parseIntEnv(env['POPS_NGINX_BACKOFF_MS'], 1000),
+    healthPort: parseOptionalPortEnv(env['POPS_NGINX_HEALTH_PORT']),
+    healthHost: env['POPS_NGINX_HEALTH_HOST'] ?? '0.0.0.0',
+    healthPath: env['POPS_NGINX_HEALTH_PATH'] ?? '/health',
   };
 }
-
-function formatErrorDetail(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (err === undefined) return '';
-  return String(err);
-}
-
-const consoleLogger: ReloadLogger = {
-  info: (message) => process.stdout.write(`${message}\n`),
-  error: (message, err) => {
-    const detail = formatErrorDetail(err);
-    process.stderr.write(detail.length > 0 ? `${message}: ${detail}\n` : `${message}\n`);
-  },
-};
 
 function execShell(cmd: string): Promise<void> {
   return new Promise((resolvePromise, rejectPromise) => {
@@ -100,16 +100,36 @@ async function runRegen(config: WatcherConfig): Promise<void> {
   await writeFile(config.outputPath, conf, 'utf8');
 }
 
+export interface RunOnceDeps {
+  readonly health?: NginxGeneratorHealth;
+  readonly execImpl?: (cmd: string) => Promise<void>;
+  readonly regenerateImpl?: (config: WatcherConfig) => Promise<void>;
+}
+
 async function runOnce(
   config: WatcherConfig,
   signal: AbortSignal,
-  logger: ReloadLogger
+  logger: ReloadLogger,
+  deps: RunOnceDeps = {}
 ): Promise<void> {
+  const exec = deps.execImpl ?? execShell;
+  const regen = deps.regenerateImpl ?? runRegen;
+  const validate =
+    config.configTestCmd.length > 0 ? (): Promise<void> => exec(config.configTestCmd) : undefined;
+  const onSuccess =
+    deps.health !== undefined ? (): void => deps.health?.recordSuccess() : undefined;
+  const onError =
+    deps.health !== undefined
+      ? (event: ReloadErrorEvent): void => deps.health?.recordError(event)
+      : undefined;
   const handler = createReloadHandler({
-    regenerate: () => runRegen(config),
-    reload: () => execShell(config.reloadCmd),
+    regenerate: () => regen(config),
+    validateConfig: validate,
+    reload: () => exec(config.reloadCmd),
     debounceMs: config.debounceMs,
     logger,
+    onSuccess,
+    onError,
   });
   try {
     await consumeSse({
@@ -140,16 +160,19 @@ async function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
+export type WatchRegistryDeps = RunOnceDeps;
+
 export async function watchRegistryAndReload(
   config: WatcherConfig,
   signal: AbortSignal,
-  logger: ReloadLogger = consoleLogger
+  logger: ReloadLogger,
+  deps: WatchRegistryDeps = {}
 ): Promise<void> {
   let backoff = config.backoffMs;
   while (!signal.aborted) {
     try {
       logger.info(`watch-registry: connecting to ${config.registryUrl}/registry/subscribe`);
-      await runOnce(config, signal, logger);
+      await runOnce(config, signal, logger, deps);
       logger.info('watch-registry: SSE stream ended; reconnecting');
       backoff = config.backoffMs;
     } catch (err: unknown) {
@@ -161,24 +184,4 @@ export async function watchRegistryAndReload(
   }
 }
 
-async function main(): Promise<void> {
-  const config = readConfig(process.env);
-  const controller = new AbortController();
-  const onSignal = (): void => controller.abort();
-  process.once('SIGINT', onSignal);
-  process.once('SIGTERM', onSignal);
-  await watchRegistryAndReload(config, controller.signal);
-}
-
-const invokedAsScript =
-  process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-
-if (invokedAsScript) {
-  main().catch((err: unknown) => {
-    const message = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`watch-registry-and-reload failed: ${message}\n`);
-    process.exit(1);
-  });
-}
-
-export { readConfig, runOnce };
+export { readConfig, runOnce, type WatcherConfig };
