@@ -138,6 +138,7 @@ export {
   transactions,
   transactionTagRules,
   tvShows,
+  userSettings,
   watchHistory,
   wishList,
 } from './schema/index.js';

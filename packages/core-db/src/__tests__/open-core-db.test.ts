@@ -173,6 +173,42 @@ describe('openCoreDb', () => {
     }
   });
 
+  it('applies the PRD-186 PR4 user_settings migration', () => {
+    const path = join(tmpDir, 'core.db');
+    const { raw } = openCoreDb(path);
+    try {
+      const tables = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(tables.has('user_settings')).toBe(true);
+
+      const indexes = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(indexes.has('idx_user_settings_user')).toBe(true);
+
+      raw
+        .prepare(
+          `INSERT INTO user_settings (user_email, key, value)
+           VALUES ('alice@example.com', 'feature.test.simple', 'true')`
+        )
+        .run();
+      const count = (raw.prepare('SELECT count(*) AS n FROM user_settings').get() as { n: number })
+        .n;
+      expect(count).toBe(1);
+    } finally {
+      raw.close();
+    }
+  });
+
   it('is idempotent — re-opening the same DB does not re-apply migrations', async () => {
     const path = join(tmpDir, 'core.db');
     const first = openCoreDb(path);

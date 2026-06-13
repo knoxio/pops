@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { userSettings } from '@pops/db-types/schema';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 
 /**
  * Per-user settings storage helpers. Backs `scope: 'user'` features and any
@@ -10,7 +10,7 @@ import { getDrizzle } from '../../../db.js';
  */
 
 export function getUserSetting(userEmail: string, key: string): string | null {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const row = db
     .select()
     .from(userSettings)
@@ -20,7 +20,7 @@ export function getUserSetting(userEmail: string, key: string): string | null {
 }
 
 export function setUserSetting(userEmail: string, key: string, value: string): void {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   db.insert(userSettings)
     .values({ userEmail, key, value })
     .onConflictDoUpdate({
@@ -31,7 +31,7 @@ export function setUserSetting(userEmail: string, key: string, value: string): v
 }
 
 export function deleteUserSetting(userEmail: string, key: string): boolean {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const result = db
     .delete(userSettings)
     .where(and(eq(userSettings.userEmail, userEmail), eq(userSettings.key, key)))

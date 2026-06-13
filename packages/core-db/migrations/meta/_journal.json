@@ -78,6 +78,13 @@
       "when": 1782259200000,
       "tag": "0064_ai_providers",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1782345600000,
+      "tag": "0066_user_settings",
+      "breakpoints": true
     }
   ]
 }
