@@ -1,16 +1,61 @@
-import { getClient } from '../client.js';
-import { copyOptStr, nullStr, ok, optBool, optNum, reqStr, toolError } from './utils.js';
+import { getPillar } from '../pillar-client.js';
+import { copyOptStr, mapCallResult, nullStr, optBool, optNum, reqStr, toolError } from './utils.js';
+
+import type { PillarHandle } from '@pops/pillar-sdk/client';
 
 import type { ToolDef } from './index.js';
 
-type LocationPatch = Parameters<
-  ReturnType<typeof getClient>['inventory']['locations']['update']['mutate']
->[0]['data'];
+type Location = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  sortOrder: number;
+};
+
+type LocationTreeNode = Location & { children: LocationTreeNode[] };
+
+type LocationPatch = {
+  name?: string;
+  parentId?: string | null;
+  sortOrder?: number;
+};
+
+type DeleteResponse =
+  | { message: string }
+  | {
+      requiresConfirmation: true;
+      stats: {
+        childCount: number;
+        descendantCount: number;
+        itemCount: number;
+        totalItemCount: number;
+      };
+    };
+
+type InventoryShape = {
+  inventory: {
+    locations: {
+      tree: () => { data: LocationTreeNode[] };
+      list: () => { data: Location[]; total: number };
+      create: (input: { name: string; parentId?: string | null; sortOrder?: number }) => {
+        data: Location;
+        message: string;
+      };
+      update: (input: { id: string; data: LocationPatch }) => { data: Location; message: string };
+      delete: (input: { id: string; force: boolean }) => DeleteResponse;
+    };
+  };
+};
+
+type LocationsHandle = PillarHandle<InventoryShape>['inventory']['locations'];
+
+function locations(): LocationsHandle {
+  return getPillar<InventoryShape>('inventory').inventory.locations;
+}
 
 function buildLocationPatch(args: Record<string, unknown>): LocationPatch {
   const patch: LocationPatch = {};
   copyOptStr(patch, args, 'name');
-  // parentId is three-state (null clears to root); custom-handled.
   if ('parentId' in args) {
     const parentId = nullStr(args, 'parentId');
     if (parentId !== undefined) patch.parentId = parentId;
@@ -25,20 +70,14 @@ const locationTree: ToolDef = {
   description:
     'Get the full location hierarchy as a nested tree. Returns all locations with their children.',
   inputSchema: { type: 'object', properties: {} },
-  handler: async () => {
-    const result = await getClient().inventory.locations.tree.query();
-    return ok(result);
-  },
+  handler: async () => mapCallResult(await locations().tree()),
 };
 
 const locationsList: ToolDef = {
   name: 'inventory.locations.list',
   description: 'List all locations as a flat array.',
   inputSchema: { type: 'object', properties: {} },
-  handler: async () => {
-    const result = await getClient().inventory.locations.list.query();
-    return ok(result);
-  },
+  handler: async () => mapCallResult(await locations().list()),
 };
 
 const locationsCreate: ToolDef = {
@@ -60,12 +99,12 @@ const locationsCreate: ToolDef = {
   handler: async (args) => {
     const name = reqStr(args, 'name');
     if (!name) return toolError('Missing required field: name');
-    const result = await getClient().inventory.locations.create.mutate({
-      name,
-      parentId: nullStr(args, 'parentId'),
-      sortOrder: optNum(args, 'sortOrder'),
-    });
-    return ok(result);
+    const input: { name: string; parentId?: string | null; sortOrder?: number } = { name };
+    const parentId = nullStr(args, 'parentId');
+    if (parentId !== undefined) input.parentId = parentId;
+    const sortOrder = optNum(args, 'sortOrder');
+    if (sortOrder !== undefined) input.sortOrder = sortOrder;
+    return mapCallResult(await locations().create(input));
   },
 };
 
@@ -90,8 +129,7 @@ const locationsUpdate: ToolDef = {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
     const data = buildLocationPatch(args);
-    const result = await getClient().inventory.locations.update.mutate({ id, data });
-    return ok(result);
+    return mapCallResult(await locations().update({ id, data }));
   },
 };
 
@@ -113,11 +151,7 @@ const locationsDelete: ToolDef = {
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
-    const result = await getClient().inventory.locations.delete.mutate({
-      id,
-      force: optBool(args, 'force') ?? false,
-    });
-    return ok(result);
+    return mapCallResult(await locations().delete({ id, force: optBool(args, 'force') ?? false }));
   },
 };
 
