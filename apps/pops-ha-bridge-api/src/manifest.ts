@@ -1,3 +1,4 @@
+import { haBridgeAiTools } from './ai-tools/index.js';
 import {
   HA_ENTITIES_ADAPTER_NAME,
   HA_ENTITIES_ENTITY_TYPE,
@@ -15,9 +16,9 @@ import { validateSinkMappings } from './sinks/validator.js';
  * over the FTS5 virtual table (`ha_entities_fts`). The remaining
  * dimensions land in subsequent stories:
  *
- *   - US-03 fills `ai.tools` with the read-only `ha.entity.list` and
- *     `ha.entity.getState` entries.
- *   - US-04 adds `ha.entity.callService` to `ai.tools`.
+ *   - US-03 (this slice — partial) fills `ai.tools` with the
+ *     read-only `entityList` descriptor. `entityGetState` lands in a
+ *     follow-up; `ha.entity.callService` (US-04) stays out of scope.
  *
  * PRD-237 US-01 derives the `sinks.descriptors` block from the mapping
  * config (`src/sinks/mapping.ts`) — the same array drives the runtime
@@ -59,7 +60,7 @@ export function buildHaBridgeManifest(version: string): ManifestPayload {
         },
       ],
     },
-    ai: { tools: [] },
+    ai: { tools: haBridgeAiTools },
     sinks: {
       descriptors: mappings.map((mapping) => ({
         eventType: mapping.eventType,
