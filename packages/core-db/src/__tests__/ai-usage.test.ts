@@ -25,11 +25,13 @@ import {
   fetchAgedInferenceLogs,
   getBudget,
   getBudgetOrNull,
+  groupInferenceLogByDate,
   listBudgets,
   listInferenceDaily,
   listInferenceLogs,
   recordInferenceDaily,
   sumInferenceLogUsage,
+  summarizeInferenceLogStats,
   upsertBudget,
   type InferenceDailyAggregate,
 } from '../services/ai-usage.js';
@@ -211,6 +213,119 @@ describe('sumInferenceLogUsage', () => {
       totalCostUsd: 0,
       cachedCalls: 0,
     });
+  });
+});
+
+describe('summarizeInferenceLogStats', () => {
+  let db: CoreDb;
+  beforeEach(() => {
+    db = freshDb();
+    createInferenceLog(
+      db,
+      logBase({
+        createdAt: '2026-06-01T10:00:00.000Z',
+        inputTokens: 100,
+        outputTokens: 50,
+        costUsd: 0.001,
+        cached: 0,
+      })
+    );
+    createInferenceLog(
+      db,
+      logBase({
+        createdAt: '2026-06-02T10:00:00.000Z',
+        inputTokens: 300,
+        outputTokens: 100,
+        costUsd: 0.003,
+        cached: 0,
+      })
+    );
+    createInferenceLog(
+      db,
+      logBase({
+        createdAt: '2026-06-03T10:00:00.000Z',
+        inputTokens: 999,
+        outputTokens: 999,
+        costUsd: 0.999,
+        cached: 1,
+      })
+    );
+  });
+
+  it('excludes cached rows from cost + token sums but counts them as cache hits', () => {
+    const stats = summarizeInferenceLogStats(db, {});
+    expect(stats.totalApiCalls).toBe(2);
+    expect(stats.totalCacheHits).toBe(1);
+    expect(stats.totalInputTokens).toBe(400);
+    expect(stats.totalOutputTokens).toBe(150);
+    expect(stats.totalCost).toBeCloseTo(0.004, 6);
+  });
+
+  it('honours the [since, until] filter window', () => {
+    const stats = summarizeInferenceLogStats(db, {
+      since: '2026-06-02T00:00:00.000Z',
+      until: '2026-06-02T23:59:59.999Z',
+    });
+    expect(stats.totalApiCalls).toBe(1);
+    expect(stats.totalCacheHits).toBe(0);
+    expect(stats.totalCost).toBeCloseTo(0.003, 6);
+  });
+
+  it('returns zeros on an empty table', () => {
+    const stats = summarizeInferenceLogStats(freshDb(), {});
+    expect(stats).toEqual({
+      totalCost: 0,
+      totalApiCalls: 0,
+      totalCacheHits: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+    });
+  });
+});
+
+describe('groupInferenceLogByDate', () => {
+  let db: CoreDb;
+  beforeEach(() => {
+    db = freshDb();
+    createInferenceLog(
+      db,
+      logBase({ createdAt: '2026-03-01T10:00:00.000Z', costUsd: 0.001, cached: 0 })
+    );
+    createInferenceLog(
+      db,
+      logBase({ createdAt: '2026-03-01T11:00:00.000Z', costUsd: 0, cached: 1 })
+    );
+    createInferenceLog(
+      db,
+      logBase({ createdAt: '2026-03-10T10:00:00.000Z', costUsd: 0.002, cached: 0 })
+    );
+    createInferenceLog(
+      db,
+      logBase({ createdAt: '2026-03-20T10:00:00.000Z', costUsd: 0.003, cached: 0 })
+    );
+  });
+
+  it('returns one bucket per UTC date newest-first with cached-aware sums', () => {
+    const rows = groupInferenceLogByDate(db, {});
+    expect(rows.map((r) => r.date)).toEqual(['2026-03-20', '2026-03-10', '2026-03-01']);
+    const first = rows.find((r) => r.date === '2026-03-01');
+    expect(first?.totalApiCalls).toBe(1);
+    expect(first?.totalCacheHits).toBe(1);
+    expect(first?.totalCost).toBeCloseTo(0.001, 6);
+  });
+
+  it('honours startDate + endDate as inclusive YYYY-MM-DD bounds', () => {
+    const rows = groupInferenceLogByDate(db, {
+      startDate: '2026-03-05',
+      endDate: '2026-03-15',
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.date).toBe('2026-03-10');
+    expect(rows[0]?.totalCost).toBeCloseTo(0.002, 6);
+  });
+
+  it('returns an empty list on an empty table', () => {
+    expect(groupInferenceLogByDate(freshDb(), {})).toEqual([]);
   });
 });
 
