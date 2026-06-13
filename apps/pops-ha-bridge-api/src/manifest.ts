@@ -17,8 +17,10 @@ import { validateSinkMappings } from './sinks/validator.js';
  * dimensions land in subsequent stories:
  *
  *   - US-03 fills `ai.tools` with the read-only `entityList` and
- *     `entityGetState` descriptors. `ha.entity.callService` (US-04)
- *     stays out of scope.
+ *     `entityGetState` descriptors.
+ *   - US-04 adds the outbound `entityCallService` descriptor — the first
+ *     tool that lets the LLM drive HA via `call_service` over the
+ *     existing WebSocket connection.
  *
  * PRD-237 US-01 derives the `sinks.descriptors` block from the mapping
  * config (`src/sinks/mapping.ts`) — the same array drives the runtime

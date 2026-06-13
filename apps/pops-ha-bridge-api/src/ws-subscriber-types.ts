@@ -54,4 +54,11 @@ export interface HaWebSocketSubscriberOptions {
    * the PRD heuristic.
    */
   sinkQueueCap?: number;
+  /**
+   * PRD-229 US-04: timeout (ms) for outbound `call_service` requests.
+   * If HA does not acknowledge within the window the call resolves with
+   * `{ kind: 'rejected', reason: 'ha-offline' }`. Defaults to 10s per
+   * the PRD acceptance criteria.
+   */
+  callServiceTimeoutMs?: number;
 }

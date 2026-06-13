@@ -19,19 +19,20 @@
  * `HA_TOKEN` is never logged, never returned, and never serialised into
  * the manifest — it is only ever passed to the auth frame.
  */
-import { appendHistory, upsertEntity, type OpenedHaBridgeDb } from '@pops/ha-bridge-db';
+import { appendHistory, type OpenedHaBridgeDb } from '@pops/ha-bridge-db';
 
-import {
-  parseFrame,
-  stateObjectToMirrorInput,
-  type HaFrame,
-  type HaStateObject,
-} from './ha-frame.js';
+import { type CallServiceSender } from './ai-tools/call-service-sender.js';
+import { parseFrame } from './ha-frame.js';
 import { HistoryDebouncer } from './history-debouncer.js';
+import { type FireEventSender } from './sinks/fire-event-sender.js';
 import {
-  createFireEventSenderForSubscriber,
-  type FireEventSender,
-} from './sinks/fire-event-sender.js';
+  handleAuthFrame,
+  handleCallServiceResultFrame,
+  handleEventFrame,
+  handleSnapshotFrame,
+  type InboundContext,
+} from './ws-inbound.js';
+import { createSenderBundle } from './ws-senders.js';
 import {
   isPostAuthFailureClose,
   transitionToAuthFailed,
@@ -73,6 +74,7 @@ export class HaWebSocketSubscriber {
   private readonly logger: SubscriberLogger;
   private readonly debouncer: HistoryDebouncer;
   private readonly fireEventSender: FireEventSender;
+  private readonly callServiceSender: CallServiceSender;
   private socket: HaWebSocketLike | undefined;
   private connectionState: ConnectionState;
   private reconnectAttempt = 0;
@@ -105,12 +107,10 @@ export class HaWebSocketSubscriber {
         appendHistory(this.db.db, observation);
       },
     });
-    this.fireEventSender = createFireEventSenderForSubscriber({
-      liveSocket: {
-        isReady: () =>
-          this.connectionState.kind === 'connected' && this.socket !== undefined && this.subscribed,
-        send: (data) => this.socket?.send(data),
-      },
+    const bundle = createSenderBundle({
+      isLive: () =>
+        this.connectionState.kind === 'connected' && this.socket !== undefined && this.subscribed,
+      sendOnSocket: (data) => this.socket?.send(data),
       nextCommandId: () => {
         const id = this.commandId;
         this.commandId += 1;
@@ -118,8 +118,13 @@ export class HaWebSocketSubscriber {
       },
       logger: this.logger,
       now: this.now,
-      queueCap: options.sinkQueueCap,
+      setTimeoutImpl: this.setTimeoutImpl,
+      clearTimeoutImpl: this.clearTimeoutImpl,
+      sinkQueueCap: options.sinkQueueCap,
+      callServiceTimeoutMs: options.callServiceTimeoutMs,
     });
+    this.fireEventSender = bundle.fireEventSender;
+    this.callServiceSender = bundle.callServiceSender;
   }
 
   state(): ConnectionState {
@@ -129,6 +134,11 @@ export class HaWebSocketSubscriber {
   /** PRD-237 US-02: outbound sink — `sendFireEvent` + queue introspection. */
   get sinks(): FireEventSender {
     return this.fireEventSender;
+  }
+
+  /** PRD-229 US-04: outbound `ha.entity.callService` AI tool. */
+  get aiTools(): { callService: CallServiceSender } {
+    return { callService: this.callServiceSender };
   }
 
   start(): void {
@@ -145,6 +155,7 @@ export class HaWebSocketSubscriber {
       this.reconnectTimer = undefined;
     }
     this.debouncer.cancelAll();
+    this.callServiceSender.cancelAll({ kind: 'rejected', reason: 'ha-offline' });
     this.socket?.close();
     this.socket = undefined;
   }
@@ -166,60 +177,35 @@ export class HaWebSocketSubscriber {
   private handleMessage(raw: unknown): void {
     const frame = parseFrame(raw);
     if (frame === undefined) return;
-    if (this.handleAuthFrame(frame)) return;
-    if (this.handleSnapshotFrame(frame)) return;
-    this.handleEventFrame(frame);
+    const ctx = this.inboundContext();
+    if (handleAuthFrame(ctx, frame)) return;
+    if (handleSnapshotFrame(ctx, frame)) return;
+    if (handleCallServiceResultFrame(ctx, frame)) return;
+    handleEventFrame(ctx, frame);
   }
 
-  private handleAuthFrame(frame: HaFrame): boolean {
-    if (frame.type === 'auth_required') {
-      this.socket?.send(JSON.stringify({ type: 'auth', access_token: this.token }));
-      return true;
-    }
-    if (frame.type === 'auth_invalid') {
-      this.markAuthFailed();
-      return true;
-    }
-    if (frame.type === 'auth_ok') {
-      this.connectionState = { kind: 'connected', lastEventAt: this.now() };
-      this.reconnectAttempt = 0;
-      this.sendCommand({ type: 'get_states' });
-      return true;
-    }
-    return false;
-  }
-
-  private handleSnapshotFrame(frame: HaFrame): boolean {
-    if (frame.type !== 'result' || frame.success !== true || !Array.isArray(frame.result)) {
-      return false;
-    }
-    for (const state of frame.result as HaStateObject[]) {
-      const input = stateObjectToMirrorInput(state, this.now());
-      if (input !== undefined) upsertEntity(this.db.db, input);
-    }
-    if (!this.subscribed) {
-      this.subscribed = true;
-      this.sendCommand({ type: 'subscribe_events', event_type: 'state_changed' });
-      this.fireEventSender.flush();
-    }
-    return true;
-  }
-
-  private handleEventFrame(frame: HaFrame): void {
-    if (frame.type !== 'event' || frame.event?.event_type !== 'state_changed') return;
-    const newState = frame.event.data?.new_state;
-    if (newState === undefined || newState === null) return;
-    const now = this.now();
-    const input = stateObjectToMirrorInput(newState, now);
-    if (input === undefined) return;
-    upsertEntity(this.db.db, input);
-    this.connectionState = { kind: 'connected', lastEventAt: now };
-    this.debouncer.observe({
-      entityId: input.entityId,
-      state: input.state,
-      attributes: input.attributes,
-      observedAt: input.lastChanged,
-    });
+  private inboundContext(): InboundContext {
+    return {
+      db: this.db,
+      token: this.token,
+      now: this.now,
+      debouncer: this.debouncer,
+      fireEventSender: this.fireEventSender,
+      callServiceSender: this.callServiceSender,
+      send: (data) => this.socket?.send(data),
+      sendCommand: (payload) => this.sendCommand(payload),
+      setConnectionState: (state) => {
+        this.connectionState = state;
+      },
+      onAuthOk: () => {
+        this.reconnectAttempt = 0;
+      },
+      onAuthInvalid: () => this.markAuthFailed(),
+      isSubscribed: () => this.subscribed,
+      markSubscribed: () => {
+        this.subscribed = true;
+      },
+    };
   }
 
   private markAuthFailed(): void {
