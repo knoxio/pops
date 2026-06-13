@@ -44,6 +44,21 @@ export function getFinanceDrizzle(): FinanceDb {
 }
 
 /**
+ * Resolve the finance pillar's raw better-sqlite3 handle. Same lazy
+ * open + env-aware behaviour as `getFinanceDrizzle()` — exposed for
+ * the same lower-level needs (`.transaction()`, `.prepare()`,
+ * `.pragma()`) that the drizzle wrapper hides. Prefer
+ * `getFinanceDrizzle()` for everything that doesn't need it.
+ */
+export function getFinanceRawDb(): OpenedFinanceDb['raw'] {
+  if (isNamedEnvContext()) return getDb();
+  if (!financeDb) {
+    financeDb = openFinanceDb(resolveFinanceSqlitePath());
+  }
+  return financeDb.raw;
+}
+
+/**
  * Close the finance pillar's connection if it was opened. Idempotent —
  * safe to call from `closeDb()` on shutdown even when the finance
  * handle was never resolved.
