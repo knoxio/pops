@@ -118,6 +118,12 @@ export function unlink(db: InventoryDb, id: number): void {
 /**
  * List all documents linked to a given item. Paginated; returns the
  * matching slice plus the full count for the filter.
+ *
+ * Rows are ordered by `item_documents.id` ascending. The id column is the
+ * autoincrement PK, so this is insertion order — the contract callers
+ * implicitly relied on under the legacy inline implementation, now made
+ * explicit so pagination slices are deterministic across SQLite planner
+ * versions and storage layouts.
  */
 export function listForItem(
   db: InventoryDb,
