@@ -5,8 +5,10 @@ export {
   usePillarCallDynamicMutation,
   usePillarMutation,
   usePillarQuery,
+  usePillarUtils,
 } from './hooks.js';
 export type {
+  PillarUpdater,
   UsePillarCallDynamicMutationArgs,
   UsePillarCallDynamicMutationOptions,
   UsePillarCallDynamicMutationResult,
@@ -17,6 +19,7 @@ export type {
   UsePillarMutationResult,
   UsePillarQueryOptions,
   UsePillarQueryResult,
+  UsePillarUtilsResult,
 } from './hooks.js';
 export { pillarQueryKey } from './query-key.js';
 export { usePillarSubscriptionBridge, applySubscriptionEvent } from './subscription-bridge.js';
