@@ -1,0 +1,39 @@
+{
+  "name": "@pops/wire-conformance",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "wire-conformance": "./dist/cli.js"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./fixture": {
+      "types": "./dist/fixture/index.d.ts",
+      "default": "./dist/fixture/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "conformance": "vitest run"
+  },
+  "dependencies": {
+    "@pops/pillar-sdk": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.8",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

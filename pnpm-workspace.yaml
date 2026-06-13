@@ -32,3 +32,4 @@ packages:
   - 'packages/navigation'
   - 'packages/pillar-sdk'
   - 'packages/ui'
+  - 'packages/wire-conformance'
