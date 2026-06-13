@@ -26,6 +26,7 @@ export function validateManifestPayload(input: unknown): ValidationResult {
   const crossFieldIssues = [
     ...checkContractPackageMatchesPillar(parsed.data),
     ...checkContractTagMatchesVersion(parsed.data),
+    ...checkAiToolAllowedUriTypesAreDeclared(parsed.data),
   ];
 
   if (crossFieldIssues.length > 0) {
@@ -118,4 +119,29 @@ export function checkContractTagMatchesVersion(payload: ManifestPayload): Valida
       schemaPath: ['contract', 'tag'],
     },
   ];
+}
+
+/**
+ * Each AI tool's `allowedUriTypes` (if declared) must be a subset of the
+ * pillar's `uri.types`. PRD-200 business rule: a tool cannot reference a
+ * URI type the pillar does not actually expose.
+ */
+export function checkAiToolAllowedUriTypesAreDeclared(payload: ManifestPayload): ValidationIssue[] {
+  const declared = new Set(payload.uri.types);
+  const issues: ValidationIssue[] = [];
+  payload.ai.tools.forEach((tool, toolIndex) => {
+    const allowed = tool.allowedUriTypes;
+    if (!allowed) return;
+    allowed.forEach((uriType, uriIndex) => {
+      if (declared.has(uriType)) return;
+      const path: (string | number)[] = ['ai', 'tools', toolIndex, 'allowedUriTypes', uriIndex];
+      issues.push({
+        field: pathToDotted(path),
+        reason: `allowedUriTypes entry '${uriType}' is not declared in uri.types`,
+        got: uriType,
+        schemaPath: path,
+      });
+    });
+  });
+  return issues;
 }

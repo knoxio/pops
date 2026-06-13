@@ -34,6 +34,8 @@ const AI_TOOL = z
     name: CAMEL_IDENTIFIER,
     description: z.string().min(10).max(500),
     parameters: z.record(z.string(), z.unknown()),
+    allowedUriTypes: z.array(URI_TYPE).optional(),
+    requiredScopes: z.array(SETTINGS_KEY).optional(),
   })
   .strict();
 

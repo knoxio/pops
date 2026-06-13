@@ -195,6 +195,58 @@ describe('ManifestPayloadSchema', () => {
       const result = ManifestPayloadSchema.safeParse(m);
       expect(result.success).toBe(false);
     });
+
+    it('accepts a tool with allowedUriTypes and requiredScopes omitted', () => {
+      const result = ManifestPayloadSchema.safeParse(validManifest());
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a tool with valid allowedUriTypes', () => {
+      const m = validManifest();
+      m.ai.tools[0]!.allowedUriTypes = ['finance/transaction'];
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects a malformed allowedUriTypes entry', () => {
+      const m = validManifest();
+      m.ai.tools[0]!.allowedUriTypes = ['finance'];
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('accepts an empty allowedUriTypes array', () => {
+      const m = validManifest();
+      m.ai.tools[0]!.allowedUriTypes = [];
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a tool with valid requiredScopes', () => {
+      const m = validManifest();
+      m.ai.tools[0]!.requiredScopes = ['finance.write', 'finance.read'];
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects a malformed requiredScopes entry', () => {
+      const m = validManifest();
+      m.ai.tools[0]!.requiredScopes = ['Finance.Write'];
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an unknown field on a tool (strict mode)', () => {
+      const m = validManifest();
+      const input = {
+        ...m,
+        ai: {
+          tools: [{ ...m.ai.tools[0]!, sneaky: true }],
+        },
+      };
+      const result = ManifestPayloadSchema.safeParse(input);
+      expect(result.success).toBe(false);
+    });
   });
 
   describe('strict mode', () => {
