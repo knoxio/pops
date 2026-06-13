@@ -1,9 +1,28 @@
-import { and, count, eq } from 'drizzle-orm';
-
 /**
- * Item documents service — link/unlink Paperless-ngx documents to inventory items.
+ * Inventory documents read/write surface — PRD-176 PR 2 cutover.
+ *
+ * Read/write split during the migration window (mirrors PRD-175 PR 2 +
+ * PRD-173 PR 2 + PRD-179 PR 2):
+ *  - `listDocumentsForItem` is routed through `documentsService` from
+ *    `@pops/inventory-db` against the inventory pillar handle
+ *    (`getInventoryDrizzle()`). Reads now resolve from the canonical
+ *    package implementation.
+ *  - Writes (`linkDocument`, `unlinkDocument`) keep their inline drizzle
+ *    statements against the same handle to preserve the existing
+ *    read-after-write guarantee on the inventory pillar's SQLite file.
+ *    Both calls validate via in-line reads against the same handle, so
+ *    the writes stay inline until PRD-176 PR 3 collapses them onto
+ *    `documentsService.{link, unlink}`.
+ *
+ * The legacy router stays mounted in pops-api as a fall-through while the
+ * dispatcher cutover routes `inventory.documents.*` traffic to
+ * pops-inventory-api. Consumers (router.ts here) keep the same wire
+ * surface — no caller churn.
  */
+import { and, eq } from 'drizzle-orm';
+
 import { homeInventory, itemDocuments } from '@pops/db-types';
+import { documentsService } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
@@ -27,7 +46,6 @@ export function linkDocument(
 ): ItemDocumentRow {
   const db = getInventoryDrizzle();
 
-  // Validate item exists
   const [item] = db
     .select({ id: homeInventory.id })
     .from(homeInventory)
@@ -36,7 +54,6 @@ export function linkDocument(
 
   if (!item) throw new NotFoundError('Inventory item', itemId);
 
-  // Check for existing link
   const [existing] = db
     .select({ id: itemDocuments.id })
     .from(itemDocuments)
@@ -58,7 +75,6 @@ export function linkDocument(
     .values({ itemId, paperlessDocumentId, documentType, title: title ?? null })
     .run();
 
-  // Fetch the created row
   const [created] = db
     .select()
     .from(itemDocuments)
@@ -99,13 +115,5 @@ export function listDocumentsForItem(
   limit: number,
   offset: number
 ): DocumentListResult {
-  const db = getInventoryDrizzle();
-
-  const condition = eq(itemDocuments.itemId, itemId);
-
-  const rows = db.select().from(itemDocuments).where(condition).limit(limit).offset(offset).all();
-
-  const [countResult] = db.select({ total: count() }).from(itemDocuments).where(condition).all();
-
-  return { rows, total: countResult?.total ?? 0 };
+  return documentsService.listForItem(getInventoryDrizzle(), itemId, limit, offset);
 }
