@@ -15,7 +15,8 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "gen:nginx": "tsx scripts/generate-nginx-conf.ts",
-    "gen:nginx:check": "tsx scripts/generate-nginx-conf.ts --check"
+    "gen:nginx:check": "tsx scripts/generate-nginx-conf.ts --check",
+    "registry:register": "tsx scripts/register-with-registry.ts"
   },
   "dependencies": {
     "@pops/api-client": "workspace:*",
