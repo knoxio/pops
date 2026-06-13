@@ -43,6 +43,13 @@
       "when": 1782086400000,
       "tag": "0053_plexus_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782172800000,
+      "tag": "0054_embeddings_baseline",
+      "breakpoints": true
     }
   ]
 }

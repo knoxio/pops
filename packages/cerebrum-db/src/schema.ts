@@ -20,14 +20,18 @@
  *     conversation → engram junction table.
  *   - `plexusAdapters` / `plexusFilters` — PRD-180 external adapter
  *     registry + per-adapter ingestion filter rules (PRD-090).
- *
- * Downstream slices (embeddings) will add their tables here as their
- * service code lands.
+ *   - `embeddings` — PRD-076 dense-vector metadata table (one row per
+ *     content chunk). The companion `embeddings_vec` virtual table
+ *     (sqlite-vec `vec0`) is created imperatively in `openCerebrumDb`
+ *     when the extension is available; it has no drizzle table object
+ *     because virtual tables cannot be represented in the schema
+ *     builder.
  */
 export { engramIndex, engramLinks, engramScopes, engramTags, nudgeLog } from '@pops/db-types';
 export {
   conversationContext,
   conversations,
+  embeddings,
   gliaActions,
   gliaTrustState,
   messages,
