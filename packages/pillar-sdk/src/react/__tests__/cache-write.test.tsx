@@ -9,6 +9,7 @@ import {
   FakeRegistryTransport,
   jsonResponse,
 } from '../../client/__tests__/fixtures.js';
+import { PillarCallError } from '../../client/errors.js';
 import { __resetSharedPillarClient } from '../../client/factory.js';
 import { usePillarMutation, usePillarQuery, usePillarUtils } from '../hooks.js';
 import { PillarSdkProvider } from '../provider.js';
@@ -162,6 +163,134 @@ describe('usePillarUtils.invalidate', () => {
       const after = harness.calls.filter((c) => c.url.endsWith('finance.wishlist.list')).length;
       expect(after).toBeGreaterThan(before);
     });
+  });
+});
+
+describe('usePillarUtils.fetchQuery', () => {
+  beforeEach(() => __resetSharedPillarClient());
+  afterEach(() => __resetSharedPillarClient());
+
+  it('resolves with the procedure output and caches it under the pillar query key', async () => {
+    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
+    const payload = [{ id: 'wl-1', checked: false }];
+    const harness = buildHarness(transport, () => jsonResponse({ result: { data: payload } }));
+
+    const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
+
+    let value: readonly Item[] | undefined;
+    await act(async () => {
+      value = await result.current.fetchQuery<readonly Item[]>(['watchlist', 'list'], {
+        limit: 10,
+      });
+    });
+
+    expect(value).toEqual(payload);
+    const key = pillarQueryKey('finance', ['watchlist', 'list'], { limit: 10 });
+    expect(harness.queryClient.getQueryData(key)).toEqual(payload);
+  });
+
+  it('keys distinct inputs into separate cache slots', async () => {
+    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
+    let next = 0;
+    const harness = buildHarness(transport, () => {
+      next += 1;
+      return jsonResponse({ result: { data: [{ id: `wl-${next}`, checked: false }] } });
+    });
+
+    const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
+
+    await act(async () => {
+      await result.current.fetchQuery<readonly Item[]>(['watchlist', 'list'], { limit: 5 });
+      await result.current.fetchQuery<readonly Item[]>(['watchlist', 'list'], { limit: 25 });
+    });
+
+    const keyA = pillarQueryKey('finance', ['watchlist', 'list'], { limit: 5 });
+    const keyB = pillarQueryKey('finance', ['watchlist', 'list'], { limit: 25 });
+    const a = harness.queryClient.getQueryData<readonly Item[]>(keyA);
+    const b = harness.queryClient.getQueryData<readonly Item[]>(keyB);
+    expect(a).toEqual([{ id: 'wl-1', checked: false }]);
+    expect(b).toEqual([{ id: 'wl-2', checked: false }]);
+  });
+
+  it('serves the cached value without issuing a new network call when staleTime keeps it fresh', async () => {
+    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
+    const harness = buildHarness(transport, () =>
+      jsonResponse({ result: { data: [{ id: 'x' }] } })
+    );
+
+    const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
+
+    await act(async () => {
+      await result.current.fetchQuery<readonly { id: string }[]>(
+        ['watchlist', 'list'],
+        { limit: 10 },
+        { staleTime: 60_000 }
+      );
+    });
+    const callsAfterFirst = harness.calls.length;
+
+    await act(async () => {
+      await result.current.fetchQuery<readonly { id: string }[]>(
+        ['watchlist', 'list'],
+        { limit: 10 },
+        { staleTime: 60_000 }
+      );
+    });
+
+    expect(harness.calls.length).toBe(callsAfterFirst);
+  });
+
+  it('rejects with PillarCallError when the call fails', async () => {
+    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
+    const harness = buildHarness(
+      transport,
+      () =>
+        new Response(
+          JSON.stringify({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'boom' } }),
+          { status: 500, headers: { 'content-type': 'application/json' } }
+        )
+    );
+
+    const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
+
+    let captured: unknown;
+    await act(async () => {
+      try {
+        await result.current.fetchQuery<readonly Item[]>(['watchlist', 'list'], { limit: 10 });
+      } catch (e) {
+        captured = e;
+      }
+    });
+
+    expect(captured).toBeInstanceOf(PillarCallError);
+  });
+
+  it('forwards retry: false via opts so failing calls reject immediately', async () => {
+    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
+    const harness = buildHarness(
+      transport,
+      () =>
+        new Response(
+          JSON.stringify({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'boom' } }),
+          { status: 500, headers: { 'content-type': 'application/json' } }
+        )
+    );
+
+    const { result } = renderHook(() => usePillarUtils('finance'), { wrapper: harness.wrapper });
+
+    await act(async () => {
+      try {
+        await result.current.fetchQuery<readonly Item[]>(
+          ['watchlist', 'list'],
+          { limit: 10 },
+          { retry: false }
+        );
+      } catch {
+        // expected
+      }
+    });
+
+    expect(harness.calls.length).toBe(1);
   });
 });
 
