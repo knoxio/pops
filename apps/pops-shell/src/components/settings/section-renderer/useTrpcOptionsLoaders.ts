@@ -7,6 +7,12 @@ import type { SettingsManifest } from '@pops/types';
 type Options = { value: string; label: string }[];
 type Loaders = Record<string, () => Promise<Options>>;
 
+/**
+ * PRD-204 follow-up: this site builds tRPC procedure paths from manifest data at runtime,
+ * which is now supported by `@pops/pillar-sdk` `pillar(id).callDynamic(router, proc, input)`.
+ * Migration off the legacy `@/lib/trpc` traversal helper is tracked separately so the SDK
+ * affordance can ship in isolation.
+ */
 export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
   const utils = trpc.useUtils();
   // Keep a ref so loader closures always see the latest utils without causing

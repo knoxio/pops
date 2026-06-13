@@ -165,3 +165,54 @@ export function usePillarMutation<TInput = unknown, TOutput = unknown>(
 
   return { ...mutation, ...flags } as UsePillarMutationResult<TInput, TOutput>;
 }
+
+export type UsePillarCallDynamicQueryOptions = UsePillarQueryOptions<unknown>;
+export type UsePillarCallDynamicQueryResult = UsePillarQueryResult<unknown>;
+export type UsePillarCallDynamicMutationOptions = UsePillarMutationOptions<unknown, unknown>;
+export type UsePillarCallDynamicMutationResult = UsePillarMutationResult<unknown, unknown>;
+
+export type UsePillarCallDynamicQueryArgs = {
+  pillarId: string;
+  routerName: string;
+  procName: string;
+  input?: unknown;
+  options?: UsePillarCallDynamicQueryOptions;
+};
+
+export type UsePillarCallDynamicMutationArgs = {
+  pillarId: string;
+  routerName: string;
+  procName: string;
+  options?: UsePillarCallDynamicMutationOptions;
+};
+
+/**
+ * Runtime-path React Query hook. Use only when `routerName` / `procName`
+ * are not known at compile time (e.g. paths come from a settings
+ * manifest). For statically-known paths prefer
+ * {@link usePillarQuery} so call sites get end-to-end typing. Output is
+ * always `unknown` because the shape cannot be inferred from a runtime
+ * path; the caller is responsible for validating it.
+ *
+ * For mutations, see {@link usePillarCallDynamicMutation}. The two are
+ * separate hooks (not a `kind`-switched single hook) so React's
+ * rules-of-hooks aren't violated when call sites change their mind.
+ */
+export function usePillarCallDynamic(
+  args: UsePillarCallDynamicQueryArgs
+): UsePillarCallDynamicQueryResult {
+  const path: ProcedurePath = [args.routerName, args.procName];
+  return usePillarQuery<unknown>(args.pillarId, path, args.input, args.options ?? {});
+}
+
+/**
+ * Mutation-mode counterpart to {@link usePillarCallDynamic}. Returns
+ * `unknown` for both input and output; callers should validate the
+ * input shape before invoking `mutateAsync`.
+ */
+export function usePillarCallDynamicMutation(
+  args: UsePillarCallDynamicMutationArgs
+): UsePillarCallDynamicMutationResult {
+  const path: ProcedurePath = [args.routerName, args.procName];
+  return usePillarMutation<unknown, unknown>(args.pillarId, path, args.options ?? {});
+}

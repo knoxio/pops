@@ -13,7 +13,13 @@ function assertConnected(result: unknown): void {
   }
 }
 
-/** Dynamic traversal is unavoidable — procedure paths come from manifest data at runtime. */
+/**
+ * Dynamic traversal is unavoidable — procedure paths come from manifest data at runtime.
+ *
+ * PRD-204 follow-up: now unblocked by `@pops/pillar-sdk` `pillar(id).callDynamic(router, proc, input, kind)`
+ * plus `usePillarCallDynamic` / `usePillarCallDynamicMutation`. Migration is tracked separately
+ * so the SDK addition can ship in isolation.
+ */
 export function useTestActionHandler() {
   const utils = trpc.useUtils();
 
