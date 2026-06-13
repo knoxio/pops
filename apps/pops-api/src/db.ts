@@ -8,7 +8,6 @@ import { openCoreDb, type CoreDb, type OpenedCoreDb } from '@pops/core-db';
 
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
 import { closeCerebrumDb } from './db/cerebrum-handle.js';
-import { backfillCoreFromShared as backfillCoreImpl } from './db/core-backfill.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { closeFinanceDb } from './db/finance-handle.js';
 import { closeFoodDb } from './db/food-handle.js';
@@ -301,15 +300,6 @@ export function setCoreDb(next: OpenedCoreDb | null): OpenedCoreDb | null {
 // `./db/media-db-handle.ts` so this file stays under the eslint(max-lines)
 // cap. `closeDb` calls the close helper at shutdown; the rest are imported
 // directly by their consumers.
-
-/**
- * Re-exported convenience wrapper around the standalone backfill in
- * `./db/core-backfill.ts`. Resolves the singleton's raw handle and
- * forwards. See {@link backfillCoreImpl} for the documented contract.
- */
-export function backfillCoreFromShared(): void {
-  backfillCoreImpl(coreDb?.raw ?? null);
-}
 
 export function setDb(newDb: BetterSqlite3.Database): BetterSqlite3.Database | null {
   const prev = prodDb;
