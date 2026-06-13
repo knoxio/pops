@@ -53,7 +53,7 @@ Each `app-*` package migrates as a single PR per pillar once its writer move PR 
 
 | Tool file                        | Calls                                        | Target                                                   | Blocker                                                        |
 | -------------------------------- | -------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------- |
-| `tools/inventory-locations.ts`   | 7× `inventory.locations.*`                   | `pillar('inventory').locations.*`                        | none — manifest covers full surface                            |
+| `tools/inventory-locations.ts`   | 5× `inventory.locations.*`                   | `pillar('inventory').locations.*`                        | `core.registry.snapshot` precondition (PRD-161 alignment)      |
 | `tools/inventory-items.ts`       | `inventory.items.*` read                     | `pillar('inventory').items.*`                            | inventory-api items module migration                           |
 | `tools/inventory-items-write.ts` | `inventory.items.{create,update,…}`          | `pillar('inventory').items.*`                            | inventory-api items module migration                           |
 | `tools/inventory-fixtures*.ts`   | `inventory.fixtures.*`                       | `pillar('inventory').fixtures.*`                         | inventory-api fixtures module migration                        |
