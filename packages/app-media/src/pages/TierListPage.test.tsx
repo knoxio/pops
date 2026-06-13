@@ -61,63 +61,31 @@ const mockRefetch = vi.fn();
 const mockMutate = vi.fn();
 const mockCreateDimension = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      media: {
-        comparisons: {
-          getTierListMovies: { invalidate: vi.fn() },
-          getSmartPair: { invalidate: vi.fn() },
-          listDimensions: { invalidate: vi.fn() },
-        },
-      },
-    }),
-    media: {
-      comparisons: {
-        listDimensions: {
-          useQuery: (...args: unknown[]) => mockDimensionsQuery(...args),
-        },
-        getTierListMovies: {
-          useQuery: (...args: unknown[]) => {
-            const result = mockTierListQuery(...args);
-            return { ...result, refetch: mockRefetch, isFetching: false };
-          },
-        },
-        submitTierList: {
-          useMutation: () => ({
-            mutate: mockMutate,
-            isPending: false,
-            error: null,
-          }),
-        },
-        markStale: {
-          useMutation: () => ({
-            mutate: vi.fn(),
-            isPending: false,
-          }),
-        },
-        excludeFromDimension: {
-          useMutation: () => ({
-            mutate: vi.fn(),
-            isPending: false,
-          }),
-        },
-        blacklistMovie: {
-          useMutation: () => ({
-            mutate: vi.fn(),
-            isPending: false,
-          }),
-        },
-        createDimension: {
-          useMutation: () => ({
-            mutate: mockCreateDimension,
-            isPending: false,
-            error: null,
-          }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts?: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.listDimensions') return mockDimensionsQuery(input);
+    if (key === 'comparisons.getTierListMovies') {
+      const result = mockTierListQuery(input, opts ?? {});
+      return { ...result, refetch: mockRefetch, isFetching: false };
+    }
+    return { data: undefined, isLoading: false };
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'comparisons.submitTierList') {
+      return { mutate: mockMutate, isPending: false, error: null };
+    }
+    if (key === 'comparisons.createDimension') {
+      return { mutate: mockCreateDimension, isPending: false, error: null };
+    }
+    return { mutate: vi.fn(), isPending: false, error: null };
+  },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 import { TierListPage } from './TierListPage';

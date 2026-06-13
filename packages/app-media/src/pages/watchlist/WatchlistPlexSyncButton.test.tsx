@@ -31,16 +31,11 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     }
     return { mutate: vi.fn(), isPending: false };
   },
-}));
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      media: {
-        watchlist: { list: { invalidate: mockInvalidateWatchlist } },
-      },
-    }),
-  },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: mockInvalidateWatchlist,
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 const mockToastSuccess = vi.fn();

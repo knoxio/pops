@@ -29,23 +29,6 @@ const {
   mockTvRefetch: vi.fn(),
 }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      library: {
-        addMovie: { useMutation: () => ({ mutate: mockAddMovieMutation, isPending: false }) },
-        addTvShow: { useMutation: () => ({ mutate: mockAddTvMutation, isPending: false }) },
-      },
-      watchlist: {
-        add: { useMutation: () => ({ mutate: mockWatchlistAddMutation, isPending: false }) },
-      },
-      watchHistory: {
-        log: { useMutation: () => ({ mutate: mockWatchHistoryLogMutation, isPending: false }) },
-      },
-    },
-  },
-}));
-
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (
     _pillarId: string,
@@ -60,6 +43,20 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     if (key === 'tvShows.list') return mockLibraryTv(input, options);
     return { data: undefined, isLoading: false, error: null };
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'library.addMovie') return { mutate: mockAddMovieMutation, isPending: false };
+    if (key === 'library.addTvShow') return { mutate: mockAddTvMutation, isPending: false };
+    if (key === 'watchlist.add') return { mutate: mockWatchlistAddMutation, isPending: false };
+    if (key === 'watchHistory.log')
+      return { mutate: mockWatchHistoryLogMutation, isPending: false };
+    return { mutate: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 // Capture props passed to SearchResultCard for assertion

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { type Tier, type TierMovie } from '../../components/TierListBoard';
 import { useTierListSubmit } from '../../hooks/useTierListSubmit';
@@ -13,20 +13,54 @@ interface CreateDimensionInput {
   description: string | null;
 }
 
+interface DimensionRow {
+  id: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  sortOrder: number;
+}
+
+interface ListDimensionsResponse {
+  data: DimensionRow[];
+}
+
+interface TierMovieRow {
+  id: number;
+  title: string;
+  posterUrl: string | null;
+  score: number;
+  comparisonCount: number;
+  tierOverride: string | null;
+}
+
+interface TierListMoviesResponse {
+  data: TierMovieRow[];
+}
+
+interface CreateDimensionResponse {
+  data: { id: number };
+}
+
 function useDimensionsAndMovies() {
   const [selectedDimension, setSelectedDimension] = useState<number | null>(null);
 
-  const { data: dimensionsData, isLoading: dimsLoading } =
-    trpc.media.comparisons.listDimensions.useQuery();
+  const { data: dimensionsData, isLoading: dimsLoading } = usePillarQuery<ListDimensionsResponse>(
+    'media',
+    ['comparisons', 'listDimensions'],
+    undefined
+  );
 
   const activeDimensions = useMemo(
-    () => (dimensionsData?.data ?? []).filter((d: { active: boolean }) => d.active),
+    () => (dimensionsData?.data ?? []).filter((d) => d.active),
     [dimensionsData?.data]
   );
 
   const effectiveDimension = selectedDimension ?? activeDimensions[0]?.id ?? null;
 
-  const tierMoviesQuery = trpc.media.comparisons.getTierListMovies.useQuery(
+  const tierMoviesQuery = usePillarQuery<TierListMoviesResponse>(
+    'media',
+    ['comparisons', 'getTierListMovies'],
     { dimensionId: effectiveDimension ?? 0 },
     { enabled: effectiveDimension != null, staleTime: Infinity }
   );
@@ -56,6 +90,12 @@ function useDimensionsAndMovies() {
   };
 }
 
+interface CreateDimensionMutationInput {
+  name: string;
+  description: string | null;
+  active: boolean;
+}
+
 /**
  * Wires the `createDimension` mutation, dialog open state, and post-create
  * book-keeping. On success: invalidate `listDimensions`, select the new
@@ -65,10 +105,13 @@ function useCreateDimension(args: {
   setSelectedDimension: (id: number) => void;
   setDialogOpen: (open: boolean) => void;
 }) {
-  const utils = trpc.useUtils();
-  const createDimensionMutation = trpc.media.comparisons.createDimension.useMutation({
+  const utils = usePillarUtils('media');
+  const createDimensionMutation = usePillarMutation<
+    CreateDimensionMutationInput,
+    CreateDimensionResponse
+  >('media', ['comparisons', 'createDimension'], {
     onSuccess: (result) => {
-      void utils.media.comparisons.listDimensions.invalidate();
+      void utils.invalidate(['comparisons', 'listDimensions']);
       const newId = result?.data?.id;
       if (typeof newId === 'number') args.setSelectedDimension(newId);
       args.setDialogOpen(false);

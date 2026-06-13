@@ -8,8 +8,6 @@ const mockGenresQuery = vi.fn();
 const mockRefetch = vi.fn();
 const mockGetPendingDebriefs = vi.fn();
 
-const mockGetLeavingMovies = vi.fn();
-
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
     const key = path.join('.');
@@ -19,22 +17,11 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     return { data: undefined, isLoading: false };
   },
   usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
-}));
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        getPendingDebriefs: { useQuery: () => mockGetPendingDebriefs() },
-      },
-      rotation: {
-        getLeavingMovies: { useQuery: () => mockGetLeavingMovies() },
-        cancelLeaving: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-      },
-    },
-  },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 vi.mock('../components/MediaGrid', () => ({
@@ -120,7 +107,6 @@ describe('LibraryPage', () => {
     vi.clearAllMocks();
     mockGenresQuery.mockReturnValue({ data: { data: ['Drama', 'Sci-Fi'] } });
     mockGetPendingDebriefs.mockReturnValue({ data: null });
-    mockGetLeavingMovies.mockReturnValue({ data: [], isLoading: false });
   });
 
   describe('Loading state', () => {

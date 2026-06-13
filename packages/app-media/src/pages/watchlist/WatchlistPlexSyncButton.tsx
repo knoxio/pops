@@ -13,13 +13,13 @@
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { useSyncJob } from '../../hooks/useSyncJob';
 
 export function WatchlistPlexSyncButton() {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
   const sync = useSyncJob('plexSyncWatchlist');
   const previousStatusRef = useRef(sync.status);
 
@@ -30,7 +30,7 @@ export function WatchlistPlexSyncButton() {
   // history.
   useEffect(() => {
     if (previousStatusRef.current === 'running' && sync.status === 'completed') {
-      void utils.media.watchlist.list.invalidate();
+      void utils.invalidate(['watchlist', 'list']);
     }
     previousStatusRef.current = sync.status;
   }, [sync.status, utils]);

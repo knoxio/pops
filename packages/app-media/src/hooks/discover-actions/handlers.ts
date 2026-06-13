@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import type { trpc } from '@pops/api-client';
+import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
 
 import type { DiscoverActionResult } from '../useDiscoverCardActions';
 import type { useDiscoverMutations } from './discoverMutations';
@@ -9,11 +9,16 @@ import type { usePendingSet } from './usePendingSet';
 
 type Mutations = ReturnType<typeof useDiscoverMutations>;
 type Pending = ReturnType<typeof usePendingSet>;
-type TrpcUtils = ReturnType<typeof trpc.useUtils>;
+type PillarUtils = UsePillarUtilsResult;
+
+interface WatchlistStatusResponse {
+  onWatchlist: boolean;
+  entryId: number | null;
+}
 
 interface AddDeps {
   mutations: Mutations;
-  utils: TrpcUtils;
+  utils: PillarUtils;
   pending: Pending;
 }
 
@@ -49,7 +54,7 @@ export function useAddToWatchlist({ mutations, utils, pending }: AddDeps) {
         });
         if (wlResult.created) toast.success(`Added "${libResult.data.title}" to watchlist`);
         else toast.info(`"${libResult.data.title}" is already on watchlist`);
-        void utils.media.watchlist.list.invalidate();
+        void utils.invalidate(['watchlist', 'list']);
         return { ok: true, inLibrary: true, onWatchlist: true };
       } catch {
         toast.error('Failed to add to watchlist');
@@ -68,7 +73,7 @@ export function useRemoveFromWatchlist({ mutations, utils, pending }: AddDeps) {
       pending.add(tmdbId);
       try {
         const libResult = await mutations.addMovieMutation.mutateAsync({ tmdbId });
-        const status = await utils.media.watchlist.status.fetch({
+        const status = await utils.fetchQuery<WatchlistStatusResponse>(['watchlist', 'status'], {
           mediaType: 'movie',
           mediaId: libResult.data.id,
         });
@@ -78,7 +83,7 @@ export function useRemoveFromWatchlist({ mutations, utils, pending }: AddDeps) {
         }
         await mutations.removeWatchlistMutation.mutateAsync({ id: status.entryId });
         toast.success(`Removed "${libResult.data.title}" from watchlist`);
-        void utils.media.watchlist.list.invalidate();
+        void utils.invalidate(['watchlist', 'list']);
         return { ok: true, inLibrary: true, onWatchlist: false };
       } catch {
         toast.error('Failed to remove from watchlist');
@@ -103,9 +108,9 @@ export function useMarkWatched({ mutations, utils, pending }: AddDeps) {
         });
         toast.success(`Marked "${libResult.data.title}" as watched`);
         if (watchResult.watchlistRemoved) {
-          void utils.media.watchlist.list.invalidate();
+          void utils.invalidate(['watchlist', 'list']);
         }
-        void utils.media.comparisons.getPendingDebriefs.invalidate();
+        void utils.invalidate(['comparisons', 'getPendingDebriefs']);
         return {
           ok: true,
           inLibrary: true,
@@ -134,7 +139,7 @@ export function useMarkRewatched({ mutations, utils, pending }: AddDeps) {
           mediaId: libResult.data.id,
         });
         toast.success(`Logged rewatch of "${libResult.data.title}"`);
-        void utils.media.comparisons.getPendingDebriefs.invalidate();
+        void utils.invalidate(['comparisons', 'getPendingDebriefs']);
         return { ok: true, inLibrary: true, isWatched: true };
       } catch {
         toast.error('Failed to log rewatch');
@@ -154,7 +159,7 @@ export function useNotInterested({
   optimistic,
 }: {
   mutations: Mutations;
-  utils: TrpcUtils;
+  utils: PillarUtils;
   dismissing: Pending;
   optimistic: Pending;
 }) {
@@ -164,7 +169,7 @@ export function useNotInterested({
       dismissing.add(tmdbId);
       try {
         await mutations.dismissMutation.mutateAsync({ tmdbId });
-        void utils.media.discovery.getDismissed.invalidate();
+        void utils.invalidate(['discovery', 'getDismissed']);
         return { ok: true };
       } catch {
         optimistic.remove(tmdbId);

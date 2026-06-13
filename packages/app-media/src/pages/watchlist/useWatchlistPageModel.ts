@@ -1,12 +1,40 @@
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { parseTypeParam, type WatchlistEntry, type WatchlistFilter } from './types';
 import { useWatchlistDnd } from './useWatchlistDnd';
 import { useWatchlistMediaMaps } from './useWatchlistMediaMaps';
 import { useWatchlistMutations } from './useWatchlistMutations';
+
+interface WatchlistListResponse {
+  data: WatchlistEntry[];
+}
+
+interface MovieRow {
+  id: number;
+  title: string;
+  releaseDate: string | null;
+  posterUrl: string | null;
+  rotationStatus?: 'leaving' | 'protected' | null;
+  rotationExpiresAt?: string | null;
+}
+
+interface TvRow {
+  id: number;
+  name: string;
+  firstAirDate: string | null;
+  posterUrl: string | null;
+}
+
+interface MoviesListResponse {
+  data: MovieRow[];
+}
+
+interface TvShowsListResponse {
+  data: TvRow[];
+}
 
 function useFilterState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,16 +53,20 @@ function useWatchlistData(filter: WatchlistFilter) {
     data: watchlistData,
     isLoading,
     error: watchlistError,
-  } = trpc.media.watchlist.list.useQuery({
+  } = usePillarQuery<WatchlistListResponse>('media', ['watchlist', 'list'], {
     ...(filter !== 'all' ? { mediaType: filter } : {}),
     limit: 500,
   });
-  const { data: moviesData, isLoading: moviesLoading } = trpc.media.movies.list.useQuery({
-    limit: 500,
-  });
-  const { data: tvShowsData, isLoading: tvShowsLoading } = trpc.media.tvShows.list.useQuery({
-    limit: 500,
-  });
+  const { data: moviesData, isLoading: moviesLoading } = usePillarQuery<MoviesListResponse>(
+    'media',
+    ['movies', 'list'],
+    { limit: 500 }
+  );
+  const { data: tvShowsData, isLoading: tvShowsLoading } = usePillarQuery<TvShowsListResponse>(
+    'media',
+    ['tvShows', 'list'],
+    { limit: 500 }
+  );
   return {
     watchlistData,
     isLoading,

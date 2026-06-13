@@ -1694,9 +1694,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.7)
-      '@pops/api-client':
-        specifier: workspace:*
-        version: link:../api-client
       '@pops/navigation':
         specifier: workspace:*
         version: link:../navigation

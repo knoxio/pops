@@ -13,63 +13,40 @@ const mockInvalidate = vi.fn();
 const capturedOpts: Record<string, Record<string, unknown>> = {};
 
 vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
     const key = path.join('.');
     if (key === 'plex.getActiveSyncJobs') return { data: { data: [] }, isLoading: false };
     if (key === 'plex.getSyncJobStatus') return { data: undefined, isLoading: false };
+    if (key === 'watchlist.list') return mockWatchlistQuery(input);
+    if (key === 'movies.list') return mockMoviesQuery(input);
+    if (key === 'tvShows.list') return mockTvShowsQuery(input);
     return { data: undefined, isLoading: false };
   },
-  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
-}));
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      watchlist: {
-        list: { useQuery: (...args: unknown[]) => mockWatchlistQuery(...args) },
-        remove: {
-          useMutation: (opts: Record<string, unknown>) => {
-            capturedOpts.remove = opts;
-            return { mutate: mockRemoveMutate, isPending: false };
-          },
-        },
-        reorder: {
-          useMutation: (opts: Record<string, unknown>) => {
-            capturedOpts.reorder = opts;
-            return { mutate: mockReorderMutate, isPending: false };
-          },
-        },
-        update: {
-          useMutation: (opts: Record<string, unknown>) => {
-            capturedOpts.update = opts;
-            return { mutate: mockUpdateMutate, isPending: false, variables: null };
-          },
-        },
-      },
-      movies: {
-        list: { useQuery: (...args: unknown[]) => mockMoviesQuery(...args) },
-      },
-      tvShows: {
-        list: { useQuery: (...args: unknown[]) => mockTvShowsQuery(...args) },
-      },
-      plex: {
-        getActiveSyncJobs: {
-          useQuery: () => ({ data: { data: [] }, isLoading: false }),
-        },
-        getSyncJobStatus: {
-          useQuery: () => ({ data: undefined, isLoading: false }),
-        },
-        startSyncJob: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        watchlist: { list: { invalidate: mockInvalidate } },
-      },
-    }),
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, unknown> = {}
+  ) => {
+    const key = path.join('.');
+    if (key === 'watchlist.remove') {
+      capturedOpts.remove = opts;
+      return { mutate: mockRemoveMutate, isPending: false };
+    }
+    if (key === 'watchlist.reorder') {
+      capturedOpts.reorder = opts;
+      return { mutate: mockReorderMutate, isPending: false };
+    }
+    if (key === 'watchlist.update') {
+      capturedOpts.update = opts;
+      return { mutate: mockUpdateMutate, isPending: false, variables: null };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: mockInvalidate,
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 vi.mock('sonner', () => ({

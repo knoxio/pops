@@ -2,28 +2,21 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock trpc hooks
+import { PillarCallError } from '@pops/pillar-sdk/client';
+
 const mockMovieQuery = vi.fn();
 const mockWatchHistoryQuery = vi.fn();
 const mockGetStalenessQuery = vi.fn();
 const mockGetPendingDebriefsQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      movies: {
-        get: { useQuery: (...args: unknown[]) => mockMovieQuery(...args) },
-      },
-      watchHistory: {
-        list: { useQuery: (...args: unknown[]) => mockWatchHistoryQuery(...args) },
-      },
-      comparisons: {
-        getStaleness: { useQuery: (...args: unknown[]) => mockGetStalenessQuery(...args) },
-        getPendingDebriefs: {
-          useQuery: (...args: unknown[]) => mockGetPendingDebriefsQuery(...args),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'movies.get') return mockMovieQuery(input);
+    if (key === 'watchHistory.list') return mockWatchHistoryQuery(input);
+    if (key === 'comparisons.getStaleness') return mockGetStalenessQuery(input);
+    if (key === 'comparisons.getPendingDebriefs') return mockGetPendingDebriefsQuery();
+    return { data: undefined, isLoading: false };
   },
 }));
 
@@ -266,7 +259,7 @@ describe('MovieDetailPage', () => {
       mockMovieQuery.mockReturnValue({
         data: null,
         isLoading: false,
-        error: { data: { code: 'NOT_FOUND' }, message: 'Not found' },
+        error: new PillarCallError('media', { kind: 'not-found', pillar: 'media' }),
       });
       renderAtRoute('/media/movies/999');
       expect(screen.getByText('Movie not found')).toBeInTheDocument();
@@ -274,21 +267,22 @@ describe('MovieDetailPage', () => {
     });
 
     it('shows generic error for other errors', () => {
+      const err = new PillarCallError('media', { kind: 'unavailable', pillar: 'media' });
       mockMovieQuery.mockReturnValue({
         data: null,
         isLoading: false,
-        error: { data: { code: 'INTERNAL_SERVER_ERROR' }, message: 'Something broke' },
+        error: err,
       });
       renderAtRoute('/media/movies/1');
       expect(screen.getByText('Error')).toBeInTheDocument();
-      expect(screen.getByText('Something broke')).toBeInTheDocument();
+      expect(screen.getByText(err.message)).toBeInTheDocument();
     });
 
     it('shows back to library link on error', () => {
       mockMovieQuery.mockReturnValue({
         data: null,
         isLoading: false,
-        error: { data: { code: 'NOT_FOUND' }, message: 'Not found' },
+        error: new PillarCallError('media', { kind: 'not-found', pillar: 'media' }),
       });
       renderAtRoute('/media/movies/999');
       expect(screen.getByText('Back to library')).toHaveAttribute('href', '/media');
