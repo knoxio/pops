@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useEpisodeMonitoring } from './useEpisodeMonitoring';
 
@@ -9,6 +9,27 @@ interface SonarrSeries {
   exists: boolean;
   sonarrId?: number;
   seasons?: Array<{ seasonNumber: number; monitored: boolean }>;
+}
+
+interface CheckSeriesEnvelope {
+  data?: SonarrSeries;
+}
+
+interface SonarrEpisodeItem {
+  id: number;
+  episodeNumber: number;
+  monitored: boolean;
+  hasFile: boolean;
+}
+
+interface GetSeriesEpisodesEnvelope {
+  data: SonarrEpisodeItem[];
+}
+
+interface UpdateSeasonMonitoringInput {
+  sonarrId: number;
+  seasonNumber: number;
+  monitored: boolean;
 }
 
 interface UseSonarrMonitoringArgs {
@@ -20,7 +41,9 @@ interface UseSonarrMonitoringArgs {
  * Hook owning Sonarr (Arr) monitoring state for a single season.
  */
 export function useSonarrMonitoring({ tvdbId, seasonNum }: UseSonarrMonitoringArgs) {
-  const { data: sonarrData } = trpc.media.arr.checkSeries.useQuery(
+  const { data: sonarrData } = usePillarQuery<CheckSeriesEnvelope>(
+    'media',
+    ['arr', 'checkSeries'],
     { tvdbId: tvdbId ?? 0 },
     { enabled: !!tvdbId }
   );
@@ -30,15 +53,21 @@ export function useSonarrMonitoring({ tvdbId, seasonNum }: UseSonarrMonitoringAr
   const [seasonMonitored, setSeasonMonitored] = useState<boolean | null>(null);
   const effectiveMonitored = seasonMonitored ?? sonarrSeasonData?.monitored ?? false;
 
-  const seasonMonitorMutation = trpc.media.arr.updateSeasonMonitoring.useMutation({
-    onError: (err: { message: string }) => {
-      setSeasonMonitored((prev) => (prev != null ? !prev : null));
-      toast.error(`Failed to update monitoring: ${err.message}`);
-    },
-  });
+  const seasonMonitorMutation = usePillarMutation<UpdateSeasonMonitoringInput, unknown>(
+    'media',
+    ['arr', 'updateSeasonMonitoring'],
+    {
+      onError: (err) => {
+        setSeasonMonitored((prev) => (prev != null ? !prev : null));
+        toast.error(`Failed to update monitoring: ${err.message}`);
+      },
+    }
+  );
 
   const sonarrId = sonarrSeries?.sonarrId;
-  const { data: sonarrEpisodesData } = trpc.media.arr.getSeriesEpisodes.useQuery(
+  const { data: sonarrEpisodesData } = usePillarQuery<GetSeriesEpisodesEnvelope>(
+    'media',
+    ['arr', 'getSeriesEpisodes'],
     { sonarrId: sonarrId ?? 0, seasonNumber: seasonNum },
     { enabled: !!sonarrId }
   );

@@ -1,19 +1,80 @@
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
 import { useSetPageContext } from '@pops/navigation';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useEpisodeWatchState } from './useEpisodeWatchState';
 import { useSonarrMonitoring } from './useSonarrMonitoring';
 
+interface ShowEnvelope {
+  data: { id: number; name: string; tvdbId?: number } | null;
+}
+
+interface SeasonItem {
+  id: number;
+  seasonNumber: number;
+  name: string;
+  posterUrl: string | null;
+  airDate: string | null;
+  overview: string | null;
+}
+
+interface SeasonsEnvelope {
+  data: SeasonItem[];
+}
+
+interface EpisodeItem {
+  id: number;
+  episodeNumber: number;
+  name: string | null;
+  overview: string | null;
+  airDate: string | null;
+  runtime: number | null;
+}
+
+interface EpisodesEnvelope {
+  data: EpisodeItem[];
+}
+
+interface WatchHistoryItem {
+  id: number;
+  mediaId: number;
+}
+
+interface WatchHistoryEnvelope {
+  data: WatchHistoryItem[];
+}
+
+interface ProgressSeason {
+  seasonNumber: number;
+  watched: number;
+  total: number;
+}
+
+interface ProgressEnvelope {
+  data: {
+    seasons?: ProgressSeason[];
+  } | null;
+}
+
 function useSeasonQueries(showId: number, seasonNum: number) {
   const enabled = !Number.isNaN(showId);
-  const showQuery = trpc.media.tvShows.get.useQuery({ id: showId }, { enabled });
-  const seasonsQuery = trpc.media.tvShows.listSeasons.useQuery({ tvShowId: showId }, { enabled });
-  const season = seasonsQuery.data?.data?.find(
-    (s: { seasonNumber: number }) => s.seasonNumber === seasonNum
+  const showQuery = usePillarQuery<ShowEnvelope>(
+    'media',
+    ['tvShows', 'get'],
+    { id: showId },
+    { enabled }
   );
-  const episodesQuery = trpc.media.tvShows.listEpisodes.useQuery(
+  const seasonsQuery = usePillarQuery<SeasonsEnvelope>(
+    'media',
+    ['tvShows', 'listSeasons'],
+    { tvShowId: showId },
+    { enabled }
+  );
+  const season = seasonsQuery.data?.data?.find((s) => s.seasonNumber === seasonNum);
+  const episodesQuery = usePillarQuery<EpisodesEnvelope>(
+    'media',
+    ['tvShows', 'listEpisodes'],
     { seasonId: season?.id ?? 0 },
     { enabled: !!season?.id }
   );
@@ -21,11 +82,15 @@ function useSeasonQueries(showId: number, seasonNum: number) {
 }
 
 function useWatchHistoryAndProgress(showId: number, episodeIds: number[]) {
-  const watchHistoryQuery = trpc.media.watchHistory.list.useQuery(
+  const watchHistoryQuery = usePillarQuery<WatchHistoryEnvelope>(
+    'media',
+    ['watchHistory', 'list'],
     { mediaType: 'episode', limit: 500 },
     { enabled: episodeIds.length > 0 }
   );
-  const progressQuery = trpc.media.watchHistory.progress.useQuery(
+  const progressQuery = usePillarQuery<ProgressEnvelope>(
+    'media',
+    ['watchHistory', 'progress'],
     { tvShowId: showId },
     { enabled: !Number.isNaN(showId) }
   );
@@ -81,12 +146,12 @@ export function useSeasonDetailModel(showId: number, seasonNum: number) {
   const { showQuery, seasonsQuery, season, episodesQuery } = useSeasonQueries(showId, seasonNum);
 
   const episodes = episodesQuery.data?.data ?? [];
-  const episodeIds = useMemo(() => episodes.map((ep: { id: number }) => ep.id), [episodes]);
+  const episodeIds = useMemo(() => episodes.map((ep) => ep.id), [episodes]);
 
   const { watchHistoryQuery, progressQuery } = useWatchHistoryAndProgress(showId, episodeIds);
 
   const seasonProgress = progressQuery.data?.data?.seasons?.find(
-    (s: { seasonNumber: number }) => s.seasonNumber === seasonNum
+    (s) => s.seasonNumber === seasonNum
   );
 
   const { sonarr, watch } = useSeasonInteractions({

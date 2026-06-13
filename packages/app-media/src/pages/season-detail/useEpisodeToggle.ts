@@ -1,54 +1,73 @@
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
 
 interface UseEpisodeToggleArgs {
   watchHistory: Array<{ id: number; mediaId: number }> | undefined;
 }
 
-export function useEpisodeToggle({ watchHistory }: UseEpisodeToggleArgs) {
-  const utils = trpc.useUtils();
-  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
-  const deleteEntryToEpisode = useRef<Map<number, number>>(new Map());
+interface LogInput {
+  mediaType: 'episode';
+  mediaId: number;
+}
 
-  const removeToggling = (episodeId: number) => {
-    setTogglingIds((prev) => {
-      const next = new Set(prev);
-      next.delete(episodeId);
-      return next;
-    });
-  };
+interface DeleteInput {
+  id: number;
+}
 
-  const logMutation = trpc.media.watchHistory.log.useMutation({
+function useLogMutation(utils: UsePillarUtilsResult, removeToggling: (id: number) => void) {
+  return usePillarMutation<LogInput, unknown>('media', ['watchHistory', 'log'], {
     onSuccess: () => {
-      void utils.media.watchHistory.list.invalidate();
-      void utils.media.watchHistory.progress.invalidate();
-      void utils.media.tvShows.listSeasons.invalidate();
+      void utils.invalidate(['tvShows', 'listSeasons']);
     },
-    onError: (err: { message: string }) => {
+    onError: (err) => {
       toast.error(`Failed to log watch: ${err.message}`);
     },
-    onSettled: (_data: unknown, _err: unknown, variables: { mediaId: number }) => {
-      removeToggling(variables.mediaId);
+    onSettled: (_data, _err, variables) => {
+      if (variables) removeToggling(variables.mediaId);
     },
   });
+}
 
-  const deleteMutation = trpc.media.watchHistory.delete.useMutation({
+function useDeleteMutation(
+  utils: UsePillarUtilsResult,
+  deleteEntryToEpisode: React.RefObject<Map<number, number>>,
+  removeToggling: (id: number) => void
+) {
+  return usePillarMutation<DeleteInput, unknown>('media', ['watchHistory', 'delete'], {
     onSuccess: () => {
-      void utils.media.watchHistory.list.invalidate();
-      void utils.media.watchHistory.progress.invalidate();
-      void utils.media.tvShows.listSeasons.invalidate();
+      void utils.invalidate(['tvShows', 'listSeasons']);
     },
-    onError: (err: { message: string }) => {
+    onError: (err) => {
       toast.error(`Failed to remove watch: ${err.message}`);
     },
-    onSettled: (_data: unknown, _err: unknown, variables: { id: number }) => {
+    onSettled: (_data, _err, variables) => {
+      if (!variables) return;
       const episodeId = deleteEntryToEpisode.current.get(variables.id);
       deleteEntryToEpisode.current.delete(variables.id);
       if (episodeId != null) removeToggling(episodeId);
     },
   });
+}
+
+export function useEpisodeToggle({ watchHistory }: UseEpisodeToggleArgs) {
+  const utils = usePillarUtils('media');
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  const deleteEntryToEpisode = useRef<Map<number, number>>(new Map());
+
+  const removeToggling = useCallback((episodeId: number) => {
+    setTogglingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(episodeId);
+      return next;
+    });
+  }, []);
+
+  const logMutation = useLogMutation(utils, removeToggling);
+  const deleteMutation = useDeleteMutation(utils, deleteEntryToEpisode, removeToggling);
 
   const handleToggleWatched = useCallback(
     (episodeId: number, watched: boolean) => {
@@ -67,7 +86,7 @@ export function useEpisodeToggle({ watchHistory }: UseEpisodeToggleArgs) {
         removeToggling(episodeId);
       }
     },
-    [logMutation, deleteMutation, watchHistory]
+    [logMutation, deleteMutation, watchHistory, removeToggling]
   );
 
   return { togglingIds, handleToggleWatched };
