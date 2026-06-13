@@ -1,6 +1,6 @@
-import { trpc } from '@/lib/trpc';
 import { useCallback, useMemo } from 'react';
 
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { GroupRenderer } from './section-renderer/GroupRenderer';
@@ -10,6 +10,16 @@ import { useSettingsValues } from './section-renderer/useSettingsValues';
 import { useTrpcOptionsLoaders } from './section-renderer/useTrpcOptionsLoaders';
 
 import type { SettingsManifest } from '@pops/types';
+
+type GetBulkResult = { settings: Record<string, string> };
+type SetBulkInput = { entries: { key: string; value: string }[] };
+type SetBulkResult = { settings: Record<string, string> };
+
+function useBulkSettings(allKeys: string[]) {
+  const query = usePillarQuery<GetBulkResult>('core', ['settings', 'getBulk'], { keys: allKeys });
+  const mutation = usePillarMutation<SetBulkInput, SetBulkResult>('core', ['settings', 'setBulk']);
+  return { query, mutation };
+}
 
 interface SectionRendererProps {
   manifest: SettingsManifest;
@@ -43,8 +53,8 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
     [manifest.groups]
   );
 
-  const { data, isLoading } = trpc.core.settings.getBulk.useQuery({ keys: allKeys });
-  const setBulkMutation = trpc.core.settings.setBulk.useMutation();
+  const { query: bulkQuery, mutation: setBulkMutation } = useBulkSettings(allKeys);
+  const { data, isLoading, isUnavailable, isContractMismatch } = bulkQuery;
 
   const { values, setValues, loadedKeys } = useSettingsValues({ data, manifest });
   const trpcLoaders = useTrpcOptionsLoaders(manifest);
@@ -68,7 +78,7 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
     [onTestAction]
   );
 
-  if (isLoading) {
+  if (isLoading && !isUnavailable && !isContractMismatch) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-32 w-full" />

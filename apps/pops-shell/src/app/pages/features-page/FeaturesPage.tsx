@@ -1,6 +1,6 @@
-import { trpc } from '@/lib/trpc';
 import { useMemo } from 'react';
 
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { FeatureCard } from './FeatureCard';
@@ -8,6 +8,9 @@ import { FeatureCard } from './FeatureCard';
 import type { FeatureManifest, FeatureStatus } from '@pops/types';
 
 import type { FeaturesByManifest } from './types';
+
+type GetManifestsResult = { manifests: FeatureManifest[] };
+type ListFeaturesResult = { features: FeatureStatus[] };
 
 function groupByManifest(
   manifests: FeatureManifest[],
@@ -25,15 +28,25 @@ function groupByManifest(
 }
 
 export function FeaturesPage() {
-  const manifestsQuery = trpc.core.features.getManifests.useQuery();
-  const listQuery = trpc.core.features.list.useQuery();
+  const manifestsQuery = usePillarQuery<GetManifestsResult>(
+    'core',
+    ['features', 'getManifests'],
+    undefined
+  );
+  const listQuery = usePillarQuery<ListFeaturesResult>('core', ['features', 'list'], undefined);
 
   const grouped = useMemo<FeaturesByManifest[]>(
     () => groupByManifest(manifestsQuery.data?.manifests ?? [], listQuery.data?.features ?? []),
     [manifestsQuery.data?.manifests, listQuery.data?.features]
   );
 
-  if (manifestsQuery.isLoading || listQuery.isLoading) {
+  const corePillarMissing =
+    manifestsQuery.isUnavailable ||
+    listQuery.isUnavailable ||
+    manifestsQuery.isContractMismatch ||
+    listQuery.isContractMismatch;
+
+  if ((manifestsQuery.isLoading || listQuery.isLoading) && !corePillarMissing) {
     return (
       <div className="p-6 max-w-3xl mx-auto space-y-3">
         <Skeleton className="h-32 w-full" />
