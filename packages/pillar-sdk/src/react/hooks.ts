@@ -2,7 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { PillarCallError } from '../client/errors.js';
-import { pillar } from '../client/factory.js';
+import {
+  callProcedure,
+  failureFlagsFrom,
+  NO_FAILURE,
+  type ProcedurePath,
+} from './internal/call-procedure.js';
 import { usePillarSdkOptions } from './provider.js';
 import { pillarQueryKey } from './query-key.js';
 
@@ -13,52 +18,7 @@ import type {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { CallFailure, CallResult } from '../client/errors.js';
-
-type ProcedurePath = readonly [string, ...string[]];
-
-type FailureFlags = {
-  isContractMismatch: boolean;
-  isUnavailable: boolean;
-  isDegraded: boolean;
-};
-
-const NO_FAILURE: FailureFlags = {
-  isContractMismatch: false,
-  isUnavailable: false,
-  isDegraded: false,
-};
-
-function failureFlagsFrom(failure: CallFailure): FailureFlags {
-  return {
-    isContractMismatch: failure.kind === 'contract-mismatch',
-    isUnavailable: failure.kind === 'unavailable',
-    isDegraded: failure.kind === 'degraded',
-  };
-}
-
-function callProcedure<TOutput>(
-  pillarId: string,
-  path: ProcedurePath,
-  input: unknown,
-  options: ReturnType<typeof usePillarSdkOptions>
-): Promise<CallResult<TOutput>> {
-  const handle = pillar<unknown>(pillarId, options);
-  let node: unknown = handle;
-  for (let i = 0; i < path.length - 1; i += 1) {
-    const segment = path[i] as string;
-    node = (node as Record<string, unknown>)[segment];
-  }
-  const leaf = (node as Record<string, unknown>)[path[path.length - 1] as string];
-  if (typeof leaf !== 'function') {
-    throw new PillarCallError(pillarId, {
-      kind: 'contract-mismatch',
-      pillar: pillarId,
-      actual: path.join('.'),
-    });
-  }
-  return (leaf as (i: unknown) => Promise<CallResult<TOutput>>)(input);
-}
+import type { FailureFlags } from './internal/call-procedure.js';
 
 export type UsePillarQueryOptions<TOutput> = Omit<
   UseQueryOptions<TOutput, PillarCallError, TOutput, readonly unknown[]>,
@@ -125,7 +85,7 @@ export type UsePillarMutationResult<TInput, TOutput, TContext = unknown> = UseMu
  * (single-segment paths) invalidate the entire `[pillarId]` prefix.
  *
  * Optimistic updates: pass `onMutate` to snapshot + apply optimistic
- * cache writes (typically through {@link usePillarUtils}) and return a
+ * cache writes (typically through `usePillarUtils`) and return a
  * `previousData` blob. `onError` then receives that blob as its third
  * argument so callers can roll back. `onSettled` fires on both success
  * and failure paths. All four lifecycle callbacks (`onMutate`,
@@ -174,91 +134,12 @@ export function usePillarMutation<TInput = unknown, TOutput = unknown, TContext 
   return { ...mutation, ...flags } as UsePillarMutationResult<TInput, TOutput, TContext>;
 }
 
-export type PillarUpdater<TData> = (previous: TData | undefined) => TData | undefined;
-
-export type UsePillarUtilsResult = {
-  /**
-   * Imperatively write to the cache slot keyed by
-   * `pillarQueryKey(pillarId, routerPath, input)`. `updater` receives the
-   * current value (or `undefined` if the slot is empty) and returns the
-   * next value. Returning `undefined` removes the slot.
-   *
-   * Returns the snapshot of the previous value, suitable to stash in the
-   * `onMutate` context for rollback.
-   */
-  setData: <TData>(
-    routerPath: ProcedurePath,
-    input: unknown,
-    updater: PillarUpdater<TData>
-  ) => TData | undefined;
-  /**
-   * Invalidate cached queries under this pillar. With no argument,
-   * invalidates everything under `[pillarId]`. With `routerPath`,
-   * invalidates everything under `[pillarId, ...routerPath]` — pass the
-   * router prefix (e.g. `['wishlist']`) or the full procedure path
-   * (e.g. `['wishlist', 'list']`).
-   *
-   * Returns the underlying React Query promise so callers can `await`
-   * the invalidation if they want refetches to settle before continuing.
-   */
-  invalidate: (routerPath?: readonly string[]) => Promise<void>;
-};
-
-/**
- * Cache-write surface for a given pillar. Use alongside
- * {@link usePillarQuery} / {@link usePillarMutation} to drive optimistic
- * updates without hand-rolling query keys at the call site.
- *
- * Typical optimistic-update flow:
- * ```ts
- * const utils = usePillarUtils('media');
- * usePillarMutation<Input, Output, { previous: Item[] | undefined }>(
- *   'media',
- *   ['watchlist', 'toggle'],
- *   {
- *     onMutate: (vars) => {
- *       const previous = utils.setData<Item[]>(
- *         ['watchlist', 'list'],
- *         { limit: 10 },
- *         (prev) => applyToggle(prev, vars)
- *       );
- *       return { previous };
- *     },
- *     onError: (_err, _vars, ctx) => {
- *       utils.setData(['watchlist', 'list'], { limit: 10 }, () => ctx?.previous);
- *     },
- *   }
- * );
- * ```
- */
-export function usePillarUtils(pillarId: string): UsePillarUtilsResult {
-  const queryClient = useQueryClient();
-
-  const setData = useCallback(
-    <TData>(
-      routerPath: ProcedurePath,
-      input: unknown,
-      updater: PillarUpdater<TData>
-    ): TData | undefined => {
-      const key = pillarQueryKey(pillarId, routerPath, input);
-      const previous = queryClient.getQueryData<TData>(key);
-      const next = updater(previous);
-      queryClient.setQueryData<TData>(key, next);
-      return previous;
-    },
-    [queryClient, pillarId]
-  );
-
-  const invalidate = useCallback(
-    async (routerPath?: readonly string[]): Promise<void> => {
-      const queryKey = routerPath && routerPath.length > 0 ? [pillarId, ...routerPath] : [pillarId];
-      await queryClient.invalidateQueries({ queryKey });
-    },
-    [queryClient, pillarId]
-  );
-
-  return { setData, invalidate };
-}
+export {
+  usePillarUtils,
+  type PillarUpdater,
+  type UsePillarUtilsFetchQueryOptions,
+  type UsePillarUtilsResult,
+} from './use-pillar-utils.js';
 
 export type UsePillarCallDynamicQueryOptions = UsePillarQueryOptions<unknown>;
 export type UsePillarCallDynamicQueryResult = UsePillarQueryResult<unknown>;

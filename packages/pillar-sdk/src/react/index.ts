@@ -19,6 +19,7 @@ export type {
   UsePillarMutationResult,
   UsePillarQueryOptions,
   UsePillarQueryResult,
+  UsePillarUtilsFetchQueryOptions,
   UsePillarUtilsResult,
 } from './hooks.js';
 export { pillarQueryKey } from './query-key.js';
