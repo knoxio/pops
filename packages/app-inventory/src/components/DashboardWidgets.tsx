@@ -2,7 +2,7 @@ import { Clock, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Card,
   CardContent,
@@ -56,6 +56,16 @@ interface RecentItem {
   type: string | null;
   assetId: string | null;
   lastEditedTime: string;
+}
+
+interface DashboardResult {
+  data: {
+    itemCount: number;
+    totalReplacementValue: number;
+    totalResaleValue: number;
+    warrantiesExpiringSoon: number;
+    recentlyAdded: RecentItem[];
+  };
 }
 
 function RecentItemRow({ item, onOpen }: { item: RecentItem; onOpen: (id: string) => void }) {
@@ -115,10 +125,14 @@ function RecentlyAddedCard({
 export function DashboardWidgets() {
   const { t } = useTranslation('inventory');
   const navigate = useNavigate();
-  const { data, isLoading } = trpc.inventory.reports.dashboard.useQuery();
+  const { data, isLoading, isUnavailable, isContractMismatch } = usePillarQuery<DashboardResult>(
+    'inventory',
+    ['reports', 'dashboard'],
+    undefined
+  );
 
   if (isLoading) return <DashboardSkeleton />;
-  if (!data?.data) return null;
+  if (isUnavailable || isContractMismatch || !data?.data) return null;
 
   const {
     itemCount,

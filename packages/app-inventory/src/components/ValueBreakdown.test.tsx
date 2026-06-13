@@ -58,14 +58,12 @@ vi.mock('react-router', async () => {
 const mockValueByTypeQuery = vi.fn();
 const mockValueByLocationQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      reports: {
-        valueByType: { useQuery: () => mockValueByTypeQuery() },
-        valueByLocation: { useQuery: () => mockValueByLocationQuery() },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (pillarId: string, path: readonly string[]) => {
+    const leaf = path[path.length - 1];
+    if (leaf === 'valueByType') return mockValueByTypeQuery();
+    if (leaf === 'valueByLocation') return mockValueByLocationQuery();
+    throw new Error(`Unexpected pillar query: ${pillarId}.${path.join('.')}`);
   },
 }));
 

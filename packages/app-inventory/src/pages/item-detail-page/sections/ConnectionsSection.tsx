@@ -2,7 +2,7 @@ import { GitBranch, Link2, Network, Unlink } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,14 @@ function ConnectionRow({
   onDisconnect: () => void;
   isDisconnecting: boolean;
 }) {
-  const { data } = trpc.inventory.items.get.useQuery({ id: connectedItemId });
+  const { data } = usePillarQuery<{
+    data: {
+      itemName: string;
+      brand: string | null;
+      assetId: string | null;
+      type: string | null;
+    } | null;
+  }>('inventory', ['items', 'get'], { id: connectedItemId });
   const item = data?.data;
   const itemName = item?.itemName ?? connectedItemId;
 

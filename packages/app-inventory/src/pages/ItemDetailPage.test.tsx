@@ -60,6 +60,20 @@ vi.mock('../components/ConnectionGraph', () => ({
   ConnectionGraph: () => <div data-testid="connection-graph" />,
 }));
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'items.get') return mockItemQuery(input);
+    if (key === 'connections.listForItem') return mockConnectionsQuery(input);
+    return { data: undefined, isLoading: false, isUnavailable: false, isContractMismatch: false };
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[], opts?: unknown) => {
+    const key = path.join('.');
+    if (key === 'connections.disconnect') return mockDisconnectMutation(opts);
+    return { mutate: vi.fn(), isPending: false };
+  },
+}));
+
 // Mock react-markdown
 vi.mock('react-markdown', () => ({
   default: ({ children }: { children: string }) => (

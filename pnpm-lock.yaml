@@ -1429,6 +1429,9 @@ importers:
       '@pops/navigation':
         specifier: workspace:*
         version: link:../navigation
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../types

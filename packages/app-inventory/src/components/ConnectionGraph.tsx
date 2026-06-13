@@ -1,13 +1,20 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { useGraphInteraction } from './connection-graph/useGraphInteraction';
 import { useGraphSimulation } from './connection-graph/useGraphSimulation';
 
 import type { GraphLink, GraphNode, Transform } from './connection-graph/types';
+
+interface GraphResult {
+  data: {
+    nodes: Array<{ id: string; itemName: string; assetId: string | null; type: string | null }>;
+    edges: Array<{ source: string; target: string }>;
+  };
+}
 
 export interface ConnectionGraphProps {
   itemId: string;
@@ -21,7 +28,12 @@ function GraphCanvas({ itemId }: { itemId: string }): React.ReactElement {
   const linksRef = useRef<GraphLink[]>([]);
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
 
-  const { data } = trpc.inventory.connections.graph.useQuery({ itemId }, { enabled: !!itemId });
+  const { data } = usePillarQuery<GraphResult>(
+    'inventory',
+    ['connections', 'graph'],
+    { itemId },
+    { enabled: !!itemId }
+  );
 
   useGraphSimulation({
     rawData: data?.data ?? null,
@@ -55,12 +67,17 @@ function GraphCanvas({ itemId }: { itemId: string }): React.ReactElement {
 }
 
 export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactElement {
-  const { data, isLoading, error } = trpc.inventory.connections.graph.useQuery(
+  const { data, isLoading, error, isUnavailable, isContractMismatch } = usePillarQuery<GraphResult>(
+    'inventory',
+    ['connections', 'graph'],
     { itemId },
     { enabled: !!itemId }
   );
 
   if (isLoading) return <Skeleton className="h-100 w-full rounded-lg" />;
+  if (isUnavailable || isContractMismatch) {
+    return <p className="text-sm text-muted-foreground">Connection graph unavailable.</p>;
+  }
   if (error) return <p className="text-sm text-destructive">Failed to load connection graph.</p>;
   if (!data?.data.nodes.length || data.data.nodes.length < 2) {
     return (

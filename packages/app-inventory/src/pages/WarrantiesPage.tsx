@@ -3,13 +3,27 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { PageHeader } from '@pops/ui';
 
 import { CollapsibleSection, ExpiringSection } from './warranties-page/sections';
 import { EmptyState, ErrorState, WarrantySkeleton } from './warranties-page/states';
 import { categorizeWarranties, type WarrantyTiers } from './warranties-page/utils';
 import { WarrantyRow } from './warranties-page/WarrantyRow';
+
+import type { WarrantyItem } from './warranties-page/types';
+
+interface WarrantiesResult {
+  data: WarrantyItem[];
+}
+
+interface PaperlessStatusResult {
+  data: {
+    configured: boolean;
+    available: boolean;
+    baseUrl: string | null;
+  };
+}
 
 interface WarrantyContentProps {
   tiers: WarrantyTiers;
@@ -108,8 +122,13 @@ function WarrantiesBody({
 export function WarrantiesPage() {
   const { t } = useTranslation('inventory');
   const navigate = useNavigate();
-  const { data, isLoading, isError, refetch } = trpc.inventory.reports.warranties.useQuery();
-  const { data: paperlessData } = trpc.inventory.paperless.status.useQuery();
+  const { data, isLoading, isError, refetch, isUnavailable, isContractMismatch } =
+    usePillarQuery<WarrantiesResult>('inventory', ['reports', 'warranties'], undefined);
+  const { data: paperlessData } = usePillarQuery<PaperlessStatusResult>(
+    'inventory',
+    ['paperless', 'status'],
+    undefined
+  );
   const paperlessBaseUrl = paperlessData?.data?.available ? paperlessData.data.baseUrl : null;
   const tiers = useMemo(() => categorizeWarranties(data?.data ?? []), [data]);
 
@@ -125,7 +144,7 @@ export function WarrantiesPage() {
       />
       <WarrantiesBody
         isLoading={isLoading}
-        isError={isError}
+        isError={isError || isUnavailable || isContractMismatch}
         tiers={tiers}
         paperlessBaseUrl={paperlessBaseUrl}
         onRetry={() => refetch()}

@@ -10,14 +10,9 @@ vi.mock('react-router', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      connections: {
-        trace: { useQuery: (...args: unknown[]) => mockTraceQuery(...args) },
-      },
-    },
-  },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) =>
+    mockTraceQuery({ pillarId, path: [...path], input }),
 }));
 
 vi.mock('@pops/ui', async (importOriginal) => {
@@ -62,9 +57,20 @@ function renderPanel(itemId = 'item-1') {
   );
 }
 
+function queryResult(extra: Record<string, unknown>) {
+  return {
+    data: undefined,
+    isLoading: false,
+    error: null,
+    isUnavailable: false,
+    isContractMismatch: false,
+    ...extra,
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockTraceQuery.mockReturnValue({ data: undefined, isLoading: false, error: null });
+  mockTraceQuery.mockReturnValue(queryResult({}));
 });
 
 describe('ConnectionTracePanel — loading', () => {

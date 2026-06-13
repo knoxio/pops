@@ -5,20 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockWarrantiesQuery = vi.fn();
 const mockPaperlessStatusQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      reports: {
-        warranties: {
-          useQuery: (...args: unknown[]) => mockWarrantiesQuery(...args),
-        },
-      },
-      paperless: {
-        status: {
-          useQuery: (...args: unknown[]) => mockPaperlessStatusQuery(...args),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'reports.warranties') return mockWarrantiesQuery();
+    if (key === 'paperless.status') return mockPaperlessStatusQuery();
+    throw new Error(`Unexpected pillar query: ${pillarId}.${key}`);
   },
 }));
 

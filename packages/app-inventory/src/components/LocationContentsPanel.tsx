@@ -2,67 +2,19 @@ import { Package, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
 import { AssetIdBadge, Button, ContainerPanel, formatAUD, Skeleton, TypeBadge } from '@pops/ui';
+
+import { collectDescendantIds, useLocationItems } from './location-contents-panel-data';
 
 import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
 
-interface LocationTreeNode {
-  id: string;
-  name: string;
-  parentId: string | null;
-  sortOrder: number;
-  children: LocationTreeNode[];
-}
-
-function collectDescendantIds(node: LocationTreeNode): string[] {
-  const ids: string[] = [];
-  for (const child of node.children) {
-    ids.push(child.id);
-    ids.push(...collectDescendantIds(child));
-  }
-  return ids;
-}
+import type { LocationTreeNode } from './location-contents-panel-data';
 
 export interface LocationContentsPanelProps {
   locationId: string;
   locationName: string;
   breadcrumb: string[];
   node: LocationTreeNode;
-}
-
-function useLocationItems(
-  locationId: string,
-  descendantIds: string[],
-  includeSubLocations: boolean
-) {
-  const hasSubLocations = descendantIds.length > 0;
-  const { data: directData, isLoading: directLoading } = trpc.inventory.items.list.useQuery({
-    locationId,
-    limit: 200,
-  });
-  const subLocationQueries = trpc.useQueries((t) =>
-    includeSubLocations && hasSubLocations
-      ? descendantIds.map((id) => t.inventory.items.list({ locationId: id, limit: 200 }))
-      : []
-  );
-
-  const subLocationItems = useMemo(() => {
-    if (!includeSubLocations || !hasSubLocations) return [];
-    return subLocationQueries.flatMap((q) => q.data?.data ?? []);
-  }, [includeSubLocations, hasSubLocations, subLocationQueries]);
-
-  const allItems = useMemo(() => {
-    const direct = directData?.data ?? [];
-    if (!includeSubLocations) return direct;
-    return [...direct, ...subLocationItems];
-  }, [directData, includeSubLocations, subLocationItems]);
-
-  const isLoading =
-    directLoading ||
-    (includeSubLocations && hasSubLocations && subLocationQueries.some((q) => q.isLoading));
-
-  return { allItems, isLoading, hasSubLocations };
 }
 
 function ItemsList({
