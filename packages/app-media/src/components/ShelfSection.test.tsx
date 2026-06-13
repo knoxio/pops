@@ -5,18 +5,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockGetShelfPageFetch = vi.fn();
-const mockUseUtils = vi.fn().mockReturnValue({
-  media: {
-    discovery: {
-      getShelfPage: { fetch: mockGetShelfPageFetch },
-    },
-  },
-});
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => mockUseUtils(),
-  },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: vi.fn(),
+    fetchQuery: (path: readonly string[], input: unknown) => {
+      const key = path.join('.');
+      if (key === 'discovery.getShelfPage') return mockGetShelfPageFetch(input);
+      return Promise.resolve(undefined);
+    },
+  }),
 }));
 
 // Mock IntersectionObserver — trigger callback immediately to make sections visible

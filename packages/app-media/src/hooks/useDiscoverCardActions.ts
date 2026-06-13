@@ -4,7 +4,7 @@
  * Encapsulates add-to-library, watchlist, watched, rewatch, and dismiss mutations
  * so they can be reused across the discover page and dynamic shelf sections.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { useDiscoverMutations } from './discover-actions/discoverMutations';
 import {
@@ -53,7 +53,7 @@ export interface DiscoverCardActions {
 }
 
 export function useDiscoverCardActions(): DiscoverCardActions {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
   const mutations = useDiscoverMutations();
 
   const addingToLibrary = usePendingSet();

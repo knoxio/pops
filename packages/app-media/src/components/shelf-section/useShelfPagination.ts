@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarUtils } from '@pops/pillar-sdk/react';
 
 import type { ShelfItem } from './types';
 
 const LOAD_MORE_LIMIT = 20;
+
+interface ShelfPageResponse {
+  items: ShelfItem[];
+  hasMore: boolean;
+  totalCount: number | null;
+}
 
 function useVisibilityObserver() {
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -42,7 +48,7 @@ export function useShelfPagination({
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(initialItems.length);
 
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
 
   const patchItem = useCallback((tmdbId: number, patch: Partial<ShelfItem>) => {
     setItems((prev) => prev.map((i) => (i.tmdbId === tmdbId ? { ...i, ...patch } : i)));
@@ -51,7 +57,7 @@ export function useShelfPagination({
   const handleShowMore = useCallback(async () => {
     setLoadingMore(true);
     try {
-      const data = await utils.media.discovery.getShelfPage.fetch({
+      const data = await utils.fetchQuery<ShelfPageResponse>(['discovery', 'getShelfPage'], {
         shelfId,
         limit: LOAD_MORE_LIMIT,
         offset,

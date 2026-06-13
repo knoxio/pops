@@ -1,4 +1,4 @@
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import {
   makeKey,
@@ -10,6 +10,36 @@ import {
 } from './useSearchAddHandlers';
 import { useSearchAddState } from './useSearchAddState';
 
+interface AddMovieInput {
+  tmdbId: number;
+}
+
+interface AddMovieResponse {
+  data: { id: number; title: string };
+  created: boolean;
+  message?: string;
+}
+
+interface AddTvShowInput {
+  tvdbId: number;
+}
+
+interface AddTvShowResponse {
+  data: { show: { id: number; name: string } };
+  created: boolean;
+  message?: string;
+}
+
+interface WatchlistAddInput {
+  mediaType: 'movie';
+  mediaId: number;
+}
+
+interface WatchHistoryLogInput {
+  mediaType: 'movie';
+  mediaId: number;
+}
+
 /**
  * Encapsulates "Add to library" mutations for movies and TV shows, plus
  * compound flows ("watchlist + library", "watched + library") and the
@@ -17,10 +47,22 @@ import { useSearchAddState } from './useSearchAddState';
  */
 export function useSearchAddActions() {
   const state = useSearchAddState();
-  const addMovieMutation = trpc.media.library.addMovie.useMutation();
-  const addTvShowMutation = trpc.media.library.addTvShow.useMutation();
-  const watchlistAddMutation = trpc.media.watchlist.add.useMutation();
-  const watchHistoryLogMutation = trpc.media.watchHistory.log.useMutation();
+  const addMovieMutation = usePillarMutation<AddMovieInput, AddMovieResponse>('media', [
+    'library',
+    'addMovie',
+  ]);
+  const addTvShowMutation = usePillarMutation<AddTvShowInput, AddTvShowResponse>('media', [
+    'library',
+    'addTvShow',
+  ]);
+  const watchlistAddMutation = usePillarMutation<WatchlistAddInput, unknown>('media', [
+    'watchlist',
+    'add',
+  ]);
+  const watchHistoryLogMutation = usePillarMutation<WatchHistoryLogInput, unknown>('media', [
+    'watchHistory',
+    'log',
+  ]);
 
   const handlerArgs = {
     state,

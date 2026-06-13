@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
 
 import type { WatchlistEntry } from './types';
 
@@ -10,50 +12,77 @@ interface MutationsArgs {
   setOptimisticOrder: (v: WatchlistEntry[] | null) => void;
 }
 
-export function useWatchlistMutations({ setIsReordering, setOptimisticOrder }: MutationsArgs) {
-  const utils = trpc.useUtils();
-  const [removingId, setRemovingId] = useState<number | null>(null);
-  const [updateErrorId, setUpdateErrorId] = useState<number | null>(null);
-  const [updateErrorMsg, setUpdateErrorMsg] = useState<string | null>(null);
+interface RemoveInput {
+  id: number;
+}
 
-  const removeMutation = trpc.media.watchlist.remove.useMutation({
+interface UpdateInput {
+  id: number;
+  data: { notes: string | null };
+}
+
+interface ReorderInput {
+  items: Array<{ id: number; priority: number }>;
+}
+
+function useRemoveMutation(utils: UsePillarUtilsResult, setRemovingId: (v: number | null) => void) {
+  return usePillarMutation<RemoveInput, unknown>('media', ['watchlist', 'remove'], {
     onSuccess: () => {
       setRemovingId(null);
       toast.success('Removed from watchlist');
-      void utils.media.watchlist.list.invalidate();
+      void utils.invalidate(['watchlist', 'list']);
     },
-    onError: (err: { message: string }) => {
+    onError: (err) => {
       setRemovingId(null);
       toast.error(`Failed to remove: ${err.message}`);
     },
   });
+}
 
-  const updateMutation = trpc.media.watchlist.update.useMutation({
+function useUpdateMutation(
+  utils: UsePillarUtilsResult,
+  setUpdateErrorId: (v: number | null) => void,
+  setUpdateErrorMsg: (v: string | null) => void
+) {
+  return usePillarMutation<UpdateInput, unknown>('media', ['watchlist', 'update'], {
     onSuccess: () => {
       setUpdateErrorId(null);
       setUpdateErrorMsg(null);
       toast.success('Notes saved');
-      void utils.media.watchlist.list.invalidate();
+      void utils.invalidate(['watchlist', 'list']);
     },
-    onError: (error: { message: string }) => {
+    onError: (error) => {
       setUpdateErrorMsg(error.message ?? 'Failed to save notes');
       toast.error(`Failed to save notes: ${error.message}`);
     },
   });
+}
 
-  const reorderMutation = trpc.media.watchlist.reorder.useMutation({
+function useReorderMutation(utils: UsePillarUtilsResult, args: MutationsArgs) {
+  return usePillarMutation<ReorderInput, unknown>('media', ['watchlist', 'reorder'], {
     onSuccess: () => {
-      setOptimisticOrder(null);
-      void utils.media.watchlist.list.invalidate();
+      args.setOptimisticOrder(null);
+      void utils.invalidate(['watchlist', 'list']);
     },
-    onError: (err: { message: string }) => {
-      setOptimisticOrder(null);
+    onError: (err) => {
+      args.setOptimisticOrder(null);
       toast.error(`Failed to reorder: ${err.message}`);
     },
     onSettled: () => {
-      setIsReordering(false);
+      args.setIsReordering(false);
     },
   });
+}
+
+export function useWatchlistMutations(args: MutationsArgs) {
+  const utils = usePillarUtils('media');
+  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [updateErrorId, setUpdateErrorId] = useState<number | null>(null);
+  const [updateErrorMsg, setUpdateErrorMsg] = useState<string | null>(null);
+
+  const removeMutation = useRemoveMutation(utils, setRemovingId);
+  const updateMutation = useUpdateMutation(utils, setUpdateErrorId, setUpdateErrorMsg);
+  const reorderMutation = useReorderMutation(utils, args);
 
   return {
     removeMutation,

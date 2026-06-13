@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router';
 
+import { isNotFound } from '@pops/pillar-sdk/client';
 import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
 
 import { MovieDetailContent } from './movie-detail/MovieDetailContent';
@@ -18,14 +19,15 @@ function InvalidIdView() {
   );
 }
 
-function ErrorView({ error }: { error: { data?: { code?: string } | null; message: string } }) {
-  const is404 = error.data?.code === 'NOT_FOUND';
+function ErrorView({ error }: { error: unknown }) {
+  const is404 = isNotFound(error);
+  const message = error instanceof Error ? error.message : String(error);
   return (
     <div className="p-6">
       <Alert variant="destructive">
         <AlertTitle>{is404 ? 'Movie not found' : 'Error'}</AlertTitle>
         <AlertDescription>
-          {is404 ? "This movie doesn't exist in your library." : error.message}
+          {is404 ? "This movie doesn't exist in your library." : message}
         </AlertDescription>
       </Alert>
       <Link to="/media" className="mt-4 inline-block text-sm text-primary underline">
