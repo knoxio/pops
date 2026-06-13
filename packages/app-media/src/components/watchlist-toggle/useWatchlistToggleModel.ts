@@ -1,80 +1,94 @@
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
 
 type ApiMediaType = 'movie' | 'tv_show';
 
-interface OptimisticArgs {
-  apiMediaType: ApiMediaType;
-  mediaId: number;
-  utils: ReturnType<typeof trpc.useUtils>;
+type WatchlistStatus = { onWatchlist: boolean; entryId: number | null };
+
+type WatchlistMutationContext = { previous: WatchlistStatus | undefined };
+
+function snapshotAndApply(
+  utils: UsePillarUtilsResult,
+  apiMediaType: ApiMediaType,
+  mediaId: number,
+  next: WatchlistStatus
+): WatchlistMutationContext {
+  const previous = utils.setData<WatchlistStatus>(
+    ['watchlist', 'status'],
+    { mediaType: apiMediaType, mediaId },
+    () => next
+  );
+  return { previous };
 }
 
-function useAddMutation({ apiMediaType, mediaId, utils }: OptimisticArgs) {
-  return trpc.media.watchlist.add.useMutation({
-    onMutate: async () => {
-      await utils.media.watchlist.status.cancel({ mediaType: apiMediaType, mediaId });
-      const previous = utils.media.watchlist.status.getData({ mediaType: apiMediaType, mediaId });
-      utils.media.watchlist.status.setData({ mediaType: apiMediaType, mediaId }, () => ({
-        onWatchlist: true,
-        entryId: -1,
-      }));
-      return { previous };
-    },
+function rollback(
+  utils: UsePillarUtilsResult,
+  apiMediaType: ApiMediaType,
+  mediaId: number,
+  context: WatchlistMutationContext | undefined
+) {
+  if (!context) return;
+  utils.setData<WatchlistStatus | undefined>(
+    ['watchlist', 'status'],
+    { mediaType: apiMediaType, mediaId },
+    () => context.previous
+  );
+}
+
+function useAddMutation(apiMediaType: ApiMediaType, mediaId: number, utils: UsePillarUtilsResult) {
+  return usePillarMutation<
+    { mediaType: ApiMediaType; mediaId: number },
+    unknown,
+    WatchlistMutationContext
+  >('media', ['watchlist', 'add'], {
+    onMutate: () =>
+      snapshotAndApply(utils, apiMediaType, mediaId, { onWatchlist: true, entryId: -1 }),
     onSuccess: () => {
       toast.success('Added to watchlist');
     },
-    onError: (err: { message: string; data?: { code?: string } | null }, _vars, context) => {
-      if (context?.previous !== undefined) {
-        utils.media.watchlist.status.setData(
-          { mediaType: apiMediaType, mediaId },
-          context.previous
-        );
-      }
-      if (err.data?.code === 'CONFLICT') {
-        toast.info('Already on watchlist');
-      } else {
-        toast.error(`Failed to add: ${err.message}`);
-      }
+    onError: (err, _vars, context) => {
+      rollback(utils, apiMediaType, mediaId, context);
+      toast.error(`Failed to add: ${err.message}`);
     },
     onSettled: () => {
-      void utils.media.watchlist.status.invalidate({ mediaType: apiMediaType, mediaId });
+      void utils.invalidate(['watchlist', 'status']);
     },
   });
 }
 
-function useRemoveMutation({ apiMediaType, mediaId, utils }: OptimisticArgs) {
-  return trpc.media.watchlist.remove.useMutation({
-    onMutate: async () => {
-      await utils.media.watchlist.status.cancel({ mediaType: apiMediaType, mediaId });
-      const previous = utils.media.watchlist.status.getData({ mediaType: apiMediaType, mediaId });
-      utils.media.watchlist.status.setData({ mediaType: apiMediaType, mediaId }, () => ({
-        onWatchlist: false,
-        entryId: null,
-      }));
-      return { previous };
-    },
-    onSuccess: () => {
-      toast.success('Removed from watchlist');
-    },
-    onError: (err: { message: string }, _vars, context) => {
-      if (context?.previous !== undefined) {
-        utils.media.watchlist.status.setData(
-          { mediaType: apiMediaType, mediaId },
-          context.previous
-        );
-      }
-      toast.error(`Failed to remove: ${err.message}`);
-    },
-    onSettled: () => {
-      void utils.media.watchlist.status.invalidate({ mediaType: apiMediaType, mediaId });
-    },
-  });
+function useRemoveMutation(
+  apiMediaType: ApiMediaType,
+  mediaId: number,
+  utils: UsePillarUtilsResult
+) {
+  return usePillarMutation<{ id: number }, unknown, WatchlistMutationContext>(
+    'media',
+    ['watchlist', 'remove'],
+    {
+      onMutate: () =>
+        snapshotAndApply(utils, apiMediaType, mediaId, { onWatchlist: false, entryId: null }),
+      onSuccess: () => {
+        toast.success('Removed from watchlist');
+      },
+      onError: (err, _vars, context) => {
+        rollback(utils, apiMediaType, mediaId, context);
+        toast.error(`Failed to remove: ${err.message}`);
+      },
+      onSettled: () => {
+        void utils.invalidate(['watchlist', 'status']);
+      },
+    }
+  );
 }
 
 export function useWatchlistToggleModel(apiMediaType: ApiMediaType, mediaId: number) {
-  const utils = trpc.useUtils();
-  const { data: statusData, isLoading: isChecking } = trpc.media.watchlist.status.useQuery(
+  const utils = usePillarUtils('media');
+  const { data: statusData, isLoading: isChecking } = usePillarQuery<WatchlistStatus>(
+    'media',
+    ['watchlist', 'status'],
     { mediaType: apiMediaType, mediaId },
     { staleTime: 30_000 }
   );
@@ -82,8 +96,8 @@ export function useWatchlistToggleModel(apiMediaType: ApiMediaType, mediaId: num
   const isOnWatchlist = statusData?.onWatchlist ?? false;
   const watchlistEntryId = statusData?.entryId ?? null;
 
-  const addMutation = useAddMutation({ apiMediaType, mediaId, utils });
-  const removeMutation = useRemoveMutation({ apiMediaType, mediaId, utils });
+  const addMutation = useAddMutation(apiMediaType, mediaId, utils);
+  const removeMutation = useRemoveMutation(apiMediaType, mediaId, utils);
 
   const isMutating = addMutation.isPending || removeMutation.isPending;
 

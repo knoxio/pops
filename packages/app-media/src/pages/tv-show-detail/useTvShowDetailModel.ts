@@ -1,21 +1,61 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
 import { useSetPageContext } from '@pops/navigation';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
+
+import type { ProgressData, SeasonRow, SonarrSeriesData } from './types';
+
+type ShowDetail = {
+  id: number;
+  name: string;
+  tvdbId: number;
+  overview: string | null;
+  genres: string[] | null;
+  status: string | null;
+  originalLanguage: string | null;
+  networks: string[] | null;
+  voteAverage: number | null;
+  voteCount: number | null;
+  posterUrl: string | null;
+  backdropUrl: string | null;
+  firstAirDate: string | null;
+  lastAirDate: string | null;
+};
+
+type ShowEnvelope = { data: ShowDetail | null };
+
+type SeasonsEnvelope = { data: SeasonRow[] };
+type ProgressEnvelope = { data: ProgressData | null };
+type SonarrEnvelope = { data: SonarrSeriesData | null };
+
+type ProgressContext = { previous: ProgressEnvelope | undefined };
 
 function useTvShowQueries(showId: number) {
   const enabled = !Number.isNaN(showId);
-  const { data, isLoading, error } = trpc.media.tvShows.get.useQuery({ id: showId }, { enabled });
-  const { data: seasonsData } = trpc.media.tvShows.listSeasons.useQuery(
+  const { data, isLoading, error } = usePillarQuery<ShowEnvelope>(
+    'media',
+    ['tvShows', 'get'],
+    { id: showId },
+    { enabled }
+  );
+  const { data: seasonsData } = usePillarQuery<SeasonsEnvelope>(
+    'media',
+    ['tvShows', 'listSeasons'],
     { tvShowId: showId },
     { enabled }
   );
-  const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
+  const { data: progressData } = usePillarQuery<ProgressEnvelope>(
+    'media',
+    ['watchHistory', 'progress'],
     { tvShowId: showId },
     { enabled }
   );
-  const { data: sonarrData } = trpc.media.arr.checkSeries.useQuery(
+  const { data: sonarrData } = usePillarQuery<SonarrEnvelope>(
+    'media',
+    ['arr', 'checkSeries'],
     { tvdbId: data?.data?.tvdbId ?? 0 },
     { enabled: !!data?.data?.tvdbId }
   );
@@ -29,74 +69,86 @@ function useMonitoringMutation({
   setOptimisticMonitoring: React.Dispatch<React.SetStateAction<Map<number, boolean>>>;
   setPendingSeasons: React.Dispatch<React.SetStateAction<Set<number>>>;
 }) {
-  const utils = trpc.useUtils();
-  return trpc.media.arr.updateSeasonMonitoring.useMutation({
-    onError: (
-      err: { message: string },
-      variables: { seasonNumber: number; monitored: boolean }
-    ) => {
-      setOptimisticMonitoring((prev) => {
-        const next = new Map(prev);
-        next.set(variables.seasonNumber, !variables.monitored);
-        return next;
-      });
-      toast.error(`Failed to update monitoring: ${err.message}`);
-    },
-    onSuccess: () => {
-      void utils.media.arr.checkSeries.invalidate();
-    },
-    onSettled: (_data: unknown, _err: unknown, variables: { seasonNumber: number }) => {
-      setPendingSeasons((prev) => {
-        const next = new Set(prev);
-        next.delete(variables.seasonNumber);
-        return next;
-      });
-    },
-  });
+  const utils = usePillarUtils('media');
+  return usePillarMutation<{ sonarrId: number; seasonNumber: number; monitored: boolean }, unknown>(
+    'media',
+    ['arr', 'updateSeasonMonitoring'],
+    {
+      onError: (err, variables) => {
+        setOptimisticMonitoring((prev) => {
+          const next = new Map(prev);
+          next.set(variables.seasonNumber, !variables.monitored);
+          return next;
+        });
+        toast.error(`Failed to update monitoring: ${err.message}`);
+      },
+      onSuccess: () => {
+        void utils.invalidate(['arr', 'checkSeries']);
+      },
+      onSettled: (_data, _err, variables) => {
+        setPendingSeasons((prev) => {
+          const next = new Set(prev);
+          next.delete(variables.seasonNumber);
+          return next;
+        });
+      },
+    }
+  );
 }
 
-function useBatchLogMutation(showId: number) {
-  const utils = trpc.useUtils();
-  const progressSnapshot =
-    useRef<ReturnType<typeof utils.media.watchHistory.progress.getData>>(undefined);
-
-  return trpc.media.watchHistory.batchLog.useMutation({
-    onMutate: async () => {
-      await utils.media.watchHistory.progress.cancel({ tvShowId: showId });
-      progressSnapshot.current = utils.media.watchHistory.progress.getData({ tvShowId: showId });
-      utils.media.watchHistory.progress.setData({ tvShowId: showId }, (old) => {
-        if (!old?.data) return old;
-        const updatedSeasons = old.data.seasons.map((s) => ({
-          ...s,
-          watched: s.total,
-          percentage: 100,
-        }));
-        const totalEpisodes = updatedSeasons.reduce((sum, s) => sum + s.total, 0);
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            seasons: updatedSeasons,
-            overall: { watched: totalEpisodes, total: totalEpisodes, percentage: 100 },
-            nextEpisode: null,
-          },
-        };
-      });
+function applyBatchOptimistic(
+  envelope: ProgressEnvelope | undefined
+): ProgressEnvelope | undefined {
+  if (!envelope?.data) return envelope;
+  const updatedSeasons = (envelope.data.seasons ?? []).map((s) => ({
+    ...s,
+    watched: s.total,
+    percentage: 100,
+  }));
+  const totalEpisodes = updatedSeasons.reduce((sum, s) => sum + s.total, 0);
+  return {
+    ...envelope,
+    data: {
+      ...envelope.data,
+      seasons: updatedSeasons,
+      overall: { watched: totalEpisodes, total: totalEpisodes, percentage: 100 },
+      nextEpisode: null,
     },
-    onSuccess: (result: { data: { logged: number } }) => {
+  };
+}
+
+function useBatchLogMutation(showId: number, utils: UsePillarUtilsResult) {
+  return usePillarMutation<
+    { mediaType: 'show'; mediaId: number },
+    { data: { logged: number } },
+    ProgressContext
+  >('media', ['watchHistory', 'batchLog'], {
+    onMutate: () => {
+      const previous = utils.setData<ProgressEnvelope>(
+        ['watchHistory', 'progress'],
+        { tvShowId: showId },
+        (prev) => applyBatchOptimistic(prev)
+      );
+      return { previous };
+    },
+    onSuccess: (result) => {
       toast.success(
         `Marked ${result.data.logged} episode${result.data.logged !== 1 ? 's' : ''} as watched`
       );
     },
-    onError: (err: { message: string }) => {
-      if (progressSnapshot.current !== undefined) {
-        utils.media.watchHistory.progress.setData({ tvShowId: showId }, progressSnapshot.current);
+    onError: (err, _vars, context) => {
+      if (context) {
+        utils.setData<ProgressEnvelope | undefined>(
+          ['watchHistory', 'progress'],
+          { tvShowId: showId },
+          () => context.previous
+        );
       }
       toast.error(`Failed to mark all watched: ${err.message}`);
     },
     onSettled: () => {
-      void utils.media.watchHistory.invalidate();
-      void utils.media.tvShows.listSeasons.invalidate();
+      void utils.invalidate(['watchHistory']);
+      void utils.invalidate(['tvShows', 'listSeasons']);
     },
   });
 }
@@ -110,6 +162,7 @@ function sortSeasons<T extends { seasonNumber: number }>(rawSeasons: T[]): T[] {
 }
 
 export function useTvShowDetailModel(showId: number) {
+  const utils = usePillarUtils('media');
   const queries = useTvShowQueries(showId);
   const [optimisticMonitoring, setOptimisticMonitoring] = useState<Map<number, boolean>>(new Map());
   const [pendingSeasons, setPendingSeasons] = useState<Set<number>>(new Set());
@@ -118,7 +171,7 @@ export function useTvShowDetailModel(showId: number) {
     setOptimisticMonitoring,
     setPendingSeasons,
   });
-  const batchLogMutation = useBatchLogMutation(showId);
+  const batchLogMutation = useBatchLogMutation(showId, utils);
 
   const seasons = useMemo(
     () => sortSeasons(queries.seasonsData?.data ?? []),
@@ -140,8 +193,8 @@ export function useTvShowDetailModel(showId: number) {
     error: queries.error,
     show: queries.data?.data,
     seasons,
-    progress: queries.progressData?.data,
-    sonarrSeries: queries.sonarrData?.data,
+    progress: queries.progressData?.data ?? undefined,
+    sonarrSeries: queries.sonarrData?.data ?? undefined,
     optimisticMonitoring,
     setOptimisticMonitoring,
     pendingSeasons,

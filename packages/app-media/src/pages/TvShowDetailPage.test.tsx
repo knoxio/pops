@@ -4,8 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TvShowDetailPage } from './TvShowDetailPage';
 
-// --- tRPC mock setup ---
-
 const {
   mockShowQuery,
   mockSeasonsQuery,
@@ -14,8 +12,6 @@ const {
   mockCheckSeriesQuery,
   mockSeasonMonitorMutation,
   mockInvalidate,
-  mockCancel,
-  mockGetData,
   mockSetData,
 } = vi.hoisted(() => ({
   mockShowQuery: vi.fn(),
@@ -25,83 +21,51 @@ const {
   mockCheckSeriesQuery: vi.fn(),
   mockSeasonMonitorMutation: vi.fn(),
   mockInvalidate: vi.fn(),
-  mockCancel: vi.fn(),
-  mockGetData: vi.fn(),
   mockSetData: vi.fn(),
 }));
 
-// Store batchLog opts so tests can invoke callbacks
 let batchLogOpts: Record<string, unknown> = {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      tvShows: {
-        get: {
-          useQuery: (...args: unknown[]) => mockShowQuery(...args),
-        },
-        listSeasons: {
-          useQuery: (...args: unknown[]) => mockSeasonsQuery(...args),
-        },
-      },
-      watchHistory: {
-        progress: {
-          useQuery: (...args: unknown[]) => mockProgressQuery(...args),
-        },
-        batchLog: {
-          useMutation: (opts: Record<string, unknown>) => {
-            batchLogOpts = opts;
-            mockBatchLogMutation.mockImplementation(async () => {
-              if (typeof opts.onMutate === 'function')
-                await (opts.onMutate as () => Promise<void>)();
-              if (typeof opts.onSuccess === 'function')
-                (opts.onSuccess as (result: { data: { logged: number } }) => void)({
-                  data: { logged: 16 },
-                });
-              if (typeof opts.onSettled === 'function') (opts.onSettled as () => void)();
-            });
-            return { mutate: mockBatchLogMutation, isPending: false };
-          },
-        },
-        invalidate: mockInvalidate,
-      },
-      arr: {
-        checkSeries: {
-          useQuery: (...args: unknown[]) => mockCheckSeriesQuery(...args),
-          invalidate: mockInvalidate,
-        },
-        updateSeasonMonitoring: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockSeasonMonitorMutation.mockImplementation((variables: { seasonNumber: number }) => {
-              if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
-              if (typeof opts.onSettled === 'function')
-                (opts.onSettled as (d: unknown, e: unknown, v: { seasonNumber: number }) => void)(
-                  undefined,
-                  undefined,
-                  variables
-                );
-            });
-            return { mutate: mockSeasonMonitorMutation, isPending: false };
-          },
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        watchHistory: {
-          progress: {
-            cancel: mockCancel,
-            getData: mockGetData,
-            setData: mockSetData,
-          },
-          invalidate: mockInvalidate,
-        },
-        arr: {
-          checkSeries: { invalidate: mockInvalidate },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'tvShows.get') return mockShowQuery(input);
+    if (key === 'tvShows.listSeasons') return mockSeasonsQuery(input);
+    if (key === 'watchHistory.progress') return mockProgressQuery(input);
+    if (key === 'arr.checkSeries') return mockCheckSeriesQuery(input);
+    return { data: undefined, isLoading: false };
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'watchHistory.batchLog') {
+      batchLogOpts = opts;
+      mockBatchLogMutation.mockImplementation(() => {
+        if (typeof opts.onMutate === 'function') (opts.onMutate as () => void)();
+        if (typeof opts.onSuccess === 'function')
+          (opts.onSuccess as (r: { data: { logged: number } }) => void)({ data: { logged: 16 } });
+        if (typeof opts.onSettled === 'function') (opts.onSettled as () => void)();
+      });
+      return { mutate: mockBatchLogMutation, isPending: false };
+    }
+    if (key === 'arr.updateSeasonMonitoring') {
+      mockSeasonMonitorMutation.mockImplementation((variables: { seasonNumber: number }) => {
+        if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
+        if (typeof opts.onSettled === 'function')
+          (opts.onSettled as (d: unknown, e: unknown, v: { seasonNumber: number }) => void)(
+            undefined,
+            undefined,
+            variables
+          );
+      });
+      return { mutate: mockSeasonMonitorMutation, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({ setData: mockSetData, invalidate: mockInvalidate }),
 }));
 
 vi.mock('../components/ArrStatusBadge', () => ({
@@ -111,8 +75,6 @@ vi.mock('../components/ArrStatusBadge', () => ({
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
-
-// --- Test data ---
 
 const SHOW = {
   id: 1,
@@ -154,8 +116,6 @@ const PROGRESS = {
   },
 };
 
-// --- Helpers ---
-
 function renderPage(showId = '1') {
   return render(
     <MemoryRouter initialEntries={[`/media/tv/${showId}`]}>
@@ -186,10 +146,9 @@ function setupQueries(
   });
 }
 
-// --- Tests ---
-
 beforeEach(() => {
   vi.clearAllMocks();
+  batchLogOpts = {};
   mockSeasonsQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
   mockProgressQuery.mockReturnValue({ data: null, isLoading: false });
   mockCheckSeriesQuery.mockReturnValue({ data: null, isLoading: false });
@@ -203,7 +162,6 @@ describe('TvShowDetailPage — season list', () => {
       expect(screen.getByRole('heading', { name: 'Seasons' })).toBeInTheDocument();
       expect(screen.getByText('Season 1')).toBeInTheDocument();
       expect(screen.getByText('Season 2')).toBeInTheDocument();
-      // Season 3 has null name — falls back to "Season 3"
       expect(screen.getByText('Season 3')).toBeInTheDocument();
       expect(screen.getByText('Specials')).toBeInTheDocument();
     });
@@ -234,7 +192,6 @@ describe('TvShowDetailPage — season list', () => {
       const { container } = renderPage();
       const links = container.querySelectorAll('a[href*="/season/"]');
       expect(links).toHaveLength(4);
-      // First three should be seasons 1, 2, 3 — last should be specials (season 0)
       expect(links[0]!.getAttribute('href')).toBe('/media/tv/1/season/1');
       expect(links[1]!.getAttribute('href')).toBe('/media/tv/1/season/2');
       expect(links[2]!.getAttribute('href')).toBe('/media/tv/1/season/3');
@@ -255,7 +212,6 @@ describe('TvShowDetailPage — season list', () => {
     it('renders progress bar for season with progress', () => {
       setupQueries();
       const { container } = renderPage();
-      // Season 1 is 100% — should have green bar
       const progressBars = container.querySelectorAll('[role="progressbar"]');
       expect(progressBars.length).toBeGreaterThan(0);
     });
@@ -289,7 +245,6 @@ describe('TvShowDetailPage — season list', () => {
         seasons: [{ seasonId: 10, seasonNumber: 1, watched: 0, total: 5, percentage: 0 }],
       });
       const { container } = renderPage();
-      // ProgressBar renders a 0-value bar — the bar div still exists but is visually empty
       const seasonLinks = container.querySelectorAll('a[href*="/season/"]');
       expect(seasonLinks).toHaveLength(1);
       const bar = seasonLinks[0]!.querySelector('[role="progressbar"]');
@@ -328,14 +283,11 @@ describe('TvShowDetailPage — hero and metadata', () => {
     it('does not render backdrop image when backdropUrl is null (fallback gradient)', () => {
       setupQueries({ backdropUrl: null });
       const { container } = renderPage();
-      // No backdrop img — only the poster img should exist
       const images = container.querySelectorAll('img');
       expect(images).toHaveLength(1);
       expect(images[0]!.getAttribute('alt')).toBe('Breaking Bad poster');
-      // Hero container still has bg-muted as fallback background
       const hero = container.querySelector('.bg-muted');
       expect(hero).toBeInTheDocument();
-      // Gradient overlay is always rendered
       const gradient = container.querySelector('.bg-gradient-to-t');
       expect(gradient).toBeInTheDocument();
     });
@@ -349,7 +301,6 @@ describe('TvShowDetailPage — hero and metadata', () => {
     it('renders a placeholder div when posterUrl is null (no img element)', () => {
       setupQueries({ posterUrl: null });
       const { container } = renderPage();
-      // Component renders a <div> placeholder instead of <img> when posterUrl is null
       expect(container.querySelector('img[alt="Breaking Bad poster"]')).not.toBeInTheDocument();
       const placeholder = container.querySelector('div.rounded-lg.bg-muted.shadow-lg');
       expect(placeholder).toBeInTheDocument();
@@ -367,7 +318,6 @@ describe('TvShowDetailPage — hero and metadata', () => {
     it('renders status text for ended show', () => {
       setupQueries();
       renderPage();
-      // Status appears in both hero and metadata grid
       expect(screen.getAllByText('Ended').length).toBeGreaterThanOrEqual(1);
     });
 
@@ -387,7 +337,6 @@ describe('TvShowDetailPage — hero and metadata', () => {
       setupQueries({ firstAirDate: null, lastAirDate: null });
       renderPage();
       expect(screen.queryByText('·')).not.toBeInTheDocument();
-      // Status still renders in hero and metadata
       expect(screen.getAllByText('Ended').length).toBeGreaterThanOrEqual(1);
     });
 
@@ -482,7 +431,6 @@ describe('TvShowDetailPage — overall progress bar', () => {
       seasons: PROGRESS.seasons.map((s) => ({ ...s, watched: s.total, percentage: 100 })),
     });
     const { container } = renderPage();
-    // Overall progress bar in hero — find bar with 100% value
     const bars = container.querySelectorAll('[aria-valuenow="100"]');
     const greenBar = Array.from(bars).find((b) => b.className.includes('bg-success'));
     expect(greenBar).toBeTruthy();
@@ -505,7 +453,6 @@ describe('TvShowDetailPage — overall progress bar', () => {
       overall: { watched: 0, total: 0, percentage: 0 },
     });
     renderPage();
-    // ProgressBar returns null when total is 0
     expect(screen.queryByText(/\/0/)).not.toBeInTheDocument();
   });
 });
@@ -578,28 +525,16 @@ describe('TvShowDetailPage — batch mark all watched', () => {
     });
   });
 
-  it('cancels progress query on batch mark (optimistic)', () => {
-    setupQueries();
-    renderPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
-    expect(mockCancel).toHaveBeenCalled();
-  });
-
-  it('snapshots progress data before optimistic update', async () => {
+  it('writes optimistic progress via setData on batch mark', async () => {
     setupQueries();
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
     await waitFor(() => {
-      expect(mockGetData).toHaveBeenCalled();
-    });
-  });
-
-  it('sets progress data optimistically on batch mark', async () => {
-    setupQueries();
-    renderPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
-    await waitFor(() => {
-      expect(mockSetData).toHaveBeenCalled();
+      expect(mockSetData).toHaveBeenCalledWith(
+        ['watchHistory', 'progress'],
+        { tvShowId: 1 },
+        expect.any(Function)
+      );
     });
   });
 
@@ -608,29 +543,46 @@ describe('TvShowDetailPage — batch mark all watched', () => {
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
     await waitFor(() => {
-      expect(mockInvalidate).toHaveBeenCalled();
+      expect(mockInvalidate).toHaveBeenCalledWith(['watchHistory']);
+    });
+  });
+
+  it('invalidates listSeasons after batch mark settles', async () => {
+    setupQueries();
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
+    await waitFor(() => {
+      expect(mockInvalidate).toHaveBeenCalledWith(['tvShows', 'listSeasons']);
     });
   });
 
   it('reverts progress data on error', async () => {
-    mockGetData.mockReturnValue({ data: PROGRESS });
     setupQueries();
     renderPage();
-    // Override AFTER render so it isn't overwritten by useMutation mock
-    mockBatchLogMutation.mockImplementation(async () => {
-      if (typeof batchLogOpts.onMutate === 'function')
-        await (batchLogOpts.onMutate as () => Promise<void>)();
+    mockBatchLogMutation.mockImplementation(() => {
+      const previousEnvelope = { data: PROGRESS };
+      mockSetData.mockReturnValueOnce(previousEnvelope);
+      const context =
+        typeof batchLogOpts.onMutate === 'function'
+          ? (batchLogOpts.onMutate as () => { previous: typeof previousEnvelope })()
+          : undefined;
       if (typeof batchLogOpts.onError === 'function')
-        (batchLogOpts.onError as (err: { message: string }) => void)({
-          message: 'Network error',
-        });
+        (
+          batchLogOpts.onError as (
+            err: { message: string },
+            vars: unknown,
+            ctx: typeof context
+          ) => void
+        )({ message: 'Network error' }, { mediaType: 'show', mediaId: 1 }, context);
       if (typeof batchLogOpts.onSettled === 'function') (batchLogOpts.onSettled as () => void)();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
-    // setData called twice: once for optimistic, once for rollback
     await waitFor(() => {
       expect(mockSetData).toHaveBeenCalledTimes(2);
     });
+    const rollbackCall = mockSetData.mock.calls[1]!;
+    expect(rollbackCall[0]).toEqual(['watchHistory', 'progress']);
+    expect(rollbackCall[1]).toEqual({ tvShowId: 1 });
   });
 });
 
@@ -699,7 +651,6 @@ describe('TvShowDetailPage — season monitoring toggles', () => {
     renderPage();
     const toggle = screen.getByRole('switch', { name: 'Monitor Season 2' });
     fireEvent.click(toggle);
-    // After clicking unmonitored season 2, it should optimistically show checked
     expect(toggle).toBeChecked();
   });
 });
