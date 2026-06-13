@@ -30,11 +30,11 @@ when the contract packages ship.
 
 ## Triage
 
-| Bucket      | Count | Definition                                                                                                       | Notes                                                                |
-| ----------- | ----- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Trivial** | 24    | Single-pillar `trpc.finance.*` call, ≤5 LOC delta, plain query or mutation with `utils.invalidate` only          | Migrate first via the planned `@pops/finance-sdk` React adapter.     |
-| **Medium**  | 23    | `trpc.core.*` call (cross-pillar, depends on core SDK), or call inside a `useUtils()`-invalidation chain crossing routers | Blocked on `@pops/core-sdk` ship; mechanical once it lands.          |
-| **Risky**   | 0     | Optimistic updates, suspense, infinite queries, or any cross-pillar coordination                                 | None in this package.                                                |
+| Bucket      | Count | Definition                                                                                                                | Notes                                                            |
+| ----------- | ----- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Trivial** | 24    | Single-pillar `trpc.finance.*` call, ≤5 LOC delta, plain query or mutation with `utils.invalidate` only                   | Migrate first via the planned `@pops/finance-sdk` React adapter. |
+| **Medium**  | 23    | `trpc.core.*` call (cross-pillar, depends on core SDK), or call inside a `useUtils()`-invalidation chain crossing routers | Blocked on `@pops/core-sdk` ship; mechanical once it lands.      |
+| **Risky**   | 0     | Optimistic updates, suspense, infinite queries, or any cross-pillar coordination                                          | None in this package.                                            |
 
 Total trivial + medium + risky = 47 (matches call-site count).
 

@@ -189,13 +189,13 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 This wave was added after the original plan as the vision expanded. Waves 1-5 end at "every pillar isolated within this monorepo + pops.db dropped." Wave 6 extends to "every pillar isolated anywhere, in any language." See [ADR-032](../../architecture/adr-032-positioning-vs-self-hosted-os-family.md) for the positioning context and [ADR-033](../../architecture/adr-033-cross-language-pillar-contracts.md) for the cross-language story.
 
-| PRD                                                                      | Parallelism | Owner agent              |
-| ------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 228 dynamic pillar registration (POST /register + heartbeat)             | first       | `a:dynamic-registration` |
-| 230 browser-resolvable baseUrls + URL doubling fix                       | parallel    | `a:browser-baseurl`      |
-| 231 cross-language SDK wire-format spec                                  | parallel    | `a:wire-spec`            |
+| PRD                                                                       | Parallelism | Owner agent              |
+| ------------------------------------------------------------------------- | ----------- | ------------------------ |
+| 228 dynamic pillar registration (POST /register + heartbeat)              | first       | `a:dynamic-registration` |
+| 230 browser-resolvable baseUrls + URL doubling fix                        | parallel    | `a:browser-baseurl`      |
+| 231 cross-language SDK wire-format spec                                   | parallel    | `a:wire-spec`            |
 | 232 nginx generator dynamic-source (consume registry, not static PILLARS) | follows 228 | `a:nginx-dynamic`        |
-| 233 external pillar example repo (Rust or Go reference impl)             | follows 231 | `a:external-pillar-demo` |
+| 233 external pillar example repo (Rust or Go reference impl)              | follows 231 | `a:external-pillar-demo` |
 
 **Wave 6 exit criteria:**
 
@@ -211,13 +211,13 @@ This wave was added after the original plan as the vision expanded. Waves 1-5 en
 
 **Goal:** make pops additive to the HA / MQTT / ESPHome ecosystems via bridge pillars. Per [ADR-032](../../architecture/adr-032-positioning-vs-self-hosted-os-family.md), pops does not compete on device integration count — it consumes integrations from HA and friends via thin bridge-pillar containers. The `sinks` manifest dimension ([ADR-034](../../architecture/adr-034-sinks-manifest-dimension.md)) enables outbound flow.
 
-| PRD                                                       | Parallelism | Owner agent             |
-| --------------------------------------------------------- | ----------- | ----------------------- |
-| 229 HA bridge pillar (WebSocket subscribe + entity mirror)| first       | `a:ha-bridge`           |
-| 234 MQTT bridge pillar                                    | parallel    | `a:mqtt-bridge`         |
-| 235 ESPHome bridge pillar                                 | parallel    | `a:esphome-bridge`      |
-| 236 `sinks` manifest dimension (outbound event flow)      | follows 229 | `a:sinks-manifest`      |
-| 237 pops → HA event publisher (uses sinks)                | follows 236 | `a:ha-publisher`        |
+| PRD                                                        | Parallelism | Owner agent        |
+| ---------------------------------------------------------- | ----------- | ------------------ |
+| 229 HA bridge pillar (WebSocket subscribe + entity mirror) | first       | `a:ha-bridge`      |
+| 234 MQTT bridge pillar                                     | parallel    | `a:mqtt-bridge`    |
+| 235 ESPHome bridge pillar                                  | parallel    | `a:esphome-bridge` |
+| 236 `sinks` manifest dimension (outbound event flow)       | follows 229 | `a:sinks-manifest` |
+| 237 pops → HA event publisher (uses sinks)                 | follows 236 | `a:ha-publisher`   |
 
 **Wave 7 exit criteria:**
 
@@ -232,11 +232,11 @@ This wave was added after the original plan as the vision expanded. Waves 1-5 en
 
 **Goal:** the deliverable. The contribution is the architecture description, not the running system. Plus optional ISO appliance variant.
 
-| PRD                                                | Parallelism | Owner agent             |
-| -------------------------------------------------- | ----------- | ----------------------- |
-| 238 starter template repo (`pops-pillar-starter`)  | first       | `a:starter-template`    |
-| 239 architecture writeup / blog series             | parallel    | `a:writeup`             |
-| 240 pops OS ISO packaging (HassOS-style appliance) | optional    | `a:os-iso`              |
+| PRD                                                | Parallelism | Owner agent          |
+| -------------------------------------------------- | ----------- | -------------------- |
+| 238 starter template repo (`pops-pillar-starter`)  | first       | `a:starter-template` |
+| 239 architecture writeup / blog series             | parallel    | `a:writeup`          |
+| 240 pops OS ISO packaging (HassOS-style appliance) | optional    | `a:os-iso`           |
 
 **Wave 8 exit criteria:**
 
@@ -410,65 +410,65 @@ Pillar A is built against `@pops/finance-contract@1.4`; consumer is built agains
 
 Status legend: ⏳ Not started · 🔄 In progress · ✅ Done · ⛔ Blocked
 
-| PRD     | Slug                             | Wave | Status | Requires               | Unblocks                       |
-| ------- | -------------------------------- | ---- | ------ | ---------------------- | ------------------------------ |
-| 153     | contract-package-scaffold        | 1    | ⏳     | ADR-030                | 154, 155, 156, 157, all others |
-| 154     | contract-semver-ci               | 1    | ⏳     | 153                    | gates breaking changes         |
-| 155     | manifest-type-generation         | 1    | ⏳     | 153                    | 157, 158                       |
-| 156     | consumer-import-discipline       | 1    | ⏳     | 153                    | enforces boundaries            |
-| 157     | manifest-schema-validator        | 1    | ⏳     | 155                    | 158, 161                       |
-| 158     | bootstrap-pillar-helper          | 1    | ⏳     | 157                    | every pillar's boot            |
-| 159     | discovery-client                 | 1    | ⏳     | 161                    | 191, 215                       |
-| 160     | capability-projection-types      | 1    | ⏳     | 153                    | 191                            |
-| 161     | registry-schema-endpoints        | 1    | ⏳     | 157, ADR-027           | 158, 159, 162, 163             |
-| 162     | heartbeat-lifecycle              | 1    | ⏳     | 161                    | 163                            |
-| 163     | subscription-model               | 1    | ⏳     | 161, 162               | 194                            |
-| 164     | reconciliation-on-restart        | 2    | ⏳     | 162                    | core-api restart resilience    |
-| 165     | media-movies-cutover             | 3    | ⏳     | Wave 2                 | (canonical pattern)            |
-| 166-186 | (slice cutovers)                 | 3    | ⏳     | 165 (pattern) + Wave 2 | Wave 4                         |
-| 187     | splitlink-strategy               | 3    | ⏳     | ADR-028                | 188, 189, 190                  |
-| 188     | batching-invariants              | 3    | ⏳     | 187                    | regression prevention          |
-| 189     | batch-call-site-audit            | 3    | ⏳     | 187                    | 206, 208                       |
-| 190     | nginx-dispatcher-simplification  | 3    | ⏳     | 187                    | 217                            |
-| 191     | client-surface                   | 1    | ⏳     | 159, 160               | 192, 193, 215                  |
-| 192     | server-surface                   | 1    | ⏳     | 191                    | 197, 209, 210                  |
-| 193     | react-hooks                      | 2    | ⏳     | 191                    | 194, 215                       |
-| 194     | caching-invalidation             | 2    | ⏳     | 193, 163               | 215                            |
-| 195     | type-generation-pipeline         | 2    | ⏳     | 191                    | consumer ergonomics            |
-| 196     | search-adapter-manifest          | 4    | ⏳     | Wave 2                 | 197                            |
-| 197     | federated-query-orchestrator     | 4    | ⏳     | 196, 192               | 198, 199, 208                  |
-| 198     | ranking-strategy                 | 4    | ⏳     | 197                    | 199                            |
-| 199     | partial-failure-semantics        | 4    | ⏳     | 197                    | search UX                      |
-| 200     | ai-tool-manifest                 | 4    | ⏳     | Wave 2                 | 201                            |
-| 201     | dynamic-tool-list                | 4    | ⏳     | 200                    | 202                            |
-| 202     | tool-call-routing                | 4    | ⏳     | 201                    | 209                            |
-| 203     | directory-move-namespace-rename  | 2    | ⏳     | independent            | 204, 205, 206                  |
-| 204     | shell-call-site-migration        | 2    | ⏳     | 203                    | 206                            |
-| 205     | mcp-cli-call-site-migration      | 2    | ⏳     | 203                    | 206                            |
-| 206     | dispatcher-legacy-mount-deletion | 2    | ⏳     | 204, 205               | 184, 185                       |
-| 207     | adr-029-decision-matrix          | 4    | ⏳     | Wave 3                 | 208, 209, 210, 211             |
-| 208     | search-orchestrator-relocation   | 4    | ⏳     | 207, 197               | search-api container           |
-| 209     | ai-orchestrator-relocation       | 4    | ⏳     | 207, 202               | ai-api container               |
-| 210     | worker-partitioning-audit        | 4    | ⏳     | 207, Wave 3            | worker isolation               |
-| 211     | uri-dispatcher-relocation        | 4    | ⏳     | 207                    | URI handling                   |
-| 212     | readiness-audit                  | 5    | ⏳     | Wave 4                 | 213                            |
-| 213     | final-drop-migration             | 5    | ⏳     | 212                    | 214                            |
-| 214     | code-retirement                  | 5    | ⏳     | 213                    | theme complete                 |
-| 215     | react-sdk                        | 4    | ⏳     | 193, 194               | 216, 218                       |
-| 216     | pillar-guard-rewrite             | 4    | ⏳     | 215                    | FE graceful degradation        |
-| 217     | nginx-config-generator           | 4    | ⏳     | 190                    | dispatcher automation          |
-| 218     | module-registry-deprecation      | 4    | ⏳     | 215                    | legacy retirement              |
-| 219     | docs-swagger-container           | 2    | ⏳     | 153                    | dev ergonomics                 |
-| 184     | core-tag-rules-cleanup           | 3    | ⏳     | 206                    | core cleanup                   |
-| 185     | core-corrections-cleanup         | 3    | ⏳     | 206                    | core cleanup                   |
-| 220     | ci-path-filter-audit             | 1    | ⏳     | independent            | CI leanness wave 1             |
-| 221     | ci-affected-rebuild              | 2    | ⏳     | 220                    | CI leanness wave 2             |
-| 222     | ci-docs-fast-path                | 2    | ⏳     | 220                    | CI leanness wave 2             |
-| 223     | ci-pillar-isolation              | 3    | ⏳     | 221                    | CI leanness wave 3             |
-| 224     | ci-e2e-scoping                   | 3    | ⏳     | 221                    | CI leanness wave 3             |
-| 225     | ci-publish-narrowing             | 4    | ⏳     | 221                    | CI leanness wave 4             |
-| 226     | ci-budget-enforcement            | 5    | ⏳     | 220-225                | CI leanness wave 5             |
-| 227     | sdk-consumer-migration-audit     | 4    | ⏳     | 193, 215               | FE + Node `pillar()` rollout   |
+| PRD     | Slug                             | Wave | Status | Requires               | Unblocks                                     |
+| ------- | -------------------------------- | ---- | ------ | ---------------------- | -------------------------------------------- |
+| 153     | contract-package-scaffold        | 1    | ⏳     | ADR-030                | 154, 155, 156, 157, all others               |
+| 154     | contract-semver-ci               | 1    | ⏳     | 153                    | gates breaking changes                       |
+| 155     | manifest-type-generation         | 1    | ⏳     | 153                    | 157, 158                                     |
+| 156     | consumer-import-discipline       | 1    | ⏳     | 153                    | enforces boundaries                          |
+| 157     | manifest-schema-validator        | 1    | ⏳     | 155                    | 158, 161                                     |
+| 158     | bootstrap-pillar-helper          | 1    | ⏳     | 157                    | every pillar's boot                          |
+| 159     | discovery-client                 | 1    | ⏳     | 161                    | 191, 215                                     |
+| 160     | capability-projection-types      | 1    | ⏳     | 153                    | 191                                          |
+| 161     | registry-schema-endpoints        | 1    | ⏳     | 157, ADR-027           | 158, 159, 162, 163                           |
+| 162     | heartbeat-lifecycle              | 1    | ⏳     | 161                    | 163                                          |
+| 163     | subscription-model               | 1    | ⏳     | 161, 162               | 194                                          |
+| 164     | reconciliation-on-restart        | 2    | ⏳     | 162                    | core-api restart resilience                  |
+| 165     | media-movies-cutover             | 3    | ⏳     | Wave 2                 | (canonical pattern)                          |
+| 166-186 | (slice cutovers)                 | 3    | ⏳     | 165 (pattern) + Wave 2 | Wave 4                                       |
+| 187     | splitlink-strategy               | 3    | ⏳     | ADR-028                | 188, 189, 190                                |
+| 188     | batching-invariants              | 3    | ⏳     | 187                    | regression prevention                        |
+| 189     | batch-call-site-audit            | 3    | ⏳     | 187                    | 206, 208                                     |
+| 190     | nginx-dispatcher-simplification  | 3    | ⏳     | 187                    | 217                                          |
+| 191     | client-surface                   | 1    | ⏳     | 159, 160               | 192, 193, 215                                |
+| 192     | server-surface                   | 1    | ⏳     | 191                    | 197, 209, 210                                |
+| 193     | react-hooks                      | 2    | ⏳     | 191                    | 194, 215                                     |
+| 194     | caching-invalidation             | 2    | ⏳     | 193, 163               | 215                                          |
+| 195     | type-generation-pipeline         | 2    | ⏳     | 191                    | consumer ergonomics                          |
+| 196     | search-adapter-manifest          | 4    | ⏳     | Wave 2                 | 197                                          |
+| 197     | federated-query-orchestrator     | 4    | ⏳     | 196, 192               | 198, 199, 208                                |
+| 198     | ranking-strategy                 | 4    | ⏳     | 197                    | 199                                          |
+| 199     | partial-failure-semantics        | 4    | ⏳     | 197                    | search UX                                    |
+| 200     | ai-tool-manifest                 | 4    | ⏳     | Wave 2                 | 201                                          |
+| 201     | dynamic-tool-list                | 4    | ⏳     | 200                    | 202                                          |
+| 202     | tool-call-routing                | 4    | ⏳     | 201                    | 209                                          |
+| 203     | directory-move-namespace-rename  | 2    | ⏳     | independent            | 204, 205, 206                                |
+| 204     | shell-call-site-migration        | 2    | ⏳     | 203                    | 206                                          |
+| 205     | mcp-cli-call-site-migration      | 2    | ⏳     | 203                    | 206                                          |
+| 206     | dispatcher-legacy-mount-deletion | 2    | ⏳     | 204, 205               | 184, 185                                     |
+| 207     | adr-029-decision-matrix          | 4    | ⏳     | Wave 3                 | 208, 209, 210, 211                           |
+| 208     | search-orchestrator-relocation   | 4    | ⏳     | 207, 197               | search-api container                         |
+| 209     | ai-orchestrator-relocation       | 4    | ⏳     | 207, 202               | ai-api container                             |
+| 210     | worker-partitioning-audit        | 4    | ⏳     | 207, Wave 3            | worker isolation                             |
+| 211     | uri-dispatcher-relocation        | 4    | ⏳     | 207                    | URI handling                                 |
+| 212     | readiness-audit                  | 5    | ⏳     | Wave 4                 | 213                                          |
+| 213     | final-drop-migration             | 5    | ⏳     | 212                    | 214                                          |
+| 214     | code-retirement                  | 5    | ⏳     | 213                    | theme complete                               |
+| 215     | react-sdk                        | 4    | ⏳     | 193, 194               | 216, 218                                     |
+| 216     | pillar-guard-rewrite             | 4    | ⏳     | 215                    | FE graceful degradation                      |
+| 217     | nginx-config-generator           | 4    | ⏳     | 190                    | dispatcher automation                        |
+| 218     | module-registry-deprecation      | 4    | ⏳     | 215                    | legacy retirement                            |
+| 219     | docs-swagger-container           | 2    | ⏳     | 153                    | dev ergonomics                               |
+| 184     | core-tag-rules-cleanup           | 3    | ⏳     | 206                    | core cleanup                                 |
+| 185     | core-corrections-cleanup         | 3    | ⏳     | 206                    | core cleanup                                 |
+| 220     | ci-path-filter-audit             | 1    | ⏳     | independent            | CI leanness wave 1                           |
+| 221     | ci-affected-rebuild              | 2    | ⏳     | 220                    | CI leanness wave 2                           |
+| 222     | ci-docs-fast-path                | 2    | ⏳     | 220                    | CI leanness wave 2                           |
+| 223     | ci-pillar-isolation              | 3    | ⏳     | 221                    | CI leanness wave 3                           |
+| 224     | ci-e2e-scoping                   | 3    | ⏳     | 221                    | CI leanness wave 3                           |
+| 225     | ci-publish-narrowing             | 4    | ⏳     | 221                    | CI leanness wave 4                           |
+| 226     | ci-budget-enforcement            | 5    | ⏳     | 220-225                | CI leanness wave 5                           |
+| 227     | sdk-consumer-migration-audit     | 4    | ⏳     | 193, 215               | FE + Node `pillar()` rollout                 |
 | 228     | dynamic-pillar-registration      | 4    | ⏳     | 161, 162, 163, 217     | external-pillar drop-in (final BE-lego step) |
 
 ---

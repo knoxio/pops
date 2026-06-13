@@ -1,14 +1,14 @@
 # POPS Pillar Wire-Format Specification
 
-| Field        | Value                                                       |
-| ------------ | ----------------------------------------------------------- |
-| Version      | `1.0`                                                       |
-| Status       | Stable                                                      |
-| Wire header  | `X-Pops-Wire-Version: 1`                                    |
-| Owners       | Theme 13 — Pillar Finale                                    |
-| Related PRDs | PRD-157, PRD-215, PRD-228, PRD-231, PRD-233                 |
+| Field        | Value                                                                       |
+| ------------ | --------------------------------------------------------------------------- |
+| Version      | `1.0`                                                                       |
+| Status       | Stable                                                                      |
+| Wire header  | `X-Pops-Wire-Version: 1`                                                    |
+| Owners       | Theme 13 — Pillar Finale                                                    |
+| Related PRDs | PRD-157, PRD-215, PRD-228, PRD-231, PRD-233                                 |
 | Related ADRs | [ADR-033](../../../architecture/adr-033-cross-language-pillar-contracts.md) |
-| Last updated | 2026-06-13                                                  |
+| Last updated | 2026-06-13                                                                  |
 
 This document is **normative**. If `@pops/pillar-sdk` and this specification disagree, the specification wins and the SDK is the bug.
 
@@ -18,13 +18,13 @@ This document is **normative**. If `@pops/pillar-sdk` and this specification dis
 
 POPS pillars are independent HTTP services that speak a tRPC v11–shaped JSON-over-HTTP protocol. The contract between a pillar and its consumers is split across three artifacts:
 
-| Artifact                | Layer         | Purpose                                                                 |
-| ----------------------- | ------------- | ----------------------------------------------------------------------- |
-| `@pops/contract-<name>` | Type schema   | Zod input/output types and procedure names per router.                  |
-| `<pillar>.openapi.json` | Schema-level  | Per-procedure request/response shapes (per ADR-033).                    |
-| **This spec**           | **Wire-level**| The bytes on the wire that wrap and transport those schema-level types. |
+| Artifact                | Layer          | Purpose                                                                 |
+| ----------------------- | -------------- | ----------------------------------------------------------------------- |
+| `@pops/contract-<name>` | Type schema    | Zod input/output types and procedure names per router.                  |
+| `<pillar>.openapi.json` | Schema-level   | Per-procedure request/response shapes (per ADR-033).                    |
+| **This spec**           | **Wire-level** | The bytes on the wire that wrap and transport those schema-level types. |
 
-OpenAPI describes *what one procedure looks like in isolation*. It does **not** describe:
+OpenAPI describes _what one procedure looks like in isolation_. It does **not** describe:
 
 - the URL pattern used for tRPC routes;
 - the success/error envelope (`{ result: { data } }` / `{ error: { code, message, data } }`);
@@ -69,12 +69,12 @@ POST <base_url>/trpc/<router>.<procedure>
 
 ### 2.2 Request
 
-| Header                  | Required | Notes                                                          |
-| ----------------------- | -------- | -------------------------------------------------------------- |
-| `Content-Type`          | yes      | `application/json` (charset `utf-8` assumed).                  |
-| `X-Request-Id`          | no       | UUIDv4 echoed on the response; see §10.                        |
-| `X-Pops-Wire-Version`   | no       | Defaults to `1` when absent (the floor).                       |
-| `Accept-Encoding`       | no       | `gzip` permitted; pillars MAY emit gzip when requested.        |
+| Header                | Required | Notes                                                   |
+| --------------------- | -------- | ------------------------------------------------------- |
+| `Content-Type`        | yes      | `application/json` (charset `utf-8` assumed).           |
+| `X-Request-Id`        | no       | UUIDv4 echoed on the response; see §10.                 |
+| `X-Pops-Wire-Version` | no       | Defaults to `1` when absent (the floor).                |
+| `Accept-Encoding`     | no       | `gzip` permitted; pillars MAY emit gzip when requested. |
 
 Body:
 
@@ -280,11 +280,11 @@ GET <base_url>/trpc/<router>.<procedure>?input=<url-encoded JSON>
 
 ### 4.2 Request headers
 
-| Header           | Required | Notes                                          |
-| ---------------- | -------- | ---------------------------------------------- |
-| `Accept`         | yes      | `text/event-stream`                            |
-| `Last-Event-ID`  | no       | Best-effort resumption hint (see §4.5).        |
-| `X-Request-Id`   | no       | Echoed on the response.                        |
+| Header          | Required | Notes                                   |
+| --------------- | -------- | --------------------------------------- |
+| `Accept`        | yes      | `text/event-stream`                     |
+| `Last-Event-ID` | no       | Best-effort resumption hint (see §4.5). |
+| `X-Request-Id`  | no       | Echoed on the response.                 |
 
 ### 4.3 Response
 
@@ -398,22 +398,22 @@ Body matches `ManifestPayloadSchema` from PRD-157 (`@pops/manifest-schema`).
 
 Required fields:
 
-| Field          | Type     | Notes                                                                                |
-| -------------- | -------- | ------------------------------------------------------------------------------------ |
-| `pillarId`     | `string` | Stable identifier (`finance`, `cerebrum`, `inventory`, …). Matches the contract name.|
-| `contract`     | `object` | `{ "name": "@pops/contract-<id>", "version": "<semver>" }` per ADR-030.              |
-| `searchAdapters` | `array` | See PRD-196 for the per-adapter shape.                                              |
-| `aiTools`      | `array`  | See PRD-200 for the per-tool shape.                                                  |
-| `sinks`        | `array`  | Inbound webhook descriptors; see PRD-201 for the per-sink shape.                     |
-| `capabilities` | `object` | Feature flags surfaced to the registry (e.g. `{ "supportsSubscriptions": true }`).   |
+| Field            | Type     | Notes                                                                                 |
+| ---------------- | -------- | ------------------------------------------------------------------------------------- |
+| `pillarId`       | `string` | Stable identifier (`finance`, `cerebrum`, `inventory`, …). Matches the contract name. |
+| `contract`       | `object` | `{ "name": "@pops/contract-<id>", "version": "<semver>" }` per ADR-030.               |
+| `searchAdapters` | `array`  | See PRD-196 for the per-adapter shape.                                                |
+| `aiTools`        | `array`  | See PRD-200 for the per-tool shape.                                                   |
+| `sinks`          | `array`  | Inbound webhook descriptors; see PRD-201 for the per-sink shape.                      |
+| `capabilities`   | `object` | Feature flags surfaced to the registry (e.g. `{ "supportsSubscriptions": true }`).    |
 
 Optional fields:
 
-| Field           | Type     | Notes                                                              |
-| --------------- | -------- | ------------------------------------------------------------------ |
-| `wireVersion`   | `number` | Defaults to `1`. Set explicitly once v2 ships.                     |
-| `displayName`   | `string` | Human-readable name for tooling.                                   |
-| `documentation` | `string` | URL to the pillar's docs.                                          |
+| Field           | Type     | Notes                                          |
+| --------------- | -------- | ---------------------------------------------- |
+| `wireVersion`   | `number` | Defaults to `1`. Set explicitly once v2 ships. |
+| `displayName`   | `string` | Human-readable name for tooling.               |
+| `documentation` | `string` | URL to the pillar's docs.                      |
 
 ### 5.3 Caching rule
 
@@ -464,12 +464,12 @@ POST <core_base_url>/trpc/core.registry.register
 
 ### 6.2 Request headers
 
-| Header                 | Required | Notes                                                                |
-| ---------------------- | -------- | -------------------------------------------------------------------- |
-| `Content-Type`         | yes      | `application/json`                                                   |
-| `X-Internal-API-Key`   | yes      | Shared secret from `POPS_INTERNAL_API_KEY`. See PRD-228.             |
-| `X-Request-Id`         | no       | UUIDv4 echoed on the response.                                       |
-| `X-Pops-Wire-Version`  | no       | `1` floor.                                                           |
+| Header                | Required | Notes                                                    |
+| --------------------- | -------- | -------------------------------------------------------- |
+| `Content-Type`        | yes      | `application/json`                                       |
+| `X-Internal-API-Key`  | yes      | Shared secret from `POPS_INTERNAL_API_KEY`. See PRD-228. |
+| `X-Request-Id`        | no       | UUIDv4 echoed on the response.                           |
+| `X-Pops-Wire-Version` | no       | `1` floor.                                               |
 
 ### 6.3 Request body
 
@@ -478,7 +478,9 @@ POST <core_base_url>/trpc/core.registry.register
   "input": {
     "pillarId": "cerebrum",
     "baseUrl": "http://cerebrum:3010",
-    "manifest": { /* full ManifestPayload — same shape as GET /manifest.json */ },
+    "manifest": {
+      /* full ManifestPayload — same shape as GET /manifest.json */
+    },
     "apiKey": "<heartbeat shared secret>"
   }
 }
@@ -513,9 +515,7 @@ Failure (e.g. invalid manifest):
       "code": "BAD_REQUEST",
       "httpStatus": 400,
       "path": "core.registry.register",
-      "issues": [
-        { "path": ["aiTools", 0, "router"], "message": "Required" }
-      ]
+      "issues": [{ "path": ["aiTools", 0, "router"], "message": "Required" }]
     }
   }
 }
@@ -591,28 +591,28 @@ The `error.code` field in every error envelope (single-call §2.4, batched §3.3
 
 ### 8.1 tRPC v11 codes
 
-| Code                       | HTTP equivalent | When emitted                                                                                              | Client reaction                                       |
-| -------------------------- | --------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `BAD_REQUEST`              | 400             | Input failed schema validation; malformed envelope; missing required field.                               | Do not retry. Fix the request.                        |
-| `UNAUTHORIZED`             | 401             | Missing or invalid auth credential (e.g. bad `X-Internal-API-Key` on registration).                       | Do not retry. Fix the credential.                     |
-| `FORBIDDEN`                | 403             | Caller is authenticated but not allowed to perform this operation.                                        | Do not retry.                                         |
-| `NOT_FOUND`                | 404             | The procedure exists but the addressed resource does not.                                                 | Do not retry. Surface to user.                        |
-| `METHOD_NOT_SUPPORTED`     | 405             | The procedure does not support the requested method (e.g. mutation called via subscription URL).          | Do not retry. Bug in the client.                      |
-| `TIMEOUT`                  | 408             | Server exceeded its own internal deadline before producing a response.                                    | MAY retry with backoff if the operation is idempotent.|
-| `CONFLICT`                 | 409             | The operation conflicts with current state (e.g. duplicate key).                                          | MAY retry after resolving the conflict.               |
-| `PRECONDITION_FAILED`      | 412             | Optimistic-concurrency or precondition check failed (e.g. `If-Match` style guards).                       | MAY retry after re-reading state.                     |
-| `PAYLOAD_TOO_LARGE`        | 413             | Request body exceeded the pillar's documented size limit.                                                 | Do not retry. Reduce the payload.                     |
-| `UNSUPPORTED_MEDIA_TYPE`   | 415             | `Content-Type` or `Content-Encoding` not supported (e.g. gzip when the pillar does not support gzip).     | Do not retry without changing encoding.               |
-| `UNPROCESSABLE_CONTENT`    | 422             | Body parsed successfully but is semantically invalid for the procedure.                                   | Do not retry. Fix the input.                          |
-| `TOO_MANY_REQUESTS`        | 429             | Rate-limit triggered.                                                                                     | Retry with backoff. Honour `Retry-After` if present.  |
-| `CLIENT_CLOSED_REQUEST`    | 499             | Client aborted the request before the server finished. Emitted by servers that detect the abort.          | N/A — client already aborted.                         |
-| `INTERNAL_SERVER_ERROR`    | 500             | Unhandled server error; bug in the pillar.                                                                | MAY retry once for idempotent operations.             |
+| Code                     | HTTP equivalent | When emitted                                                                                          | Client reaction                                        |
+| ------------------------ | --------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `BAD_REQUEST`            | 400             | Input failed schema validation; malformed envelope; missing required field.                           | Do not retry. Fix the request.                         |
+| `UNAUTHORIZED`           | 401             | Missing or invalid auth credential (e.g. bad `X-Internal-API-Key` on registration).                   | Do not retry. Fix the credential.                      |
+| `FORBIDDEN`              | 403             | Caller is authenticated but not allowed to perform this operation.                                    | Do not retry.                                          |
+| `NOT_FOUND`              | 404             | The procedure exists but the addressed resource does not.                                             | Do not retry. Surface to user.                         |
+| `METHOD_NOT_SUPPORTED`   | 405             | The procedure does not support the requested method (e.g. mutation called via subscription URL).      | Do not retry. Bug in the client.                       |
+| `TIMEOUT`                | 408             | Server exceeded its own internal deadline before producing a response.                                | MAY retry with backoff if the operation is idempotent. |
+| `CONFLICT`               | 409             | The operation conflicts with current state (e.g. duplicate key).                                      | MAY retry after resolving the conflict.                |
+| `PRECONDITION_FAILED`    | 412             | Optimistic-concurrency or precondition check failed (e.g. `If-Match` style guards).                   | MAY retry after re-reading state.                      |
+| `PAYLOAD_TOO_LARGE`      | 413             | Request body exceeded the pillar's documented size limit.                                             | Do not retry. Reduce the payload.                      |
+| `UNSUPPORTED_MEDIA_TYPE` | 415             | `Content-Type` or `Content-Encoding` not supported (e.g. gzip when the pillar does not support gzip). | Do not retry without changing encoding.                |
+| `UNPROCESSABLE_CONTENT`  | 422             | Body parsed successfully but is semantically invalid for the procedure.                               | Do not retry. Fix the input.                           |
+| `TOO_MANY_REQUESTS`      | 429             | Rate-limit triggered.                                                                                 | Retry with backoff. Honour `Retry-After` if present.   |
+| `CLIENT_CLOSED_REQUEST`  | 499             | Client aborted the request before the server finished. Emitted by servers that detect the abort.      | N/A — client already aborted.                          |
+| `INTERNAL_SERVER_ERROR`  | 500             | Unhandled server error; bug in the pillar.                                                            | MAY retry once for idempotent operations.              |
 
 ### 8.2 POPS-specific codes
 
-| Code                  | HTTP equivalent | When emitted                                                                                       | Client reaction                            |
-| --------------------- | --------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `PILLAR_UNAVAILABLE`  | 503             | The orchestrator (typically `core-api`) is forwarding a call to a pillar that is not registered or is failing health checks. | Retry with backoff; surface to user if persistent. |
+| Code                 | HTTP equivalent | When emitted                                                                                                                 | Client reaction                                    |
+| -------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `PILLAR_UNAVAILABLE` | 503             | The orchestrator (typically `core-api`) is forwarding a call to a pillar that is not registered or is failing health checks. | Retry with backoff; surface to user if persistent. |
 
 ### 8.3 Compliance notes
 
@@ -668,16 +668,16 @@ The wire format is versioned independently of any contract package's semver.
 
 ### 10.2 Breaking vs additive
 
-| Change                                                  | Classification         |
-| ------------------------------------------------------- | ---------------------- |
-| New optional field on the manifest                      | Additive (minor)       |
-| New error code                                          | Additive (minor)       |
-| New required field on a request envelope                | Breaking (major)       |
-| Changing the URL shape (e.g. dropping `/trpc/` prefix)  | Breaking (major)       |
-| Changing the success envelope shape (`result.data`)     | Breaking (major)       |
-| Tightening an existing field (e.g. `string` → `uuid`)   | Breaking (major)       |
-| Removing an error code                                  | Breaking (major)       |
-| Documenting an existing undocumented behaviour          | Editorial (patch)      |
+| Change                                                 | Classification    |
+| ------------------------------------------------------ | ----------------- |
+| New optional field on the manifest                     | Additive (minor)  |
+| New error code                                         | Additive (minor)  |
+| New required field on a request envelope               | Breaking (major)  |
+| Changing the URL shape (e.g. dropping `/trpc/` prefix) | Breaking (major)  |
+| Changing the success envelope shape (`result.data`)    | Breaking (major)  |
+| Tightening an existing field (e.g. `string` → `uuid`)  | Breaking (major)  |
+| Removing an error code                                 | Breaking (major)  |
+| Documenting an existing undocumented behaviour         | Editorial (patch) |
 
 ### 10.3 Deprecation window
 
@@ -694,7 +694,7 @@ A v2 ships only after:
 - **TypeScript**: `@pops/pillar-sdk` (this monorepo). Every in-tree pillar uses it; CI runs the conformance suite (§12) against every in-tree pillar on every PR. The SDK is the baseline.
 - **Rust**: PRD-233 ships a reference Rust pillar built directly against this spec. It MUST pass the same conformance suite as TS pillars. It is not a deployment target — it exists to prove the spec is implementable from scratch.
 
-Both implementations are *examples*, not authorities. If they disagree with this document, this document wins.
+Both implementations are _examples_, not authorities. If they disagree with this document, this document wins.
 
 ---
 

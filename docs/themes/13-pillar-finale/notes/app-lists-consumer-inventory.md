@@ -25,20 +25,20 @@ doc comment, not a real call.
 
 ## Triage
 
-| Bucket      | Count | Definition                                                              | Notes                                                                |
-| ----------- | ----- | ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Trivial** | 14    | Single-router `trpc.lists.*` call, plain `utils.invalidate` only        | Standard query / mutation hooks across the 6 files.                  |
-| **Medium**  | 0     | —                                                                       | None.                                                                |
-| **Risky**   | 3     | Optimistic `setData` writes on `lists.list.get` with snapshot rollback  | 1 file (`useShoppingBulkMutations.ts`) holding 3 `setData` calls.    |
+| Bucket      | Count | Definition                                                             | Notes                                                             |
+| ----------- | ----- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Trivial** | 14    | Single-router `trpc.lists.*` call, plain `utils.invalidate` only       | Standard query / mutation hooks across the 6 files.               |
+| **Medium**  | 0     | —                                                                      | None.                                                             |
+| **Risky**   | 3     | Optimistic `setData` writes on `lists.list.get` with snapshot rollback | 1 file (`useShoppingBulkMutations.ts`) holding 3 `setData` calls. |
 
 Total = 14 + 0 + 3 = 17 (matches call-site count).
 
 ## Call sites by router
 
-| Router          | Calls |
-| --------------- | ----- |
-| `lists.list`    | 9     |
-| `lists.items`   | 8     |
+| Router        | Calls |
+| ------------- | ----- |
+| `lists.list`  | 9     |
+| `lists.items` | 8     |
 
 ## Call sites by file
 

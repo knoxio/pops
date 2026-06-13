@@ -117,7 +117,7 @@ Is this load-bearing? Three observations:
    logged but the debrief side-effects fail, the user can still see "I
    watched this", and the next completion (or a scheduled reconciler)
    re-creates the debrief queue. The reverse — debrief rows orphaned
-   without a watch_history entry — _would_ be a bug, but it cannot happen
+   without a watch*history entry — \_would* be a bug, but it cannot happen
    in any of the proposed shapes below because the watch_history insert
    is always the first write.
 
@@ -150,10 +150,10 @@ itself.
 ### C) Move `logWatch` into cerebrum
 
 The orchestrator that fans out to media + cerebrum lives in cerebrum,
-treating media's watch_history as a write-only target via SDK. Wrong
+treating media's watch*history as a write-only target via SDK. Wrong
 direction: logWatch is triggered by media UI flows (manual log, Plex
 sync, batch ops), its dominant work is media-side (watchlist removal,
-priority resequence, episode→show resolution), and only the _tail_ is
+priority resequence, episode→show resolution), and only the \_tail* is
 cerebrum. Hoisting it into cerebrum inverts the call graph for one branch
 of an otherwise media-shaped function. **Rejected.**
 

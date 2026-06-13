@@ -7,17 +7,17 @@ This document is **audit-only**. No migration in this PR.
 
 ## Summary
 
-| Metric                                                                | Value                          |
-| --------------------------------------------------------------------- | ------------------------------ |
-| Total tRPC call sites (`useQuery` / `useMutation`)                    | **151**                        |
-| Files containing at least one call site                               | **61**                         |
-| `trpc.useUtils()` consumers (cache invalidation)                      | 32 files                       |
-| Calls into `trpc.media.*` (pillar-local)                              | **151**                        |
-| Cross-pillar calls (`trpc.core.*`, others)                            | **0**                          |
-| Direct `getDrizzle()` usage                                           | 0                              |
-| Raw `fetch('/trpc/…')` usage                                          | 0                              |
-| Optimistic updates (`utils.*.setData` / `onMutate` for cache writes)  | **14 occurrences across 3 files** |
-| `useSuspenseQuery` / `useInfiniteQuery`                               | 0                              |
+| Metric                                                               | Value                             |
+| -------------------------------------------------------------------- | --------------------------------- |
+| Total tRPC call sites (`useQuery` / `useMutation`)                   | **151**                           |
+| Files containing at least one call site                              | **61**                            |
+| `trpc.useUtils()` consumers (cache invalidation)                     | 32 files                          |
+| Calls into `trpc.media.*` (pillar-local)                             | **151**                           |
+| Cross-pillar calls (`trpc.core.*`, others)                           | **0**                             |
+| Direct `getDrizzle()` usage                                          | 0                                 |
+| Raw `fetch('/trpc/…')` usage                                         | 0                                 |
+| Optimistic updates (`utils.*.setData` / `onMutate` for cache writes) | **14 occurrences across 3 files** |
+| `useSuspenseQuery` / `useInfiniteQuery`                              | 0                                 |
 
 The package consumes `@pops/api-client` and is otherwise self-contained against
 the `media` tRPC namespace. There is no cross-pillar coupling at the call-site
@@ -25,11 +25,11 @@ level — every call is `trpc.media.*`.
 
 ## Triage
 
-| Bucket      | Count | Definition                                                                                                              | Notes                                                                                                                              |
-| ----------- | ----- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Trivial** | 137   | Single-pillar `trpc.media.*` call, ≤5 LOC delta, query or mutation with at most `utils.media.*.invalidate()`            | The bulk; suitable for the first migration sweep.                                                                                  |
-| **Medium**  | 0     | Wrapper-required (cross-router invalidation chain, or `usePillarQuery`-style adapter)                                   | Many `useUtils()` consumers exist, but they all stay inside `media.*` namespace, so they remain trivial for the SDK swap.          |
-| **Risky**   | 14    | Optimistic updates via `utils.media.*.setData(...)` and `onMutate` rollback in three files                              | Needs the SDK to expose a typed cache-write surface, or keep `utils` on raw tRPC for these hooks.                                  |
+| Bucket      | Count | Definition                                                                                                   | Notes                                                                                                                     |
+| ----------- | ----- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **Trivial** | 137   | Single-pillar `trpc.media.*` call, ≤5 LOC delta, query or mutation with at most `utils.media.*.invalidate()` | The bulk; suitable for the first migration sweep.                                                                         |
+| **Medium**  | 0     | Wrapper-required (cross-router invalidation chain, or `usePillarQuery`-style adapter)                        | Many `useUtils()` consumers exist, but they all stay inside `media.*` namespace, so they remain trivial for the SDK swap. |
+| **Risky**   | 14    | Optimistic updates via `utils.media.*.setData(...)` and `onMutate` rollback in three files                   | Needs the SDK to expose a typed cache-write surface, or keep `utils` on raw tRPC for these hooks.                         |
 
 Total = 137 + 0 + 14 = 151 (matches call-site count).
 

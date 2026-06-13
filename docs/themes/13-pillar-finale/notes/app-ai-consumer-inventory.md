@@ -27,22 +27,22 @@ type imports detected).
 
 ## Triage
 
-| Bucket      | Count | Definition                                                                                | Notes                                                                |
-| ----------- | ----- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Trivial** | 0     | —                                                                                         | Nothing is pillar-local.                                             |
-| **Medium**  | 14    | `trpc.core.*` cross-pillar call, plain query / mutation with `utils.invalidate` only      | Entire package. Blocked on `@pops/core-sdk` (AI sub-surface) ship.   |
-| **Risky**   | 0     | —                                                                                         | No optimistic, suspense, or infinite queries.                        |
+| Bucket      | Count | Definition                                                                           | Notes                                                              |
+| ----------- | ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| **Trivial** | 0     | —                                                                                    | Nothing is pillar-local.                                           |
+| **Medium**  | 14    | `trpc.core.*` cross-pillar call, plain query / mutation with `utils.invalidate` only | Entire package. Blocked on `@pops/core-sdk` (AI sub-surface) ship. |
+| **Risky**   | 0     | —                                                                                    | No optimistic, suspense, or infinite queries.                      |
 
 Total = 0 + 14 + 0 = 14 (matches call-site count).
 
 ## Call sites by router
 
-| Router                    | Calls |
-| ------------------------- | ----- |
-| `core.aiUsage`            | 7     |
-| `core.aiObservability`    | 4     |
-| `core.aiProviders`        | 2     |
-| `core.aiBudgets`          | 1     |
+| Router                 | Calls |
+| ---------------------- | ----- |
+| `core.aiUsage`         | 7     |
+| `core.aiObservability` | 4     |
+| `core.aiProviders`     | 2     |
+| `core.aiBudgets`       | 1     |
 
 ## Call sites by file
 
