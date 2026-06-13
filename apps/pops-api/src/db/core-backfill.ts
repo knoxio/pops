@@ -4,12 +4,23 @@ import { resolveSqlitePath } from './sqlite-path.js';
  * Boot-time backfill from the legacy shared `pops.db` into the core
  * pillar's `core.db`.
  *
- * Each slice cutover (Phase 2 PR 3 service-accounts, PRD-183 settings, …)
- * flips its handle to `getCoreDrizzle()`. The first deploy after each
- * cutover needs to carry the existing rows from the shared DB across
- * before any reads come from the new file. Subsequent boots find the
- * core copy already populated and become a no-op via the
- * `WHERE <id> NOT IN (...)` existence filter on every table.
+ * Each slice cutover (Phase 2 PR 3 service-accounts, PRD-183 settings,
+ * PRD-186 ai-usage, …) flips its handle to `getCoreDrizzle()`. The
+ * first deploy after each cutover needs to carry the existing rows
+ * from the shared DB across before any reads come from the new file.
+ * Subsequent boots find the core copy already populated and become a
+ * no-op via the `WHERE <id> NOT IN (...)` existence filter on every
+ * table.
+ *
+ * Theme 13 round 2 retired the `service_accounts`, `settings`,
+ * `ai_inference_daily`, and `ai_budgets` entries from `TABLE_COPIES`
+ * — every write site for those tables now lands on `core.db` via
+ * `getCoreDrizzle()`. `ai_inference_log` stays on the bridge because
+ * `modules/food/routers/ai.ts` still writes to it via the shared
+ * `getDrizzle()` handle (food-pillar PR 3 follow-up). Depends on the
+ * settings + ai-usage + service-accounts PR 3 deploys having shipped
+ * to prod before the retired entries are dropped; otherwise late
+ * rows on `pops.db` would be stranded.
  *
  * No FK relationships exist between the listed core tables, so order
  * is independent — but each entry is wrapped in `tryCopyTable` so a
@@ -39,26 +50,6 @@ interface TableCopy {
 
 const TABLE_COPIES: readonly TableCopy[] = [
   {
-    table: 'service_accounts',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'name',
-      'key_prefix',
-      'key_hash',
-      'scopes',
-      'created_at',
-      'last_used_at',
-      'revoked_at',
-      'created_by',
-    ],
-  },
-  {
-    table: 'settings',
-    idColumn: 'key',
-    columns: ['key', 'value'],
-  },
-  {
     table: 'ai_inference_log',
     idColumn: 'id',
     columns: [
@@ -77,41 +68,6 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'error_message',
       'metadata',
       'created_at',
-    ],
-  },
-  {
-    table: 'ai_inference_daily',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'date',
-      'provider',
-      'model',
-      'operation',
-      'domain',
-      'total_calls',
-      'total_input_tokens',
-      'total_output_tokens',
-      'total_cost_usd',
-      'avg_latency_ms',
-      'error_count',
-      'timeout_count',
-      'cache_hit_count',
-      'budget_blocked_count',
-    ],
-  },
-  {
-    table: 'ai_budgets',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'scope_type',
-      'scope_value',
-      'monthly_token_limit',
-      'monthly_cost_limit',
-      'action',
-      'created_at',
-      'updated_at',
     ],
   },
 ];
