@@ -23,12 +23,14 @@ There is therefore **no slice to cut over** under this PRD. No package scaffold,
 
 ## API Surface
 
-| Procedure (namespace)             | File                                              | DB handle today                          |
-| --------------------------------- | ------------------------------------------------- | ---------------------------------------- |
-| `media.radarr.*` settings I/O     | `media/arr/service-settings.ts`                   | `getCoreDrizzle()` (correct — stays)     |
-| `media.radarr.*` HTTP ops         | `media/arr/radarr-client.ts`, `radarr-procedures` | none (outbound HTTP)                     |
-| `media.sonarr.*` HTTP ops         | `media/arr/sonarr-client.ts`, `sonarr-procedures` | none (outbound HTTP)                     |
-| `media.radarr.downloadAndProtect` | `media/arr/download-and-protect.ts`               | `getMediaDrizzle()` for the movies write |
+All procedures are wired under `media.arr.*` — the `arrRouter` flattens Radarr and Sonarr procedures into a single namespace (see `apps/pops-api/src/modules/media/index.ts`).
+
+| Procedure (namespace)          | File                                              | DB handle today                          |
+| ------------------------------ | ------------------------------------------------- | ---------------------------------------- |
+| `media.arr.*` settings I/O     | `media/arr/service-settings.ts`                   | `getCoreDrizzle()` (correct — stays)     |
+| `media.arr.*` Radarr HTTP ops  | `media/arr/radarr-client.ts`, `radarr-procedures` | none (outbound HTTP)                     |
+| `media.arr.*` Sonarr HTTP ops  | `media/arr/sonarr-client.ts`, `sonarr-procedures` | none (outbound HTTP)                     |
+| `media.arr.downloadAndProtect` | `media/arr/download-and-protect.ts`               | `getMediaDrizzle()` for the movies write |
 
 The HTTP clients (`radarr-client.ts`, `sonarr-client.ts`, `base-client.ts`) make outbound calls to Radarr/Sonarr — no DB at all.
 
