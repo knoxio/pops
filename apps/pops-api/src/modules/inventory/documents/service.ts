@@ -48,9 +48,7 @@ function translate<T>(fn: () => T): T {
       throw new NotFoundError('Item document link', String(err.id));
     }
     if (err instanceof DocumentConflictError) {
-      throw new ConflictError(
-        `Document '${err.paperlessDocumentId}' is already linked to item '${err.itemId}'`
-      );
+      throw new ConflictError(err.message);
     }
     if (err instanceof DocumentCreateFailedError) {
       throw new NotFoundError('Item document link', `${err.itemId}-${err.paperlessDocumentId}`);
