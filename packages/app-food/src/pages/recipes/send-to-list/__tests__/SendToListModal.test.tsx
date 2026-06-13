@@ -57,22 +57,13 @@ let capturedSendOptions: {
 } = {};
 let mockSendPending = false;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      recipes: {
-        prepareSendToList: { useQuery: (...args: unknown[]) => mockPrepare(...args) },
-      },
-    },
-    lists: {
-      list: {
-        list: { useQuery: (...args: unknown[]) => mockListsList(...args) },
-      },
-    },
-  },
-}));
-
 vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
+    const key = `${pillarId}.${path.join('.')}`;
+    if (key === 'food.recipes.prepareSendToList') return mockPrepare(input, opts);
+    if (key === 'lists.list.list') return mockListsList(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
+  },
   usePillarMutation: (
     _pillarId: string,
     path: readonly string[],

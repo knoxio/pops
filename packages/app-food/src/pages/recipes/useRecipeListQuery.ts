@@ -1,8 +1,15 @@
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarInfiniteQuery } from '@pops/pillar-sdk/react';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 import type { RecipeListFilterState, RecipeType } from './recipe-list-types.js';
+
+type RecipeListOutput = inferRouterOutputs<AppRouter>['food']['recipes']['list'];
+type RecipeListCursor = string | null;
 
 export interface UseRecipeListQueryArgs {
   filters: RecipeListFilterState;
@@ -34,10 +41,10 @@ export interface UseRecipeListQueryResult {
 }
 
 /**
- * Wraps `trpc.food.recipes.list.useInfiniteQuery` so the page component
- * stays declarative. The hook is keyed off the filter state plus a
- * pre-debounced search string — the caller owns debouncing so this hook
- * doesn't re-trigger on every keystroke.
+ * Wraps `food.recipes.list` paginated reads via `usePillarInfiniteQuery`
+ * so the page component stays declarative. The hook is keyed off the
+ * filter state plus a pre-debounced search string — the caller owns
+ * debouncing so this hook doesn't re-trigger on every keystroke.
  */
 export function useRecipeListQuery({
   filters,
@@ -55,9 +62,15 @@ export function useRecipeListQuery({
     [debouncedSearch, filters]
   );
 
-  const query = trpc.food.recipes.list.useInfiniteQuery(input, {
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-  });
+  const query = usePillarInfiniteQuery<RecipeListOutput, RecipeListCursor>(
+    'food',
+    ['recipes', 'list'],
+    input,
+    {
+      initialPageParam: null as RecipeListCursor,
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    }
+  );
 
   const items = useMemo(
     () => (query.data?.pages ?? []).flatMap((page) => page.items),
@@ -68,7 +81,7 @@ export function useRecipeListQuery({
     items,
     isLoading: query.isLoading,
     isFetchingNextPage: query.isFetchingNextPage,
-    hasNextPage: query.hasNextPage ?? false,
+    hasNextPage: query.hasNextPage,
     fetchNextPage: () => {
       void query.fetchNextPage();
     },

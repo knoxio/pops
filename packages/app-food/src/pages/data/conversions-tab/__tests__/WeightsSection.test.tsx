@@ -51,12 +51,6 @@ const mockUpdateMutate = vi.fn();
 const mockDeleteMutate = vi.fn();
 let createOpts: MutationOpts = {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useQueries: (builder: unknown) => mockUseQueries(builder),
-  },
-}));
-
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
     const key = path.join('.');
@@ -65,6 +59,8 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     if (key === 'ingredients.get') return mockGetIngredient(input, opts);
     throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarQueries: (args: readonly unknown[]) => mockUseQueries(args),
+  pillarQueryArg: <T,>(arg: T) => arg,
   usePillarMutation: (_pillarId: string, path: readonly string[], opts: MutationOpts) => {
     const key = path.join('.');
     if (key === 'conversions.createWeight') {

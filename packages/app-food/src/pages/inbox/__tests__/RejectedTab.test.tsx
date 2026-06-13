@@ -23,45 +23,39 @@ import type { RejectedRow } from '../inbox-types';
 
 const mockListRejected = vi.fn();
 const mockSetData = vi.fn();
-const mockGetData = vi.fn();
-const mockCancel = vi.fn();
 const mockInvalidate = vi.fn();
 const mockUnrejectMutate = vi.fn();
 let mockUnrejectOpts:
   | {
-      onMutate?: (input: { versionId: number }) => Promise<{ snapshot: unknown }>;
+      onMutate?: (input: { versionId: number }) => { snapshot: unknown };
       onError?: (err: Error, input: { versionId: number }, ctx: { snapshot: unknown }) => void;
       onSuccess?: (res: { ok: boolean; reason?: string }) => void;
       onSettled?: () => void;
     }
   | undefined;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        inbox: {
-          listRejected: {
-            cancel: mockCancel,
-            getData: mockGetData,
-            setData: mockSetData,
-            invalidate: mockInvalidate,
-          },
-        },
-      },
-    }),
-    food: {
-      inbox: {
-        listRejected: { useQuery: (input: unknown) => mockListRejected(input) },
-        unreject: {
-          useMutation: (opts: NonNullable<typeof mockUnrejectOpts>) => {
-            mockUnrejectOpts = opts;
-            return { mutate: mockUnrejectMutate, isPending: false, variables: undefined };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'inbox.listRejected') return mockListRejected(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: NonNullable<typeof mockUnrejectOpts>
+  ) => {
+    const key = path.join('.');
+    if (key === 'inbox.unreject') {
+      mockUnrejectOpts = opts;
+      return { mutate: mockUnrejectMutate, isPending: false, variables: undefined };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    setData: mockSetData,
+    invalidate: mockInvalidate,
+  }),
 }));
 
 import { RejectedTab } from '../RejectedTab.js';
@@ -154,7 +148,6 @@ describe('RejectedTab — PRD-138', () => {
       isError: false,
       error: null,
     });
-    mockGetData.mockReturnValue({ items: [makeRow()], nextCursor: null });
     render(
       <Wrapper>
         <RejectedTab now={FIXED_NOW} />
@@ -177,7 +170,6 @@ describe('RejectedTab — PRD-138', () => {
       isError: false,
       error: null,
     });
-    mockGetData.mockReturnValue(snapshot);
     render(
       <Wrapper>
         <RejectedTab now={FIXED_NOW} />
@@ -186,7 +178,11 @@ describe('RejectedTab — PRD-138', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /Undo rejection/i }));
     mockUnrejectOpts?.onError?.(new Error('boom'), { versionId: 1 }, { snapshot });
-    expect(mockSetData).toHaveBeenCalledWith(expect.objectContaining({}), snapshot);
+    expect(mockSetData).toHaveBeenCalledWith(
+      ['inbox', 'listRejected'],
+      expect.objectContaining({}),
+      expect.any(Function)
+    );
     await waitFor(() => {
       expect(screen.getByText(/Couldn’t undo: boom/i)).toBeInTheDocument();
     });

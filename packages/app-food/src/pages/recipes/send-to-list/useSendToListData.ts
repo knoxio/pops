@@ -6,14 +6,15 @@
  * both resolve. Both queries are scoped to enabled=open so the modal pays
  * nothing while closed.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
 import type { AppRouter } from '@pops/api-client';
 
 export type PrepareOutput = inferRouterOutputs<AppRouter>['food']['recipes']['prepareSendToList'];
-export type ShoppingList = inferRouterOutputs<AppRouter>['lists']['list']['list']['items'][number];
+type ListsListOutput = inferRouterOutputs<AppRouter>['lists']['list']['list'];
+export type ShoppingList = ListsListOutput['items'][number];
 
 export interface SendToListDataState {
   preview: PrepareOutput | undefined;
@@ -30,11 +31,15 @@ interface Args {
 }
 
 export function useSendToListData({ versionId, scaleFactor, enabled }: Args): SendToListDataState {
-  const prepare = trpc.food.recipes.prepareSendToList.useQuery(
+  const prepare = usePillarQuery<PrepareOutput>(
+    'food',
+    ['recipes', 'prepareSendToList'],
     { versionId, scaleFactor },
     { enabled }
   );
-  const lists = trpc.lists.list.list.useQuery(
+  const lists = usePillarQuery<ListsListOutput>(
+    'lists',
+    ['list', 'list'],
     { kinds: ['shopping'], includeArchived: false, sort: 'updated' },
     { enabled }
   );
@@ -42,7 +47,7 @@ export function useSendToListData({ versionId, scaleFactor, enabled }: Args): Se
     preview: prepare.data,
     shoppingLists: lists.data?.items ?? [],
     isLoading: prepare.isLoading || lists.isLoading,
-    error: (prepare.error as Error | null) ?? (lists.error as Error | null) ?? null,
+    error: prepare.error ?? lists.error ?? null,
     refetch: () => {
       void prepare.refetch();
       void lists.refetch();
