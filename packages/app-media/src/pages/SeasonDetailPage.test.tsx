@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { PillarCallError } from '@pops/pillar-sdk/client';
+
 import { SeasonDetailPage } from './SeasonDetailPage';
 
 const {
@@ -36,110 +38,18 @@ const {
   mockSetData: vi.fn(),
 }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      tvShows: {
-        get: {
-          useQuery: (...args: unknown[]) => mockShowQuery(...args),
-        },
-        listSeasons: {
-          useQuery: (...args: unknown[]) => mockSeasonsQuery(...args),
-        },
-        listEpisodes: {
-          useQuery: (...args: unknown[]) => mockEpisodesQuery(...args),
-        },
-      },
-      watchHistory: {
-        list: {
-          useQuery: (...args: unknown[]) => mockWatchHistoryQuery(...args),
-        },
-        progress: {
-          useQuery: (...args: unknown[]) => mockProgressQuery(...args),
-        },
-        log: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockLogMutation.mockImplementation(() => {
-              if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
-            });
-            return { mutate: mockLogMutation, isPending: false };
-          },
-        },
-        delete: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockDeleteMutation.mockImplementation(() => {
-              if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
-            });
-            return { mutate: mockDeleteMutation, isPending: false };
-          },
-        },
-        invalidate: mockInvalidate,
-      },
-      arr: {
-        checkSeries: {
-          useQuery: (...args: unknown[]) => mockCheckSeriesQuery(...args),
-        },
-        getSeriesEpisodes: {
-          useQuery: (...args: unknown[]) => mockSonarrEpisodesQuery(...args),
-          invalidate: mockInvalidate,
-        },
-        updateSeasonMonitoring: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockSeasonMonitorMutation.mockImplementation(() => {
-              if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
-            });
-            return { mutate: mockSeasonMonitorMutation, isPending: false };
-          },
-        },
-        updateEpisodeMonitoring: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockEpisodeMonitorMutation.mockImplementation(
-              (variables: { episodeIds: number[]; monitored: boolean }) => {
-                if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
-                if (typeof opts.onSettled === 'function')
-                  (opts.onSettled as (d: unknown, e: unknown, v: typeof variables) => void)(
-                    undefined,
-                    undefined,
-                    variables
-                  );
-              }
-            );
-            return { mutate: mockEpisodeMonitorMutation, isPending: false };
-          },
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        watchHistory: {
-          list: {
-            invalidate: mockInvalidate,
-            cancel: vi.fn().mockResolvedValue(undefined),
-            getData: vi.fn(),
-            setData: vi.fn(),
-          },
-          progress: {
-            invalidate: mockInvalidate,
-            cancel: vi.fn().mockResolvedValue(undefined),
-            getData: vi.fn(),
-            setData: vi.fn(),
-          },
-          invalidate: mockInvalidate,
-        },
-        tvShows: {
-          listSeasons: { invalidate: mockInvalidate },
-        },
-        arr: {
-          checkSeries: { invalidate: mockInvalidate },
-          getSeriesEpisodes: { invalidate: mockInvalidate },
-        },
-      },
-    }),
-  },
-}));
-
 vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: () => ({ data: undefined, isLoading: false }),
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'tvShows.get') return mockShowQuery(input);
+    if (key === 'tvShows.listSeasons') return mockSeasonsQuery(input);
+    if (key === 'tvShows.listEpisodes') return mockEpisodesQuery(input);
+    if (key === 'watchHistory.list') return mockWatchHistoryQuery(input);
+    if (key === 'watchHistory.progress') return mockProgressQuery(input);
+    if (key === 'arr.checkSeries') return mockCheckSeriesQuery(input);
+    if (key === 'arr.getSeriesEpisodes') return mockSonarrEpisodesQuery(input);
+    return { data: undefined, isLoading: false };
+  },
   usePillarMutation: (
     _pillarId: string,
     path: readonly string[],
@@ -154,6 +64,38 @@ vi.mock('@pops/pillar-sdk/react', () => ({
         if (typeof opts.onSettled === 'function') (opts.onSettled as () => void)();
       });
       return { mutate: mockBatchLogMutation, isPending: false };
+    }
+    if (key === 'watchHistory.log') {
+      mockLogMutation.mockImplementation(() => {
+        if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
+      });
+      return { mutate: mockLogMutation, isPending: false };
+    }
+    if (key === 'watchHistory.delete') {
+      mockDeleteMutation.mockImplementation(() => {
+        if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
+      });
+      return { mutate: mockDeleteMutation, isPending: false };
+    }
+    if (key === 'arr.updateSeasonMonitoring') {
+      mockSeasonMonitorMutation.mockImplementation(() => {
+        if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
+      });
+      return { mutate: mockSeasonMonitorMutation, isPending: false };
+    }
+    if (key === 'arr.updateEpisodeMonitoring') {
+      mockEpisodeMonitorMutation.mockImplementation(
+        (variables: { episodeIds: number[]; monitored: boolean }) => {
+          if (typeof opts.onSuccess === 'function') (opts.onSuccess as () => void)();
+          if (typeof opts.onSettled === 'function')
+            (opts.onSettled as (d: unknown, e: unknown, v: typeof variables) => void)(
+              undefined,
+              undefined,
+              variables
+            );
+        }
+      );
+      return { mutate: mockEpisodeMonitorMutation, isPending: false };
     }
     return { mutate: vi.fn(), isPending: false };
   },
@@ -516,7 +458,7 @@ describe('SeasonDetailPage — monitoring', () => {
       mockShowQuery.mockReturnValue({
         data: null,
         isLoading: false,
-        error: { data: { code: 'NOT_FOUND' }, message: 'Not found' },
+        error: new PillarCallError('media', { kind: 'not-found', pillar: 'media' }),
       });
       renderPage('999');
       expect(screen.getByText('Show not found')).toBeInTheDocument();
