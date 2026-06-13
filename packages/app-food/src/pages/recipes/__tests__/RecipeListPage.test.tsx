@@ -13,15 +13,16 @@ import type { RecipeListItemView } from '../useRecipeListQuery.js';
 
 const mockListInfinite = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      recipes: {
-        list: {
-          useInfiniteQuery: (input: unknown, opts: unknown) => mockListInfinite(input, opts),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarInfiniteQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    input: unknown,
+    opts: unknown
+  ) => {
+    const key = path.join('.');
+    if (key === 'recipes.list') return mockListInfinite(input, opts);
+    throw new Error(`Unexpected pillar infinite query: ${key}`);
   },
 }));
 
