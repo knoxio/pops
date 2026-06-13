@@ -2,7 +2,7 @@
 
 > Epic: [Cross-language interop](../../epics/14-cross-language-interop.md)
 
-> Status: Partial — US-01 done, US-02/US-03 follow-up
+> Status: Partial — US-01 done, US-02 decision done (see [publication decision note](../../notes/wire-format-publication-decision.md)), US-03 follow-up
 
 > Spec: [`pillar-wire-format-v1.md`](../../specs/pillar-wire-format-v1.md)
 
