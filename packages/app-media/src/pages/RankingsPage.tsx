@@ -2,7 +2,7 @@ import { Trophy } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * RankingsPage — leaderboard of media items ranked by Elo score.
  */
@@ -80,11 +80,14 @@ export function RankingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const dimensionParam = searchParams.get('dimension') ?? 'overall';
 
-  const { data: dimensionsData, isLoading: dimsLoading } =
-    trpc.media.comparisons.listDimensions.useQuery();
+  const { data: dimensionsData, isLoading: dimsLoading } = usePillarQuery<{ data: Dimension[] }>(
+    'media',
+    ['comparisons', 'listDimensions'],
+    undefined
+  );
 
   const activeDimensions = useMemo<Dimension[]>(
-    () => (dimensionsData?.data ?? []).filter((d: Dimension) => d.active),
+    () => (dimensionsData?.data ?? []).filter((d) => d.active),
     [dimensionsData?.data]
   );
 
