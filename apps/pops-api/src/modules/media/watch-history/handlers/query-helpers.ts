@@ -1,5 +1,5 @@
 /**
- * Watch-history read/write surface — PRD-168 PR2 cutover.
+ * Watch-history read/write surface — PRD-168 PR2 + PR3 cutover.
  *
  * Read/write split during the migration window:
  *  - `listWatchHistory` and `getWatchHistoryEntry` are routed through
@@ -8,10 +8,17 @@
  *  - Every write path — `logWatch` in `./log-watch-event.ts`,
  *    `deleteWatchHistoryEntry` below, `batchLogWatch`, the cascade
  *    deletes for `debrief_sessions` / `debrief_results` — still goes
- *    through `getDrizzle()` (the shared `pops.db`). Debrief tables and
- *    the `watch_history.id` FK they hang off are still pinned to the
- *    legacy mount, so writes must stay there until the full slice
- *    moves to `@pops/media-db`.
+ *    through `getDrizzle()` (the shared `pops.db`). PR3 audit confirmed
+ *    every writer in the pops-api watch-history surface is a mixed-table
+ *    transaction spanning `watch_history` plus at least one of
+ *    `episodes`, `seasons`, `mediaWatchlist`, `debrief_sessions`, or
+ *    `debrief_results`. None of those tables live in `@pops/media-db`
+ *    yet, so flipping `watch_history` alone would split a single
+ *    transaction across two SQLite files. PR3 therefore defers the
+ *    writes cutover until the dependent slices ship their own
+ *    `getMediaDrizzle()` / `getCerebrumDrizzle()` handles. See the
+ *    per-handler headers in `./log-watch-event.ts` and
+ *    `./batch-operations.ts` for the table-by-table breakdown.
  *
  * Cross-store consistency relies on `backfillMediaFromShared()` in
  * `apps/pops-api/src/db/media-backfill.ts`: a one-way, boot-time copy

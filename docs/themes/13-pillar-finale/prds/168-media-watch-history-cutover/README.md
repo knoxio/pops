@@ -46,12 +46,12 @@ Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                    |
-| --- | ----------------------------------------------------------- | ------------------------------------------ |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Schema + service + batched backfill |
-| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal            |
-| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip router to `getMediaDrizzle()`  |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                |
+| #   | Story                                                       | Summary                                                                                      |
+| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Schema + service + batched backfill                                                   |
+| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal                                                              |
+| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip leaf reads to `getMediaDrizzle()`; writes deferred (every writer is mixed-table) |
+| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                                                                  |
 
 ## Out of Scope
 

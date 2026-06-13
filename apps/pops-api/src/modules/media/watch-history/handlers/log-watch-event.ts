@@ -1,3 +1,19 @@
+/**
+ * `logWatch` — mixed-table writer. PRD-168 PR3 left this on `getDrizzle()`
+ * deliberately: the transaction inserts into `watchHistory`, then for an
+ * episode resolves `episodes` -> `seasons` -> `tv_show` to seed debrief
+ * state, deletes from `mediaWatchlist`, and resequences watchlist
+ * priorities. Splitting any of those reads/writes across a different
+ * SQLite file would break atomicity, so the whole transaction stays on
+ * `pops.db` until `episodes`, `seasons`, and `mediaWatchlist` move into
+ * `@pops/media-db` (and `debriefSessions` / `debriefStatus` move into
+ * the cerebrum pillar). At that point this orchestrator either fans out
+ * to per-pillar services or, more likely, becomes a router-layer call
+ * sequencing distinct transactions per store.
+ *
+ * `autoRemoveTvShowIfFullyWatched` is exported only for `batchLogWatch`
+ * and runs inside the same `getDrizzle()` transaction.
+ */
 import { and, countDistinct, eq, inArray } from 'drizzle-orm';
 
 import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/db-types';

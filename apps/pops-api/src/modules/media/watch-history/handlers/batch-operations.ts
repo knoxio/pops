@@ -1,3 +1,14 @@
+/**
+ * `batchLogWatch` — mixed-table writer. PRD-168 PR3 left this on
+ * `getDrizzle()` for the same reason as `logWatch`: the transaction
+ * walks `seasons`/`episodes` to expand the input, dedups against
+ * existing `watchHistory` rows, inserts the new events, then on a
+ * fully-watched show deletes from `mediaWatchlist` and resequences
+ * priorities. Every read and write must hit the same store within one
+ * transaction; until `episodes`, `seasons`, and `mediaWatchlist` move
+ * into `@pops/media-db` this whole orchestrator stays pinned to
+ * `pops.db`.
+ */
 import { and, countDistinct, eq, inArray, isNotNull, lte } from 'drizzle-orm';
 
 import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/db-types';
