@@ -30,16 +30,6 @@ afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-const LOCATIONS_SQL = `
-CREATE TABLE locations (
-  id text PRIMARY KEY NOT NULL,
-  name text NOT NULL,
-  parent_id text,
-  sort_order integer DEFAULT 0 NOT NULL,
-  last_edited_time text NOT NULL
-);
-`;
-
 const HOME_INVENTORY_SQL = `
 CREATE TABLE home_inventory (
   id text PRIMARY KEY NOT NULL,
@@ -74,7 +64,6 @@ CREATE TABLE home_inventory (
 function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string {
   const path = join(tmpDir, 'pops.db');
   const raw = new BetterSqlite3(path);
-  raw.exec(LOCATIONS_SQL);
   raw.exec(HOME_INVENTORY_SQL);
   seed(raw);
   raw.close();
@@ -82,26 +71,19 @@ function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string
 }
 
 describe('backfillInventoryFromShared', () => {
-  it('copies locations + home_inventory rows from the shared DB on first run', () => {
+  it('copies home_inventory rows from the shared DB on first run', () => {
     const sharedPath = openSharedWithSeed((raw) => {
       raw.exec(
-        `INSERT INTO locations (id, name, sort_order, last_edited_time) VALUES ('loc-1', 'Home', 0, '2026-06-10T00:00:00Z')`
-      );
-      raw.exec(
-        `INSERT INTO home_inventory (id, item_name, location_id, last_edited_time) VALUES ('item-1', 'Couch', 'loc-1', '2026-06-10T00:00:00Z')`
+        `INSERT INTO home_inventory (id, item_name, last_edited_time) VALUES ('item-1', 'Couch', '2026-06-10T00:00:00Z')`
       );
     });
 
     const inventory = openInventoryDb(join(tmpDir, 'inventory.db'));
     try {
       backfillInventoryFromShared(inventory, sharedPath);
-      const locCount = inventory.raw.prepare('SELECT count(*) AS n FROM locations').get() as {
-        n: number;
-      };
       const itemCount = inventory.raw.prepare('SELECT count(*) AS n FROM home_inventory').get() as {
         n: number;
       };
-      expect(locCount.n).toBe(1);
       expect(itemCount.n).toBe(1);
     } finally {
       inventory.raw.close();
@@ -111,7 +93,7 @@ describe('backfillInventoryFromShared', () => {
   it('is idempotent — a second run does not duplicate rows', () => {
     const sharedPath = openSharedWithSeed((raw) => {
       raw.exec(
-        `INSERT INTO locations (id, name, sort_order, last_edited_time) VALUES ('loc-1', 'Home', 0, '2026-06-10T00:00:00Z')`
+        `INSERT INTO home_inventory (id, item_name, last_edited_time) VALUES ('item-1', 'Couch', '2026-06-10T00:00:00Z')`
       );
     });
 
@@ -119,10 +101,10 @@ describe('backfillInventoryFromShared', () => {
     try {
       backfillInventoryFromShared(inventory, sharedPath);
       backfillInventoryFromShared(inventory, sharedPath);
-      const locCount = inventory.raw.prepare('SELECT count(*) AS n FROM locations').get() as {
+      const itemCount = inventory.raw.prepare('SELECT count(*) AS n FROM home_inventory').get() as {
         n: number;
       };
-      expect(locCount.n).toBe(1);
+      expect(itemCount.n).toBe(1);
     } finally {
       inventory.raw.close();
     }
@@ -131,32 +113,29 @@ describe('backfillInventoryFromShared', () => {
   it('only inserts rows missing from the inventory copy (mixed state)', () => {
     const sharedPath = openSharedWithSeed((raw) => {
       raw.exec(
-        `INSERT INTO locations (id, name, sort_order, last_edited_time) VALUES ('loc-shared-only', 'Garage', 0, '2026-06-10T00:00:00Z')`
+        `INSERT INTO home_inventory (id, item_name, last_edited_time) VALUES ('item-shared-only', 'Lamp', '2026-06-10T00:00:00Z')`
       );
       raw.exec(
-        `INSERT INTO locations (id, name, sort_order, last_edited_time) VALUES ('loc-both', 'Home', 0, '2026-06-10T00:00:00Z')`
+        `INSERT INTO home_inventory (id, item_name, last_edited_time) VALUES ('item-both', 'Couch', '2026-06-10T00:00:00Z')`
       );
     });
 
     const inventory = openInventoryDb(join(tmpDir, 'inventory.db'));
     try {
-      // Pre-seed the inventory.db with one of the rows that also lives
-      // in the shared DB; the backfill must skip it but pick up the other.
       inventory.raw.exec(
-        `INSERT INTO locations (id, name, sort_order, last_edited_time) VALUES ('loc-both', 'Home', 0, '2026-06-10T00:00:00Z')`
+        `INSERT INTO home_inventory (id, item_name, last_edited_time) VALUES ('item-both', 'Couch', '2026-06-10T00:00:00Z')`
       );
       backfillInventoryFromShared(inventory, sharedPath);
-      const rows = inventory.raw.prepare('SELECT id FROM locations ORDER BY id').all() as {
+      const rows = inventory.raw.prepare('SELECT id FROM home_inventory ORDER BY id').all() as {
         id: string;
       }[];
-      expect(rows.map((r) => r.id)).toEqual(['loc-both', 'loc-shared-only']);
+      expect(rows.map((r) => r.id)).toEqual(['item-both', 'item-shared-only']);
     } finally {
       inventory.raw.close();
     }
   });
 
   it('tolerates a shared DB with no inventory tables (post-PR-4 drop scenario)', () => {
-    // Shared DB exists but doesn't have any inventory tables.
     const sharedPath = join(tmpDir, 'pops.db');
     const raw = new BetterSqlite3(sharedPath);
     raw.exec(`CREATE TABLE other_table (id integer PRIMARY KEY)`);
@@ -165,10 +144,10 @@ describe('backfillInventoryFromShared', () => {
     const inventory = openInventoryDb(join(tmpDir, 'inventory.db'));
     try {
       expect(() => backfillInventoryFromShared(inventory, sharedPath)).not.toThrow();
-      const locCount = inventory.raw.prepare('SELECT count(*) AS n FROM locations').get() as {
+      const itemCount = inventory.raw.prepare('SELECT count(*) AS n FROM home_inventory').get() as {
         n: number;
       };
-      expect(locCount.n).toBe(0);
+      expect(itemCount.n).toBe(0);
     } finally {
       inventory.raw.close();
     }
