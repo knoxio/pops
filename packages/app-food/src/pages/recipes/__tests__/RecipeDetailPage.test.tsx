@@ -17,48 +17,53 @@ let mockArchivePending = false;
 let mockArchiveOnSuccess: (() => void) | undefined;
 let mockArchiveOnError: ((err: Error) => void) | undefined;
 
-vi.mock('@pops/api-client', () => {
-  const idleQuery = () => ({
-    isLoading: false as const,
-    data: undefined,
-    error: null,
-    refetch: vi.fn(),
-  });
-  return {
-    trpc: {
-      useUtils: () => ({
-        food: { recipes: { list: { invalidate: vi.fn() } } },
-      }),
-      food: {
-        recipes: {
-          getForRendering: { useQuery: (input: unknown) => mockGet(input) },
-          listDrafts: { useQuery: (input: unknown) => mockDrafts(input) },
-          // PRD-142 — query is gated by `enabled: open` from the modal hook
-          // but the React-Query mock still gets mounted so we stub it idle.
-          prepareSendToList: { useQuery: idleQuery },
-          sendToList: {
-            useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-          },
-          archiveRecipe: {
-            useMutation: (opts: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-              mockArchiveOnSuccess = opts.onSuccess;
-              mockArchiveOnError = opts.onError;
-              return {
-                mutate: mockArchiveMutate,
-                isPending: mockArchivePending,
-              };
-            },
-          },
-        },
-      },
-      lists: {
-        list: {
-          list: { useQuery: idleQuery },
-        },
+const idleQuery = {
+  isLoading: false as const,
+  data: undefined,
+  error: null,
+  refetch: vi.fn(),
+};
+
+vi.mock('@pops/api-client', () => ({
+  trpc: {
+    food: {
+      recipes: {
+        prepareSendToList: { useQuery: () => idleQuery },
       },
     },
-  };
-});
+    lists: {
+      list: {
+        list: { useQuery: () => idleQuery },
+      },
+    },
+  },
+}));
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'recipes.getForRendering') return mockGet(input);
+    if (key === 'recipes.listDrafts') return mockDrafts(input);
+    return { isLoading: false, data: undefined, error: null, refetch: vi.fn() };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: { onSuccess?: () => void; onError?: (err: Error) => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'recipes.archiveRecipe') {
+      mockArchiveOnSuccess = opts.onSuccess;
+      mockArchiveOnError = opts.onError;
+      return { mutate: mockArchiveMutate, isPending: mockArchivePending };
+    }
+    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    invalidate: vi.fn(),
+    setData: vi.fn(),
+  }),
+}));
 
 vi.mock('../../../components/RecipeRenderer.js', () => ({
   RecipeRenderer: (props: { recipeVersion: RecipeVersionWithCompiledData }) => (

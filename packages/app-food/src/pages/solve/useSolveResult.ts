@@ -6,7 +6,13 @@
  * `document.visibilityState !== 'visible'` so a backgrounded tab
  * doesn't burn solver budget.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type CanICookOutput = inferRouterOutputs<AppRouter>['food']['solver']['canICook'];
 
 const POLL_INTERVAL_MS = 60_000;
 
@@ -44,7 +50,7 @@ export function useSolveResult({ filters }: UseSolveResultArgs) {
     tags: filters.tags.length === 0 ? undefined : [...filters.tags],
     maxMinutes: filters.maxMinutes ?? undefined,
   };
-  const query = trpc.food.solver.canICook.useQuery(input, {
+  const query = usePillarQuery<CanICookOutput>('food', ['solver', 'canICook'], input, {
     refetchInterval: POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
   });

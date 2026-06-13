@@ -10,8 +10,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type RecipeRefsOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['recipeRefs'];
 
 interface Props {
   ingredientId: number;
@@ -20,7 +26,9 @@ interface Props {
 export function RecipeRefsSection({ ingredientId }: Props) {
   const { t } = useTranslation('food');
   const [open, setOpen] = useState(false);
-  const query = trpc.food.ingredients.recipeRefs.useQuery({ id: ingredientId });
+  const query = usePillarQuery<RecipeRefsOutput>('food', ['ingredients', 'recipeRefs'], {
+    id: ingredientId,
+  });
 
   if (query.isLoading) {
     return <p className="text-muted-foreground text-sm">{t('data.ingredients.loading')}</p>;

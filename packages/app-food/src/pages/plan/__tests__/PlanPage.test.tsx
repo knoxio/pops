@@ -25,79 +25,60 @@ const mockMoveEntryMutate = vi.fn();
 const mockReorderSlotMutate = vi.fn();
 const mockInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        plan: {
-          weekView: { invalidate: mockInvalidate },
-          listSlots: { invalidate: mockInvalidate },
-        },
-      },
-    }),
-    food: {
-      plan: {
-        weekView: { useQuery: (input: unknown) => mockWeekView(input) },
-        listSlots: { useQuery: () => mockListSlots() },
-        addEntry: {
-          useMutation: (opts?: { onSuccess?: (r: unknown) => void }) => ({
-            mutate: (vars: unknown) => mockAddEntryMutate(vars, opts),
-            mutateAsync: async (vars: unknown) => mockAddEntryMutate(vars, opts),
-            isPending: false,
-          }),
-        },
-        updateEntry: {
-          useMutation: () => ({
-            mutate: mockUpdateEntryMutate,
-            isPending: false,
-          }),
-        },
-        deleteEntry: {
-          useMutation: () => ({
-            mutate: mockDeleteEntryMutate,
-            isPending: false,
-          }),
-        },
-        addSlot: {
-          useMutation: () => ({
-            mutate: mockAddSlotMutate,
-            mutateAsync: async (vars: unknown) => {
-              mockAddSlotMutate(vars);
-              return { ok: true } as const;
-            },
-            isPending: false,
-          }),
-        },
-        updateSlot: {
-          useMutation: () => ({
-            mutate: mockUpdateSlotMutate,
-            isPending: false,
-          }),
-        },
-        deleteSlot: {
-          useMutation: () => ({
-            mutate: mockDeleteSlotMutate,
-            isPending: false,
-          }),
-        },
-        moveEntry: {
-          useMutation: () => ({
-            mutate: mockMoveEntryMutate,
-            isPending: false,
-          }),
-        },
-        reorderSlot: {
-          useMutation: () => ({
-            mutate: mockReorderSlotMutate,
-            isPending: false,
-          }),
-        },
-      },
-      recipes: {
-        list: { useQuery: (input: unknown) => mockListRecipes(input) },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'plan.weekView') return mockWeekView(input);
+    if (key === 'plan.listSlots') return mockListSlots();
+    if (key === 'recipes.list') return mockListRecipes(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: (r: unknown) => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'plan.addEntry') {
+      return {
+        mutate: (vars: unknown) => mockAddEntryMutate(vars, opts),
+        mutateAsync: async (vars: unknown) => mockAddEntryMutate(vars, opts),
+        isPending: false,
+      };
+    }
+    if (key === 'plan.updateEntry') {
+      return { mutate: mockUpdateEntryMutate, isPending: false };
+    }
+    if (key === 'plan.deleteEntry') {
+      return { mutate: mockDeleteEntryMutate, isPending: false };
+    }
+    if (key === 'plan.addSlot') {
+      return {
+        mutate: mockAddSlotMutate,
+        mutateAsync: async (vars: unknown) => {
+          mockAddSlotMutate(vars);
+          return { ok: true } as const;
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'plan.updateSlot') {
+      return { mutate: mockUpdateSlotMutate, isPending: false };
+    }
+    if (key === 'plan.deleteSlot') {
+      return { mutate: mockDeleteSlotMutate, isPending: false };
+    }
+    if (key === 'plan.moveEntry') {
+      return { mutate: mockMoveEntryMutate, isPending: false };
+    }
+    if (key === 'plan.reorderSlot') {
+      return { mutate: mockReorderSlotMutate, isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: (path: readonly string[]) => mockInvalidate(path),
+  }),
 }));
 
 import { PlanPage } from '../PlanPage.js';

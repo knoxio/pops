@@ -13,10 +13,17 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 import type { buildSubmitInput } from './cook-modal-helpers.js';
 import type { CookedSuccess } from './CookModal.js';
+
+type MarkCookedInput = inferRouterInputs<AppRouter>['food']['cook']['markCooked'];
+type MarkCookedOutput = inferRouterOutputs<AppRouter>['food']['cook']['markCooked'];
 
 interface Args {
   onSuccess?: (result: CookedSuccess) => void;
@@ -32,26 +39,30 @@ interface Result {
 export function useMarkCookedMutation(args: Args): Result {
   const { t } = useTranslation('food');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const utils = trpc.useUtils();
-  const mutation = trpc.food.cook.markCooked.useMutation({
-    onSuccess: (result, input) => {
-      if (result.ok) {
-        setErrorMessage(null);
-        void utils.food.batches.searchForConsume.invalidate();
-        args.onSuccess?.({
-          recipeRunId: result.recipeRunId,
-          yieldedBatchId: result.yieldedBatchId,
-          location: input.yield?.location ?? null,
-        });
-        args.onClose();
-        return;
-      }
-      setErrorMessage(t(`cook.modal.error.${result.reason}`, { defaultValue: result.reason }));
-    },
-    onError: (err) => {
-      setErrorMessage(err.message);
-    },
-  });
+  const utils = usePillarUtils('food');
+  const mutation = usePillarMutation<MarkCookedInput, MarkCookedOutput>(
+    'food',
+    ['cook', 'markCooked'],
+    {
+      onSuccess: (result, input) => {
+        if (result.ok) {
+          setErrorMessage(null);
+          void utils.invalidate(['batches', 'searchForConsume']);
+          args.onSuccess?.({
+            recipeRunId: result.recipeRunId,
+            yieldedBatchId: result.yieldedBatchId,
+            location: input.yield?.location ?? null,
+          });
+          args.onClose();
+          return;
+        }
+        setErrorMessage(t(`cook.modal.error.${result.reason}`, { defaultValue: result.reason }));
+      },
+      onError: (err) => {
+        setErrorMessage(err.message);
+      },
+    }
+  );
   return {
     submit: (input) => {
       setErrorMessage(null);

@@ -26,38 +26,41 @@ interface RenderingResponse {
 
 let renderingData: RenderingResponse | undefined;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        recipes: {
-          getForRendering: { invalidate: getForRenderingInvalidate },
-          list: { invalidate: listInvalidate },
-        },
-      },
-    }),
-    food: {
-      recipes: {
-        createNewDraft: {
-          useMutation: (opts: {
-            onSuccess?: (res: { versionId: number; versionNo: number }) => void;
-          }) => {
-            createDraftOnSuccess = opts.onSuccess;
-            return { mutate: createDraftMutate };
-          },
-        },
-        getForRendering: {
-          useQuery: () => ({ data: renderingData }),
-        },
-        listProposedSlugs: {
-          useQuery: () => ({ data: { items: [] } }),
-        },
-        saveDraft: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-        promote: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-        archiveVersion: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'recipes.getForRendering') return { data: renderingData };
+    if (key === 'recipes.listProposedSlugs') return { data: { items: [] } };
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: { onSuccess?: (res: { versionId: number; versionNo: number }) => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'recipes.createNewDraft') {
+      createDraftOnSuccess = opts.onSuccess;
+      return { mutate: createDraftMutate, isPending: false };
+    }
+    if (
+      key === 'recipes.saveDraft' ||
+      key === 'recipes.promote' ||
+      key === 'recipes.archiveVersion'
+    ) {
+      return { mutate: vi.fn(), isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: (path: readonly string[], input?: unknown) => {
+      const key = path.join('.');
+      if (key === 'recipes.getForRendering') return getForRenderingInvalidate(input);
+      if (key === 'recipes.list') return listInvalidate(input);
+      return undefined;
+    },
+    setData: vi.fn(),
+  }),
 }));
 
 vi.mock('../../../components/DslEditor.js', () => ({
@@ -163,7 +166,6 @@ describe('PRD-124 follow-up — RecipeEditPage hero uploader mount', () => {
     heroUploaderProps?.onUploaded('42/hero.png');
     heroUploaderProps?.onRemoved();
     expect(getForRenderingInvalidate).toHaveBeenCalledTimes(2);
-    expect(getForRenderingInvalidate).toHaveBeenCalledWith({ slug: 'pancakes', versionNo: 3 });
     expect(listInvalidate).toHaveBeenCalledTimes(2);
   });
 

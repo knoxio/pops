@@ -7,7 +7,7 @@
 import { useEffect, useState, type Dispatch, type ReactElement, type SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import {
@@ -18,16 +18,23 @@ import {
 } from './cook-modal-helpers.js';
 import { CookModalContent } from './CookModalContent.js';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { CookPreparation } from '@pops/app-food-db';
 
 import type { CookModalProps } from './CookModal.js';
 import type { useCookResolution } from './useCookResolution.js';
 
+type PrepareCookOutput = inferRouterOutputs<AppRouter>['food']['cook']['prepareCook'];
+
 export function usePrepareCook(props: CookModalProps): {
   data: CookPreparation | undefined;
   error: { message: string } | null;
 } {
-  const query = trpc.food.cook.prepareCook.useQuery(
+  const query = usePillarQuery<PrepareCookOutput>(
+    'food',
+    ['cook', 'prepareCook'],
     {
       recipeVersionId: props.recipeVersionId,
       scaleFactor: props.scaleFactor ?? 1,

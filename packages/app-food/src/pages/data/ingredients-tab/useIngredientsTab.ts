@@ -9,12 +9,21 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { buildIngredientTree } from './buildIngredientTree';
 import { mapMutationError } from './errors';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
 import type { CreateIngredientInput } from './CreateIngredientDialog';
+
+type IngredientsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['list'];
+type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
+type IngredientsCreateInput = inferRouterInputs<AppRouter>['food']['ingredients']['create'];
+type IngredientsCreateOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['create'];
 
 function useExpandedSet() {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
@@ -41,18 +50,22 @@ function useCreateDialog() {
   const { t } = useTranslation('food');
   const [open, setOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const utils = trpc.useUtils();
-  const mutation = trpc.food.ingredients.create.useMutation({
-    onSuccess: () => {
-      setErrorMessage(null);
-      setOpen(false);
-      void utils.food.ingredients.list.invalidate();
-    },
-    onError: (err) =>
-      setErrorMessage(
-        mapMutationError(err, t, { fallbackKey: 'data.ingredients.create.error.generic' })
-      ),
-  });
+  const utils = usePillarUtils('food');
+  const mutation = usePillarMutation<IngredientsCreateInput, IngredientsCreateOutput>(
+    'food',
+    ['ingredients', 'create'],
+    {
+      onSuccess: () => {
+        setErrorMessage(null);
+        setOpen(false);
+        void utils.invalidate(['ingredients', 'list']);
+      },
+      onError: (err) =>
+        setErrorMessage(
+          mapMutationError(err, t, { fallbackKey: 'data.ingredients.create.error.generic' })
+        ),
+    }
+  );
   const submit = useCallback(
     (input: CreateIngredientInput) => {
       setErrorMessage(null);
@@ -90,10 +103,12 @@ export function useIngredientsTab() {
   const { expandedIds, toggleNode, expandMany } = useExpandedSet();
   const createDialog = useCreateDialog();
 
-  const listQuery = trpc.food.ingredients.list.useQuery({
+  const listQuery = usePillarQuery<IngredientsListOutput>('food', ['ingredients', 'list'], {
     search: search.length > 0 ? search : undefined,
   });
-  const detail = trpc.food.ingredients.get.useQuery(
+  const detail = usePillarQuery<IngredientsGetOutput>(
+    'food',
+    ['ingredients', 'get'],
     { idOrSlug: selectedId ?? 0 },
     { enabled: selectedId !== null }
   );

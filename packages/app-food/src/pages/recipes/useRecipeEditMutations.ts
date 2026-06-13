@@ -3,9 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { CompileResult } from '@pops/app-food-db';
+
+type SaveDraftInput = inferRouterInputs<AppRouter>['food']['recipes']['saveDraft'];
+type SaveDraftOutput = inferRouterOutputs<AppRouter>['food']['recipes']['saveDraft'];
+type PromoteInput = inferRouterInputs<AppRouter>['food']['recipes']['promote'];
+type PromoteOutput = inferRouterOutputs<AppRouter>['food']['recipes']['promote'];
+type ArchiveVersionInput = inferRouterInputs<AppRouter>['food']['recipes']['archiveVersion'];
+type ArchiveVersionOutput = inferRouterOutputs<AppRouter>['food']['recipes']['archiveVersion'];
 
 interface UseRecipeEditMutationsArgs {
   slug: string;
@@ -35,7 +45,7 @@ export function useRecipeEditMutations(
   const { slug, versionId, dsl, setLatestCompile } = args;
   const { t } = useTranslation('food');
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const saveMutation = useSaveMutation(setLatestCompile, t);
   const promoteMutation = usePromoteMutation(slug, navigate, utils, t);
   const discardMutation = useDiscardMutation(slug, navigate, t);
@@ -71,7 +81,7 @@ function useSaveMutation(
   setLatestCompile: (next: CompileResult | null) => void,
   t: (k: string, opts?: Record<string, unknown>) => string
 ) {
-  return trpc.food.recipes.saveDraft.useMutation({
+  return usePillarMutation<SaveDraftInput, SaveDraftOutput>('food', ['recipes', 'saveDraft'], {
     onSuccess: (res) => {
       setLatestCompile(res.compile);
       if (res.compile.ok === true) toast.success(t('recipes.edit.saved'));
@@ -84,14 +94,14 @@ function useSaveMutation(
 function usePromoteMutation(
   slug: string,
   navigate: ReturnType<typeof useNavigate>,
-  utils: ReturnType<typeof trpc.useUtils>,
+  utils: ReturnType<typeof usePillarUtils>,
   t: (k: string, opts?: Record<string, unknown>) => string
 ) {
-  return trpc.food.recipes.promote.useMutation({
+  return usePillarMutation<PromoteInput, PromoteOutput>('food', ['recipes', 'promote'], {
     onSuccess: (res) => {
       if (res.ok === true) {
         toast.success(t('recipes.edit.promoted'));
-        void utils.food.recipes.list.invalidate();
+        void utils.invalidate(['recipes', 'list']);
         void navigate(`/food/recipes/${slug}`);
       } else {
         toast.error(t(`recipes.edit.promoteFailed.${res.reason}` as const));
@@ -106,11 +116,15 @@ function useDiscardMutation(
   navigate: ReturnType<typeof useNavigate>,
   t: (k: string, opts?: Record<string, unknown>) => string
 ) {
-  return trpc.food.recipes.archiveVersion.useMutation({
-    onSuccess: () => {
-      toast.success(t('recipes.edit.discarded'));
-      void navigate(`/food/recipes/${slug}`);
-    },
-    onError: (err) => toast.error(t('recipes.edit.discardError', { message: err.message })),
-  });
+  return usePillarMutation<ArchiveVersionInput, ArchiveVersionOutput>(
+    'food',
+    ['recipes', 'archiveVersion'],
+    {
+      onSuccess: () => {
+        toast.success(t('recipes.edit.discarded'));
+        void navigate(`/food/recipes/${slug}`);
+      },
+      onError: (err) => toast.error(t('recipes.edit.discardError', { message: err.message })),
+    }
+  );
 }

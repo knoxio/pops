@@ -29,32 +29,30 @@ const mockInvalidate = vi.fn();
 let createOpts: MutationOpts = {};
 let deleteOpts: MutationOpts = {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      conversions: {
-        listUnits: { useQuery: (input: unknown) => mockListQuery(input) },
-        createUnit: {
-          useMutation: (opts: MutationOpts) => {
-            createOpts = opts;
-            return { mutate: mockCreateMutate, isPending: false };
-          },
-        },
-        updateUnit: {
-          useMutation: (_opts: MutationOpts) => ({ mutate: mockUpdateMutate, isPending: false }),
-        },
-        deleteUnit: {
-          useMutation: (opts: MutationOpts) => {
-            deleteOpts = opts;
-            return { mutate: mockDeleteMutate, isPending: false };
-          },
-        },
-      },
-    },
-    useUtils: () => ({
-      food: { conversions: { listUnits: { invalidate: mockInvalidate } } },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'conversions.listUnits') return mockListQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[], opts: MutationOpts) => {
+    const key = path.join('.');
+    if (key === 'conversions.createUnit') {
+      createOpts = opts;
+      return { mutate: mockCreateMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    if (key === 'conversions.updateUnit') {
+      return { mutate: mockUpdateMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    if (key === 'conversions.deleteUnit') {
+      deleteOpts = opts;
+      return { mutate: mockDeleteMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: mockInvalidate,
+  }),
 }));
 
 function row(overrides: Partial<UnitConversionRow> & { id: number }): UnitConversionRow {

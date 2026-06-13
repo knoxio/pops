@@ -6,9 +6,32 @@
  */
 import { useCallback } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { BadClientDateError, toIsoMonday } from './iso-week.js';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type PlanWeekViewOutput = inferRouterOutputs<AppRouter>['food']['plan']['weekView'];
+type PlanListSlotsOutput = inferRouterOutputs<AppRouter>['food']['plan']['listSlots'];
+type PlanAddEntryInput = inferRouterInputs<AppRouter>['food']['plan']['addEntry'];
+type PlanAddEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['addEntry'];
+type PlanUpdateEntryInput = inferRouterInputs<AppRouter>['food']['plan']['updateEntry'];
+type PlanUpdateEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['updateEntry'];
+type PlanMoveEntryInput = inferRouterInputs<AppRouter>['food']['plan']['moveEntry'];
+type PlanMoveEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['moveEntry'];
+type PlanReorderSlotInput = inferRouterInputs<AppRouter>['food']['plan']['reorderSlot'];
+type PlanReorderSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['reorderSlot'];
+type PlanDeleteEntryInput = inferRouterInputs<AppRouter>['food']['plan']['deleteEntry'];
+type PlanDeleteEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['deleteEntry'];
+type PlanAddSlotInput = inferRouterInputs<AppRouter>['food']['plan']['addSlot'];
+type PlanAddSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['addSlot'];
+type PlanUpdateSlotInput = inferRouterInputs<AppRouter>['food']['plan']['updateSlot'];
+type PlanUpdateSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['updateSlot'];
+type PlanDeleteSlotInput = inferRouterInputs<AppRouter>['food']['plan']['deleteSlot'];
+type PlanDeleteSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['deleteSlot'];
 
 const WEEK_POLL_INTERVAL_MS = 60_000;
 
@@ -18,46 +41,85 @@ export interface UsePlanPageOpts {
   today?: Date;
 }
 
+function usePlanMutations(invalidate: () => void) {
+  const addEntry = usePillarMutation<PlanAddEntryInput, PlanAddEntryOutput>(
+    'food',
+    ['plan', 'addEntry'],
+    { onSuccess: invalidate }
+  );
+  const updateEntry = usePillarMutation<PlanUpdateEntryInput, PlanUpdateEntryOutput>(
+    'food',
+    ['plan', 'updateEntry'],
+    { onSuccess: invalidate }
+  );
+  const moveEntry = usePillarMutation<PlanMoveEntryInput, PlanMoveEntryOutput>(
+    'food',
+    ['plan', 'moveEntry'],
+    { onSuccess: invalidate }
+  );
+  const reorderSlot = usePillarMutation<PlanReorderSlotInput, PlanReorderSlotOutput>(
+    'food',
+    ['plan', 'reorderSlot'],
+    { onSuccess: invalidate }
+  );
+  const deleteEntry = usePillarMutation<PlanDeleteEntryInput, PlanDeleteEntryOutput>(
+    'food',
+    ['plan', 'deleteEntry'],
+    { onSuccess: invalidate }
+  );
+  const addSlot = usePillarMutation<PlanAddSlotInput, PlanAddSlotOutput>(
+    'food',
+    ['plan', 'addSlot'],
+    { onSuccess: invalidate }
+  );
+  const updateSlot = usePillarMutation<PlanUpdateSlotInput, PlanUpdateSlotOutput>(
+    'food',
+    ['plan', 'updateSlot'],
+    { onSuccess: invalidate }
+  );
+  const deleteSlot = usePillarMutation<PlanDeleteSlotInput, PlanDeleteSlotOutput>(
+    'food',
+    ['plan', 'deleteSlot'],
+    { onSuccess: invalidate }
+  );
+  return {
+    addEntry,
+    updateEntry,
+    moveEntry,
+    reorderSlot,
+    deleteEntry,
+    addSlot,
+    updateSlot,
+    deleteSlot,
+  };
+}
+
 export function usePlanPage({ weekParam, today }: UsePlanPageOpts) {
   const weekStart = safeIsoMonday(weekParam, today);
-  const utils = trpc.useUtils();
-  const weekQuery = trpc.food.plan.weekView.useQuery(
+  const utils = usePillarUtils('food');
+  const weekQuery = usePillarQuery<PlanWeekViewOutput>(
+    'food',
+    ['plan', 'weekView'],
     { weekStart },
     { refetchInterval: WEEK_POLL_INTERVAL_MS, refetchIntervalInBackground: false }
   );
-  const slotsQuery = trpc.food.plan.listSlots.useQuery(undefined, {
+  const slotsQuery = usePillarQuery<PlanListSlotsOutput>('food', ['plan', 'listSlots'], undefined, {
     refetchInterval: WEEK_POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
   });
 
   const invalidate = useCallback(() => {
-    void utils.food.plan.weekView.invalidate();
-    void utils.food.plan.listSlots.invalidate();
+    void utils.invalidate(['plan', 'weekView']);
+    void utils.invalidate(['plan', 'listSlots']);
   }, [utils]);
 
-  const addEntry = trpc.food.plan.addEntry.useMutation({ onSuccess: invalidate });
-  const updateEntry = trpc.food.plan.updateEntry.useMutation({ onSuccess: invalidate });
-  const moveEntry = trpc.food.plan.moveEntry.useMutation({ onSuccess: invalidate });
-  const reorderSlot = trpc.food.plan.reorderSlot.useMutation({ onSuccess: invalidate });
-  const deleteEntry = trpc.food.plan.deleteEntry.useMutation({ onSuccess: invalidate });
-  const addSlot = trpc.food.plan.addSlot.useMutation({ onSuccess: invalidate });
-  const updateSlot = trpc.food.plan.updateSlot.useMutation({ onSuccess: invalidate });
-  const deleteSlot = trpc.food.plan.deleteSlot.useMutation({ onSuccess: invalidate });
+  const mutations = usePlanMutations(invalidate);
 
   return {
     weekStart,
     weekQuery,
     slotsQuery,
-    mutations: {
-      addEntry,
-      updateEntry,
-      moveEntry,
-      reorderSlot,
-      deleteEntry,
-      addSlot,
-      updateSlot,
-      deleteSlot,
-    },
+    mutations,
   };
 }
 

@@ -15,10 +15,17 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Input } from '@pops/ui';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
 import type { AliasTarget } from './types';
+
+type SlugSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
+type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
 
 export interface AliasTargetPickerProps {
   readonly value: AliasTarget | null;
@@ -29,7 +36,9 @@ export interface AliasTargetPickerProps {
 export function AliasTargetPicker({ value, onChange, inputId }: AliasTargetPickerProps) {
   const { t } = useTranslation('food');
   const [query, setQuery] = useState('');
-  const search = trpc.food.slugs.search.useQuery(
+  const search = usePillarQuery<SlugSearchOutput>(
+    'food',
+    ['slugs', 'search'],
     { query, kinds: ['ingredient'], limit: 10 },
     { enabled: query.length > 0 }
   );
@@ -96,7 +105,9 @@ interface SelectedTargetRowProps {
 function SelectedTargetRow({ target, onClear, onPickVariant }: SelectedTargetRowProps) {
   const { t } = useTranslation('food');
   const ingredientId = target.kind === 'ingredient' ? target.id : null;
-  const variants = trpc.food.ingredients.get.useQuery(
+  const variants = usePillarQuery<IngredientsGetOutput>(
+    'food',
+    ['ingredients', 'get'],
     { idOrSlug: ingredientId ?? 0 },
     { enabled: ingredientId !== null }
   );

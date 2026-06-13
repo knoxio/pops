@@ -9,9 +9,15 @@
  * default during the in-flight window would temporarily enable the
  * destructive action and surface a confusing FK-CONFLICT path.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { DeleteBlockerSummary, IngredientRow } from '@pops/app-food-db';
+
+type BlockersOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['blockers'];
+type RecipeRefsOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['recipeRefs'];
 
 interface BlockerQueryArgs {
   ingredient: IngredientRow | null;
@@ -24,7 +30,9 @@ export interface BlockersState {
 }
 
 export function useBlockersQuery({ ingredient, deleteOpen }: BlockerQueryArgs): BlockersState {
-  const query = trpc.food.ingredients.blockers.useQuery(
+  const query = usePillarQuery<BlockersOutput>(
+    'food',
+    ['ingredients', 'blockers'],
     { id: ingredient?.id ?? 0 },
     { enabled: ingredient !== null && deleteOpen }
   );
@@ -43,7 +51,9 @@ export function useRecipeRefCount(
   ingredientId: number | null,
   deleteOpen: boolean
 ): RecipeRefCountState {
-  const query = trpc.food.ingredients.recipeRefs.useQuery(
+  const query = usePillarQuery<RecipeRefsOutput>(
+    'food',
+    ['ingredients', 'recipeRefs'],
     { id: ingredientId ?? 0 },
     { enabled: ingredientId !== null && deleteOpen }
   );

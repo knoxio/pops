@@ -6,49 +6,79 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { mapVariantMutationError } from './errors';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type CreateVariantInput = inferRouterInputs<AppRouter>['food']['variants']['create'];
+type CreateVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['create'];
+type UpdateVariantInput = inferRouterInputs<AppRouter>['food']['variants']['update'];
+type UpdateVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['update'];
+type DeleteVariantInput = inferRouterInputs<AppRouter>['food']['variants']['delete'];
+type DeleteVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['delete'];
 
 interface Args {
   onFormSuccess: () => void;
   onDeleteSuccess: () => void;
 }
 
+function isConflictError(err: unknown): boolean {
+  if (err === null || typeof err !== 'object') return false;
+  const candidate = (err as { data?: unknown }).data;
+  if (candidate === null || typeof candidate !== 'object') return false;
+  return (candidate as { code?: unknown }).code === 'CONFLICT';
+}
+
 export function useVariantActionMutations({ onFormSuccess, onDeleteSuccess }: Args) {
   const { t } = useTranslation('food');
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const [formError, setFormError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const invalidate = useCallback(() => utils.food.ingredients.get.invalidate(), [utils]);
-  const create = trpc.food.variants.create.useMutation({
-    onSuccess: async () => {
-      await invalidate();
-      onFormSuccess();
-    },
-    onError: (err) => setFormError(mapVariantMutationError(err, t)),
-  });
-  const update = trpc.food.variants.update.useMutation({
-    onSuccess: async () => {
-      await invalidate();
-      onFormSuccess();
-    },
-    onError: (err) => setFormError(mapVariantMutationError(err, t)),
-  });
-  const deleteMutation = trpc.food.variants.delete.useMutation({
-    onSuccess: async () => {
-      await invalidate();
-      onDeleteSuccess();
-    },
-    onError: (err) => {
-      if (err.data?.code === 'CONFLICT') {
-        setDeleteError(t('data.ingredients.variants.delete.referenced'));
-        return;
-      }
-      setDeleteError(t('data.ingredients.variants.error.generic'));
-    },
-  });
+  const invalidate = useCallback(() => utils.invalidate(['ingredients', 'get']), [utils]);
+  const create = usePillarMutation<CreateVariantInput, CreateVariantOutput>(
+    'food',
+    ['variants', 'create'],
+    {
+      onSuccess: async () => {
+        await invalidate();
+        onFormSuccess();
+      },
+      onError: (err) => setFormError(mapVariantMutationError(err, t)),
+    }
+  );
+  const update = usePillarMutation<UpdateVariantInput, UpdateVariantOutput>(
+    'food',
+    ['variants', 'update'],
+    {
+      onSuccess: async () => {
+        await invalidate();
+        onFormSuccess();
+      },
+      onError: (err) => setFormError(mapVariantMutationError(err, t)),
+    }
+  );
+  const deleteMutation = usePillarMutation<DeleteVariantInput, DeleteVariantOutput>(
+    'food',
+    ['variants', 'delete'],
+    {
+      onSuccess: async () => {
+        await invalidate();
+        onDeleteSuccess();
+      },
+      onError: (err) => {
+        if (isConflictError(err)) {
+          setDeleteError(t('data.ingredients.variants.delete.referenced'));
+          return;
+        }
+        setDeleteError(t('data.ingredients.variants.error.generic'));
+      },
+    }
+  );
 
   return {
     formError,

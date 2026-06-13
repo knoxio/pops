@@ -14,9 +14,24 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 import type { AliasSource, AliasTarget } from './types.js';
+
+type CreateInput = inferRouterInputs<AppRouter>['food']['aliases']['create'];
+type CreateOutput = inferRouterOutputs<AppRouter>['food']['aliases']['create'];
+type UpdateTextInput = inferRouterInputs<AppRouter>['food']['aliases']['updateText'];
+type UpdateTextOutput = inferRouterOutputs<AppRouter>['food']['aliases']['updateText'];
+type DeleteInput = inferRouterInputs<AppRouter>['food']['aliases']['delete'];
+type DeleteOutput = inferRouterOutputs<AppRouter>['food']['aliases']['delete'];
+type MergeInput = inferRouterInputs<AppRouter>['food']['aliases']['merge'];
+type MergeOutput = inferRouterOutputs<AppRouter>['food']['aliases']['merge'];
+type BulkApproveInput = inferRouterInputs<AppRouter>['food']['aliases']['bulkApprove'];
+type BulkApproveOutput = inferRouterOutputs<AppRouter>['food']['aliases']['bulkApprove'];
 
 function targetWire(target: AliasTarget): { kind: 'ingredient' | 'variant'; id: number } {
   return { kind: target.kind, id: target.id };
@@ -38,37 +53,45 @@ function showError(err: { message: string }): void {
 function useRawMutations(baseSuccess: (extra?: () => void) => void, opts: UseAliasMutationsOpts) {
   const { onCreateSuccess, onMergeSuccess } = opts;
   return {
-    create: trpc.food.aliases.create.useMutation({
+    create: usePillarMutation<CreateInput, CreateOutput>('food', ['aliases', 'create'], {
       onSuccess: () => baseSuccess(onCreateSuccess),
       onError: showError,
     }),
-    updateText: trpc.food.aliases.updateText.useMutation({
+    updateText: usePillarMutation<UpdateTextInput, UpdateTextOutput>(
+      'food',
+      ['aliases', 'updateText'],
+      {
+        onSuccess: () => baseSuccess(),
+        onError: showError,
+      }
+    ),
+    delete: usePillarMutation<DeleteInput, DeleteOutput>('food', ['aliases', 'delete'], {
       onSuccess: () => baseSuccess(),
       onError: showError,
     }),
-    delete: trpc.food.aliases.delete.useMutation({
-      onSuccess: () => baseSuccess(),
-      onError: showError,
-    }),
-    merge: trpc.food.aliases.merge.useMutation({
+    merge: usePillarMutation<MergeInput, MergeOutput>('food', ['aliases', 'merge'], {
       onSuccess: () => baseSuccess(onMergeSuccess),
       onError: showError,
     }),
-    bulkApprove: trpc.food.aliases.bulkApprove.useMutation({
-      onSuccess: () => baseSuccess(),
-      onError: showError,
-    }),
+    bulkApprove: usePillarMutation<BulkApproveInput, BulkApproveOutput>(
+      'food',
+      ['aliases', 'bulkApprove'],
+      {
+        onSuccess: () => baseSuccess(),
+        onError: showError,
+      }
+    ),
   };
 }
 
 export function useAliasMutations(opts: UseAliasMutationsOpts = {}) {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const { onAnySuccess } = opts;
 
   const invalidateList = useCallback(async () => {
-    await utils.food.aliases.listWithTargets.invalidate();
-    await utils.food.aliases.list.invalidate();
-  }, [utils.food.aliases.list, utils.food.aliases.listWithTargets]);
+    await utils.invalidate(['aliases', 'listWithTargets']);
+    await utils.invalidate(['aliases', 'list']);
+  }, [utils]);
 
   const baseSuccess = useCallback(
     (extra?: () => void) => {

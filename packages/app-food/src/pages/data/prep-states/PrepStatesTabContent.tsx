@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import {
   Button,
   Table,
@@ -28,18 +28,30 @@ import {
 
 import { AddPrepStateDialog } from './AddPrepStateDialog.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
+type PrepStatesCreateInput = inferRouterInputs<AppRouter>['food']['prepStates']['create'];
+type PrepStatesCreateOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['create'];
+
 export function PrepStatesTabContent() {
   const { t } = useTranslation('food');
-  const utils = trpc.useUtils();
-  const list = trpc.food.prepStates.list.useQuery();
+  const utils = usePillarUtils('food');
+  const list = usePillarQuery<PrepStatesListOutput>('food', ['prepStates', 'list'], undefined);
   const [addOpen, setAddOpen] = useState(false);
-  const createMutation = trpc.food.prepStates.create.useMutation({
-    onSuccess: () => {
-      void utils.food.prepStates.list.invalidate();
-      setAddOpen(false);
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const createMutation = usePillarMutation<PrepStatesCreateInput, PrepStatesCreateOutput>(
+    'food',
+    ['prepStates', 'create'],
+    {
+      onSuccess: () => {
+        void utils.invalidate(['prepStates', 'list']);
+        setAddOpen(false);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
   const rows = list.data?.items ?? [];
   const sortedRows = [...rows].toSorted((a, b) => a.slug.localeCompare(b.slug));

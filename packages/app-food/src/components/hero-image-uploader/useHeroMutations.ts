@@ -6,9 +6,18 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { HERO_ALLOWED_MIME_TYPES } from '../../storage/hero-paths';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type HeroImageUploadInput = inferRouterInputs<AppRouter>['food']['heroImage']['upload'];
+type HeroImageUploadOutput = inferRouterOutputs<AppRouter>['food']['heroImage']['upload'];
+type HeroImageRemoveInput = inferRouterInputs<AppRouter>['food']['heroImage']['remove'];
+type HeroImageRemoveOutput = inferRouterOutputs<AppRouter>['food']['heroImage']['remove'];
 
 interface ValidationResult {
   ok: boolean;
@@ -67,21 +76,29 @@ export interface MutationOptions {
 
 export function useHeroMutations(opts: MutationOptions): MutationState {
   const { recipeId, maxBytes, onUploaded, onRemoved, uploadedMsg, removedMsg } = opts;
-  const uploadMutation = trpc.food.heroImage.upload.useMutation({
-    onSuccess: (res) => {
-      onUploaded(res.data.heroImagePath);
-      toast.success(uploadedMsg);
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const uploadMutation = usePillarMutation<HeroImageUploadInput, HeroImageUploadOutput>(
+    'food',
+    ['heroImage', 'upload'],
+    {
+      onSuccess: (res) => {
+        onUploaded(res.data.heroImagePath);
+        toast.success(uploadedMsg);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
-  const removeMutation = trpc.food.heroImage.remove.useMutation({
-    onSuccess: () => {
-      onRemoved();
-      toast.success(removedMsg);
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const removeMutation = usePillarMutation<HeroImageRemoveInput, HeroImageRemoveOutput>(
+    'food',
+    ['heroImage', 'remove'],
+    {
+      onSuccess: () => {
+        onRemoved();
+        toast.success(removedMsg);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
   const uploadFile = useCallback(
     async (file: File) => {

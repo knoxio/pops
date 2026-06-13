@@ -52,33 +52,33 @@ let capturedMutationOptions: {
 } = {};
 let mockMarkCookedPending = false;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      cook: {
-        prepareCook: { useQuery: (...args: unknown[]) => mockPrepareCook(...args) },
-        markCooked: {
-          useMutation: (opts: {
-            onSuccess?: (result: MarkCookedResult) => void;
-            onError?: (err: Error) => void;
-          }) => {
-            capturedMutationOptions = opts;
-            return {
-              mutate: (input: unknown) => mockMarkCookedMutate(input),
-              isPending: mockMarkCookedPending,
-            };
-          },
-        },
-      },
-    },
-    useUtils: () => ({
-      food: {
-        batches: {
-          searchForConsume: { invalidate: (...args: unknown[]) => mockInvalidate(...args) },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts?: unknown) => {
+    const key = path.join('.');
+    if (key === 'cook.prepareCook') return mockPrepareCook(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: {
+      onSuccess?: (result: MarkCookedResult, input: { yield?: { location: string } }) => void;
+      onError?: (err: Error) => void;
+    }
+  ) => {
+    const key = path.join('.');
+    if (key === 'cook.markCooked') {
+      capturedMutationOptions = opts;
+      return {
+        mutate: (input: unknown) => mockMarkCookedMutate(input),
+        isPending: mockMarkCookedPending,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: (path: readonly string[]) => mockInvalidate(path),
+  }),
 }));
 
 import { CookModal } from '../CookModal.js';

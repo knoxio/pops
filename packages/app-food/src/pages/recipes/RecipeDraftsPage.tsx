@@ -2,10 +2,16 @@ import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { DraftRowCard } from './DraftRowCard.js';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type ListDraftsOutput = inferRouterOutputs<AppRouter>['food']['recipes']['listDrafts'];
 
 /**
  * `/food/recipes/:slug/drafts` — list of every `status='draft'` version
@@ -27,8 +33,10 @@ export function RecipeDraftsPage(): ReactElement {
 
 function RecipeDraftsBody({ slug }: { slug: string }): ReactElement {
   const { t } = useTranslation('food');
-  const utils = trpc.useUtils();
-  const draftsQuery = trpc.food.recipes.listDrafts.useQuery({ slug });
+  const utils = usePillarUtils('food');
+  const draftsQuery = usePillarQuery<ListDraftsOutput>('food', ['recipes', 'listDrafts'], {
+    slug,
+  });
   const drafts = draftsQuery.data?.drafts ?? [];
 
   if (draftsQuery.isLoading) {
@@ -79,7 +87,7 @@ function RecipeDraftsBody({ slug }: { slug: string }): ReactElement {
               <DraftRowCard
                 slug={slug}
                 draft={d}
-                refetch={() => utils.food.recipes.listDrafts.invalidate({ slug })}
+                refetch={() => utils.invalidate(['recipes', 'listDrafts'])}
                 t={t}
               />
             </li>

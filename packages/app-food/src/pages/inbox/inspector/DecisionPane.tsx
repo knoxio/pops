@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { ApproveDialog } from './ApproveDialog.js';
@@ -21,11 +21,19 @@ import { ProposedSlugsList } from './ProposedSlugsList.js';
 import { QualityBandCard } from './QualityBandCard.js';
 import { RejectDialog } from './RejectDialog.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type {
   InspectorDraftView,
   InspectorProposedSlugRow,
   InspectorReviewView,
 } from '@pops/app-food-db';
+
+type InboxUnrejectInput = inferRouterInputs<AppRouter>['food']['inbox']['unreject'];
+type InboxUnrejectOutput = inferRouterOutputs<AppRouter>['food']['inbox']['unreject'];
+type IngestRetryInput = inferRouterInputs<AppRouter>['food']['ingest']['retry'];
+type IngestRetryOutput = inferRouterOutputs<AppRouter>['food']['ingest']['retry'];
 
 interface Props {
   review: InspectorReviewView;
@@ -126,19 +134,23 @@ interface ArchivedControlsProps {
 function ArchivedControls({ draft, onMutated }: ArchivedControlsProps): ReactElement {
   const { t } = useTranslation('food');
   const navigate = useNavigate();
-  const unrejectMutation = trpc.food.inbox.unreject.useMutation({
-    onSuccess: (res) => {
-      if (res.ok) {
-        toast.success(t('inbox.inspector.decision.undo.success'));
-        onMutated();
-        void navigate('/food/inbox?tab=rejected');
-      } else {
-        toast.error(t(`inbox.inspector.decision.undo.error.${res.reason}` as const));
-      }
-    },
-    onError: (err) =>
-      toast.error(t('inbox.inspector.decision.undo.error.generic', { message: err.message })),
-  });
+  const unrejectMutation = usePillarMutation<InboxUnrejectInput, InboxUnrejectOutput>(
+    'food',
+    ['inbox', 'unreject'],
+    {
+      onSuccess: (res) => {
+        if (res.ok) {
+          toast.success(t('inbox.inspector.decision.undo.success'));
+          onMutated();
+          void navigate('/food/inbox?tab=rejected');
+        } else {
+          toast.error(t(`inbox.inspector.decision.undo.error.${res.reason}` as const));
+        }
+      },
+      onError: (err) =>
+        toast.error(t('inbox.inspector.decision.undo.error.generic', { message: err.message })),
+    }
+  );
   return (
     <div className="space-y-3" data-testid="inspector-archived-controls">
       {draft.rejection !== null && (
@@ -186,14 +198,18 @@ function RerunPipelineButton({
   // explicit invalidate after re-queue the UI sticks on the old partial draft
   // until the user reloads. Bumping `onRequeued` invalidates the query
   // (Copilot R1).
-  const mutation = trpc.food.ingest.retry.useMutation({
-    onSuccess: () => {
-      toast.success(t('inbox.inspector.decision.rerun.success'));
-      onRequeued();
-    },
-    onError: (err) =>
-      toast.error(t('inbox.inspector.decision.rerun.error', { message: err.message })),
-  });
+  const mutation = usePillarMutation<IngestRetryInput, IngestRetryOutput>(
+    'food',
+    ['ingest', 'retry'],
+    {
+      onSuccess: () => {
+        toast.success(t('inbox.inspector.decision.rerun.success'));
+        onRequeued();
+      },
+      onError: (err) =>
+        toast.error(t('inbox.inspector.decision.rerun.error', { message: err.message })),
+    }
+  );
   return (
     <Button
       type="button"

@@ -20,33 +20,31 @@ import type { FridgeView } from '@pops/app-food-db';
 
 const mockViewQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: { fridge: { view: { invalidate: vi.fn() } } },
-    }),
-    food: {
-      fridge: {
-        view: { useQuery: () => mockViewQuery() },
-        recipesUsingBatch: { useQuery: () => ({ data: { items: [] }, isLoading: false }) },
-      },
-      ingredients: {
-        list: { useQuery: () => ({ data: { items: [] } }) },
-        get: { useQuery: () => ({ data: undefined }) },
-      },
-      prepStates: { list: { useQuery: () => ({ data: { items: [] } }) } },
-      batches: {
-        get: { useQuery: () => ({ data: null }) },
-        create: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-        edit: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-        relocate: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-        adjustQty: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-        delete: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'fridge.view') return mockViewQuery();
+    if (key === 'fridge.recipesUsingBatch') return { data: { items: [] }, isLoading: false };
+    if (key === 'ingredients.list') return { data: { items: [] } };
+    if (key === 'ingredients.get') return { data: undefined };
+    if (key === 'prepStates.list') return { data: { items: [] } };
+    if (key === 'batches.get') return { data: null };
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (
+      key === 'batches.create' ||
+      key === 'batches.edit' ||
+      key === 'batches.relocate' ||
+      key === 'batches.adjustQty' ||
+      key === 'batches.delete'
+    ) {
+      return { mutate: vi.fn(), isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({ invalidate: vi.fn() }),
 }));
 
 import { FridgePage } from '../FridgePage.js';

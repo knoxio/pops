@@ -20,7 +20,11 @@
  */
 import { useMemo, useRef } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarCall } from '../../lib/pillar-call.js';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 import type {
   DslAutocompleteSources,
@@ -30,13 +34,17 @@ import type {
   VariantSuggestion,
 } from './autocomplete-types';
 
+type SlugsSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
+type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
+type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
+
 export function useDslAutocompleteSources(): DslAutocompleteSources {
-  const utils = trpc.useUtils();
-  // Mirror the settings-page pattern: stash utils in a ref so the memo
-  // doesn't invalidate every render (the trpc utils identity is not
-  // stable across renders in production OR in tests).
-  const utilsRef = useRef(utils);
-  utilsRef.current = utils;
+  const call = usePillarCall();
+  // Mirror the settings-page pattern: stash the callable in a ref so the
+  // memo doesn't invalidate every render (call identity is not stable
+  // across renders in production OR in tests).
+  const callRef = useRef(call);
+  callRef.current = call;
 
   return useMemo<DslAutocompleteSources>(
     () => ({
@@ -46,19 +54,25 @@ export function useDslAutocompleteSources(): DslAutocompleteSources {
       // what we want when a backend round-trip is flaky mid-keystroke.
       async searchSlugs(query, kinds) {
         try {
-          const result = await utilsRef.current.food.slugs.search.fetch({
+          const result = await callRef.current<SlugsSearchOutput>('food', ['slugs', 'search'], {
             query,
             kinds: kinds === undefined ? undefined : [...kinds],
           });
-          return mapSlugs(result.items);
+          if (result.kind !== 'ok') return [];
+          return mapSlugs(result.value.items);
         } catch {
           return [];
         }
       },
       async listVariantsForIngredient(slug) {
         try {
-          const result = await utilsRef.current.food.ingredients.get.fetch({ idOrSlug: slug });
-          return mapVariants(result.variants);
+          const result = await callRef.current<IngredientsGetOutput>(
+            'food',
+            ['ingredients', 'get'],
+            { idOrSlug: slug }
+          );
+          if (result.kind !== 'ok') return [];
+          return mapVariants(result.value.variants);
         } catch {
           // Missing ingredients are a normal autocomplete state (the
           // user typed a not-yet-created slug); never throw out of a
@@ -69,14 +83,19 @@ export function useDslAutocompleteSources(): DslAutocompleteSources {
       },
       async listPrepStates() {
         try {
-          const result = await utilsRef.current.food.prepStates.list.fetch();
-          return mapPrepStates(result.items);
+          const result = await callRef.current<PrepStatesListOutput>(
+            'food',
+            ['prepStates', 'list'],
+            undefined
+          );
+          if (result.kind !== 'ok') return [];
+          return mapPrepStates(result.value.items);
         } catch {
           return [];
         }
       },
     }),
-    [] // utils accessed via ref; never invalidate
+    [] // call accessed via ref; never invalidate
   );
 }
 

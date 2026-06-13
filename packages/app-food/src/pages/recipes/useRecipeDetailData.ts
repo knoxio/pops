@@ -1,6 +1,12 @@
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
+
+type GetForRenderingOutput = inferRouterOutputs<AppRouter>['food']['recipes']['getForRendering'];
+type ListDraftsOutput = inferRouterOutputs<AppRouter>['food']['recipes']['listDrafts'];
 
 export interface RecipeDetailQueryArgs {
   slug: string;
@@ -34,8 +40,16 @@ export function useRecipeDetailData({
   versionNo,
   includeDrafts = true,
 }: RecipeDetailQueryArgs): RecipeDetailState {
-  const rendering = trpc.food.recipes.getForRendering.useQuery({ slug, versionNo });
-  const drafts = trpc.food.recipes.listDrafts.useQuery({ slug }, { enabled: includeDrafts });
+  const rendering = usePillarQuery<GetForRenderingOutput>('food', ['recipes', 'getForRendering'], {
+    slug,
+    versionNo,
+  });
+  const drafts = usePillarQuery<ListDraftsOutput>(
+    'food',
+    ['recipes', 'listDrafts'],
+    { slug },
+    { enabled: includeDrafts }
+  );
   const error = firstError(rendering.error, drafts.error);
   return {
     data: rendering.data,

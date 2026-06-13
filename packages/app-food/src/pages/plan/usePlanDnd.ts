@@ -17,11 +17,19 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useCallback } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { resolveGridDrop } from './plan-grid-dnd.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { WirePlanEntryRow } from '@pops/app-food-db';
+
+type PlanMoveEntryInput = inferRouterInputs<AppRouter>['food']['plan']['moveEntry'];
+type PlanMoveEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['moveEntry'];
+type PlanReorderSlotInput = inferRouterInputs<AppRouter>['food']['plan']['reorderSlot'];
+type PlanReorderSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['reorderSlot'];
 
 export function usePlanDndSensors() {
   return useSensors(
@@ -32,10 +40,18 @@ export function usePlanDndSensors() {
 }
 
 export function usePlanDndHandlers(entries: readonly WirePlanEntryRow[]) {
-  const utils = trpc.useUtils();
-  const invalidate = () => void utils.food.plan.weekView.invalidate();
-  const moveEntry = trpc.food.plan.moveEntry.useMutation({ onSuccess: invalidate });
-  const reorderSlot = trpc.food.plan.reorderSlot.useMutation({ onSuccess: invalidate });
+  const utils = usePillarUtils('food');
+  const invalidate = () => void utils.invalidate(['plan', 'weekView']);
+  const moveEntry = usePillarMutation<PlanMoveEntryInput, PlanMoveEntryOutput>(
+    'food',
+    ['plan', 'moveEntry'],
+    { onSuccess: invalidate }
+  );
+  const reorderSlot = usePillarMutation<PlanReorderSlotInput, PlanReorderSlotOutput>(
+    'food',
+    ['plan', 'reorderSlot'],
+    { onSuccess: invalidate }
+  );
   const onDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;

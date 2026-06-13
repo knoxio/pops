@@ -1,8 +1,15 @@
 import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Label, useDebouncedValue } from '@pops/ui';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type SlugSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
+type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
 
 import { IngredientSearch, type SlugSearchItem } from './endpoint-picker/IngredientSearch';
 import { KindToggle } from './endpoint-picker/KindToggle';
@@ -24,7 +31,9 @@ function useEndpointPickerQueries(
   debounced: string
 ) {
   const searchEnabled = value === null && debounced.length > 0;
-  const searchQuery = trpc.food.slugs.search.useQuery(
+  const searchQuery = usePillarQuery<SlugSearchOutput>(
+    'food',
+    ['slugs', 'search'],
     { query: debounced, kinds: ['ingredient'], limit: 8 },
     { enabled: searchEnabled }
   );
@@ -33,7 +42,9 @@ function useEndpointPickerQueries(
     [searchQuery.data]
   );
   const detailEnabled = kind === 'variant' && parentIngredientId !== null && value === null;
-  const detailQuery = trpc.food.ingredients.get.useQuery(
+  const detailQuery = usePillarQuery<IngredientsGetOutput>(
+    'food',
+    ['ingredients', 'get'],
     { idOrSlug: parentIngredientId ?? 0 },
     { enabled: detailEnabled }
   );

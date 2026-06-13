@@ -21,38 +21,27 @@ const removeHooks = {
   onError: null as null | ((err: { message: string }) => void),
 };
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      heroImage: {
-        upload: {
-          useMutation: (opts: {
-            onSuccess: typeof uploadHooks.onSuccess;
-            onError: typeof uploadHooks.onError;
-          }) => {
-            uploadHooks.onSuccess = opts.onSuccess;
-            uploadHooks.onError = opts.onError;
-            return {
-              mutate: uploadMutate,
-              isPending: uploadHooks.isPending,
-            };
-          },
-        },
-        remove: {
-          useMutation: (opts: {
-            onSuccess: typeof removeHooks.onSuccess;
-            onError: typeof removeHooks.onError;
-          }) => {
-            removeHooks.onSuccess = opts.onSuccess;
-            removeHooks.onError = opts.onError;
-            return {
-              mutate: removeMutate,
-              isPending: removeHooks.isPending,
-            };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: {
+      onSuccess?: typeof uploadHooks.onSuccess & typeof removeHooks.onSuccess;
+      onError?: typeof uploadHooks.onError & typeof removeHooks.onError;
+    }
+  ) => {
+    const key = path.join('.');
+    if (key === 'heroImage.upload') {
+      uploadHooks.onSuccess = opts.onSuccess ?? null;
+      uploadHooks.onError = opts.onError ?? null;
+      return { mutate: uploadMutate, isPending: uploadHooks.isPending };
+    }
+    if (key === 'heroImage.remove') {
+      removeHooks.onSuccess = opts.onSuccess ?? null;
+      removeHooks.onError = opts.onError ?? null;
+      return { mutate: removeMutate, isPending: removeHooks.isPending };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
   },
 }));
 

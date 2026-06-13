@@ -11,45 +11,41 @@ const mockCreateMutate = vi.fn();
 const mockUpdateMutate = vi.fn();
 const mockDeleteMutate = vi.fn();
 let createOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
-let updateOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
-let deleteOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
+let _updateOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
+let _deleteOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
 const mockInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      substitutions: {
-        listHydrated: { useQuery: (input: unknown) => mockListHydratedQuery(input) },
-        create: {
-          useMutation: (opts: typeof createOpts) => {
-            createOpts = opts;
-            return { mutate: mockCreateMutate, isPending: false };
-          },
-        },
-        update: {
-          useMutation: (opts: typeof updateOpts) => {
-            updateOpts = opts;
-            return { mutate: mockUpdateMutate, isPending: false };
-          },
-        },
-        delete: {
-          useMutation: (opts: typeof deleteOpts) => {
-            deleteOpts = opts;
-            return { mutate: mockDeleteMutate, isPending: false };
-          },
-        },
-      },
-      slugs: {
-        search: { useQuery: (input: unknown, opts: unknown) => mockSlugSearchQuery(input, opts) },
-      },
-      ingredients: {
-        get: { useQuery: (input: unknown, opts: unknown) => mockIngredientGetQuery(input, opts) },
-      },
-    },
-    useUtils: () => ({
-      food: { substitutions: { listHydrated: { invalidate: mockInvalidate } } },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
+    const key = path.join('.');
+    if (key === 'substitutions.listHydrated') return mockListHydratedQuery(input);
+    if (key === 'slugs.search') return mockSlugSearchQuery(input, opts);
+    if (key === 'ingredients.get') return mockIngredientGetQuery(input, opts);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: { onSuccess?: () => void; onError?: (e: unknown) => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'substitutions.create') {
+      createOpts = opts;
+      return { mutate: mockCreateMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    if (key === 'substitutions.update') {
+      _updateOpts = opts;
+      return { mutate: mockUpdateMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    if (key === 'substitutions.delete') {
+      _deleteOpts = opts;
+      return { mutate: mockDeleteMutate, mutateAsync: vi.fn(), isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: mockInvalidate,
+  }),
 }));
 
 function row(
@@ -105,8 +101,8 @@ function seedList(rows: ReturnType<typeof row>[]) {
 beforeEach(() => {
   vi.clearAllMocks();
   createOpts = {};
-  updateOpts = {};
-  deleteOpts = {};
+  _updateOpts = {};
+  _deleteOpts = {};
   mockSlugSearchQuery.mockReturnValue({ data: { items: [] }, isLoading: false });
   mockIngredientGetQuery.mockReturnValue({ data: undefined, isLoading: false });
 });

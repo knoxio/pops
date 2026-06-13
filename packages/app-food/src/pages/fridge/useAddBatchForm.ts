@@ -7,11 +7,20 @@
  */
 import { useEffect, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { toIsoFromDateInput } from './form-controls.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { BatchLocation, BatchUnit, ManualBatchSourceType } from '@pops/app-food-db';
+
+type IngredientsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['list'];
+type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
+type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
+type BatchesCreateInput = inferRouterInputs<AppRouter>['food']['batches']['create'];
+type BatchesCreateOutput = inferRouterOutputs<AppRouter>['food']['batches']['create'];
 
 export interface AddBatchFormState {
   ingredientId: string;
@@ -80,8 +89,23 @@ interface UseAddBatchFormArgs {
   onClose: () => void;
 }
 
+function useCreateBatchMutation(args: {
+  onAdded: ((batchId: number) => void) | undefined;
+  onClose: () => void;
+  setError: (msg: string | null) => void;
+}) {
+  const utils = usePillarUtils('food');
+  return usePillarMutation<BatchesCreateInput, BatchesCreateOutput>('food', ['batches', 'create'], {
+    onSuccess: ({ batchId }) => {
+      void utils.invalidate(['fridge', 'view']);
+      args.onAdded?.(batchId);
+      args.onClose();
+    },
+    onError: (err) => args.setError(err.message),
+  });
+}
+
 export function useAddBatchForm({ isOpen, onAdded, onClose }: UseAddBatchFormArgs) {
-  const utils = trpc.useUtils();
   const [form, setForm] = useState<AddBatchFormState>(INITIAL_FORM);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,28 +116,30 @@ export function useAddBatchForm({ isOpen, onAdded, onClose }: UseAddBatchFormArg
     }
   }, [isOpen]);
 
-  const ingredientsQuery = trpc.food.ingredients.list.useQuery(
+  const ingredientsQuery = usePillarQuery<IngredientsListOutput>(
+    'food',
+    ['ingredients', 'list'],
     { search: form.search.trim().length > 0 ? form.search.trim() : undefined },
     { enabled: isOpen }
   );
 
   const selectedIngredientId = form.ingredientId.length > 0 ? Number(form.ingredientId) : null;
 
-  const ingredientDetail = trpc.food.ingredients.get.useQuery(
+  const ingredientDetail = usePillarQuery<IngredientsGetOutput>(
+    'food',
+    ['ingredients', 'get'],
     { idOrSlug: selectedIngredientId ?? 0 },
     { enabled: isOpen && selectedIngredientId !== null }
   );
 
-  const prepStatesQuery = trpc.food.prepStates.list.useQuery(undefined, { enabled: isOpen });
+  const prepStatesQuery = usePillarQuery<PrepStatesListOutput>(
+    'food',
+    ['prepStates', 'list'],
+    undefined,
+    { enabled: isOpen }
+  );
 
-  const createMutation = trpc.food.batches.create.useMutation({
-    onSuccess: ({ batchId }) => {
-      void utils.food.fridge.view.invalidate();
-      onAdded?.(batchId);
-      onClose();
-    },
-    onError: (err) => setError(err.message),
-  });
+  const createMutation = useCreateBatchMutation({ onAdded, onClose, setError });
 
   function submit(): void {
     setError(null);

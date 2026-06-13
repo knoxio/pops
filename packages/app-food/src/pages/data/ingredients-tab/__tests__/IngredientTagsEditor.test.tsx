@@ -24,28 +24,21 @@ const mockSetMutate = vi.fn();
 const mockSetUseMutation = vi.fn();
 const mockInvalidate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      ingredients: {
-        tags: {
-          list: { useQuery: (input: unknown) => mockListUseQuery(input) },
-          distinct: { useQuery: (input: unknown) => mockDistinctUseQuery(input) },
-          set: { useMutation: (opts: unknown) => mockSetUseMutation(opts) },
-        },
-      },
-    },
-    useUtils: () => ({
-      food: {
-        ingredients: {
-          tags: {
-            list: { invalidate: mockInvalidate },
-            distinct: { invalidate: mockInvalidate },
-          },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'ingredients.tags.list') return mockListUseQuery(input);
+    if (key === 'ingredients.tags.distinct') return mockDistinctUseQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[], opts: unknown) => {
+    const key = path.join('.');
+    if (key === 'ingredients.tags.set') return mockSetUseMutation(opts);
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: mockInvalidate,
+  }),
 }));
 
 import { IngredientTagsEditor } from '../IngredientTagsEditor.js';

@@ -5,7 +5,16 @@
  */
 import { useEffect, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];
+type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
+type BatchesEditInput = inferRouterInputs<AppRouter>['food']['batches']['edit'];
+type BatchesEditOutput = inferRouterOutputs<AppRouter>['food']['batches']['edit'];
 
 export interface EditState {
   expiresAt: string;
@@ -22,12 +31,19 @@ interface UseEditBatchArgs {
 }
 
 export function useEditBatchState({ batchId, isOpen, onClose }: UseEditBatchArgs) {
-  const utils = trpc.useUtils();
-  const detail = trpc.food.batches.get.useQuery(
+  const utils = usePillarUtils('food');
+  const detail = usePillarQuery<BatchesGetOutput>(
+    'food',
+    ['batches', 'get'],
     { id: batchId ?? 0 },
     { enabled: isOpen && batchId !== null }
   );
-  const prepStates = trpc.food.prepStates.list.useQuery(undefined, { enabled: isOpen });
+  const prepStates = usePillarQuery<PrepStatesListOutput>(
+    'food',
+    ['prepStates', 'list'],
+    undefined,
+    { enabled: isOpen }
+  );
   const [form, setForm] = useState<EditState>(EMPTY_STATE);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,17 +60,21 @@ export function useEditBatchState({ batchId, isOpen, onClose }: UseEditBatchArgs
     }
   }, [detail.data, isOpen]);
 
-  const editMutation = trpc.food.batches.edit.useMutation({
-    onSuccess: (res) => {
-      if (res.ok) {
-        void utils.food.fridge.view.invalidate();
-        onClose();
-      } else {
-        setError(reasonToMessage(res.reason));
-      }
-    },
-    onError: (err) => setError(err.message),
-  });
+  const editMutation = usePillarMutation<BatchesEditInput, BatchesEditOutput>(
+    'food',
+    ['batches', 'edit'],
+    {
+      onSuccess: (res) => {
+        if (res.ok) {
+          void utils.invalidate(['fridge', 'view']);
+          onClose();
+        } else {
+          setError(reasonToMessage(res.reason));
+        }
+      },
+      onError: (err) => setError(err.message),
+    }
+  );
 
   const isFromRun = detail.data?.sourceType === 'recipe_run';
 

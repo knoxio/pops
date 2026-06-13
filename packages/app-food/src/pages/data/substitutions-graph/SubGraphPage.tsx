@@ -17,15 +17,21 @@
  */
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { distinctContextTags, findNodeBySlug } from './helpers';
 import { SubGraphBody } from './SubGraphBody';
 import { SubGraphHeader } from './SubGraphHeader';
 import { useSubGraphState } from './useSubGraphState';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
 import type { ForceGraphInternalProps } from './ForceGraphCanvas';
 import type { SubGraphView } from './types';
+
+type GraphViewOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['graphView'];
 
 const TABLE_HREF = '/food/data/substitutions';
 
@@ -43,9 +49,12 @@ export function SubGraphPage(props: SubGraphPageProps = {}): React.ReactElement 
   const state = useSubGraphState();
   const { filters } = state;
   const skipQuery = filters.scope === 'recipe' && filters.recipeId === null;
-  const query = trpc.food.substitutions.graphView.useQuery(state.queryInput, {
-    enabled: !skipQuery,
-  });
+  const query = usePillarQuery<GraphViewOutput>(
+    'food',
+    ['substitutions', 'graphView'],
+    state.queryInput,
+    { enabled: !skipQuery }
+  );
   const view: SubGraphView = query.data ?? { nodes: [], edges: [] };
   const focusedNode =
     filters.focusedSlug !== null ? findNodeBySlug(view.nodes, filters.focusedSlug) : null;

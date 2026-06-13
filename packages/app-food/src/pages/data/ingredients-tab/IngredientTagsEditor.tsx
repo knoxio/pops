@@ -10,10 +10,17 @@
  */
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Chip, TextInput } from '@pops/ui';
 
 import { useTagsDraft, type TagsDraft } from './useTagsDraft.js';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type TagsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['list'];
+type TagsDistinctOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['distinct'];
 
 const DATALIST_ID = 'ingredient-tag-suggestions';
 
@@ -23,8 +30,14 @@ interface Props {
 
 export function IngredientTagsEditor({ ingredientId }: Props) {
   const { t } = useTranslation('food');
-  const tagsQuery = trpc.food.ingredients.tags.list.useQuery({ ingredientId });
-  const distinctQuery = trpc.food.ingredients.tags.distinct.useQuery({});
+  const tagsQuery = usePillarQuery<TagsListOutput>('food', ['ingredients', 'tags', 'list'], {
+    ingredientId,
+  });
+  const distinctQuery = usePillarQuery<TagsDistinctOutput>(
+    'food',
+    ['ingredients', 'tags', 'distinct'],
+    {}
+  );
   const draft = useTagsDraft({
     ingredientId,
     remoteTags: tagsQuery.data?.tags ?? null,

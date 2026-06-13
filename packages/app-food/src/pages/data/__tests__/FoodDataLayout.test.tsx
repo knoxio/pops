@@ -18,15 +18,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FoodDataLayout, getActiveTabSlug } from '../FoodDataLayout';
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    food: {
-      slugs: {
-        search: {
-          useQuery: () => ({ data: { items: [] }, isLoading: false }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'slugs.search') return { data: { items: [] }, isLoading: false };
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

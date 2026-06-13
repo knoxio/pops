@@ -5,16 +5,24 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Checkbox, Label, TextInput } from '@pops/ui';
 
-import { CreateWeightDialog, type IngredientOption } from './CreateWeightDialog';
-import { EditWeightDialog } from './EditWeightDialog';
+import { type IngredientOption } from './CreateWeightDialog';
 import { useWeightMutations } from './useWeightMutations';
 import { buildIngredientLookup, useWeightRowViews } from './useWeightRowViews';
+import { WeightsDialogs } from './WeightsDialogs';
 import { WeightsTable } from './WeightsTable';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
 import type { IngredientWeightRow } from './types';
+
+type IngredientsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['list'];
+type ConversionsListWeightsOutput =
+  inferRouterOutputs<AppRouter>['food']['conversions']['listWeights'];
 
 function useWeightFilters() {
   const [search, setSearch] = useState('');
@@ -96,7 +104,11 @@ function SectionHeader({ onAdd }: { onAdd: () => void }) {
 }
 
 function useIngredientOptions(): readonly IngredientOption[] {
-  const ingredientListQuery = trpc.food.ingredients.list.useQuery({});
+  const ingredientListQuery = usePillarQuery<IngredientsListOutput>(
+    'food',
+    ['ingredients', 'list'],
+    {}
+  );
   return useMemo(
     () =>
       (ingredientListQuery.data?.items ?? []).map((row) => ({
@@ -140,11 +152,15 @@ function useWeightData(
   const lookup = useMemo(() => buildIngredientLookup(ingredients), [ingredients]);
   const ingredientId =
     filters.ingredientFilter.length > 0 ? Number(filters.ingredientFilter) : undefined;
-  const listQuery = trpc.food.conversions.listWeights.useQuery({
-    search: filters.search.length > 0 ? filters.search : undefined,
-    seededOnly: filters.seededOnly ? true : undefined,
-    ingredientId,
-  });
+  const listQuery = usePillarQuery<ConversionsListWeightsOutput>(
+    'food',
+    ['conversions', 'listWeights'],
+    {
+      search: filters.search.length > 0 ? filters.search : undefined,
+      seededOnly: filters.seededOnly ? true : undefined,
+      ingredientId,
+    }
+  );
   const rawRows = listQuery.data?.items ?? [];
   const views = useWeightRowViews(rawRows, lookup);
   return { views, isLoading: listQuery.isLoading };
@@ -184,23 +200,18 @@ export function WeightsSection() {
         onEdit={dialog.startEdit}
         onDelete={(row) => mutations.submitDelete(row.id)}
       />
-      <CreateWeightDialog
-        open={dialog.createOpen}
-        onOpenChange={(open) => (open ? dialog.openCreate() : dialog.closeCreate())}
+      <WeightsDialogs
+        createOpen={dialog.createOpen}
+        editingRow={dialog.editingRow}
         ingredients={ingredients}
         errorMessage={mutations.errorMessage}
-        isSubmitting={mutations.isCreating}
-        onSubmit={(input) => mutations.submitCreate(input, dialog.closeCreate)}
-      />
-      <EditWeightDialog
-        open={dialog.editingRow !== null}
-        onOpenChange={(open) => {
-          if (!open) dialog.cancelEdit();
-        }}
-        row={dialog.editingRow}
-        errorMessage={mutations.errorMessage}
-        isSubmitting={mutations.isUpdating}
-        onSubmit={(id, patch) => mutations.submitUpdate(id, patch, dialog.cancelEdit)}
+        isCreating={mutations.isCreating}
+        isUpdating={mutations.isUpdating}
+        openCreate={dialog.openCreate}
+        closeCreate={dialog.closeCreate}
+        cancelEdit={dialog.cancelEdit}
+        submitCreate={mutations.submitCreate}
+        submitUpdate={mutations.submitUpdate}
       />
     </section>
   );

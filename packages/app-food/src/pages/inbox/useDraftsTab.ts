@@ -7,9 +7,15 @@
  * — React Query disables background polling automatically when the tab is
  * hidden.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { type DraftsFiltersState, toQueryInput } from './drafts-filters.js';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type InboxListOutput = inferRouterOutputs<AppRouter>['food']['inbox']['list'];
 
 interface UseDraftsTabOpts {
   filters: DraftsFiltersState;
@@ -19,7 +25,7 @@ const DRAFTS_POLL_INTERVAL_MS = 60_000;
 
 export function useDraftsTab({ filters }: UseDraftsTabOpts) {
   const queryInput = toQueryInput(filters);
-  const query = trpc.food.inbox.list.useQuery(queryInput, {
+  const query = usePillarQuery<InboxListOutput>('food', ['inbox', 'list'], queryInput, {
     refetchInterval: DRAFTS_POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
   });

@@ -8,11 +8,17 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { TFunction } from 'i18next';
 
+import type { AppRouter } from '@pops/api-client';
+
 import type { SendError } from './types.js';
+
+type SendToListInput = inferRouterInputs<AppRouter>['food']['recipes']['sendToList'];
+type SendToListOutput = inferRouterOutputs<AppRouter>['food']['recipes']['sendToList'];
 
 export interface SendInput {
   versionId: number;
@@ -39,23 +45,27 @@ function reasonToMessage(reason: SendError, t: TFunction): string {
 export function useSendToListMutation({ onSuccess }: UseSendOpts) {
   const { t } = useTranslation('food');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const mutation = trpc.food.recipes.sendToList.useMutation({
-    onSuccess: (result) => {
-      if (result.ok) {
-        setErrorMessage(null);
-        onSuccess({
-          listId: result.listId,
-          addedCount: result.addedCount,
-          mergedCount: result.mergedCount,
-        });
-        return;
-      }
-      setErrorMessage(reasonToMessage(result.reason as SendError, t));
-    },
-    onError: (err) => {
-      setErrorMessage(t('recipes.detail.sendToList.error.network', { message: err.message }));
-    },
-  });
+  const mutation = usePillarMutation<SendToListInput, SendToListOutput>(
+    'food',
+    ['recipes', 'sendToList'],
+    {
+      onSuccess: (result) => {
+        if (result.ok) {
+          setErrorMessage(null);
+          onSuccess({
+            listId: result.listId,
+            addedCount: result.addedCount,
+            mergedCount: result.mergedCount,
+          });
+          return;
+        }
+        setErrorMessage(reasonToMessage(result.reason as SendError, t));
+      },
+      onError: (err) => {
+        setErrorMessage(t('recipes.detail.sendToList.error.network', { message: err.message }));
+      },
+    }
+  );
   const clearError = useCallback(() => setErrorMessage(null), []);
   const submit = useCallback(
     (input: SendInput) => {

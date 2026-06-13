@@ -10,13 +10,18 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, NumberInput } from '@pops/ui';
 
 import { useIsMobile } from './useIsMobile.js';
 import { usePlanEntryEdit } from './usePlanEntryEdit.js';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { WirePlanEntryRow } from '@pops/app-food-db';
+
+type PlanWeekViewOutput = inferRouterOutputs<AppRouter>['food']['plan']['weekView'];
 
 export interface PlanEntryEditSheetProps {
   entryId: number | null;
@@ -28,7 +33,12 @@ export interface PlanEntryEditSheetProps {
 export function PlanEntryEditSheet(props: PlanEntryEditSheetProps): ReactElement | null {
   const { entryId, weekStart, isOpen, onClose } = props;
   const isMobile = useIsMobile();
-  const weekQuery = trpc.food.plan.weekView.useQuery({ weekStart }, { enabled: isOpen });
+  const weekQuery = usePillarQuery<PlanWeekViewOutput>(
+    'food',
+    ['plan', 'weekView'],
+    { weekStart },
+    { enabled: isOpen }
+  );
   const entry = (weekQuery.data?.entries ?? []).find((e) => e.id === entryId) ?? null;
   if (!isOpen || entry === null) return null;
   const variant = isMobile ? 'bottom-sheet' : 'right-drawer';

@@ -6,13 +6,20 @@
  */
 import { useEffect, useState, type ReactElement } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
 import { FormError } from './form-controls.js';
 import { formatQty } from './format.js';
 
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { BatchDetail } from '@pops/app-food-db';
+
+type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];
+type BatchesDeleteInput = inferRouterInputs<AppRouter>['food']['batches']['delete'];
+type BatchesDeleteOutput = inferRouterOutputs<AppRouter>['food']['batches']['delete'];
 
 export interface DeleteBatchConfirmProps {
   batchId: number | null;
@@ -27,8 +34,10 @@ export function DeleteBatchConfirm({
   onClose,
   onConfirmed,
 }: DeleteBatchConfirmProps): ReactElement {
-  const utils = trpc.useUtils();
-  const detail = trpc.food.batches.get.useQuery(
+  const utils = usePillarUtils('food');
+  const detail = usePillarQuery<BatchesGetOutput>(
+    'food',
+    ['batches', 'get'],
     { id: batchId ?? 0 },
     { enabled: isOpen && batchId !== null }
   );
@@ -38,18 +47,22 @@ export function DeleteBatchConfirm({
     if (!isOpen) setError(null);
   }, [isOpen]);
 
-  const deleteMutation = trpc.food.batches.delete.useMutation({
-    onSuccess: (res) => {
-      if (res.ok) {
-        void utils.food.fridge.view.invalidate();
-        onConfirmed?.();
-        onClose();
-      } else {
-        setError(res.reason);
-      }
-    },
-    onError: (err) => setError(err.message),
-  });
+  const deleteMutation = usePillarMutation<BatchesDeleteInput, BatchesDeleteOutput>(
+    'food',
+    ['batches', 'delete'],
+    {
+      onSuccess: (res) => {
+        if (res.ok) {
+          void utils.invalidate(['fridge', 'view']);
+          onConfirmed?.();
+          onClose();
+        } else {
+          setError(res.reason);
+        }
+      },
+      onError: (err) => setError(err.message),
+    }
+  );
 
   function handleDelete(): void {
     if (batchId === null) return;

@@ -3,9 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { RecipeRenderer } from '../../components/RecipeRenderer.js';
+
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
+
+type ArchiveRecipeInput = inferRouterInputs<AppRouter>['food']['recipes']['archiveRecipe'];
+type ArchiveRecipeOutput = inferRouterOutputs<AppRouter>['food']['recipes']['archiveRecipe'];
 import { CookNowPortal } from './CookNowPortal.js';
 import { MissingCurrentVersionBanner } from './MissingCurrentVersionBanner.js';
 import { RecipeActionMenu, type RecipeActionMenuItem } from './RecipeActionMenu.js';
@@ -94,18 +101,22 @@ interface ArchiveFlow {
 function useArchiveFlow(_slug: string): ArchiveFlow {
   const { t } = useTranslation('food');
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('food');
   const [isOpen, setOpen] = useState(false);
-  const mutation = trpc.food.recipes.archiveRecipe.useMutation({
-    onSuccess: () => {
-      toast.success(t('recipes.detail.archive.success'));
-      void utils.food.recipes.list.invalidate();
-      void navigate('/food/recipes');
-    },
-    onError: (err) => {
-      toast.error(t('recipes.detail.archive.error', { message: err.message }));
-    },
-  });
+  const mutation = usePillarMutation<ArchiveRecipeInput, ArchiveRecipeOutput>(
+    'food',
+    ['recipes', 'archiveRecipe'],
+    {
+      onSuccess: () => {
+        toast.success(t('recipes.detail.archive.success'));
+        void utils.invalidate(['recipes', 'list']);
+        void navigate('/food/recipes');
+      },
+      onError: (err) => {
+        toast.error(t('recipes.detail.archive.error', { message: err.message }));
+      },
+    }
+  );
   return {
     open: useCallback(() => setOpen(true), []),
     close: useCallback(() => setOpen(false), []),

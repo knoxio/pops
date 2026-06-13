@@ -4,9 +4,14 @@
  * Owns the cache key for the fridge query so the mutation handlers in
  * the sibling modals can invalidate one place when a batch changes.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 import type { FridgeView } from '@pops/app-food-db';
+
+type FridgeViewOutput = inferRouterOutputs<AppRouter>['food']['fridge']['view'];
 
 /**
  * PRD-147's overview blurb mentions a prep-state filter, but the spec
@@ -57,7 +62,7 @@ export function useFridgeView({
     includeDeleted: filters.showAll || undefined,
   };
 
-  const query = trpc.food.fridge.view.useQuery(input);
+  const query = usePillarQuery<FridgeViewOutput>('food', ['fridge', 'view'], input);
 
   return {
     data: query.data,

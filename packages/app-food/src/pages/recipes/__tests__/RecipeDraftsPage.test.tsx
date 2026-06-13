@@ -17,37 +17,39 @@ let mockPromoteOnSuccess:
 const mockDiscardMutate = vi.fn();
 let mockDiscardOnSuccess: (() => void) | undefined;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        recipes: {
-          listDrafts: { invalidate: mockListDraftsInvalidate },
-          list: { invalidate: vi.fn() },
-        },
-      },
-    }),
-    food: {
-      recipes: {
-        listDrafts: { useQuery: (input: unknown) => mockListDrafts(input) },
-        promote: {
-          useMutation: (opts: {
-            onSuccess?: typeof mockPromoteOnSuccess;
-            onError?: (err: Error) => void;
-          }) => {
-            mockPromoteOnSuccess = opts.onSuccess;
-            return { mutate: mockPromoteMutate, isPending: false };
-          },
-        },
-        archiveVersion: {
-          useMutation: (opts: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-            mockDiscardOnSuccess = opts.onSuccess;
-            return { mutate: mockDiscardMutate, isPending: false };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'recipes.listDrafts') return mockListDrafts(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: {
+      onSuccess?: (res: { ok: boolean; reason?: string; versionId?: number }) => void;
+      onError?: (err: Error) => void;
+    }
+  ) => {
+    const key = path.join('.');
+    if (key === 'recipes.promote') {
+      mockPromoteOnSuccess = opts.onSuccess;
+      return { mutate: mockPromoteMutate, isPending: false };
+    }
+    if (key === 'recipes.archiveVersion') {
+      mockDiscardOnSuccess = opts.onSuccess as (() => void) | undefined;
+      return { mutate: mockDiscardMutate, isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: (path: readonly string[]) => {
+      const key = path.join('.');
+      if (key === 'recipes.listDrafts') return mockListDraftsInvalidate();
+      return undefined;
+    },
+    setData: vi.fn(),
+  }),
 }));
 
 const navigateMock = vi.fn();
