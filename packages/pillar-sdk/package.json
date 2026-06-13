@@ -58,6 +58,10 @@
       "types": "./dist/orchestrator/index.d.ts",
       "default": "./dist/orchestrator/index.js"
     },
+    "./ai-tools": {
+      "types": "./dist/ai-tools/index.d.ts",
+      "default": "./dist/ai-tools/index.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

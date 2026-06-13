@@ -15,7 +15,19 @@ export function manifest(pillarId: string, adapters: readonly string[]): Manifes
       mutations: [`${pillarId}.routerA.create`],
       subscriptions: [],
     },
-    search: { adapters: [...adapters] },
+    search: {
+      adapters: adapters.map((name) => ({
+        name,
+        entityType: 'entity',
+        queryShape: {
+          supportsText: true,
+          supportsTags: false,
+          supportsDateRange: false,
+          supportsScope: [],
+        },
+        procedurePath: `${pillarId}.routerA.${name}`,
+      })),
+    },
     ai: { tools: [] },
     uri: { types: [`${pillarId}/entity`] },
     settings: { keys: [] },

@@ -16,7 +16,7 @@ Today: AI tools are hand-registered on pops-api. Adding an AI tool requires touc
 | --- | ------------------------------ | -------------------------------------------------------------------------------------------- | ----------- |
 | 200 | AI tool manifest               | What a pillar declares; parameters schema; URI scopes the tool can act on                    | Partial     |
 | 201 | Dynamic tool list construction | AI orchestrator reads registry on each call; tool list reflects live capabilities            | Not started |
-| 202 | Tool-call routing              | When the AI invokes a tool, route to the right pillar via the SDK; handle pillar-unavailable | Not started |
+| 202 | Tool-call routing              | When the AI invokes a tool, route to the right pillar via the SDK; handle pillar-unavailable | Done        |
 
 ## Dependencies
 
