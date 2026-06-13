@@ -23,13 +23,13 @@ Recommendation per the theme README: separate concerns (B). `pops-search-api`, `
 
 ## PRDs
 
-| #   | PRD                            | Summary                                                                                 | Status      |
-| --- | ------------------------------ | --------------------------------------------------------------------------------------- | ----------- |
-| 207 | ADR-029 decision matrix        | The per-concern decision; this PRD captures the rationale and writes the ADR            | Not started |
-| 208 | Search orchestrator relocation | Implement whichever option ADR-029 picked for search                                    | Not started |
-| 209 | AI Ops orchestrator relocation | Same for AI                                                                             | Not started |
-| 210 | Worker partitioning audit      | Worker calls become SDK calls; remove in-process DB access; or split worker per concern | Not started |
-| 211 | URI dispatcher relocation      | Fold dispatcher into registry; pillar-specific resolvers stay co-located                | Not started |
+| #   | PRD                            | Summary                                                                                 | Status                                                                                                     |
+| --- | ------------------------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 207 | ADR-029 decision matrix        | The per-concern decision; this PRD captures the rationale and writes the ADR            | Not started                                                                                                |
+| 208 | Search orchestrator relocation | Implement whichever option ADR-029 picked for search                                    | Not started                                                                                                |
+| 209 | AI Ops orchestrator relocation | Same for AI                                                                             | Not started                                                                                                |
+| 210 | Worker partitioning audit      | Worker calls become SDK calls; remove in-process DB access; or split worker per concern | Partial (audit done — only `pops-worker-food` exists and is already SDK-partitioned; no migration backlog) |
+| 211 | URI dispatcher relocation      | Fold dispatcher into registry; pillar-specific resolvers stay co-located                | Not started                                                                                                |
 
 ## Dependencies
 

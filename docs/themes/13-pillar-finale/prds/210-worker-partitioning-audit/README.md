@@ -32,11 +32,43 @@ Per-job audit. Examples:
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------ |
-| 01  | [us-01-audit-jobs](us-01-audit-jobs.md)                     | Catalogue every job + its DB-touch pattern             |
-| 02  | [us-02-job-by-job-migration](us-02-job-by-job-migration.md) | One PR per job: convert in-process writes to SDK calls |
-| 03  | [us-03-bulk-procedures](us-03-bulk-procedures.md)           | Author bulk procedures where needed for perf           |
+| #   | Story                      | Summary                                                | Status                                                                      |
+| --- | -------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| 01  | us-01-audit-jobs           | Catalogue every job + its DB-touch pattern             | Done (inline, see Audit Findings)                                           |
+| 02  | us-02-job-by-job-migration | One PR per job: convert in-process writes to SDK calls | Not started (no in-process writes remain to migrate)                        |
+| 03  | us-03-bulk-procedures      | Author bulk procedures where needed for perf           | Not started (no batched job currently bottlenecked by per-record SDK calls) |
+
+Story files were never authored — US-01's deliverable is captured inline under **Audit Findings** below; US-02/03 are gated on a job actually needing migration or a bulk path.
+
+## Audit Findings
+
+Status snapshot from the worker tree as of this audit. Audit only — no code changes.
+
+### Worker inventory
+
+| Worker             | Pillar(s) touched | Queue / job kinds                                                                                                      | DB access pattern                                                                                                                                                                  | Partitioning verdict        |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `pops-worker-food` | food (only)       | `food.ingest` queue: `web-url`, `screenshot`, `text`, `instagram*`, `web-llm-*` handlers (see `src/handlers/index.ts`) | tRPC HTTP only — `client.food.ingest.workerComplete.mutate(...)` against pops-api with `x-pops-internal-token` (PRD-125). No drizzle, no `@pops/*-db` workspace imports in `src/`. | Single-pillar, SDK-correct. |
+
+`apps/pops-worker-*` glob returns exactly one directory; the PRD's `bullmq:plex-sync` (media), `bullmq:ai-categorize` (finance + core/aiUsage), and `*arr ingest` jobs referenced in the parent epic do not exist in code — no worker writes those tables today.
+
+### Cross-pillar offenders
+
+None. `pops-worker-food`'s runtime `package.json` dependencies are scoped to `@pops/food-contracts`; the only other workspace import is a `devDependencies` reference to `@pops/app-food-db` consumed in `src/__tests__/*` to reuse `parseRecipeDsl` for fixture parsing. That is a same-pillar test-only dep, not a cross-pillar runtime DB write.
+
+### Implications for ADR-029 / Epic 08b
+
+- The "convert in-process pillar-DB writes to SDK calls" workstream this PRD anticipated has nothing to convert in `pops-worker-food`. The worker was authored against the PRD-125/126 callback contract from the start.
+- Future workers (plex-sync, ai-categorize, \*arr ingest) are still hypothetical. When they are scaffolded, this PRD's per-job audit rubric still applies; until then it has no active migration backlog.
+- Bulk pillar procedures (US-03) are only justified by an observed throughput bottleneck — none today.
+
+### Re-audit triggers
+
+Reopen this PRD when any of the following lands:
+
+- A new `apps/pops-worker-*` directory.
+- A `package.json` dependency on `@pops/*-db` (any pillar) inside an existing worker's runtime (non-`devDependencies`) section.
+- A handler that imports `drizzle-orm` or a `db` client directly under `apps/pops-worker-*/src/` (excluding tests).
 
 ## Out of Scope
 
