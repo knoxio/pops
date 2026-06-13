@@ -135,6 +135,44 @@ describe('openCoreDb', () => {
     }
   });
 
+  it('applies the PRD-186 PR4 ai_providers migration', () => {
+    const path = join(tmpDir, 'core.db');
+    const { raw } = openCoreDb(path);
+    try {
+      const tables = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(tables.has('ai_providers')).toBe(true);
+
+      const indexes = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(indexes.has('idx_ai_providers_type')).toBe(true);
+      expect(indexes.has('idx_ai_providers_status')).toBe(true);
+
+      raw
+        .prepare(
+          `INSERT INTO ai_providers
+            (id, name, type, base_url, api_key_ref, status, created_at, updated_at)
+           VALUES ('claude', 'Anthropic Claude', 'cloud', NULL, 'anthropic.apiKey', 'active', datetime('now'), datetime('now'))`
+        )
+        .run();
+      const count = (raw.prepare('SELECT count(*) AS n FROM ai_providers').get() as { n: number })
+        .n;
+      expect(count).toBe(1);
+    } finally {
+      raw.close();
+    }
+  });
+
   it('is idempotent — re-opening the same DB does not re-apply migrations', async () => {
     const path = join(tmpDir, 'core.db');
     const first = openCoreDb(path);

@@ -17,6 +17,7 @@ export {
   aiInferenceDaily,
   aiInferenceLog,
   aiModelPricing,
+  aiProviders,
   aiUsage,
   pillarRegistry,
   serviceAccounts,

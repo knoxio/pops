@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { aiModelPricing, aiProviders } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { getAnthropicApiKey } from '../../../lib/anthropic-api-key.js';
 import { logger } from '../../../lib/logger.js';
 
@@ -59,7 +59,7 @@ function rowToModel(row: typeof aiModelPricing.$inferSelect): ModelPricing {
 }
 
 export function listProviders(): ProviderWithModels[] {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const providers = db.select().from(aiProviders).all();
   const allModels = db.select().from(aiModelPricing).all();
 
@@ -70,7 +70,7 @@ export function listProviders(): ProviderWithModels[] {
 }
 
 export function getProvider(providerId: string): ProviderWithModels | null {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const [provider] = db.select().from(aiProviders).where(eq(aiProviders.id, providerId)).all();
   if (!provider) return null;
   const models = db
@@ -86,7 +86,7 @@ type ModelInput = NonNullable<UpsertProviderInput['models']>[number];
 function upsertProviderRow(input: UpsertProviderInput, now: string): void {
   const baseUrl = input.baseUrl ?? null;
   const apiKeyRef = input.apiKeyRef ?? null;
-  getDrizzle()
+  getCoreDrizzle()
     .insert(aiProviders)
     .values({
       id: input.id,
@@ -118,7 +118,7 @@ function upsertModelRow(providerId: string, model: ModelInput, now: string): voi
   const outputCostPerMtok = model.outputCostPerMtok ?? 0;
   const contextWindow = model.contextWindow ?? null;
   const isDefault = model.isDefault ? 1 : 0;
-  getDrizzle()
+  getCoreDrizzle()
     .insert(aiModelPricing)
     .values({
       providerId,
@@ -196,7 +196,7 @@ export async function runHealthCheck(
   const latencyMs = Date.now() - start;
   const now = new Date().toISOString();
 
-  getDrizzle()
+  getCoreDrizzle()
     .update(aiProviders)
     .set({ status, lastHealthCheck: now, lastLatencyMs: latencyMs, updatedAt: now })
     .where(eq(aiProviders.id, providerId))
