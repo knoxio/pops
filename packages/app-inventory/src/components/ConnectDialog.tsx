@@ -2,10 +2,16 @@ import { Link2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { AssetIdBadge, Button, SearchPickerDialog, TypeBadge } from '@pops/ui';
 
 import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+
+interface ItemsListResult {
+  data: InventoryItem[];
+}
+
+type ConnectInput = { itemAId: string; itemBId: string };
 
 interface ConnectDialogProps {
   currentItemId: string;
@@ -48,29 +54,35 @@ function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) 
   );
 }
 
-export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-
-  const { data, isLoading } = trpc.inventory.items.list.useQuery(
-    { search, limit: 10 },
-    { enabled: open && search.length >= 2 }
-  );
-
-  const connectMutation = trpc.inventory.connections.connect.useMutation({
-    onSuccess: () => {
-      toast.success('Items connected');
-      onConnected();
-      setOpen(false);
-      setSearch('');
-    },
+function useConnectMutation(onSuccess: () => void) {
+  return usePillarMutation<ConnectInput, unknown>('inventory', ['connections', 'connect'], {
+    onSuccess,
     onError: (err) => {
-      if (err.data?.code === 'CONFLICT') {
+      if (err.message.toLowerCase().includes('conflict')) {
         toast.error('These items are already connected');
       } else {
         toast.error(`Failed to connect: ${err.message}`);
       }
     },
+  });
+}
+
+export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const { data, isLoading } = usePillarQuery<ItemsListResult>(
+    'inventory',
+    ['items', 'list'],
+    { search, limit: 10 },
+    { enabled: open && search.length >= 2 }
+  );
+
+  const connectMutation = useConnectMutation(() => {
+    toast.success('Items connected');
+    onConnected();
+    setOpen(false);
+    setSearch('');
   });
 
   const results = data?.data.filter((item: InventoryItem) => item.id !== currentItemId) ?? [];

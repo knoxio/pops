@@ -14,20 +14,12 @@ vi.mock('react-router', async () => {
   };
 });
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      reports: {
-        insuranceReport: {
-          useQuery: (...args: unknown[]) => mockInsuranceReportQuery(...args),
-        },
-      },
-      locations: {
-        tree: {
-          useQuery: (...args: unknown[]) => mockLocationsTreeQuery(...args),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'reports.insuranceReport') return mockInsuranceReportQuery(input);
+    if (key === 'locations.tree') return mockLocationsTreeQuery();
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

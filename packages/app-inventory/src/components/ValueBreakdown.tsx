@@ -2,12 +2,16 @@ import { AlertCircle, MapPin, RefreshCw, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * Value breakdown cards — horizontal bar charts showing replacement value
  * grouped by item type or location.
  */
 import { Alert, AlertDescription, Button, Card, CardContent, Skeleton } from '@pops/ui';
+
+interface BreakdownResult {
+  data: BreakdownEntry[];
+}
 
 import { formatCurrency } from '../lib/utils';
 
@@ -115,8 +119,11 @@ export function ValueByTypeCard({ className }: { className?: string }) {
     isLoading: typeLoading,
     isError: typeError,
     refetch: refetchType,
-  } = trpc.inventory.reports.valueByType.useQuery();
+    isUnavailable: typeUnavailable,
+    isContractMismatch: typeContractMismatch,
+  } = usePillarQuery<BreakdownResult>('inventory', ['reports', 'valueByType'], undefined);
 
+  if (typeUnavailable || typeContractMismatch) return null;
   if (typeLoading) {
     return (
       <Card className={className}>
@@ -167,8 +174,11 @@ export function ValueByLocationCard({ className }: { className?: string }) {
     isLoading: locationLoading,
     isError: locationError,
     refetch: refetchLocation,
-  } = trpc.inventory.reports.valueByLocation.useQuery();
+    isUnavailable: locationUnavailable,
+    isContractMismatch: locationContractMismatch,
+  } = usePillarQuery<BreakdownResult>('inventory', ['reports', 'valueByLocation'], undefined);
 
+  if (locationUnavailable || locationContractMismatch) return null;
   if (locationLoading) {
     return (
       <Card className={className}>

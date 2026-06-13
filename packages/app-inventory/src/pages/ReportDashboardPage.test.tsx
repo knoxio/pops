@@ -7,14 +7,12 @@ const mocks = vi.hoisted(() => ({
   valueByTypeQuery: vi.fn(),
 }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      reports: {
-        dashboard: { useQuery: () => mocks.dashboardQuery() },
-        valueByType: { useQuery: () => mocks.valueByTypeQuery() },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'reports.dashboard') return mocks.dashboardQuery();
+    if (key === 'reports.valueByType') return mocks.valueByTypeQuery();
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

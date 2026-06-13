@@ -2,8 +2,19 @@ import { FileText, Link2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, SearchPickerDialog, Select } from '@pops/ui';
+
+interface PaperlessSearchResult {
+  data: PaperlessDocResult[];
+}
+
+type LinkDocumentInput = {
+  itemId: string;
+  paperlessDocumentId: number;
+  documentType: string;
+  title: string;
+};
 
 interface PaperlessDocResult {
   id: number;
@@ -92,7 +103,7 @@ function useLinkDocumentMutation(
   setSearch: (v: string) => void,
   setLinkingId: (v: number | null) => void
 ) {
-  return trpc.inventory.documents.link.useMutation({
+  return usePillarMutation<LinkDocumentInput, unknown>('inventory', ['documents', 'link'], {
     onSuccess: () => {
       toast.success('Document linked');
       onLinked();
@@ -102,7 +113,7 @@ function useLinkDocumentMutation(
     },
     onError: (err) => {
       setLinkingId(null);
-      if (err.data?.code === 'CONFLICT') {
+      if (err.message.toLowerCase().includes('conflict')) {
         toast.error('This document is already linked to this item');
       } else {
         toast.error(`Failed to link: ${err.message}`);
@@ -117,7 +128,9 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
   const [docType, setDocType] = useState<DocType>('receipt');
   const [linkingId, setLinkingId] = useState<number | null>(null);
 
-  const { data, isLoading } = trpc.inventory.paperless.search.useQuery(
+  const { data, isLoading } = usePillarQuery<PaperlessSearchResult>(
+    'inventory',
+    ['paperless', 'search'],
     { query: search },
     { enabled: open && search.length >= 2 }
   );

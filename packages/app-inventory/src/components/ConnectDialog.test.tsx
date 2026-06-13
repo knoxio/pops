@@ -6,17 +6,14 @@ const mockItemsListQuery = vi.fn();
 const mockConnectMutate = vi.fn();
 const mockConnectMutation = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    inventory: {
-      items: {
-        list: { useQuery: (...args: unknown[]) => mockItemsListQuery(...args) },
-      },
-      connections: {
-        connect: { useMutation: (...args: unknown[]) => mockConnectMutation(...args) },
-      },
-    },
-  },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) =>
+    mockItemsListQuery({ pillarId, path: [...path], input }),
+  usePillarMutation: (
+    pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: () => void; onError?: (e: { message: string }) => void }
+  ) => mockConnectMutation({ pillarId, path: [...path], ...opts }),
 }));
 
 import { ConnectDialog } from './ConnectDialog';

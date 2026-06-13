@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * ConnectionTracePanel — displays connection chain as an expandable tree.
  *
@@ -137,12 +137,15 @@ export interface ConnectionTracePanelProps {
 }
 
 export function ConnectionTracePanel({ itemId }: ConnectionTracePanelProps) {
-  const { data, isLoading, error } = trpc.inventory.connections.trace.useQuery(
-    { itemId },
-    { enabled: !!itemId }
-  );
+  const { data, isLoading, error, isUnavailable, isContractMismatch } = usePillarQuery<{
+    data: TraceNode;
+  }>('inventory', ['connections', 'trace'], { itemId }, { enabled: !!itemId });
 
   if (isLoading) return <TraceSkeleton />;
+
+  if (isUnavailable || isContractMismatch) {
+    return <p className="text-sm text-muted-foreground">Connection chain unavailable.</p>;
+  }
 
   if (error) {
     return <p className="text-sm text-destructive">Failed to load connection trace.</p>;
