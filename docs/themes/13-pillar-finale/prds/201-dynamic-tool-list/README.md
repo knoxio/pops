@@ -42,11 +42,19 @@ type Tool = {
 
 ## User Stories
 
-| #   | Story                                       | Summary                                             |
-| --- | ------------------------------------------- | --------------------------------------------------- |
-| 01  | [us-01-list-builder](us-01-list-builder.md) | Read registry; filter active pillars; flatten tools |
-| 02  | [us-02-cache-layer](us-02-cache-layer.md)   | 30s TTL cache                                       |
-| 03  | [us-03-tests](us-03-tests.md)               | Test: simulated registry → tool list shape          |
+| #   | Story                                       | Summary                                             | Status |
+| --- | ------------------------------------------- | --------------------------------------------------- | ------ |
+| 01  | [us-01-list-builder](us-01-list-builder.md) | Read registry; filter active pillars; flatten tools | Done   |
+| 02  | [us-02-cache-layer](us-02-cache-layer.md)   | 30s TTL cache                                       | Done   |
+| 03  | [us-03-tests](us-03-tests.md)               | Test: simulated registry → tool list shape          | Done   |
+
+## Implementation Notes
+
+- Lives in `@pops/pillar-sdk/ai-tools` (`packages/pillar-sdk/src/ai-tools`).
+- `buildToolList()` pulls a snapshot via `pillarRegistry()` (PRD-159) and projects each pillar's `manifest.ai.tools` slot (PRD-200) into a flat list.
+- Memoised by `(snapshot.fetchedAt, opts)` with a 30s wall-clock floor; `invalidateToolListCache()` is the explicit reset hook.
+- Filters by the discovery `status` field (`'healthy' | 'unavailable' | 'unknown'`). Pillars without `status` fall back to the `registered` flag (PRD-162 reconciliation window).
+- **Known gap:** pillars only populate `manifest.ai.tools` once they ship PRD-200-compliant descriptors. Until then `buildToolList()` returns an empty list — the AI runs with whatever in-process tools the orchestrator already carries, matching the "all pillars down" edge case.
 
 ## Out of Scope
 

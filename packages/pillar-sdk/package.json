@@ -38,6 +38,10 @@
       "types": "./dist/capabilities/index.d.ts",
       "default": "./dist/capabilities/index.js"
     },
+    "./ai-tools": {
+      "types": "./dist/ai-tools/index.d.ts",
+      "default": "./dist/ai-tools/index.js"
+    },
     "./react": {
       "types": "./dist/react/index.d.ts",
       "default": "./dist/react/index.js"
