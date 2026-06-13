@@ -1,8 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 
-import { embeddings } from '@pops/db-types';
+import { embeddings } from '@pops/cerebrum-db';
 
-import { getDb, getDrizzle } from '../../db.js';
+import { getDb } from '../../db.js';
+import { getCerebrumDrizzle, getCerebrumRawDb } from '../../db/cerebrum-handle.js';
 
 export async function fetchContent(sourceType: string, sourceId: string): Promise<string | null> {
   const db = getDb();
@@ -25,8 +26,8 @@ export async function deleteEmbeddingsForSource(
   sourceType: string,
   sourceId: string
 ): Promise<void> {
-  const db = getDrizzle();
-  const rawDb = getDb();
+  const db = getCerebrumDrizzle();
+  const rawDb = getCerebrumRawDb();
 
   const rows = db
     .select({ id: embeddings.id })

@@ -1,8 +1,10 @@
 import { and, eq, gt } from 'drizzle-orm';
 
-import { aiUsage, embeddings } from '@pops/db-types';
+import { embeddings } from '@pops/cerebrum-db';
+import { aiUsage } from '@pops/db-types';
 
-import { getDb, getDrizzle } from '../../db.js';
+import { getDrizzle } from '../../db.js';
+import { getCerebrumDrizzle, getCerebrumRawDb } from '../../db/cerebrum-handle.js';
 import { CONTENT_PREVIEW_LENGTH, hashContent } from '../../shared/chunker.js';
 import {
   estimateEmbeddingCost,
@@ -27,7 +29,7 @@ interface ExistingEmbedding {
 }
 
 function loadExisting(ctx: ChunkContext, chunkIndex: number): ExistingEmbedding | undefined {
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
   return db
     .select({ id: embeddings.id, contentHash: embeddings.contentHash })
     .from(embeddings)
@@ -79,7 +81,7 @@ export async function obtainEmbedding(
 }
 
 function persistVector(rowId: number, vector: number[]): void {
-  const rawDb = getDb();
+  const rawDb = getCerebrumRawDb();
   const vectorBlob = Buffer.from(new Float32Array(vector).buffer);
   rawDb.prepare('DELETE FROM embeddings_vec WHERE rowid = ?').run(rowId);
   rawDb.prepare('INSERT INTO embeddings_vec (rowid, vector) VALUES (?, ?)').run(rowId, vectorBlob);
@@ -96,7 +98,7 @@ export interface UpsertChunkArgs {
 
 export function upsertChunkEmbedding(args: UpsertChunkArgs): void {
   const { ctx, chunk, contentHash, contentPreview, vector, existing } = args;
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
   const now = new Date().toISOString();
 
   if (existing) {
@@ -129,7 +131,7 @@ export function upsertChunkEmbedding(args: UpsertChunkArgs): void {
     .returning({ id: embeddings.id })
     .get();
 
-  const rawDb = getDb();
+  const rawDb = getCerebrumRawDb();
   const vectorBlob = Buffer.from(new Float32Array(vector).buffer);
   rawDb
     .prepare('INSERT INTO embeddings_vec (rowid, vector) VALUES (?, ?)')
@@ -163,8 +165,8 @@ export function pruneOrphanChunks(
   sourceId: string,
   validChunkCount: number
 ): number {
-  const db = getDrizzle();
-  const rawDb = getDb();
+  const db = getCerebrumDrizzle();
+  const rawDb = getCerebrumRawDb();
 
   const orphans = db
     .select({ id: embeddings.id })
