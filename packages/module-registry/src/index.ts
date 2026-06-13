@@ -35,6 +35,22 @@ export type ModuleId = (typeof MODULES)[number]['id'];
 export type RegisteredModule = (typeof MODULES)[number];
 
 /**
+ * Type-level pair for the runtime `INSTALLED_MODULES` shim (PRD-218 US-02).
+ *
+ * Structurally identical to `RegisteredModule`, but named to match the
+ * `INSTALLED_MODULES` runtime export so consumers that need the build-time
+ * install-set shape at the type level can read `InstalledModule` instead of
+ * re-deriving `(typeof MODULES)[number]` at every call site.
+ *
+ * Runtime `POPS_APPS` / `POPS_OVERLAYS` narrowing cannot reflect into the
+ * type system without per-deploy codegen, so this alias still resolves to
+ * the build-time superset (same as `RegisteredModule`). It exists to give
+ * downstream code (e.g. `apps/pops-api/src/router.ts`) a stable, semantic
+ * name aligned with the install-set vocabulary.
+ */
+export type InstalledModule = (typeof MODULES)[number];
+
+/**
  * Find an installed module by id. Returns `undefined` when the id is not in
  * the install set — call sites are expected to handle "module absent" as a
  * first-class state (placeholder UI, NOT_FOUND, etc.) rather than throwing.

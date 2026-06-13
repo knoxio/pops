@@ -4,6 +4,11 @@ import { findModule, isModuleId, KNOWN_MODULES, MODULES } from './index.js';
 
 import type { SettingsManifest } from '@pops/types';
 
+import type { InstalledModule, RegisteredModule } from './index.js';
+
+type AssertEqual<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+
 describe('@pops/module-registry exports', () => {
   it('MODULES is non-empty after the registry build', () => {
     // Sanity check: the registry build is the prerequisite for any consumer
@@ -97,6 +102,16 @@ describe('findModule', () => {
 
   it('returns undefined for an unknown id (string overload)', () => {
     expect(findModule('nope')).toBeUndefined();
+  });
+});
+
+describe('InstalledModule type alias', () => {
+  it('mirrors RegisteredModule structurally (PRD-218 US-02)', () => {
+    // Type-level assertion: `InstalledModule` is the semantic alias paired
+    // with the runtime `INSTALLED_MODULES` shim. Both must resolve to the
+    // same build-time entry shape so consumers can swap freely.
+    const ok: AssertEqual<InstalledModule, RegisteredModule> = true;
+    expect(ok).toBe(true);
   });
 });
 
