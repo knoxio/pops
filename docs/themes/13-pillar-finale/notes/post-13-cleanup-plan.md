@@ -1,8 +1,8 @@
 # Post-Theme-13 Cleanup Plan
 
-> Parked: not actionable now. Read before kicking off cleanup work in 1-2 days (for #1) or at Theme 14 boundary (for #2).
+> Parked: not actionable now. Read before kicking off cleanup work in 1-2 days (for #1) or at Theme 14 boundary (for #2 + #3).
 
-Two separate cleanups, at two different times. Captured here so they don't get forgotten while the Wave 5 / Wave 6 / Wave 7 implementations are in flight.
+Three separate cleanups, at different times. Captured here so they don't get forgotten while the Wave 5 / Wave 6 / Wave 7 implementations are in flight.
 
 ## Cleanup #1 — PRD status audit + dead PRD removal
 
@@ -80,13 +80,56 @@ Should NOT touch PRD content beyond status + framing. Domain redesigns are separ
 - It is NOT a request to rewrite content. The reorg is structural.
 - It is NOT a Theme 13 deliverable. Theme 13 finishes first.
 
+## Cleanup #3 — Code topology reorg (`/pillars/<name>/` flat layout)
+
+**When:** at Theme 14 boundary. Not before. Same gating as Cleanup #2; runs as the sibling code-side companion to the doc reorg.
+
+**Why wait:** the cost is huge and the win is purely structural. ~50 packages move, every import path changes, every tsconfig path mapping, every Vite alias, every Dockerfile `COPY`, every CI workflow build list, dependency-cruiser rules, ESLint configs — all of it. Any PR open at the moment of the move eats merge conflicts. The federation already works; this is rearrangement, not capability.
+
+**ADR target:** ADR-037 code-topology — pairs with ADR-036 doc-topology so the layouts mirror each other.
+
+### Proposed shape (subject to ADR-037 review)
+
+- **`/pillars/<name>/`** for in-repo pillars — each pillar groups everything it owns:
+  - `pillars/food/contract/` ← was `packages/food-contract/`
+  - `pillars/food/db/` ← was `packages/food-db/`
+  - `pillars/food/api/` ← was `apps/pops-food-api/`
+  - `pillars/food/app/` ← was `packages/app-food/`
+  - and so on per pillar (core / inventory / finance / cerebrum / media / lists / ha-bridge / ai)
+- **`/platform/`** for cross-pillar shared code that doesn't belong to any one pillar:
+  - `platform/pillar-sdk/`, `platform/types/`, `platform/db-types/`, `platform/module-registry/`, `platform/widgets/`, `platform/ui/`, `platform/wire-conformance/`, `platform/api-client/` (during deprecation)
+- **`/apps/`** retained for non-pillar applications:
+  - `apps/pops-api/` (orchestrator/router), `apps/pops-mcp/` (tool surface), `apps/pops-shell/` (UI pillar — debatable; could also live under `pillars/shell/`)
+- **External pillars** stay in their own repos. The registry only sees their manifest. The Rust example at `examples/pops-pillar-rust-example/` is a hint at the external-repo shape.
+
+### Why this shape
+
+- Matches the BE-lego vision: a pillar is a self-contained unit, code + db + api + UI grouped.
+- Makes it obvious what code belongs to a pillar (cd `pillars/food/` and read).
+- Mirrors the doc reorg shape (Cleanup #2) so the codebase and docs stay coherent.
+- Forces a clear answer to "is this code pillar-specific or platform?" — every package gets reclassified, ambiguous cases get resolved at the boundary.
+
+### What this is NOT
+
+- It is NOT a rename of any package — `@pops/food-contract` stays as `@pops/food-contract`, just lives at `pillars/food/contract/`.
+- It is NOT a rewrite — file contents are unchanged.
+- It is NOT a Theme 13 deliverable. Theme 13 finishes first.
+
+### Trial run before committing
+
+Before doing the in-repo reorg, validate the layout on the next *external* pillar:
+- If the HA bridge container moves into the homelab repo, ship it with `pillars/ha-bridge/` shape locally.
+- Or promote PRD-233 Rust pillar to its own repo with the same layout.
+- That gives a working precedent. If the layout creates friction in a self-contained external pillar, it'll create more friction in the monorepo — back off.
+
 ## Anti-action: things explicitly NOT in scope here
 
 - Renaming "pillar" to anything else (ADR-035 settled this — name stays).
 - Adding a `kind` field to `pillar_registry` (ADR-035 settled this — kinds are descriptive).
 - UI federation (ADR-032 settled this — out of scope for Theme 13 + Theme 14).
 - Forking HassOS or any other platform (ADR-032 settled this — positioning is additive).
+- Renaming any package as part of the code reorg (Cleanup #3 — moves only).
 
 ## Status
 
-Parked. Re-read before kicking off either cleanup.
+Parked. Re-read before kicking off any cleanup.
