@@ -8,10 +8,8 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     // Force forked child processes per test file so vi.mock factories
     // don't leak across files. Required because multiple test suites
-    // mock `@pops/api-client` with different shapes (HeroImageUploader
-    // mocks only `food.heroImage`; IngredientsTab mocks `food.ingredients`)
-    // and the default worker-thread pool was leaking lazy-import
-    // module state across runs.
+    // mock `@pops/pillar-sdk` with different shapes and the default
+    // worker-thread pool was leaking lazy-import module state across runs.
     pool: 'forks',
     coverage: {
       provider: 'v8',

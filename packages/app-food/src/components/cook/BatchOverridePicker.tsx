@@ -27,7 +27,7 @@ import { useSubstitutionResolution } from './useSubstitutionResolution.js';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { ReactNode } from 'react';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { BatchForConsumeRow } from '@pops/app-food-db';
 
 import type { SubCandidate, SubCandidateBatch } from './useSubstitutionResolution.js';

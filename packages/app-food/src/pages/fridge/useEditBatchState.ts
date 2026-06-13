@@ -9,7 +9,7 @@ import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];
 type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];

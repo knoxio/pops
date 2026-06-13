@@ -13,7 +13,7 @@ import { sortAliases } from './format.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type {
   AliasesFilter,

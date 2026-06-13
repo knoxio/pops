@@ -14,7 +14,7 @@ import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { TFunction } from 'i18next';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { CreateWeightInput, UpdateWeightInput } from './types';
 

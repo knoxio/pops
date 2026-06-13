@@ -16,7 +16,7 @@ import { mapMutationError } from './errors';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { CreateIngredientInput } from './CreateIngredientDialog';
 

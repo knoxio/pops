@@ -6,7 +6,7 @@
  */
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type ConversionsOutputs = inferRouterOutputs<AppRouter>['food']['conversions'];
 

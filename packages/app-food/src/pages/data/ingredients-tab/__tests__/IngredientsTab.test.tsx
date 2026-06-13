@@ -1,7 +1,7 @@
 /**
  * PRD-122-B / PRD-122-B2 — ingredients tab UI smoke tests.
  *
- * Mocks `@pops/api-client` so the tree renders against a controlled
+ * Mocks `@pops/pillar-sdk` so the tree renders against a controlled
  * dataset; asserts:
  *   - the tree groups children under their parents
  *   - selecting a node renders the detail panel

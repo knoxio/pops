@@ -9,7 +9,7 @@ import { RecipeRenderer } from '../../components/RecipeRenderer.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type ArchiveRecipeInput = inferRouterInputs<AppRouter>['food']['recipes']['archiveRecipe'];
 type ArchiveRecipeOutput = inferRouterOutputs<AppRouter>['food']['recipes']['archiveRecipe'];

@@ -1,7 +1,7 @@
 /**
  * RTL coverage for `/food/data/aliases` (PRD-122-C).
  *
- * `vi.mock('@pops/api-client', ...)` is declared at the top level so
+ * `vi.mock('@pops/pillar-sdk/react', ...)` is declared at the top level so
  * vitest can hoist it (a helper function-wrapped mock works but
  * produces a deprecation warning). Each procedure's behaviour reads
  * from the module-scoped `state` object so tests can seed + assert

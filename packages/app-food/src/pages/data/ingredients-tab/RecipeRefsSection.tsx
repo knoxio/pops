@@ -15,7 +15,7 @@ import { Button } from '@pops/ui';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type RecipeRefsOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['recipeRefs'];
 

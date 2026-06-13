@@ -20,7 +20,7 @@ import { CookModalContent } from './CookModalContent.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { CookPreparation } from '@pops/app-food-db';
 
 import type { CookModalProps } from './CookModal.js';

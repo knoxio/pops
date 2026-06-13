@@ -6,7 +6,7 @@ import { Label, useDebouncedValue } from '@pops/ui';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type SlugSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
 type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];

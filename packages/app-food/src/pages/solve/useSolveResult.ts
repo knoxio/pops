@@ -10,7 +10,7 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type CanICookOutput = inferRouterOutputs<AppRouter>['food']['solver']['canICook'];
 

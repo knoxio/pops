@@ -24,7 +24,7 @@ import { usePillarCall } from '../../lib/pillar-call.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type {
   DslAutocompleteSources,

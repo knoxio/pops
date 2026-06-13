@@ -8,7 +8,7 @@ import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { BatchAdjustReason } from '@pops/app-food-db';
 
 type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];

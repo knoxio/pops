@@ -18,7 +18,7 @@ import { usePlanEntryEdit } from './usePlanEntryEdit.js';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { WirePlanEntryRow } from '@pops/app-food-db';
 
 type PlanWeekViewOutput = inferRouterOutputs<AppRouter>['food']['plan']['weekView'];

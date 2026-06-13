@@ -23,7 +23,7 @@ import { RejectDialog } from './RejectDialog.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type {
   InspectorDraftView,
   InspectorProposedSlugRow,

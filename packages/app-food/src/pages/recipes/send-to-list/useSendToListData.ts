@@ -10,7 +10,7 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 export type PrepareOutput = inferRouterOutputs<AppRouter>['food']['recipes']['prepareSendToList'];
 type ListsListOutput = inferRouterOutputs<AppRouter>['lists']['list']['list'];

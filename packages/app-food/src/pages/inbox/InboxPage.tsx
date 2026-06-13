@@ -24,7 +24,7 @@ import { RejectedTab } from './RejectedTab.js';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { NavigateFunction } from 'react-router';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type InboxPendingCountOutput = inferRouterOutputs<AppRouter>['food']['inbox']['pendingCount'];
 

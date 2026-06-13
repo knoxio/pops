@@ -13,7 +13,7 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { DeleteBlockerSummary, IngredientRow } from '@pops/app-food-db';
 
 type BlockersOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['blockers'];

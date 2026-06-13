@@ -18,7 +18,7 @@ import { rankSubstitutionCandidates, type RankableCandidate } from './substituti
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type SubResolution = inferRouterOutputs<AppRouter>['food']['substitutions']['resolveForLine'];
 

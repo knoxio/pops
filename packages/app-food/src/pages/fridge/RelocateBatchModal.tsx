@@ -14,7 +14,7 @@ import { FormError } from './form-controls.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { BatchLocation } from '@pops/app-food-db';
 
 type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];

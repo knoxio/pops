@@ -12,7 +12,7 @@ import { HERO_ALLOWED_MIME_TYPES } from '../../storage/hero-paths';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type HeroImageUploadInput = inferRouterInputs<AppRouter>['food']['heroImage']['upload'];
 type HeroImageUploadOutput = inferRouterOutputs<AppRouter>['food']['heroImage']['upload'];

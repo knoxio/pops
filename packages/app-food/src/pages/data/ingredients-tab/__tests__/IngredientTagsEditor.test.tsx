@@ -1,7 +1,7 @@
 /**
  * PRD-151 — IngredientTagsEditor unit tests.
  *
- * Mocks `@pops/api-client` so the component is exercised against a fully
+ * Mocks `@pops/pillar-sdk` so the component is exercised against a fully
  * synchronous tRPC stand-in. Covers:
  *   - initial render hydrates from the server-side list
  *   - adding a chip is local until Save

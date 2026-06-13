@@ -8,7 +8,7 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { FridgeView } from '@pops/app-food-db';
 
 type FridgeViewOutput = inferRouterOutputs<AppRouter>['food']['fridge']['view'];

@@ -13,7 +13,7 @@ import { toIsoFromDateInput } from './form-controls.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 import type { BatchLocation, BatchUnit, ManualBatchSourceType } from '@pops/app-food-db';
 
 type IngredientsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['list'];

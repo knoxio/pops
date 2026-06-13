@@ -14,7 +14,7 @@ import { NumberFieldRow, SelectFieldRow, TextareaFieldRow, TextFieldRow } from '
 
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
 

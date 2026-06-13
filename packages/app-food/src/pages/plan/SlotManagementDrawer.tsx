@@ -15,7 +15,7 @@ import { SlotRow } from './SlotRow.js';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 type PlanListSlotsOutput = inferRouterOutputs<AppRouter>['food']['plan']['listSlots'];
 type PlanUpdateSlotInput = inferRouterInputs<AppRouter>['food']['plan']['updateSlot'];

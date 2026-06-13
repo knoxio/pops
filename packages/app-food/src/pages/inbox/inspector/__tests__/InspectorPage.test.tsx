@@ -1,7 +1,7 @@
 /**
  * PRD-135 — RTL coverage for the per-draft inspector page.
  *
- * Mocks `@pops/api-client` so the page renders against a synthetic
+ * Mocks `@pops/pillar-sdk` so the page renders against a synthetic
  * `food.inbox.getForReview` payload and asserts:
  *   - 404 renders for `{ ok: false, reason: 'SourceNotFound' }`
  *   - pending source (draft = null) shows the no-draft body
