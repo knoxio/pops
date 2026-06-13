@@ -35,3 +35,9 @@ export {
   type HaEntitySearchHit,
   type HaEntitySearchOptions,
 } from './services/search.js';
+
+export {
+  listEntities,
+  type ListEntitiesOptions,
+  type ListEntitiesResult,
+} from './services/list.js';

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ManifestPayloadSchema, validateManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
+import { ENTITY_LIST_TOOL_NAME } from '../ai-tools/index.js';
 import { buildHaBridgeManifest, HA_BRIDGE_PILLAR_ID } from '../manifest.js';
 import {
   HA_ENTITIES_ADAPTER_NAME,
@@ -15,8 +16,19 @@ describe('buildHaBridgeManifest', () => {
     const parsed = ManifestPayloadSchema.parse(manifest);
     expect(parsed.pillar).toBe(HA_BRIDGE_PILLAR_ID);
     expect(parsed.contract.tag).toBe('contract-ha-bridge@v0.1.0');
-    expect(parsed.ai.tools).toEqual([]);
+    expect(parsed.ai.tools.map((t) => t.name)).toEqual([ENTITY_LIST_TOOL_NAME]);
     expect(parsed.sinks?.descriptors.length).toBeGreaterThan(0);
+  });
+
+  it('publishes the entityList AI tool descriptor (US-03 partial)', () => {
+    const manifest = buildHaBridgeManifest('0.1.0');
+    const tool = manifest.ai.tools.find((t) => t.name === ENTITY_LIST_TOOL_NAME);
+    if (tool === undefined) throw new Error('entityList descriptor missing');
+    expect(tool.description.length).toBeGreaterThanOrEqual(10);
+    expect(tool.parameters).toMatchObject({ type: 'object' });
+    const parameters = tool.parameters as { properties?: Record<string, unknown> };
+    const props = parameters.properties ?? {};
+    expect(Object.keys(props).toSorted()).toEqual(['area', 'cursor', 'domain', 'limit']);
   });
 
   it('declares the haEntities search adapter (US-02)', () => {
