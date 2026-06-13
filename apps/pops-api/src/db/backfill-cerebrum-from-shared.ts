@@ -19,8 +19,8 @@
  * leave the cerebrum copy partially populated; the next deploy retries
  * and the idempotent filter picks up only the still-missing rows.
  *
- * Mirrors `backfill-inventory-from-shared.ts` / `backfill-finance-from-
- * shared.ts` / `backfill-media-from-shared.ts`.
+ * Mirrors `backfill-finance-from-shared.ts` / `backfill-media-from-
+ * shared.ts`.
  */
 import type Database from 'better-sqlite3';
 

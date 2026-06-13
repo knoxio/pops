@@ -10,7 +10,7 @@ import { closeDb, getCoreDrizzle } from './db.js';
 import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
 import { backfillFinanceFromSharedDb, getFinanceDrizzle } from './db/finance-handle.js';
 import { getFoodDrizzle } from './db/food-handle.js';
-import { backfillInventoryFromSharedDb, getInventoryDrizzle } from './db/inventory-handle.js';
+import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { backfillListsFromSharedDb, getListsDrizzle } from './db/lists-handle.js';
 import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
@@ -55,14 +55,14 @@ try {
 }
 
 // Eagerly open the inventory pillar's SQLite + apply its journal at
-// boot. All inventory module traffic now reads/writes against this
-// handle (phase 2 PR 3); the one-shot `backfillInventoryFromSharedDb`
-// carries any rows that still live in the legacy pops.db across.
-// The backfill is idempotent (per-table `WHERE id NOT IN (...)`
-// filters) and non-fatal (partial failure logs + continues).
+// boot. Every inventory-owned table (locations, home_inventory,
+// fixtures, item_connections, item_documents, item_photos,
+// item_uploaded_files, item_fixture_connections) now writes directly
+// to inventory.db via getInventoryDrizzle(), so the boot-time ATTACH
+// bridge from the shared pops.db has been retired — there is nothing
+// left to carry forward.
 try {
   getInventoryDrizzle();
-  backfillInventoryFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the inventory pillar SQLite:', err);
   throw err;

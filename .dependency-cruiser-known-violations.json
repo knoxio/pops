@@ -804,17 +804,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/db/backfill-inventory-from-shared.ts",
-    "to": "packages/inventory-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/inventory-db",
-    "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-inventory"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/inventory-handle.ts",
     "to": "packages/inventory-db/dist/index.d.ts",
     "unresolvedTo": "@pops/inventory-db",
