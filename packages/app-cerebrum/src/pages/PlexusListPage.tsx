@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Badge,
   Button,
@@ -123,24 +123,26 @@ interface AdapterMutations {
 
 function useAdapterMutations(): AdapterMutations {
   const { t } = useTranslation('cerebrum');
-  const utils = trpc.useUtils();
-  const invalidate = () => {
-    void utils.cerebrum.plexus.adapters.list.invalidate();
-  };
-  const healthMutation = trpc.cerebrum.plexus.adapters.healthCheck.useMutation({
-    onSuccess: () => {
-      invalidate();
-      toast.success(t('plexus.list.healthSuccess'));
-    },
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
-  const syncMutation = trpc.cerebrum.plexus.adapters.sync.useMutation({
-    onSuccess: () => {
-      invalidate();
-      toast.success(t('plexus.list.syncSuccess'));
-    },
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
+  const healthMutation = usePillarMutation<{ adapterId: string }, unknown>(
+    'cerebrum',
+    ['plexus', 'adapters', 'healthCheck'],
+    {
+      onSuccess: () => {
+        toast.success(t('plexus.list.healthSuccess'));
+      },
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
+  const syncMutation = usePillarMutation<{ adapterId: string }, unknown>(
+    'cerebrum',
+    ['plexus', 'adapters', 'sync'],
+    {
+      onSuccess: () => {
+        toast.success(t('plexus.list.syncSuccess'));
+      },
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
   return {
     isPending: healthMutation.isPending || syncMutation.isPending,
     onHealth: (id) => healthMutation.mutate({ adapterId: id }),
@@ -201,7 +203,11 @@ function PlexusListBody({ list, adapters, mutations }: ListBodyProps) {
 
 export function PlexusListPage() {
   const { t } = useTranslation('cerebrum');
-  const list = trpc.cerebrum.plexus.adapters.list.useQuery();
+  const list = usePillarQuery<{ adapters: PlexusAdapter[] }>(
+    'cerebrum',
+    ['plexus', 'adapters', 'list'],
+    undefined
+  );
   const mutations = useAdapterMutations();
   const adapters = list.data?.adapters ?? [];
   return (

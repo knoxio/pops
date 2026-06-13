@@ -31,16 +31,8 @@ let queryResult: { data: ContradictionsResult | undefined; isLoading: boolean; i
     isError: false,
   };
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    cerebrum: {
-      nudges: {
-        contradictions: {
-          useQuery: () => queryResult,
-        },
-      },
-    },
-  },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: () => queryResult,
 }));
 
 import { ContradictionsPanel } from './ContradictionsPanel';

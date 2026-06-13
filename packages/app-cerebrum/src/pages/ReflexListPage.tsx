@@ -2,7 +2,7 @@ import { Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Button,
   EmptyState,
@@ -62,25 +62,30 @@ interface ReflexListMutations {
 
 function useReflexListMutations(): ReflexListMutations {
   const { t } = useTranslation('cerebrum');
-  const utils = trpc.useUtils();
-  const invalidate = () => {
-    void utils.cerebrum.reflex.list.invalidate();
-  };
-  const enableMutation = trpc.cerebrum.reflex.enable.useMutation({
-    onSuccess: invalidate,
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
-  const disableMutation = trpc.cerebrum.reflex.disable.useMutation({
-    onSuccess: invalidate,
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
-  const testMutation = trpc.cerebrum.reflex.test.useMutation({
-    onSuccess: () => {
-      invalidate();
-      toast.success(t('reflex.list.fireSuccess'));
-    },
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
+  const enableMutation = usePillarMutation<{ name: string }, unknown>(
+    'cerebrum',
+    ['reflex', 'enable'],
+    {
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
+  const disableMutation = usePillarMutation<{ name: string }, unknown>(
+    'cerebrum',
+    ['reflex', 'disable'],
+    {
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
+  const testMutation = usePillarMutation<{ name: string }, unknown>(
+    'cerebrum',
+    ['reflex', 'test'],
+    {
+      onSuccess: () => {
+        toast.success(t('reflex.list.fireSuccess'));
+      },
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
   return {
     isPending: enableMutation.isPending || disableMutation.isPending || testMutation.isPending,
     onToggle: (name, next) =>
@@ -142,7 +147,11 @@ function ReflexListBody({ list, reflexes, mutations }: ReflexListBodyProps) {
 
 export function ReflexListPage() {
   const { t } = useTranslation('cerebrum');
-  const list = trpc.cerebrum.reflex.list.useQuery(undefined);
+  const list = usePillarQuery<{ reflexes: ReflexWithStatus[] }>(
+    'cerebrum',
+    ['reflex', 'list'],
+    undefined
+  );
   const mutations = useReflexListMutations();
   const reflexes = list.data?.reflexes ?? [];
 

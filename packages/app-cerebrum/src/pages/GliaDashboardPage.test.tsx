@@ -9,51 +9,29 @@ const mockPrunerMutate = vi.fn();
 const mockConsolidatorMutate = vi.fn();
 const mockLinkerMutate = vi.fn();
 const mockAuditorMutate = vi.fn();
-const invalidateActions = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      cerebrum: { glia: { actions: { list: { invalidate: invalidateActions } } } },
-    }),
-    cerebrum: {
-      glia: {
-        actions: {
-          list: { useQuery: (...args: unknown[]) => mockActionsListQuery(...args) },
-        },
-        trustState: {
-          list: { useQuery: (...args: unknown[]) => mockTrustListQuery(...args) },
-        },
-        runPruner: {
-          useMutation: () => ({
-            mutate: mockPrunerMutate,
-            isPending: false,
-            error: null,
-          }),
-        },
-        runConsolidator: {
-          useMutation: () => ({
-            mutate: mockConsolidatorMutate,
-            isPending: false,
-            error: null,
-          }),
-        },
-        runLinker: {
-          useMutation: () => ({
-            mutate: mockLinkerMutate,
-            isPending: false,
-            error: null,
-          }),
-        },
-        runAuditor: {
-          useMutation: () => ({
-            mutate: mockAuditorMutate,
-            isPending: false,
-            error: null,
-          }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'glia.actions.list') return mockActionsListQuery(input);
+    if (key === 'glia.trustState.list') return mockTrustListQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'glia.runPruner') {
+      return { mutate: mockPrunerMutate, isPending: false, error: null };
+    }
+    if (key === 'glia.runConsolidator') {
+      return { mutate: mockConsolidatorMutate, isPending: false, error: null };
+    }
+    if (key === 'glia.runLinker') {
+      return { mutate: mockLinkerMutate, isPending: false, error: null };
+    }
+    if (key === 'glia.runAuditor') {
+      return { mutate: mockAuditorMutate, isPending: false, error: null };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
   },
 }));
 

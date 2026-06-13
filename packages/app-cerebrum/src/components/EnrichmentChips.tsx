@@ -5,11 +5,14 @@
  * then renders the inferred type / template / scopes / tags as editable chips
  * alongside any scope reconciliation suggestions ("Did you mean: …").
  */
-import { Loader2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
-import { Badge, Button, Chip } from '@pops/ui';
+import {
+  usePillarMutation,
+  usePillarQuery,
+  usePillarUtils,
+  type UsePillarMutationResult,
+} from '@pops/pillar-sdk/react';
 
 import {
   appendUnique,
@@ -18,6 +21,7 @@ import {
   replaceScope,
   segmentSetKey,
 } from './enrichment-chips-helpers';
+import { ChipGrid, EnrichmentHeader } from './EnrichmentChipsParts';
 import { ScopeSuggestionList } from './ScopeSuggestionList';
 
 interface EnrichmentChipsProps {
@@ -39,10 +43,34 @@ interface EnrichmentStatus {
   customFields?: Record<string, unknown>;
 }
 
+type EnrichmentUpdateInput = {
+  id: string;
+  scopes?: string[];
+  customFields?: Record<string, unknown>;
+};
+
+function useEnrichmentMutations() {
+  const utils = usePillarUtils('cerebrum');
+  const invalidate = () => void utils.invalidate(['ingest', 'enrichmentStatus']);
+  const updateMutation = usePillarMutation<EnrichmentUpdateInput, unknown>(
+    'cerebrum',
+    ['engrams', 'update'],
+    { onSuccess: invalidate }
+  );
+  const retryMutation = usePillarMutation<{ engramId: string }, unknown>(
+    'cerebrum',
+    ['ingest', 'retryEnrichment'],
+    { onSuccess: invalidate }
+  );
+  return { updateMutation, retryMutation };
+}
+
 export function EnrichmentChips({ engramId }: EnrichmentChipsProps) {
   const [startedAt] = useState(() => Date.now());
 
-  const statusQuery = trpc.cerebrum.ingest.enrichmentStatus.useQuery(
+  const statusQuery = usePillarQuery<EnrichmentStatus>(
+    'cerebrum',
+    ['ingest', 'enrichmentStatus'],
     { engramId },
     {
       refetchInterval: (query) => {
@@ -53,17 +81,7 @@ export function EnrichmentChips({ engramId }: EnrichmentChipsProps) {
     }
   );
 
-  const utils = trpc.useUtils();
-  const updateMutation = trpc.cerebrum.engrams.update.useMutation({
-    onSuccess: () => {
-      void utils.cerebrum.ingest.enrichmentStatus.invalidate({ engramId });
-    },
-  });
-  const retryMutation = trpc.cerebrum.ingest.retryEnrichment.useMutation({
-    onSuccess: () => {
-      void utils.cerebrum.ingest.enrichmentStatus.invalidate({ engramId });
-    },
-  });
+  const { updateMutation, retryMutation } = useEnrichmentMutations();
 
   const status = statusQuery.data;
   const stoppedPolling = hasStoppedPolling(Date.now() - startedAt, status?.enriched ?? false);
@@ -94,7 +112,7 @@ export function EnrichmentChips({ engramId }: EnrichmentChipsProps) {
 function useChipHandlers(
   engramId: string,
   status: EnrichmentStatus | undefined,
-  updateMutation: ReturnType<typeof trpc.cerebrum.engrams.update.useMutation>
+  updateMutation: UsePillarMutationResult<EnrichmentUpdateInput, unknown>
 ) {
   const acceptSuggestion = (original: string, canonical: string) => {
     if (!status) return;
@@ -130,89 +148,6 @@ function useChipHandlers(
   };
 
   return { acceptSuggestion, dismissSuggestion, removeScope };
-}
-
-function EnrichmentHeader({
-  enriched,
-  stoppedPolling,
-  onRetry,
-  retryPending,
-}: {
-  enriched: boolean;
-  stoppedPolling: boolean;
-  onRetry: () => void;
-  retryPending: boolean;
-}) {
-  if (enriched) {
-    return <h4 className="text-sm font-semibold text-muted-foreground">Enriched</h4>;
-  }
-  if (stoppedPolling) {
-    return (
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Enrichment didn't complete in time.</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRetry}
-          disabled={retryPending}
-          prefix={<RefreshCw className="h-3.5 w-3.5" />}
-        >
-          Retry enrichment
-        </Button>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      Enriching…
-    </div>
-  );
-}
-
-function ChipGrid({
-  status,
-  onRemoveScope,
-}: {
-  status: { type: string; template: string | null; scopes: string[]; tags: string[] };
-  onRemoveScope: (scope: string) => void;
-}) {
-  return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-      <dt className="text-muted-foreground self-center">Type</dt>
-      <dd>
-        <Badge variant="secondary">{status.type}</Badge>
-      </dd>
-      {status.template && (
-        <>
-          <dt className="text-muted-foreground self-center">Template</dt>
-          <dd>
-            <Badge variant="outline">{status.template}</Badge>
-          </dd>
-        </>
-      )}
-      <dt className="text-muted-foreground self-center">Scopes</dt>
-      <dd className="flex flex-wrap gap-1.5">
-        {status.scopes.map((scope) => (
-          <Chip key={scope} size="sm" removable onRemove={() => onRemoveScope(scope)}>
-            {scope}
-          </Chip>
-        ))}
-      </dd>
-      {status.tags.length > 0 && (
-        <>
-          <dt className="text-muted-foreground self-center">Tags</dt>
-          <dd className="flex flex-wrap gap-1.5">
-            {status.tags.map((tag) => (
-              <Chip key={tag} size="sm">
-                {tag}
-              </Chip>
-            ))}
-          </dd>
-        </>
-      )}
-    </dl>
-  );
 }
 
 function readDismissed(customFields: Record<string, unknown> | undefined): string[] {

@@ -9,19 +9,18 @@ const mockEngramsListQuery = vi.fn();
 const mockSearchQuery = vi.fn();
 const mockScopesListQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    cerebrum: {
-      engrams: {
-        list: { useQuery: (...args: unknown[]) => mockEngramsListQuery(...args) },
-      },
-      retrieval: {
-        search: { useQuery: (...args: unknown[]) => mockSearchQuery(...args) },
-      },
-      scopes: {
-        list: { useQuery: (...args: unknown[]) => mockScopesListQuery(...args) },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    input: unknown,
+    options?: unknown
+  ) => {
+    const key = path.join('.');
+    if (key === 'engrams.list') return mockEngramsListQuery(input, options);
+    if (key === 'retrieval.search') return mockSearchQuery(input, options);
+    if (key === 'scopes.list') return mockScopesListQuery(input, options);
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
 }));
 

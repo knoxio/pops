@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Badge, Button, PageHeader, Skeleton } from '@pops/ui';
 
 import { formatTimestamp, statusBadgeVariant, statusKey } from '../plexus/format';
@@ -27,25 +27,26 @@ interface DetailMutations {
 
 function useDetailMutations(adapterId: string): DetailMutations {
   const { t } = useTranslation('cerebrum');
-  const utils = trpc.useUtils();
-  const invalidate = () => {
-    void utils.cerebrum.plexus.adapters.get.invalidate({ adapterId });
-    void utils.cerebrum.plexus.adapters.list.invalidate();
-  };
-  const healthMutation = trpc.cerebrum.plexus.adapters.healthCheck.useMutation({
-    onSuccess: () => {
-      invalidate();
-      toast.success(t('plexus.list.healthSuccess'));
-    },
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
-  const syncMutation = trpc.cerebrum.plexus.adapters.sync.useMutation({
-    onSuccess: () => {
-      invalidate();
-      toast.success(t('plexus.list.syncSuccess'));
-    },
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
+  const healthMutation = usePillarMutation<{ adapterId: string }, unknown>(
+    'cerebrum',
+    ['plexus', 'adapters', 'healthCheck'],
+    {
+      onSuccess: () => {
+        toast.success(t('plexus.list.healthSuccess'));
+      },
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
+  const syncMutation = usePillarMutation<{ adapterId: string }, unknown>(
+    'cerebrum',
+    ['plexus', 'adapters', 'sync'],
+    {
+      onSuccess: () => {
+        toast.success(t('plexus.list.syncSuccess'));
+      },
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
   return {
     isPending: healthMutation.isPending || syncMutation.isPending,
     onHealth: () => healthMutation.mutate({ adapterId }),
@@ -121,11 +122,15 @@ export function PlexusDetailPage() {
   const { t } = useTranslation('cerebrum');
   const params = useParams<{ adapterId: string }>();
   const adapterId = params.adapterId ?? '';
-  const detail = trpc.cerebrum.plexus.adapters.get.useQuery(
+  const detail = usePillarQuery<{ adapter: PlexusAdapter | null }>(
+    'cerebrum',
+    ['plexus', 'adapters', 'get'],
     { adapterId },
     { enabled: adapterId.length > 0 }
   );
-  const filtersQuery = trpc.cerebrum.plexus.filters.list.useQuery(
+  const filtersQuery = usePillarQuery<{ filters: PlexusFilter[] }>(
+    'cerebrum',
+    ['plexus', 'filters', 'list'],
     { adapterId },
     { enabled: adapterId.length > 0 }
   );

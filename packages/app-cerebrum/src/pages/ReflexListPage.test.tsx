@@ -7,29 +7,25 @@ const mockListQuery = vi.fn();
 const mockEnableMutate = vi.fn();
 const mockDisableMutate = vi.fn();
 const mockTestMutate = vi.fn();
-const invalidateList = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      cerebrum: {
-        reflex: { list: { invalidate: invalidateList } },
-      },
-    }),
-    cerebrum: {
-      reflex: {
-        list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-        enable: {
-          useMutation: () => ({ mutate: mockEnableMutate, isPending: false, error: null }),
-        },
-        disable: {
-          useMutation: () => ({ mutate: mockDisableMutate, isPending: false, error: null }),
-        },
-        test: {
-          useMutation: () => ({ mutate: mockTestMutate, isPending: false, error: null }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'reflex.list') return mockListQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'reflex.enable') {
+      return { mutate: mockEnableMutate, isPending: false, error: null };
+    }
+    if (key === 'reflex.disable') {
+      return { mutate: mockDisableMutate, isPending: false, error: null };
+    }
+    if (key === 'reflex.test') {
+      return { mutate: mockTestMutate, isPending: false, error: null };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
   },
 }));
 

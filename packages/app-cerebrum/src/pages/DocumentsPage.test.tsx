@@ -13,34 +13,30 @@ vi.mock('sonner', () => ({
 }));
 
 const mockGenerateMutate = vi.fn();
-const mockPreviewFetch = vi.fn();
+const mockPreviewCall = vi.fn();
 let generatePending = false;
 let generateCallbacks: { onSuccess?: (data: unknown) => void; onError?: (err: unknown) => void } =
   {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      cerebrum: {
-        emit: {
-          preview: { fetch: (...args: unknown[]) => mockPreviewFetch(...args) },
-        },
-      },
-    }),
-    cerebrum: {
-      emit: {
-        generate: {
-          useMutation: (cb: typeof generateCallbacks) => {
-            generateCallbacks = cb;
-            return {
-              mutate: (...args: unknown[]) => mockGenerateMutate(...args),
-              isPending: generatePending,
-              error: null,
-            };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (_pillarId: string, path: readonly string[], cb: typeof generateCallbacks) => {
+    const key = path.join('.');
+    if (key === 'emit.generate') {
+      generateCallbacks = cb;
+      return {
+        mutate: (...args: unknown[]) => mockGenerateMutate(...args),
+        isPending: generatePending,
+        error: null,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+}));
+
+vi.mock('../lib/pillar-call', () => ({
+  usePillarCall: () => async (_pillarId: string, _path: readonly string[], input: unknown) => {
+    const value = await mockPreviewCall(input);
+    return { kind: 'ok', value };
   },
 }));
 
@@ -58,7 +54,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   generatePending = false;
   generateCallbacks = {};
-  mockPreviewFetch.mockResolvedValue({ sources: [], outline: 'outline' });
+  mockPreviewCall.mockResolvedValue({ sources: [], outline: 'outline' });
 });
 
 describe('DocumentsPage', () => {
@@ -80,7 +76,7 @@ describe('DocumentsPage', () => {
     renderPage();
     await userEvent.type(screen.getByLabelText('Query'), 'agents');
     await userEvent.click(screen.getByRole('button', { name: /preview/i }));
-    expect(mockPreviewFetch).toHaveBeenCalledWith({ mode: 'report', query: 'agents' });
+    expect(mockPreviewCall).toHaveBeenCalledWith({ mode: 'report', query: 'agents' });
   });
 
   it('renders the generated document when the mutation succeeds', () => {

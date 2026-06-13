@@ -13,7 +13,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { extractMessage } from '../utils/errors';
 import {
@@ -132,7 +132,9 @@ interface BrowseHook {
  */
 function useBrowseList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
   const { t } = useTranslation('cerebrum');
-  const query = trpc.cerebrum.engrams.list.useQuery(
+  const query = usePillarQuery<{ engrams: Engram[]; total: number }>(
+    'cerebrum',
+    ['engrams', 'list'],
     buildListInput(filters, offset, DEFAULT_PAGE_SIZE),
     { enabled }
   );
@@ -152,9 +154,16 @@ function useBrowseList(filters: EngramListFilters, offset: number, enabled: bool
  * second `engrams.list({ ids })` query to hydrate the matched ids
  * into full Engram rows.
  */
+interface SearchResult {
+  results: unknown[];
+  meta: { total: number; mode: string };
+}
+
 function useSearchList(filters: EngramListFilters, offset: number, enabled: boolean): BrowseHook {
   const { t } = useTranslation('cerebrum');
-  const searchQuery = trpc.cerebrum.retrieval.search.useQuery(
+  const searchQuery = usePillarQuery<SearchResult>(
+    'cerebrum',
+    ['retrieval', 'search'],
     buildSearchInput(filters, offset, DEFAULT_PAGE_SIZE),
     { enabled }
   );
@@ -162,7 +171,9 @@ function useSearchList(filters: EngramListFilters, offset: number, enabled: bool
     () => (enabled ? extractRetrievalIds(searchQuery.data?.results) : []),
     [enabled, searchQuery.data]
   );
-  const hydration = trpc.cerebrum.engrams.list.useQuery(
+  const hydration = usePillarQuery<{ engrams: Engram[]; total: number }>(
+    'cerebrum',
+    ['engrams', 'list'],
     { ids, limit: ids.length || 1 },
     { enabled: enabled && ids.length > 0 }
   );
@@ -191,7 +202,11 @@ export function useEngramListModel(): EngramListModel {
 
   const browse = useBrowseList(filters, offset, !isSearching);
   const search = useSearchList(filters, offset, isSearching);
-  const scopesQuery = trpc.cerebrum.scopes.list.useQuery(undefined);
+  const scopesQuery = usePillarQuery<{ scopes: { scope: string; count: number }[] }>(
+    'cerebrum',
+    ['scopes', 'list'],
+    undefined
+  );
 
   const scopeOptions = useMemo(
     () => (scopesQuery.data?.scopes ?? []).map((s) => s.scope),

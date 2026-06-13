@@ -12,33 +12,55 @@ const mockUpdateMutationState = { isPending: false, error: null as unknown };
 const invalidateGet = vi.fn().mockResolvedValue(undefined);
 const invalidateList = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      cerebrum: {
-        engrams: {
-          get: { invalidate: invalidateGet },
-          list: { invalidate: invalidateList },
-        },
-      },
-    }),
-    cerebrum: {
-      engrams: {
-        get: { useQuery: (...args: unknown[]) => mockGetQuery(...args) },
-        list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-        update: {
-          useMutation: (opts: { onSuccess?: () => void | Promise<void> }) => ({
-            mutate: (...args: unknown[]) => {
-              mockUpdateMutate(...args);
-              void opts.onSuccess?.();
-            },
-            isPending: mockUpdateMutationState.isPending,
-            error: mockUpdateMutationState.error,
-          }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/client', () => ({
+  PillarCallError: class PillarCallError extends Error {
+    result: { kind: string };
+    constructor(_pillarId: string, result: { kind: string }) {
+      super('pillar error');
+      this.result = result;
+    }
   },
+}));
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'engrams.get') return mockGetQuery(input);
+    if (key === 'engrams.list') return mockListQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: { onSuccess?: () => void | Promise<void> }
+  ) => {
+    const key = path.join('.');
+    if (key === 'engrams.update') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockUpdateMutate(...args);
+          void opts.onSuccess?.();
+        },
+        isPending: mockUpdateMutationState.isPending,
+        error: mockUpdateMutationState.error,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: async (routerPath?: readonly string[]) => {
+      const key = routerPath?.join('.') ?? '';
+      if (key === 'engrams' || key === '') {
+        await invalidateGet();
+        await invalidateList();
+      } else if (key === 'engrams.get') {
+        await invalidateGet();
+      } else if (key === 'engrams.list') {
+        await invalidateList();
+      }
+    },
+    setData: vi.fn(),
+  }),
 }));
 
 import { EngramDetailPage } from './EngramDetailPage';

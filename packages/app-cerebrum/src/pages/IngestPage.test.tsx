@@ -26,81 +26,77 @@ vi.mock('react-router', () => ({
   },
 }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      cerebrum: { ingest: { enrichmentStatus: { invalidate: vi.fn() } } },
-    }),
-    cerebrum: {
-      templates: { list: { useQuery: (...args: unknown[]) => mockTemplatesQuery(...args) } },
-      scopes: { list: { useQuery: (...args: unknown[]) => mockScopesQuery(...args) } },
-      tags: { list: { useQuery: (...args: unknown[]) => mockTagsQuery(...args) } },
-      engrams: {
-        update: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false, error: null }),
-        },
-      },
-      ingest: {
-        enrichmentStatus: {
-          useQuery: () => ({
-            data: undefined,
-            isLoading: false,
-            error: null,
-            refetch: vi.fn(),
-          }),
-        },
-        retryEnrichment: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false, error: null }),
-        },
-        submit: {
-          useMutation: (opts: { onSuccess?: (data: unknown) => void; onError?: unknown }) => {
-            submitOnSuccess.current = opts.onSuccess ?? null;
-            return {
-              mutate: (...args: unknown[]) => {
-                mockSubmitMutate(...args);
-                submitOnSuccess.current?.({
-                  engram: {
-                    id: 'eng_20260514_1700_advanced',
-                    filePath: '/cerebrum/engrams/advanced.md',
-                    type: 'note',
-                  },
-                  classification: null,
-                  entities: [],
-                  scopeInference: { scopes: [], source: 'fallback', confidence: 0 },
-                });
-              },
-              isPending: false,
-              error: null,
-            };
-          },
-        },
-        quickCapture: {
-          useMutation: (opts: { onSuccess?: (data: unknown) => void; onError?: unknown }) => {
-            captureOnSuccess.current = opts.onSuccess ?? null;
-            const response = {
-              id: 'eng_20260514_1700_capture',
-              path: 'capture/eng_20260514_1700_capture.md',
-              type: 'capture',
-              scopes: ['personal.captures'],
-            };
-            return {
-              mutate: (...args: unknown[]) => {
-                mockQuickCaptureMutate(...args);
-                captureOnSuccess.current?.(response);
-              },
-              mutateAsync: async (...args: unknown[]) => {
-                mockQuickCaptureMutate(...args);
-                captureOnSuccess.current?.(response);
-                return response;
-              },
-              isPending: false,
-              error: null,
-            };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'templates.list') return mockTemplatesQuery(input);
+    if (key === 'scopes.list') return mockScopesQuery(input);
+    if (key === 'tags.list') return mockTagsQuery(input);
+    if (key === 'ingest.enrichmentStatus') {
+      return { data: undefined, isLoading: false, error: null, refetch: vi.fn() };
+    }
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: (data: unknown) => void; onError?: unknown }
+  ) => {
+    const key = path.join('.');
+    if (key === 'engrams.update') {
+      return { mutate: vi.fn(), isPending: false, error: null };
+    }
+    if (key === 'ingest.retryEnrichment') {
+      return { mutate: vi.fn(), isPending: false, error: null };
+    }
+    if (key === 'ingest.submit') {
+      submitOnSuccess.current = opts?.onSuccess ?? null;
+      return {
+        mutate: (...args: unknown[]) => {
+          mockSubmitMutate(...args);
+          submitOnSuccess.current?.({
+            engram: {
+              id: 'eng_20260514_1700_advanced',
+              filePath: '/cerebrum/engrams/advanced.md',
+              type: 'note',
+            },
+            classification: null,
+            entities: [],
+            scopeInference: { scopes: [], source: 'fallback', confidence: 0 },
+          });
+        },
+        isPending: false,
+        error: null,
+      };
+    }
+    if (key === 'ingest.quickCapture') {
+      captureOnSuccess.current = opts?.onSuccess ?? null;
+      const response = {
+        id: 'eng_20260514_1700_capture',
+        path: 'capture/eng_20260514_1700_capture.md',
+        type: 'capture',
+        scopes: ['personal.captures'],
+      };
+      return {
+        mutate: (...args: unknown[]) => {
+          mockQuickCaptureMutate(...args);
+          captureOnSuccess.current?.(response);
+        },
+        mutateAsync: async (...args: unknown[]) => {
+          mockQuickCaptureMutate(...args);
+          captureOnSuccess.current?.(response);
+          return response;
+        },
+        isPending: false,
+        error: null,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: vi.fn().mockResolvedValue(undefined),
+    setData: vi.fn(),
+  }),
 }));
 
 // ── UI mock ──────────────────────────────────────────────────────────

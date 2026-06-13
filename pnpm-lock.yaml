@@ -1038,15 +1038,15 @@ importers:
 
   packages/app-cerebrum:
     dependencies:
-      '@pops/api-client':
-        specifier: workspace:*
-        version: link:../api-client
       '@pops/navigation':
         specifier: workspace:*
         version: link:../navigation
       '@pops/overlay-ego':
         specifier: workspace:*
         version: link:../overlay-ego
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../types
