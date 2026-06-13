@@ -10,6 +10,14 @@ const mockGetPendingDebriefs = vi.fn();
 
 const mockGetLeavingMovies = vi.fn();
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    if (path.join('.') === 'comparisons.getPendingDebriefs') return mockGetPendingDebriefs();
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock('@pops/api-client', () => ({
   trpc: {
     media: {

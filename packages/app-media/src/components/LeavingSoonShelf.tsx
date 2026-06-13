@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * LeavingSoonShelf — horizontal shelf showing movies scheduled for removal.
  * Used on the Library page above the main grid.
@@ -82,17 +82,25 @@ function LeavingMovieCard({
 }
 
 export function LeavingSoonShelf() {
-  const { data: movies, isLoading, refetch } = trpc.media.rotation.getLeavingMovies.useQuery();
-  const cancelMutation = trpc.media.rotation.cancelLeaving.useMutation({
-    onSuccess: (_data, variables) => {
-      const movie = movies?.find((m) => m.id === variables.movieId);
-      toast.success(`Kept "${movie?.title ?? 'movie'}" in library`);
-      void refetch();
-    },
-    onError: () => {
-      toast.error('Failed to cancel leaving status');
-    },
-  });
+  const {
+    data: movies,
+    isLoading,
+    refetch,
+  } = usePillarQuery<LeavingMovie[]>('media', ['rotation', 'getLeavingMovies'], undefined);
+  const cancelMutation = usePillarMutation<{ movieId: number }, unknown>(
+    'media',
+    ['rotation', 'cancelLeaving'],
+    {
+      onSuccess: (_data, variables) => {
+        const movie = movies?.find((m) => m.id === variables.movieId);
+        toast.success(`Kept "${movie?.title ?? 'movie'}" in library`);
+        void refetch();
+      },
+      onError: () => {
+        toast.error('Failed to cancel leaving status');
+      },
+    }
+  );
 
   if (isLoading) return <LeavingSkeleton />;
   if (!movies || movies.length === 0) return null;

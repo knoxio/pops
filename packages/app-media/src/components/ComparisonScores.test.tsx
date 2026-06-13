@@ -23,14 +23,12 @@ vi.mock('recharts', () => ({
 const mockScoresQuery = vi.fn();
 const mockDimensionsQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        scores: { useQuery: (...args: unknown[]) => mockScoresQuery(...args) },
-        listDimensions: { useQuery: () => mockDimensionsQuery() },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.scores') return mockScoresQuery(input);
+    if (key === 'comparisons.listDimensions') return mockDimensionsQuery();
+    return { data: undefined, isLoading: false };
   },
 }));
 

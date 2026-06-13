@@ -15,45 +15,60 @@ const mockInvalidatePendingDebriefs = vi.fn();
 
 const mockHistoryQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      watchHistory: {
-        list: {
-          useQuery: (...args: unknown[]) => mockHistoryQuery(...args),
-        },
-        log: {
-          useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
-            logMutationOpts = opts;
-            return { mutate: mockLogMutate, isPending: false };
-          },
-        },
-        delete: {
-          useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
-            _deleteMutationOpts = opts;
-            return { mutate: mockDeleteMutate, isPending: false };
-          },
-        },
-      },
-      watchlist: {
-        add: {
-          useMutation: () => ({ mutate: mockWatchlistAddMutate, isPending: false }),
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        watchHistory: {
-          list: { invalidate: mockInvalidateHistory },
-        },
-        watchlist: {
-          list: { invalidate: mockInvalidateWatchlist },
-        },
-        comparisons: {
-          getPendingDebriefs: { invalidate: mockInvalidatePendingDebriefs },
-        },
+vi.mock('@tanstack/react-query', async () => {
+  const actual =
+    await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+  return {
+    ...actual,
+    useQueryClient: () => ({
+      invalidateQueries: ({ queryKey }: { queryKey: readonly string[] }) => {
+        const router = queryKey[1];
+        if (router === 'watchHistory') mockInvalidateHistory();
+        if (router === 'watchlist') mockInvalidateWatchlist();
+        if (router === 'comparisons') mockInvalidatePendingDebriefs();
       },
     }),
+  };
+});
+
+function wrapOpts(
+  path: readonly string[],
+  opts?: Record<string, (...args: unknown[]) => unknown>
+): Record<string, (...args: unknown[]) => unknown> {
+  const router = path[0];
+  return {
+    ...opts,
+    onSuccess: (...args: unknown[]) => {
+      if (router === 'watchHistory') mockInvalidateHistory();
+      return opts?.onSuccess?.(...args);
+    },
+  };
+}
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    if (path.join('.') === 'watchHistory.list') return mockHistoryQuery(input);
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: Record<string, (...args: unknown[]) => unknown>
+  ) => {
+    const key = path.join('.');
+    const wrapped = wrapOpts(path, opts);
+    if (key === 'watchHistory.log') {
+      logMutationOpts = wrapped;
+      return { mutate: mockLogMutate, isPending: false };
+    }
+    if (key === 'watchHistory.delete') {
+      _deleteMutationOpts = wrapped;
+      return { mutate: mockDeleteMutate, isPending: false };
+    }
+    if (key === 'watchlist.add') {
+      return { mutate: mockWatchlistAddMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
 }));
 
@@ -178,10 +193,7 @@ describe('MarkAsWatchedButton', () => {
     const deleteOpts = deleteCall?.[1] as { onSuccess?: () => void };
     deleteOpts?.onSuccess?.();
 
-    expect(mockWatchlistAddMutate).toHaveBeenCalledWith(
-      { mediaType: 'movie', mediaId: 550 },
-      expect.any(Object)
-    );
+    expect(mockWatchlistAddMutate).toHaveBeenCalledWith({ mediaType: 'movie', mediaId: 550 });
   });
 
   it('undo does not re-add to watchlist when watchlistRemoved=false', () => {

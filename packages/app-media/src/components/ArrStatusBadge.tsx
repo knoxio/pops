@@ -1,4 +1,4 @@
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * ArrStatusBadge — shows Radarr/Sonarr monitoring and download status.
  *
@@ -16,16 +16,34 @@ interface ArrStatusBadgeProps {
   externalId: number;
 }
 
+interface ArrConfigResult {
+  data: { radarrConfigured: boolean; sonarrConfigured: boolean };
+}
+
+type ArrStatus = keyof typeof ARR_STATUS_STYLES;
+
+interface ArrStatusResult {
+  data: { status: ArrStatus; label: string } | null;
+}
+
 function useArrStatus({ kind, externalId }: ArrStatusBadgeProps) {
-  const { data: configData } = trpc.media.arr.getConfig.useQuery();
+  const { data: configData } = usePillarQuery<ArrConfigResult>(
+    'media',
+    ['arr', 'getConfig'],
+    undefined
+  );
   const config = configData?.data;
   const isConfigured = kind === 'movie' ? config?.radarrConfigured : config?.sonarrConfigured;
 
-  const movieStatus = trpc.media.arr.getMovieStatus.useQuery(
+  const movieStatus = usePillarQuery<ArrStatusResult>(
+    'media',
+    ['arr', 'getMovieStatus'],
     { tmdbId: externalId },
     { enabled: kind === 'movie' && isConfigured === true }
   );
-  const showStatus = trpc.media.arr.getShowStatus.useQuery(
+  const showStatus = usePillarQuery<ArrStatusResult>(
+    'media',
+    ['arr', 'getShowStatus'],
     { tvdbId: externalId },
     { enabled: kind === 'show' && isConfigured === true }
   );

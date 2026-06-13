@@ -36,6 +36,21 @@ const mockInvalidateDebrief = vi.fn();
 const mockInvalidatePending = vi.fn();
 const mockInvalidateWatchlist = vi.fn();
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: () => ({ data: undefined, isLoading: false, error: null }),
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: Record<string, unknown>
+  ) => {
+    if (path.join('.') === 'comparisons.dismissDebriefDimension') {
+      mockDismissMutate._opts = opts;
+      return { mutate: mockDismissMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+}));
+
 vi.mock('@pops/api-client', () => ({
   trpc: {
     media: {

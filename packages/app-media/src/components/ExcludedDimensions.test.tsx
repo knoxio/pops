@@ -6,27 +6,14 @@ const mockScoresQuery = vi.fn();
 const mockDimensionsQuery = vi.fn();
 const mockIncludeMutate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      media: {
-        comparisons: {
-          scores: { invalidate: vi.fn() },
-        },
-      },
-    }),
-    media: {
-      comparisons: {
-        scores: { useQuery: (...args: unknown[]) => mockScoresQuery(...args) },
-        listDimensions: { useQuery: () => mockDimensionsQuery() },
-        includeInDimension: {
-          useMutation: () => {
-            return { mutate: mockIncludeMutate, isPending: false };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.scores') return mockScoresQuery(input);
+    if (key === 'comparisons.listDimensions') return mockDimensionsQuery();
+    return { data: undefined, isLoading: false };
   },
+  usePillarMutation: () => ({ mutate: mockIncludeMutate, isPending: false }),
 }));
 
 import { ExcludedDimensions } from './ExcludedDimensions';
