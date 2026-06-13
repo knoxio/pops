@@ -5,7 +5,10 @@
  */
 import { assertModuleManifest, type ModuleManifest, type SettingsManifest } from '@pops/types';
 
+import { resolveInstalledIds } from '../src/install-set.js';
 import { warnUnknownChromeSlots } from './chrome-slots.js';
+
+export { resolveInstalledIds };
 
 /**
  * Project the serialisable subset of a `ModuleManifest` — id, name,
@@ -134,51 +137,6 @@ export function project(m: ModuleManifest): SerialisableModule {
         : undefined,
     settings: m.settings !== undefined ? [...m.settings] : undefined,
   };
-}
-
-/**
- * Resolve which modules are "installed" for this build. Mirrors PRD-100
- * `POPS_APPS` / `POPS_OVERLAYS` semantics: unset / empty = install all
- * known modules; comma-separated list = install only those (intersected
- * with `KNOWN_MODULES`).
- *
- * `alwaysInstalled` ids stay in the result regardless of env restrictions —
- * `core` is the always-mounted platform shell (PRD-100), so excluding it
- * from `MODULES` via `POPS_APPS=finance` would amount to "no core" which is
- * never the intent.
- *
- * Unknown ids in the env vars are silently dropped at this layer because
- * `apps/pops-api/src/modules/env-modules.ts` is the canonical strict
- * validator at boot. The registry build only needs to know the resulting
- * id set.
- */
-export function resolveInstalledIds(
-  knownIds: readonly string[],
-  env: Readonly<Record<string, string | undefined>>,
-  alwaysInstalled: readonly string[] = []
-): readonly string[] {
-  const fromEnv = (raw: string | undefined): readonly string[] => {
-    if (raw === undefined || raw.trim() === '') return [];
-    return raw
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-  };
-
-  const appsRaw = env.POPS_APPS;
-  const overlaysRaw = env.POPS_OVERLAYS;
-
-  if (appsRaw === undefined && overlaysRaw === undefined) {
-    return knownIds;
-  }
-
-  const envSet = new Set<string>([
-    ...fromEnv(appsRaw),
-    ...fromEnv(overlaysRaw),
-    ...alwaysInstalled,
-  ]);
-  const known = new Set(knownIds);
-  return knownIds.filter((id) => envSet.has(id) && known.has(id));
 }
 
 export { renderFile } from './render.js';
