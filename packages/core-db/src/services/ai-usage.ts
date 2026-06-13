@@ -19,21 +19,25 @@
  * transaction handle to pass in. Mirrors `@pops/finance-db`'s service
  * signature pattern.
  *
- * Post-PRD-186 PR 3: the hot inference-log write path and the retention
- * rollup in `apps/pops-api` route through this module against
- * `getCoreDrizzle()`. A handful of dashboard read paths
- * (`ai-observability/history.ts`, `group-stats.ts`, `summary.ts`,
- * `service.ts`, plus `findFallbackProvider`) still query
- * `ai_inference_log` / `ai_inference_daily` directly via `getDrizzle()`
- * and migrate in a follow-up PR. The boot-time `pops.db -> core.db`
- * backfill bridges any pre-cutover rows; PR 4 drops the legacy `ai_*`
- * tables from the shared journal once the read sites move over.
+ * Post-PRD-186 PR 3 + PR 3 follow-up: the hot inference-log write path,
+ * the retention rollup, and the AI Ops `core.aiUsage` dashboard reads
+ * (`getStats` / `getHistory`) all route through this module against
+ * `getCoreDrizzle()`. A handful of `ai-observability` read paths
+ * (`history.ts`, `group-stats.ts`, `summary.ts`, plus
+ * `findFallbackProvider`) still query `ai_inference_log` /
+ * `ai_inference_daily` directly via `getDrizzle()` and migrate in
+ * subsequent PRs. The boot-time `pops.db -> core.db` backfill bridges
+ * any pre-cutover rows; PR 4 drops the legacy `ai_*` tables from the
+ * shared journal once those last read sites move over.
  */
-import { and, desc, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
+import { and, desc, gte, lte, sql, type SQL } from 'drizzle-orm';
 
 import { aiInferenceDaily, aiInferenceLog } from '../schema.js';
+import { buildInferenceLogConditions, type ListInferenceLogsFilter } from './ai-usage-filters.js';
 
 import type { CoreDb } from './internal.js';
+
+export type { ListInferenceLogsFilter } from './ai-usage-filters.js';
 
 export {
   deleteBudget,
@@ -54,6 +58,14 @@ export {
   type InferenceDailyAggregate,
   type InferenceLogRetentionRow,
 } from './ai-usage-retention.js';
+
+export {
+  groupInferenceLogByDate,
+  summarizeInferenceLogStats,
+  type DashboardInferenceLogDailyRow,
+  type DashboardInferenceLogStats,
+  type GroupInferenceLogByDateFilter,
+} from './ai-usage-dashboard.js';
 
 /** Raw drizzle row shapes — persisted records. */
 export type AiInferenceLogRow = typeof aiInferenceLog.$inferSelect;
@@ -84,18 +96,6 @@ export interface CreateInferenceLogInput {
   createdAt?: string;
 }
 
-/** Optional filters for {@link listInferenceLogs}. ISO timestamps. */
-export interface ListInferenceLogsFilter {
-  since?: string;
-  until?: string;
-  provider?: string;
-  model?: string;
-  operation?: string;
-  domain?: string;
-  status?: string;
-  contextId?: string;
-}
-
 function buildInferenceLogInsert(input: CreateInferenceLogInput): AiInferenceLogInsert {
   return {
     provider: input.provider,
@@ -124,21 +124,6 @@ export function createInferenceLog(db: CoreDb, input: CreateInferenceLogInput): 
   const inserted = db.insert(aiInferenceLog).values(values).returning().get();
   if (!inserted) throw new Error('Failed to insert ai_inference_log row');
   return inserted;
-}
-
-function buildInferenceLogConditions(filter: ListInferenceLogsFilter): SQL | undefined {
-  const conditions: SQL[] = [];
-  if (filter.since) conditions.push(gte(aiInferenceLog.createdAt, filter.since));
-  if (filter.until) conditions.push(lte(aiInferenceLog.createdAt, filter.until));
-  if (filter.provider) conditions.push(eq(aiInferenceLog.provider, filter.provider));
-  if (filter.model) conditions.push(eq(aiInferenceLog.model, filter.model));
-  if (filter.operation) conditions.push(eq(aiInferenceLog.operation, filter.operation));
-  if (filter.domain) conditions.push(eq(aiInferenceLog.domain, filter.domain));
-  if (filter.status) conditions.push(eq(aiInferenceLog.status, filter.status));
-  if (filter.contextId) conditions.push(eq(aiInferenceLog.contextId, filter.contextId));
-  if (conditions.length === 0) return undefined;
-  if (conditions.length === 1) return conditions[0];
-  return and(...conditions);
 }
 
 /**
