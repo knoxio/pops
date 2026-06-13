@@ -50,13 +50,40 @@ CREATE TABLE nudge_log (
 );
 `;
 
+const EMBEDDINGS_SQL = `
+CREATE TABLE embeddings (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  source_type text NOT NULL,
+  source_id text NOT NULL,
+  chunk_index integer DEFAULT 0 NOT NULL,
+  content_hash text NOT NULL,
+  content_preview text NOT NULL,
+  model text NOT NULL,
+  dimensions integer NOT NULL,
+  created_at text NOT NULL
+);
+CREATE UNIQUE INDEX uq_embeddings_source_chunk
+  ON embeddings (source_type, source_id, chunk_index);
+`;
+
 function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string {
   const path = join(tmpDir, 'pops.db');
   const raw = new BetterSqlite3(path);
   raw.exec(NUDGE_LOG_SQL);
+  raw.exec(EMBEDDINGS_SQL);
   seed(raw);
   raw.close();
   return path;
+}
+
+function insertEmbedding(raw: BetterSqlite3.Database, sourceId: string, chunkIndex = 0): void {
+  raw
+    .prepare(
+      `INSERT INTO embeddings
+        (source_type, source_id, chunk_index, content_hash, content_preview, model, dimensions, created_at)
+       VALUES ('transactions', ?, ?, 'h', 'preview', 'text-embedding-3-small', 1536, '2026-06-13T00:00:00Z')`
+    )
+    .run(sourceId, chunkIndex);
 }
 
 function insertNudge(raw: BetterSqlite3.Database, id: string): void {
@@ -115,6 +142,32 @@ describe('backfillCerebrumFromShared', () => {
         id: string;
       }[];
       expect(rows.map((r) => r.id)).toEqual(['nudge-both', 'nudge-shared-only']);
+    } finally {
+      cerebrum.raw.close();
+    }
+  });
+
+  it('copies embeddings rows and dedupes on (source_type, source_id, chunk_index)', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertEmbedding(raw, 'tx-shared-only', 0);
+      insertEmbedding(raw, 'tx-both', 0);
+      insertEmbedding(raw, 'tx-both', 1);
+    });
+
+    const cerebrum = openCerebrumDb(join(tmpDir, 'cerebrum.db'), { loadVec: false });
+    try {
+      insertEmbedding(cerebrum.raw, 'tx-both', 0);
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+      backfillCerebrumFromShared(cerebrum, sharedPath);
+
+      const rows = cerebrum.raw
+        .prepare('SELECT source_id, chunk_index FROM embeddings ORDER BY source_id, chunk_index')
+        .all() as { source_id: string; chunk_index: number }[];
+      expect(rows).toEqual([
+        { source_id: 'tx-both', chunk_index: 0 },
+        { source_id: 'tx-both', chunk_index: 1 },
+        { source_id: 'tx-shared-only', chunk_index: 0 },
+      ]);
     } finally {
       cerebrum.raw.close();
     }

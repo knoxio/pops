@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openCerebrumDb } from '../open-cerebrum-db.js';
-import { engramIndex, nudgeLog } from '../schema.js';
+import { embeddings, engramIndex, nudgeLog } from '../schema.js';
 import { upsertEngramIndex } from '../services/engrams.js';
 import { persistCandidates } from '../services/nudge-log.js';
 
@@ -94,6 +94,57 @@ describe('openCerebrumDb', () => {
         links: [],
       });
       expect(db.select().from(engramIndex).all()).toHaveLength(1);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('applies the embeddings baseline with the documented schema (PRD-076)', () => {
+    const path = join(tmpDir, 'cerebrum.db');
+    const { db, raw } = openCerebrumDb(path, { loadVec: false });
+    try {
+      expect(db.select().from(embeddings).all()).toHaveLength(0);
+
+      const inserted = db
+        .insert(embeddings)
+        .values({
+          sourceType: 'transactions',
+          sourceId: 'tx-1',
+          chunkIndex: 0,
+          contentHash: 'h',
+          contentPreview: 'preview',
+          model: 'text-embedding-3-small',
+          dimensions: 1536,
+          createdAt: '2026-06-13T00:00:00Z',
+        })
+        .returning({ id: embeddings.id })
+        .all();
+      expect(inserted).toHaveLength(1);
+      expect(typeof inserted[0].id).toBe('number');
+
+      const indexes = raw
+        .prepare(`SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='embeddings'`)
+        .all() as { name: string }[];
+      const names = indexes.map((r) => r.name).toSorted();
+      expect(names).toContain('uq_embeddings_source_chunk');
+      expect(names).toContain('idx_embeddings_source_type');
+      expect(names).toContain('idx_embeddings_content_hash');
+
+      expect(() =>
+        db
+          .insert(embeddings)
+          .values({
+            sourceType: 'transactions',
+            sourceId: 'tx-1',
+            chunkIndex: 0,
+            contentHash: 'h2',
+            contentPreview: 'preview2',
+            model: 'text-embedding-3-small',
+            dimensions: 1536,
+            createdAt: '2026-06-13T00:00:00Z',
+          })
+          .run()
+      ).toThrow(/UNIQUE/i);
     } finally {
       raw.close();
     }

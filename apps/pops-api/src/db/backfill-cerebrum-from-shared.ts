@@ -7,9 +7,10 @@
  * (PRD-179), plexus (PRD-180), glia (PRD-181), and conversations
  * (PRD-182) entries have been retired from the backfill — their PR3
  * writer cutovers were verified in prod, so no further rows can land
- * on the shared `pops.db` for those tables. The only remaining bridge
- * is `nudge_log`, which carries forward until the nudges pillar flips
- * its writer (Track M5 / PRD-149).
+ * on the shared `pops.db` for those tables. The remaining bridges are
+ * `nudge_log` (until Track M5 / PRD-149 flips the nudges writer) and
+ * `embeddings` (PRD-076 / theme-13 wave-5 — the slice scaffold landed
+ * here, hot-path writer cutover follows in a subsequent PR).
  *
  * Subsequent boots find the cerebrum copy already populated and become
  * a no-op via the `WHERE NOT EXISTS (...)` existence filter.
@@ -61,6 +62,39 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'action_type',
       'action_label',
       'action_params',
+    ],
+  },
+  {
+    table: 'embeddings',
+    /**
+     * `id` is intentionally omitted from the column list. The shared
+     * pops.db assigns integer autoincrement IDs that may collide with
+     * IDs the cerebrum copy has already assigned via its own
+     * autoincrement sequence — copying the PK across would corrupt the
+     * sequence and risk INSERT failures that abort the whole batch.
+     *
+     * The trade-off: the cerebrum `embeddings.id` no longer matches
+     * the shared `embeddings_vec.rowid` after the copy. That's
+     * acceptable here because the companion `embeddings_vec` virtual
+     * table is NOT copied by this backfill (vector blobs stay on the
+     * shared pops.db until writer cutover) — the next-PR writer
+     * migration rebuilds `embeddings_vec` on cerebrum.db from fresh
+     * embedding requests, keyed against the new IDs.
+     *
+     * The existence filter dedupes on
+     * (source_type, source_id, chunk_index), which is the natural
+     * business key per the `uq_embeddings_source_chunk` unique index.
+     */
+    idColumns: ['source_type', 'source_id', 'chunk_index'],
+    columns: [
+      'source_type',
+      'source_id',
+      'chunk_index',
+      'content_hash',
+      'content_preview',
+      'model',
+      'dimensions',
+      'created_at',
     ],
   },
 ];

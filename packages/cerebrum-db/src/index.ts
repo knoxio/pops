@@ -33,8 +33,13 @@
  *     config loading, the per-adapter HTTP clients, the lifecycle
  *     orchestrator and the encrypted-config envelope all stay in
  *     pops-api until PRD-180 US-03.
+ *   - Theme-13 wave-5 added the embeddings slice — schema re-export,
+ *     baseline migration (`0054_embeddings_baseline.sql`), and the
+ *     `embeddings` table copied into the backfill bridge. The hot-path
+ *     handlers in `apps/pops-api/src/jobs/handlers/embeddings-source.ts`
+ *     and `embeddings-helpers.ts` migrate over to `getCerebrumDrizzle()`
+ *     in the next PR.
  *
- * The remaining slice (embeddings) follows in a subsequent PR.
  * Cerebrum's load-bearing surgery is the URI dispatcher round-trip
  * (engrams reference other pillars' entities by URI) — that lands when
  * the consumers cut over, not in this scaffold.
