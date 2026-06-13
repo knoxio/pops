@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { closeDb, setDb } from '../../../db.js';
-import { createTestDb, seedTransaction } from '../../../shared/test-utils.js';
+import { seedTransaction, setupTestContext } from '../../../shared/test-utils.js';
 import {
   normalizeTransactionType,
   type TransactionHitData,
@@ -12,15 +11,15 @@ import type { Database } from 'better-sqlite3';
 
 import type { SearchHit } from '../../core/search/index.js';
 
+const ctx = setupTestContext();
 let db: Database;
 
 beforeEach(() => {
-  db = createTestDb();
-  setDb(db);
+  ({ db } = ctx.setup());
 });
 
 afterEach(() => {
-  closeDb();
+  ctx.teardown();
 });
 
 const adapter = transactionsSearchAdapter;

@@ -2,7 +2,7 @@ import { like } from 'drizzle-orm';
 
 import { budgets } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 
@@ -38,7 +38,7 @@ export const budgetsSearchAdapter: SearchAdapter<BudgetHitData> = {
     const text = query.text.trim();
     if (!text) return [];
 
-    const db = getDrizzle();
+    const db = getFinanceDrizzle();
     const limit = options?.limit ?? 20;
 
     const rows = db
