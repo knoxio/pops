@@ -8,7 +8,7 @@ import { and, count, eq, like, ne, sql } from 'drizzle-orm';
  */
 import { entities, transactions } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
 import type { CreateEntityInput, EntityRow, UpdateEntityInput } from './types.js';
@@ -43,7 +43,7 @@ function fetchEntitiesPage(
   whereClause: ReturnType<typeof and> | undefined,
   opts: ListEntitiesOptions
 ): EntityWithCount[] {
-  let query = getDrizzle()
+  let query = getFinanceDrizzle()
     .select({
       id: entities.id,
       notionId: entities.notionId,
@@ -72,7 +72,7 @@ function countEntities(
   whereClause: ReturnType<typeof and> | undefined,
   orphanedOnly?: boolean
 ): number {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   if (orphanedOnly) {
     const countRows = db
       .select({ id: entities.id })
@@ -99,7 +99,7 @@ export function listEntities(opts: ListEntitiesOptions): EntityListResult {
 
 /** Get a single entity by id. Throws NotFoundError if missing. */
 export function getEntity(id: string): EntityRow {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   const [row] = db.select().from(entities).where(eq(entities.id, id)).all();
 
   if (!row) throw new NotFoundError('Entity', id);
@@ -111,7 +111,7 @@ export function getEntity(id: string): EntityRow {
  * Generates a local UUID and inserts directly into SQLite.
  */
 export function createEntity(input: CreateEntityInput): EntityRow {
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
 
   const [existing] = db
     .select({ id: entities.id })
@@ -145,7 +145,7 @@ export function createEntity(input: CreateEntityInput): EntityRow {
 
 function assertNoDuplicateName(id: string, name: string | undefined): void {
   if (name === undefined) return;
-  const [existing] = getDrizzle()
+  const [existing] = getFinanceDrizzle()
     .select({ id: entities.id })
     .from(entities)
     .where(and(eq(entities.name, name), ne(entities.id, id)))
@@ -195,7 +195,7 @@ export function updateEntity(id: string, input: UpdateEntityInput): EntityRow {
   const updates = buildEntityUpdates(input);
   if (Object.keys(updates).length > 0) {
     updates.lastEditedTime = new Date().toISOString();
-    getDrizzle().update(entities).set(updates).where(eq(entities.id, id)).run();
+    getFinanceDrizzle().update(entities).set(updates).where(eq(entities.id, id)).run();
   }
 
   return getEntity(id);
@@ -209,7 +209,7 @@ export function deleteEntity(id: string): void {
   // Verify it exists first
   getEntity(id);
 
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
   const result = db.delete(entities).where(eq(entities.id, id)).run();
   if (result.changes === 0) throw new NotFoundError('Entity', id);
 }

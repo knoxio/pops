@@ -4,8 +4,8 @@ import type { SearchContext } from '../search/types.js';
 
 const mockAll = vi.fn().mockReturnValue([]);
 
-vi.mock('../../../db.js', () => ({
-  getDrizzle: () => ({
+vi.mock('../../../db/finance-handle.js', () => ({
+  getFinanceDrizzle: () => ({
     select: () => ({
       from: () => ({
         where: () => ({ all: mockAll }),
