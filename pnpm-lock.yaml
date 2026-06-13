@@ -2272,6 +2272,9 @@ importers:
 
   packages/pillar-sdk:
     dependencies:
+      '@pops/module-registry':
+        specifier: workspace:*
+        version: link:../module-registry
       zod:
         specifier: ^4.4.3
         version: 4.4.3
