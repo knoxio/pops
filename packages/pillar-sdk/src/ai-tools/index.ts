@@ -10,9 +10,4 @@ export {
   type AnthropicToolResultBlock,
   type OpenAiToolMessage,
 } from './provider-adapter.js';
-export type {
-  Tool,
-  BuildToolListOptions,
-  ToolResult,
-  InvokeToolOptions,
-} from './types.js';
+export type { Tool, BuildToolListOptions, ToolResult, InvokeToolOptions } from './types.js';

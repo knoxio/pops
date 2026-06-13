@@ -42,12 +42,12 @@ Audit produces a report at `docs/themes/13-pillar-finale/prds/189-batch-call-sit
 
 ## User Stories
 
-| #   | Story                                                                                                       | Status      |
-| --- | ----------------------------------------------------------------------------------------------------------- | ----------- |
-| 01  | Scan every shell + app-package source file for `trpc.<pillar>.*` calls; emit per-file report                | Done        |
+| #   | Story                                                                                                        | Status      |
+| --- | ------------------------------------------------------------------------------------------------------------ | ----------- |
+| 01  | Scan every shell + app-package source file for `trpc.<pillar>.*` calls; emit per-file report                 | Done        |
 | 02  | For each cross-pillar site, classify: single-pillar / cross-pillar-documented / cross-pillar-refactor-needed | Done        |
-| 03  | Refactor the 3-5 highest-volume cross-pillar pages (likely Dashboard, Cerebrum context view, etc.)          | Not started |
-| 04  | Final report committed alongside this PRD ([`inventory.md`](./inventory.md))                                | Done        |
+| 03  | Refactor the 3-5 highest-volume cross-pillar pages (likely Dashboard, Cerebrum context view, etc.)           | Not started |
+| 04  | Final report committed alongside this PRD ([`inventory.md`](./inventory.md))                                 | Done        |
 
 ## Out of Scope
 
