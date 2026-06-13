@@ -21,6 +21,12 @@ export interface CoreApiDeps {
    * case the host pillar.
    */
   selfBaseUrl: string;
+  /**
+   * Optional shared-key resolver for the PRD-228 external register
+   * endpoint. Production wiring falls back to `POPS_INTERNAL_API_KEY`
+   * from the process env; tests inject a deterministic value.
+   */
+  resolveApiKey?: () => string | undefined;
 }
 
 export interface HealthResponse {

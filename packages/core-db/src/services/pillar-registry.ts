@@ -26,6 +26,9 @@ import type { CoreDb } from './internal.js';
 
 export type PillarStatus = 'healthy' | 'unavailable' | 'unknown';
 
+/** PRD-228: `'internal'` is the bootstrap path; `'external'` is HTTP-key registration. */
+export type PillarOrigin = 'internal' | 'external';
+
 /**
  * Storage-facing manifest contract. Structurally compatible with the
  * `ManifestPayload` type from `@pops/pillar-sdk/manifest-schema` but
@@ -46,6 +49,10 @@ export interface UpsertPillarRegistrationInput {
   readonly baseUrl: string;
   readonly manifest: PersistableManifest;
   readonly now?: string;
+  /** Defaults to `'internal'` (bootstrap path); HTTP endpoint passes `'external'`. */
+  readonly origin?: PillarOrigin;
+  /** SHA-256 hex of the API key. Required when `origin === 'external'`. */
+  readonly apiKeyHash?: string;
 }
 
 export interface PillarRegistration {
@@ -59,6 +66,9 @@ export interface PillarRegistration {
   readonly lastHeartbeatAt: string;
   readonly status: PillarStatus;
   readonly statusUpdatedAt: string;
+  readonly origin: PillarOrigin;
+  readonly apiKeyHash: string | null;
+  readonly evictedAt: string | null;
 }
 
 interface PillarRegistryRow {
@@ -72,11 +82,18 @@ interface PillarRegistryRow {
   lastHeartbeatAt: string;
   status: string;
   statusUpdatedAt: string;
+  origin: string;
+  apiKeyHash: string | null;
+  evictedAt: string | null;
 }
 
 function parseStatus(raw: string): PillarStatus {
   if (raw === 'healthy' || raw === 'unavailable' || raw === 'unknown') return raw;
   return 'unknown';
+}
+
+function parseOrigin(raw: string): PillarOrigin {
+  return raw === 'external' ? 'external' : 'internal';
 }
 
 function parseManifestBlob(raw: string): unknown {
@@ -99,6 +116,9 @@ function rowToRegistration(row: PillarRegistryRow): PillarRegistration {
     lastHeartbeatAt: row.lastHeartbeatAt,
     status: parseStatus(row.status),
     statusUpdatedAt: row.statusUpdatedAt,
+    origin: parseOrigin(row.origin),
+    apiKeyHash: row.apiKeyHash,
+    evictedAt: row.evictedAt,
   };
 }
 
@@ -109,6 +129,8 @@ export function upsertPillarRegistration(
   const now = input.now ?? new Date().toISOString();
   const pillarId = input.manifest.pillar;
   const manifestJson = JSON.stringify(input.manifest);
+  const origin: PillarOrigin = input.origin ?? 'internal';
+  const apiKeyHash = origin === 'external' ? (input.apiKeyHash ?? null) : null;
 
   db.insert(pillarRegistry)
     .values({
@@ -122,6 +144,9 @@ export function upsertPillarRegistration(
       lastHeartbeatAt: now,
       status: 'healthy',
       statusUpdatedAt: now,
+      origin,
+      apiKeyHash,
+      evictedAt: null,
     })
     .onConflictDoUpdate({
       target: pillarRegistry.pillarId,
@@ -134,6 +159,9 @@ export function upsertPillarRegistration(
         lastHeartbeatAt: sql`excluded.last_heartbeat_at`,
         status: sql`excluded.status`,
         statusUpdatedAt: sql`excluded.status_updated_at`,
+        origin: sql`excluded.origin`,
+        apiKeyHash: sql`excluded.api_key_hash`,
+        evictedAt: sql`excluded.evicted_at`,
       },
     })
     .run();
@@ -223,36 +251,5 @@ export function recordHeartbeat(
   };
 }
 
-export interface StatusTransition {
-  readonly pillarId: string;
-  readonly previousStatus: PillarStatus;
-  readonly nextStatus: PillarStatus;
-  readonly at: string;
-}
-
-export interface ApplyStatusUpdate {
-  readonly pillarId: string;
-  readonly status: PillarStatus;
-  readonly statusUpdatedAt: string;
-}
-
-/**
- * Persist a batch of status updates emitted by the background ticker
- * (Theme 13 PRD-162). One UPDATE per row, all inside a single SQLite
- * transaction so a tick is atomic relative to concurrent heartbeats /
- * registrations.
- */
-export function applyStatusUpdates(db: CoreDb, updates: readonly ApplyStatusUpdate[]): void {
-  if (updates.length === 0) return;
-  db.transaction((tx) => {
-    for (const update of updates) {
-      tx.update(pillarRegistry)
-        .set({
-          status: update.status,
-          statusUpdatedAt: update.statusUpdatedAt,
-        })
-        .where(eq(pillarRegistry.pillarId, update.pillarId))
-        .run();
-    }
-  });
-}
+export type { ApplyStatusUpdate, StatusTransition } from './pillar-registry-status.js';
+export { applyStatusUpdates } from './pillar-registry-status.js';

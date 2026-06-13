@@ -22,15 +22,20 @@ import {
 
 import type { CoreDb } from '../services/internal.js';
 
-const MIGRATION_PATH = join(__dirname, '../../migrations/0055_pillar_registry.sql');
+const MIGRATION_PATHS = [
+  join(__dirname, '../../migrations/0055_pillar_registry.sql'),
+  join(__dirname, '../../migrations/0058_pillar_registry_external_origin.sql'),
+];
 
 function freshDb(): CoreDb {
   const raw = new Database(':memory:');
   raw.pragma('foreign_keys = ON');
-  const sql = readFileSync(MIGRATION_PATH, 'utf8');
-  for (const stmt of sql.split('--> statement-breakpoint')) {
-    const trimmed = stmt.trim();
-    if (trimmed.length > 0) raw.exec(trimmed);
+  for (const path of MIGRATION_PATHS) {
+    const sql = readFileSync(path, 'utf8');
+    for (const stmt of sql.split('--> statement-breakpoint')) {
+      const trimmed = stmt.trim();
+      if (trimmed.length > 0) raw.exec(trimmed);
+    }
   }
   return drizzle(raw);
 }

@@ -15,13 +15,22 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express, { type Express, type Request, type Response } from 'express';
 
 import { type CoreApiDeps, makeRequestHandler } from './handlers.js';
+import { createExternalRegisterHandler } from './modules/external-registry/register.js';
 import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js';
 import { appRouter } from './router.js';
 import { createCoreTrpcContextFactory } from './trpc.js';
 
+const SERVER_API_KEY_ENV = 'POPS_INTERNAL_API_KEY';
+
+function defaultResolveApiKey(): string | undefined {
+  const raw = process.env[SERVER_API_KEY_ENV];
+  return typeof raw === 'string' && raw.length > 0 ? raw : undefined;
+}
+
 export function createCoreApiApp(deps: CoreApiDeps): Express {
   const app = express();
   app.disable('x-powered-by');
+  app.use(express.json({ limit: '512kb' }));
 
   const handlers = makeRequestHandler(deps);
 
@@ -34,6 +43,14 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
   });
 
   app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
+
+  app.post(
+    '/core.registry.register',
+    createExternalRegisterHandler({
+      coreDb: deps.coreDb.db,
+      resolveApiKey: deps.resolveApiKey ?? defaultResolveApiKey,
+    })
+  );
 
   app.use(
     '/trpc',
