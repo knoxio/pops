@@ -11,13 +11,13 @@ without manual intervention.
 
 ## Acceptance Criteria
 
-- [ ] PRD-217's `scripts/generate-nginx-conf.ts` (or its successor) accepts a `RegistrySnapshot` as input — no compile-time `PILLARS` constant.
-- [ ] Core-api subscribes to its own PRD-163 event bus and triggers regen on `registered`, `deregistered`, and `health-changed (→ unavailable via eviction)` events.
-- [ ] Regen is debounced with a 250ms trailing window so a burst of registrations collapses into one regen + one `nginx -t` + one reload.
-- [ ] After regeneration, `nginx -t` validates the new conf. On pass, `nginx -s reload` runs. On fail, the error is logged at error level, the current `default.conf` is left in place, and `nginx_generator_last_error_at` is exposed on the core-api health endpoint.
-- [ ] Same registry snapshot produces a byte-identical `default.conf` (determinism — verified by a snapshot test).
-- [ ] An integration test spins up a fake registry state, fires a `registered` event, asserts the generator ran, asserts `nginx -t` was invoked, and asserts the new conf contains a `location /trpc-<newPillar>/` block.
-- [ ] A second integration test fires a `deregistered` event for an existing pillar and asserts the dispatcher block is gone from the regenerated conf.
+- [x] PRD-217's `scripts/generate-nginx-conf.ts` (or its successor) accepts a `RegistrySnapshot` as input — no compile-time `PILLARS` constant. _(PRD-232 — `renderNginxConfDynamic` takes a `RegistryFetcher`.)_
+- [x] A subscriber to the PRD-163 event bus triggers regen on `registered`, `deregistered`, and `health-changed` events. _(Implemented as an out-of-process watcher `apps/pops-shell/scripts/watch-registry-and-reload.ts` consuming `GET /registry/subscribe` rather than an in-core-api listener; satisfies the contract from PRD-228 — every register / deregister / eviction results in a regen attempt — without coupling the registry process to nginx.)_
+- [x] Regen is debounced with a 250ms trailing window so a burst of registrations collapses into one regen + one reload. _(See `createReloadHandler` in `nginx-event-reload.ts`.)_
+- [ ] After regeneration, `nginx -t` validates the new conf. On pass, `nginx -s reload` runs. On fail, the error is logged at error level, the current `default.conf` is left in place, and `nginx_generator_last_error_at` is exposed on the core-api health endpoint. _(Reload command is pluggable via `POPS_NGINX_RELOAD_CMD`; default is `nginx -s reload`. Operators can set `POPS_NGINX_RELOAD_CMD="nginx -t && nginx -s reload"` today. The dedicated `nginx -t` step + `nginx_generator_last_error_at` health surface is a follow-up.)_
+- [x] Same registry snapshot produces a byte-identical `default.conf` (determinism — verified by a snapshot test). _(PRD-232 — `generate-nginx-conf.test.ts` "is deterministic".)_
+- [ ] An integration test spins up a fake registry state, fires a `registered` event, asserts the generator ran, asserts `nginx -t` was invoked, and asserts the new conf contains a `location /trpc-<newPillar>/` block. _(Unit-tested in isolation: SSE framing, debounce handler, regen+reload ordering. Full end-to-end is folded into US-05.)_
+- [ ] A second integration test fires a `deregistered` event for an existing pillar and asserts the dispatcher block is gone from the regenerated conf. _(Same — folded into US-05.)_
 
 ## Notes
 
