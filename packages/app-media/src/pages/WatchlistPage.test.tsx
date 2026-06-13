@@ -12,6 +12,16 @@ const mockUpdateMutate = vi.fn();
 const mockInvalidate = vi.fn();
 const capturedOpts: Record<string, Record<string, unknown>> = {};
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'plex.getActiveSyncJobs') return { data: { data: [] }, isLoading: false };
+    if (key === 'plex.getSyncJobStatus') return { data: undefined, isLoading: false };
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock('@pops/api-client', () => ({
   trpc: {
     media: {

@@ -1,10 +1,19 @@
 import { useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { useSeriesDefaults, useSeriesQueries } from './useRequestSeriesQueries';
 
 import type { SeasonInfo } from '../RequestSeriesModal';
+
+interface AddSeriesInput {
+  tvdbId: number;
+  title: string;
+  qualityProfileId: number;
+  rootFolderPath: string;
+  languageProfileId: number;
+  seasons: { seasonNumber: number; monitored: boolean }[];
+}
 
 interface ModelArgs {
   open: boolean;
@@ -46,7 +55,7 @@ function useSubmit({
   args: ModelArgs;
   resetState: () => void;
 }) {
-  const addSeries = trpc.media.arr.addSeries.useMutation({
+  const addSeries = usePillarMutation<AddSeriesInput, unknown>('media', ['arr', 'addSeries'], {
     onSuccess: () => {
       state.setSuccess(true);
       state.setError(null);
@@ -55,7 +64,7 @@ function useSubmit({
         resetState();
       }, 1500);
     },
-    onError: (err: { message: string }) => state.setError(err.message),
+    onError: (err) => state.setError(err.message),
   });
 
   const handleSubmit = () => {

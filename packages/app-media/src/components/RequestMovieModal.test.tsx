@@ -10,40 +10,33 @@ const mockDownloadAndProtectMutate = vi.fn();
 let addMovieOpts: Record<string, unknown> = {};
 let downloadAndProtectOpts: Record<string, unknown> = {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      arr: {
-        getQualityProfiles: {
-          useQuery: (...args: unknown[]) => mockProfilesQuery(...args),
-        },
-        getRootFolders: {
-          useQuery: (...args: unknown[]) => mockFoldersQuery(...args),
-        },
-        addMovie: {
-          useMutation: (opts: Record<string, unknown>) => {
-            addMovieOpts = opts;
-            return { mutate: mockAddMovieMutate, isPending: false };
-          },
-        },
-        downloadAndProtect: {
-          useMutation: (opts: Record<string, unknown>) => {
-            downloadAndProtectOpts = opts;
-            return { mutate: mockDownloadAndProtectMutate, isPending: false };
-          },
-        },
-        getMovieStatus: {
-          invalidate: vi.fn(),
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        arr: {
-          getMovieStatus: { invalidate: vi.fn() },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    _input: unknown,
+    opts?: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'arr.getQualityProfiles') return mockProfilesQuery(_input, opts);
+    if (key === 'arr.getRootFolders') return mockFoldersQuery(_input, opts);
+    return { data: null, isLoading: false, error: null };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'arr.addMovie') {
+      addMovieOpts = opts;
+      return { mutate: mockAddMovieMutate, isPending: false };
+    }
+    if (key === 'arr.downloadAndProtect') {
+      downloadAndProtectOpts = opts;
+      return { mutate: mockDownloadAndProtectMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
 }));
 

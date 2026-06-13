@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * MovieActionButtons — conditional action buttons for non-library movies.
  *
@@ -15,6 +15,10 @@ import { QueueActionButtons } from './movie-action-buttons/QueueActionButtons';
 import { ExcludedButton, InQueueButton } from './movie-action-buttons/StatusButtons';
 import { useRotationButtonsModel } from './movie-action-buttons/useRotationButtonsModel';
 import { RequestMovieButton } from './RequestMovieButton';
+
+interface RotationStatusResult {
+  isRunning: boolean;
+}
 
 type ButtonVariant = 'standard' | 'compact';
 
@@ -35,7 +39,11 @@ export function MovieActionButtons({
   rating,
   variant = 'standard',
 }: MovieActionButtonsProps) {
-  const { data: statusData } = trpc.media.rotation.status.useQuery();
+  const { data: statusData } = usePillarQuery<RotationStatusResult>(
+    'media',
+    ['rotation', 'status'],
+    undefined
+  );
   const rotationEnabled = statusData?.isRunning ?? false;
 
   if (!rotationEnabled) {

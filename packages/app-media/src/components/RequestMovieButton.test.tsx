@@ -4,18 +4,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockGetConfigQuery = vi.fn();
 const mockGetMovieStatusQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      arr: {
-        getConfig: {
-          useQuery: () => mockGetConfigQuery(),
-        },
-        getMovieStatus: {
-          useQuery: (_input: unknown, _opts: unknown) => mockGetMovieStatusQuery(),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    _input: unknown,
+    opts?: { enabled?: boolean }
+  ) => {
+    const key = path.join('.');
+    if (key === 'arr.getConfig') return mockGetConfigQuery();
+    const enabled = opts?.enabled ?? true;
+    if (key === 'arr.getMovieStatus')
+      return enabled ? mockGetMovieStatusQuery() : { data: null, isLoading: false, error: null };
+    return { data: null, isLoading: false, error: null };
   },
 }));
 

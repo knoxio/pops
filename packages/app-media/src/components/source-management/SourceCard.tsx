@@ -1,10 +1,14 @@
 import { Clock, Database, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button, Switch } from '@pops/ui';
 
 import { formatSyncDate, sourceTypeLabel, type Source } from './types';
+
+interface SyncSourceResult {
+  candidatesInserted: number;
+}
 
 interface SourceCardProps {
   source: Source;
@@ -12,30 +16,35 @@ interface SourceCardProps {
 }
 
 function useSourceMutations(source: Source) {
-  const utils = trpc.useUtils();
+  const syncMutation = usePillarMutation<{ sourceId: number }, SyncSourceResult>(
+    'media',
+    ['rotation', 'syncSource'],
+    {
+      onSuccess: (data) => {
+        toast.success(`Synced "${source.name}": ${data.candidatesInserted} new candidates`);
+      },
+      onError: () => toast.error(`Failed to sync "${source.name}"`),
+    }
+  );
 
-  const syncMutation = trpc.media.rotation.syncSource.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Synced "${source.name}": ${data.candidatesInserted} new candidates`);
-      void utils.media.rotation.listSources.invalidate();
-    },
-    onError: () => toast.error(`Failed to sync "${source.name}"`),
-  });
+  const toggleMutation = usePillarMutation<{ id: number; enabled: boolean }, unknown>(
+    'media',
+    ['rotation', 'updateSource'],
+    {
+      onError: () => toast.error('Failed to update source'),
+    }
+  );
 
-  const toggleMutation = trpc.media.rotation.updateSource.useMutation({
-    onSuccess: () => {
-      void utils.media.rotation.listSources.invalidate();
-    },
-    onError: () => toast.error('Failed to update source'),
-  });
-
-  const deleteMutation = trpc.media.rotation.deleteSource.useMutation({
-    onSuccess: () => {
-      toast.success(`Deleted "${source.name}"`);
-      void utils.media.rotation.listSources.invalidate();
-    },
-    onError: (err) => toast.error(err.message || 'Failed to delete source'),
-  });
+  const deleteMutation = usePillarMutation<{ id: number }, unknown>(
+    'media',
+    ['rotation', 'deleteSource'],
+    {
+      onSuccess: () => {
+        toast.success(`Deleted "${source.name}"`);
+      },
+      onError: (err) => toast.error(err.message || 'Failed to delete source'),
+    }
+  );
 
   return { syncMutation, toggleMutation, deleteMutation };
 }
