@@ -38,71 +38,72 @@ const calls: MutationCalls = {
 
 const mockGet = vi.fn();
 
-vi.mock('@pops/api-client', () => {
-  const mkMutation = (impl: (args: unknown) => unknown) => ({
-    useMutation: () => ({
-      mutate: (args: unknown, opts?: { onSuccess?: () => void }) => {
-        impl(args);
-        opts?.onSuccess?.();
-      },
-      mutateAsync: async (args: unknown) => impl(args),
-      isPending: false,
-      error: null,
-    }),
-  });
-  return {
-    trpc: {
-      useUtils: () => ({
-        lists: { list: { get: { invalidate: vi.fn() } } },
-      }),
-      lists: {
-        list: {
-          get: { useQuery: (input: unknown) => mockGet(input) },
-          update: mkMutation((args) => {
-            calls.update(args);
-            return { ok: true };
-          }),
-          archive: mkMutation((args) => {
-            calls.archive(args);
-            return { ok: true };
-          }),
-          unarchive: mkMutation((args) => {
-            calls.unarchive(args);
-            return { ok: true };
-          }),
-          delete: mkMutation((args) => {
-            calls.del(args);
-            return { ok: true };
-          }),
-        },
-        items: {
-          add: mkMutation((args) => {
-            calls.add(args);
-            return { id: 99, position: 5 };
-          }),
-          check: mkMutation((args) => {
-            calls.check(args);
-            return { ok: true, checkedAt: '2026-06-10T00:00:00Z' };
-          }),
-          uncheck: mkMutation((args) => {
-            calls.uncheck(args);
-            return { ok: true };
-          }),
-          update: mkMutation((args) => {
-            calls.itemUpdate(args);
-            return { ok: true };
-          }),
-          remove: mkMutation((args) => {
-            calls.remove(args);
-            return { ok: true };
-          }),
-          reorder: mkMutation((args) => {
-            calls.reorder(args);
-            return { ok: true };
-          }),
-        },
-      },
+vi.mock('@pops/pillar-sdk/react', () => {
+  const procImpls: Record<string, (args: unknown) => unknown> = {
+    'lists.list.update': (args) => {
+      calls.update(args);
+      return { ok: true };
     },
+    'lists.list.archive': (args) => {
+      calls.archive(args);
+      return { ok: true };
+    },
+    'lists.list.unarchive': (args) => {
+      calls.unarchive(args);
+      return { ok: true };
+    },
+    'lists.list.delete': (args) => {
+      calls.del(args);
+      return { ok: true };
+    },
+    'lists.items.add': (args) => {
+      calls.add(args);
+      return { id: 99, position: 5 };
+    },
+    'lists.items.check': (args) => {
+      calls.check(args);
+      return { ok: true, checkedAt: '2026-06-10T00:00:00Z' };
+    },
+    'lists.items.uncheck': (args) => {
+      calls.uncheck(args);
+      return { ok: true };
+    },
+    'lists.items.update': (args) => {
+      calls.itemUpdate(args);
+      return { ok: true };
+    },
+    'lists.items.remove': (args) => {
+      calls.remove(args);
+      return { ok: true };
+    },
+    'lists.items.reorder': (args) => {
+      calls.reorder(args);
+      return { ok: true };
+    },
+  };
+  return {
+    usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
+      const key = `${pillarId}.${path.join('.')}`;
+      if (key === 'lists.list.get') return mockGet(input);
+      throw new Error(`Unexpected pillar query: ${key}`);
+    },
+    usePillarMutation: (pillarId: string, path: readonly string[]) => {
+      const key = `${pillarId}.${path.join('.')}`;
+      const impl = procImpls[key];
+      if (!impl) throw new Error(`Unexpected pillar mutation: ${key}`);
+      return {
+        mutate: (args: unknown) => {
+          impl(args);
+        },
+        mutateAsync: async (args: unknown) => impl(args),
+        isPending: false,
+        error: null,
+      };
+    },
+    usePillarUtils: () => ({
+      setData: () => undefined,
+      invalidate: async () => undefined,
+    }),
   };
 });
 

@@ -1532,15 +1532,15 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.7)
-      '@pops/api-client':
-        specifier: workspace:*
-        version: link:../api-client
       '@pops/app-lists-db':
         specifier: workspace:*
         version: link:../app-lists-db
       '@pops/db-types':
         specifier: workspace:*
         version: link:../db-types
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../types

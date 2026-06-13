@@ -24,62 +24,79 @@ const mockGet = vi.fn();
 
 let cachedData: { list: ListRow; items: ListItemRow[] } | null = null;
 
-vi.mock('@pops/api-client', () => {
-  const mkMutation = (impl: (args: unknown) => unknown) => ({
-    useMutation: () => ({
-      mutate: (args: unknown, opts?: { onSuccess?: () => void }) => {
-        impl(args);
-        opts?.onSuccess?.();
-      },
-      mutateAsync: async (args: unknown) => impl(args),
-      isPending: false,
-      error: null,
-    }),
-  });
-  return {
-    trpc: {
-      useUtils: () => ({
-        lists: {
-          list: {
-            get: {
-              invalidate: vi.fn(),
-              getData: () => cachedData,
-              setData: (_input: unknown, data: typeof cachedData) => {
-                cachedData = data;
-              },
-            },
-          },
-        },
-      }),
-      lists: {
-        list: {
-          get: { useQuery: (input: unknown) => mockGet(input) },
-          update: mkMutation((args) => {
-            bulk.update(args);
-            return { ok: true };
-          }),
-          archive: mkMutation(() => ({ ok: true })),
-          unarchive: mkMutation(() => ({ ok: true })),
-          delete: mkMutation(() => ({ ok: true })),
-        },
-        items: {
-          add: mkMutation(() => ({ id: 99, position: 5 })),
-          check: mkMutation(() => ({ ok: true, checkedAt: '2026-06-10T00:00:00Z' })),
-          uncheck: mkMutation(() => ({ ok: true })),
-          update: mkMutation(() => ({ ok: true })),
-          remove: mkMutation(() => ({ ok: true })),
-          reorder: mkMutation(() => ({ ok: true })),
-          uncheckAll: mkMutation((args) => {
-            bulk.uncheckAll(args);
-            return { ok: true, count: 2 };
-          }),
-          removeChecked: mkMutation((args) => {
-            bulk.removeChecked(args);
-            return { ok: true, removedCount: 2 };
-          }),
-        },
-      },
+vi.mock('@pops/pillar-sdk/react', () => {
+  const procImpls: Record<string, (args: unknown) => unknown> = {
+    'lists.list.update': (args) => {
+      bulk.update(args);
+      return { ok: true };
     },
+    'lists.list.archive': () => ({ ok: true }),
+    'lists.list.unarchive': () => ({ ok: true }),
+    'lists.list.delete': () => ({ ok: true }),
+    'lists.items.add': () => ({ id: 99, position: 5 }),
+    'lists.items.check': () => ({ ok: true, checkedAt: '2026-06-10T00:00:00Z' }),
+    'lists.items.uncheck': () => ({ ok: true }),
+    'lists.items.update': () => ({ ok: true }),
+    'lists.items.remove': () => ({ ok: true }),
+    'lists.items.reorder': () => ({ ok: true }),
+    'lists.items.uncheckAll': (args) => {
+      bulk.uncheckAll(args);
+      return { ok: true, count: 2 };
+    },
+    'lists.items.removeChecked': (args) => {
+      bulk.removeChecked(args);
+      return { ok: true, removedCount: 2 };
+    },
+  };
+  interface MutationOpts {
+    onMutate?: (vars: unknown) => unknown;
+    onError?: (err: Error, vars: unknown, ctx: unknown) => void;
+    onSettled?: () => void;
+  }
+  return {
+    usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
+      const key = `${pillarId}.${path.join('.')}`;
+      if (key === 'lists.list.get') return mockGet(input);
+      throw new Error(`Unexpected pillar query: ${key}`);
+    },
+    usePillarMutation: (pillarId: string, path: readonly string[], opts: MutationOpts = {}) => {
+      const key = `${pillarId}.${path.join('.')}`;
+      const impl = procImpls[key];
+      if (!impl) throw new Error(`Unexpected pillar mutation: ${key}`);
+      const run = async (args: unknown) => {
+        const ctx = opts.onMutate?.(args);
+        try {
+          const result = impl(args);
+          return result;
+        } catch (err) {
+          opts.onError?.(err instanceof Error ? err : new Error(String(err)), args, ctx);
+          throw err;
+        } finally {
+          opts.onSettled?.();
+        }
+      };
+      return {
+        mutate: (args: unknown) => {
+          void run(args);
+        },
+        mutateAsync: async (args: unknown) => run(args),
+        isPending: false,
+        error: null,
+      };
+    },
+    usePillarUtils: () => ({
+      setData: (
+        _routerPath: readonly string[],
+        _input: unknown,
+        updater: (prev: typeof cachedData | undefined) => typeof cachedData | undefined
+      ) => {
+        const previous = cachedData ?? undefined;
+        const next = updater(previous);
+        cachedData = next ?? null;
+        return previous;
+      },
+      invalidate: async () => undefined,
+    }),
   };
 });
 

@@ -12,30 +12,30 @@ import type { ListIndexItemView } from '../lists-index/useListsIndexQuery';
 
 const mockListQuery = vi.fn();
 const mockCreateMutate = vi.fn();
-const mockInvalidate = vi.fn();
 let mockOnSuccess: ((res: { id: number }) => void) | undefined;
 let mockOnError: ((err: Error) => void) | undefined;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({ lists: { list: { list: { invalidate: mockInvalidate } } } }),
-    lists: {
-      list: {
-        list: {
-          useQuery: (input: unknown) => mockListQuery(input),
-        },
-        create: {
-          useMutation: (opts: {
-            onSuccess?: (res: { id: number }) => void;
-            onError?: (err: Error) => void;
-          }) => {
-            mockOnSuccess = opts.onSuccess;
-            mockOnError = opts.onError;
-            return { mutate: mockCreateMutate, isPending: false };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
+    const key = `${pillarId}.${path.join('.')}`;
+    if (key === 'lists.list.list') return mockListQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
+  },
+  usePillarMutation: (
+    pillarId: string,
+    path: readonly string[],
+    opts: {
+      onSuccess?: (res: { id: number }) => void;
+      onError?: (err: Error) => void;
+    } = {}
+  ) => {
+    const key = `${pillarId}.${path.join('.')}`;
+    if (key !== 'lists.list.create') {
+      throw new Error(`Unexpected pillar mutation: ${key}`);
+    }
+    mockOnSuccess = opts.onSuccess;
+    mockOnError = opts.onError;
+    return { mutate: mockCreateMutate, isPending: false };
   },
 }));
 
@@ -105,7 +105,6 @@ function Wrapper({
 beforeEach(() => {
   mockListQuery.mockReset();
   mockCreateMutate.mockReset();
-  mockInvalidate.mockReset();
   mockOnSuccess = undefined;
   mockOnError = undefined;
 });
@@ -287,7 +286,11 @@ describe('PRD-140 part B — ListsIndexPage', () => {
     await waitFor(() => expect(nameInput.value).toMatch(/^Shopping list — \d{4}-\d{2}-\d{2}$/));
   });
 
-  it('invalidates the index cache on successful create', () => {
+  it('wires onSuccess so the SDK can invalidate the index cache + the page can navigate', () => {
+    // Cache invalidation is owned by `usePillarMutation`'s built-in
+    // router-prefix invalidate; the page just needs to register an
+    // `onSuccess` that the SDK can chain. This test asserts the wiring is
+    // in place (the callback exists and runs without throwing).
     mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
     render(
       <Wrapper initialEntries={['/lists?new=1']}>
@@ -295,8 +298,7 @@ describe('PRD-140 part B — ListsIndexPage', () => {
       </Wrapper>
     );
     expect(mockOnSuccess).toBeDefined();
-    mockOnSuccess?.({ id: 42 });
-    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    expect(() => mockOnSuccess?.({ id: 42 })).not.toThrow();
   });
 
   it('does not throw when the create mutation reports an error', () => {

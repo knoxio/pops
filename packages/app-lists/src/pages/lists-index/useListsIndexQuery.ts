@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { LIST_KINDS, type ListKind, type ListsIndexFilterState } from './list-index-types.js';
 
@@ -19,6 +19,10 @@ export interface ListIndexItemView {
   archivedAt: string | null;
 }
 
+interface ListsIndexPayload {
+  items: ListIndexItemView[];
+}
+
 export interface UseListsIndexQueryResult {
   items: ListIndexItemView[];
   isLoading: boolean;
@@ -27,7 +31,7 @@ export interface UseListsIndexQueryResult {
 }
 
 /**
- * Wraps `trpc.lists.list.list.useQuery` so the page component stays
+ * Wraps the `lists` pillar's `list.list` query so the page component stays
  * declarative. The router-owned aggregate query already returns the shape
  * the UI needs (`itemCount` / `uncheckedCount` / `lastUpdatedAt`); the hook
  * narrows it to a stable view type and converts query state into the
@@ -51,7 +55,7 @@ export function useListsIndexQuery(filters: ListsIndexFilterState): UseListsInde
     [filters]
   );
 
-  const query = trpc.lists.list.list.useQuery(input);
+  const query = usePillarQuery<ListsIndexPayload>('lists', ['list', 'list'], input);
 
   return {
     items: query.data?.items ?? [],
