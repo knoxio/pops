@@ -1,20 +1,18 @@
 /**
- * Inventory items read/write surface — PRD-173 PR 2 cutover.
+ * Inventory items read/write surface — PRD-173 PR 3 cutover.
  *
- * Read/write split during the migration window (mirrors PRD-168 PR 2 +
- * PRD-179 PR 2):
+ * Reads (PR 2) and writes (PR 3) now both route through `itemsService`
+ * from `@pops/inventory-db` against the inventory pillar handle
+ * (`getInventoryDrizzle()`):
  *  - `listInventoryItems`, `getInventoryItem`, `searchByAssetId`,
- *    `countByAssetPrefix`, `getDistinctTypes` are routed through
- *    `itemsService` from `@pops/inventory-db` against the inventory
- *    pillar handle (`getInventoryDrizzle()`). Reads now resolve from
- *    the canonical package implementation.
- *  - Writes (`createInventoryItem`, `updateInventoryItem`,
- *    `deleteInventoryItem`) keep their inline drizzle statements
- *    against the same handle to preserve the existing read-after-write
- *    guarantee against the inventory pillar's SQLite file. The pillar
- *    handle is the single store for inventory writes, so there is no
- *    cross-store TOCTOU to worry about; the inline writes stay in
- *    place until PRD-173 PR 3 collapses them onto `itemsService.*`.
+ *    `countByAssetPrefix`, `getDistinctTypes`.
+ *  - `createInventoryItem`, `updateInventoryItem`,
+ *    `deleteInventoryItem`.
+ *
+ * The inline drizzle statements (and the local `buildInventoryUpdate`
+ * helper) are gone — the canonical implementation lives in the
+ * `@pops/inventory-db` package, so any future write-shape change
+ * happens in one place.
  *
  * The legacy router stays mounted in pops-api as a fall-through while
  * the dispatcher cutover routes `inventory.items.*` traffic to
@@ -26,16 +24,10 @@
  * `apps/pops-inventory-api/src/modules/items/service.ts`. Legacy mount
  * stays for fall-through traffic until the slice's dispatcher cutover.
  */
-import crypto from 'crypto';
-
-import { eq } from 'drizzle-orm';
-
-import { homeInventory } from '@pops/db-types';
 import { ItemNotFoundError, itemsService } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
-import { buildInventoryUpdate } from './update-builder.js';
 
 import type { CreateInventoryItemInput, InventoryRow, UpdateInventoryItemInput } from './types.js';
 
@@ -103,109 +95,17 @@ export function getInventoryItem(id: string): InventoryRow {
   return translate(() => itemsService.get(getInventoryDrizzle(), id));
 }
 
-function buildCreateValues(
-  id: string,
-  now: string,
-  input: CreateInventoryItemInput
-): typeof homeInventory.$inferInsert {
-  return {
-    id,
-    itemName: input.itemName,
-    inUse: input.inUse ? 1 : 0,
-    deductible: input.deductible ? 1 : 0,
-    lastEditedTime: now,
-    ...nullableStringsFromInput(input),
-    ...nullableNumbersFromInput(input),
-  };
-}
-
-const CREATE_NULLABLE_STRING_KEYS = [
-  'brand',
-  'model',
-  'itemId',
-  'room',
-  'location',
-  'type',
-  'condition',
-  'purchaseDate',
-  'warrantyExpires',
-  'purchaseTransactionId',
-  'purchasedFromId',
-  'purchasedFromName',
-  'assetId',
-  'notes',
-  'locationId',
-] as const satisfies ReadonlyArray<
-  keyof CreateInventoryItemInput & keyof typeof homeInventory.$inferInsert
->;
-
-const CREATE_NULLABLE_NUMBER_KEYS = [
-  'replacementValue',
-  'resaleValue',
-] as const satisfies ReadonlyArray<
-  keyof CreateInventoryItemInput & keyof typeof homeInventory.$inferInsert
->;
-
-function nullableStringsFromInput(
-  input: CreateInventoryItemInput
-): Partial<typeof homeInventory.$inferInsert> {
-  const out: Record<string, unknown> = {};
-  for (const key of CREATE_NULLABLE_STRING_KEYS) {
-    out[key] = input[key] ?? null;
-  }
-  return out as Partial<typeof homeInventory.$inferInsert>;
-}
-
-function nullableNumbersFromInput(
-  input: CreateInventoryItemInput
-): Partial<typeof homeInventory.$inferInsert> {
-  const out: Record<string, unknown> = {};
-  for (const key of CREATE_NULLABLE_NUMBER_KEYS) {
-    out[key] = input[key] ?? null;
-  }
-  return out as Partial<typeof homeInventory.$inferInsert>;
-}
-
-/**
- * Create a new inventory item. Returns the created row.
- * Generates a local UUID and inserts directly into SQLite.
- */
+/** Create a new inventory item. Returns the created row. */
 export function createInventoryItem(input: CreateInventoryItemInput): InventoryRow {
-  const db = getInventoryDrizzle();
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-
-  db.insert(homeInventory)
-    .values(buildCreateValues(id, now, input))
-    .run();
-
-  return getInventoryItem(id);
+  return itemsService.create(getInventoryDrizzle(), input);
 }
 
-/**
- * Update an existing inventory item. Returns the updated row.
- * Updates directly in SQLite.
- */
+/** Update an existing inventory item. Returns the updated row. */
 export function updateInventoryItem(id: string, input: UpdateInventoryItemInput): InventoryRow {
-  getInventoryItem(id);
-
-  const updates = buildInventoryUpdate(input);
-  if (updates) {
-    const db = getInventoryDrizzle();
-    db.update(homeInventory).set(updates).where(eq(homeInventory.id, id)).run();
-  }
-
-  return getInventoryItem(id);
+  return translate(() => itemsService.update(getInventoryDrizzle(), id, input));
 }
 
-/**
- * Delete an inventory item by ID. Throws NotFoundError if missing.
- * Deletes directly from SQLite.
- */
+/** Delete an inventory item by ID. Throws NotFoundError if missing. */
 export function deleteInventoryItem(id: string): void {
-  getInventoryItem(id);
-
-  const db = getInventoryDrizzle();
-  const result = db.delete(homeInventory).where(eq(homeInventory.id, id)).run();
-  if (result.changes === 0) throw new NotFoundError('Inventory item', id);
+  translate(() => itemsService.delete(getInventoryDrizzle(), id));
 }
