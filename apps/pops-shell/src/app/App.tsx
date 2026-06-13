@@ -10,6 +10,7 @@ import { toast } from 'sonner';
  * Root App component with all providers
  */
 import { isNetworkError } from '@pops/api-client';
+import { PillarSdkProvider } from '@pops/pillar-sdk/react';
 import { Toaster, TooltipProvider } from '@pops/ui';
 
 import { PillarStatusProvider } from './pillars';
@@ -53,13 +54,15 @@ export function App() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <PillarStatusProvider>
-          <TooltipProvider>
-            <RouterProvider router={router} />
-          </TooltipProvider>
-        </PillarStatusProvider>
-        {!import.meta.env.VITE_E2E && <ReactQueryDevtools initialIsOpen={false} />}
-        <Toaster />
+        <PillarSdkProvider>
+          <PillarStatusProvider>
+            <TooltipProvider>
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </PillarStatusProvider>
+          {!import.meta.env.VITE_E2E && <ReactQueryDevtools initialIsOpen={false} />}
+          <Toaster />
+        </PillarSdkProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );
