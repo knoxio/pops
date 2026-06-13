@@ -7,11 +7,20 @@ const PillarRegistryEntrySchema = z
     pillarId: z.string().min(1),
     baseUrl: z.string().min(1),
     manifest: ManifestPayloadSchema,
-    lastSeenAt: z.string().min(1),
+    lastSeenAt: z.string().min(1).optional(),
+    lastHeartbeatAt: z.string().min(1).optional(),
     registered: z.boolean().optional(),
     status: z.enum(['healthy', 'unavailable', 'unknown']).optional(),
   })
-  .loose();
+  .loose()
+  .refine((entry) => Boolean(entry.lastSeenAt ?? entry.lastHeartbeatAt), {
+    message: 'registry entry must include lastSeenAt or lastHeartbeatAt',
+    path: ['lastSeenAt'],
+  })
+  .transform((entry) => {
+    const resolved = entry.lastSeenAt ?? entry.lastHeartbeatAt ?? '';
+    return { ...entry, lastSeenAt: resolved };
+  });
 
 const RegistrySnapshotPayloadSchema = z
   .object({

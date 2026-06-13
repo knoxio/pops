@@ -8,7 +8,8 @@
  * fetch the snapshot got a 404. This test pins the URL contract
  * end-to-end:
  *
- *   1. Boot `createCoreApiApp` against a per-test in-memory core.db.
+ *   1. Boot `createCoreApiApp` against a per-test file-backed core.db
+ *      in an OS temp directory.
  *   2. Listen on an ephemeral port via `http.createServer(app).listen(0)`.
  *   3. Inject a tracing `fetchImpl` into `HttpDiscoveryTransport` to
  *      capture the URL the SDK constructs.
@@ -60,12 +61,29 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await new Promise<void>((resolve, reject) =>
-    server.close((err) => (err ? reject(err) : resolve()))
-  );
-  coreDb.raw.close();
-  rmSync(tmpDir, { recursive: true, force: true });
+  if (server) {
+    await new Promise<void>((resolve, reject) =>
+      server.close((err) => (err ? reject(err) : resolve()))
+    ).catch(() => undefined);
+  }
+  if (coreDb) {
+    try {
+      coreDb.raw.close();
+    } catch {
+      // surface the original beforeEach failure instead of swallowing cleanup noise
+    }
+  }
+  if (tmpDir) {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
 });
+
+function extractFetchUrl(input: Parameters<typeof fetch>[0]): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.toString();
+  if (input instanceof Request) return input.url;
+  return String(input);
+}
 
 function caller(): ReturnType<typeof appRouter.createCaller> {
   const ctx: Context = {
@@ -108,7 +126,7 @@ describe('SDK ↔ core.registry procedure-name interop', () => {
     const seenUrls: string[] = [];
     let lastResponse: Response | undefined;
     const tracingFetch: typeof fetch = async (input, init) => {
-      const url = typeof input === 'string' ? input : input.toString();
+      const url = extractFetchUrl(input);
       seenUrls.push(url);
       const res = await fetch(input, init);
       lastResponse = res.clone();
@@ -142,7 +160,7 @@ describe('SDK ↔ core.registry procedure-name interop', () => {
   it('returns an empty pillar list on a fresh registry (no 404)', async () => {
     const seenUrls: string[] = [];
     const tracingFetch: typeof fetch = async (input, init) => {
-      const url = typeof input === 'string' ? input : input.toString();
+      const url = extractFetchUrl(input);
       seenUrls.push(url);
       return fetch(input, init);
     };

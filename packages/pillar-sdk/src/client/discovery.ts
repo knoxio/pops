@@ -112,9 +112,22 @@ function parseRegistryEntry(entry: unknown, index: number): DiscoveredPillar {
     baseUrl: requireString(entry, 'baseUrl', index),
     status: requireStatus(entry['status'], index),
     manifest: requireManifest(entry['manifest'], index),
-    lastSeenAt: requireString(entry, 'lastSeenAt', index),
+    lastSeenAt: requireLastSeenAt(entry, index),
     registered: requireRegistered(entry['registered'], index),
   };
+}
+
+/**
+ * Core-api emits `lastHeartbeatAt`; older / mocked surfaces emit
+ * `lastSeenAt`. Accept either and normalise to `lastSeenAt` so callers
+ * keep a single field name.
+ */
+function requireLastSeenAt(entry: Record<string, unknown>, index: number): string {
+  const seen = entry['lastSeenAt'];
+  if (typeof seen === 'string' && seen.length > 0) return seen;
+  const heartbeat = entry['lastHeartbeatAt'];
+  if (typeof heartbeat === 'string' && heartbeat.length > 0) return heartbeat;
+  throw new PillarSdkError(`registry snapshot entry ${index} missing lastSeenAt / lastHeartbeatAt`);
 }
 
 function requireString(entry: Record<string, unknown>, key: string, index: number): string {
