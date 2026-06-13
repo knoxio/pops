@@ -8,6 +8,13 @@
       "when": 1781999000000,
       "tag": "0000_ha_bridge_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782085400000,
+      "tag": "0001_ha_entities_fts",
+      "breakpoints": true
     }
   ]
 }

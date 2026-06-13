@@ -29,3 +29,9 @@ export {
   upsertEntity,
   type HaEntityMirrorInput,
 } from './services/entities.js';
+
+export {
+  searchEntities,
+  type HaEntitySearchHit,
+  type HaEntitySearchOptions,
+} from './services/search.js';

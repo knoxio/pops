@@ -8,13 +8,13 @@ As a user querying federated POPS search for "kitchen temperature", I want the H
 
 ## Acceptance Criteria
 
-- [ ] An FTS5 virtual table `ha_entities_fts(entity_id, friendly_name, area, device_class)` exists, populated by triggers on `ha_entities` insert / update / delete.
-- [ ] The pillar's manifest declares `searchAdapter: { id: 'ha-entities', label: 'Home Assistant entities' }` and is discovered by the central registry (Epic 02) and the search registry (Epic 06).
-- [ ] The adapter implements the `SearchAdapter` interface from `@pops/pillar-sdk`: takes a query string, returns `{ items: { id: string; label: string; score: number; metadata: { domain, area, deviceClass, state } }[] }`.
-- [ ] Ranking: exact-match `area` token raises score; exact-match `device_class` token raises score; friendly-name FTS5 rank is the baseline.
-- [ ] Query "kitchen temperature" against a seeded fixture (`sensor.kitchen_temperature` with `area=kitchen`, `device_class=temperature`) returns that entity as the top result.
-- [ ] If `ha_entities` is empty (cold boot), the adapter returns `{ items: [] }` without error.
-- [ ] Unit tests cover: tokenisation, ranking, area/device-class boosts, empty-table case, FTS rebuild after entity rename.
+- [x] An FTS5 virtual table `ha_entities_fts(entity_id, friendly_name, area, device_class)` exists, populated by triggers on `ha_entities` insert / update / delete.
+- [x] The pillar's manifest declares `searchAdapter: { id: 'ha-entities', label: 'Home Assistant entities' }` and is discovered by the central registry (Epic 02) and the search registry (Epic 06).
+- [x] The adapter implements the `SearchAdapter` interface from `@pops/pillar-sdk`: takes a query string, returns `{ items: { id: string; label: string; score: number; metadata: { domain, area, deviceClass, state } }[] }`.
+- [x] Ranking: exact-match `area` token raises score; exact-match `device_class` token raises score; friendly-name FTS5 rank is the baseline.
+- [x] Query "kitchen temperature" against a seeded fixture (`sensor.kitchen_temperature` with `area=kitchen`, `device_class=temperature`) returns that entity as the top result.
+- [x] If `ha_entities` is empty (cold boot), the adapter returns `{ items: [] }` without error.
+- [x] Unit tests cover: tokenisation, ranking, area/device-class boosts, empty-table case, FTS rebuild after entity rename.
 
 ## Notes
 
