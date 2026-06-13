@@ -218,6 +218,10 @@ describe('runPerPillarMigrations', () => {
     // 0064_ai_providers (Wave 5 cascade — moves the providers table and
     // flips the 5 `core/ai-providers/service.ts` handler sites plus the
     // `core/ai-budgets/enforcement.ts` mixed-DB pin to
+    // `getCoreDrizzle()`), and the PRD-186 PR4 user_settings slice
+    // 0066_user_settings (Wave 5 cascade — moves the per-user
+    // preferences table and flips the 3
+    // `core/features/user-settings.ts` handler sites to
     // `getCoreDrizzle()`);
     // `media` owns `packages/media-db/migrations/`
     // with 0021_spooky_lockheed (media pillar Phase 1 PR 2),
@@ -285,6 +289,7 @@ describe('runPerPillarMigrations', () => {
         '0062_ai_alert_rules',
         '0063_ai_alerts',
         '0064_ai_providers',
+        '0066_user_settings',
       ]);
       expect([...result.pillarsApplied].toSorted()).toEqual([
         'cerebrum',

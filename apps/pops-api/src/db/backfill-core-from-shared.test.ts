@@ -138,6 +138,16 @@ CREATE INDEX idx_ai_alerts_acknowledged ON ai_alerts (acknowledged);
 CREATE INDEX idx_ai_alerts_dedupe ON ai_alerts (type, scope_detail, created_at);
 `;
 
+const USER_SETTINGS_SQL = `
+CREATE TABLE user_settings (
+  user_email text NOT NULL,
+  key text NOT NULL,
+  value text NOT NULL,
+  PRIMARY KEY (user_email, key)
+);
+CREATE INDEX idx_user_settings_user ON user_settings (user_email);
+`;
+
 function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string {
   const path = join(tmpDir, 'pops.db');
   const raw = new BetterSqlite3(path);
@@ -147,6 +157,7 @@ function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string
   raw.exec(AI_ALERT_RULES_SQL);
   raw.exec(AI_ALERTS_SQL);
   raw.exec(AI_PROVIDERS_SQL);
+  raw.exec(USER_SETTINGS_SQL);
   seed(raw);
   raw.close();
   return path;
@@ -214,8 +225,19 @@ function insertAlert(raw: BetterSqlite3.Database, ruleId: number, type: string):
     .run(ruleId, type, `${type} fired`, `scope:${type}`);
 }
 
+function insertUserSetting(
+  raw: BetterSqlite3.Database,
+  userEmail: string,
+  key: string,
+  value: string
+): void {
+  raw
+    .prepare(`INSERT INTO user_settings (user_email, key, value) VALUES (?, ?, ?)`)
+    .run(userEmail, key, value);
+}
+
 describe('backfillCoreFromShared', () => {
-  it('copies ai_model_pricing, sync_job_results, ai_usage, ai_alert_rules, ai_alerts, and ai_providers rows from shared on first run', () => {
+  it('copies ai_model_pricing, sync_job_results, ai_usage, ai_alert_rules, ai_alerts, ai_providers, and user_settings rows from shared on first run', () => {
     const sharedPath = openSharedWithSeed((raw) => {
       insertPricing(raw, 'claude', 'claude-haiku-4-5');
       insertSync(raw, 'job-a');
@@ -223,6 +245,7 @@ describe('backfillCoreFromShared', () => {
       const ruleId = insertAlertRule(raw, 'budget-threshold');
       insertAlert(raw, ruleId, 'budget-threshold');
       insertProvider(raw, 'claude', 'cloud');
+      insertUserSetting(raw, 'alice@example.com', 'feature.test.simple', 'true');
     });
 
     const core = openCoreDb(join(tmpDir, 'core.db'));
@@ -274,6 +297,13 @@ describe('backfillCoreFromShared', () => {
       expect(providers).toEqual([
         { id: 'claude', name: 'claude provider', type: 'cloud', status: 'active' },
       ]);
+
+      const userSettingsRows = core.raw
+        .prepare('SELECT user_email, key, value FROM user_settings')
+        .all() as { user_email: string; key: string; value: string }[];
+      expect(userSettingsRows).toEqual([
+        { user_email: 'alice@example.com', key: 'feature.test.simple', value: 'true' },
+      ]);
     } finally {
       core.raw.close();
     }
@@ -287,6 +317,7 @@ describe('backfillCoreFromShared', () => {
       const ruleId = insertAlertRule(raw, 'budget-threshold');
       insertAlert(raw, ruleId, 'budget-threshold');
       insertProvider(raw, 'claude', 'cloud');
+      insertUserSetting(raw, 'alice@example.com', 'feature.test.simple', 'true');
     });
 
     const core = openCoreDb(join(tmpDir, 'core.db'));
@@ -312,12 +343,16 @@ describe('backfillCoreFromShared', () => {
       const providerCount = (
         core.raw.prepare('SELECT count(*) AS n FROM ai_providers').get() as { n: number }
       ).n;
+      const userSettingsCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM user_settings').get() as { n: number }
+      ).n;
       expect(pricingCount).toBe(1);
       expect(syncCount).toBe(1);
       expect(usageCount).toBe(1);
       expect(ruleCount).toBe(1);
       expect(alertCount).toBe(1);
       expect(providerCount).toBe(1);
+      expect(userSettingsCount).toBe(1);
     } finally {
       core.raw.close();
     }
@@ -446,12 +481,49 @@ describe('backfillCoreFromShared', () => {
       const providerCount = (
         core.raw.prepare('SELECT count(*) AS n FROM ai_providers').get() as { n: number }
       ).n;
+      const userSettingsCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM user_settings').get() as { n: number }
+      ).n;
       expect(pricingCount).toBe(0);
       expect(syncCount).toBe(0);
       expect(usageCount).toBe(0);
       expect(ruleCount).toBe(0);
       expect(alertCount).toBe(0);
       expect(providerCount).toBe(0);
+      expect(userSettingsCount).toBe(0);
+    } finally {
+      core.raw.close();
+    }
+  });
+
+  it('skips user_settings rows whose (user_email, key) already exists in core', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertUserSetting(raw, 'alice@example.com', 'feature.test.simple', 'true');
+      insertUserSetting(raw, 'bob@example.com', 'feature.test.simple', 'false');
+    });
+
+    const core = openCoreDb(join(tmpDir, 'core.db'));
+    try {
+      core.raw
+        .prepare(
+          `INSERT INTO user_settings (user_email, key, value)
+           VALUES ('alice@example.com', 'feature.test.simple', 'core-overrides-shared')`
+        )
+        .run();
+
+      backfillCoreFromShared(core, sharedPath);
+
+      const rows = core.raw
+        .prepare('SELECT user_email, key, value FROM user_settings ORDER BY user_email')
+        .all() as { user_email: string; key: string; value: string }[];
+      expect(rows).toEqual([
+        {
+          user_email: 'alice@example.com',
+          key: 'feature.test.simple',
+          value: 'core-overrides-shared',
+        },
+        { user_email: 'bob@example.com', key: 'feature.test.simple', value: 'false' },
+      ]);
     } finally {
       core.raw.close();
     }

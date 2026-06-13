@@ -23,4 +23,5 @@ export {
   serviceAccounts,
   settings,
   syncJobResults,
+  userSettings,
 } from '@pops/db-types';
