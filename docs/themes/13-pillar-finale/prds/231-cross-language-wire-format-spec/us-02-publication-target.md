@@ -1,6 +1,14 @@
 # US-02: Decide and execute the publication target
 
 > PRD: [Cross-language SDK wire-format spec](README.md)
+>
+> Status: Done — decision recorded in
+> [`wire-format-publication-decision.md`](../../notes/wire-format-publication-decision.md).
+> Outcome: option (a), spec stays in the monorepo as single source of
+> truth with a root-level `WIRE-FORMAT.md` pointer. The doc-update
+> follow-ups (ADR-033 `Related` link, theme README references, Epic 14
+> dependencies, root `WIRE-FORMAT.md`) are tracked at the bottom of the
+> decision note and will land in subsequent PRs.
 
 ## Description
 
@@ -8,8 +16,8 @@ As a maintainer needing to point external pillar authors at the wire-format spec
 
 ## Acceptance Criteria
 
-- [ ] A short trade-off note exists at the top of this US's PR describing the two candidates: (a) ship as a deliverable inside `@pops/pillar-sdk` so it travels with the contract package, or (b) ship as a standalone `pops-wire-format` repo so it can be referenced without npm-installing the SDK.
-- [ ] One option is chosen with a one-paragraph justification. Default lean: (a) — co-location with the SDK keeps the spec, the conformance suite (US-03), and the reference TS implementation in lock-step. (b) is justified if and only if a concrete external consumer needs to reference the spec without depending on the SDK.
+- [x] A short trade-off note exists at the top of this US's PR describing the two candidates: (a) ship as a deliverable inside `@pops/pillar-sdk` so it travels with the contract package, or (b) ship as a standalone `pops-wire-format` repo so it can be referenced without npm-installing the SDK.
+- [x] One option is chosen with a one-paragraph justification. Default lean: (a) — co-location with the SDK keeps the spec, the conformance suite (US-03), and the reference TS implementation in lock-step. (b) is justified if and only if a concrete external consumer needs to reference the spec without depending on the SDK.
 - [ ] The spec is published at the chosen target with stable internal anchor links (`#single-call-procedure`, `#batched-procedure`, etc.) so future docs can deep-link.
 - [ ] ADR-033's `Related` section is updated to link directly to `wire-format-spec.md` at the chosen URL (currently it only references "PRD-231" by number).
 - [ ] The theme README's `## References` and Epic 14's `## Dependencies` are updated to reference the spec at the chosen URL.
