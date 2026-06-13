@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import type { ListItemRow } from './types.js';
 
@@ -12,11 +12,6 @@ import type { ListItemRow } from './types.js';
  * fire-and-forget at the call site (no awaitable Promise) because their
  * callers don't need to chain; `update`/`reorder` await so the caller can
  * close the inline editor / roll back a failed drag.
- *
- * Future: lean on `utils.lists.list.get.setData` to apply the patch (and
- * `lists.items.check`'s server-returned `checkedAt`) before the refetch
- * lands — see `apps/pops-api/src/modules/lists/routers/items.ts:92` for the
- * server payload that's currently ignored.
  */
 export interface ItemMutations {
   add: (input: AddInput) => Promise<{ id: number; position: number } | null>;
@@ -43,61 +38,69 @@ interface UpdatePatch {
   notes?: string | null;
 }
 
+type AddPayload = AddInput & { listId: number };
+type AddResult = { id: number; position: number };
+type IdInput = { id: number };
+type OkResult = { ok: true } | { ok: true; checkedAt: string };
+type UpdateInput = UpdatePatch & { id: number };
+type ReorderInput = { listId: number; orderedIds: readonly number[] };
+type ReorderResult = { ok: true } | { ok: false; reason: 'BadIds' };
+
 function useItemMutationHooks(onError: (message: string) => void) {
   const handler = { onError: (err: { message: string }) => onError(err.message) };
   return {
-    add: trpc.lists.items.add.useMutation(handler),
-    check: trpc.lists.items.check.useMutation(handler),
-    uncheck: trpc.lists.items.uncheck.useMutation(handler),
-    update: trpc.lists.items.update.useMutation(handler),
-    remove: trpc.lists.items.remove.useMutation(handler),
-    reorder: trpc.lists.items.reorder.useMutation(handler),
+    add: usePillarMutation<AddPayload, AddResult>('lists', ['items', 'add'], handler),
+    check: usePillarMutation<IdInput, OkResult>('lists', ['items', 'check'], handler),
+    uncheck: usePillarMutation<IdInput, OkResult>('lists', ['items', 'uncheck'], handler),
+    update: usePillarMutation<UpdateInput, OkResult>('lists', ['items', 'update'], handler),
+    remove: usePillarMutation<IdInput, OkResult>('lists', ['items', 'remove'], handler),
+    reorder: usePillarMutation<ReorderInput, ReorderResult>('lists', ['items', 'reorder'], handler),
   };
 }
 
 export function useItemMutations(listId: number): ItemMutations {
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('lists');
   const [errorMessage, setError] = useState<string | null>(null);
   const clearError = useCallback(() => setError(null), []);
-  const invalidate = useCallback(
-    () => utils.lists.list.get.invalidate({ id: listId }),
-    [listId, utils]
-  );
+  // The SDK's auto-invalidate covers the `['lists', 'items']` router prefix;
+  // the detail page reads from `['lists', 'list', 'get']` so we have to
+  // invalidate that slot ourselves whenever an item mutation lands.
+  const invalidateDetail = useCallback(() => utils.invalidate(['list', 'get']), [utils]);
   const m = useItemMutationHooks(setError);
 
   const add: ItemMutations['add'] = useCallback(
     async (input) => {
       try {
         const row = await m.add.mutateAsync({ listId, ...input });
-        await invalidate();
+        await invalidateDetail();
         return row;
       } catch {
         return null;
       }
     },
-    [invalidate, listId, m.add]
+    [invalidateDetail, listId, m.add]
   );
-  const fireAndForget =
-    (mutation: { mutate: (input: { id: number }, opts?: { onSuccess?: () => void }) => void }) =>
-    (id: number) =>
-      mutation.mutate({ id }, { onSuccess: () => void invalidate() });
+  const fireAndForget = (mutation: { mutate: (input: IdInput) => void }) => (id: number) => {
+    mutation.mutate({ id });
+    void invalidateDetail();
+  };
 
   const update: ItemMutations['update'] = useCallback(
     async (id, patch) =>
       awaitMutation(async () => {
         await m.update.mutateAsync({ id, ...patch });
-        await invalidate();
+        await invalidateDetail();
       }),
-    [invalidate, m.update]
+    [invalidateDetail, m.update]
   );
   const reorder: ItemMutations['reorder'] = useCallback(
     async (orderedIds) =>
       awaitMutation(async () => {
         const result = await m.reorder.mutateAsync({ listId, orderedIds: [...orderedIds] });
-        await invalidate();
+        await invalidateDetail();
         return result.ok;
       }),
-    [invalidate, listId, m.reorder]
+    [invalidateDetail, listId, m.reorder]
   );
 
   return {

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import {
   Button,
   Dialog,
@@ -42,14 +42,12 @@ export function ListNewModal(): ReactElement {
   const [params, setParams] = useSearchParams();
   const open = params.get('new') === '1';
 
-  const utils = trpc.useUtils();
-  const createMutation = trpc.lists.list.create.useMutation({
+  const createMutation = usePillarMutation<FormState, { id: number }>('lists', ['list', 'create'], {
     onSuccess: ({ id }) => {
       toast.success(t('new.toast.created'));
-      void utils.lists.list.list.invalidate();
-      // Navigate per PRD-140 §Create. The detail route lands in PRD-140
-      // part C; until then this 404s and the user back-buttons to the
-      // index, where the new list is now visible (cache was invalidated).
+      // The SDK's router-prefix invalidation (['lists', 'list']) covers
+      // the index query (`list.list`) so no manual invalidate is needed.
+      // Navigate per PRD-140 §Create.
       void navigate(`/lists/${id}`);
     },
     onError: (err) => {

@@ -2,15 +2,16 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import type { ListKind } from './types.js';
 
 /**
  * List-header mutations consumed by the detail page: update (rename + change
- * kind), archive/unarchive, hard-delete. Each mutation invalidates the
- * single-list `lists.list.get` cache so the page reflects the change without
- * a manual refetch; delete additionally bounces back to `/lists`.
+ * kind), archive/unarchive, hard-delete. The SDK's `usePillarMutation`
+ * invalidates the `['lists', 'list']` router prefix on success, which
+ * covers the `list.get` cache automatically; delete additionally bounces
+ * back to `/lists`.
  */
 export interface DetailMutations {
   update: (
@@ -26,50 +27,51 @@ export interface DetailMutations {
   clearError: () => void;
 }
 
+type UpdateInput = { id: number; name?: string; kind?: ListKind };
+type UpdateResult = { ok: true } | { ok: false; reason: 'NotFound' };
+type OkResult = { ok: true };
+type IdInput = { id: number };
+
 function useDetailMutationHooks(onError: (message: string) => void) {
   const handler = { onError: (err: { message: string }) => onError(err.message) };
   return {
-    update: trpc.lists.list.update.useMutation(handler),
-    archive: trpc.lists.list.archive.useMutation(handler),
-    unarchive: trpc.lists.list.unarchive.useMutation(handler),
-    del: trpc.lists.list.delete.useMutation(handler),
+    update: usePillarMutation<UpdateInput, UpdateResult>('lists', ['list', 'update'], handler),
+    archive: usePillarMutation<IdInput, OkResult>('lists', ['list', 'archive'], handler),
+    unarchive: usePillarMutation<IdInput, OkResult>('lists', ['list', 'unarchive'], handler),
+    del: usePillarMutation<IdInput, OkResult>('lists', ['list', 'delete'], handler),
   };
 }
 
 export function useDetailMutations(): DetailMutations {
   const { t } = useTranslation('lists');
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
   const [errorMessage, setError] = useState<string | null>(null);
   const clearError = useCallback(() => setError(null), []);
   const mutations = useDetailMutationHooks(setError);
 
   const update: DetailMutations['update'] = useCallback(
     async (id, patch) =>
-      mapUpdate({ mutateAsync: mutations.update.mutateAsync, id, patch, utils, setError }),
-    [mutations.update, utils]
+      mapUpdate({ mutateAsync: mutations.update.mutateAsync, id, patch, setError }),
+    [mutations.update]
   );
   const archive = useCallback(
     async (id: number) => {
       await mutations.archive.mutateAsync({ id });
-      await utils.lists.list.get.invalidate({ id });
     },
-    [mutations.archive, utils]
+    [mutations.archive]
   );
   const unarchive = useCallback(
     async (id: number) => {
       await mutations.unarchive.mutateAsync({ id });
-      await utils.lists.list.get.invalidate({ id });
     },
-    [mutations.unarchive, utils]
+    [mutations.unarchive]
   );
   const remove = useCallback(
     async (id: number) => {
       await mutations.del.mutateAsync({ id });
-      await utils.lists.list.get.invalidate({ id });
       await navigate('/lists');
     },
-    [mutations.del, navigate, utils]
+    [mutations.del, navigate]
   );
 
   return {
@@ -84,23 +86,21 @@ export function useDetailMutations(): DetailMutations {
   };
 }
 
-type UpdateAsync = ReturnType<typeof trpc.lists.list.update.useMutation>['mutateAsync'];
+type UpdateAsync = (input: UpdateInput) => Promise<UpdateResult>;
 
 interface MapUpdateArgs {
   mutateAsync: UpdateAsync;
   id: number;
   patch: { name?: string; kind?: ListKind };
-  utils: ReturnType<typeof trpc.useUtils>;
   setError: (message: string) => void;
 }
 
 async function mapUpdate(
   args: MapUpdateArgs
 ): Promise<{ ok: true } | { ok: false; reason: 'NotFound' | 'NameRequired' }> {
-  const { mutateAsync, id, patch, utils, setError } = args;
+  const { mutateAsync, id, patch, setError } = args;
   try {
     const result = await mutateAsync({ id, ...patch });
-    if (result.ok) await utils.lists.list.get.invalidate({ id });
     return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown';

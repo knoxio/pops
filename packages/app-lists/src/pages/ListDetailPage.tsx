@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { ShoppingDetailContent } from './components/shopping/ShoppingDetailContent.js';
 import { GenericDetailContent } from './detail/GenericDetailContent.js';
@@ -10,6 +10,9 @@ import { useDetailMutations } from './detail/useDetailMutations.js';
 import { useItemMutations } from './detail/useItemMutations.js';
 
 import type { DetailContentProps, DialogState } from './detail/detail-handlers.js';
+import type { ListItemRow, ListRow } from './detail/types.js';
+
+export type ListDetailPayload = { list: ListRow; items: readonly ListItemRow[] } | null;
 
 /**
  * `/lists/:id` — generic list detail page (PRD-140-C) with PRD-141's
@@ -46,7 +49,9 @@ function useDialogs(): DialogState {
 
 function ListDetailBody({ listId }: { listId: number }): ReactElement {
   const { t } = useTranslation('lists');
-  const query = trpc.lists.list.get.useQuery(
+  const query = usePillarQuery<ListDetailPayload>(
+    'lists',
+    ['list', 'get'],
     { id: listId },
     { refetchInterval: 60_000, refetchIntervalInBackground: false }
   );

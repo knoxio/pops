@@ -1,14 +1,17 @@
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+
+import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
+
+import type { ListItemRow, ListRow } from '../../detail/types.js';
 
 /**
  * Optimistic wrappers for PRD-141's `uncheckAll` + `removeChecked`
- * mutations. Both use `utils.lists.list.get.setData`'s updater form to
- * patch the cached detail payload before the server round-trip lands;
- * `setData` infers the wire shape from the tRPC router so we don't need
- * any structural casts. Rollback restores the pre-mutation snapshot if
- * the server rejects.
+ * mutations. Both use `usePillarUtils().setData` on the `lists.list.get`
+ * cache slot to patch the cached detail payload before the server round-trip
+ * lands. The mutation's `onMutate` snapshots + applies the optimistic write
+ * and returns the previous value; `onError` rolls back from that snapshot.
  */
 export interface ShoppingBulkMutations {
   uncheckAll: () => Promise<{ ok: boolean; count: number }>;
@@ -19,89 +22,122 @@ export interface ShoppingBulkMutations {
   clearError: () => void;
 }
 
-type DetailQueryUtils = ReturnType<typeof trpc.useUtils>['lists']['list']['get'];
-type DetailSnapshot = ReturnType<DetailQueryUtils['getData']>;
+type DetailPayload = { list: ListRow; items: readonly ListItemRow[] } | null;
+type RollbackContext = { previous: DetailPayload | undefined };
 
-function useCache(listId: number) {
-  const utils = trpc.useUtils();
-  const get = utils.lists.list.get;
-  const snapshot = useCallback((): DetailSnapshot => get.getData({ id: listId }), [get, listId]);
-  const restore = useCallback(
-    (previous: DetailSnapshot) => {
-      if (previous !== undefined) get.setData({ id: listId }, previous);
-    },
-    [get, listId]
-  );
-  const update = useCallback(
-    (mapItem: (item: ItemOf<DetailSnapshot>) => ItemOf<DetailSnapshot>): void => {
-      get.setData({ id: listId }, (prev) => mapDetail(prev, mapItem));
-    },
-    [get, listId]
-  );
-  const filter = useCallback(
-    (predicate: (item: ItemOf<DetailSnapshot>) => boolean): void => {
-      get.setData({ id: listId }, (prev) => filterDetail(prev, predicate));
-    },
-    [get, listId]
-  );
-  const invalidate = useCallback(() => get.invalidate({ id: listId }), [get, listId]);
-  return { snapshot, restore, update, filter, invalidate };
-}
-
-type NonNullPayload = Exclude<DetailSnapshot, null | undefined>;
-type ItemOf<T> = T extends { items: readonly (infer U)[] } ? U : never;
+const DETAIL_PATH = ['list', 'get'] as const;
 
 function mapDetail(
-  prev: DetailSnapshot,
-  mapItem: (item: ItemOf<DetailSnapshot>) => ItemOf<DetailSnapshot>
-): DetailSnapshot {
+  prev: DetailPayload | undefined,
+  mapItem: (item: ListItemRow) => ListItemRow
+): DetailPayload | undefined {
   if (prev === undefined || prev === null) return prev;
-  const next: NonNullPayload = { ...prev, items: prev.items.map(mapItem) };
-  return next;
+  return { ...prev, items: prev.items.map(mapItem) };
 }
 
 function filterDetail(
-  prev: DetailSnapshot,
-  predicate: (item: ItemOf<DetailSnapshot>) => boolean
-): DetailSnapshot {
+  prev: DetailPayload | undefined,
+  predicate: (item: ListItemRow) => boolean
+): DetailPayload | undefined {
   if (prev === undefined || prev === null) return prev;
-  const next: NonNullPayload = { ...prev, items: prev.items.filter(predicate) };
-  return next;
+  return { ...prev, items: prev.items.filter(predicate) };
+}
+
+function snapshotAndUpdate(
+  utils: UsePillarUtilsResult,
+  listId: number,
+  updater: (prev: DetailPayload | undefined) => DetailPayload | undefined
+): RollbackContext {
+  const previous = utils.setData<DetailPayload>(DETAIL_PATH, { id: listId }, updater);
+  return { previous };
+}
+
+function rollback(
+  utils: UsePillarUtilsResult,
+  listId: number,
+  context: RollbackContext | undefined
+): void {
+  if (!context) return;
+  utils.setData<DetailPayload | undefined>(DETAIL_PATH, { id: listId }, () => context.previous);
+}
+
+type ListIdInput = { listId: number };
+type UncheckAllResult = { ok: true; count: number };
+type RemoveCheckedResult = { ok: true; removedCount: number };
+
+function useUncheckAllMutation(
+  utils: UsePillarUtilsResult,
+  listId: number,
+  setError: (message: string) => void
+) {
+  return usePillarMutation<ListIdInput, UncheckAllResult, RollbackContext>(
+    'lists',
+    ['items', 'uncheckAll'],
+    {
+      onMutate: () =>
+        snapshotAndUpdate(utils, listId, (prev) =>
+          mapDetail(prev, (row) =>
+            row.checked === 1 ? { ...row, checked: 0, checkedAt: null } : row
+          )
+        ),
+      onError: (err, _vars, context) => {
+        rollback(utils, listId, context);
+        setError(err.message);
+      },
+      onSettled: () => {
+        void utils.invalidate(['list', 'get']);
+      },
+    }
+  );
+}
+
+function useRemoveCheckedMutation(
+  utils: UsePillarUtilsResult,
+  listId: number,
+  setError: (message: string) => void
+) {
+  return usePillarMutation<ListIdInput, RemoveCheckedResult, RollbackContext>(
+    'lists',
+    ['items', 'removeChecked'],
+    {
+      onMutate: () =>
+        snapshotAndUpdate(utils, listId, (prev) => filterDetail(prev, (row) => row.checked !== 1)),
+      onError: (err, _vars, context) => {
+        rollback(utils, listId, context);
+        setError(err.message);
+      },
+      onSettled: () => {
+        void utils.invalidate(['list', 'get']);
+      },
+    }
+  );
 }
 
 export function useShoppingBulkMutations(listId: number): ShoppingBulkMutations {
-  const cache = useCache(listId);
+  const utils = usePillarUtils('lists');
   const [errorMessage, setError] = useState<string | null>(null);
   const clearError = useCallback(() => setError(null), []);
-  const handler = { onError: (err: { message: string }) => setError(err.message) };
-  const uncheckMx = trpc.lists.items.uncheckAll.useMutation(handler);
-  const removeMx = trpc.lists.items.removeChecked.useMutation(handler);
+
+  const uncheckMx = useUncheckAllMutation(utils, listId, setError);
+  const removeMx = useRemoveCheckedMutation(utils, listId, setError);
 
   const uncheckAll = useCallback(async () => {
-    const previous = cache.snapshot();
-    cache.update((row) => (row.checked === 1 ? { ...row, checked: 0, checkedAt: null } : row));
     try {
       const result = await uncheckMx.mutateAsync({ listId });
-      await cache.invalidate();
       return { ok: true, count: result.count };
     } catch {
-      cache.restore(previous);
       return { ok: false, count: 0 };
     }
-  }, [cache, listId, uncheckMx]);
+  }, [listId, uncheckMx]);
 
   const removeChecked = useCallback(async () => {
-    const previous = cache.snapshot();
-    cache.filter((row) => row.checked !== 1);
     try {
       const result = await removeMx.mutateAsync({ listId });
-      await cache.invalidate();
       return { ok: true, removedCount: result.removedCount };
     } catch {
-      cache.restore(previous);
       return { ok: false, removedCount: 0 };
     }
-  }, [cache, listId, removeMx]);
+  }, [listId, removeMx]);
 
   return {
     uncheckAll,
