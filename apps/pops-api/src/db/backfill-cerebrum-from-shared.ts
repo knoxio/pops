@@ -2,39 +2,17 @@
  * Boot-time backfill from the legacy shared `pops.db` into the cerebrum
  * pillar's `cerebrum.db`.
  *
- * Phase 2 PR 3 of the cerebrum pillar flips NudgeService reads/writes
- * to the cerebrum handle. The first deploy after PR 3 needs to carry
- * the existing nudge_log rows from the shared DB across before any
- * reads come from the new file. Subsequent boots find the cerebrum
- * copy already populated and become a no-op via the
- * `WHERE NOT EXISTS (...)` existence filter (composite-key aware for
- * junction tables like `conversation_context`).
+ * After the theme-13 cerebrum PR4 wave, every cerebrum-owned table
+ * except `nudge_log` writes directly to `cerebrum.db`. The engrams
+ * (PRD-179), plexus (PRD-180), glia (PRD-181), and conversations
+ * (PRD-182) entries have been retired from the backfill — their PR3
+ * writer cutovers were verified in prod, so no further rows can land
+ * on the shared `pops.db` for those tables. The only remaining bridge
+ * is `nudge_log`, which carries forward until the nudges pillar flips
+ * its writer (Track M5 / PRD-149).
  *
- * Today the slice covers:
- *   - `nudge_log` (Track M5 / PRD-149)
- *   - `engram_index` + `engram_scopes` + `engram_tags` + `engram_links`
- *     (PRD-179 US-01 — scaffold; consumers still write to the shared
- *     pops.db until US-03 flips them over)
- *   - `glia_actions` + `glia_trust_state` (PRD-181 US-01 — scaffold;
- *     consumers still write to the shared pops.db until US-03 flips
- *     them over)
- *   - `conversations` + `messages` + `conversation_context` (PRD-182
- *     US-01 — scaffold; consumers still write to the shared pops.db
- *     until PR 3 flips them over)
- *   - `plexus_adapters` + `plexus_filters` (PRD-180 US-01 — scaffold;
- *     the lifecycle manager still writes to the shared pops.db until
- *     US-03 flips it over)
- *
- * The remaining cerebrum tables (embeddings + embeddings_vec) add their
- * entries here when their cutovers land. Order matters when FKs are
- * introduced across cerebrum-owned tables — `engram_index` is copied
- * first so the cascading auxiliaries (`engram_scopes`, `engram_tags`,
- * `engram_links`) can satisfy their FK at insert time. The two glia
- * tables have no cross-table FKs so their order is independent of the
- * engram block. The conversations block has an FK from `messages` and
- * `conversation_context` to `conversations`, so the parent table is
- * copied first. `plexus_adapters` is copied before `plexus_filters` so
- * `plexus_filters.adapter_id` resolves at insert time.
+ * Subsequent boots find the cerebrum copy already populated and become
+ * a no-op via the `WHERE NOT EXISTS (...)` existence filter.
  *
  * Non-fatal: ATTACH or INSERT failures are logged and swallowed so a
  * stale on-disk pops.db never bricks the boot path. Partial failures
@@ -84,141 +62,6 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'action_label',
       'action_params',
     ],
-  },
-  {
-    table: 'engram_index',
-    idColumns: ['id'],
-    columns: [
-      'id',
-      'file_path',
-      'type',
-      'source',
-      'status',
-      'template',
-      'created_at',
-      'modified_at',
-      'title',
-      'content_hash',
-      'body_hash',
-      'word_count',
-      'custom_fields',
-    ],
-  },
-  {
-    // engram_scopes has no surrogate id — the pair (engram_id, scope) is
-    // unique. Filter on the composite tuple so new scopes added to an
-    // already-copied engram still converge on subsequent boots.
-    table: 'engram_scopes',
-    idColumns: ['engram_id', 'scope'],
-    columns: ['engram_id', 'scope'],
-  },
-  {
-    table: 'engram_tags',
-    idColumns: ['engram_id', 'tag'],
-    columns: ['engram_id', 'tag'],
-  },
-  {
-    table: 'engram_links',
-    idColumns: ['source_id', 'target_id'],
-    columns: ['source_id', 'target_id'],
-  },
-  {
-    table: 'glia_actions',
-    idColumns: ['id'],
-    columns: [
-      'id',
-      'action_type',
-      'affected_ids',
-      'rationale',
-      'payload',
-      'phase',
-      'status',
-      'user_decision',
-      'user_note',
-      'executed_at',
-      'decided_at',
-      'reverted_at',
-      'created_at',
-    ],
-  },
-  {
-    // glia_trust_state's PK is `action_type` — the same column doubles
-    // as the existence-filter source. Once a row for an action type is
-    // copied across, the WHERE NOT IN clause makes subsequent runs a
-    // no-op for that type; new counter increments on the still-shared
-    // row won't replicate, which is acceptable for the same reason
-    // engram_scopes is: PR 3 (US-03) routes writes through the cerebrum
-    // handle before any divergence matters.
-    table: 'glia_trust_state',
-    idColumns: ['action_type'],
-    columns: [
-      'action_type',
-      'current_phase',
-      'approved_count',
-      'rejected_count',
-      'reverted_count',
-      'autonomous_since',
-      'last_revert_at',
-      'graduated_at',
-      'updated_at',
-    ],
-  },
-  {
-    // Conversations is the parent of `messages` and `conversation_context`
-    // (both FK with ON DELETE CASCADE); copying it first lets the
-    // dependents satisfy their FK at insert time.
-    table: 'conversations',
-    idColumns: ['id'],
-    columns: ['id', 'title', 'active_scopes', 'app_context', 'model', 'created_at', 'updated_at'],
-  },
-  {
-    table: 'messages',
-    idColumns: ['id'],
-    columns: [
-      'id',
-      'conversation_id',
-      'role',
-      'content',
-      'citations',
-      'tool_calls',
-      'tokens_in',
-      'tokens_out',
-      'created_at',
-    ],
-  },
-  {
-    // conversation_context's PK is the (conversation_id, engram_id) pair.
-    // Filter on the composite tuple so new engram associations added to
-    // an already-copied conversation still converge on subsequent boots.
-    table: 'conversation_context',
-    idColumns: ['conversation_id', 'engram_id'],
-    columns: ['conversation_id', 'engram_id', 'relevance_score', 'loaded_at'],
-  },
-  {
-    // plexus_adapters has to be copied before plexus_filters so the
-    // FK on plexus_filters.adapter_id resolves at insert time. The
-    // ingested/emitted counters keep drifting on the still-shared
-    // row until PR 3 (US-03) routes writes through the cerebrum
-    // handle, mirroring the engram_scopes / glia_trust_state pattern.
-    table: 'plexus_adapters',
-    idColumns: ['id'],
-    columns: [
-      'id',
-      'name',
-      'status',
-      'config',
-      'last_health',
-      'last_error',
-      'ingested_count',
-      'emitted_count',
-      'created_at',
-      'updated_at',
-    ],
-  },
-  {
-    table: 'plexus_filters',
-    idColumns: ['id'],
-    columns: ['id', 'adapter_id', 'filter_type', 'field', 'pattern', 'enabled'],
   },
 ];
 
