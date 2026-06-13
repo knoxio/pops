@@ -1,15 +1,27 @@
-server {
+/**
+ * Static nginx-conf fragments used by `generate-nginx-conf.ts`.
+ *
+ * Split out so the generator's renderer stays small and the literal
+ * blocks (which are essentially data) live next to each other. Order:
+ * the renderer concatenates HEAD → DISPATCHER_INTRO → <pillar blocks>
+ * → TAIL.
+ *
+ * Editing any text below changes the committed `nginx.conf` — the
+ * drift-detection test will fail until `pnpm gen:nginx` is re-run.
+ */
+
+export const NGINX_CONF_HEAD = `server {
     listen 80;
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
 
-    # Resolver for variable-form `proxy_pass`. Upstreams held in an
+    # Resolver for variable-form \`proxy_pass\`. Upstreams held in an
     # nginx variable defer DNS resolution to request time (vs. config-
-    # load time for literal `proxy_pass <name>`), letting nginx boot
+    # load time for literal \`proxy_pass <name>\`), letting nginx boot
     # even when an optional pillar container is missing. The per-pillar
-    # `/trpc-<pillar>/` dispatchers below and the `/pillars` proxy use
-    # the variable form; every literal `proxy_pass` (pops-api, pops-docs
+    # \`/trpc-<pillar>/\` dispatchers below and the \`/pillars\` proxy use
+    # the variable form; every literal \`proxy_pass\` (pops-api, pops-docs
     # legacy fall-throughs) still hard-fails the boot if its host is
     # unreachable, so new optional upstreams must adopt the variable
     # form to inherit the boot-resilience.
@@ -31,81 +43,33 @@ server {
     # GENERATED FILE — do not hand-edit. Source:
     #   apps/pops-shell/scripts/generate-nginx-conf.ts
     #   reads PILLARS from @pops/pillar-sdk; CI drift-checks the output
-    #   via `pnpm gen:nginx:check`.
+    #   via \`pnpm gen:nginx:check\`.
     #
-    # PRD-187 landed `splitLink` in `packages/api-client`, so the shell
+    # PRD-187 landed \`splitLink\` in \`packages/api-client\`, so the shell
     # now POSTs each pillar's tRPC calls to its own URL prefix
-    # (`/trpc-finance/...`, `/trpc-inventory/...`, …). A single batched
-    # URL can never carry procedures from two pillars — `splitLink`
+    # (\`/trpc-finance/...\`, \`/trpc-inventory/...\`, …). A single batched
+    # URL can never carry procedures from two pillars — \`splitLink\`
     # guarantees one HTTP request per pillar per tick.
     #
-    # The shared `_pillar-proxy.conf` partial in `conf.d/` carries the
+    # The shared \`_pillar-proxy.conf\` partial in \`conf.d/\` carries the
     # HTTP/1.1, header forwarding, and timeout directives that every
     # pillar block needs (DRY).
     #
-    # nginx forbids a URI fragment on a variable-form `proxy_pass`, so
-    # each block first `rewrite`s the path from `/trpc-<pillar>/<rest>`
-    # to `/trpc/<rest>` (the path each pillar's tRPC mount expects) and
+    # nginx forbids a URI fragment on a variable-form \`proxy_pass\`, so
+    # each block first \`rewrite\`s the path from \`/trpc-<pillar>/<rest>\`
+    # to \`/trpc/<rest>\` (the path each pillar's tRPC mount expects) and
     # then proxies to the variable-form upstream. The variable form is
     # what defers DNS resolution to request time — pops-shell still boots
-    # when a pillar container is absent; calls 502 and `PillarGuard`
+    # when a pillar container is absent; calls 502 and \`PillarGuard\`
     # flips to the unavailable placeholder.
+`;
 
-    location /trpc-core/ {
-        rewrite ^/trpc-core/(.*)$ /trpc/$1 break;
-        set $trpc_core_upstream http://core-api:3001;
-        proxy_pass $trpc_core_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
-    }
-
-    location /trpc-inventory/ {
-        rewrite ^/trpc-inventory/(.*)$ /trpc/$1 break;
-        set $trpc_inventory_upstream http://inventory-api:3002;
-        proxy_pass $trpc_inventory_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
-    }
-
-    location /trpc-media/ {
-        rewrite ^/trpc-media/(.*)$ /trpc/$1 break;
-        set $trpc_media_upstream http://media-api:3003;
-        proxy_pass $trpc_media_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
-    }
-
-    location /trpc-finance/ {
-        rewrite ^/trpc-finance/(.*)$ /trpc/$1 break;
-        set $trpc_finance_upstream http://finance-api:3004;
-        proxy_pass $trpc_finance_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
-    }
-
-    location /trpc-food/ {
-        rewrite ^/trpc-food/(.*)$ /trpc/$1 break;
-        set $trpc_food_upstream http://food-api:3005;
-        proxy_pass $trpc_food_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
-    }
-
-    location /trpc-lists/ {
-        rewrite ^/trpc-lists/(.*)$ /trpc/$1 break;
-        set $trpc_lists_upstream http://lists-api:3006;
-        proxy_pass $trpc_lists_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
-    }
-
-    location /trpc-cerebrum/ {
-        rewrite ^/trpc-cerebrum/(.*)$ /trpc/$1 break;
-        set $trpc_cerebrum_upstream http://cerebrum-api:3007;
-        proxy_pass $trpc_cerebrum_upstream;
-        include /etc/nginx/snippets/_pillar-proxy.conf;
-    }
-
-    # Legacy tRPC catch-all → pops-api.
+export const NGINX_CONF_TAIL = `    # Legacy tRPC catch-all → pops-api.
     #
     # Kept for backwards compatibility: orchestration code, cached SPA
     # bundles served before PRD-187 shipped, and any procedure whose
-    # namespace isn't a known pillar (e.g. `pops.*`, `health`) still POST
-    # to `/trpc/...`. Sync mutations (movies, TV, watchlist) can take
+    # namespace isn't a known pillar (e.g. \`pops.*\`, \`health\`) still POST
+    # to \`/trpc/...\`. Sync mutations (movies, TV, watchlist) can take
     # several minutes for large libraries, so the timeouts stay long.
     location /trpc {
         proxy_pass http://pops-api:3000/trpc;
@@ -137,7 +101,7 @@ server {
     }
 
     # Core pillar registry snapshot (ADR-026 phase 3 PR 4). The shell's
-    # `fetchPillarRegistry` hits `/pillars` at boot; route it to core-api
+    # \`fetchPillarRegistry\` hits \`/pillars\` at boot; route it to core-api
     # which is the authoritative source. /pillars/health lives on pops-api
     # for now because the aggregator probe still depends on its internal
     # service registry; that endpoint moves to core-api when the
@@ -145,16 +109,16 @@ server {
     #
     # Regex match so /pillars and /pillars/ both reach the upstream (and
     # similarly for /pillars/health). nginx forbids a URI part on
-    # `proxy_pass` inside a regex location, so the upstream is the bare
-    # host:port and the original `$request_uri` flows through unchanged.
-    # Both upstreams are Express with default `strict routing: off` so
+    # \`proxy_pass\` inside a regex location, so the upstream is the bare
+    # host:port and the original \`$request_uri\` flows through unchanged.
+    # Both upstreams are Express with default \`strict routing: off\` so
     # the trailing-slash and bare variants hit the same handler.
     #
     # The core-api upstream is stored in a variable so nginx defers DNS
     # resolution to request time. Hosts that haven't yet deployed
-    # `pops-core-api` would otherwise fail to boot pops-shell entirely
-    # (`host not found in upstream "core-api"`); with the variable form
-    # the SPA stays up and `/pillars` returns 502 until the upstream is
+    # \`pops-core-api\` would otherwise fail to boot pops-shell entirely
+    # (\`host not found in upstream "core-api"\`); with the variable form
+    # the SPA stays up and \`/pillars\` returns 502 until the upstream is
     # in place — the correct failure mode.
     location ~ ^/pillars/?$ {
         set $pillars_upstream http://core-api:3001;
@@ -183,15 +147,15 @@ server {
 
     # API docs browser — Theme 13 PRD-219.
     #
-    # `pops-docs` is a tiny static nginx image serving Stoplight Elements
+    # \`pops-docs\` is a tiny static nginx image serving Stoplight Elements
     # pointed at every contract package's OpenAPI snapshot. Variable-form
-    # `proxy_pass` so pops-shell still boots if pops-docs is absent
-    # (consistent with the rest of this file); requests to `/docs/` 502
+    # \`proxy_pass\` so pops-shell still boots if pops-docs is absent
+    # (consistent with the rest of this file); requests to \`/docs/\` 502
     # in that case instead of failing the shell container.
     #
-    # The trailing slash on `proxy_pass` strips the `/docs/` prefix
-    # before forwarding so pops-docs's own nginx serves `/`, `/catalog.json`,
-    # `/openapi/<pillar>.json`, and `/healthz` at their natural paths.
+    # The trailing slash on \`proxy_pass\` strips the \`/docs/\` prefix
+    # before forwarding so pops-docs's own nginx serves \`/\`, \`/catalog.json\`,
+    # \`/openapi/<pillar>.json\`, and \`/healthz\` at their natural paths.
     location /docs/ {
         set $pops_docs_upstream http://pops-docs:80;
         proxy_pass $pops_docs_upstream/;
@@ -210,3 +174,4 @@ server {
         try_files $uri $uri/ /index.html;
     }
 }
+`;

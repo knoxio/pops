@@ -61,10 +61,50 @@ PRD picks **image build time** initially — simpler, no runtime dep.
 
 ## Implementation Status
 
-> Audit date: 2026-06-13. Compares the PRD against shipped code on `main`.
-> Branch under audit: `feat/theme13-prd-217-status-update`.
+> Status: **Done (phase 1)** — generator scaffolded for the canonical seven
+> pillars. Dynamic external-pillar registration tracked as the follow-up
+> below. Last updated: 2026-06-13 on `feat/theme13-prd-217-nginx-generator`.
 
 ### Shipped state
+
+- `apps/pops-shell/scripts/generate-nginx-conf.ts` reads `PILLARS` from
+  `@pops/pillar-sdk` and emits the full `nginx.conf` deterministically.
+  `PILLAR_UPSTREAMS` (a `Record<KnownPillarId, …>` in that file) is the
+  single source of truth for per-pillar `host:port` — adding a pillar to
+  the SDK forces a port entry here at typecheck time.
+- Static fragments (everything outside the per-pillar dispatcher blocks)
+  live in `apps/pops-shell/scripts/nginx-conf-template.ts`. The renderer
+  concatenates HEAD → pillar blocks → TAIL.
+- `pnpm gen:nginx` writes `apps/pops-shell/nginx.conf` from the source of
+  truth. `pnpm gen:nginx:check` exits non-zero on drift.
+- Drift gate: `scripts/generate-nginx-conf.test.ts` runs inside `pnpm test`
+  (and therefore inside the `FE Quality` workflow). Any hand-edit to the
+  committed `nginx.conf` that diverges from the generator output fails CI.
+  Seventeen tests cover drift, pillar coverage, render-output structure,
+  determinism, and the defensive `assertRenderOrderCoversAllPillars()`.
+- `apps/pops-shell/nginx.conf` remains the artefact shipped via the
+  Dockerfile `COPY` (no Dockerfile change required) — the generator simply
+  rewrites it from the canonical source. PRD-190's hand-written layout is
+  preserved; the only visible diff is the dispatcher-section header
+  comment, which now marks the file as generated.
+
+### Follow-ups (out of scope for phase 1)
+
+- **Dynamic external pillars.** Reading a registry snapshot (per the
+  original PRD body) instead of the static SDK list. Lands when the
+  pillar SDK exposes a runtime-augmentable registry.
+- **Runtime init-container option.** Generator runs at image build today;
+  a sidecar that polls the registry and `nginx reload`s is still the
+  documented alternative.
+- **`nginx -t` on generator output.** `apps/pops-shell/scripts/validate-nginx-conf.sh`
+  already exercises the committed `nginx.conf`; since the drift gate
+  guarantees committed == generator output, the existing harness covers
+  generator output by transitivity. A dedicated nginx-validate step on the
+  generator output directly is a nice-to-have, not a blocker.
+
+### Pre-phase-1 baseline (historical)
+
+The pre-generator audit follows; the gaps below were closed by this PR.
 
 - `apps/pops-shell/nginx.conf` is hand-written and committed. It carries one
   prefix-match `location /trpc-<pillar>/` block per pillar (core, inventory,
