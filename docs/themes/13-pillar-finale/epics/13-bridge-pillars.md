@@ -12,12 +12,13 @@ The first bridge — Home Assistant — proves the pattern. MQTT and ESPHome fol
 
 ## PRDs
 
-| #   | PRD                                                                        | Summary                                                                                                                           | Status      |
-| --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 229 | [HA bridge pillar](../prds/229-ha-bridge-pillar/README.md)                 | `pops-ha-bridge-api` — subscribe to HA WebSocket, mirror entities, expose via `searchAdapter` + `aiTools` + new `sinks` dimension | Not started |
-| TBD | MQTT bridge pillar                                                         | `pops-mqtt-bridge-api` — subscribe to MQTT broker, mirror topics as entities                                                      | Not started |
-| TBD | ESPHome bridge pillar                                                      | `pops-esphome-bridge-api` — subscribe to ESPHome native API, mirror devices                                                       | Not started |
-| 236 | [Sinks manifest dimension](../prds/236-sinks-manifest-dimension/README.md) | First-class `sinks` manifest field + `publishEvent` orchestrator + `/_sinks/<eventType>` endpoint convention (per ADR-034)        | In progress |
+| #   | PRD                                                                                    | Summary                                                                                                                           | Status      |
+| --- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 229 | [HA bridge pillar](../prds/229-ha-bridge-pillar/README.md)                             | `pops-ha-bridge-api` — subscribe to HA WebSocket, mirror entities, expose via `searchAdapter` + `aiTools` + new `sinks` dimension | Not started |
+| TBD | MQTT bridge pillar                                                                     | `pops-mqtt-bridge-api` — subscribe to MQTT broker, mirror topics as entities                                                      | Not started |
+| TBD | ESPHome bridge pillar                                                                  | `pops-esphome-bridge-api` — subscribe to ESPHome native API, mirror devices                                                       | Not started |
+| 236 | [Sinks manifest dimension](../prds/236-sinks-manifest-dimension/README.md)             | First-class `sinks` manifest field + `publishEvent` orchestrator + `/_sinks/<eventType>` endpoint convention (per ADR-034)        | In progress |
+| 237 | [pops → HA outbound event publisher](../prds/237-pops-to-ha-event-publisher/README.md) | Wire the HA bridge as the first `sinks` consumer — `publishEvent('media.watch.completed', ...)` becomes an HA `fire_event` call   | Not started |
 
 PRD-229 (HA) is the reference implementation. MQTT and ESPHome PRDs are deferred until PRD-229 lands — they fork from the HA shape rather than designed from scratch.
 
