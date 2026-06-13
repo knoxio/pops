@@ -57,6 +57,7 @@ export function createHaBridgeApiApp(deps: HaBridgeAppDeps): Express {
     createSinkRouter({
       fireEvent: (eventType, haEventName, eventData) =>
         deps.subscriber.sinks.send(eventType, haEventName, eventData),
+      sendBody: (eventType, body) => deps.subscriber.sinks.sendBody(eventType, body),
       logger: deps.logger,
     })
   );

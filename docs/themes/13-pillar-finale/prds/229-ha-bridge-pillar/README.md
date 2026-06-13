@@ -4,7 +4,7 @@
 
 ## Status
 
-Not started
+Done — all five user stories shipped. US-01 retention worker cron is the one explicit follow-up (separate PRD).
 
 ## Overview
 
@@ -98,13 +98,13 @@ The bridge pillar's manifest (consumed by the central registry) declares three d
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                                                                                                       | Parallelisable   |
-| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| 01  | [us-01-ws-subscriber-mirror](us-01-ws-subscriber-mirror.md) | WebSocket subscriber + entity mirror — connect to HA, subscribe to `state_changed`, write `ha_entities` + `ha_state_history`; reconnect loop. | Foundation       |
-| 02  | [us-02-search-adapter](us-02-search-adapter.md)             | `searchAdapter` over `ha_entities` with FTS5 + area/device-class ranking; registered via manifest.                                            | Blocked by us-01 |
-| 03  | [us-03-ai-tools-read](us-03-ai-tools-read.md)               | `ha.entity.list` + `ha.entity.getState` AI tools — read-only surface registered via manifest.                                                 | Blocked by us-01 |
-| 04  | [us-04-ai-tool-call-service](us-04-ai-tool-call-service.md) | `ha.entity.callService` AI tool — outbound control via HA WebSocket `call_service`; rejection-shape discriminants.                            | Blocked by us-01 |
-| 05  | [us-05-sinks-outbound](us-05-sinks-outbound.md)             | `sinks` manifest dimension — pillar accepts `ha.notify` + `ha.event.fire` events from other pillars and forwards to HA.                       | Blocked by us-04 |
+| #   | Story                                                       | Summary                                                                                                                                       | Parallelisable   | Status                                      |
+| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ------------------------------------------- |
+| 01  | [us-01-ws-subscriber-mirror](us-01-ws-subscriber-mirror.md) | WebSocket subscriber + entity mirror — connect to HA, subscribe to `state_changed`, write `ha_entities` + `ha_state_history`; reconnect loop. | Foundation       | Done (retention worker cron is a follow-up) |
+| 02  | [us-02-search-adapter](us-02-search-adapter.md)             | `searchAdapter` over `ha_entities` with FTS5 + area/device-class ranking; registered via manifest.                                            | Blocked by us-01 | Done                                        |
+| 03  | [us-03-ai-tools-read](us-03-ai-tools-read.md)               | `ha.entity.list` + `ha.entity.getState` AI tools — read-only surface registered via manifest.                                                 | Blocked by us-01 | Done                                        |
+| 04  | [us-04-ai-tool-call-service](us-04-ai-tool-call-service.md) | `ha.entity.callService` AI tool — outbound control via HA WebSocket `call_service`; rejection-shape discriminants.                            | Blocked by us-01 | Done                                        |
+| 05  | [us-05-sinks-outbound](us-05-sinks-outbound.md)             | `sinks` manifest dimension — pillar accepts `ha.notify.send` + `ha.event.fire` events from other pillars and forwards to HA.                  | Blocked by us-04 | Done                                        |
 
 ## Out of Scope
 

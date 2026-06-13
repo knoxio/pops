@@ -1,5 +1,9 @@
 /**
- * PRD-237 US-02: bounded FIFO queue for outbound `fire_event` frames.
+ * PRD-237 US-02 / PRD-229 US-05: bounded FIFO queue for outbound HA frames.
+ *
+ * Originally introduced for `fire_event` frames. Now carries any HA
+ * WebSocket command body (sans `id`) so the same queue can hold
+ * `fire_event` and `call_service` frames produced by sink mappings.
  *
  * When the HA WebSocket is reconnecting we cannot deliver immediately,
  * but per the PRD we still accept the sink invocation and respond 200
@@ -13,11 +17,12 @@
  * memory; small enough to fail loud rather than absorb runaway
  * publishing.
  */
-export interface FireEventFrame {
+export interface QueuedHaFrame {
   readonly eventType: string;
-  readonly haEventName: string;
-  readonly eventData: Record<string, unknown>;
+  readonly body: Record<string, unknown>;
 }
+
+export type FireEventFrame = QueuedHaFrame;
 
 export interface DroppedFrameEvent {
   readonly eventType: string;
@@ -35,7 +40,7 @@ const DEFAULT_CAP = 100;
 
 export class FireEventQueue {
   private readonly cap: number;
-  private readonly buffer: FireEventFrame[] = [];
+  private readonly buffer: QueuedHaFrame[] = [];
   private readonly droppedByEventType = new Map<string, number>();
   private readonly now: () => number;
   private readonly onDropped: (event: DroppedFrameEvent) => void;
@@ -46,7 +51,7 @@ export class FireEventQueue {
     this.onDropped = options.onDropped ?? (() => undefined);
   }
 
-  enqueue(frame: FireEventFrame): void {
+  enqueue(frame: QueuedHaFrame): void {
     if (this.buffer.length >= this.cap) {
       const dropped = this.buffer.shift();
       if (dropped !== undefined) {
@@ -62,7 +67,7 @@ export class FireEventQueue {
     this.buffer.push(frame);
   }
 
-  drain(visit: (frame: FireEventFrame) => void): void {
+  drain(visit: (frame: QueuedHaFrame) => void): void {
     while (this.buffer.length > 0) {
       const next = this.buffer.shift();
       if (next === undefined) return;

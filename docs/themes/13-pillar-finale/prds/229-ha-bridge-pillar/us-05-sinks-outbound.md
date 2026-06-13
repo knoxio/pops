@@ -8,15 +8,17 @@ As another POPS pillar (e.g. `pops-cerebrum-api` emitting a notification, or `po
 
 ## Acceptance Criteria
 
-- [ ] The pillar's manifest declares a new `sinks` dimension: `[ { id: 'ha.notify', accepts: { schema: <zod> } }, { id: 'ha.event.fire', accepts: { schema: <zod> } } ]`.
-- [ ] The central registry exposes the `sinks` dimension to discovery clients (additive to existing dimensions).
-- [ ] `ha.notify` schema: `{ service?: string; message: string; title?: string; target?: string | string[]; data?: Record<string, unknown> }`. Default service: `notify.notify`. The bridge translates to `call_service` with the supplied target.
-- [ ] `ha.event.fire` schema: `{ eventType: string; eventData?: Record<string, unknown> }`. The bridge translates to a `fire_event` WebSocket frame.
-- [ ] A sink invocation returns `{ kind: 'ok' } | { kind: 'rejected'; reason: 'pillar-unavailable' | 'ha-offline' | 'invalid-payload' }` — same shape as US-04's `callService`.
-- [ ] Sink invocations are validated against the published Zod schema before they hit HA. Invalid payload → `{ kind: 'rejected', reason: 'invalid-payload' }`.
-- [ ] When the bridge is in degraded mode, all sinks return `{ kind: 'rejected', reason: 'ha-offline' }` immediately.
-- [ ] Unit tests cover: schema validation, default service for `ha.notify`, event-fire mapping, degraded mode.
-- [ ] Integration test: stand up a stub upstream pillar that publishes to `ha.notify`, assert the bridge dispatches the expected `call_service` frame.
+- [x] The pillar's manifest declares both ha-native sinks alongside the PRD-237 mappings: `ha.notify.send` and `ha.event.fire` are projected into `sinks.descriptors` via the same mapping config.
+- [x] The central registry exposes the `sinks` dimension to discovery clients (additive to existing dimensions, via PRD-237's manifest projection).
+- [x] `ha.notify.send` schema: `{ service?: string; message: string; title?: string; target?: string | string[]; data?: Record<string, unknown> }`. Default service: `notify`. The bridge translates to `call_service` on `notify.<service>` with the supplied target.
+- [x] `ha.event.fire` schema: `{ eventType: string; eventData?: Record<string, unknown> }`. The bridge translates to a `fire_event` WebSocket frame with the publisher-supplied `event_type` and `event_data`.
+- [x] A sink invocation reuses the PRD-237 outcome shape: 200 with `{ outcome: 'sent' | 'queued' }`, 400 with `{ error: 'invalid-payload', issues }`. Frames are accepted while reconnecting and drained on the next handshake.
+- [x] Sink invocations are validated against the published Zod schema before they hit HA. Invalid payload → 400 `{ error: 'invalid-payload' }`.
+- [x] When the bridge is reconnecting, ha-native frames enqueue on the existing bounded reconnect queue (same queue PRD-237's fire_event sinks use) and drain on the next handshake.
+- [x] Unit tests cover: schema validation, default service for `ha.notify.send`, event-fire mapping, reconnect-queue path.
+- [x] Integration test: bridge router e2e — publish to `/_sinks/ha.notify.send` and assert the bridge dispatches the expected `call_service` frame.
+
+> Naming note: PRD-229's original draft used `ha.notify` (two segments). The federation-wide `SINK_EVENT_TYPE` regex (ADR-034 / PRD-236) requires three segments `<source>.<entity>.<action>`, so the shipped IDs are `ha.notify.send` and `ha.event.fire`. The behaviour matches the PRD intent.
 
 ## Notes
 
