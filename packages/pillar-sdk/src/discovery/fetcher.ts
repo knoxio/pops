@@ -91,6 +91,7 @@ function toPillarSnapshot(entry: PillarRegistryEntryPayload): PillarSnapshot {
     manifest: entry.manifest,
     registered,
     lastSeenAt,
+    ...(entry.status !== undefined ? { status: entry.status } : {}),
   };
 }
 

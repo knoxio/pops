@@ -7,12 +7,27 @@ import type { ManifestPayload } from '../manifest-schema/index.js';
  * `registered` flag (false during PRD-162 reconciliation windows) and
  * normalises `lastSeenAt` from ISO string to Date.
  */
+export type PillarStatus = 'healthy' | 'unavailable' | 'unknown';
+
 export type PillarSnapshot = {
   pillarId: string;
   baseUrl: string;
   manifest: ManifestPayload;
   registered: boolean;
   lastSeenAt: Date;
+  /**
+   * Liveness flag emitted by the core registry (PRD-161).
+   *
+   * - `'healthy'`: registry got a successful healthcheck within its window.
+   * - `'unavailable'`: registry observed at least one failed healthcheck and
+   *   has not recovered. Consumers building tool lists or routing AI calls
+   *   should treat these pillars as down.
+   * - `'unknown'`: the registry has not yet probed this pillar (cold-start
+   *   window). Conservative consumers treat this as down too.
+   *
+   * Optional because legacy snapshots / tests may omit it.
+   */
+  status?: PillarStatus;
 };
 
 /**
