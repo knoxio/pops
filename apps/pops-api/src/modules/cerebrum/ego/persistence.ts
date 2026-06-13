@@ -25,7 +25,12 @@
  * auto-title heuristic, persistence-store adapter) stays in pops-api
  * — `@pops/cerebrum-db` is pure data-access.
  */
-import { conversationsService, type CerebrumDb } from '@pops/cerebrum-db';
+import {
+  conversationsService,
+  MESSAGE_ROLES,
+  type CerebrumDb,
+  type MessageRole,
+} from '@pops/cerebrum-db';
 
 import { mapPackageConversation, mapPackageMessage } from './persistence-mappers.js';
 import {
@@ -230,9 +235,9 @@ export class ConversationPersistence {
     });
   }
 
-  private coerceRole(role: string): 'user' | 'assistant' | 'system' | 'tool' {
-    if (role === 'user' || role === 'assistant' || role === 'system' || role === 'tool') {
-      return role;
+  private coerceRole(role: string): MessageRole {
+    for (const allowed of MESSAGE_ROLES) {
+      if (allowed === role) return allowed;
     }
     throw new Error(`Invalid message role: ${role}`);
   }
