@@ -27,29 +27,29 @@ type imports detected).
 
 ## Triage
 
-| Bucket      | Count | Definition                                          | Notes                        |
-| ----------- | ----- | --------------------------------------------------- | ---------------------------- |
-| **Trivial** | 45    | Single-pillar `trpc.cerebrum.*` call, ≤5 LOC delta  | All 45 call sites fall here. |
-| **Medium**  | 0     | —                                                   | None.                        |
-| **Risky**   | 0     | —                                                   | None.                        |
+| Bucket      | Count | Definition                                         | Notes                        |
+| ----------- | ----- | -------------------------------------------------- | ---------------------------- |
+| **Trivial** | 45    | Single-pillar `trpc.cerebrum.*` call, ≤5 LOC delta | All 45 call sites fall here. |
+| **Medium**  | 0     | —                                                  | None.                        |
+| **Risky**   | 0     | —                                                  | None.                        |
 
 Total = 45 + 0 + 0 = 45 (matches call-site count).
 
 ## Call sites by router
 
-| Router                  | Calls |
-| ----------------------- | ----- |
-| `cerebrum.reflex`       | 8     |
-| `cerebrum.glia`         | 8     |
-| `cerebrum.plexus`       | 7     |
-| `cerebrum.engrams`      | 7     |
-| `cerebrum.ingest`       | 6     |
-| `cerebrum.nudges`       | 4     |
-| `cerebrum.scopes`       | 2     |
-| `cerebrum.emit`         | 2     |
-| `cerebrum.templates`    | 1     |
-| `cerebrum.tags`         | 1     |
-| `cerebrum.retrieval`    | 1     |
+| Router               | Calls |
+| -------------------- | ----- |
+| `cerebrum.reflex`    | 8     |
+| `cerebrum.glia`      | 8     |
+| `cerebrum.plexus`    | 7     |
+| `cerebrum.engrams`   | 7     |
+| `cerebrum.ingest`    | 6     |
+| `cerebrum.nudges`    | 4     |
+| `cerebrum.scopes`    | 2     |
+| `cerebrum.emit`      | 2     |
+| `cerebrum.templates` | 1     |
+| `cerebrum.tags`      | 1     |
+| `cerebrum.retrieval` | 1     |
 
 ## Call sites by file
 

@@ -145,11 +145,11 @@ All fields use shapes compatible with the published Zod schemas in `@pops/contra
 
 ## User Stories
 
-| #   | Story                                                   | Summary                                                                                                                                                           | Parallelisable          |
-| --- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| 01  | [us-01-spec-document](us-01-spec-document.md)           | Author `wire-format-spec.md` covering every section in the Data Model table. Single-page, Rust/Go/Python-readable, normative.                                     | yes — first deliverable |
+| #   | Story                                                   | Summary                                                                                                                                                                                                                                                                        | Parallelisable          |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| 01  | [us-01-spec-document](us-01-spec-document.md)           | Author `wire-format-spec.md` covering every section in the Data Model table. Single-page, Rust/Go/Python-readable, normative.                                                                                                                                                  | yes — first deliverable |
 | 02  | [us-02-publication-target](us-02-publication-target.md) | Decide and execute the publication location: ship as a deliverable inside `@pops/pillar-sdk`, or as a standalone repo. Trade-offs documented. **Done** — spec stays in the monorepo; root [`WIRE-FORMAT.md`](../../../../../WIRE-FORMAT.md) pointer added for discoverability. | done                    |
-| 03  | [us-03-conformance-suite](us-03-conformance-suite.md)   | Build the TS-implemented, language-agnostic conformance harness as `packages/wire-conformance` with a CLI entry point and a battery of black-box HTTP assertions. | blocked by us-01        |
+| 03  | [us-03-conformance-suite](us-03-conformance-suite.md)   | Build the TS-implemented, language-agnostic conformance harness as `packages/wire-conformance` with a CLI entry point and a battery of black-box HTTP assertions.                                                                                                              | blocked by us-01        |
 
 ## Out of Scope
 

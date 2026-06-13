@@ -25,36 +25,36 @@ The package consumes `@pops/api-client` and the pillar's contract package
 
 ## Triage
 
-| Bucket      | Count | Definition                                                                                       | Notes                                                                |
-| ----------- | ----- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| **Trivial** | 118   | Single-router `trpc.food.*` call, plain query or mutation, plain `utils.invalidate` only         | Bulk of the package. Migrate first.                                  |
-| **Medium**  | 3     | Cross-pillar call (`trpc.lists.list.list`, 1) or `useInfiniteQuery` wrapper (`recipes.list`, 2)  | Need `usePillarQuery`-style wrapping for the infinite query.         |
-| **Risky**   | 3     | Optimistic `onMutate` + `utils.food.inbox.list*.setData` rollback chains                         | 2 files (`useFailedTab`, `useRejectedTab`) holding 3 mutation sites. |
+| Bucket      | Count | Definition                                                                                      | Notes                                                                |
+| ----------- | ----- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Trivial** | 118   | Single-router `trpc.food.*` call, plain query or mutation, plain `utils.invalidate` only        | Bulk of the package. Migrate first.                                  |
+| **Medium**  | 3     | Cross-pillar call (`trpc.lists.list.list`, 1) or `useInfiniteQuery` wrapper (`recipes.list`, 2) | Need `usePillarQuery`-style wrapping for the infinite query.         |
+| **Risky**   | 3     | Optimistic `onMutate` + `utils.food.inbox.list*.setData` rollback chains                        | 2 files (`useFailedTab`, `useRejectedTab`) holding 3 mutation sites. |
 
 Total = 118 + 3 + 3 = 124 (matches call-site count).
 
 ## Call sites by router
 
-| Router                | Calls |
-| --------------------- | ----- |
-| `food.recipes`        | 22    |
-| `food.plan`           | 20    |
-| `food.ingredients`    | 20    |
-| `food.inbox`          | 10    |
-| `food.batches`        | 10    |
-| `food.conversions`    | 8     |
-| `food.substitutions`  | 6     |
-| `food.aliases`        | 6     |
-| `food.prepStates`     | 4     |
-| `food.variants`       | 3     |
-| `food.slugs`          | 3     |
-| `food.shopping`       | 2     |
-| `food.ingest`         | 2     |
-| `food.heroImage`      | 2     |
-| `food.fridge`         | 2     |
-| `food.cook`           | 2     |
-| `food.solver`         | 1     |
-| `lists.list`          | 1     |
+| Router               | Calls |
+| -------------------- | ----- |
+| `food.recipes`       | 22    |
+| `food.plan`          | 20    |
+| `food.ingredients`   | 20    |
+| `food.inbox`         | 10    |
+| `food.batches`       | 10    |
+| `food.conversions`   | 8     |
+| `food.substitutions` | 6     |
+| `food.aliases`       | 6     |
+| `food.prepStates`    | 4     |
+| `food.variants`      | 3     |
+| `food.slugs`         | 3     |
+| `food.shopping`      | 2     |
+| `food.ingest`        | 2     |
+| `food.heroImage`     | 2     |
+| `food.fridge`        | 2     |
+| `food.cook`          | 2     |
+| `food.solver`        | 1     |
+| `lists.list`         | 1     |
 
 ## Risky sites detail
 
@@ -69,6 +69,7 @@ Total = 118 + 3 + 3 = 124 (matches call-site count).
   `utils.food.inbox.listRejected.setData(...)`.
 
 These need the `@pops/food-sdk` adapter to expose either:
+
 1. An `setQueryData`-equivalent helper keyed on the same input shape, or
 2. A thin `usePillarOptimisticMutation` wrapper that hides the
    `setData`/snapshot/rollback choreography.

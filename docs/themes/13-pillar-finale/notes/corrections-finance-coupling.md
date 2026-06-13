@@ -24,7 +24,7 @@ FINANCE PR4 is **option (a)** — swap `getDrizzle()` for
 `handlers/apply-corrections.ts` which already uses the finance handle.
 
 Option (b) — move the corrections module into `pops-finance-api` — is
-the *correct* long-term outcome and is the explicit scope of
+the _correct_ long-term outcome and is the explicit scope of
 [Epic 08a PRD-203](../epics/08a-reclaim-misnamed-finance.md). It is
 **not** the right unblock for PR4 because it requires renaming the
 tRPC namespace (`core.corrections.*` → `finance.corrections.*`),
@@ -109,7 +109,7 @@ Each entry maps file → exact read pattern → recommended option.
 
 ## Why not (b) — move into the finance module?
 
-The PRD-185 README states the *target end state* is `apps/pops-api/src/modules/core/corrections/`
+The PRD-185 README states the _target end state_ is `apps/pops-api/src/modules/core/corrections/`
 no longer existing, replaced by `apps/pops-finance-api/src/modules/corrections/`
 under the renamed tRPC namespace `finance.corrections.*`. That is the
 correct long-term home: all five sites read finance-owned tables, none
@@ -123,7 +123,7 @@ gated on three follow-on PRDs (204 shell, 205 MCP/CLI, 206 dispatcher).
 The FINANCE PR4 audit needs an unblock measured in hours, not the
 multi-PR rename train.
 
-Option (a) is *additive* to option (b): swapping the handle today
+Option (a) is _additive_ to option (b): swapping the handle today
 costs five `import` edits and zero behaviour change, and the
 relocation step in PRD-203 keeps the new handle on the way through.
 Effectively (a) is a pre-requisite refactor for (b).
@@ -149,13 +149,13 @@ legitimate reason to stay outside the finance pillar. It doesn't.
 
 ## Summary table
 
-| # | File | Tables read | Recommended |
-| - | ---- | ----------- | ----------- |
-| 1 | `handlers/preview-matches.ts` | `transactions` | (a) |
-| 2 | `handlers/changeset-impact.ts` | `transactions`, `transaction_corrections` | (a) |
-| 3 | `handlers/ai-revise.ts` | `transaction_corrections` | (a) |
-| 4 | `handlers/compute-changeset.ts` | `transaction_corrections` | (a) |
-| 5 | `lib/tag-loader.ts` | `transactions` | (a) |
+| #   | File                            | Tables read                               | Recommended |
+| --- | ------------------------------- | ----------------------------------------- | ----------- |
+| 1   | `handlers/preview-matches.ts`   | `transactions`                            | (a)         |
+| 2   | `handlers/changeset-impact.ts`  | `transactions`, `transaction_corrections` | (a)         |
+| 3   | `handlers/ai-revise.ts`         | `transaction_corrections`                 | (a)         |
+| 4   | `handlers/compute-changeset.ts` | `transaction_corrections`                 | (a)         |
+| 5   | `lib/tag-loader.ts`             | `transactions`                            | (a)         |
 
 Total: **5 sites**, **6 read patterns** (changeset-impact reads both
 tables), all five recommended for **option (a) — `getFinanceDrizzle()` swap**.
