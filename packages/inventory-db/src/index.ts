@@ -20,6 +20,7 @@ export { openInventoryDb, type OpenedInventoryDb } from './open-inventory-db.js'
 
 export * as locationsService from './services/locations.js';
 export * as itemsService from './services/items.js';
+export * as connectionsService from './services/connections.js';
 
 // Public types re-exported at the package root so consumers can name
 // them without reaching into the namespaces.
@@ -47,3 +48,23 @@ export type {
 export { toItem } from './services/items.js';
 
 export { ItemConflictError, ItemNotFoundError } from './services/items-errors.js';
+
+export type {
+  Connection,
+  ConnectionListResult,
+  CreateConnectionInput,
+  GraphData,
+  GraphEdge,
+  GraphNode,
+  ItemConnectionRow,
+  TraceNode,
+} from './services/connections.js';
+
+export { toConnection } from './services/connections.js';
+
+export {
+  ConnectionConflictError,
+  ConnectionItemNotFoundError,
+  ConnectionNotFoundError,
+  SelfConnectionError,
+} from './services/connections-errors.js';
