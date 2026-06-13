@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { embeddings, engramIndex } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { ContextAssemblyService } from './context-assembly.js';
@@ -166,7 +167,7 @@ export const retrievalRouter = router({
    * Retrieval layer health and coverage counts.
    */
   stats: protectedProcedure.query(() => {
-    const db = getDrizzle();
+    const db = getCerebrumDrizzle();
 
     const [indexedRow] = db.select({ count: count() }).from(engramIndex).all();
     const indexed = indexedRow?.count ?? 0;

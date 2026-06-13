@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { nudgeLog } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { logger } from '../../../lib/logger.js';
 import {
   escapeTelegramMarkdownV2,
@@ -42,7 +42,7 @@ export function deliverShellDigest(
   body: string,
   now: Date = new Date()
 ): boolean {
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
   const id = buildShellNudgeId(now);
   const title = `Glia ${report.period} digest — ${report.totalAutonomousActions} autonomous actions`;
   const engramIds = collectEngramIds(report);
