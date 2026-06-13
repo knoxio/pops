@@ -34,8 +34,13 @@ export interface SinkFireEventFn {
   ): SendFireEventOutcome;
 }
 
+export interface SinkSendBodyFn {
+  (eventType: string, body: Record<string, unknown>): SendFireEventOutcome;
+}
+
 export interface SinkRouterDeps {
   readonly fireEvent: SinkFireEventFn;
+  readonly sendBody: SinkSendBodyFn;
   readonly logger?: { warn(msg: string, meta?: Record<string, unknown>): void };
 }
 
@@ -101,6 +106,10 @@ function invokeMapping(
     };
   }
   const data = parsed.data as Record<string, unknown>;
+  if (mapping.buildFrameBody !== undefined) {
+    const body = mapping.buildFrameBody(data);
+    return deps.sendBody(mapping.eventType, body);
+  }
   const eventData = mapping.transformInline(data);
   return deps.fireEvent(mapping.eventType, mapping.haEventName, eventData);
 }

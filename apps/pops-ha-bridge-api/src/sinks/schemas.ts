@@ -39,6 +39,30 @@ export const sinkPayloadSchemas = {
       occurredAt: z.string(),
     })
     .strict(),
+  'ha.notify.send': z
+    .object({
+      service: z
+        .string()
+        .min(1)
+        .max(64)
+        .regex(/^[a-z][a-z0-9_]*$/, 'service must be lowercase snake_case')
+        .optional(),
+      message: z.string().min(1),
+      title: z.string().min(1).optional(),
+      target: z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]).optional(),
+      data: z.record(z.string(), z.unknown()).optional(),
+    })
+    .strict(),
+  'ha.event.fire': z
+    .object({
+      eventType: z
+        .string()
+        .min(1)
+        .max(128)
+        .regex(/^[a-z][a-z0-9_]*$/, 'eventType must be lowercase snake_case'),
+      eventData: z.record(z.string(), z.unknown()).optional(),
+    })
+    .strict(),
 } as const;
 
 export type SinkPayloadSchemaMap = typeof sinkPayloadSchemas;

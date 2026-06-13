@@ -1,17 +1,23 @@
 /**
- * PRD-237 US-02: outbound `fire_event` sender.
+ * PRD-237 US-02 / PRD-229 US-05: outbound sink sender.
  *
  * Owns the bounded reconnect queue and the per-frame WS write logic.
+ * Carries any HA WebSocket command body (sans `id`) — `fire_event` for
+ * the PRD-237 mappings, `call_service` for the PRD-229 US-05
+ * `ha.notify.send` ha-native sink, and any future shape a mapping
+ * declares.
+ *
  * The HA WebSocket subscriber composes this — when the socket is up,
- * `send` writes immediately; while reconnecting, frames are queued and
- * `flush` drains them in FIFO order on the next successful handshake.
+ * `sendBody` writes immediately; while reconnecting, frames are queued
+ * and `flush` drains them in FIFO order on the next successful
+ * handshake.
  *
  * Kept separate from the subscriber so the subscriber file stays
  * focused on the inbound state machine (per the per-file LOC ceiling)
  * and so the queue + frame-serialisation logic can be unit-tested in
  * isolation.
  */
-import { FireEventQueue, type FireEventFrame } from './fire-event-queue.js';
+import { FireEventQueue, type QueuedHaFrame } from './fire-event-queue.js';
 
 import type { SubscriberLogger } from '../ws-subscriber-types.js';
 
@@ -57,7 +63,15 @@ export class FireEventSender {
     haEventName: string,
     eventData: Record<string, unknown>
   ): SendFireEventOutcome {
-    const frame: FireEventFrame = { eventType, haEventName, eventData };
+    return this.sendBody(eventType, {
+      type: 'fire_event',
+      event_type: haEventName,
+      event_data: eventData,
+    });
+  }
+
+  sendBody(eventType: string, body: Record<string, unknown>): SendFireEventOutcome {
+    const frame: QueuedHaFrame = { eventType, body };
     const ok = this.write(this.serialise(frame));
     if (ok) return 'sent';
     this.queue.enqueue(frame);
@@ -79,12 +93,10 @@ export class FireEventSender {
     return this.queue.droppedTotal(eventType);
   }
 
-  private serialise(frame: FireEventFrame): string {
+  private serialise(frame: QueuedHaFrame): string {
     return JSON.stringify({
       id: this.nextCommandId(),
-      type: 'fire_event',
-      event_type: frame.haEventName,
-      event_data: frame.eventData,
+      ...frame.body,
     });
   }
 }
