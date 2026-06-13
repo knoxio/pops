@@ -1,6 +1,6 @@
 export { pillar, __resetSharedPillarClient } from './factory.js';
 export type { PillarClientOptions } from './factory.js';
-export type { PillarHandle, CallableProcedure } from './proxy.js';
+export type { CallableProcedure, CallDynamicFn, PillarHandle, ProcedureKind } from './proxy.js';
 export { DiscoveryCache } from './cache.js';
 export {
   HttpDiscoveryTransport,

@@ -11,12 +11,36 @@ type ProcedureNode<T> = T extends (...args: infer Args) => infer Ret
     ? { [K in keyof T]: ProcedureNode<T[K]> }
     : CallableProcedure<readonly unknown[], unknown>;
 
-export type PillarHandle<TRouter> =
-  TRouter extends Record<string, unknown>
-    ? { [K in keyof TRouter]: ProcedureNode<TRouter[K]> }
-    : Record<string, ProcedureNode<unknown>>;
+/** Hint to React Query whether the runtime call is a read (query) or write (mutation). */
+export type ProcedureKind = 'query' | 'mutation';
+
+/**
+ * Runtime escape hatch for call sites that build procedure paths from
+ * config (e.g. a settings manifest names `routerName` + `procName`).
+ *
+ * Prefer the typed proxy (`pillar('finance').wishlist.list(input)`) when
+ * the path is known at compile time. The result is always
+ * `CallResult<unknown>` because the output shape cannot be derived from a
+ * runtime path.
+ */
+export type CallDynamicFn = {
+  (
+    routerName: string,
+    procName: string,
+    input?: unknown,
+    kind?: ProcedureKind
+  ): Promise<CallResult<unknown>>;
+};
+
+export type PillarHandle<TRouter> = (TRouter extends Record<string, unknown>
+  ? { [K in keyof TRouter]: ProcedureNode<TRouter[K]> }
+  : Record<string, ProcedureNode<unknown>>) & {
+  callDynamic: CallDynamicFn;
+};
 
 export type InvokeFn = (path: readonly string[], input: unknown) => Promise<CallResult<unknown>>;
+
+const CALL_DYNAMIC_KEY = 'callDynamic';
 
 export function buildPillarProxy(pillarId: string, invoke: InvokeFn): unknown {
   return buildBranch(pillarId, [], invoke);
@@ -27,9 +51,24 @@ function buildBranch(pillarId: string, path: readonly string[], invoke: InvokeFn
   return new Proxy(target, {
     get(_t, prop) {
       if (typeof prop !== 'string' || prop === 'then') return undefined;
+      if (path.length === 0 && prop === CALL_DYNAMIC_KEY) {
+        return buildCallDynamic(invoke);
+      }
       return buildCallable(pillarId, [...path, prop], invoke);
     },
   });
+}
+
+function buildCallDynamic(invoke: InvokeFn): CallDynamicFn {
+  return (
+    routerName: string,
+    procName: string,
+    input?: unknown,
+    kind: ProcedureKind = 'query'
+  ): Promise<CallResult<unknown>> => {
+    void kind;
+    return invoke([routerName, procName], input);
+  };
 }
 
 function buildCallable(pillarId: string, path: readonly string[], invoke: InvokeFn): unknown {
