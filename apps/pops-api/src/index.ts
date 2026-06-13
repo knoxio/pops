@@ -9,7 +9,7 @@ import { createApp } from './app.js';
 import { backfillCoreFromShared, closeDb, getCoreDrizzle } from './db.js';
 import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
 import { backfillFinanceFromSharedDb, getFinanceDrizzle } from './db/finance-handle.js';
-import { backfillFoodFromSharedDb, getFoodDrizzle } from './db/food-handle.js';
+import { getFoodDrizzle } from './db/food-handle.js';
 import { backfillInventoryFromSharedDb, getInventoryDrizzle } from './db/inventory-handle.js';
 import { backfillListsFromSharedDb, getListsDrizzle } from './db/lists-handle.js';
 import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
@@ -113,14 +113,12 @@ try {
 }
 
 // Eagerly open the food pillar's SQLite + apply its journal at boot.
-// The prep_states slice now reads/writes against this handle (phase 2
-// PR 3); the one-shot `backfillFoodFromSharedDb` carries any rows that
-// still live in the legacy pops.db across. The backfill is idempotent
-// (per-table `WHERE id NOT IN (...)` filters) and non-fatal (partial
-// failure logs + continues).
+// Every food-owned table (prep_states + the kind='prep_state' slice of
+// slug_registry) now writes directly to food.db via getFoodDrizzle(),
+// so the boot-time ATTACH bridge from the shared pops.db has been
+// retired — there is nothing left to carry forward.
 try {
   getFoodDrizzle();
-  backfillFoodFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the food pillar SQLite:', err);
   throw err;

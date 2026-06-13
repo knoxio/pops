@@ -1,14 +1,12 @@
 /**
  * Lazily-initialised handle to the food pillar's SQLite file.
  *
- * Phase 2 PR 2 of the food pillar migration: opens the connection
- * (and applies the in-package migrations journal) at boot but does NOT
- * yet route any production traffic through it. PR 3 of phase 2 flips
- * the prep_states slice (and subsequent slices) over with a single
- * edit to `getDrizzle()` → `getFoodDrizzle()` plus an ATTACH-based
- * backfill of any existing rows from the shared pops.db; PR 4 drops
- * the food-owned tags from the shared journal + adds the Litestream
- * config.
+ * Phase 2 PR 2 opened the connection (and applied the in-package
+ * migrations journal) at boot. PR 3 routed the prep_states slice
+ * reads/writes through `getFoodDrizzle()` and ran a one-shot
+ * ATTACH-based backfill from the legacy shared pops.db. PR 4 (Theme 13)
+ * retired the backfill — every food-owned table now writes directly to
+ * food.db, so the boot bridge has nothing left to carry forward.
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
  * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts` /
@@ -19,7 +17,6 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openFoodDb, type FoodDb, type OpenedFoodDb } from '@pops/food-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
-import { backfillFoodFromShared } from './backfill-food-from-shared.js';
 import { resolveFoodSqlitePath } from './food-sqlite-path.js';
 
 let foodDb: OpenedFoodDb | null = null;
@@ -85,16 +82,4 @@ export function setFoodDb(next: OpenedFoodDb | null): OpenedFoodDb | null {
   const prev = foodDb;
   foodDb = next;
   return prev;
-}
-
-/**
- * Run the one-shot ATTACH backfill from the legacy shared pops.db into
- * the food pillar's food.db. No-op if the food handle isn't open (e.g.
- * boot still resolving). Idempotent against repeated boots via
- * per-table `WHERE id NOT IN (...)` filters. See
- * `backfill-food-from-shared.ts` for the table-by-table behaviour.
- */
-export function backfillFoodFromSharedDb(sharedPath: string): void {
-  if (!foodDb) return;
-  backfillFoodFromShared(foodDb, sharedPath);
 }

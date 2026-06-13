@@ -749,17 +749,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/db/backfill-food-from-shared.ts",
-    "to": "packages/food-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-food"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/food-handle.ts",
     "to": "packages/food-db/dist/index.d.ts",
     "unresolvedTo": "@pops/food-db",
