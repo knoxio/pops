@@ -17,10 +17,10 @@
  *
  * Track K phase 2 PR 3 cutover: the DB handle every call site receives
  * now comes from `getListsDrizzle()` (the lists pillar's `lists.db`)
- * instead of the shared `getDrizzle()` core handle. The boot-time
- * `backfillListsFromSharedDb` carries the existing `lists` + `list_items`
- * rows across so the cutover is transparent on first deploy. The mix of
- * `@pops/lists-db` (reads + check-state) and `@pops/app-lists-db`
+ * instead of the shared `getDrizzle()` core handle. Theme 13 PR 4
+ * retired the boot-time ATTACH bridge from the shared `pops.db` — every
+ * `lists` + `list_items` write now lands directly in `lists.db`. The
+ * mix of `@pops/lists-db` (reads + check-state) and `@pops/app-lists-db`
  * (writes still pending slice migration) both accept the same
  * structural `ListsDb` drizzle type, so the single handle change covers
  * both packages.
