@@ -120,6 +120,11 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'plex_rating_key',
     ],
   },
+  {
+    table: 'dismissed_discover',
+    idColumn: 'tmdb_id',
+    columns: ['tmdb_id', 'dismissed_at'],
+  },
 ];
 
 function tryCopyTable(raw: Database.Database, copy: TableCopy): void {

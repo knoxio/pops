@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock dependencies before imports
+const mockMediaDb = { __mediaDb: true };
+
 vi.mock('../../../db.js', () => ({
   getDrizzle: vi.fn(),
+}));
+
+vi.mock('../../../db/media-db-handle.js', () => ({
+  getMediaDrizzle: vi.fn(() => mockMediaDb),
 }));
 
 vi.mock('@pops/db-types', () => ({
@@ -11,14 +16,25 @@ vi.mock('@pops/db-types', () => ({
   mediaWatchlist: { mediaId: 'media_id', mediaType: 'media_type' },
 }));
 
+vi.mock('@pops/media-db', () => ({
+  dismissedDiscoverService: {
+    getDismissedTmdbIdSet: vi.fn(),
+  },
+}));
+
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((col, val) => ({ col, val })),
 }));
 
+import { dismissedDiscoverService } from '@pops/media-db';
+
 import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
+const mockGetMediaDrizzle = vi.mocked(getMediaDrizzle);
+const mockGetDismissedTmdbIdSet = vi.mocked(dismissedDiscoverService.getDismissedTmdbIdSet);
 
 function createMockDb(rows: { tmdbId: number }[]) {
   const mockAll = vi.fn().mockReturnValue(rows);
@@ -86,29 +102,25 @@ describe('getDismissedTmdbIds', () => {
   });
 
   it('returns empty Set when no dismissed movies', () => {
-    const mockAll = vi.fn().mockReturnValue([]);
-    mockGetDrizzle.mockReturnValue({ all: mockAll } as unknown as ReturnType<typeof getDrizzle>);
+    mockGetDismissedTmdbIdSet.mockReturnValue(new Set());
     const result = getDismissedTmdbIds();
     expect(result).toBeInstanceOf(Set);
     expect(result.size).toBe(0);
   });
 
-  it('returns Set of dismissed TMDB IDs from raw SQL', () => {
-    const mockAll = vi.fn().mockReturnValue([{ tmdb_id: 500 }, { tmdb_id: 600 }]);
-    mockGetDrizzle.mockReturnValue({ all: mockAll } as unknown as ReturnType<typeof getDrizzle>);
+  it('returns Set of dismissed TMDB IDs from dismissedDiscoverService', () => {
+    mockGetDismissedTmdbIdSet.mockReturnValue(new Set([500, 600]));
     const result = getDismissedTmdbIds();
     expect(result.has(500)).toBe(true);
     expect(result.has(600)).toBe(true);
     expect(result.has(999)).toBe(false);
   });
 
-  it('returns empty Set when table does not exist yet', () => {
-    const mockAll = vi.fn().mockImplementation(() => {
-      throw new Error('no such table: dismissed_discover');
-    });
-    mockGetDrizzle.mockReturnValue({ all: mockAll } as unknown as ReturnType<typeof getDrizzle>);
-    const result = getDismissedTmdbIds();
-    expect(result).toBeInstanceOf(Set);
-    expect(result.size).toBe(0);
+  it('resolves the media-pillar drizzle handle and forwards it to the service', () => {
+    mockGetDismissedTmdbIdSet.mockReturnValue(new Set([42]));
+    getDismissedTmdbIds();
+    expect(mockGetMediaDrizzle).toHaveBeenCalledTimes(1);
+    expect(mockGetDismissedTmdbIdSet).toHaveBeenCalledWith(mockMediaDb);
+    expect(mockGetDrizzle).not.toHaveBeenCalled();
   });
 });

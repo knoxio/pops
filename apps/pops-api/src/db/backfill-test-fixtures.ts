@@ -14,6 +14,7 @@
  */
 export { AI_INFERENCE_LOG_TABLE_SQL } from './backfill-test-fixtures-core.js';
 export {
+  DISMISSED_DISCOVER_TABLE_SQL,
   MOVIES_TABLE_SQL,
   SHELF_IMPRESSIONS_TABLE_SQL,
   TV_SHOWS_TABLE_SQL,

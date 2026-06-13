@@ -16,6 +16,7 @@ vi.mock('@pops/db-types', () => ({
 }));
 
 vi.mock('./flags.js', () => ({
+  getDismissedTmdbIds: vi.fn().mockReturnValue(new Set()),
   getWatchedTmdbIds: vi.fn().mockReturnValue(new Set()),
   getWatchlistTmdbIds: vi.fn().mockReturnValue(new Set()),
 }));
@@ -23,11 +24,12 @@ vi.mock('./flags.js', () => ({
 // Now import mocked modules
 import { getDrizzle } from '../../../db.js';
 import { getPlexClient } from '../plex/service.js';
-import { getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 import { getTrendingFromPlex } from './plex-service.js';
 
 const mockGetPlexClient = vi.mocked(getPlexClient);
 const mockGetDrizzle = vi.mocked(getDrizzle);
+const mockGetDismissedTmdbIds = vi.mocked(getDismissedTmdbIds);
 const mockGetWatchedTmdbIds = vi.mocked(getWatchedTmdbIds);
 const mockGetWatchlistTmdbIds = vi.mocked(getWatchlistTmdbIds);
 
@@ -61,18 +63,19 @@ function makePlexItem(overrides: Partial<PlexMediaItem> = {}): PlexMediaItem {
   };
 }
 
-/** Create a mock DB that returns empty results for both queries. */
+/**
+ * Create a mock DB for the `getLibraryTmdbIds` drizzle query — the
+ * dismissed-discover read now lives behind `flags.ts::getDismissedTmdbIds`
+ * (mocked at module level), so this fixture only needs to cover the
+ * library-ids select chain.
+ */
 function createMockDb(libraryTmdbIds: number[] = []) {
   const mockAll = vi.fn().mockReturnValue(libraryTmdbIds.map((id) => ({ tmdbId: id })));
   const mockFrom = vi.fn().mockReturnValue({ all: mockAll });
   const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-  // For raw SQL query (dismissed_discover)
-  const mockDbAll = vi.fn().mockReturnValue([]);
-
   return {
     select: mockSelect,
-    all: mockDbAll,
   } as unknown as ReturnType<typeof getDrizzle>;
 }
 
@@ -195,10 +198,8 @@ describe('getTrendingFromPlex', () => {
       mockClient as unknown as ReturnType<typeof getPlexClient> & object
     );
 
-    const mockDb = createMockDb();
-    // Override the raw SQL query to return dismissed IDs
-    (mockDb.all as ReturnType<typeof vi.fn>).mockReturnValue([{ tmdb_id: 200 }]);
-    mockGetDrizzle.mockReturnValue(mockDb);
+    mockGetDrizzle.mockReturnValue(createMockDb());
+    mockGetDismissedTmdbIds.mockReturnValueOnce(new Set([200]));
 
     const result = await getTrendingFromPlex();
     expect(result).toHaveLength(1);

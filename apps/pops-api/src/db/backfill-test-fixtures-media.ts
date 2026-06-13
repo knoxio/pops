@@ -105,3 +105,10 @@ CREATE TABLE watchlist (
 );
 CREATE UNIQUE INDEX idx_watchlist_media ON watchlist (media_type, media_id);
 `;
+
+export const DISMISSED_DISCOVER_TABLE_SQL = `
+CREATE TABLE dismissed_discover (
+  tmdb_id integer PRIMARY KEY,
+  dismissed_at text NOT NULL DEFAULT (datetime('now'))
+);
+`;

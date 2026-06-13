@@ -6,7 +6,7 @@ import { movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { getPlexClient } from '../plex/service.js';
-import { getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 
 import type { PlexMediaItem } from '../plex/types.js';
 import type { DiscoverResult } from './types.js';
@@ -63,18 +63,6 @@ function toDiscoverResult(
     isWatched: watchedIds.has(tmdbId),
     onWatchlist: watchlistIds.has(tmdbId),
   };
-}
-
-/** Get dismissed TMDB IDs for filtering. Returns empty set if table doesn't exist yet. */
-function getDismissedTmdbIds(): Set<number> {
-  try {
-    const db = getDrizzle();
-    const rows = db.all<{ tmdb_id: number }>(/* sql */ `SELECT tmdb_id FROM dismissed_discover`);
-    return new Set(rows.map((r) => r.tmdb_id));
-  } catch {
-    // Table may not exist yet (tb-115 creates it)
-    return new Set();
-  }
 }
 
 /**
