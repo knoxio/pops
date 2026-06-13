@@ -18,8 +18,29 @@ import type { IngredientWeightRow } from '../types';
 
 interface MutationOpts {
   onSuccess?: (result: { ok: boolean; reason?: string }) => void;
-  onError?: (err: { message: string; data?: { code?: string } | null }) => void;
+  onError?: (err: unknown) => void;
 }
+
+vi.mock('@pops/pillar-sdk/client', () => {
+  class PillarCallError extends Error {
+    pillarId: string;
+    result: { kind: string; pillar: string; message?: string };
+    constructor(pillarId: string, result: { kind: string; pillar: string; message?: string }) {
+      super(result.message ?? result.kind);
+      this.pillarId = pillarId;
+      this.result = result;
+    }
+  }
+  return {
+    PillarCallError,
+    isNotFound: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'not-found',
+    isConflict: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'conflict',
+    isBadRequest: (err: unknown) =>
+      err instanceof PillarCallError && err.result.kind === 'bad-request',
+  };
+});
+
+const { PillarCallError: MockPillarCallError } = await import('@pops/pillar-sdk/client');
 
 const mockListWeights = vi.fn();
 const mockListIngredients = vi.fn();
@@ -180,7 +201,11 @@ describe('PRD-123 Phase C — WeightsSection', () => {
     seedWeights([]);
     render(<WeightsSection />);
     await userEvent.click(screen.getByRole('button', { name: /add weight/i }));
-    act(() => createOpts.onError?.({ message: 'duplicate', data: { code: 'CONFLICT' } }));
+    act(() =>
+      createOpts.onError?.(
+        new MockPillarCallError('food', { kind: 'conflict', pillar: 'food', message: 'duplicate' })
+      )
+    );
     const dialog = await screen.findByRole('dialog');
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(/already exists/i);
   });

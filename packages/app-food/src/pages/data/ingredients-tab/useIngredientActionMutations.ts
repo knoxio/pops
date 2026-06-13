@@ -12,6 +12,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { isConflict } from '@pops/pillar-sdk/client';
 import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { mapMutationError } from './errors';
@@ -41,18 +42,8 @@ interface Args {
   onDeleteOtherFkRef: () => void;
 }
 
-function isConflictError(err: unknown): boolean {
-  if (err === null || typeof err !== 'object') return false;
-  const candidate = (err as { data?: unknown }).data;
-  if (candidate === null || typeof candidate !== 'object') return false;
-  return (candidate as { code?: unknown }).code === 'CONFLICT';
-}
-
-function deriveDeleteError(
-  err: { data?: { code?: string } | null; message: string },
-  t: TFunction
-): string {
-  if (isConflictError(err)) return t('data.ingredients.delete.blockers.otherRefs');
+function deriveDeleteError(err: unknown, t: TFunction): string {
+  if (isConflict(err)) return t('data.ingredients.delete.blockers.otherRefs');
   return mapMutationError(err, t, { fallbackKey: 'data.ingredients.delete.error.generic' });
 }
 
@@ -129,7 +120,7 @@ function useDeleteMutation({
       await utils.invalidate(['ingredients', 'blockers']);
     },
     onError: (err) => {
-      if (isConflictError(err)) onDeleteOtherFkRef();
+      if (isConflict(err)) onDeleteOtherFkRef();
       setErrors((prev) => ({ ...prev, delete: deriveDeleteError(err, t) }));
     },
   });

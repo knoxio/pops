@@ -105,6 +105,12 @@ function mapCallResult(pillarId: string, result: CallResult<unknown>): ToolResul
       return { kind: 'pillar-unavailable', pillar: pillarId };
     case 'contract-mismatch':
       return { kind: 'tool-error', reason: 'contract mismatch' };
+    case 'not-found':
+      return { kind: 'tool-error', reason: result.message ?? 'not found' };
+    case 'conflict':
+      return { kind: 'tool-error', reason: result.message ?? 'conflict' };
+    case 'bad-request':
+      return { kind: 'tool-error', reason: result.message ?? 'bad request' };
   }
 }
 

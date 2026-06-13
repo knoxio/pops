@@ -97,7 +97,7 @@ describe('usePillarCallDynamic — query path', () => {
     expect(result.current.isUnavailable).toBe(true);
   });
 
-  it('surfaces a 404 path-not-found via isContractMismatch', async () => {
+  it('surfaces a 404 path-not-found via isNotFound', async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const calls: { url: string; body: unknown }[] = [];
     const fetchImpl = fakeFetch(async (url) => {
@@ -123,7 +123,8 @@ describe('usePillarCallDynamic — query path', () => {
       { wrapper }
     );
     await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(result.current.isContractMismatch).toBe(true);
+    expect(result.current.isNotFound).toBe(true);
+    expect(result.current.isContractMismatch).toBe(false);
     expect(calls[0]?.url).toBe('http://finance-api:3004/trpc/finance.wishlist.nope');
   });
 });

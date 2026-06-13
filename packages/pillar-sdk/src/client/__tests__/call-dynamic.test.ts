@@ -92,14 +92,14 @@ describe('pillar().callDynamic — runtime path dispatch', () => {
     if (result.kind === 'unavailable') expect(result.pillar).toBe('finance');
   });
 
-  it("returns 'contract-mismatch' when the procedure path doesn't exist (404)", async () => {
+  it("returns 'not-found' when the procedure path doesn't exist (404)", async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const fetchImpl = fakeFetch(() => new Response('not found', { status: 404 }));
     const finance = pillar('finance', { transport, fetchImpl });
     const result = await finance.callDynamic('wishlist', 'doesNotExist', {});
-    expect(result.kind).toBe('contract-mismatch');
-    if (result.kind === 'contract-mismatch') {
-      expect(result.expected).toBe('finance.wishlist.doesNotExist');
+    expect(result.kind).toBe('not-found');
+    if (result.kind === 'not-found') {
+      expect(result.pillar).toBe('finance');
     }
   });
 

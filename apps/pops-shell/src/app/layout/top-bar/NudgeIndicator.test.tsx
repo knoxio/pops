@@ -184,7 +184,7 @@ describe('NudgeIndicator', () => {
     });
   });
 
-  it('hides the indicator when the SDK reports a contract mismatch (HTTP 404)', async () => {
+  it('hides the indicator when the SDK reports not-found (HTTP 404)', async () => {
     const transport = new StubTransport([cerebrumDiscoveredPillar()]);
     const fetchImpl = stubFetch(() => jsonResponse({ message: 'not found' }, 404));
 

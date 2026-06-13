@@ -23,4 +23,11 @@ export type {
   CallResult,
   CallSuccess,
 } from '../client/index.js';
-export { PillarCallError, PillarSdkError, isOk } from '../client/index.js';
+export {
+  PillarCallError,
+  PillarSdkError,
+  isOk,
+  isNotFound,
+  isConflict,
+  isBadRequest,
+} from '../client/index.js';

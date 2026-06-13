@@ -42,7 +42,7 @@ export function nudgeRefetchInterval(query: {
 }
 
 function useSdkPendingCount(enabled: boolean): { pendingCount: number; hidden: boolean } {
-  const { data, isUnavailable, isContractMismatch } = usePillarQuery<NudgeListResult>(
+  const { data, isUnavailable, isContractMismatch, isNotFound } = usePillarQuery<NudgeListResult>(
     'cerebrum',
     ['nudges', 'list'],
     { status: 'pending', limit: 1 },
@@ -51,7 +51,7 @@ function useSdkPendingCount(enabled: boolean): { pendingCount: number; hidden: b
 
   return {
     pendingCount: data?.total ?? 0,
-    hidden: enabled && (isUnavailable || isContractMismatch),
+    hidden: enabled && (isUnavailable || isContractMismatch || isNotFound),
   };
 }
 

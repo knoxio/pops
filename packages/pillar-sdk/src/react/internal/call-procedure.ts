@@ -10,12 +10,18 @@ export type FailureFlags = {
   isContractMismatch: boolean;
   isUnavailable: boolean;
   isDegraded: boolean;
+  isNotFound: boolean;
+  isConflict: boolean;
+  isBadRequest: boolean;
 };
 
 export const NO_FAILURE: FailureFlags = {
   isContractMismatch: false,
   isUnavailable: false,
   isDegraded: false,
+  isNotFound: false,
+  isConflict: false,
+  isBadRequest: false,
 };
 
 export function failureFlagsFrom(failure: CallFailure): FailureFlags {
@@ -23,6 +29,9 @@ export function failureFlagsFrom(failure: CallFailure): FailureFlags {
     isContractMismatch: failure.kind === 'contract-mismatch',
     isUnavailable: failure.kind === 'unavailable',
     isDegraded: failure.kind === 'degraded',
+    isNotFound: failure.kind === 'not-found',
+    isConflict: failure.kind === 'conflict',
+    isBadRequest: failure.kind === 'bad-request',
   };
 }
 

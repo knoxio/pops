@@ -8,6 +8,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { isBadRequest, isConflict, isNotFound } from '@pops/pillar-sdk/client';
 import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
@@ -30,14 +31,10 @@ type DeleteWeightMutationInput =
 type DeleteWeightMutationOutput =
   inferRouterOutputs<AppRouter>['food']['conversions']['deleteWeight'];
 
-function mapMutationError(
-  err: { data?: { code?: string } | null; message: string },
-  t: TFunction
-): string {
-  const code = err.data?.code;
-  if (code === 'CONFLICT') return t('data.conversions.weights.error.duplicate');
-  if (code === 'NOT_FOUND') return t('data.conversions.weights.error.notFound');
-  if (code === 'BAD_REQUEST') return t('data.conversions.weights.error.invalid');
+function mapMutationError(err: unknown, t: TFunction): string {
+  if (isConflict(err)) return t('data.conversions.weights.error.duplicate');
+  if (isNotFound(err)) return t('data.conversions.weights.error.notFound');
+  if (isBadRequest(err)) return t('data.conversions.weights.error.invalid');
   return t('data.conversions.weights.error.generic');
 }
 

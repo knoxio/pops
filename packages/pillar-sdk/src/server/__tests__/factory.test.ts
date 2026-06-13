@@ -234,12 +234,12 @@ describe('server pillar() — error-mapping parity with client', () => {
     expect(result.kind).toBe('unavailable');
   });
 
-  it("returns 'contract-mismatch' on a 404 from the pillar", async () => {
+  it("returns 'not-found' on a 404 from the pillar", async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const { fetchImpl } = recordingFetch(() => new Response('not found', { status: 404 }));
     const finance = pillar('finance', { transport, fetchImpl });
     const result = await finance.wishlist.list({});
-    expect(result.kind).toBe('contract-mismatch');
+    expect(result.kind).toBe('not-found');
   });
 
   it('flags a contract major skew when contractVersion is pinned', async () => {

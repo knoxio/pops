@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { isOk, PillarCallError, PillarSdkError, type CallResult } from '../errors.js';
+import {
+  isBadRequest,
+  isConflict,
+  isNotFound,
+  isOk,
+  PillarCallError,
+  PillarSdkError,
+  type CallResult,
+} from '../errors.js';
 
 describe('CallResult', () => {
   it('isOk narrows the success branch', () => {
@@ -22,9 +30,15 @@ describe('CallResult', () => {
       kind: 'contract-mismatch',
       pillar: 'finance',
     };
+    const notFound: CallResult<number> = { kind: 'not-found', pillar: 'finance' };
+    const conflict: CallResult<number> = { kind: 'conflict', pillar: 'finance' };
+    const badRequest: CallResult<number> = { kind: 'bad-request', pillar: 'finance' };
     expect(isOk(unavailable)).toBe(false);
     expect(isOk(degraded)).toBe(false);
     expect(isOk(mismatch)).toBe(false);
+    expect(isOk(notFound)).toBe(false);
+    expect(isOk(conflict)).toBe(false);
+    expect(isOk(badRequest)).toBe(false);
   });
 });
 
@@ -37,6 +51,18 @@ describe('PillarCallError', () => {
     expect(err.message).toContain('finance');
     expect(err.message).toContain('unavailable');
   });
+
+  it("carries the 'not-found' failure with an optional message", () => {
+    const err = new PillarCallError('cerebrum', {
+      kind: 'not-found',
+      pillar: 'cerebrum',
+      message: 'engram eng_x not found',
+    });
+    expect(err.result.kind).toBe('not-found');
+    if (err.result.kind === 'not-found') {
+      expect(err.result.message).toBe('engram eng_x not found');
+    }
+  });
 });
 
 describe('PillarSdkError', () => {
@@ -45,5 +71,80 @@ describe('PillarSdkError', () => {
     const err = new PillarSdkError('registry fetch failed', { cause: root });
     expect(err.name).toBe('PillarSdkError');
     expect(err.cause).toBe(root);
+  });
+});
+
+describe('isNotFound', () => {
+  it('matches a PillarCallError with kind not-found', () => {
+    const err = new PillarCallError('cerebrum', { kind: 'not-found', pillar: 'cerebrum' });
+    expect(isNotFound(err)).toBe(true);
+  });
+
+  it('does not match contract-mismatch (the old conflated check)', () => {
+    const err = new PillarCallError('cerebrum', {
+      kind: 'contract-mismatch',
+      pillar: 'cerebrum',
+    });
+    expect(isNotFound(err)).toBe(false);
+  });
+
+  it('does not match conflict / bad-request / unavailable / degraded', () => {
+    const conflict = new PillarCallError('finance', { kind: 'conflict', pillar: 'finance' });
+    const badRequest = new PillarCallError('finance', { kind: 'bad-request', pillar: 'finance' });
+    const unavailable = new PillarCallError('finance', { kind: 'unavailable', pillar: 'finance' });
+    const degraded = new PillarCallError('finance', {
+      kind: 'degraded',
+      pillar: 'finance',
+      reason: 'reconciling',
+    });
+    expect(isNotFound(conflict)).toBe(false);
+    expect(isNotFound(badRequest)).toBe(false);
+    expect(isNotFound(unavailable)).toBe(false);
+    expect(isNotFound(degraded)).toBe(false);
+  });
+
+  it('does not match non-PillarCallError values', () => {
+    expect(isNotFound(null)).toBe(false);
+    expect(isNotFound(undefined)).toBe(false);
+    expect(isNotFound(new Error('plain'))).toBe(false);
+    expect(isNotFound({ result: { kind: 'not-found' } })).toBe(false);
+  });
+
+  it('narrows the type so .result.message is reachable', () => {
+    const err: unknown = new PillarCallError('cerebrum', {
+      kind: 'not-found',
+      pillar: 'cerebrum',
+      message: 'missing',
+    });
+    if (isNotFound(err)) {
+      const msg: string | undefined = err.result.message;
+      expect(msg).toBe('missing');
+    }
+  });
+});
+
+describe('isConflict', () => {
+  it('matches a PillarCallError with kind conflict', () => {
+    const err = new PillarCallError('food', { kind: 'conflict', pillar: 'food' });
+    expect(isConflict(err)).toBe(true);
+  });
+
+  it('does not match other kinds', () => {
+    const notFound = new PillarCallError('food', { kind: 'not-found', pillar: 'food' });
+    expect(isConflict(notFound)).toBe(false);
+    expect(isConflict(null)).toBe(false);
+  });
+});
+
+describe('isBadRequest', () => {
+  it('matches a PillarCallError with kind bad-request', () => {
+    const err = new PillarCallError('food', { kind: 'bad-request', pillar: 'food' });
+    expect(isBadRequest(err)).toBe(true);
+  });
+
+  it('does not match other kinds', () => {
+    const notFound = new PillarCallError('food', { kind: 'not-found', pillar: 'food' });
+    expect(isBadRequest(notFound)).toBe(false);
+    expect(isBadRequest(new Error())).toBe(false);
   });
 });

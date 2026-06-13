@@ -38,6 +38,13 @@ export function useTestActionHandler() {
       if (result.kind === 'contract-mismatch') {
         throw new Error(`Cannot call procedure: ${procedure}`);
       }
+      if (
+        result.kind === 'not-found' ||
+        result.kind === 'conflict' ||
+        result.kind === 'bad-request'
+      ) {
+        throw new Error(result.message ?? `Pillar '${pillarId}' call failed: ${result.kind}`);
+      }
 
       assertConnected(result.value);
     },
