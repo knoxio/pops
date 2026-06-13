@@ -18,38 +18,36 @@ const mockGetPendingDebriefs = vi.fn();
 const mockDeleteMutate = vi.fn();
 let deleteMutationOpts: Record<string, (...args: unknown[]) => unknown> = {};
 let deleteMutationPending = false;
-const mockInvalidateListRecent = vi.fn();
-const mockInvalidateList = vi.fn();
+const mockInvalidateWatchHistory = vi.fn();
 const mockInvalidateWatchlist = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      watchHistory: {
-        listRecent: { useQuery: (...args: unknown[]) => mockListRecentQuery(...args) },
-        delete: {
-          useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
-            deleteMutationOpts = opts;
-            return { mutate: mockDeleteMutate, isPending: deleteMutationPending };
-          },
-        },
-      },
-      comparisons: {
-        getPendingDebriefs: { useQuery: () => mockGetPendingDebriefs() },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        watchHistory: {
-          listRecent: { invalidate: mockInvalidateListRecent },
-          list: { invalidate: mockInvalidateList },
-        },
-        watchlist: {
-          list: { invalidate: mockInvalidateWatchlist },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'watchHistory.listRecent') return mockListRecentQuery(input);
+    if (key === 'comparisons.getPendingDebriefs') return mockGetPendingDebriefs();
+    return { data: undefined, isLoading: false };
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, (...args: unknown[]) => unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'watchHistory.delete') {
+      deleteMutationOpts = opts;
+      return { mutate: mockDeleteMutate, isPending: deleteMutationPending };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: (path?: readonly string[]) => {
+      const key = path?.join('.') ?? '';
+      if (key === 'watchHistory') mockInvalidateWatchHistory();
+      if (key === 'watchlist') mockInvalidateWatchlist();
+    },
+  }),
 }));
 
 import { HistoryPage } from './HistoryPage';
@@ -238,8 +236,7 @@ describe('HistoryPage', () => {
     it('invalidates queries on success', () => {
       renderPage();
       deleteMutationOpts.onSuccess?.();
-      expect(mockInvalidateListRecent).toHaveBeenCalled();
-      expect(mockInvalidateList).toHaveBeenCalled();
+      expect(mockInvalidateWatchHistory).toHaveBeenCalled();
       expect(mockInvalidateWatchlist).toHaveBeenCalled();
     });
   });

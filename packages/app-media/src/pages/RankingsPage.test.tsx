@@ -6,14 +6,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockRankingsQuery = vi.fn();
 const mockDimensionsQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        rankings: { useQuery: (...args: unknown[]) => mockRankingsQuery(...args) },
-        listDimensions: { useQuery: () => mockDimensionsQuery() },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.rankings') return mockRankingsQuery(input);
+    if (key === 'comparisons.listDimensions') return mockDimensionsQuery();
+    return { data: undefined, isLoading: false };
   },
 }));
 

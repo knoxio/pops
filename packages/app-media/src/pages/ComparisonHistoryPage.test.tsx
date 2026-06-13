@@ -19,50 +19,42 @@ vi.mock('sonner', () => ({
   }),
 }));
 
-// Mock trpc
+// Mock pillar SDK
 const mockListAllQuery = vi.fn();
 const mockDimensionsQuery = vi.fn();
 const mockMovieGetQuery = vi.fn();
 const mockDeleteMutate = vi.fn();
-const mockInvalidateListAll = vi.fn();
-const mockInvalidateScores = vi.fn();
-const mockInvalidateRankings = vi.fn();
+const mockInvalidateComparisons = vi.fn();
 const mockRefetch = vi.fn();
 let deleteMutationOpts: Record<string, (...args: unknown[]) => unknown> = {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        listAll: {
-          useQuery: (...args: unknown[]) => mockListAllQuery(...args),
-        },
-        listDimensions: {
-          useQuery: (...args: unknown[]) => mockDimensionsQuery(...args),
-        },
-        delete: {
-          useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
-            deleteMutationOpts = opts;
-            return { mutate: mockDeleteMutate, isPending: false };
-          },
-        },
-      },
-      movies: {
-        get: {
-          useQuery: (...args: unknown[]) => mockMovieGetQuery(...args),
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        comparisons: {
-          listAll: { invalidate: mockInvalidateListAll },
-          scores: { invalidate: mockInvalidateScores },
-          rankings: { invalidate: mockInvalidateRankings },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.listAll') return mockListAllQuery(input);
+    if (key === 'comparisons.listDimensions') return mockDimensionsQuery(input);
+    if (key === 'movies.get') return mockMovieGetQuery(input);
+    return { data: undefined, isLoading: false };
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, (...args: unknown[]) => unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'comparisons.delete') {
+      deleteMutationOpts = opts;
+      return { mutate: mockDeleteMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: (path?: readonly string[]) => {
+      const key = path?.join('.') ?? '';
+      if (key === 'comparisons') mockInvalidateComparisons();
+    },
+  }),
 }));
 
 const DIMENSION = { id: 1, name: 'Overall' };
@@ -244,9 +236,7 @@ describe('ComparisonHistoryPage', () => {
       deleteMutationOpts.onSuccess?.(undefined, { id: COMPARISON.id });
     });
 
-    expect(mockInvalidateListAll).toHaveBeenCalled();
-    expect(mockInvalidateScores).toHaveBeenCalled();
-    expect(mockInvalidateRankings).toHaveBeenCalled();
+    expect(mockInvalidateComparisons).toHaveBeenCalled();
   });
 
   it('filters by dimension', () => {

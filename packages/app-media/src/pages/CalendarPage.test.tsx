@@ -5,18 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockGetConfigQuery = vi.fn();
 const mockGetCalendarQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      arr: {
-        getConfig: {
-          useQuery: () => mockGetConfigQuery(),
-        },
-        getCalendar: {
-          useQuery: (_input: unknown, _opts: unknown) => mockGetCalendarQuery(),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'arr.getConfig') return mockGetConfigQuery();
+    if (key === 'arr.getCalendar') return mockGetCalendarQuery();
+    return { data: undefined, isLoading: false };
   },
 }));
 

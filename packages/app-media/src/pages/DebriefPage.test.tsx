@@ -37,93 +37,60 @@ const mockInvalidatePending = vi.fn();
 const mockInvalidateWatchlist = vi.fn();
 
 vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: () => ({ data: undefined, isLoading: false, error: null }),
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.getDebrief') {
+      const result = mockDebriefQuery(input);
+      return { ...result, refetch: vi.fn() };
+    }
+    if (key === 'comparisons.listForMedia') return mockListForMediaQuery(input);
+    if (key === 'watchlist.list') return mockWatchlistQuery(input);
+    return { data: undefined, isLoading: false, error: null };
+  },
   usePillarMutation: (
     _pillarId: string,
     path: readonly string[],
     opts?: Record<string, unknown>
   ) => {
-    if (path.join('.') === 'comparisons.dismissDebriefDimension') {
+    const key = path.join('.');
+    if (key === 'comparisons.recordDebriefComparison') {
+      mockRecordMutate._opts = opts;
+      return { mutate: mockRecordMutate, isPending: false };
+    }
+    if (key === 'comparisons.dismissDebriefDimension') {
       mockDismissMutate._opts = opts;
       return { mutate: mockDismissMutate, isPending: false };
     }
+    if (key === 'comparisons.markStale') {
+      mockMarkStaleMutate._opts = opts;
+      return { mutate: mockMarkStaleMutate, isPending: false };
+    }
+    if (key === 'comparisons.excludeFromDimension') {
+      return { mutate: mockExcludeMutate, isPending: false };
+    }
+    if (key === 'comparisons.blacklistMovie') {
+      mockBlacklistMutate._opts = opts;
+      return { mutate: mockBlacklistMutate, isPending: false };
+    }
+    if (key === 'watchlist.add') {
+      mockAddToWatchlistMutate._opts = opts;
+      return { mutate: mockAddToWatchlistMutate, isPending: false };
+    }
+    if (key === 'watchlist.remove') {
+      mockRemoveFromWatchlistMutate._opts = opts;
+      return { mutate: mockRemoveFromWatchlistMutate, isPending: false };
+    }
     return { mutate: vi.fn(), isPending: false };
   },
-}));
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        getDebrief: {
-          useQuery: (...args: unknown[]) => {
-            const result = mockDebriefQuery(...args);
-            return { ...result, refetch: vi.fn() };
-          },
-        },
-        recordDebriefComparison: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockRecordMutate._opts = opts;
-            return { mutate: mockRecordMutate, isPending: false };
-          },
-        },
-        dismissDebriefDimension: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockDismissMutate._opts = opts;
-            return { mutate: mockDismissMutate, isPending: false };
-          },
-        },
-        markStale: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockMarkStaleMutate._opts = opts;
-            return { mutate: mockMarkStaleMutate, isPending: false };
-          },
-        },
-        excludeFromDimension: {
-          useMutation: () => {
-            return { mutate: mockExcludeMutate, isPending: false };
-          },
-        },
-        blacklistMovie: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockBlacklistMutate._opts = opts;
-            return { mutate: mockBlacklistMutate, isPending: false };
-          },
-        },
-        listForMedia: {
-          useQuery: (...args: unknown[]) => mockListForMediaQuery(...args),
-        },
-      },
-      watchlist: {
-        list: {
-          useQuery: (...args: unknown[]) => mockWatchlistQuery(...args),
-        },
-        add: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockAddToWatchlistMutate._opts = opts;
-            return { mutate: mockAddToWatchlistMutate, isPending: false };
-          },
-        },
-        remove: {
-          useMutation: (opts: Record<string, unknown>) => {
-            mockRemoveFromWatchlistMutate._opts = opts;
-            return { mutate: mockRemoveFromWatchlistMutate, isPending: false };
-          },
-        },
-      },
+  usePillarUtils: () => ({
+    setData: vi.fn(),
+    invalidate: (path?: readonly string[]) => {
+      const key = path?.join('.') ?? '';
+      if (key === 'comparisons.getDebrief') mockInvalidateDebrief();
+      if (key === 'comparisons.getPendingDebriefs') mockInvalidatePending();
+      if (key === 'watchlist') mockInvalidateWatchlist();
     },
-    useUtils: () => ({
-      media: {
-        comparisons: {
-          getDebrief: { invalidate: mockInvalidateDebrief },
-          getPendingDebriefs: { invalidate: mockInvalidatePending },
-        },
-        watchlist: {
-          list: { invalidate: mockInvalidateWatchlist },
-        },
-      },
-    }),
-  },
+  }),
 }));
 
 vi.mock('sonner', () => ({
