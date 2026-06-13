@@ -23,7 +23,7 @@ React hooks layer on top: `usePillarQuery(...)`, `usePillarMutation(...)` for th
 | #   | PRD                      | Summary                                                                                 | Status      |
 | --- | ------------------------ | --------------------------------------------------------------------------------------- | ----------- |
 | 191 | Client surface           | The `pillar('id').router.proc(...)` proxy + failure-mode discriminants                  | Not started |
-| 192 | Server surface           | Same SDK for sibling pillars + worker calling each other                                | Done        |
+| 192 | Server surface           | Same SDK for sibling pillars + worker calling each other                                | Partial     |
 | 193 | React hooks              | `usePillarQuery`, `usePillarMutation` with React Query integration                      | Partial     |
 | 194 | Caching + invalidation   | Registry snapshot TTL, change-subscription invalidation, per-procedure response caching | Not started |
 | 195 | Type generation pipeline | Generate the consumer-side typings from each pillar's contract                          | Not started |
