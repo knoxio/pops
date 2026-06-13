@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { reorderDimension, useDimensionMutations } from './useDimensionMutations';
 
@@ -56,10 +56,16 @@ export function useDimensionManagerModel(): DimensionManagerModel {
   const [addDescription, setAddDescription] = useState('');
   const [editing, setEditing] = useState<EditState | null>(null);
 
-  const { data: dimensionsData, isLoading } = trpc.media.comparisons.listDimensions.useQuery(
-    undefined,
-    { enabled: open }
-  );
+  const { data: dimensionsData, isLoading } = usePillarQuery<{
+    data: ReadonlyArray<{
+      id: number;
+      name: string;
+      description: string | null;
+      active: boolean | number;
+      sortOrder: number;
+      weight: number | null;
+    }>;
+  }>('media', ['comparisons', 'listDimensions'], undefined, { enabled: open });
 
   const dimensions = normalizeDimensions(dimensionsData?.data ?? []);
 

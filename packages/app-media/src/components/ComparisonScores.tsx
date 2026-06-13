@@ -7,7 +7,7 @@ import {
   Tooltip,
 } from 'recharts';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * ComparisonScores — radar chart showing Elo scores across comparison dimensions.
  * Queries scores and dimensions, merges them, and renders a recharts RadarChart.
@@ -109,12 +109,22 @@ function ScoresChart({ radarData }: { radarData: RadarDatum[] }) {
   );
 }
 
+interface ScoresResult {
+  data: (ScoreEntry & { excluded?: boolean })[];
+}
+
+interface DimensionsResult {
+  data: DimensionEntry[];
+}
+
 export function ComparisonScores({ mediaType, mediaId }: ComparisonScoresProps) {
-  const { data: scoresResponse, isLoading: scoresLoading } = trpc.media.comparisons.scores.useQuery(
+  const { data: scoresResponse, isLoading: scoresLoading } = usePillarQuery<ScoresResult>(
+    'media',
+    ['comparisons', 'scores'],
     { mediaType, mediaId }
   );
   const { data: dimensionsResponse, isLoading: dimensionsLoading } =
-    trpc.media.comparisons.listDimensions.useQuery();
+    usePillarQuery<DimensionsResult>('media', ['comparisons', 'listDimensions'], undefined);
 
   if (scoresLoading || dimensionsLoading) {
     return (

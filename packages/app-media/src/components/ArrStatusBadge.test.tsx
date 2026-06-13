@@ -7,21 +7,21 @@ const mockGetConfig = vi.fn();
 const mockGetMovieStatus = vi.fn();
 const mockGetShowStatus = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      arr: {
-        getConfig: { useQuery: () => mockGetConfig() },
-        getMovieStatus: {
-          useQuery: (_input: unknown, opts: { enabled: boolean }) =>
-            opts.enabled ? mockGetMovieStatus() : { data: null, isLoading: false, error: null },
-        },
-        getShowStatus: {
-          useQuery: (_input: unknown, opts: { enabled: boolean }) =>
-            opts.enabled ? mockGetShowStatus() : { data: null, isLoading: false, error: null },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    _input: unknown,
+    opts?: { enabled?: boolean }
+  ) => {
+    const key = path.join('.');
+    if (key === 'arr.getConfig') return mockGetConfig();
+    const enabled = opts?.enabled ?? true;
+    if (key === 'arr.getMovieStatus')
+      return enabled ? mockGetMovieStatus() : { data: null, isLoading: false, error: null };
+    if (key === 'arr.getShowStatus')
+      return enabled ? mockGetShowStatus() : { data: null, isLoading: false, error: null };
+    return { data: null, isLoading: false, error: null };
   },
 }));
 

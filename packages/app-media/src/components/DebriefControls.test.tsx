@@ -7,25 +7,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 let dismissOpts: Record<string, (...args: unknown[]) => unknown> = {};
 const mockDismissMutate = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        dismissDebriefDimension: {
-          useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
-            dismissOpts = opts;
-            return { mutate: mockDismissMutate, isPending: false };
-          },
-        },
-      },
-    },
-    useUtils: () => ({
-      media: {
-        comparisons: {
-          getPendingDebriefs: { invalidate: vi.fn() },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, (...args: unknown[]) => unknown>
+  ) => {
+    if (path.join('.') === 'comparisons.dismissDebriefDimension') {
+      dismissOpts = opts;
+      return { mutate: mockDismissMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
 }));
 

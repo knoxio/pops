@@ -5,13 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGetPendingDebriefs = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        getPendingDebriefs: { useQuery: () => mockGetPendingDebriefs() },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    if (path.join('.') === 'comparisons.getPendingDebriefs') return mockGetPendingDebriefs();
+    return { data: undefined };
   },
 }));
 

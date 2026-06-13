@@ -2,7 +2,7 @@ import { ClipboardList, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * DebriefBanner — shows a notification when movies are pending debrief.
  *
@@ -10,9 +10,21 @@ import { trpc } from '@pops/api-client';
  */
 import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
 
+interface PendingDebrief {
+  movieId: number;
+}
+
+interface PendingDebriefsResult {
+  data: PendingDebrief[];
+}
+
 export function DebriefBanner() {
   const [dismissed, setDismissed] = useState(false);
-  const { data } = trpc.media.comparisons.getPendingDebriefs.useQuery();
+  const { data } = usePillarQuery<PendingDebriefsResult>(
+    'media',
+    ['comparisons', 'getPendingDebriefs'],
+    undefined
+  );
 
   const debriefs = data?.data;
   if (!debriefs || debriefs.length === 0 || dismissed) return null;

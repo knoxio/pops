@@ -2,7 +2,7 @@ import { DoorOpen, SkipForward } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 /**
  * Debrief session controls: skip dimension, bail out (done for now),
  * and completion summary.
@@ -28,24 +28,30 @@ interface SkipDimensionButtonProps {
   onSkipped?: () => void;
 }
 
+interface DismissDebriefDimensionInput {
+  sessionId: number;
+  dimensionId: number;
+}
+
 export function SkipDimensionButton({
   sessionId,
   dimensionId,
   dimensionName,
   onSkipped,
 }: SkipDimensionButtonProps) {
-  const utils = trpc.useUtils();
-
-  const dismissMutation = trpc.media.comparisons.dismissDebriefDimension.useMutation({
-    onSuccess: () => {
-      toast.success(`Skipped ${dimensionName}`);
-      void utils.media.comparisons.getPendingDebriefs.invalidate();
-      onSkipped?.();
-    },
-    onError: (err) => {
-      toast.error(err.message);
-    },
-  });
+  const dismissMutation = usePillarMutation<DismissDebriefDimensionInput, unknown>(
+    'media',
+    ['comparisons', 'dismissDebriefDimension'],
+    {
+      onSuccess: () => {
+        toast.success(`Skipped ${dimensionName}`);
+        onSkipped?.();
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    }
+  );
 
   return (
     <Button

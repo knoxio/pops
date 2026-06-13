@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, type UsePillarMutationResult } from '@pops/pillar-sdk/react';
 
 import type { Dimension, EditState } from './types';
 
@@ -16,36 +16,57 @@ interface MutationsArgs {
   setShowAddForm: (v: boolean) => void;
 }
 
+interface CreateDimensionInput {
+  name: string;
+  description: string | null;
+  sortOrder: number;
+}
+
+interface UpdateDimensionInput {
+  id: number;
+  data: {
+    name?: string;
+    description?: string | null;
+    active?: boolean;
+    sortOrder?: number;
+    weight?: number;
+  };
+}
+
+type UpdateMutation = UsePillarMutationResult<UpdateDimensionInput, unknown>;
+
 function useCoreMutations(
   args: Pick<MutationsArgs, 'setEditing' | 'setAddName' | 'setAddDescription'>
 ) {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.media.comparisons.createDimension.useMutation({
-    onSuccess: () => {
-      void utils.media.comparisons.listDimensions.invalidate();
-      args.setAddName('');
-      args.setAddDescription('');
-      toast.success('Dimension created');
-    },
-    onError: (err: { message: string }) => toast.error(err.message),
-  });
+  const createMutation = usePillarMutation<CreateDimensionInput, unknown>(
+    'media',
+    ['comparisons', 'createDimension'],
+    {
+      onSuccess: () => {
+        args.setAddName('');
+        args.setAddDescription('');
+        toast.success('Dimension created');
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
-  const updateMutation = trpc.media.comparisons.updateDimension.useMutation({
-    onSuccess: () => {
-      void utils.media.comparisons.listDimensions.invalidate();
-      args.setEditing(null);
-      toast.success('Dimension updated');
-    },
-    onError: (err: { message: string }) => toast.error(err.message),
-  });
+  const updateMutation = usePillarMutation<UpdateDimensionInput, unknown>(
+    'media',
+    ['comparisons', 'updateDimension'],
+    {
+      onSuccess: () => {
+        args.setEditing(null);
+        toast.success('Dimension updated');
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
   return { createMutation, updateMutation };
 }
 
-function useEditHandlers(
-  args: MutationsArgs,
-  updateMutation: ReturnType<typeof trpc.media.comparisons.updateDimension.useMutation>
-) {
+function useEditHandlers(args: MutationsArgs, updateMutation: UpdateMutation) {
   const handleToggleActive = useCallback(
     (dim: Dimension) => {
       updateMutation.mutate({ id: dim.id, data: { active: !dim.active } });
@@ -77,9 +98,7 @@ function useEditHandlers(
   return { handleToggleActive, handleStartEdit, handleSaveEdit };
 }
 
-function useWeightHandlers(
-  updateMutation: ReturnType<typeof trpc.media.comparisons.updateDimension.useMutation>
-) {
+function useWeightHandlers(updateMutation: UpdateMutation) {
   const [localWeights, setLocalWeights] = useState<Map<number, number>>(new Map());
 
   const handleWeightDrag = useCallback((dimId: number, value: number) => {

@@ -1,44 +1,72 @@
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+
+interface ArrConfigResult {
+  data: { radarrConfigured: boolean; sonarrConfigured: boolean };
+}
+
+interface MovieStatusResult {
+  data: { status: string; label: string } | null;
+}
+
+interface CandidateStatusResult {
+  inQueue?: boolean;
+  isExcluded?: boolean;
+}
+
+interface AddToQueueInput {
+  tmdbId: number;
+  title?: string;
+  year?: number;
+  posterPath?: string;
+  rating?: number;
+}
 
 export function useRotationButtonsModel(tmdbId: number) {
-  const utils = trpc.useUtils();
-
-  const { data: configData } = trpc.media.arr.getConfig.useQuery();
+  const { data: configData } = usePillarQuery<ArrConfigResult>(
+    'media',
+    ['arr', 'getConfig'],
+    undefined
+  );
   const radarrConfigured = configData?.data?.radarrConfigured === true;
 
-  const movieStatus = trpc.media.arr.getMovieStatus.useQuery(
+  const movieStatus = usePillarQuery<MovieStatusResult>(
+    'media',
+    ['arr', 'getMovieStatus'],
     { tmdbId },
     { enabled: radarrConfigured }
   );
 
   const { data: candidateData, isLoading: candidateLoading } =
-    trpc.media.rotation.getCandidateStatus.useQuery({ tmdbId });
+    usePillarQuery<CandidateStatusResult>('media', ['rotation', 'getCandidateStatus'], { tmdbId });
 
-  const addToQueueMutation = trpc.media.rotation.addToQueue.useMutation({
-    onSuccess: () => {
-      toast.success('Added to rotation queue');
-      void utils.media.rotation.getCandidateStatus.invalidate({ tmdbId });
-    },
-    onError: () => toast.error('Failed to add to queue'),
-  });
+  const addToQueueMutation = usePillarMutation<AddToQueueInput, unknown>(
+    'media',
+    ['rotation', 'addToQueue'],
+    {
+      onSuccess: () => toast.success('Added to rotation queue'),
+      onError: () => toast.error('Failed to add to queue'),
+    }
+  );
 
-  const removeFromQueueMutation = trpc.media.rotation.removeFromQueue.useMutation({
-    onSuccess: () => {
-      toast.success('Removed from queue');
-      void utils.media.rotation.getCandidateStatus.invalidate({ tmdbId });
-    },
-    onError: () => toast.error('Failed to remove from queue'),
-  });
+  const removeFromQueueMutation = usePillarMutation<{ tmdbId: number }, unknown>(
+    'media',
+    ['rotation', 'removeFromQueue'],
+    {
+      onSuccess: () => toast.success('Removed from queue'),
+      onError: () => toast.error('Failed to remove from queue'),
+    }
+  );
 
-  const removeExclusionMutation = trpc.media.rotation.removeExclusion.useMutation({
-    onSuccess: () => {
-      toast.success('Exclusion removed');
-      void utils.media.rotation.getCandidateStatus.invalidate({ tmdbId });
-    },
-    onError: () => toast.error('Failed to remove exclusion'),
-  });
+  const removeExclusionMutation = usePillarMutation<{ tmdbId: number }, unknown>(
+    'media',
+    ['rotation', 'removeExclusion'],
+    {
+      onSuccess: () => toast.success('Exclusion removed'),
+      onError: () => toast.error('Failed to remove exclusion'),
+    }
+  );
 
   return {
     radarrConfigured,

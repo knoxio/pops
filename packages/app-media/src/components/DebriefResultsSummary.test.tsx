@@ -5,18 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockGetDebrief = vi.fn();
 const mockScores = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      comparisons: {
-        getDebrief: {
-          useQuery: (...args: unknown[]) => mockGetDebrief(...args),
-        },
-        scores: {
-          useQuery: (...args: unknown[]) => mockScores(...args),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts?: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.getDebrief') return mockGetDebrief(input, opts);
+    if (key === 'comparisons.scores') return mockScores(input, opts);
+    return { data: undefined, isLoading: false, error: null };
   },
 }));
 

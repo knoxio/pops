@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * ExcludedDimensions — shows which comparison dimensions a movie is excluded from
  * and provides an "Include" button to restore it.
@@ -12,37 +12,99 @@ export interface ExcludedDimensionsProps {
   mediaId: number;
 }
 
-export function ExcludedDimensions({ mediaType, mediaId }: ExcludedDimensionsProps) {
-  const utils = trpc.useUtils();
+interface ScoreEntry {
+  dimensionId: number;
+  excluded: boolean;
+}
 
-  const { data: scoresResponse } = trpc.media.comparisons.scores.useQuery({
-    mediaType,
-    mediaId,
-  });
+interface DimensionEntry {
+  id: number;
+  name: string;
+}
 
-  const { data: dimensionsResponse } = trpc.media.comparisons.listDimensions.useQuery();
+interface ScoresResult {
+  data: ScoreEntry[];
+}
 
-  const includeMutation = trpc.media.comparisons.includeInDimension.useMutation({
-    onSuccess: (_data, variables) => {
-      const dimName = dimensions.find((d) => d.id === variables.dimensionId)?.name ?? 'dimension';
-      toast.success(`Included in ${dimName}`);
-      void utils.media.comparisons.scores.invalidate({ mediaType, mediaId });
-    },
-    onError: (err) => {
-      toast.error(`Failed to include: ${err.message}`);
-    },
-  });
+interface DimensionsResult {
+  data: DimensionEntry[];
+}
+
+interface IncludeInDimensionInput {
+  mediaType: 'movie' | 'tv_show';
+  mediaId: number;
+  dimensionId: number;
+}
+
+function useExcludedDimensionsModel(mediaType: 'movie' | 'tv_show', mediaId: number) {
+  const { data: scoresResponse } = usePillarQuery<ScoresResult>(
+    'media',
+    ['comparisons', 'scores'],
+    { mediaType, mediaId }
+  );
+
+  const { data: dimensionsResponse } = usePillarQuery<DimensionsResult>(
+    'media',
+    ['comparisons', 'listDimensions'],
+    undefined
+  );
 
   const scores = scoresResponse?.data ?? [];
   const dimensions = dimensionsResponse?.data ?? [];
 
-  // Find excluded dimensions by matching scores with excluded=true
-  const excludedScores = scores.filter((s: { excluded: boolean }) => s.excluded);
+  const includeMutation = usePillarMutation<IncludeInDimensionInput, unknown>(
+    'media',
+    ['comparisons', 'includeInDimension'],
+    {
+      onSuccess: (_data, variables) => {
+        const dimName = dimensions.find((d) => d.id === variables.dimensionId)?.name ?? 'dimension';
+        toast.success(`Included in ${dimName}`);
+      },
+      onError: (err) => {
+        toast.error(`Failed to include: ${err.message}`);
+      },
+    }
+  );
 
+  return { scores, dimensions, includeMutation };
+}
+
+function ExcludedRow({
+  score,
+  dimensionMap,
+  isPending,
+  onInclude,
+}: {
+  score: ScoreEntry;
+  dimensionMap: Map<number, string>;
+  isPending: boolean;
+  onInclude: (dimensionId: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between py-1.5 px-2 rounded-md bg-muted/50">
+      <span className="text-sm font-medium">
+        {dimensionMap.get(score.dimensionId) ?? `Dimension ${score.dimensionId}`}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={isPending}
+        onClick={() => {
+          onInclude(score.dimensionId);
+        }}
+      >
+        Include
+      </Button>
+    </div>
+  );
+}
+
+export function ExcludedDimensions({ mediaType, mediaId }: ExcludedDimensionsProps) {
+  const { scores, dimensions, includeMutation } = useExcludedDimensionsModel(mediaType, mediaId);
+  const excludedScores = scores.filter((s) => s.excluded);
   if (excludedScores.length === 0) return null;
 
-  // Build dimension name lookup
-  const dimensionMap = new Map(dimensions.map((d: { id: number; name: string }) => [d.id, d.name]));
+  const dimensionMap = new Map(dimensions.map((d) => [d.id, d.name]));
 
   return (
     <section>
@@ -51,29 +113,16 @@ export function ExcludedDimensions({ mediaType, mediaId }: ExcludedDimensionsPro
         <p className="text-sm text-muted-foreground mb-3">
           This movie is excluded from the following comparison dimensions:
         </p>
-        {excludedScores.map((s: { dimensionId: number }) => (
-          <div
+        {excludedScores.map((s) => (
+          <ExcludedRow
             key={s.dimensionId}
-            className="flex items-center justify-between py-1.5 px-2 rounded-md bg-muted/50"
-          >
-            <span className="text-sm font-medium">
-              {dimensionMap.get(s.dimensionId) ?? `Dimension ${s.dimensionId}`}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={includeMutation.isPending}
-              onClick={() => {
-                includeMutation.mutate({
-                  mediaType,
-                  mediaId,
-                  dimensionId: s.dimensionId,
-                });
-              }}
-            >
-              Include
-            </Button>
-          </div>
+            score={s}
+            dimensionMap={dimensionMap}
+            isPending={includeMutation.isPending}
+            onInclude={(dimensionId) => {
+              includeMutation.mutate({ mediaType, mediaId, dimensionId });
+            }}
+          />
         ))}
       </div>
     </section>

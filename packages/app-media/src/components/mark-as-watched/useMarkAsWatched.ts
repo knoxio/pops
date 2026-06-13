@@ -1,21 +1,62 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+
+interface WatchHistoryEntry {
+  id: number;
+  watchedAt: string;
+}
+
+interface WatchHistoryListResult {
+  data: WatchHistoryEntry[];
+}
+
+interface LogResult {
+  data: { id: number };
+  watchlistRemoved: boolean;
+}
+
+interface LogInput {
+  mediaType: 'movie';
+  mediaId: number;
+  completed?: number;
+  watchedAt?: string;
+}
+
+interface AddToWatchlistInput {
+  mediaType: 'movie';
+  mediaId: number;
+}
+
+function useCrossRouterInvalidation() {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist'] });
+    void queryClient.invalidateQueries({ queryKey: ['media', 'comparisons'] });
+  };
+}
 
 function useUndoMutation(mediaId: number) {
-  const utils = trpc.useUtils();
-  const addToWatchlistMutation = trpc.media.watchlist.add.useMutation();
-  const deleteMutation = trpc.media.watchHistory.delete.useMutation({
-    onSuccess: () => {
-      toast.success('Watch entry undone');
-      void utils.media.watchHistory.list.invalidate();
-      void utils.media.watchlist.list.invalidate();
-    },
-    onError: (err: { message: string }) => {
-      toast.error(`Failed to undo: ${err.message}`);
-    },
-  });
+  const invalidateCross = useCrossRouterInvalidation();
+  const addToWatchlistMutation = usePillarMutation<AddToWatchlistInput, unknown>('media', [
+    'watchlist',
+    'add',
+  ]);
+  const deleteMutation = usePillarMutation<{ id: number }, unknown>(
+    'media',
+    ['watchHistory', 'delete'],
+    {
+      onSuccess: () => {
+        toast.success('Watch entry undone');
+        invalidateCross();
+      },
+      onError: (err) => {
+        toast.error(`Failed to undo: ${err.message}`);
+      },
+    }
+  );
 
   const handleUndo = (entryId: number, watchlistRemoved: boolean) => {
     deleteMutation.mutate(
@@ -23,14 +64,7 @@ function useUndoMutation(mediaId: number) {
       {
         onSuccess: () => {
           if (watchlistRemoved) {
-            addToWatchlistMutation.mutate(
-              { mediaType: 'movie', mediaId },
-              {
-                onSuccess: () => {
-                  void utils.media.watchlist.list.invalidate();
-                },
-              }
-            );
+            addToWatchlistMutation.mutate({ mediaType: 'movie', mediaId });
           }
         },
       }
@@ -49,9 +83,9 @@ function useLogMutation({
   setShowDatePicker: (v: boolean) => void;
   setCustomDate: (v: string) => void;
 }) {
-  const utils = trpc.useUtils();
-  return trpc.media.watchHistory.log.useMutation({
-    onSuccess: (result: { data: { id: number }; watchlistRemoved: boolean }) => {
+  const invalidateCross = useCrossRouterInvalidation();
+  return usePillarMutation<LogInput, LogResult>('media', ['watchHistory', 'log'], {
+    onSuccess: (result) => {
       toast.success('Marked as watched', {
         duration: 5000,
         action: {
@@ -61,13 +95,11 @@ function useLogMutation({
           },
         },
       });
-      void utils.media.watchHistory.list.invalidate();
-      void utils.media.watchlist.list.invalidate();
-      void utils.media.comparisons.getPendingDebriefs.invalidate();
+      invalidateCross();
       setShowDatePicker(false);
       setCustomDate('');
     },
-    onError: (err: { message: string }) => {
+    onError: (err) => {
       toast.error(`Failed to log watch: ${err.message}`);
     },
   });
@@ -77,7 +109,9 @@ export function useMarkAsWatched(mediaId: number) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [customDate, setCustomDate] = useState('');
 
-  const { data: historyData } = trpc.media.watchHistory.list.useQuery(
+  const { data: historyData } = usePillarQuery<WatchHistoryListResult>(
+    'media',
+    ['watchHistory', 'list'],
     { mediaType: 'movie', mediaId, limit: 100 },
     { staleTime: 30_000 }
   );

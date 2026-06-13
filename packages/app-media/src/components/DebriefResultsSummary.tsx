@@ -1,7 +1,7 @@
 import { ArrowLeft, CheckCircle, Clock, Trophy, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * DebriefResultsSummary — shows per-dimension results and ELO score
  * changes after completing a debrief session.
@@ -143,16 +143,29 @@ function ResultsBody({
   );
 }
 
+interface GetDebriefResult {
+  data: DebriefData;
+}
+
+interface ScoresResult {
+  data: { dimensionId: number; score: number }[];
+}
+
 export function DebriefResultsSummary({ mediaType, mediaId }: DebriefResultsSummaryProps) {
   const {
     data: debriefData,
     isLoading,
     error,
-  } = trpc.media.comparisons.getDebrief.useQuery({ mediaType, mediaId });
+  } = usePillarQuery<GetDebriefResult>('media', ['comparisons', 'getDebrief'], {
+    mediaType,
+    mediaId,
+  });
 
   const debrief = debriefData?.data;
 
-  const { data: scoresData } = trpc.media.comparisons.scores.useQuery(
+  const { data: scoresData } = usePillarQuery<ScoresResult>(
+    'media',
+    ['comparisons', 'scores'],
     { mediaType: 'movie', mediaId: debrief?.movie.mediaId ?? 0 },
     { enabled: !!debrief }
   );
