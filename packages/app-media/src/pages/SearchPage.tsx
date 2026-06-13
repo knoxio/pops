@@ -15,7 +15,7 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { MovieSearchSection } from './search/MovieSearchSection';
 import { SearchInput } from './search/SearchInput';
@@ -28,6 +28,14 @@ import type { MovieSearchResult, SearchMode, TvSearchResult } from './search/typ
 
 const MAX_RESULTS_PER_SECTION = 20;
 const STALE_TIME_MS = 60_000;
+
+interface MovieSearchResponse {
+  results: MovieSearchResult[];
+}
+
+interface TvSearchResponse {
+  results: TvSearchResult[];
+}
 
 function SearchEmptyPrompt() {
   return (
@@ -50,11 +58,15 @@ function useSearchQueries(debouncedQuery: string, mode: SearchMode) {
   const shouldSearchMovies = debouncedQuery.length > 0 && (mode === 'movies' || mode === 'both');
   const shouldSearchTv = debouncedQuery.length > 0 && (mode === 'tv' || mode === 'both');
 
-  const movieSearch = trpc.media.search.movies.useQuery(
+  const movieSearch = usePillarQuery<MovieSearchResponse>(
+    'media',
+    ['search', 'movies'],
     { query: debouncedQuery },
     { enabled: shouldSearchMovies, staleTime: STALE_TIME_MS }
   );
-  const tvSearch = trpc.media.search.tvShows.useQuery(
+  const tvSearch = usePillarQuery<TvSearchResponse>(
+    'media',
+    ['search', 'tvShows'],
     { query: debouncedQuery },
     { enabled: shouldSearchTv, staleTime: STALE_TIME_MS }
   );

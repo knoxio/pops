@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { RotationInfo } from './types';
 
@@ -21,16 +21,28 @@ interface LibraryTvShow {
   tvdbId: number;
 }
 
+interface LibraryMoviesEnvelope {
+  data: LibraryMovie[];
+}
+
+interface LibraryTvShowsEnvelope {
+  data: LibraryTvShow[];
+}
+
 /**
  * Fetches existing-library movies and TV shows so the search results can
  * mark items as "in library" and link to their detail pages.
  */
 export function useLibraryLookups({ shouldSearchMovies, shouldSearchTv }: UseLibraryLookupsArgs) {
-  const libraryMovies = trpc.media.movies.list.useQuery(
+  const libraryMovies = usePillarQuery<LibraryMoviesEnvelope>(
+    'media',
+    ['movies', 'list'],
     { limit: 1000 },
     { enabled: shouldSearchMovies, staleTime: 30_000 }
   );
-  const libraryTvShows = trpc.media.tvShows.list.useQuery(
+  const libraryTvShows = usePillarQuery<LibraryTvShowsEnvelope>(
+    'media',
+    ['tvShows', 'list'],
     { limit: 1000 },
     { enabled: shouldSearchTv, staleTime: 30_000 }
   );

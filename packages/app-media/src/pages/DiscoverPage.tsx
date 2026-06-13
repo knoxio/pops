@@ -1,7 +1,7 @@
 import { Compass, Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * DiscoverPage — dynamic shelf-based movie discovery.
  */
@@ -16,16 +16,40 @@ import {
   DiscoverSkeleton,
 } from './discover/DiscoverPageParts';
 
+import type { ComponentProps } from 'react';
+
+type DiscoverShelf = ComponentProps<typeof DiscoverShelves>['shelves'][number];
+
+interface AssembleSessionResult {
+  shelves: DiscoverShelf[];
+}
+
+type PreferenceProfileData = NonNullable<ComponentProps<typeof PreferenceProfile>['data']>;
+
+interface ProfileEnvelope {
+  data: PreferenceProfileData | undefined;
+}
+
+interface DismissedEnvelope {
+  data: number[];
+}
+
 function useDiscoverPageModel() {
-  const session = trpc.media.discovery.assembleSession.useQuery(undefined, {
-    staleTime: 0,
-  });
-  const profile = trpc.media.discovery.profile.useQuery(undefined, {
+  const session = usePillarQuery<AssembleSessionResult>(
+    'media',
+    ['discovery', 'assembleSession'],
+    undefined,
+    { staleTime: 0 }
+  );
+  const profile = usePillarQuery<ProfileEnvelope>('media', ['discovery', 'profile'], undefined, {
     staleTime: 5 * 60 * 1000,
   });
-  const dismissed = trpc.media.discovery.getDismissed.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000,
-  });
+  const dismissed = usePillarQuery<DismissedEnvelope>(
+    'media',
+    ['discovery', 'getDismissed'],
+    undefined,
+    { staleTime: 5 * 60 * 1000 }
+  );
   const actions = useDiscoverCardActions();
 
   const totalComparisons = profile.data?.data?.totalComparisons ?? 0;

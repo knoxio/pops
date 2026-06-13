@@ -1,7 +1,7 @@
 import { RefreshCw, Search, Sparkles } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Skeleton } from '@pops/ui';
 
 import { MediaCard } from '../components/MediaCard';
@@ -15,12 +15,25 @@ function parseCount(raw: string | null): number {
   return DEFAULT_COUNT;
 }
 
+interface QuickPickMovie {
+  id: number;
+  title: string;
+  releaseDate: string | null;
+  posterUrl: string | null;
+}
+
+interface QuickPickEnvelope {
+  data: QuickPickMovie[];
+}
+
 export function QuickPickPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const count = parseCount(searchParams.get('count'));
 
-  const { data, isLoading, refetch } = trpc.media.library.quickPick.useQuery(
+  const { data, isLoading, refetch } = usePillarQuery<QuickPickEnvelope>(
+    'media',
+    ['library', 'quickPick'],
     { count },
     { refetchOnWindowFocus: false }
   );
@@ -116,13 +129,6 @@ function QuickPickHeader({
       </div>
     </div>
   );
-}
-
-interface QuickPickMovie {
-  id: number;
-  title: string;
-  releaseDate: string | null;
-  posterUrl: string | null;
 }
 
 function QuickPickGrid({
