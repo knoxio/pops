@@ -2,14 +2,12 @@
  * Thin shims that forward the in-tree pattern-match read API to
  * `@pops/finance-db`'s `transactionCorrectionsService`.
  *
- * Track N3 phase 1 PR 3 routing flip — see `query-helpers.ts` for the
- * full rationale. The `getDrizzle()` handle still resolves to the shared
- * `pops.db` so the in-tree imports pipeline (the other consumer) keeps
- * seeing the same rows.
+ * Reads route through `getFinanceDrizzle()` — the finance-owned
+ * `transaction_corrections` table lives in `finance.db`.
  */
 import { transactionCorrectionsService } from '@pops/finance-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { classifyCorrectionMatch } from '../types.js';
 
 import type { CorrectionMatchResult, CorrectionRow } from '../types.js';
@@ -19,7 +17,7 @@ export function findAllMatchingCorrectionFromDB(
   minConfidence: number = 0.7
 ): CorrectionRow[] {
   return transactionCorrectionsService.findAllMatchingTransactionCorrectionsFromDb(
-    getDrizzle(),
+    getFinanceDrizzle(),
     description,
     minConfidence
   );
@@ -37,7 +35,7 @@ export function findMatchingCorrection(
 
 export function findAllMatchingCorrections(description: string): CorrectionRow[] {
   return transactionCorrectionsService.findAllMatchingTransactionCorrections(
-    getDrizzle(),
+    getFinanceDrizzle(),
     description
   );
 }
