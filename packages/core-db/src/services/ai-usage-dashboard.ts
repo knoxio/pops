@@ -8,7 +8,7 @@
  * spend. These helpers encapsulate the CASE-based aggregation so the
  * pops-api layer keeps a thin pass-through service.
  */
-import { and, desc, gte, lte, sql, type SQL } from 'drizzle-orm';
+import { and, desc, gte, lt, sql, type SQL } from 'drizzle-orm';
 
 import { aiInferenceLog } from '../schema.js';
 import { buildInferenceLogConditions, type ListInferenceLogsFilter } from './ai-usage-filters.js';
@@ -81,18 +81,31 @@ export interface DashboardInferenceLogDailyRow extends DashboardInferenceLogStat
 }
 
 /** Optional inclusive date-window filter for
- * {@link groupInferenceLogByDate}. Dates are matched against
- * `DATE(created_at)` so callers pass `YYYY-MM-DD` boundaries. */
+ * {@link groupInferenceLogByDate}. Callers pass `YYYY-MM-DD` boundaries
+ * (UTC); internally the bounds are translated to ISO timestamps and
+ * applied to the raw `created_at` column so `idx_ai_inference_log_created_at`
+ * stays usable. */
 export interface GroupInferenceLogByDateFilter {
   startDate?: string;
   endDate?: string;
 }
 
+function startOfUtcDayIso(date: string): string {
+  return `${date}T00:00:00.000Z`;
+}
+
+function startOfNextUtcDayIso(date: string): string {
+  const next = new Date(`${date}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString();
+}
+
 function buildDateWindowCondition(filter: GroupInferenceLogByDateFilter): SQL | undefined {
   const conditions: SQL[] = [];
   if (filter.startDate)
-    conditions.push(gte(sql`DATE(${aiInferenceLog.createdAt})`, filter.startDate));
-  if (filter.endDate) conditions.push(lte(sql`DATE(${aiInferenceLog.createdAt})`, filter.endDate));
+    conditions.push(gte(aiInferenceLog.createdAt, startOfUtcDayIso(filter.startDate)));
+  if (filter.endDate)
+    conditions.push(lt(aiInferenceLog.createdAt, startOfNextUtcDayIso(filter.endDate)));
   if (conditions.length === 0) return undefined;
   if (conditions.length === 1) return conditions[0];
   return and(...conditions);
