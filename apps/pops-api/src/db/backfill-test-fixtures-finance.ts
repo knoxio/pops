@@ -3,21 +3,6 @@
  * `backfill-test-fixtures.ts` to keep each file under the 200-line cap.
  * See that module's header for why these DDLs live alongside the tests.
  */
-export const WISH_LIST_TABLE_SQL = `
-CREATE TABLE wish_list (
-  id text PRIMARY KEY NOT NULL,
-  notion_id text,
-  item text NOT NULL,
-  target_amount real,
-  saved real,
-  priority text,
-  url text,
-  notes text,
-  last_edited_time text NOT NULL
-);
-CREATE UNIQUE INDEX wish_list_notion_id_unique ON wish_list (notion_id);
-`;
-
 export const ENTITIES_TABLE_SQL = `
 CREATE TABLE entities (
   id text PRIMARY KEY NOT NULL,

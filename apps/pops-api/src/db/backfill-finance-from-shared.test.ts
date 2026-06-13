@@ -29,7 +29,6 @@ import {
   TRANSACTION_CORRECTIONS_TABLE_SQL,
   TRANSACTION_TAG_RULES_TABLE_SQL,
   TRANSACTIONS_TABLE_SQL,
-  WISH_LIST_TABLE_SQL,
 } from './backfill-test-fixtures.js';
 
 const ALL_FINANCE_TABLES_SQL = [
@@ -39,7 +38,6 @@ const ALL_FINANCE_TABLES_SQL = [
   TRANSACTION_TAG_RULES_TABLE_SQL,
   TAG_VOCABULARY_TABLE_SQL,
   BUDGETS_TABLE_SQL,
-  WISH_LIST_TABLE_SQL,
 ].join('\n');
 
 let tmpDir: string;
@@ -71,9 +69,11 @@ function countRows(raw: BetterSqlite3.Database, table: string): number {
  * in-flight N2 cutover PR will introduce via its own baseline migration.
  * The current finance baseline (entities, transaction_corrections,
  * transaction_tag_rules, tag_vocabulary, budgets, wish_list) already
- * covers everything else. The backfill must already be ready for the
- * transactions cutover before that PR lands — this helper simulates the
- * post-cutover finance.db so the tests exercise the full TABLE_COPIES set.
+ * covers everything else; `wish_list` is no longer carried by the
+ * bridge (Theme 13 PR4) but its finance.db table is still part of the
+ * baseline. The backfill must already be ready for the transactions
+ * cutover before that PR lands — this helper simulates the post-cutover
+ * finance.db so the tests exercise the full TABLE_COPIES set.
  *
  * The DDL is rewritten to `IF NOT EXISTS` so this helper stays safe once
  * the N2 cutover lands and `openFinanceDb()` starts creating the
@@ -93,79 +93,6 @@ function openFinanceForCutover(path: string): ReturnType<typeof openFinanceDb> {
 }
 
 describe('backfillFinanceFromShared', () => {
-  it('copies wish_list rows from the shared DB on first run', () => {
-    const sharedPath = openSharedWithSeed((raw) => {
-      raw.exec(
-        `INSERT INTO wish_list (id, item, last_edited_time) VALUES ('wish-1', 'Espresso machine', '2026-06-10T00:00:00Z')`
-      );
-      raw.exec(
-        `INSERT INTO wish_list (id, item, last_edited_time) VALUES ('wish-2', 'Headphones', '2026-06-10T00:00:00Z')`
-      );
-    });
-
-    const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-    try {
-      backfillFinanceFromShared(finance, sharedPath);
-      const rows = finance.raw.prepare('SELECT id, item FROM wish_list ORDER BY id').all() as {
-        id: string;
-        item: string;
-      }[];
-      expect(rows).toEqual([
-        { id: 'wish-1', item: 'Espresso machine' },
-        { id: 'wish-2', item: 'Headphones' },
-      ]);
-    } finally {
-      finance.raw.close();
-    }
-  });
-
-  it('is idempotent — a second run does not duplicate rows', () => {
-    const sharedPath = openSharedWithSeed((raw) => {
-      raw.exec(
-        `INSERT INTO wish_list (id, item, last_edited_time) VALUES ('wish-1', 'Espresso machine', '2026-06-10T00:00:00Z')`
-      );
-    });
-
-    const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-    try {
-      backfillFinanceFromShared(finance, sharedPath);
-      backfillFinanceFromShared(finance, sharedPath);
-      const count = finance.raw.prepare('SELECT count(*) AS n FROM wish_list').get() as {
-        n: number;
-      };
-      expect(count.n).toBe(1);
-    } finally {
-      finance.raw.close();
-    }
-  });
-
-  it('only inserts rows missing from the finance copy (mixed state)', () => {
-    const sharedPath = openSharedWithSeed((raw) => {
-      raw.exec(
-        `INSERT INTO wish_list (id, item, last_edited_time) VALUES ('wish-shared-only', 'Bike rack', '2026-06-10T00:00:00Z')`
-      );
-      raw.exec(
-        `INSERT INTO wish_list (id, item, last_edited_time) VALUES ('wish-both', 'Espresso machine', '2026-06-10T00:00:00Z')`
-      );
-    });
-
-    const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-    try {
-      // Pre-seed the finance.db with one of the rows that also lives in
-      // the shared DB; the backfill must skip it but pick up the other.
-      finance.raw.exec(
-        `INSERT INTO wish_list (id, item, last_edited_time) VALUES ('wish-both', 'Espresso machine', '2026-06-10T00:00:00Z')`
-      );
-      backfillFinanceFromShared(finance, sharedPath);
-      const rows = finance.raw.prepare('SELECT id FROM wish_list ORDER BY id').all() as {
-        id: string;
-      }[];
-      expect(rows.map((r) => r.id)).toEqual(['wish-both', 'wish-shared-only']);
-    } finally {
-      finance.raw.close();
-    }
-  });
-
   it('tolerates a shared DB with no finance-owned tables (post-PR-4 drop scenario)', () => {
     const sharedPath = join(tmpDir, 'pops.db');
     const raw = new BetterSqlite3(sharedPath);
@@ -175,7 +102,6 @@ describe('backfillFinanceFromShared', () => {
     const finance = openFinanceForCutover(join(tmpDir, 'finance.db'));
     try {
       expect(() => backfillFinanceFromShared(finance, sharedPath)).not.toThrow();
-      expect(countRows(finance.raw, 'wish_list')).toBe(0);
       expect(countRows(finance.raw, 'entities')).toBe(0);
       expect(countRows(finance.raw, 'transactions')).toBe(0);
       expect(countRows(finance.raw, 'transaction_corrections')).toBe(0);
@@ -189,19 +115,15 @@ describe('backfillFinanceFromShared', () => {
     }
   });
 
-  it('tolerates a shared DB missing only some finance tables (partial legacy)', () => {
-    // Shared DB has wish_list + entities but no transactions / corrections /
-    // tag rules / tag vocabulary / budgets. Backfill must copy what's there
-    // and skip the rest without throwing.
+  it('tolerates a shared DB missing some finance tables (partial legacy)', () => {
+    // Shared DB only has entities — transactions / corrections / tag rules
+    // / tag vocabulary / budgets are absent. Backfill must copy what's
+    // there and skip the rest without throwing.
     const sharedPath = join(tmpDir, 'pops.db');
     const raw = new BetterSqlite3(sharedPath);
     raw.exec(ENTITIES_TABLE_SQL);
-    raw.exec(WISH_LIST_TABLE_SQL);
     raw.exec(
       `INSERT INTO entities (id, name, last_edited_time) VALUES ('ent-1', 'Acme', '2026-06-10T00:00:00Z')`
-    );
-    raw.exec(
-      `INSERT INTO wish_list (id, item, last_edited_time) VALUES ('wish-1', 'Coffee grinder', '2026-06-10T00:00:00Z')`
     );
     raw.close();
 
@@ -209,7 +131,6 @@ describe('backfillFinanceFromShared', () => {
     try {
       expect(() => backfillFinanceFromShared(finance, sharedPath)).not.toThrow();
       expect(countRows(finance.raw, 'entities')).toBe(1);
-      expect(countRows(finance.raw, 'wish_list')).toBe(1);
       expect(countRows(finance.raw, 'transactions')).toBe(0);
     } finally {
       finance.raw.close();

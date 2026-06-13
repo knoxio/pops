@@ -16,7 +16,9 @@
  *     → transaction_tag_rules (FK → entities)
  *   tag_vocabulary (no FK, PK is `tag`)
  *   budgets (no FK, UNIQUE on category+period)
- *   wish_list (no FK)
+ *
+ * `wish_list` was retired from the bridge once its read + write surface
+ * landed entirely on `finance.db` (Theme 13, PRD-212 PR4).
  *
  * Each table is wrapped in `tryCopyTable` so a missing source table
  * (post-PR-4 drop scenario, or a stale on-disk pops.db) doesn't bring
@@ -135,21 +137,6 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'period',
       'amount',
       'active',
-      'notes',
-      'last_edited_time',
-    ],
-  },
-  {
-    table: 'wish_list',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'notion_id',
-      'item',
-      'target_amount',
-      'saved',
-      'priority',
-      'url',
       'notes',
       'last_edited_time',
     ],
