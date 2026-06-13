@@ -30,6 +30,30 @@ Verification / cleanup PRD — single PR:
 
 Same as PRD-184; see that PRD for the audit checklist pattern.
 
+## Status — cross-pillar coupling not yet resolved
+
+The PRD's premise ("data already in `finance.db`, code move is mechanical")
+is correct, but five call sites inside `apps/pops-api/src/modules/core/corrections/`
+still read the finance-owned tables through the shared `getDrizzle()` (pops.db)
+handle instead of `getFinanceDrizzle()` (finance.db). This was surfaced by
+the FINANCE PR4 audit (#3080) and blocks the boot-time backfill drop for
+`transactions` and `transaction_corrections`.
+
+Sites:
+
+- `handlers/preview-matches.ts` — `transactions`
+- `handlers/changeset-impact.ts` — `transactions`, `transaction_corrections`
+- `handlers/ai-revise.ts` — `transaction_corrections`
+- `handlers/compute-changeset.ts` — `transaction_corrections`
+- `lib/tag-loader.ts` — `transactions`
+
+See [notes/corrections-finance-coupling.md](../../notes/corrections-finance-coupling.md)
+for the full audit + recommended fix. The recommendation is a
+`getDrizzle()` → `getFinanceDrizzle()` handle swap at all five sites,
+shipped as a pre-requisite refactor before the Epic 08a PRD-203
+directory move runs. Sibling `handlers/apply-corrections.ts` already
+uses the finance handle, so the change is mechanical and zero-behaviour.
+
 ## User Stories
 
 | #   | Story                                                 | Summary                                        |
