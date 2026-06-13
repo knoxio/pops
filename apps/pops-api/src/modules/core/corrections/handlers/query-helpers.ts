@@ -2,13 +2,8 @@
  * Thin shims that forward CRUD operations on `transaction_corrections` to
  * `@pops/finance-db`'s `transactionCorrectionsService`.
  *
- * Track N3 phase 1 PR 3 routing flip: the underlying drizzle handle (and
- * the on-disk SQLite file) is unchanged — `getDrizzle()` still resolves to
- * the shared `pops.db` so the in-tree imports pipeline (the other consumer
- * of this table) keeps reading and writing the same rows. Only the code
- * path moves from the in-tree implementation to the package one. PR 4 of
- * phase 1 will delete this shim once the imports pipeline (N6) is also on
- * the package and the handle can shift to `getFinanceDrizzle()`.
+ * Reads and writes route through `getFinanceDrizzle()` — the finance-owned
+ * `transaction_corrections` table lives in `finance.db`.
  *
  * Domain errors thrown by the package (`TransactionCorrectionNotFoundError`)
  * are translated to `NotFoundError` so the existing router layer (and the
@@ -22,7 +17,7 @@ import {
   type UpdateTransactionCorrectionInput,
 } from '@pops/finance-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
 
 import type { CorrectionRow, CreateCorrectionInput, UpdateCorrectionInput } from '../types.js';
@@ -40,7 +35,7 @@ export function listCorrections(
   offset: number = 0,
   matchType?: 'exact' | 'contains' | 'regex'
 ): { rows: CorrectionRow[]; total: number } {
-  return transactionCorrectionsService.listTransactionCorrections(getDrizzle(), {
+  return transactionCorrectionsService.listTransactionCorrections(getFinanceDrizzle(), {
     minConfidence,
     matchType,
     limit,
@@ -50,7 +45,7 @@ export function listCorrections(
 
 export function getCorrection(id: string): CorrectionRow {
   try {
-    return transactionCorrectionsService.getTransactionCorrection(getDrizzle(), id);
+    return transactionCorrectionsService.getTransactionCorrection(getFinanceDrizzle(), id);
   } catch (err) {
     rethrowAsNotFound(err, id);
   }
@@ -68,7 +63,7 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
     priority: input.priority,
   };
   return transactionCorrectionsService.createOrUpdateTransactionCorrection(
-    getDrizzle(),
+    getFinanceDrizzle(),
     packageInput
   );
 }
@@ -88,7 +83,7 @@ export function updateCorrection(id: string, input: UpdateCorrectionInput): Corr
   };
   try {
     return transactionCorrectionsService.updateTransactionCorrection(
-      getDrizzle(),
+      getFinanceDrizzle(),
       id,
       packageInput
     );
@@ -99,19 +94,23 @@ export function updateCorrection(id: string, input: UpdateCorrectionInput): Corr
 
 export function deleteCorrection(id: string): void {
   try {
-    transactionCorrectionsService.deleteTransactionCorrection(getDrizzle(), id);
+    transactionCorrectionsService.deleteTransactionCorrection(getFinanceDrizzle(), id);
   } catch (err) {
     rethrowAsNotFound(err, id);
   }
 }
 
 export function incrementCorrectionUsage(id: string): void {
-  transactionCorrectionsService.incrementTransactionCorrectionUsage(getDrizzle(), id);
+  transactionCorrectionsService.incrementTransactionCorrectionUsage(getFinanceDrizzle(), id);
 }
 
 export function adjustConfidence(id: string, delta: number): void {
   try {
-    transactionCorrectionsService.adjustTransactionCorrectionConfidence(getDrizzle(), id, delta);
+    transactionCorrectionsService.adjustTransactionCorrectionConfidence(
+      getFinanceDrizzle(),
+      id,
+      delta
+    );
   } catch (err) {
     rethrowAsNotFound(err, id);
   }
