@@ -19,6 +19,7 @@
  */
 
 import { mergeResults } from '../ranking/merge.js';
+import { summarisePartialFailures, type PartialFailureSummary } from './partial.js';
 
 import type { PillarSnapshot } from '../discovery/types.js';
 import type { MergedResult, PillarWeights, ScoredResult } from '../ranking/types.js';
@@ -62,6 +63,12 @@ export interface FederatedSearchOptions {
 export interface FederatedSearchResponse {
   readonly results: readonly MergedResult[];
   readonly failures: readonly FederatedSearchFailure[];
+  /**
+   * PRD-199 partial-failure summary. Always present, even when every
+   * pillar responded — empty `failedPillars` / `timeoutPillars` mean
+   * "no degradation, show the full result set".
+   */
+  readonly partial: PartialFailureSummary;
 }
 
 export class EmptyFederatedQueryError extends Error {
@@ -118,7 +125,9 @@ export async function runFederatedSearch(
     onWarn,
   });
 
-  return { results: merged, failures };
+  const partial = summarisePartialFailures(targets, failures);
+
+  return { results: merged, failures, partial };
 }
 
 interface CollectedOutcomes {

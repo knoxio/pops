@@ -39,11 +39,11 @@ type SearchResponse = {
 
 ## User Stories
 
-| #   | Story                                                                       | Summary                                |
-| --- | --------------------------------------------------------------------------- | -------------------------------------- |
-| 01  | [us-01-response-shape](us-01-response-shape.md)                             | Add partial block to search response   |
-| 02  | [us-02-orchestrator-tracks-failures](us-02-orchestrator-tracks-failures.md) | Orchestrator collects failure info     |
-| 03  | [us-03-shell-ui-indicator](us-03-shell-ui-indicator.md)                     | Shell shows "X of Y sources" indicator |
+| #   | Story                                                                       | Summary                                | Status      |
+| --- | --------------------------------------------------------------------------- | -------------------------------------- | ----------- |
+| 01  | [us-01-response-shape](us-01-response-shape.md)                             | Add partial block to search response   | Done        |
+| 02  | [us-02-orchestrator-tracks-failures](us-02-orchestrator-tracks-failures.md) | Orchestrator collects failure info     | Done        |
+| 03  | [us-03-shell-ui-indicator](us-03-shell-ui-indicator.md)                     | Shell shows "X of Y sources" indicator | Not started |
 
 ## Out of Scope
 

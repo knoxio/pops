@@ -5,7 +5,8 @@
  * whose manifest advertises at least one search adapter
  * (`manifest.search.adapters`), merges the per-pillar `ScoredResult[]`
  * lists via {@link mergeResults} (PRD-198), and returns a single ranked
- * response plus a per-pillar partial-failure list (PRD-199).
+ * response plus a per-pillar partial-failure list (PRD-197 `failures`) and
+ * a per-pillar partial-failure summary block (PRD-199 `partial`).
  *
  * **Known limitation (interim shape).** As of this PRD-197 cut, the
  * manifest schema's `search.adapters` field is `readonly string[]` —
