@@ -27,13 +27,15 @@ The schema definition stays the same — just relocates. All indexes, FK constra
 
 ### Backfill
 
-`apps/pops-api/src/db/backfill-media-from-shared.ts` already exists from M3 PR 1. Extend `TABLE_COPIES` to include `movies`:
+`apps/pops-api/src/db/backfill-media-from-shared.ts` already exists from M3 PR 1. PR 1 adds `movies` to `TABLE_COPIES`:
 
 ```ts
 { table: 'movies', idColumn: 'id', columns: [/* ... all columns ... */] }
 ```
 
 Same idempotent INSERT-WHERE-NOT-EXISTS pattern.
+
+PR 4 retires this entry once the writer cutover (PR 3) has been deployed to prod: every write now lands directly on `getMediaDrizzle()`, so the boot bridge has nothing to carry forward. The PR 4 deploy must follow PR 3 — otherwise any late-arriving rows still being written to `pops.db.movies` would be stranded.
 
 ## API Surface
 
@@ -94,15 +96,15 @@ This is the **canonical template** for every slice in Epic 03. Subsequent PRDs (
 
 ## Edge Cases
 
-| Case                                                                                  | Behaviour                                                                                                                                                                                   |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pops.db.movies` has rows that don't exist in `media.db.movies` after migration       | Backfill catches them on next boot; idempotent.                                                                                                                                             |
-| TMDB sync writes a movie row during the cutover window                                | Writes land where the active handle points; concurrent writes during the cutover PR's release are minimised because pops-worker doesn't write `movies` directly (it writes via the router). |
-| Search adapter references `movies` after relocation but before pops-search-api (E08b) | Adapter import path updates as part of PR 3; pops-api search still works because it imports through the new package path.                                                                   |
-| URI resolver `pops:media/movie/<id>` is called during the transition                  | URI handler is a stateless lookup against `getMediaDrizzle()` — works regardless of which container serves it.                                                                              |
-| `media.movies.list` batched with `media.tvShows.list` (both unmigrated)               | Falls through to pops-api per the M3 PR 2 dispatcher rule; both queries succeed against `pops.db` via the legacy mounts. Batched calls keep working until E04 (batching fix) lands.         |
-| Q1 schema-coverage CI fails because `movies` is in services but not migrations        | Caught at PR 1 review; resolved by including the table in the package's baseline.                                                                                                           |
-| New column added to `movies` mid-flight                                               | Migration drifts. The drift-guard CI catches it during the transition window. Pattern: land the schema change in the shared journal first, sync to the package, then continue the cutover.  |
+| Case                                                                                  | Behaviour                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pops.db.movies` has rows that don't exist in `media.db.movies` after migration       | Backfill catches them on next boot up to and including PR 3. PR 4 retires the `movies` entry from `TABLE_COPIES`; from then on no further boot copy runs, so PR 4 must deploy after PR 3 is live in prod to avoid stranding late-arriving rows. |
+| TMDB sync writes a movie row during the cutover window                                | Writes land where the active handle points; concurrent writes during the cutover PR's release are minimised because pops-worker doesn't write `movies` directly (it writes via the router).                                                     |
+| Search adapter references `movies` after relocation but before pops-search-api (E08b) | Adapter import path updates as part of PR 3; pops-api search still works because it imports through the new package path.                                                                                                                       |
+| URI resolver `pops:media/movie/<id>` is called during the transition                  | URI handler is a stateless lookup against `getMediaDrizzle()` — works regardless of which container serves it.                                                                                                                                  |
+| `media.movies.list` batched with `media.tvShows.list` (both unmigrated)               | Falls through to pops-api per the M3 PR 2 dispatcher rule; both queries succeed against `pops.db` via the legacy mounts. Batched calls keep working until E04 (batching fix) lands.                                                             |
+| Q1 schema-coverage CI fails because `movies` is in services but not migrations        | Caught at PR 1 review; resolved by including the table in the package's baseline.                                                                                                                                                               |
+| New column added to `movies` mid-flight                                               | Migration drifts. The drift-guard CI catches it during the transition window. Pattern: land the schema change in the shared journal first, sync to the package, then continue the cutover.                                                      |
 
 ## User Stories
 
