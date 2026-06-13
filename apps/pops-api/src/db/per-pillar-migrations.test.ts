@@ -207,10 +207,14 @@ describe('runPerPillarMigrations', () => {
     // registry endpoints), 0056_settings_baseline (PRD-183 US-01 —
     // settings baseline), 0057_ai_usage_baseline (PRD-186 US-01 —
     // ai_inference_log + ai_inference_daily + ai_budgets baseline),
-    // 0058_pillar_registry_external_origin, and the PRD-186 PR4 trio
+    // 0058_pillar_registry_external_origin, the PRD-186 PR4 trio
     // 0059_ai_model_pricing + 0060_sync_job_results + 0061_ai_usage
     // (Wave 5 unblock — the remaining AI Ops + sync-result tables land
-    // in core-db ahead of the hot-path writer cutover);
+    // in core-db ahead of the hot-path writer cutover), and the
+    // PRD-186 PR4 ai-alerts slice 0062_ai_alert_rules + 0063_ai_alerts
+    // (Wave 5 — moves the evaluator's tables and flips the 7
+    // `core/ai-alerts/{alerts-store,evaluator,service}.ts` handler sites
+    // to `getCoreDrizzle()`);
     // `media` owns `packages/media-db/migrations/`
     // with 0021_spooky_lockheed (media pillar Phase 1 PR 2),
     // 0022_media_movies_baseline (Theme 13 PRD-165 US-01 — movies baseline),
@@ -274,6 +278,8 @@ describe('runPerPillarMigrations', () => {
         '0059_ai_model_pricing',
         '0060_sync_job_results',
         '0061_ai_usage',
+        '0062_ai_alert_rules',
+        '0063_ai_alerts',
       ]);
       expect([...result.pillarsApplied].toSorted()).toEqual([
         'cerebrum',

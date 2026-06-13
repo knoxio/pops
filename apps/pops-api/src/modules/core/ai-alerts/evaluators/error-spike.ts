@@ -11,7 +11,7 @@ import { aiInferenceLog } from '@pops/db-types';
 
 import { rollingWindowStart } from './shared.js';
 
-import type { getDrizzle } from '../../../../db.js';
+import type { getCoreDrizzle } from '../../../../db.js';
 import type { AlertCandidate, AlertRule, AlertSeverity } from '../types.js';
 
 function severity(rate: number, threshold: number): AlertSeverity {
@@ -20,7 +20,7 @@ function severity(rate: number, threshold: number): AlertSeverity {
 
 export function evaluateErrorSpike(
   rule: AlertRule,
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   now: Date
 ): AlertCandidate[] {
   const windowMinutes = rule.windowMinutes ?? 60;

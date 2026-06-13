@@ -9,12 +9,17 @@
  * The orchestrator is invoked from the BullMQ scheduled worker every 5
  * minutes — see `scheduler.ts`. Tests drive `runEvaluation` directly
  * against a seeded DB.
+ *
+ * Reads + writes resolve against `getCoreDrizzle()` now that PRD-186 PR 4
+ * lands `ai_alerts` + `ai_alert_rules` in `@pops/core-db`. The per-rule
+ * evaluator helpers (`evaluators/*`) still receive the same drizzle
+ * handle for ergonomics — the orchestrator owns the handle resolution.
  */
 import { eq } from 'drizzle-orm';
 
 import { aiAlertRules } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
 import { insertAlertIfNotDuplicate } from './alerts-store.js';
 import { dispatchAlert } from './dispatch.js';
@@ -29,7 +34,7 @@ export { DEDUP_WINDOW_MINUTES, acknowledgeAlert, listAlerts } from './alerts-sto
 export type { ListAlertsFilters } from './alerts-store.js';
 
 interface EvaluatorDeps {
-  db: ReturnType<typeof getDrizzle>;
+  db: ReturnType<typeof getCoreDrizzle>;
   now: Date;
 }
 
@@ -60,7 +65,7 @@ export function evaluateRule(rule: AlertRule, deps: EvaluatorDeps): AlertCandida
 }
 
 /** List enabled rules from the DB. */
-export function loadEnabledRules(db: ReturnType<typeof getDrizzle>): AlertRule[] {
+export function loadEnabledRules(db: ReturnType<typeof getCoreDrizzle>): AlertRule[] {
   return db.select().from(aiAlertRules).where(eq(aiAlertRules.enabled, 1)).all().map(ruleRowToRule);
 }
 
@@ -81,7 +86,7 @@ async function dispatchPersistedAlert(
 export async function runEvaluation(
   options: RunEvaluationOptions = {}
 ): Promise<RunEvaluationResult> {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const now = options.now ?? new Date();
   const dispatchEnabled = options.dispatch ?? true;
   const rules = loadEnabledRules(db);

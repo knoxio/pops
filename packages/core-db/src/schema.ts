@@ -11,6 +11,8 @@
  * Mirrors the `@pops/app-food-db` schema re-export pattern.
  */
 export {
+  aiAlertRules,
+  aiAlerts,
   aiBudgets,
   aiInferenceDaily,
   aiInferenceLog,

@@ -12,7 +12,7 @@ import { aiInferenceLog } from '@pops/db-types';
 
 import { rollingWindowStart } from './shared.js';
 
-import type { getDrizzle } from '../../../../db.js';
+import type { getCoreDrizzle } from '../../../../db.js';
 import type { AlertCandidate, AlertRule, AlertSeverity } from '../types.js';
 
 /**
@@ -49,7 +49,7 @@ function baseLatencyConditions(rule: AlertRule, start: string): SQL[] {
 
 function evaluateForModel(
   rule: AlertRule,
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   now: Date,
   model: string
 ): AlertCandidate | null {
@@ -79,7 +79,7 @@ function evaluateForModel(
 
 function listModelsInWindow(
   rule: AlertRule,
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   now: Date
 ): string[] {
   const windowMinutes = rule.windowMinutes ?? 60;
@@ -95,7 +95,7 @@ function listModelsInWindow(
 
 export function evaluateLatencyDegradation(
   rule: AlertRule,
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   now: Date
 ): AlertCandidate[] {
   if (rule.scopeModel) {

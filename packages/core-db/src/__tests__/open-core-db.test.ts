@@ -82,6 +82,59 @@ describe('openCoreDb', () => {
     }
   });
 
+  it('applies the PRD-186 PR4 ai_alert_rules + ai_alerts migrations', () => {
+    const path = join(tmpDir, 'core.db');
+    const { raw } = openCoreDb(path);
+    try {
+      const tables = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(tables.has('ai_alert_rules')).toBe(true);
+      expect(tables.has('ai_alerts')).toBe(true);
+
+      const indexes = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(indexes.has('idx_ai_alert_rules_type')).toBe(true);
+      expect(indexes.has('idx_ai_alert_rules_enabled')).toBe(true);
+      expect(indexes.has('idx_ai_alerts_created_at')).toBe(true);
+      expect(indexes.has('idx_ai_alerts_type')).toBe(true);
+      expect(indexes.has('idx_ai_alerts_severity')).toBe(true);
+      expect(indexes.has('idx_ai_alerts_acknowledged')).toBe(true);
+      expect(indexes.has('idx_ai_alerts_dedupe')).toBe(true);
+
+      const ruleId = (
+        raw
+          .prepare(
+            `INSERT INTO ai_alert_rules
+              (type, scope_provider, scope_model, threshold_value, window_minutes, enabled, created_at, updated_at)
+             VALUES ('budget-threshold', NULL, NULL, 80, NULL, 1, datetime('now'), datetime('now'))
+             RETURNING id`
+          )
+          .get() as { id: number }
+      ).id;
+      raw
+        .prepare(
+          `INSERT INTO ai_alerts
+            (rule_id, type, message, severity, scope_detail, metric_value, threshold_value, acknowledged, created_at)
+           VALUES (?, 'budget-threshold', 'over budget', 'warning', 'budget:global', 81, 80, 0, datetime('now'))`
+        )
+        .run(ruleId);
+      const count = (raw.prepare('SELECT count(*) AS n FROM ai_alerts').get() as { n: number }).n;
+      expect(count).toBe(1);
+    } finally {
+      raw.close();
+    }
+  });
+
   it('is idempotent — re-opening the same DB does not re-apply migrations', async () => {
     const path = join(tmpDir, 'core.db');
     const first = openCoreDb(path);
