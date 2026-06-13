@@ -13,8 +13,10 @@
  */
 export {
   dismissedDiscover,
+  episodes,
   mediaWatchlist,
   movies,
+  seasons,
   shelfImpressions,
   tvShows,
   watchHistory,
