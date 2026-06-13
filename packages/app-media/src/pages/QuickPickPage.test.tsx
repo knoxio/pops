@@ -5,19 +5,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockQuickPickQuery = vi.fn();
 const mockRefetch = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      library: {
-        quickPick: {
-          useQuery: (...args: unknown[]) => {
-            const result = mockQuickPickQuery(...args);
-            return { ...result, refetch: mockRefetch };
-          },
-        },
-      },
-    },
-    useUtils: () => ({}),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    input: unknown,
+    options: unknown
+  ) => {
+    const key = path.join('.');
+    if (key === 'library.quickPick') {
+      const result = mockQuickPickQuery(input, options);
+      return { ...result, refetch: mockRefetch };
+    }
+    return { data: undefined, isLoading: false };
   },
 }));
 

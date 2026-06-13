@@ -9,24 +9,21 @@ const mockAssembleSessionRefetch = vi.fn();
 const mockProfileQuery = vi.fn();
 const mockGetDismissedQuery = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      discovery: {
-        assembleSession: {
-          useQuery: (...args: unknown[]) => {
-            const result = mockAssembleSessionQuery(...args);
-            return { ...result, refetch: mockAssembleSessionRefetch };
-          },
-        },
-        profile: {
-          useQuery: (...args: unknown[]) => mockProfileQuery(...args),
-        },
-        getDismissed: {
-          useQuery: (...args: unknown[]) => mockGetDismissedQuery(...args),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    input: unknown,
+    options: unknown
+  ) => {
+    const key = path.join('.');
+    if (key === 'discovery.assembleSession') {
+      const result = mockAssembleSessionQuery(input, options);
+      return { ...result, refetch: mockAssembleSessionRefetch };
+    }
+    if (key === 'discovery.profile') return mockProfileQuery(input, options);
+    if (key === 'discovery.getDismissed') return mockGetDismissedQuery(input, options);
+    return { data: undefined, isLoading: false, error: null };
   },
 }));
 

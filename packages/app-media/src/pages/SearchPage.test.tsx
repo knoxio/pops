@@ -32,16 +32,6 @@ const {
 vi.mock('@pops/api-client', () => ({
   trpc: {
     media: {
-      search: {
-        movies: { useQuery: (...args: unknown[]) => mockMovieSearch(...args) },
-        tvShows: { useQuery: (...args: unknown[]) => mockTvSearch(...args) },
-      },
-      movies: {
-        list: { useQuery: (...args: unknown[]) => mockLibraryMovies(...args) },
-      },
-      tvShows: {
-        list: { useQuery: (...args: unknown[]) => mockLibraryTv(...args) },
-      },
       library: {
         addMovie: { useMutation: () => ({ mutate: mockAddMovieMutation, isPending: false }) },
         addTvShow: { useMutation: () => ({ mutate: mockAddTvMutation, isPending: false }) },
@@ -53,6 +43,22 @@ vi.mock('@pops/api-client', () => ({
         log: { useMutation: () => ({ mutate: mockWatchHistoryLogMutation, isPending: false }) },
       },
     },
+  },
+}));
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    input: unknown,
+    options: unknown
+  ) => {
+    const key = path.join('.');
+    if (key === 'search.movies') return mockMovieSearch(input, options);
+    if (key === 'search.tvShows') return mockTvSearch(input, options);
+    if (key === 'movies.list') return mockLibraryMovies(input, options);
+    if (key === 'tvShows.list') return mockLibraryTv(input, options);
+    return { data: undefined, isLoading: false, error: null };
   },
 }));
 
