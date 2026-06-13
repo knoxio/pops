@@ -122,6 +122,23 @@ export function setRawSetting(db: CoreDb, key: string, value: string): SettingRo
 }
 
 /**
+ * Write-once insert for settings whose value must be stable for the
+ * lifetime of the install — e.g. an encryption seed, or a generated
+ * client identifier whose change would invalidate previously-derived
+ * state. Inserts with `ON CONFLICT DO NOTHING` and then re-reads, so
+ * concurrent first-time callers all converge on the same persisted
+ * value (the row that landed first) instead of clobbering each other
+ * via the upsert path. Returns the persisted row.
+ */
+export function ensureSetting(db: CoreDb, key: string, value: string): SettingRow {
+  db.insert(settings).values({ key, value }).onConflictDoNothing({ target: settings.key }).run();
+
+  const row = db.select().from(settings).where(eq(settings.key, key)).get();
+  if (!row) throw new SettingNotFoundError(key);
+  return row;
+}
+
+/**
  * Write multiple settings inside a single SQLite transaction — either
  * every row lands or none of them do. Returns a mirror of the written
  * entries (key → value) without re-reading the table.

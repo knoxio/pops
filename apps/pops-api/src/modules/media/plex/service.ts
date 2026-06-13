@@ -41,7 +41,7 @@ function getEncryptionKey(): Buffer {
     return scryptSync(existing.value, 'pops-plex-token', 32);
   }
   const seed = randomBytes(32).toString('hex');
-  const persisted = settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED, seed);
+  const persisted = settingsService.ensureSetting(coreDb, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED, seed);
   return scryptSync(persisted.value, 'pops-plex-token', 32);
 }
 
@@ -76,7 +76,7 @@ export function getPlexClientId(): string {
 
   const newId = randomUUID();
   console.warn(`[Plex] Generating new client identifier: ${newId}`);
-  const persisted = settingsService.setRawSetting(
+  const persisted = settingsService.ensureSetting(
     coreDb,
     SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER,
     newId
