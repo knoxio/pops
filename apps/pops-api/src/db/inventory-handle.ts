@@ -1,12 +1,13 @@
 /**
  * Lazily-initialised handle to the inventory pillar's SQLite file.
  *
- * Phase 2 PR 2 of the inventory pillar migration: opens the connection
- * (and applies the in-package migrations journal) at boot but does NOT
- * yet route any production traffic through it. PR 3 of phase 2 flips
- * locations + items + uri-handler callers over with a single edit to
- * `getDrizzle()` → `getInventoryDrizzle()`; PR 4 drops the inventory
- * tables from the shared journal + adds the Litestream config.
+ * Phase 2 PR 2 opened the connection (and applied the in-package
+ * migrations journal) at boot. PR 3 routed every inventory module
+ * read/write through `getInventoryDrizzle()` and ran a one-shot
+ * ATTACH-based backfill from the legacy shared pops.db. PR 4 (Theme 13)
+ * retired the backfill — every inventory-owned table now writes
+ * directly to inventory.db, so the boot bridge has nothing left to
+ * carry forward.
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
  * pillars come online. Mirrors the eventual planned extraction of
@@ -18,7 +19,6 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openInventoryDb, type InventoryDb, type OpenedInventoryDb } from '@pops/inventory-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
-import { backfillInventoryFromShared } from './backfill-inventory-from-shared.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
 
 let inventoryDb: OpenedInventoryDb | null = null;
@@ -87,16 +87,4 @@ export function setInventoryDb(next: OpenedInventoryDb | null): OpenedInventoryD
   const prev = inventoryDb;
   inventoryDb = next;
   return prev;
-}
-
-/**
- * Run the one-shot ATTACH backfill from the legacy shared pops.db into
- * the inventory pillar's inventory.db. No-op if the inventory handle
- * isn't open (e.g. boot still resolving). Idempotent against repeated
- * boots via per-table `WHERE id NOT IN (...)` filters. See
- * `backfill-inventory-from-shared.ts` for table-by-table behaviour.
- */
-export function backfillInventoryFromSharedDb(sharedPath: string): void {
-  if (!inventoryDb) return;
-  backfillInventoryFromShared(inventoryDb, sharedPath);
 }
