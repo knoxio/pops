@@ -8,11 +8,13 @@
  * `apps/pops-api/src/db/drizzle-migrations/` and
  * `packages/<id>-db/migrations/`.
  *
- * Split across per-pillar siblings (`backfill-test-fixtures-core.ts`,
- * `-media.ts`, `-finance.ts`) so each file stays under the 200-line
- * lint cap. This barrel keeps the existing import surface stable.
+ * Split across per-pillar siblings (`backfill-test-fixtures-media.ts`,
+ * `-finance.ts`) so each file stays under the 200-line lint cap. The
+ * core pillar's fixtures sibling was retired alongside the core PR4
+ * drop — every core-owned table writes directly to core.db. This
+ * barrel keeps the existing import surface stable for the remaining
+ * pillars.
  */
-export { AI_INFERENCE_LOG_TABLE_SQL } from './backfill-test-fixtures-core.js';
 export {
   DISMISSED_DISCOVER_TABLE_SQL,
   MOVIES_TABLE_SQL,
