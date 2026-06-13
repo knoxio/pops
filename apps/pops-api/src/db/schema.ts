@@ -626,9 +626,13 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE TABLE IF NOT EXISTS debrief_sessions (
       id                INTEGER PRIMARY KEY AUTOINCREMENT,
       watch_history_id  INTEGER NOT NULL REFERENCES watch_history(id),
+      media_type        TEXT,
+      media_id          INTEGER,
       status            TEXT NOT NULL DEFAULT 'pending',
       created_at        TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE INDEX IF NOT EXISTS idx_debrief_sessions_media
+      ON debrief_sessions(media_type, media_id);
 
     CREATE TABLE IF NOT EXISTS debrief_results (
       id              INTEGER PRIMARY KEY AUTOINCREMENT,

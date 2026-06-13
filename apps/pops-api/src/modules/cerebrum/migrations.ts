@@ -36,6 +36,10 @@ export const cerebrumMigrationTags: readonly string[] = [
   '0047_glia_actions',
   // conversations safety re-creation (idempotent).
   '0048_conversations',
+  // Theme 13 / PR #3111 Option D step 1 — denormalise media_type + media_id
+  // onto debrief_sessions so the cross-pillar getDebriefByMedia read
+  // (logWatchCompletion / getDebrief) no longer needs the watch_history join.
+  '0071_debrief_media_denorm',
 ];
 
 export const cerebrumMigrations: readonly MigrationDescriptor[] =

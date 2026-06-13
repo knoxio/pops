@@ -104,6 +104,12 @@ export const MIGRATION_OWNERS: Readonly<Record<string, string>> = {
   // expression index. Powers PRD-122's tag editor + PRD-152's plan-derived
   // shopping list generator.
   '0070_prd_151_ingredient_tags': 'food',
+  // Theme 13 / PR #3111 Option D step 1 — denormalise media_type + media_id
+  // onto debrief_sessions so the cross-pillar getDebriefByMedia read no
+  // longer needs the watch_history join. Owned by cerebrum even though the
+  // table still physically lives on `pops.db` until the follow-up cerebrum
+  // baseline migration picks it up.
+  '0071_debrief_media_denorm': 'cerebrum',
 };
 
 /** Materialised as a Map for O(1) lookup by the runner. */
