@@ -264,6 +264,7 @@ describe('runPerPillarMigrations', () => {
         '0055_pillar_registry',
         '0056_settings_baseline',
         '0057_ai_usage_baseline',
+        '0058_pillar_registry_external_origin',
       ]);
       expect([...result.pillarsApplied].toSorted()).toEqual([
         'cerebrum',

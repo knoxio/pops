@@ -22,6 +22,13 @@ import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
  *   as `'healthy'` on register; transitions to `'unavailable'` via the
  *   missed-heartbeat logic in PRD-162; transitions to `'unknown'` only
  *   after core-api restart reconciliation (PRD-164).
+ * - `origin` distinguishes `'internal'` (in-tree bootstrap path, PRD-158)
+ *   from `'external'` (registered via the shared-key HTTP endpoint,
+ *   PRD-228). `apiKeyHash` carries the SHA-256 of the key used at
+ *   registration time so a rotated key invalidates stale external
+ *   registrations without affecting internal ones. `evictedAt` is set
+ *   by the hard-eviction ticker for external pillars that never
+ *   heartbeated; internal pillars are never hard-evicted.
  */
 export const pillarRegistry = sqliteTable(
   'pillar_registry',
@@ -36,6 +43,12 @@ export const pillarRegistry = sqliteTable(
     lastHeartbeatAt: text('last_heartbeat_at').notNull(),
     status: text('status').notNull(),
     statusUpdatedAt: text('status_updated_at').notNull(),
+    origin: text('origin').notNull().default('internal'),
+    apiKeyHash: text('api_key_hash'),
+    evictedAt: text('evicted_at'),
   },
-  (table) => [index('idx_pillar_registry_status').on(table.status)]
+  (table) => [
+    index('idx_pillar_registry_status').on(table.status),
+    index('idx_pillar_registry_origin').on(table.origin),
+  ]
 );
