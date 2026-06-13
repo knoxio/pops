@@ -2,18 +2,28 @@
  * Boot-time backfill from the legacy shared `pops.db` into the inventory
  * pillar's `inventory.db`.
  *
- * Phase 2 PR 3 of the inventory pillar flips locations + items +
+ * Phase 2 PR 3 of the inventory pillar flipped locations + items +
  * fixtures + connections + documents + photos + uploaded-files +
  * fixture-connections traffic to the inventory handle. The first deploy
- * after PR 3 needs to carry the existing rows from the shared DB
+ * after each PR 3 needs to carry the existing rows from the shared DB
  * across before any reads come from the new file. Subsequent boots
  * find the inventory copy already populated and become a no-op via
  * the `WHERE id NOT IN (...)` existence filter on every table.
  *
+ * Theme 13 retires the bridge slice-by-slice as each PR 3 deploy
+ * ships. PR 4 drops the `locations` (pillar inventory phase 1 PR 3),
+ * `item_connections` (PRD-175 PR 3), and `item_documents` (PRD-176 PR 3)
+ * entries — their writers all land on `inventory.db` directly. The
+ * remaining entries (`home_inventory`, `fixtures`, `item_photos`,
+ * `item_uploaded_files`, `item_fixture_connections`) stay on the
+ * bridge until PRD-173 PR 3 (the items + fixtures writer cutover)
+ * ships and its PR 4 retires them as well.
+ *
  * Order matters for FK enforcement (with `foreign_keys = ON`):
- *   locations (no parent) → home_inventory → fixtures →
- *   item_connections / item_documents / item_photos /
- *   item_uploaded_files / item_fixture_connections.
+ *   home_inventory → fixtures → item_photos / item_uploaded_files /
+ *   item_fixture_connections. `home_inventory.location_id` points
+ *   at the locations row that already exists in `inventory.db`
+ *   (locations was the first pillar slice to flip).
  *
  * Each table is wrapped in `tryCopyTable` so a missing source table
  * (post-PR-4 drop scenario, or a stale on-disk pops.db) doesn't bring
@@ -36,19 +46,13 @@ interface TableCopy {
    * on-disk pops.db that already widened or narrowed since the boot
    * image was built. */
   readonly columns: readonly string[];
-  /** Identifier column used in the existence filter. Most inventory
-   * tables key on `id`; the pair-tables (`item_connections`,
-   * `item_fixture_connections`, `item_documents`) also key on `id`
-   * because they have autoincrement PKs. */
+  /** Identifier column used in the existence filter. Every inventory
+   * table on the bridge keys on `id` — the pair-table
+   * `item_fixture_connections` keys on its autoincrement PK. */
   readonly idColumn: string;
 }
 
 const TABLE_COPIES: readonly TableCopy[] = [
-  {
-    table: 'locations',
-    idColumn: 'id',
-    columns: ['id', 'name', 'parent_id', 'sort_order', 'last_edited_time'],
-  },
   {
     table: 'home_inventory',
     idColumn: 'id',
@@ -85,16 +89,6 @@ const TABLE_COPIES: readonly TableCopy[] = [
     table: 'fixtures',
     idColumn: 'id',
     columns: ['id', 'name', 'type', 'location_id', 'notes', 'created_at', 'last_edited_time'],
-  },
-  {
-    table: 'item_connections',
-    idColumn: 'id',
-    columns: ['id', 'item_a_id', 'item_b_id', 'created_at'],
-  },
-  {
-    table: 'item_documents',
-    idColumn: 'id',
-    columns: ['id', 'item_id', 'paperless_document_id', 'document_type', 'title', 'created_at'],
   },
   {
     table: 'item_photos',
