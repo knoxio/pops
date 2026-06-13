@@ -342,6 +342,17 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/lib/inference-pricing.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/core/ai-budgets/enforcement.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
@@ -397,6 +408,17 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/ai-usage/service.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/core/corrections/handlers/ai-inference.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
@@ -409,6 +431,17 @@
   {
     "type": "dependency",
     "from": "apps/pops-api/src/modules/core/settings/service.ts",
+    "to": "packages/core-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/core-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-core"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/food/__tests__/ai-router.test.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
     "dependencyTypes": ["undetermined", "import"],
@@ -793,6 +826,28 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/inventory/connections/service.ts",
+    "to": "packages/inventory-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/inventory-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-inventory"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/inventory/documents/service.ts",
+    "to": "packages/inventory-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/inventory-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-inventory"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/inventory/items/service.ts",
     "to": "packages/inventory-db/dist/index.d.ts",
     "unresolvedTo": "@pops/inventory-db",
@@ -892,6 +947,28 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/discovery/flags.test.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/discovery/flags.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/media/discovery/router-shelf.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
@@ -904,6 +981,17 @@
   {
     "type": "dependency",
     "from": "apps/pops-api/src/modules/media/discovery/router.assemble-session.test.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/discovery/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
     "dependencyTypes": ["undetermined", "import"],
@@ -936,6 +1024,17 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/library/tv-show-service.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/media/movies/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
@@ -951,6 +1050,17 @@
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
     "dependencyTypes": ["undetermined", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/plex/sync-discover-show.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
