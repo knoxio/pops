@@ -358,6 +358,16 @@ describe('recordInferenceDaily', () => {
     const rows = listInferenceDaily(db, {});
     expect(rows).toHaveLength(3);
   });
+
+  it('folds null-domain aggregates into a single bucket via the empty-string sentinel', () => {
+    recordInferenceDaily(db, { ...baseAgg, domain: null, totalCalls: 4 });
+    recordInferenceDaily(db, { ...baseAgg, domain: null, totalCalls: 6 });
+
+    const rows = listInferenceDaily(db, {});
+    const nullDomainRows = rows.filter((r) => r.domain === '' || r.domain === null);
+    expect(nullDomainRows).toHaveLength(1);
+    expect(nullDomainRows[0]?.totalCalls).toBe(10);
+  });
 });
 
 describe('deleteInferenceLogsByIds', () => {

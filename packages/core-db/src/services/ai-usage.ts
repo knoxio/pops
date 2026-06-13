@@ -19,10 +19,15 @@
  * transaction handle to pass in. Mirrors `@pops/finance-db`'s service
  * signature pattern.
  *
- * Post-PRD-186 PR 3: every read AND write site in `apps/pops-api` routes
- * through this module against `getCoreDrizzle()`. The boot-time
- * `pops.db -> core.db` backfill bridges any pre-cutover rows; PR 4 drops
- * the legacy `ai_*` tables from the shared journal.
+ * Post-PRD-186 PR 3: the hot inference-log write path and the retention
+ * rollup in `apps/pops-api` route through this module against
+ * `getCoreDrizzle()`. A handful of dashboard read paths
+ * (`ai-observability/history.ts`, `group-stats.ts`, `summary.ts`,
+ * `service.ts`, plus `findFallbackProvider`) still query
+ * `ai_inference_log` / `ai_inference_daily` directly via `getDrizzle()`
+ * and migrate in a follow-up PR. The boot-time `pops.db -> core.db`
+ * backfill bridges any pre-cutover rows; PR 4 drops the legacy `ai_*`
+ * tables from the shared journal once the read sites move over.
  */
 import { and, desc, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 

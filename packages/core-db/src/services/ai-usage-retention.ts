@@ -126,7 +126,7 @@ export function recordInferenceDaily(db: CoreDb, agg: InferenceDailyAggregate): 
       provider: agg.provider,
       model: agg.model,
       operation: agg.operation,
-      domain: agg.domain,
+      domain: agg.domain ?? '',
       totalCalls: agg.totalCalls,
       totalInputTokens: agg.totalInputTokens,
       totalOutputTokens: agg.totalOutputTokens,
