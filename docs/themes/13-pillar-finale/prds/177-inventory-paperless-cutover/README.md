@@ -1,57 +1,84 @@
 # PRD-177: inventory.paperless cutover
 
 > Epic: [Remaining data migrations](../../epics/03-remaining-data-migrations.md)
+>
+> **Status: Done (no work required).** The slice has no data of its own — see [Investigation](#investigation) below.
 
 ## Overview
 
-Move `inventory.paperless.*` procedures (the paperless-ngx client + sync state) into `inventory.db`. Follows the canonical N-track pattern from [PRD-165](../165-media-movies-cutover/README.md).
+The `inventory.paperless.*` surface is a thin tRPC router over an outbound HTTP
+client to the paperless-ngx container. It owns **zero tables** in `pops.db` (or
+anywhere else). There is nothing to migrate to `inventory.db`, so the canonical
+4-PR N-track sequence does not apply.
 
-The paperless surface bridges pops to the paperless-ngx container. Holds sync state, cached document metadata, and the API client. Outbound HTTP to `pops-paperless`; the client itself is stateless.
+This PRD is preserved as a documented no-op so the epic's slice list stays
+complete and future readers don't reopen the question.
 
-## Data Model
+## Investigation
 
-Tables (move from shared to `packages/inventory-db`):
+Surveyed `apps/pops-api/src/modules/inventory/paperless/` (2026-06-13):
 
-- `paperless_sync_state` — { id, last_synced_at, last_document_id, status }
-- `paperless_document_cache` — { document_id, title, tags_json, correspondent, file_type, cached_at } (denormalised cache of paperless metadata; refreshed on sync)
+| File             | Role                                                       |
+| ---------------- | ---------------------------------------------------------- |
+| `client.ts`      | Typed wrapper over the paperless-ngx REST API (HTTP only). |
+| `types.ts`       | Raw + mapped API types. No DB rows.                        |
+| `index.ts`       | `getPaperlessClient()` factory; feature-toggle gated.      |
+| `router.ts`      | `status` + `search` procedures. Calls the client only.     |
+| `client.test.ts` | Unit tests with mocked `fetch`.                            |
 
-## API Surface
+Grep results that confirm the no-DB picture:
 
-| Procedure                         | Kind                             |
-| --------------------------------- | -------------------------------- |
-| `inventory.paperless.sync`        | mutation (calls paperless API)   |
-| `inventory.paperless.search`      | query (against cache + live API) |
-| `inventory.paperless.getDocument` | query                            |
-| `inventory.paperless.tags.list`   | query                            |
+- `paperless_sync_state` — does not exist anywhere in the repo.
+- `paperless_document_cache` — does not exist anywhere in the repo.
+- No `getInventoryDrizzle` / `getInventoryDb` / shared-journal import in
+  `paperless/`.
+- The only `paperless`-named DB column is `item_documents.paperless_document_id`
+  — a foreign-id integer owned by **PRD-176** (`inventory.documents`), not by
+  this slice.
 
-Files today: `apps/pops-api/src/modules/inventory/paperless/{client.ts, router.ts}`.
+The actual wire surface today is:
 
-## Business Rules
+| Procedure                    | Kind  | Behaviour                                                                  |
+| ---------------------------- | ----- | -------------------------------------------------------------------------- |
+| `inventory.paperless.status` | query | Returns `{ configured, available, baseUrl }`. Hits `/api/document_types/`. |
+| `inventory.paperless.search` | query | Forwards `query` to paperless `/api/documents/?query=…`.                   |
 
-Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business-rules--the-n-track-4-pr-sequence). Slice specifics:
+The PRD's original API table — `sync`, `getDocument`, `tags.list` — was
+aspirational. None of those procedures exist.
 
-- Paperless HTTP client (`client.ts`) is decoupled from DB; outbound calls work identically post-cutover.
-- The cache table is reconstructible from paperless API; if backfill is lossy, next sync re-populates.
+### PRD discrepancy
 
-## Edge Cases
+The original PRD-177 listed two tables (`paperless_sync_state`,
+`paperless_document_cache`) and four procedures (`sync`, `search`,
+`getDocument`, `tags.list`). None of them exist in the live module. Two
+interpretations:
 
-| Case                                       | Behaviour                                                                 |
-| ------------------------------------------ | ------------------------------------------------------------------------- |
-| Paperless container is down during cutover | Cutover is a DB-only change; paperless reachability irrelevant.           |
-| Cache is stale (cached_at > 1 day)         | Existing TTL refresh logic preserved.                                     |
-| Sync mid-cutover                           | Worker / sync calls use the active handle; PR 3 lands all writes at once. |
+1. They were planned but never built — pops never cached paperless metadata
+   locally; every read goes straight to paperless-ngx.
+2. They were copy-paste from the canonical PRD-165 template without a fact
+   check.
 
-## User Stories
+Either way, the live shape is "outbound HTTP only". Nothing to cut over.
 
-| #   | Story                                                       | Summary                                          |
-| --- | ----------------------------------------------------------- | ------------------------------------------------ |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Schemas + service in `@pops/inventory-db` |
-| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal                  |
-| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip router to `getInventoryDrizzle()`    |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                      |
+## Decision
+
+**No PRs to ship.** The slice is complete-by-construction:
+
+- Container boundary: `pops-api` → `pops-paperless` (HTTP) is unchanged by the
+  per-pillar DB split. The client cares about env vars (`PAPERLESS_BASE_URL`,
+  `PAPERLESS_API_TOKEN`), not about which sqlite file owns inventory rows.
+- No shared-journal entries to drop (PR2-equivalent is a no-op).
+- No router handle to flip (PR3-equivalent is a no-op).
+- No shim to delete (PR4-equivalent is a no-op).
+
+If a future feature adds local paperless state (e.g. cached metadata, sync
+cursor, per-user subscriptions), that work goes in a **new** PRD scoped to
+those tables — not in PRD-177.
 
 ## Out of Scope
 
-- Paperless API client refactoring.
-- New paperless features (e.g. tag rules).
-- Multi-tenant paperless.
+- Refactoring `PaperlessClient` (no behaviour change desired).
+- Adding a paperless metadata cache (would need its own PRD).
+- Multi-tenant paperless / per-user paperless instances.
+- Any feature work on the inventory.documents <-> paperless link — owned by
+  PRD-176.
