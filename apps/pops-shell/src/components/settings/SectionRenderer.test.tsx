@@ -13,13 +13,14 @@ const mocks = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
 }));
 
-vi.mock('@/lib/trpc', () => ({
-  trpc: {
-    useUtils: () => ({ client: {} }),
-  },
+vi.mock('@pops/pillar-sdk/client', () => ({
+  pillar: () => ({
+    callDynamic: () => Promise.resolve({ kind: 'ok', value: { data: [] } }),
+  }),
 }));
 
 vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarSdkOptions: () => ({}),
   usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
     if (pillarId === 'core' && path.join('.') === 'settings.getBulk') {
       return mocks.getBulk(input);
