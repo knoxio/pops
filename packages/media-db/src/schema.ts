@@ -11,4 +11,11 @@
  * Mirrors the `@pops/core-db` schema re-export pattern. The shape grows as
  * subsequent Phase 1 PRs migrate additional media tables into this package.
  */
-export { mediaWatchlist, movies, shelfImpressions, tvShows, watchHistory } from '@pops/db-types';
+export {
+  dismissedDiscover,
+  mediaWatchlist,
+  movies,
+  shelfImpressions,
+  tvShows,
+  watchHistory,
+} from '@pops/db-types';
