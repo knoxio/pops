@@ -3,7 +3,7 @@ import { PillarSdkError } from './errors.js';
 import type { ManifestPayload } from '../manifest-schema/index.js';
 
 /**
- * The shape returned by `core.registry.snapshot` (PRD-161 / PRD-159).
+ * The shape returned by `core.registry.list` (PRD-161 / PRD-159).
  * One entry per registered pillar.
  */
 export type DiscoveredPillar = {
@@ -17,7 +17,7 @@ export type DiscoveredPillar = {
 
 /**
  * The transport the client uses to fetch the registry snapshot. The
- * default HTTP impl talks to `core.registry.snapshot`; tests inject a
+ * default HTTP impl talks to `core.registry.list`; tests inject a
  * fake. Decoupling the transport keeps the client unit-testable without
  * a live registry and lets future deployments swap to an SSE / file /
  * in-process variant without touching `pillar()`.
@@ -38,11 +38,11 @@ const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
 const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
 
 /**
- * Default HTTP transport. Calls `core.registry.snapshot` over the tRPC
+ * Default HTTP transport. Calls `core.registry.list` over the tRPC
  * GET wire format and reshapes the response into `DiscoveredPillar[]`.
  *
  * tRPC's HTTP GET shape:
- *   GET /trpc/core.registry.snapshot
+ *   GET /trpc/core.registry.list
  *   → { result: { data: { pillars: [...], fetchedAt: ... } } }
  */
 export class HttpDiscoveryTransport implements DiscoveryTransport {
@@ -59,7 +59,7 @@ export class HttpDiscoveryTransport implements DiscoveryTransport {
   }
 
   async fetchSnapshot(): Promise<readonly DiscoveredPillar[]> {
-    const url = `${this.registryUrl.replace(/\/$/, '')}/trpc/core.registry.snapshot`;
+    const url = `${this.registryUrl.replace(/\/$/, '')}/trpc/core.registry.list`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -112,9 +112,22 @@ function parseRegistryEntry(entry: unknown, index: number): DiscoveredPillar {
     baseUrl: requireString(entry, 'baseUrl', index),
     status: requireStatus(entry['status'], index),
     manifest: requireManifest(entry['manifest'], index),
-    lastSeenAt: requireString(entry, 'lastSeenAt', index),
+    lastSeenAt: requireLastSeenAt(entry, index),
     registered: requireRegistered(entry['registered'], index),
   };
+}
+
+/**
+ * Core-api emits `lastHeartbeatAt`; older / mocked surfaces emit
+ * `lastSeenAt`. Accept either and normalise to `lastSeenAt` so callers
+ * keep a single field name.
+ */
+function requireLastSeenAt(entry: Record<string, unknown>, index: number): string {
+  const seen = entry['lastSeenAt'];
+  if (typeof seen === 'string' && seen.length > 0) return seen;
+  const heartbeat = entry['lastHeartbeatAt'];
+  if (typeof heartbeat === 'string' && heartbeat.length > 0) return heartbeat;
+  throw new PillarSdkError(`registry snapshot entry ${index} missing lastSeenAt / lastHeartbeatAt`);
 }
 
 function requireString(entry: Record<string, unknown>, key: string, index: number): string {

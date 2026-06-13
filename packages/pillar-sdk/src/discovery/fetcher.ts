@@ -20,7 +20,7 @@ export type RegistryFetchResult = {
 export const DEFAULT_FETCH_TIMEOUT_MS = 5_000;
 
 /**
- * One-shot fetch of `core.registry.snapshot` (PRD-161).
+ * One-shot fetch of `core.registry.list` (PRD-161).
  *
  * - 5s timeout via `AbortController` (configurable, but 5s is the default
  *   the PRD-159 contract calls out).
@@ -37,7 +37,7 @@ export async function fetchRegistrySnapshot(options: FetcherOptions): Promise<Re
   const timeoutMs = options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS;
   const now = options.now ?? Date.now;
 
-  const url = buildSnapshotUrl(options.registryUrl);
+  const url = buildRegistryListUrl(options.registryUrl);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new Error('discovery fetch timeout')), timeoutMs);
 
@@ -65,8 +65,8 @@ export async function fetchRegistrySnapshot(options: FetcherOptions): Promise<Re
   };
 }
 
-function buildSnapshotUrl(registryUrl: string): string {
-  return `${registryUrl.replace(/\/$/, '')}/trpc/core.registry.snapshot`;
+function buildRegistryListUrl(registryUrl: string): string {
+  return `${registryUrl.replace(/\/$/, '')}/trpc/core.registry.list`;
 }
 
 async function readJson(response: Response): Promise<unknown> {
