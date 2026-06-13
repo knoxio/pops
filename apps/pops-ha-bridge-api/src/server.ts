@@ -24,6 +24,11 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { createHaBridgeApiApp } from './app.js';
 import { resolveHaBridgeSqlitePath } from './ha-bridge-sqlite-path.js';
 import { buildHaBridgeManifest } from './manifest.js';
+import {
+  startRetentionWorker,
+  type RetentionWorkerHandle,
+  type RetentionWorkerLogger,
+} from './retention-worker.js';
 import { HaWebSocketSubscriber, type HaWebSocketLike } from './ws-subscriber.js';
 
 function resolvePort(): number {
@@ -99,6 +104,33 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
 
 subscriber.start();
 
+function resolveRetentionDays(): number | undefined {
+  const raw = process.env['HA_BRIDGE_RETENTION_DAYS'];
+  if (raw === undefined || raw === '') return undefined;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(
+      `[ha-bridge] HA_BRIDGE_RETENTION_DAYS must be a non-negative integer; got '${raw}'`
+    );
+  }
+  return parsed;
+}
+
+const retentionDaysOverride = resolveRetentionDays();
+const retentionLogger: RetentionWorkerLogger = {
+  info: (msg, meta) => console.warn(`[ha-bridge] ${msg}`, meta ?? {}),
+  warn: (msg, meta) => console.warn(`[ha-bridge] ${msg}`, meta ?? {}),
+};
+
+let retentionHandle: RetentionWorkerHandle | undefined;
+if (retentionDaysOverride !== 0) {
+  retentionHandle = startRetentionWorker({
+    db: haBridgeDb.db,
+    retentionDays: retentionDaysOverride,
+    logger: retentionLogger,
+  });
+}
+
 const server = app.listen(port, () => {
   console.warn(`[ha-bridge] Listening on port ${port}`);
 });
@@ -109,6 +141,7 @@ function shutdown(signal: NodeJS.Signals): void {
   shuttingDown = true;
   console.warn(`[ha-bridge] Shutting down (${signal})`);
   subscriber.stop();
+  retentionHandle?.stop();
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       haBridgeDb.raw.close();
