@@ -23,6 +23,7 @@
  * and `us-04-settings-from-registry.md`.
  */
 import { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
+import { financeManifest } from '@pops/finance-contract/settings';
 import {
   arrManifest,
   mediaOperationalManifest,
@@ -33,7 +34,6 @@ import {
 import {
   cerebrumManifest,
   egoManifest,
-  financeManifest,
   inventoryManifest,
 } from '../src/settings/index.js';
 

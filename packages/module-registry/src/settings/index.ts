@@ -4,7 +4,6 @@
  * (`apps/pops-api`) read from a single source of truth. Pure data, no
  * runtime dependencies beyond `@pops/types`.
  */
-export { financeManifest } from './finance/index.js';
 export { inventoryManifest } from './inventory/index.js';
 export { cerebrumManifest } from './cerebrum/index.js';
 export { egoManifest } from './ego/index.js';
