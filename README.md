@@ -118,6 +118,10 @@ mise db:clear          # Clear all data (preserves schema)
 mise lint && mise typecheck    # Must pass before every push
 ```
 
+### Format Drift Watchdog
+
+`lint-staged` only formats _staged_ files, so when `oxfmt`'s output rules shift (version bump, new rules) or someone bypasses husky, untouched files drift silently on `main` — and then the whole-tree `Format` check fails on every open PR. The [`Format Drift Watchdog`](.github/workflows/format-drift-watchdog.yml) workflow runs `pnpm format:check` against `main` every 6 hours (and on demand via `workflow_dispatch`); on failure it opens (or updates) a single tracking issue titled `[format-drift] oxfmt --check . failing on main` with the drifted file list and remediation snippet, and closes it automatically once `main` is clean again. See PR #3153 for the original incident this guards against.
+
 ### E2E Tests
 
 Playwright with two modes: **mocked** (fast, no real DB) and **integration** (real SQLite via named env system). Named envs auto-skip external API calls — safe to run in CI without credentials.

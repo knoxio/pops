@@ -1,0 +1,159 @@
+name: Format Drift Watchdog
+
+# Periodic whole-tree `pnpm format:check` against `main` so accumulated
+# `oxfmt` drift surfaces as a single tracking issue instead of failing
+# the `Format` check on every open PR. `lint-staged` only formats staged
+# files, so when oxfmt's output rules shift (version bump, new rules) or
+# someone bypasses husky, untouched files drift silently. See PR #3153
+# for the original incident this watchdog is designed to catch.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: format-drift-watchdog
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: oxfmt drift check
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_TITLE: "[format-drift] oxfmt --check . failing on main"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm format:check
+        id: format
+        run: |
+          set +e
+          pnpm format:check >format-check.log 2>&1
+          status=$?
+          set -e
+          echo "status=$status" >>"$GITHUB_OUTPUT"
+          cat format-check.log
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "drifted_files<<DRIFT_EOF"
+              grep -Eo '[^[:space:]]+\.(ts|tsx|js|jsx|cjs|mjs|json|md|yml|yaml|css|scss|html)' format-check.log \
+                | sort -u \
+                | head -n 200
+              echo "DRIFT_EOF"
+            } >>"$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Find existing drift issue
+        id: find_issue
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          number=$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --search "in:title \"$ISSUE_TITLE\"" \
+            --json number,title \
+            --jq "[.[] | select(.title == \"$ISSUE_TITLE\")] | .[0].number // empty")
+          echo "number=$number" >>"$GITHUB_OUTPUT"
+
+      - name: Build issue body
+        if: steps.format.outputs.status != '0'
+        id: body
+        env:
+          DRIFTED_FILES: ${{ steps.format.outputs.drifted_files }}
+        run: |
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          now=$(date -u +'%Y-%m-%d %H:%M UTC')
+          {
+            echo "body<<BODY_EOF"
+            echo "\`pnpm format:check\` (oxfmt) is failing on \`main\` as of ${now}."
+            echo ""
+            echo "Run: ${run_url}"
+            echo "Commit: \`${GITHUB_SHA}\`"
+            echo ""
+            echo "## Why this matters"
+            echo ""
+            echo "\`lint-staged\` only formats *staged* files. When oxfmt's output rules shift (version bump, new rules) or someone bypasses husky, untouched files drift. Once that happens, the whole-tree \`Format\` check fails on **every open PR** until a fix lands on \`main\`. See PR #3153 for the original incident."
+            echo ""
+            echo "## Remediation"
+            echo ""
+            echo "From a fresh clone of \`main\`:"
+            echo ""
+            echo '```bash'
+            echo "pnpm install --frozen-lockfile"
+            echo "pnpm format"
+            echo 'git commit -am "style: oxfmt fix drift"'
+            echo "git push"
+            echo '```'
+            echo ""
+            echo "## Drifted files (truncated to 200)"
+            echo ""
+            echo '```'
+            if [ -n "$DRIFTED_FILES" ]; then
+              echo "$DRIFTED_FILES"
+            else
+              echo "(could not parse file list — see the run log linked above)"
+            fi
+            echo '```'
+            echo ""
+            echo "_This issue is opened and updated automatically by \`.github/workflows/format-drift-watchdog.yml\`._"
+            echo "BODY_EOF"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Open or update drift issue
+        if: steps.format.outputs.status != '0'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_BODY: ${{ steps.body.outputs.body }}
+          EXISTING_ISSUE: ${{ steps.find_issue.outputs.number }}
+        run: |
+          if [ -n "$EXISTING_ISSUE" ]; then
+            echo "Updating existing issue #$EXISTING_ISSUE"
+            gh issue edit "$EXISTING_ISSUE" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body "$ISSUE_BODY"
+            gh issue comment "$EXISTING_ISSUE" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body "Watchdog re-detected drift at $(date -u +'%Y-%m-%d %H:%M UTC'). See run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          else
+            echo "Opening new drift issue"
+            gh issue create \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$ISSUE_TITLE" \
+              --body "$ISSUE_BODY"
+          fi
+
+      - name: Close stale drift issue
+        if: steps.format.outputs.status == '0' && steps.find_issue.outputs.number != ''
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          EXISTING_ISSUE: ${{ steps.find_issue.outputs.number }}
+        run: |
+          echo "Closing stale drift issue #$EXISTING_ISSUE"
+          gh issue comment "$EXISTING_ISSUE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --body "Watchdog re-ran at $(date -u +'%Y-%m-%d %H:%M UTC') and \`pnpm format:check\` passes. Closing. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue close "$EXISTING_ISSUE" --repo "$GITHUB_REPOSITORY" --reason completed
+
+      - name: Fail job if drift detected
+        if: steps.format.outputs.status != '0'
+        run: |
+          echo "::error::oxfmt drift detected on main — see tracking issue."
+          exit 1
