@@ -27,6 +27,7 @@ packages:
   - 'packages/lists-contract'
   - 'packages/food-contract'
   - 'packages/lists-db'
+  - 'packages/ha-bridge-db'
   - 'packages/types'
   - 'packages/module-registry'
   - 'packages/navigation'
