@@ -182,6 +182,69 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 **Wave 5 duration:** 2 weeks.
 
+### Wave 6 — External BE-lego (post-Theme-13 vision)
+
+**Goal:** an external pillar in another repo (potentially another language) drops in and works. The "language-agnostic lego" milestone.
+
+This wave was added after the original plan as the vision expanded. Waves 1-5 end at "every pillar isolated within this monorepo + pops.db dropped." Wave 6 extends to "every pillar isolated anywhere, in any language." See [ADR-032](../../architecture/adr-032-positioning-vs-self-hosted-os-family.md) for the positioning context and [ADR-033](../../architecture/adr-033-cross-language-pillar-contracts.md) for the cross-language story.
+
+| PRD                                                                      | Parallelism | Owner agent              |
+| ------------------------------------------------------------------------ | ----------- | ------------------------ |
+| 228 dynamic pillar registration (POST /register + heartbeat)             | first       | `a:dynamic-registration` |
+| 230 browser-resolvable baseUrls + URL doubling fix                       | parallel    | `a:browser-baseurl`      |
+| 231 cross-language SDK wire-format spec                                  | parallel    | `a:wire-spec`            |
+| 232 nginx generator dynamic-source (consume registry, not static PILLARS) | follows 228 | `a:nginx-dynamic`        |
+| 233 external pillar example repo (Rust or Go reference impl)             | follows 231 | `a:external-pillar-demo` |
+
+**Wave 6 exit criteria:**
+
+- A pillar lives in a separate repo + container image
+- It registers with `POST /core.registry.register` and is routable from the shell within seconds
+- The pillar can be written in any language that speaks JSON-over-HTTP (Rust reference impl shipped)
+- The browser can reach the external pillar's procedures via the nginx layer
+- Removing the pillar's container → search/AI/UI degrade gracefully via existing PillarGuard
+
+**Wave 6 duration:** 4-6 weeks. Peak parallelism: ~6 agents.
+
+### Wave 7 — Bridge pillars (additive integration, per ADR-032)
+
+**Goal:** make pops additive to the HA / MQTT / ESPHome ecosystems via bridge pillars. Per [ADR-032](../../architecture/adr-032-positioning-vs-self-hosted-os-family.md), pops does not compete on device integration count — it consumes integrations from HA and friends via thin bridge-pillar containers. The `sinks` manifest dimension ([ADR-034](../../architecture/adr-034-sinks-manifest-dimension.md)) enables outbound flow.
+
+| PRD                                                       | Parallelism | Owner agent             |
+| --------------------------------------------------------- | ----------- | ----------------------- |
+| 229 HA bridge pillar (WebSocket subscribe + entity mirror)| first       | `a:ha-bridge`           |
+| 234 MQTT bridge pillar                                    | parallel    | `a:mqtt-bridge`         |
+| 235 ESPHome bridge pillar                                 | parallel    | `a:esphome-bridge`      |
+| 236 `sinks` manifest dimension (outbound event flow)      | follows 229 | `a:sinks-manifest`      |
+| 237 pops → HA event publisher (uses sinks)                | follows 236 | `a:ha-publisher`        |
+
+**Wave 7 exit criteria:**
+
+- An HA entity state change is visible in pops federated search within 5 seconds of fire
+- The AI overlay can call `ha.entity.callService('light.kitchen', 'turn_off')` end-to-end
+- Pops can publish an event (e.g. "finance: low-balance-warning") that HA receives as a webhook
+- New bridge pillar = new container, no shell changes, no orchestrator changes
+
+**Wave 7 duration:** 4-5 weeks. Peak parallelism: ~5 agents.
+
+### Wave 8 — Writeup + packaging
+
+**Goal:** the deliverable. The contribution is the architecture description, not the running system. Plus optional ISO appliance variant.
+
+| PRD                                                | Parallelism | Owner agent             |
+| -------------------------------------------------- | ----------- | ----------------------- |
+| 238 starter template repo (`pops-pillar-starter`)  | first       | `a:starter-template`    |
+| 239 architecture writeup / blog series             | parallel    | `a:writeup`             |
+| 240 pops OS ISO packaging (HassOS-style appliance) | optional    | `a:os-iso`              |
+
+**Wave 8 exit criteria:**
+
+- A new contributor can `gh repo clone pops-pillar-starter` and have a registered pillar running locally in under 30 minutes
+- The writeup explains the typed-federation pattern as a reusable architectural concept (not just "pops did this")
+- (Optional) ISO boots a NUC into a single-purpose pops appliance
+
+**Wave 8 duration:** 3-4 weeks (writeup is the bulk). Peak parallelism: ~3 agents.
+
 ---
 
 ## Total timeline
@@ -193,8 +256,13 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 | 3 — Data migrations + batching    | 6 weeks   | 18 weeks   |
 | 4 — Cross-cutting + FE            | 5 weeks   | 23 weeks   |
 | 5 — Drop pops.db                  | 2 weeks   | 25 weeks   |
+| 6 — External BE-lego (post-13)    | 4-6 weeks | 31 weeks   |
+| 7 — Bridge pillars                | 4-5 weeks | 36 weeks   |
+| 8 — Writeup + packaging           | 3-4 weeks | 40 weeks   |
 
-**~6 months with full parallel agent budget.** Compresses to 4-5 months if Wave 3 slice migrations run as a 30-agent fleet against the now-rehearsed pattern from Theme 12.
+**Waves 1-5 are the original Theme 13.** They end at "every pillar isolated within this monorepo + pops.db dropped." That is the strict reading of the theme.
+
+**Waves 6-8 are the vision extension** added once the architecture converged on something publishable. They take the project from internal isolation through language-agnostic external lego to a shipped writeup plus optional appliance. See [ADR-032](../../architecture/adr-032-positioning-vs-self-hosted-os-family.md) for the positioning context.
 
 ---
 
