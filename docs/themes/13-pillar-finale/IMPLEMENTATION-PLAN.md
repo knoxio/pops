@@ -174,14 +174,55 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 | 213 final drop migration | follows 212 | `a:drop-migration`  |
 | 214 code retirement      | follows 213 | `a:code-retirement` |
 
+**Audit findings (2026-06-14).** Five pillars have now been audited PR-by-PR
+against the actual `getDrizzle()` surface — finance (#3162), cerebrum
+(#3167), inventory (#3180), and food + lists (#3183). The per-pillar bridge
+exit is effectively done (6/7 pillars), and the real handler-real-caller
+count is dramatically smaller than the raw grep implied:
+
+| Pillar    | Raw grep | Real (handler-real) migrations |
+| --------- | -------- | ------------------------------ |
+| Finance   | 18       | 0                              |
+| Cerebrum  | 26       | 2                              |
+| Inventory | 0        | 0                              |
+| Food      | 183      | 0                              |
+| Lists     | 3        | 0                              |
+| **Total** | **230**  | **2**                          |
+
+That is ~115× grep inflation. Of food's 183 raw hits, 89 are shared-only
+schema pins gated by per-table PR4 backfill cascades — only `prep_states`
+has shipped a PR4 so far. The framing for Wave 5 is therefore not "a long
+tail of ~485 handler call-sites to migrate" but rather:
+
+- **Per-pillar bridge exit: done (6/7 pillars).** The pattern holds across
+  every audited pillar; the remaining pillar is expected to land in the
+  same shape.
+- **Handler-real migrations remaining: 0–2 per pillar.** 5 of 7 pillars
+  audited; the rollup is a count of dead-code test mocks and documented
+  cross-pillar pins, not production cutovers.
+- **The real long-tail is per-table PR4 backfill cascades in food**
+  (~10 sub-slices). Each PR4 (backfill + barrel swap + shared-schema drop)
+  unlocks the corresponding batch of food handler flips. These are sized
+  per table, not per call-site.
+
+See [`notes/wave-5-handler-state-audit.md`](notes/wave-5-handler-state-audit.md)
+for the bucketing methodology (handler-real vs. test-mock vs. documented
+intentional pin) and the per-pillar counts.
+
 **Wave 5 exit criteria:**
 
 - `pops.db` no longer mounted on any container
 - `apps/pops-api/src/db.ts` deleted (no more `getDb()` / `getDrizzle()`)
+- Per-pillar bridge exit complete across all 7 pillars (6/7 audited and
+  shipped; food's remaining handler flips gated on its PR4 cascade)
+- Food's per-table PR4 backfill cascade completed for every table still
+  pinned to the shared `pops.db` schema
 - Theme 13 acceptance criteria from the README all green
 - Final roadmap reconciliation
 
-**Wave 5 duration:** 2 weeks.
+**Wave 5 duration:** 2 weeks (handler cutover work) plus the trailing
+food per-table PR4 cascade, which runs in parallel with Waves 4–5 rather
+than serially inside Wave 5.
 
 ### Wave 6 — External BE-lego (post-Theme-13 vision)
 
