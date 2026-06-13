@@ -4,57 +4,55 @@
 
 ## Overview
 
-Move `library.*` procedures and related tables (`library_items`, `library_filters`) into `media.db`. Follows the canonical N-track pattern from [PRD-165](../165-media-movies-cutover/README.md).
+`media/library/` is an orchestration/aggregation layer — it has no tables of its own. It joins `movies` and `tv_shows` (the "everything in my library" view), and joins `movies` with `watch_history` (the unwatched quick-picks shelf).
 
-The library surface is the "what I own / what's on disk" view aggregating movies + tv_shows with download/sync state. Read-mostly; writes happen via \*arr ingest + manual edits.
+The cutover required is a **read-handle flip** on the aggregation queries, from `getDrizzle()` (shared `pops.db`) to `getMediaDrizzle()` (media pillar `media.db`), so the union list and quick-picks queries hit the pillar SQLite file directly once all participating tables have writer-cutover landed.
 
-## Data Model
-
-Tables (move from shared to `packages/media-db`):
-
-- `library_items` — { id, item_type, item_id, status ('downloaded' | 'monitored' | 'missing'), file_path, file_size, quality_profile, added_at }
-- `library_filters` — { id, name, criteria_json, is_favourite }
-
-`library_items.item_id` soft-references `movies.id` or `tv_shows.id` (depending on item_type).
+Mirrors the N-track pattern from [PRD-165 (movies)](../165-media-movies-cutover/README.md) and [PRD-166 (tv-shows)](../166-media-tv-shows-cutover/README.md), but at the aggregation layer instead of the table-owning layer.
 
 ## API Surface
 
-| Procedure                      | Kind     |
-| ------------------------------ | -------- |
-| `media.library.list`           | query    |
-| `media.library.byFilter`       | query    |
-| `media.library.update`         | mutation |
-| `media.library.filters.list`   | query    |
-| `media.library.filters.create` | mutation |
-| `media.library.filters.update` | mutation |
-| `media.library.filters.delete` | mutation |
+| Procedure                     | File                                                  |
+| ----------------------------- | ----------------------------------------------------- |
+| `media.library.list`          | `media/library/list-service.ts` (`listLibrary`)       |
+| `media.library.listGenres`    | `media/library/list-service.ts` (`listLibraryGenres`) |
+| `media.library.getQuickPicks` | `media/library/service.ts` (`getQuickPicks`)          |
+| `media.library.addMovie`      | `media/library/service.ts` (`addMovie`)               |
+| `media.library.addTvShow`     | `media/library/tv-show-service.ts` (`addTvShow`)      |
 
-Files today: `apps/pops-api/src/modules/media/library/{router.ts, service.ts, list-service.ts, tv-show-service.ts}`.
+## Cross-Store Dependency
+
+The read-handle flip is gated on the following writer cutovers landing first, since each participating table is touched on the shared `pops.db` until its writer cutover:
+
+| Table           | Writer cutover                                     | Status      |
+| --------------- | -------------------------------------------------- | ----------- |
+| `movies`        | PRD-165 PR 3                                       | Done        |
+| `tv_shows`      | PRD-166 PR 3 (blocked on seasons/episodes cutover) | Not started |
+| `watch_history` | PRD-168 PR 3                                       | In progress |
+
+Flipping a read to `getMediaDrizzle()` before its corresponding writer is on `media.db` introduces a user-visible staleness window: writes go to `pops.db`, reads come from `media.db`, and `media.db` only receives the row at the next boot-time `backfillMediaFromShared()`. The library list, genres list, and quick-picks would all miss freshly-added TV shows and freshly-recorded watch events until restart.
 
 ## Business Rules
 
-Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business-rules--the-n-track-4-pr-sequence). Slice specifics:
-
-- Library list joins to `movies` and `tv_shows` — once both PRDs (165, 166) land, all three tables co-locate in `media.db` and joins stay in-process.
-- Filters are user-defined saved searches; pure data; trivial backfill.
+Once all three writer cutovers land, the aggregation reads can flip together in one PR. Until then, this PRD investigates the surface and documents the constraint; the cutover itself is the writer's downstream work.
 
 ## Edge Cases
 
-| Case                                                         | Behaviour                                                                                |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Library lists items but the joined movie/tv_show is missing  | Returns the library row with null'd join — existing behaviour preserved.                 |
-| \*arr ingest writes a library_item before backfill completes | Backfill is idempotent; duplicate `(item_type, item_id, file_path)` ignored on conflict. |
+| Case                                                            | Behaviour                                                                   |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Library lists items but the joined movie/tv_show is missing     | Returns the library row with null'd join — existing behaviour preserved.    |
+| Quick-picks runs while a write is in flight on shared `pops.db` | Reads stay on shared until cutover, so reads see in-flight writes directly. |
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                         |
-| --- | ----------------------------------------------------------- | ----------------------------------------------- |
-| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Schemas + services into `@pops/media-db` |
-| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal                 |
-| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip routers to `getMediaDrizzle()`      |
-| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                     |
+| #   | Story                                                       | Summary                                                                            |
+| --- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 01  | [us-01-pr1-package-scaffold](us-01-pr1-package-scaffold.md) | PR 1 — Investigate surface (no `library_*` tables exist; aggregation-only layer)   |
+| 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — N/A (no tables owned by this slice)                                         |
+| 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip aggregation reads to `getMediaDrizzle()` once writer dependencies land |
+| 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — N/A (no shim to delete)                                                     |
 
 ## Out of Scope
 
-- \*arr download orchestration; only the persistence target changes.
-- Filter-query optimisation; existing implementation preserved.
+- `*arr` download orchestration; not part of the library aggregation surface.
+- The writer cutovers themselves (`tv_shows`, `watch_history`) — tracked in their own PRDs.
