@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { suggestTags } from './tag-suggester.js';
+import { suggestTags } from './index.js';
 
-// Mock entity lookup and tag-rules queries via DB
+// Mock entity lookup and tag-rules queries via the finance DB handle.
 const mockEntityGet = vi.fn<() => { defaultTags: string | null } | null>(() => null);
 const mockTagRulesAll = vi.fn<() => { tags: string; descriptionPattern: string }[]>(() => []);
 
-vi.mock('../db.js', () => ({
-  getDrizzle: vi.fn(() => ({
+vi.mock('../../../db/finance-handle.js', () => ({
+  getFinanceDrizzle: vi.fn(() => ({
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({
@@ -25,7 +25,7 @@ vi.mock('../db.js', () => ({
 const mockFindAllMatchingCorrections = vi.fn<
   () => { tags: string; descriptionPattern: string | null }[]
 >(() => []);
-vi.mock('../modules/core/corrections/service.js', () => ({
+vi.mock('../../core/corrections/service.js', () => ({
   findAllMatchingCorrections: (...args: unknown[]) =>
     mockFindAllMatchingCorrections(...(args as [])),
 }));

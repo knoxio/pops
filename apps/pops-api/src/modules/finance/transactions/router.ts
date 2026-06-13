@@ -12,9 +12,9 @@ import { getDb, getDrizzle } from '../../../db.js';
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
-import { suggestTags } from '../../../shared/tag-suggester.js';
 import { mapDomainErrors } from '../../../shared/trpc-error-mapper.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { suggestTags } from '../tag-suggester/index.js';
 import {
   CreateTransactionSchema,
   toTransaction,
