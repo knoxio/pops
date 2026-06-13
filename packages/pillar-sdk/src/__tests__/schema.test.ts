@@ -150,13 +150,23 @@ describe('ManifestPayloadSchema', () => {
       expect(result.success).toBe(false);
     });
 
-    it.each(['Transaction', 'transaction-type', '1type', ''])(
-      'rejects non-camelCase entityType %s',
+    it.each(['Transaction', '1type', '', 'transaction_type', '-leading', 'trailing-'])(
+      'rejects non-kebab-case entityType %s',
       (entityType) => {
         const m = validManifest();
         m.search.adapters[0]!.entityType = entityType;
         const result = ManifestPayloadSchema.safeParse(m);
         expect(result.success).toBe(false);
+      }
+    );
+
+    it.each(['transaction', 'transaction-type', 'tv-show', 'a', 'paperless-document-2'])(
+      'accepts kebab-case entityType %s',
+      (entityType) => {
+        const m = validManifest();
+        m.search.adapters[0]!.entityType = entityType;
+        const result = ManifestPayloadSchema.safeParse(m);
+        expect(result.success).toBe(true);
       }
     );
 

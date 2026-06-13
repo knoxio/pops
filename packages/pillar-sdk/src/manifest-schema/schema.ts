@@ -13,6 +13,10 @@ const PROCEDURE_PATH = z
 
 const CAMEL_IDENTIFIER = z.string().regex(/^[a-z][a-zA-Z0-9]*$/, 'must be camelCase identifier');
 
+const KEBAB_IDENTIFIER = z
+  .string()
+  .regex(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/, 'must be lowercase kebab-case identifier');
+
 const URI_TYPE = z
   .string()
   .regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/, 'must be <pillar>/<entity>');
@@ -67,7 +71,7 @@ const QUERY_SHAPE = z
 const SEARCH_ADAPTER = z
   .object({
     name: CAMEL_IDENTIFIER,
-    entityType: CAMEL_IDENTIFIER,
+    entityType: KEBAB_IDENTIFIER,
     queryShape: QUERY_SHAPE,
     procedurePath: PROCEDURE_PATH,
     rankFieldName: CAMEL_IDENTIFIER.optional(),

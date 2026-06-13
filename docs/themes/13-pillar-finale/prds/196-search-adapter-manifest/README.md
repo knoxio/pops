@@ -14,7 +14,7 @@ Extends the manifest schema (PRD-157) with richer search adapter shape:
 search: {
   adapters: readonly {
     name: string;                  // 'transactions' | 'movies' | ...
-    entityType: string;            // 'transaction', 'movie', ...
+    entityType: string;            // lowercase kebab-case, e.g. 'transaction', 'tv-show'
     queryShape: {
       supportsText: boolean;       // free-text query
       supportsTags: boolean;
