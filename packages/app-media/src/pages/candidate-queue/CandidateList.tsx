@@ -1,11 +1,13 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { CandidateCard } from './CandidateCard';
 import { Pagination } from './Pagination';
+
+import type { Candidate } from './CandidateCard';
 
 const PAGE_SIZE = 20;
 
@@ -40,11 +42,16 @@ function CandidateLoading() {
   );
 }
 
+interface ListCandidatesResult {
+  items: Candidate[];
+  total: number;
+}
+
 export function CandidateList({ status, actions }: CandidateListProps) {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
 
-  const query = trpc.media.rotation.listCandidates.useQuery({
+  const query = usePillarQuery<ListCandidatesResult>('media', ['rotation', 'listCandidates'], {
     status,
     search: search || undefined,
     limit: PAGE_SIZE,

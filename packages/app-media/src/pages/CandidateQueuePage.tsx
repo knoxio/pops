@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * CandidateQueuePage — tabbed view of rotation candidate queue.
  *
@@ -11,11 +11,18 @@ import { Badge, PageHeader, Tabs, TabsContent, TabsList, TabsTrigger } from '@po
 import { CandidateList } from './candidate-queue/CandidateList';
 import { ExclusionList } from './candidate-queue/ExclusionList';
 
+interface PendingCountResult {
+  total: number;
+}
+
 export function CandidateQueuePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') ?? 'pending';
 
-  const pendingCount = trpc.media.rotation.listCandidates.useQuery({ status: 'pending', limit: 1 });
+  const pendingCount = usePillarQuery<PendingCountResult>('media', ['rotation', 'listCandidates'], {
+    status: 'pending',
+    limit: 1,
+  });
 
   return (
     <div className="space-y-6 p-6">

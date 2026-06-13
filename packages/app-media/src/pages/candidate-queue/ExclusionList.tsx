@@ -2,7 +2,7 @@ import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button, Skeleton } from '@pops/ui';
 
 import { Pagination } from './Pagination';
@@ -48,23 +48,32 @@ function ExclusionRow({
   );
 }
 
+interface ListExclusionsResult {
+  items: Exclusion[];
+  total: number;
+}
+
 export function ExclusionList() {
   const [page, setPage] = useState(0);
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('media');
 
-  const query = trpc.media.rotation.listExclusions.useQuery({
+  const query = usePillarQuery<ListExclusionsResult>('media', ['rotation', 'listExclusions'], {
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
   });
 
-  const unexcludeMutation = trpc.media.rotation.removeExclusion.useMutation({
-    onSuccess: () => {
-      toast.success('Exclusion removed');
-      void utils.media.rotation.listExclusions.invalidate();
-      void utils.media.rotation.listCandidates.invalidate();
-    },
-    onError: (err) => toast.error(err.message || 'Failed to remove exclusion'),
-  });
+  const unexcludeMutation = usePillarMutation<{ tmdbId: number }, unknown>(
+    'media',
+    ['rotation', 'removeExclusion'],
+    {
+      onSuccess: () => {
+        toast.success('Exclusion removed');
+        void utils.invalidate(['rotation', 'listExclusions']);
+        void utils.invalidate(['rotation', 'listCandidates']);
+      },
+      onError: (err) => toast.error(err.message || 'Failed to remove exclusion'),
+    }
+  );
 
   const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / PAGE_SIZE));
 
