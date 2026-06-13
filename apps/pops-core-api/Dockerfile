@@ -4,12 +4,17 @@ WORKDIR /app
 # Copy workspace root files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./
 
-# Copy workspace package.json files (for dep resolution)
+# Copy workspace package.json files (for dep resolution).
+# wire-conformance is included even though @pops/core-api does not depend on
+# it: pnpm's --legacy deploy resolves the full workspace graph from
+# pnpm-workspace.yaml and fails ERR_PNPM_WORKSPACE_PKG_NOT_FOUND when a
+# listed member is absent from the build context.
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
+COPY packages/wire-conformance/package.json ./packages/wire-conformance/
 COPY apps/pops-core-api/package.json ./apps/pops-core-api/
 
 # Install pnpm and all workspace dependencies
