@@ -8,7 +8,7 @@
  */
 import { useCallback, useMemo } from 'react';
 
-import { PillarCallError } from '@pops/pillar-sdk/client';
+import { isNotFound as isPillarNotFound } from '@pops/pillar-sdk/client';
 import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { extractMessage } from '../utils/errors';
@@ -74,9 +74,7 @@ function resolveError(
 }
 
 function isNotFound(err: unknown): boolean {
-  if (err instanceof PillarCallError) {
-    return err.result.kind === 'contract-mismatch';
-  }
+  if (isPillarNotFound(err)) return true;
   if (!err || typeof err !== 'object') return false;
   const data = (err as { data?: { code?: string } }).data;
   return data?.code === 'NOT_FOUND';

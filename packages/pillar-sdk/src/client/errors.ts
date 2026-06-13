@@ -38,10 +38,48 @@ export type CallFailure =
       pillar: string;
       expected?: string;
       actual?: string;
-    };
+    }
+  | { kind: 'not-found'; pillar: string; message?: string }
+  | { kind: 'conflict'; pillar: string; message?: string }
+  | { kind: 'bad-request'; pillar: string; message?: string };
 
 export type CallResult<T> = CallSuccess<T> | CallFailure;
 
 export function isOk<T>(result: CallResult<T>): result is CallSuccess<T> {
   return result.kind === 'ok';
+}
+
+/**
+ * True when `err` is a `PillarCallError` whose failure result has the
+ * `not-found` discriminant. Maps to HTTP 404 / tRPC `NOT_FOUND`.
+ *
+ * Replaces the older `err.result.kind === 'contract-mismatch'` check
+ * which conflated "the addressed resource does not exist" with "the
+ * pillar does not implement this procedure". `contract-mismatch` is now
+ * reserved for genuine SDK ↔ pillar version skew.
+ */
+export function isNotFound(err: unknown): err is PillarCallError & {
+  result: Extract<CallFailure, { kind: 'not-found' }>;
+} {
+  return err instanceof PillarCallError && err.result.kind === 'not-found';
+}
+
+/**
+ * True when `err` is a `PillarCallError` whose failure result has the
+ * `conflict` discriminant. Maps to HTTP 409 / tRPC `CONFLICT`.
+ */
+export function isConflict(err: unknown): err is PillarCallError & {
+  result: Extract<CallFailure, { kind: 'conflict' }>;
+} {
+  return err instanceof PillarCallError && err.result.kind === 'conflict';
+}
+
+/**
+ * True when `err` is a `PillarCallError` whose failure result has the
+ * `bad-request` discriminant. Maps to HTTP 400 / tRPC `BAD_REQUEST`.
+ */
+export function isBadRequest(err: unknown): err is PillarCallError & {
+  result: Extract<CallFailure, { kind: 'bad-request' }>;
+} {
+  return err instanceof PillarCallError && err.result.kind === 'bad-request';
 }

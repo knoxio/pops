@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-import { PillarCallError } from '@pops/pillar-sdk/client';
+import { isNotFound as isPillarNotFound } from '@pops/pillar-sdk/client';
 import { Alert, AlertDescription, AlertTitle, PageHeader, Skeleton } from '@pops/ui';
 
 import { ConnectionsSection } from './item-detail-page/sections/ConnectionsSection';
@@ -33,9 +33,7 @@ function hasNotFoundCode(error: Error): boolean {
 }
 
 function errorIsNotFound(error: Error): boolean {
-  if (error instanceof PillarCallError) {
-    return error.result.kind === 'unavailable' || error.result.kind === 'contract-mismatch';
-  }
+  if (isPillarNotFound(error)) return true;
   return hasNotFoundCode(error);
 }
 

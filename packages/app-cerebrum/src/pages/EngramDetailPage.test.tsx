@@ -12,15 +12,24 @@ const mockUpdateMutationState = { isPending: false, error: null as unknown };
 const invalidateGet = vi.fn().mockResolvedValue(undefined);
 const invalidateList = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@pops/pillar-sdk/client', () => ({
-  PillarCallError: class PillarCallError extends Error {
+vi.mock('@pops/pillar-sdk/client', () => {
+  class PillarCallError extends Error {
     result: { kind: string };
     constructor(_pillarId: string, result: { kind: string }) {
       super('pillar error');
       this.result = result;
     }
-  },
-}));
+  }
+  return {
+    PillarCallError,
+    isNotFound: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'not-found',
+    isConflict: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'conflict',
+    isBadRequest: (err: unknown) =>
+      err instanceof PillarCallError && err.result.kind === 'bad-request',
+  };
+});
+
+const { PillarCallError: MockPillarCallError } = await import('@pops/pillar-sdk/client');
 
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
@@ -236,5 +245,27 @@ describe('EngramDetailPage', () => {
     mockListQuery.mockReturnValue({ data: undefined, isLoading: false });
     renderAt('/cerebrum/engrams/eng_missing');
     expect(screen.getByText('Engram not found.')).toBeInTheDocument();
+  });
+
+  it("shows the not-found message when the SDK raises a typed 'not-found' PillarCallError", () => {
+    mockGetQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new MockPillarCallError('cerebrum', { kind: 'not-found', pillar: 'cerebrum' }),
+    });
+    mockListQuery.mockReturnValue({ data: undefined, isLoading: false });
+    renderAt('/cerebrum/engrams/eng_missing');
+    expect(screen.getByText('Engram not found.')).toBeInTheDocument();
+  });
+
+  it("does NOT show not-found for a 'contract-mismatch' PillarCallError (no longer conflated)", () => {
+    mockGetQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new MockPillarCallError('cerebrum', { kind: 'contract-mismatch', pillar: 'cerebrum' }),
+    });
+    mockListQuery.mockReturnValue({ data: undefined, isLoading: false });
+    renderAt('/cerebrum/engrams/eng_missing');
+    expect(screen.queryByText('Engram not found.')).not.toBeInTheDocument();
   });
 });

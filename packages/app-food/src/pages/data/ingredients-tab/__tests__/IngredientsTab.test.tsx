@@ -24,10 +24,31 @@ interface CallStub {
   mutate: ReturnType<typeof vi.fn>;
   options: {
     onSuccess?: (result?: unknown) => void;
-    onError?: (err: { message: string; data?: { code?: string } | null }) => void;
+    onError?: (err: unknown) => void;
   };
   isPending: boolean;
 }
+
+vi.mock('@pops/pillar-sdk/client', () => {
+  class PillarCallError extends Error {
+    pillarId: string;
+    result: { kind: string; pillar: string; message?: string };
+    constructor(pillarId: string, result: { kind: string; pillar: string; message?: string }) {
+      super(result.message ?? result.kind);
+      this.pillarId = pillarId;
+      this.result = result;
+    }
+  }
+  return {
+    PillarCallError,
+    isNotFound: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'not-found',
+    isConflict: (err: unknown) => err instanceof PillarCallError && err.result.kind === 'conflict',
+    isBadRequest: (err: unknown) =>
+      err instanceof PillarCallError && err.result.kind === 'bad-request',
+  };
+});
+
+const { PillarCallError: MockPillarCallError } = await import('@pops/pillar-sdk/client');
 
 const mockListQuery = vi.fn();
 const mockGetQuery = vi.fn();
@@ -259,10 +280,13 @@ describe('PRD-122-B — IngredientsTab', () => {
     await userEvent.type(screen.getByLabelText(/^slug$/i), 'banana');
     await userEvent.type(screen.getByLabelText(/^name$/i), 'Banana');
     await userEvent.click(screen.getByRole('button', { name: /^create$/i }));
-    stubs.createIngredient.options.onError?.({
-      message: 'Slug already registered',
-      data: { code: 'CONFLICT' },
-    });
+    stubs.createIngredient.options.onError?.(
+      new MockPillarCallError('food', {
+        kind: 'conflict',
+        pillar: 'food',
+        message: 'Slug already registered',
+      })
+    );
     expect(await screen.findByRole('alert')).toHaveTextContent(/slug is already in use/i);
   });
 

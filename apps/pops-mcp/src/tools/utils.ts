@@ -12,25 +12,29 @@ export function toolError(message: string): CallToolResult {
 
 /**
  * Translate a `CallResult` from the pillar SDK into an MCP `CallToolResult`.
- * `ok` rounds-trips the value JSON. The three failure shapes
- * (`unavailable`, `degraded`, `contract-mismatch`) all surface as MCP
+ * `ok` rounds-trips the value JSON. Every failure shape surfaces as MCP
  * `toolError` so the LLM can read the reason and self-correct or retry.
  */
 export function mapCallResult<T>(result: CallResult<T>): CallToolResult {
   if (result.kind === 'ok') return ok(result.value);
-  if (result.kind === 'unavailable') {
-    return toolError(`Pillar '${result.pillar}' is unavailable. Try again shortly.`);
+  return toolError(formatFailureReason(result));
+}
+
+function formatFailureReason(failure: Exclude<CallResult<unknown>, { kind: 'ok' }>): string {
+  switch (failure.kind) {
+    case 'unavailable':
+      return `Pillar '${failure.pillar}' is unavailable. Try again shortly.`;
+    case 'degraded':
+      return `Pillar '${failure.pillar}' is reconciling (${failure.reason}). Try again shortly.`;
+    case 'contract-mismatch':
+      return `Pillar '${failure.pillar}' contract mismatch — expected ${failure.expected ?? 'unknown'}, got ${failure.actual ?? 'unknown'}.`;
+    case 'not-found':
+      return failure.message ?? `Pillar '${failure.pillar}' returned not-found for this request.`;
+    case 'conflict':
+      return failure.message ?? `Pillar '${failure.pillar}' returned conflict for this request.`;
+    case 'bad-request':
+      return failure.message ?? `Pillar '${failure.pillar}' returned bad-request for this request.`;
   }
-  if (result.kind === 'degraded') {
-    return toolError(
-      `Pillar '${result.pillar}' is reconciling (${result.reason}). Try again shortly.`
-    );
-  }
-  const expected = result.expected ?? 'unknown';
-  const actual = result.actual ?? 'unknown';
-  return toolError(
-    `Pillar '${result.pillar}' contract mismatch — expected ${expected}, got ${actual}.`
-  );
 }
 
 export function reqStr(args: Record<string, unknown>, key: string): string | null {

@@ -147,17 +147,88 @@ describe('pillar() factory — failure modes', () => {
     expect(result.kind).toBe('unavailable');
   });
 
-  it("returns 'contract-mismatch' when the pillar replies 404", async () => {
+  it("returns 'not-found' when the pillar replies 404", async () => {
     const transport = new FakeRegistryTransport({
       pillars: [discoveredPillar()],
     });
     const fetchImpl = fakeFetch(() => new Response('not found', { status: 404 }));
     const finance = pillar('finance', { transport, fetchImpl });
     const result = await finance.wishlist.list({});
-    expect(result.kind).toBe('contract-mismatch');
-    if (result.kind === 'contract-mismatch') {
-      expect(result.expected).toBe('finance.wishlist.list');
+    expect(result.kind).toBe('not-found');
+    if (result.kind === 'not-found') {
+      expect(result.pillar).toBe('finance');
     }
+  });
+
+  it("returns 'conflict' when the pillar replies 409", async () => {
+    const transport = new FakeRegistryTransport({
+      pillars: [discoveredPillar()],
+    });
+    const fetchImpl = fakeFetch(() => new Response('conflict', { status: 409 }));
+    const finance = pillar('finance', { transport, fetchImpl });
+    const result = await finance.wishlist.list({});
+    expect(result.kind).toBe('conflict');
+  });
+
+  it("returns 'bad-request' when the pillar replies 400", async () => {
+    const transport = new FakeRegistryTransport({
+      pillars: [discoveredPillar()],
+    });
+    const fetchImpl = fakeFetch(() => new Response('bad', { status: 400 }));
+    const finance = pillar('finance', { transport, fetchImpl });
+    const result = await finance.wishlist.list({});
+    expect(result.kind).toBe('bad-request');
+  });
+
+  it("maps a tRPC NOT_FOUND envelope to 'not-found' regardless of HTTP status", async () => {
+    const transport = new FakeRegistryTransport({
+      pillars: [discoveredPillar()],
+    });
+    const fetchImpl = fakeFetch(
+      () =>
+        new Response(
+          JSON.stringify({ error: { message: 'no such engram', data: { code: 'NOT_FOUND' } } }),
+          { status: 500, headers: { 'content-type': 'application/json' } }
+        )
+    );
+    const finance = pillar('finance', { transport, fetchImpl });
+    const result = await finance.wishlist.list({});
+    expect(result.kind).toBe('not-found');
+    if (result.kind === 'not-found') {
+      expect(result.message).toBe('no such engram');
+    }
+  });
+
+  it("maps a tRPC CONFLICT envelope to 'conflict'", async () => {
+    const transport = new FakeRegistryTransport({
+      pillars: [discoveredPillar()],
+    });
+    const fetchImpl = fakeFetch(
+      () =>
+        new Response(JSON.stringify({ error: { data: { code: 'CONFLICT' } } }), {
+          status: 409,
+          headers: { 'content-type': 'application/json' },
+        })
+    );
+    const finance = pillar('finance', { transport, fetchImpl });
+    const result = await finance.wishlist.list({});
+    expect(result.kind).toBe('conflict');
+  });
+
+  it("maps a tRPC BAD_REQUEST envelope to 'bad-request'", async () => {
+    const transport = new FakeRegistryTransport({
+      pillars: [discoveredPillar()],
+    });
+    const fetchImpl = fakeFetch(
+      () =>
+        new Response(JSON.stringify({ error: { data: { code: 'BAD_REQUEST' } } }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        })
+    );
+    const finance = pillar('finance', { transport, fetchImpl });
+    const result = await finance.wishlist.list({});
+    expect(result.kind).toBe('bad-request');
   });
 
   it("returns 'unavailable' when the pillar HTTP call rejects", async () => {

@@ -49,6 +49,13 @@ export function useTrpcOptionsLoaders(manifest: SettingsManifest): Loaders {
           if (result.kind === 'contract-mismatch') {
             throw new Error(`Cannot call procedure: ${procedure}`);
           }
+          if (
+            result.kind === 'not-found' ||
+            result.kind === 'conflict' ||
+            result.kind === 'bad-request'
+          ) {
+            throw new Error(result.message ?? `Pillar '${pillarId}' call failed: ${result.kind}`);
+          }
 
           const envelope = result.value as { data?: Record<string, unknown>[] } | null;
           const items = envelope?.data ?? [];

@@ -6,6 +6,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { isConflict } from '@pops/pillar-sdk/client';
 import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { mapVariantMutationError } from './errors';
@@ -24,13 +25,6 @@ type DeleteVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['de
 interface Args {
   onFormSuccess: () => void;
   onDeleteSuccess: () => void;
-}
-
-function isConflictError(err: unknown): boolean {
-  if (err === null || typeof err !== 'object') return false;
-  const candidate = (err as { data?: unknown }).data;
-  if (candidate === null || typeof candidate !== 'object') return false;
-  return (candidate as { code?: unknown }).code === 'CONFLICT';
 }
 
 export function useVariantActionMutations({ onFormSuccess, onDeleteSuccess }: Args) {
@@ -71,7 +65,7 @@ export function useVariantActionMutations({ onFormSuccess, onDeleteSuccess }: Ar
         onDeleteSuccess();
       },
       onError: (err) => {
-        if (isConflictError(err)) {
+        if (isConflict(err)) {
           setDeleteError(t('data.ingredients.variants.delete.referenced'));
           return;
         }
