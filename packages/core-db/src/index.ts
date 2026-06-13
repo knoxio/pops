@@ -22,6 +22,13 @@ export * as serviceAccountKeys from './services/service-account-keys.js';
 export * as pillarRegistryService from './services/pillar-registry.js';
 export * as settingsService from './services/settings.js';
 export * as aiUsageService from './services/ai-usage.js';
+export * as syncResultsService from './services/sync-results.js';
+export * as aiModelPricingService from './services/ai-model-pricing.js';
+
+export type { PersistSyncResultInput } from './services/sync-results.js';
+export { PERSISTED_SYNC_TYPES } from './services/sync-results.js';
+
+export type { ModelPrice, PricingCache } from './services/ai-model-pricing.js';
 
 export type {
   ApplyStatusUpdate,
