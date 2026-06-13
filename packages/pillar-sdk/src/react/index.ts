@@ -12,6 +12,7 @@ export {
 } from './hooks.js';
 export type {
   PillarInfiniteBuildInput,
+  PillarParallelQueryOptions,
   PillarQueryArg,
   PillarUpdater,
   UsePillarCallDynamicMutationArgs,
