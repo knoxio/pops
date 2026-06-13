@@ -28,3 +28,26 @@ export type BuildToolListOptions = {
    */
   includeUnavailable?: boolean;
 };
+
+/**
+ * Discriminated result returned by `invokeTool` (PRD-202).
+ *
+ * The orchestrator branches on `kind` to either thread the tool's output
+ * back into the model loop (`ok`), surface a graceful "tool unavailable"
+ * message to the AI (`pillar-unavailable`), report a tool-level failure
+ * (`tool-error`), or fail closed when the AI hallucinates a tool name
+ * that no pillar exposes (`unknown-tool`).
+ */
+export type ToolResult =
+  | { kind: 'ok'; output: unknown }
+  | { kind: 'pillar-unavailable'; pillar: string }
+  | { kind: 'tool-error'; reason: string }
+  | { kind: 'unknown-tool'; toolName: string };
+
+export type InvokeToolOptions = {
+  /**
+   * Override the per-call deadline. Defaults to 30s per the PRD; the
+   * orchestrator can tighten or loosen this per-tool if needed.
+   */
+  timeoutMs?: number;
+};
