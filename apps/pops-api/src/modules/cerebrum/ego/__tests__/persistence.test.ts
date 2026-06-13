@@ -23,7 +23,7 @@ describe('ConversationPersistence', () => {
   beforeEach(() => {
     db = createTestDb();
     svc = new ConversationPersistence({
-      db: drizzle(db),
+      db: drizzle<Record<string, unknown>>(db),
       now: makeClock(),
     });
   });

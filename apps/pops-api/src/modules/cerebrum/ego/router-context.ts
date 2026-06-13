@@ -4,7 +4,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { getDrizzle } from '../../../db.js';
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { ConversationPersistence } from './persistence.js';
@@ -12,15 +11,13 @@ import { ConversationPersistence } from './persistence.js';
 import type { AppContext } from './types.js';
 
 /**
- * `db` is the shared `pops.db` write handle; `readDb` is the cerebrum
- * pillar's `cerebrum.db` read handle. Pure reads (`setScopes`'
- * pre-check, `getActive`'s lookup, the context-entry list) forward
- * through `@pops/cerebrum-db`'s `conversationsService` against
- * `readDb`. Writes (`updateScopes`) keep landing on `pops.db` until
- * PRD-182 PR 3 collapses them onto the pillar handle.
+ * Every conversation read and write — including `setScopes`'
+ * pre-check, `getActive`'s lookup, the context-entry list, and the
+ * `updateScopes` write — routes through the cerebrum pillar handle
+ * (`cerebrum.db`) after PRD-182 PR 3.
  */
 function getPersistence(): ConversationPersistence {
-  return new ConversationPersistence({ db: getDrizzle(), readDb: getCerebrumDrizzle() });
+  return new ConversationPersistence({ db: getCerebrumDrizzle() });
 }
 
 const setScopesSchema = z.object({

@@ -39,7 +39,10 @@ describe('chat-helpers persistence ordering', () => {
 
   beforeEach(() => {
     db = createTestDb();
-    persistence = new ConversationPersistence({ db: drizzle(db), now: makeClock() });
+    persistence = new ConversationPersistence({
+      db: drizzle<Record<string, unknown>>(db),
+      now: makeClock(),
+    });
   });
 
   afterEach(() => {

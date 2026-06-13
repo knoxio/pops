@@ -228,7 +228,7 @@ describe('Ego chat pipeline (integration)', () => {
     setTestDrizzle(drizzleDb);
 
     persistence = new ConversationPersistence({
-      db: drizzleDb,
+      db: drizzle<Record<string, unknown>>(rawDb),
       now: makeClock(),
     });
 
