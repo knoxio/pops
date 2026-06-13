@@ -44,51 +44,18 @@ const mockPendingCount = vi.fn(() => ({
 }));
 const mockFailedErrorCodes = vi.fn(() => ({ data: [], isLoading: false }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        inbox: {
-          listRejected: {
-            cancel: vi.fn(),
-            getData: vi.fn(),
-            setData: vi.fn(),
-            invalidate: vi.fn(),
-          },
-          listFailed: {
-            cancel: vi.fn(),
-            getData: vi.fn(),
-            setData: vi.fn(),
-            invalidate: vi.fn(),
-          },
-        },
-      },
-    }),
-    food: {
-      inbox: {
-        listRejected: { useQuery: (i: unknown) => mockListRejected(i) },
-        listFailed: { useQuery: (i: unknown) => mockListFailed(i) },
-        failedErrorCodes: { useQuery: () => mockFailedErrorCodes() },
-        unreject: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false, variables: undefined }),
-        },
-      },
-      ingest: {
-        retry: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false, variables: undefined }),
-        },
-      },
-    },
-  },
-}));
-
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
     const key = path.join('.');
     if (key === 'inbox.list') return mockListQuery(input);
     if (key === 'inbox.pendingCount') return mockPendingCount();
+    if (key === 'inbox.listRejected') return mockListRejected(input);
+    if (key === 'inbox.listFailed') return mockListFailed(input);
+    if (key === 'inbox.failedErrorCodes') return mockFailedErrorCodes();
     throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false, variables: undefined }),
+  usePillarUtils: () => ({ setData: vi.fn(), invalidate: vi.fn() }),
 }));
 
 import { InboxPage } from '../InboxPage.js';

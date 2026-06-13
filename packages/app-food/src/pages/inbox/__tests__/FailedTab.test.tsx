@@ -24,14 +24,11 @@ import type { FailedRow } from '../inbox-types';
 const mockListFailed = vi.fn();
 const mockFailedCodes = vi.fn();
 const mockSetData = vi.fn();
-const mockGetData = vi.fn();
-const mockCancel = vi.fn();
 const mockInvalidate = vi.fn();
-const mockInvalidateCodes = vi.fn();
 const mockRetryMutate = vi.fn();
 let mockRetryOpts:
   | {
-      onMutate?: (input: { sourceId: number }) => Promise<{ snapshot: unknown }>;
+      onMutate?: (input: { sourceId: number }) => { snapshot: unknown };
       onError?: (err: Error, input: { sourceId: number }, ctx: { snapshot: unknown }) => void;
       onSuccess?: () => void;
       onSettled?: () => void;
@@ -44,36 +41,29 @@ beforeEach(() => {
   window.HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      food: {
-        inbox: {
-          listFailed: {
-            cancel: mockCancel,
-            getData: mockGetData,
-            setData: mockSetData,
-            invalidate: mockInvalidate,
-          },
-          failedErrorCodes: { invalidate: mockInvalidateCodes },
-        },
-      },
-    }),
-    food: {
-      inbox: {
-        listFailed: { useQuery: (input: unknown) => mockListFailed(input) },
-        failedErrorCodes: { useQuery: () => mockFailedCodes() },
-      },
-      ingest: {
-        retry: {
-          useMutation: (opts: NonNullable<typeof mockRetryOpts>) => {
-            mockRetryOpts = opts;
-            return { mutate: mockRetryMutate, isPending: false, variables: undefined };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'inbox.listFailed') return mockListFailed(input);
+    if (key === 'inbox.failedErrorCodes') return mockFailedCodes();
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: NonNullable<typeof mockRetryOpts>
+  ) => {
+    const key = path.join('.');
+    if (key === 'ingest.retry') {
+      mockRetryOpts = opts;
+      return { mutate: mockRetryMutate, isPending: false, variables: undefined };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    setData: mockSetData,
+    invalidate: mockInvalidate,
+  }),
 }));
 
 import { FailedTab } from '../FailedTab.js';
@@ -165,7 +155,6 @@ describe('FailedTab — PRD-138', () => {
       error: null,
     });
     mockFailedCodes.mockReturnValue({ data: ['InstagramRateLimited'] });
-    mockGetData.mockReturnValue({ items: [makeRow()], nextCursor: null });
     render(
       <Wrapper>
         <FailedTab now={FIXED_NOW} />
@@ -189,7 +178,6 @@ describe('FailedTab — PRD-138', () => {
       error: null,
     });
     mockFailedCodes.mockReturnValue({ data: ['InstagramRateLimited'] });
-    mockGetData.mockReturnValue(snapshot);
     render(
       <Wrapper>
         <FailedTab now={FIXED_NOW} />
@@ -198,7 +186,11 @@ describe('FailedTab — PRD-138', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /Retry ingest/i }));
     mockRetryOpts?.onError?.(new Error('queue down'), { sourceId: 100 }, { snapshot });
-    expect(mockSetData).toHaveBeenCalledWith(expect.objectContaining({}), snapshot);
+    expect(mockSetData).toHaveBeenCalledWith(
+      ['inbox', 'listFailed'],
+      expect.objectContaining({}),
+      expect.any(Function)
+    );
     await waitFor(() => {
       expect(screen.getByText(/Couldn’t re-queue: queue down/i)).toBeInTheDocument();
     });
