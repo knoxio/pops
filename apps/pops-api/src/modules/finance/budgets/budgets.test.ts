@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { budgets as budgetsTable } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { createCaller, seedBudget, setupTestContext } from '../../../shared/test-utils.js';
 
 import type { Database } from 'better-sqlite3';
@@ -278,7 +278,7 @@ describe('budgets.create', () => {
   it('persists to the database', async () => {
     await caller.finance.budgets.create({ category: 'New Budget' });
 
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select()
       .from(budgetsTable)
       .where(eq(budgetsTable.category, 'New Budget'))
@@ -296,7 +296,7 @@ describe('budgets.create', () => {
     });
 
     // Verify all fields persisted in SQLite
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select()
       .from(budgetsTable)
       .where(eq(budgetsTable.id, result.data.id))
@@ -370,7 +370,7 @@ describe('budgets.update', () => {
 
     await caller.finance.budgets.update({ id, data: { amount: 500 } });
 
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select({ lastEditedTime: budgetsTable.lastEditedTime })
       .from(budgetsTable)
       .where(eq(budgetsTable.id, id))
@@ -401,7 +401,7 @@ describe('budgets.update', () => {
     await caller.finance.budgets.update({ id, data: { amount: 600 } });
 
     // Verify SQLite was updated
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select({ amount: budgetsTable.amount })
       .from(budgetsTable)
       .where(eq(budgetsTable.id, id))
@@ -418,7 +418,11 @@ describe('budgets.delete', () => {
     expect(result.message).toBe('Budget deleted');
 
     // Verify gone from DB
-    const row = getDrizzle().select().from(budgetsTable).where(eq(budgetsTable.id, id)).get();
+    const row = getFinanceDrizzle()
+      .select()
+      .from(budgetsTable)
+      .where(eq(budgetsTable.id, id))
+      .get();
     expect(row).toBeUndefined();
   });
 
@@ -447,7 +451,11 @@ describe('budgets.delete', () => {
     await caller.finance.budgets.delete({ id });
 
     // Verify row is gone from SQLite
-    const row = getDrizzle().select().from(budgetsTable).where(eq(budgetsTable.id, id)).get();
+    const row = getFinanceDrizzle()
+      .select()
+      .from(budgetsTable)
+      .where(eq(budgetsTable.id, id))
+      .get();
     expect(row).toBeUndefined();
   });
 });

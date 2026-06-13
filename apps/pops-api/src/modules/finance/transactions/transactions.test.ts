@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { transactions as transactionsTable } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import {
   createCaller,
   seedEntity,
@@ -440,7 +440,7 @@ describe('transactions.update', () => {
 
     await caller.finance.transactions.update({ id, data: { amount: 100.0 } });
 
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select({ lastEditedTime: transactionsTable.lastEditedTime })
       .from(transactionsTable)
       .where(eq(transactionsTable.id, id))
@@ -487,7 +487,7 @@ describe('transactions.delete', () => {
     expect(result.message).toBe('Transaction deleted');
 
     // Verify gone from DB
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select()
       .from(transactionsTable)
       .where(eq(transactionsTable.id, id))
