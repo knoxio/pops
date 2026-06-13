@@ -141,6 +141,13 @@ export {
   type UsePillarUtilsResult,
 } from './use-pillar-utils.js';
 
+export {
+  usePillarInfiniteQuery,
+  type PillarInfiniteBuildInput,
+  type UsePillarInfiniteQueryOptions,
+  type UsePillarInfiniteQueryResult,
+} from './use-pillar-infinite-query.js';
+
 export type UsePillarCallDynamicQueryOptions = UsePillarQueryOptions<unknown>;
 export type UsePillarCallDynamicQueryResult = UsePillarQueryResult<unknown>;
 export type UsePillarCallDynamicMutationOptions = UsePillarMutationOptions<unknown, unknown>;
