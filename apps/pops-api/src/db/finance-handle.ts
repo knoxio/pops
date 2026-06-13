@@ -1,10 +1,15 @@
 /**
  * Lazily-initialised handle to the finance pillar's SQLite file.
  *
- * Phase 2 PR 3 of the finance pillar migration: the wish-list slice
- * now reads/writes through this handle (boot eagerly opens the file
- * in PR 2; this PR adds the cutover + the ATTACH-based backfill that
- * carries any rows still living in the legacy pops.db across).
+ * Phase 2 PR 2 opened the connection (and applied the in-package
+ * migrations journal) at boot. PR 3 routed every finance module read +
+ * write through `getFinanceDrizzle()` (`finance.wishlist.*`,
+ * `finance.budgets.*`, `finance.transactions.*`, the core entities +
+ * corrections handlers, the tag-suggester job, search adapters) and ran
+ * a one-shot ATTACH-based backfill from the legacy shared pops.db. PR 4
+ * (Theme 13, 5th pillar FULL EXIT) retired the backfill — every
+ * finance-owned table now writes directly to `finance.db`, so the boot
+ * bridge has nothing left to carry forward.
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
  * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts`
@@ -15,7 +20,6 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openFinanceDb, type FinanceDb, type OpenedFinanceDb } from '@pops/finance-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
-import { backfillFinanceFromShared } from './backfill-finance-from-shared.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
 
 let financeDb: OpenedFinanceDb | null = null;
@@ -80,16 +84,4 @@ export function setFinanceDb(next: OpenedFinanceDb | null): OpenedFinanceDb | nu
   const prev = financeDb;
   financeDb = next;
   return prev;
-}
-
-/**
- * Run the one-shot ATTACH backfill from the legacy shared pops.db into
- * the finance pillar's finance.db. No-op if the finance handle isn't
- * open (e.g. boot still resolving). Idempotent against repeated boots
- * via per-table `WHERE id NOT IN (...)` filters. See
- * `backfill-finance-from-shared.ts` for table-by-table behaviour.
- */
-export function backfillFinanceFromSharedDb(sharedPath: string): void {
-  if (!financeDb) return;
-  backfillFinanceFromShared(financeDb, sharedPath);
 }
