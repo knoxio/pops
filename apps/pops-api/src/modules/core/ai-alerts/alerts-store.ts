@@ -3,12 +3,15 @@
  *
  * Separated from the evaluator orchestrator so each module stays focused
  * and within the project's max-lines lint budget.
+ *
+ * Reads + writes resolve against `getCoreDrizzle()` now that PRD-186 PR 4
+ * lands `ai_alerts` + `ai_alert_rules` in `@pops/core-db`.
  */
 import { and, desc, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 
 import { aiAlerts } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { alertRowToAlert } from './mappers.js';
 
 import type { AlertCandidate, AlertRuleType, AlertSeverity, FiredAlert } from './types.js';
@@ -17,7 +20,7 @@ export const DEDUP_WINDOW_MINUTES = 60;
 
 /** Has an alert with the same `(type, scope_detail)` already fired in the dedup window? */
 export function isDuplicate(
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   candidate: AlertCandidate,
   now: Date
 ): boolean {
@@ -38,7 +41,7 @@ export function isDuplicate(
 }
 
 export function insertAlert(
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   candidate: AlertCandidate,
   now: Date
 ): FiredAlert {
@@ -73,7 +76,7 @@ export function insertAlert(
  * pass the duplicate check and double-fire.
  */
 export function insertAlertIfNotDuplicate(
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   candidate: AlertCandidate,
   now: Date
 ): FiredAlert | null {
@@ -109,7 +112,7 @@ export function listAlerts(filters: ListAlertsFilters = {}): {
   alerts: FiredAlert[];
   total: number;
 } {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const where = buildListConditions(filters);
   const baseQuery = db.select().from(aiAlerts);
   const limit = filters.limit ?? 100;
@@ -128,7 +131,7 @@ export function listAlerts(filters: ListAlertsFilters = {}): {
 }
 
 export function acknowledgeAlert(id: number, now: Date = new Date()): FiredAlert | null {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const result = db
     .update(aiAlerts)
     .set({ acknowledged: 1, acknowledgedAt: now.toISOString() })

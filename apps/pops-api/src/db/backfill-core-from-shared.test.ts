@@ -3,13 +3,15 @@
  *
  * Exercises the ATTACH-based copy from the shared `pops.db` to the
  * core pillar's `core.db` against on-disk SQLite files (in-memory DBs
- * can't be ATTACHed). The trio covered by this PR is `ai_model_pricing`,
- * `sync_job_results`, and `ai_usage` — the writer cutover that lets us
- * retire each entry happens in the follow-up PR; until then this bridge
- * runs on every boot. Confirms:
- *   - first run carries existing rows across for all three tables,
+ * can't be ATTACHed). The set covered by this bridge is
+ * `ai_model_pricing`, `sync_job_results`, `ai_usage`, `ai_alert_rules`,
+ * and `ai_alerts` — the writer cutover that lets us retire each entry
+ * happens once the handler flip lands; until then this bridge runs on
+ * every boot. Confirms:
+ *   - first run carries existing rows across for all tables,
  *   - second run is a no-op (idempotent — the per-table NOT EXISTS dedupes),
  *   - composite-key dedup honours (provider_id, model_id) for ai_model_pricing,
+ *   - ai_alerts.rule_id FK survives the ATTACH copy,
  *   - missing source table is tolerated without throwing.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -82,12 +84,51 @@ CREATE INDEX idx_ai_usage_created_at ON ai_usage (created_at);
 CREATE INDEX idx_ai_usage_batch ON ai_usage (import_batch_id);
 `;
 
+const AI_ALERT_RULES_SQL = `
+CREATE TABLE ai_alert_rules (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  type text NOT NULL,
+  scope_provider text,
+  scope_model text,
+  threshold_value real NOT NULL,
+  window_minutes integer,
+  enabled integer DEFAULT 1 NOT NULL,
+  created_at text NOT NULL,
+  updated_at text NOT NULL
+);
+CREATE INDEX idx_ai_alert_rules_type ON ai_alert_rules (type);
+CREATE INDEX idx_ai_alert_rules_enabled ON ai_alert_rules (enabled);
+`;
+
+const AI_ALERTS_SQL = `
+CREATE TABLE ai_alerts (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  rule_id integer REFERENCES ai_alert_rules(id) ON DELETE SET NULL,
+  type text NOT NULL,
+  message text NOT NULL,
+  severity text NOT NULL,
+  scope_detail text,
+  metric_value real NOT NULL,
+  threshold_value real NOT NULL,
+  acknowledged integer DEFAULT 0 NOT NULL,
+  acknowledged_at text,
+  created_at text NOT NULL
+);
+CREATE INDEX idx_ai_alerts_created_at ON ai_alerts (created_at);
+CREATE INDEX idx_ai_alerts_type ON ai_alerts (type);
+CREATE INDEX idx_ai_alerts_severity ON ai_alerts (severity);
+CREATE INDEX idx_ai_alerts_acknowledged ON ai_alerts (acknowledged);
+CREATE INDEX idx_ai_alerts_dedupe ON ai_alerts (type, scope_detail, created_at);
+`;
+
 function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string {
   const path = join(tmpDir, 'pops.db');
   const raw = new BetterSqlite3(path);
   raw.exec(AI_MODEL_PRICING_SQL);
   raw.exec(SYNC_JOB_RESULTS_SQL);
   raw.exec(AI_USAGE_SQL);
+  raw.exec(AI_ALERT_RULES_SQL);
+  raw.exec(AI_ALERTS_SQL);
   seed(raw);
   raw.close();
   return path;
@@ -123,12 +164,36 @@ function insertUsage(raw: BetterSqlite3.Database, description: string): void {
     .run(description);
 }
 
+function insertAlertRule(raw: BetterSqlite3.Database, type: string): number {
+  const row = raw
+    .prepare(
+      `INSERT INTO ai_alert_rules
+        (type, scope_provider, scope_model, threshold_value, window_minutes, enabled, created_at, updated_at)
+       VALUES (?, NULL, NULL, 80, 60, 1, datetime('now'), datetime('now'))
+       RETURNING id`
+    )
+    .get(type) as { id: number };
+  return row.id;
+}
+
+function insertAlert(raw: BetterSqlite3.Database, ruleId: number, type: string): void {
+  raw
+    .prepare(
+      `INSERT INTO ai_alerts
+        (rule_id, type, message, severity, scope_detail, metric_value, threshold_value, acknowledged, created_at)
+       VALUES (?, ?, ?, 'warning', ?, 81, 80, 0, datetime('now'))`
+    )
+    .run(ruleId, type, `${type} fired`, `scope:${type}`);
+}
+
 describe('backfillCoreFromShared', () => {
-  it('copies ai_model_pricing, sync_job_results, and ai_usage rows from shared on first run', () => {
+  it('copies ai_model_pricing, sync_job_results, ai_usage, ai_alert_rules, and ai_alerts rows from shared on first run', () => {
     const sharedPath = openSharedWithSeed((raw) => {
       insertPricing(raw, 'claude', 'claude-haiku-4-5');
       insertSync(raw, 'job-a');
       insertUsage(raw, 'seed-usage');
+      const ruleId = insertAlertRule(raw, 'budget-threshold');
+      insertAlert(raw, ruleId, 'budget-threshold');
     });
 
     const core = openCoreDb(join(tmpDir, 'core.db'));
@@ -151,6 +216,28 @@ describe('backfillCoreFromShared', () => {
         input_tokens: number;
       }[];
       expect(usage).toEqual([{ description: 'seed-usage', input_tokens: 100 }]);
+
+      const rules = core.raw
+        .prepare('SELECT id, type, threshold_value FROM ai_alert_rules')
+        .all() as { id: number; type: string; threshold_value: number }[];
+      expect(rules).toEqual([{ id: 1, type: 'budget-threshold', threshold_value: 80 }]);
+
+      const alerts = core.raw
+        .prepare('SELECT rule_id, type, scope_detail, metric_value FROM ai_alerts')
+        .all() as {
+        rule_id: number;
+        type: string;
+        scope_detail: string;
+        metric_value: number;
+      }[];
+      expect(alerts).toEqual([
+        {
+          rule_id: 1,
+          type: 'budget-threshold',
+          scope_detail: 'scope:budget-threshold',
+          metric_value: 81,
+        },
+      ]);
     } finally {
       core.raw.close();
     }
@@ -161,6 +248,8 @@ describe('backfillCoreFromShared', () => {
       insertPricing(raw, 'claude', 'claude-haiku-4-5');
       insertSync(raw, 'job-a');
       insertUsage(raw, 'seed-usage');
+      const ruleId = insertAlertRule(raw, 'budget-threshold');
+      insertAlert(raw, ruleId, 'budget-threshold');
     });
 
     const core = openCoreDb(join(tmpDir, 'core.db'));
@@ -177,9 +266,46 @@ describe('backfillCoreFromShared', () => {
       const usageCount = (
         core.raw.prepare('SELECT count(*) AS n FROM ai_usage').get() as { n: number }
       ).n;
+      const ruleCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_alert_rules').get() as { n: number }
+      ).n;
+      const alertCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_alerts').get() as { n: number }
+      ).n;
       expect(pricingCount).toBe(1);
       expect(syncCount).toBe(1);
       expect(usageCount).toBe(1);
+      expect(ruleCount).toBe(1);
+      expect(alertCount).toBe(1);
+    } finally {
+      core.raw.close();
+    }
+  });
+
+  it('preserves ai_alerts.rule_id FK to ai_alert_rules.id across the ATTACH copy', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      const errorSpikeRuleId = insertAlertRule(raw, 'error-spike');
+      const latencyRuleId = insertAlertRule(raw, 'latency-degradation');
+      insertAlert(raw, latencyRuleId, 'latency-degradation');
+      insertAlert(raw, errorSpikeRuleId, 'error-spike');
+    });
+
+    const core = openCoreDb(join(tmpDir, 'core.db'));
+    try {
+      backfillCoreFromShared(core, sharedPath);
+
+      const joined = core.raw
+        .prepare(
+          `SELECT a.type AS alert_type, r.type AS rule_type
+             FROM ai_alerts a
+             JOIN ai_alert_rules r ON r.id = a.rule_id
+             ORDER BY a.type`
+        )
+        .all() as { alert_type: string; rule_type: string }[];
+      expect(joined).toEqual([
+        { alert_type: 'error-spike', rule_type: 'error-spike' },
+        { alert_type: 'latency-degradation', rule_type: 'latency-degradation' },
+      ]);
     } finally {
       core.raw.close();
     }
@@ -239,9 +365,17 @@ describe('backfillCoreFromShared', () => {
       const usageCount = (
         core.raw.prepare('SELECT count(*) AS n FROM ai_usage').get() as { n: number }
       ).n;
+      const ruleCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_alert_rules').get() as { n: number }
+      ).n;
+      const alertCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_alerts').get() as { n: number }
+      ).n;
       expect(pricingCount).toBe(0);
       expect(syncCount).toBe(0);
       expect(usageCount).toBe(0);
+      expect(ruleCount).toBe(0);
+      expect(alertCount).toBe(0);
     } finally {
       core.raw.close();
     }

@@ -1,18 +1,19 @@
 /**
  * Boot-time backfill from the legacy shared `pops.db` into the core
- * pillar's `core.db` for the three tables PRD-186 PR4 lands in core-db:
- * `ai_model_pricing`, `sync_job_results`, and `ai_usage`.
+ * pillar's `core.db` for the tables PRD-186 PR4 lands in core-db:
+ * `ai_model_pricing`, `sync_job_results`, `ai_usage`, `ai_alert_rules`,
+ * and `ai_alerts`.
  *
  * Phase context: PR4 establishes the per-pillar table home for these
- * tables (`packages/core-db/migrations/0059..0061_*.sql`) ahead of the
- * hot-path writer cutover that flips `inference-pricing.ts`,
- * `inference-middleware.ts`, and `jobs/sync-results.ts` from
- * `getDrizzle()` to `getCoreDrizzle()` in the next PR. Until that cutover
- * lands, writers still target `pops.db` — so this backfill carries the
- * existing rows across on every boot so the new core table isn't a ghost.
- * After the cutover lands and is verified in prod, the corresponding
- * `TABLE_COPIES` entry is retired (matching the cerebrum/finance/media
- * pattern documented in `backfill-cerebrum-from-shared.ts`).
+ * tables (`packages/core-db/migrations/0059..0063_*.sql`) ahead of the
+ * hot-path writer cutover that flips the per-table writers from
+ * `getDrizzle()` to `getCoreDrizzle()` in the same / next PR. Until each
+ * cutover lands, writers still target `pops.db` — so this backfill
+ * carries the existing rows across on every boot so the new core table
+ * isn't a ghost. After a cutover lands and is verified in prod, the
+ * corresponding `TABLE_COPIES` entry is retired (matching the
+ * cerebrum/finance/media pattern documented in
+ * `backfill-cerebrum-from-shared.ts`).
  *
  * Subsequent boots find the core copy already populated and become a
  * no-op via the `WHERE NOT EXISTS (...)` existence filter.
@@ -92,6 +93,38 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'cost_usd',
       'cached',
       'import_batch_id',
+      'created_at',
+    ],
+  },
+  {
+    table: 'ai_alert_rules',
+    idColumns: ['id'],
+    columns: [
+      'id',
+      'type',
+      'scope_provider',
+      'scope_model',
+      'threshold_value',
+      'window_minutes',
+      'enabled',
+      'created_at',
+      'updated_at',
+    ],
+  },
+  {
+    table: 'ai_alerts',
+    idColumns: ['id'],
+    columns: [
+      'id',
+      'rule_id',
+      'type',
+      'message',
+      'severity',
+      'scope_detail',
+      'metric_value',
+      'threshold_value',
+      'acknowledged',
+      'acknowledged_at',
       'created_at',
     ],
   },

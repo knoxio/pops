@@ -10,7 +10,7 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 
 import { aiBudgets, aiInferenceLog } from '@pops/db-types';
 
-import type { getDrizzle } from '../../../../db.js';
+import type { getCoreDrizzle } from '../../../../db.js';
 import type { AlertCandidate, AlertRule, AlertSeverity } from '../types.js';
 
 interface BudgetMetrics {
@@ -28,7 +28,7 @@ function monthStart(now: Date): string {
 }
 
 function getUsage(
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   budget: typeof aiBudgets.$inferSelect,
   start: string
 ): { totalTokens: number; totalCost: number } {
@@ -79,7 +79,7 @@ function computeMetrics(
 
 export function evaluateBudgetThreshold(
   rule: AlertRule,
-  db: ReturnType<typeof getDrizzle>,
+  db: ReturnType<typeof getCoreDrizzle>,
   now: Date
 ): AlertCandidate[] {
   const budgets = db.select().from(aiBudgets).all();

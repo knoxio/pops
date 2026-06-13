@@ -2,12 +2,15 @@
  * CRUD service for `ai_alert_rules` (PRD-092 US-07).
  *
  * Exposes pure functions used by the tRPC router and seeding scripts.
+ *
+ * Reads + writes resolve against `getCoreDrizzle()` now that PRD-186 PR 4
+ * lands `ai_alert_rules` in `@pops/core-db`.
  */
 import { eq } from 'drizzle-orm';
 
 import { aiAlertRules } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { ruleRowToRule } from './mappers.js';
 
 import type { AlertRule, AlertRuleType } from './types.js';
@@ -36,17 +39,17 @@ function nowIso(): string {
 }
 
 export function listRules(): AlertRule[] {
-  return getDrizzle().select().from(aiAlertRules).all().map(ruleRowToRule);
+  return getCoreDrizzle().select().from(aiAlertRules).all().map(ruleRowToRule);
 }
 
 export function getRule(id: number): AlertRule | null {
-  const [row] = getDrizzle().select().from(aiAlertRules).where(eq(aiAlertRules.id, id)).all();
+  const [row] = getCoreDrizzle().select().from(aiAlertRules).where(eq(aiAlertRules.id, id)).all();
   return row ? ruleRowToRule(row) : null;
 }
 
 export function createRule(input: CreateAlertRuleInput): AlertRule {
   const now = nowIso();
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const result = db
     .insert(aiAlertRules)
     .values({
@@ -73,7 +76,7 @@ export function createRule(input: CreateAlertRuleInput): AlertRule {
  */
 export function updateRule(input: UpdateAlertRuleInput): AlertRule {
   const now = nowIso();
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const patch: Partial<typeof aiAlertRules.$inferInsert> = { updatedAt: now };
   if (input.type !== undefined) patch.type = input.type;
   if (input.scopeProvider !== undefined) patch.scopeProvider = input.scopeProvider;
@@ -97,7 +100,7 @@ export function setRuleEnabled(id: number, enabled: boolean): AlertRule {
 }
 
 export function deleteRule(id: number): { success: boolean } {
-  const result = getDrizzle().delete(aiAlertRules).where(eq(aiAlertRules.id, id)).run();
+  const result = getCoreDrizzle().delete(aiAlertRules).where(eq(aiAlertRules.id, id)).run();
   return { success: result.changes > 0 };
 }
 
@@ -116,7 +119,7 @@ export function seedDefaultRules(): number {
     { type: 'error-spike', thresholdValue: 10, windowMinutes: 60 },
     { type: 'latency-degradation', thresholdValue: 10_000, windowMinutes: 60 },
   ];
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const existingTypes = new Set(listRules().map((r) => r.type));
   const missing = defaults.filter((d) => !existingTypes.has(d.type));
   if (missing.length === 0) return 0;
