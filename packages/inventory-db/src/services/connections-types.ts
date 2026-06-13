@@ -1,9 +1,10 @@
 /**
- * Input and result types for the item connections service.
+ * Input and result types for the item connections service, plus the
+ * `toConnection` row→API mapper.
  *
- * Validation (zod) and the API response mapper live with the router
- * layers — this package stays HTTP-agnostic and only exposes the
- * service surface and row types needed to call it.
+ * Validation (zod) lives with the router layers — this package stays
+ * HTTP-agnostic and only exposes the service surface, row types, and
+ * the canonical row→public-shape mapper needed to call it.
  */
 import type { ItemConnectionRow } from '@pops/db-types';
 
@@ -39,7 +40,7 @@ export function toConnection(row: ItemConnectionRow): Connection {
   };
 }
 
-/** Tree node returned by `traceConnections`. */
+/** Tree node returned by `connectionsService.trace`. */
 export interface TraceNode {
   id: string;
   itemName: string;

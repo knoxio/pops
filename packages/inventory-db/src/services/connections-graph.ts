@@ -51,7 +51,7 @@ function visitNeighbors(
   depth: number
 ): void {
   for (const { neighborId, itemAId, itemBId } of neighbors) {
-    const edgeKey = `${itemAId}-${itemBId}`;
+    const edgeKey = `${itemAId}|${itemBId}`;
     if (!state.visitedEdges.has(edgeKey)) {
       state.visitedEdges.add(edgeKey);
       state.edges.push({ source: itemAId, target: itemBId });

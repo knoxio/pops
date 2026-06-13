@@ -15,7 +15,7 @@
  * constraint at the schema level. The service normalises caller-provided
  * pairs to satisfy that ordering before any insert / lookup / delete.
  */
-import { and, count, eq, or } from 'drizzle-orm';
+import { and, asc, count, eq, or } from 'drizzle-orm';
 
 import { homeInventory, itemConnections } from '../schema.js';
 import {
@@ -96,7 +96,14 @@ export function list(
 ): ConnectionListResult {
   const condition = or(eq(itemConnections.itemAId, itemId), eq(itemConnections.itemBId, itemId));
 
-  const rows = db.select().from(itemConnections).where(condition).limit(limit).offset(offset).all();
+  const rows = db
+    .select()
+    .from(itemConnections)
+    .where(condition)
+    .orderBy(asc(itemConnections.id))
+    .limit(limit)
+    .offset(offset)
+    .all();
 
   const [countResult] = db.select({ total: count() }).from(itemConnections).where(condition).all();
 
