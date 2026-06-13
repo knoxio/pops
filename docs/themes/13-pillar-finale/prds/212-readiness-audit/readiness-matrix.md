@@ -29,38 +29,38 @@ input to PRD-213 (drop `pops.db`): every row must reach the green
 
 ## Per-table matrix
 
-| Table                       | Owner pillar | Owner PRD                    | PR3 (writer cutover) | Backfill still active? | Blocks PRD-213? |
-| --------------------------- | ------------ | ---------------------------- | -------------------- | ---------------------- | --------------- |
-| `movies`                    | media        | PRD-165                      | Shipped (8fd43790)   | Retired (per 39dfdaae) | No              |
-| `tv_shows`                  | media        | PRD-166                      | Shipped (cbbe451b)   | Yes                    | Yes             |
-| `watchlist`                 | media        | PRD-167                      | Shipped (1766720d)   | Yes                    | Yes             |
-| `watch_history`             | media        | PRD-168                      | Shipped (0dfa8999)   | Yes                    | Yes             |
-| `shelf_impressions`         | media        | PRD-170 (discovery)          | PR1 only (f29361b1)  | Yes                    | Yes             |
-| `home_inventory`            | inventory    | PRD-173                      | PR2 only (748cd1f9)  | Yes                    | Yes             |
-| `fixtures`                  | inventory    | PRD-173                      | PR2 only             | Yes                    | Yes             |
-| `locations`                 | inventory    | PRD-173                      | PR2 only             | Yes                    | Yes             |
-| `item_connections`          | inventory    | PRD-175                      | Shipped (d09cb531)   | Yes                    | Yes             |
-| `item_documents`            | inventory    | PRD-176                      | Shipped (7b404053)   | Yes                    | Yes             |
-| `item_photos`               | inventory    | PRD-173                      | PR2 only             | Yes                    | Yes             |
-| `item_uploaded_files`       | inventory    | PRD-173                      | PR2 only             | Yes                    | Yes             |
-| `item_fixture_connections`  | inventory    | PRD-173                      | PR2 only             | Yes                    | Yes             |
-| `entities`                  | finance      | Theme 12 N3 / Epic 08a       | Shipped (Theme 12)   | Yes                    | Yes             |
-| `transactions`              | finance      | Theme 12 N3                  | Shipped (Theme 12)   | Yes                    | Yes             |
-| `transaction_corrections`   | finance      | Theme 12 N4 PR 3 (#2908)     | Shipped              | Yes                    | Yes             |
-| `transaction_tag_rules`     | finance      | Theme 12 N4 PR 3 (#2908)     | Shipped              | Yes                    | Yes             |
-| `tag_vocabulary`            | finance      | Theme 12 N4 PR 3 (#2908)     | Shipped              | Yes                    | Yes             |
-| `budgets`                   | finance      | Theme 12                     | Shipped              | Yes                    | Yes             |
-| `wish_list`                 | finance      | Theme 12                     | Shipped              | Yes                    | Yes             |
-| `nudge_log`                 | cerebrum     | Wave-3 (router still legacy) | Not started          | Yes                    | Yes             |
-| `prep_states`               | food         | (food cutover, pre-Theme 13) | Shipped              | Yes                    | Yes             |
-| `slug_registry`             | food (slice) | (food cutover, pre-Theme 13) | Shipped              | Yes                    | Yes             |
-| `lists`                     | lists        | (lists cutover, pre-Theme 13)| Shipped              | Yes                    | Yes             |
-| `list_items`                | lists        | (lists cutover, pre-Theme 13)| Shipped              | Yes                    | Yes             |
-| `service_accounts`          | core         | (core cutover, pre-Theme 13) | Shipped              | Yes                    | Yes             |
-| `settings`                  | core         | PRD-183                      | Shipped (29fbf960)   | Yes                    | Yes             |
-| `ai_inference_log`          | core         | PRD-186                      | Shipped (6650cfa0)   | Yes                    | Yes             |
-| `ai_inference_daily`        | core         | PRD-186                      | Shipped (6650cfa0)   | Yes                    | Yes             |
-| `ai_budgets`                | core         | PRD-186                      | Shipped (6650cfa0)   | Yes                    | Yes             |
+| Table                      | Owner pillar | Owner PRD                     | PR3 (writer cutover) | Backfill still active? | Blocks PRD-213? |
+| -------------------------- | ------------ | ----------------------------- | -------------------- | ---------------------- | --------------- |
+| `movies`                   | media        | PRD-165                       | Shipped (8fd43790)   | Retired (per 39dfdaae) | No              |
+| `tv_shows`                 | media        | PRD-166                       | Shipped (cbbe451b)   | Yes                    | Yes             |
+| `watchlist`                | media        | PRD-167                       | Shipped (1766720d)   | Yes                    | Yes             |
+| `watch_history`            | media        | PRD-168                       | Shipped (0dfa8999)   | Yes                    | Yes             |
+| `shelf_impressions`        | media        | PRD-170 (discovery)           | PR1 only (f29361b1)  | Yes                    | Yes             |
+| `home_inventory`           | inventory    | PRD-173                       | PR2 only (748cd1f9)  | Yes                    | Yes             |
+| `fixtures`                 | inventory    | PRD-173                       | PR2 only             | Yes                    | Yes             |
+| `locations`                | inventory    | PRD-173                       | PR2 only             | Yes                    | Yes             |
+| `item_connections`         | inventory    | PRD-175                       | Shipped (d09cb531)   | Yes                    | Yes             |
+| `item_documents`           | inventory    | PRD-176                       | Shipped (7b404053)   | Yes                    | Yes             |
+| `item_photos`              | inventory    | PRD-173                       | PR2 only             | Yes                    | Yes             |
+| `item_uploaded_files`      | inventory    | PRD-173                       | PR2 only             | Yes                    | Yes             |
+| `item_fixture_connections` | inventory    | PRD-173                       | PR2 only             | Yes                    | Yes             |
+| `entities`                 | finance      | Theme 12 N3 / Epic 08a        | Shipped (Theme 12)   | Yes                    | Yes             |
+| `transactions`             | finance      | Theme 12 N3                   | Shipped (Theme 12)   | Yes                    | Yes             |
+| `transaction_corrections`  | finance      | Theme 12 N4 PR 3 (#2908)      | Shipped              | Yes                    | Yes             |
+| `transaction_tag_rules`    | finance      | Theme 12 N4 PR 3 (#2908)      | Shipped              | Yes                    | Yes             |
+| `tag_vocabulary`           | finance      | Theme 12 N4 PR 3 (#2908)      | Shipped              | Yes                    | Yes             |
+| `budgets`                  | finance      | Theme 12                      | Shipped              | Yes                    | Yes             |
+| `wish_list`                | finance      | Theme 12                      | Shipped              | Yes                    | Yes             |
+| `nudge_log`                | cerebrum     | Wave-3 (router still legacy)  | Not started          | Yes                    | Yes             |
+| `prep_states`              | food         | (food cutover, pre-Theme 13)  | Shipped              | Yes                    | Yes             |
+| `slug_registry`            | food (slice) | (food cutover, pre-Theme 13)  | Shipped              | Yes                    | Yes             |
+| `lists`                    | lists        | (lists cutover, pre-Theme 13) | Shipped              | Yes                    | Yes             |
+| `list_items`               | lists        | (lists cutover, pre-Theme 13) | Shipped              | Yes                    | Yes             |
+| `service_accounts`         | core         | (core cutover, pre-Theme 13)  | Shipped              | Yes                    | Yes             |
+| `settings`                 | core         | PRD-183                       | Shipped (29fbf960)   | Yes                    | Yes             |
+| `ai_inference_log`         | core         | PRD-186                       | Shipped (6650cfa0)   | Yes                    | Yes             |
+| `ai_inference_daily`       | core         | PRD-186                       | Shipped (6650cfa0)   | Yes                    | Yes             |
+| `ai_budgets`               | core         | PRD-186                       | Shipped (6650cfa0)   | Yes                    | Yes             |
 
 **Totals**: 30 tables enumerated in active backfills. 1 retired
 (`movies`). **29 tables blocking PRD-213** today.
@@ -76,15 +76,15 @@ behaviour) are excluded.
 
 ### Count by pillar (production code only)
 
-| Pillar / area | Files with live `getDrizzle()` calls |
-| ------------- | -----------------------------------: |
-| media         |                                   70 |
-| core          |                                   21 |
-| food          |                                   19 |
-| cerebrum      |                                   18 |
-| jobs / lib / routes / shared (cross-pillar) | 13 |
-| finance       |                                    4 |
-| lists         |                                    2 |
+| Pillar / area                               | Files with live `getDrizzle()` calls |
+| ------------------------------------------- | -----------------------------------: |
+| media                                       |                                   70 |
+| core                                        |                                   21 |
+| food                                        |                                   19 |
+| cerebrum                                    |                                   18 |
+| jobs / lib / routes / shared (cross-pillar) |                                   13 |
+| finance                                     |                                    4 |
+| lists                                       |                                    2 |
 
 **Total: 147 production files still call `getDrizzle()` directly.**
 
@@ -93,47 +93,47 @@ behaviour) are excluded.
 These do not belong to a single Wave-3 cutover PRD and need explicit
 owners assigned before PRD-213 can ship:
 
-| File                                                | Reason still on `pops.db`                                                       | Suggested owner                            |
-| --------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------ |
-| `apps/pops-api/src/jobs/handlers/default.ts`        | Generic job runner — reads `jobs` table                                         | Needs a new "jobs.db" decision or core flip|
-| `apps/pops-api/src/jobs/handlers/embeddings-source.ts` | Embeddings pipeline — reads source rows across pillars                        | core (embeddings owner)                    |
-| `apps/pops-api/src/jobs/handlers/embeddings-helpers.ts` | Same pipeline; 4 separate `getDrizzle()` call sites                          | core                                       |
-| `apps/pops-api/src/jobs/sync-results.ts`            | Sync result persistence                                                         | core                                       |
-| `apps/pops-api/src/lib/inference-pricing.ts`        | Reads `ai_provider_pricing` — Wave-3 PRD-186 left the pricing table behind      | core (PRD-186 follow-up)                   |
-| `apps/pops-api/src/routes/health.ts`                | Health probe — touches `pops.db` to confirm it opens                            | Replace with per-pillar probes (PRD-213)   |
-| `apps/pops-api/src/shared/tag-suggester.ts`         | Cross-pillar tag suggester, reads `entities` + `tag_vocabulary`                 | finance (post-08a)                         |
-| `apps/pops-api/src/shared/pillar-smoke-harness.ts`  | Documents the legacy behaviour; ok to keep until PRD-213 lands then delete      | Theme 13 / PRD-213                         |
-| `apps/pops-api/src/modules/core/ai-budgets/enforcement.ts` line 233 | Explicitly retained — joins `ai_providers` (still on pops.db) | PRD-186 follow-up                          |
+| File                                                                | Reason still on `pops.db`                                                  | Suggested owner                             |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------- |
+| `apps/pops-api/src/jobs/handlers/default.ts`                        | Generic job runner — reads `jobs` table                                    | Needs a new "jobs.db" decision or core flip |
+| `apps/pops-api/src/jobs/handlers/embeddings-source.ts`              | Embeddings pipeline — reads source rows across pillars                     | core (embeddings owner)                     |
+| `apps/pops-api/src/jobs/handlers/embeddings-helpers.ts`             | Same pipeline; 4 separate `getDrizzle()` call sites                        | core                                        |
+| `apps/pops-api/src/jobs/sync-results.ts`                            | Sync result persistence                                                    | core                                        |
+| `apps/pops-api/src/lib/inference-pricing.ts`                        | Reads `ai_provider_pricing` — Wave-3 PRD-186 left the pricing table behind | core (PRD-186 follow-up)                    |
+| `apps/pops-api/src/routes/health.ts`                                | Health probe — touches `pops.db` to confirm it opens                       | Replace with per-pillar probes (PRD-213)    |
+| `apps/pops-api/src/shared/tag-suggester.ts`                         | Cross-pillar tag suggester, reads `entities` + `tag_vocabulary`            | finance (post-08a)                          |
+| `apps/pops-api/src/shared/pillar-smoke-harness.ts`                  | Documents the legacy behaviour; ok to keep until PRD-213 lands then delete | Theme 13 / PRD-213                          |
+| `apps/pops-api/src/modules/core/ai-budgets/enforcement.ts` line 233 | Explicitly retained — joins `ai_providers` (still on pops.db)              | PRD-186 follow-up                           |
 
 ## Wave-3 status cross-reference
 
 Summary of the 22 cutover PRDs (165–186) against the matrix above.
 Sourced from `git log --all`.
 
-| PRD     | Slice                         | PR2 (read flip) | PR3 (write flip) | PR4 (drop)     |
-| ------- | ----------------------------- | --------------- | ---------------- | -------------- |
-| PRD-165 | media.movies                  | Done            | Done             | Done (39dfdaae)|
-| PRD-166 | media.tvShows                 | Done            | Done             | Not started    |
-| PRD-167 | media.watchlist               | Done            | Done             | Not started    |
-| PRD-168 | media.watchHistory            | Done            | Done             | Not started    |
-| PRD-169 | media.library (read-flip)     | Done (c7219031) | n/a              | n/a            |
-| PRD-170 | media.discovery               | PR1 only        | Not started      | Not started    |
-| PRD-171 | media.arr                     | Re-scoped: no slice to move                                          |
-| PRD-172 | media.plex                    | Deferred: no schema to move                                          |
-| PRD-173 | inventory.items               | Done            | Not started      | Not started    |
-| PRD-174 | inventory.reports             | Done by construction (runtime aggregation)                           |
-| PRD-175 | inventory.connections         | Done            | Done             | Not started    |
-| PRD-176 | inventory.documents           | Done            | Done             | Not started    |
-| PRD-177 | inventory.paperless           | Done by construction (no tables)                                     |
-| PRD-178 | inventory.warranties          | Done by construction (no schema)                                     |
-| PRD-179 | cerebrum.engrams              | Done            | Done             | Not started    |
-| PRD-180 | cerebrum.plexus               | Done            | Done             | Not started    |
-| PRD-181 | cerebrum.glia                 | Done            | Done             | Not started    |
-| PRD-182 | cerebrum.conversations        | Done            | Done             | Not started    |
-| PRD-183 | core.settings                 | Done            | Done             | Not started    |
-| PRD-184 | core.tagRules cleanup         | Pending Epic 08a verification                                        |
-| PRD-185 | core.corrections cleanup      | Pending Epic 08a verification                                        |
-| PRD-186 | core.aiUsage                  | Done            | Done             | Not started    |
+| PRD     | Slice                     | PR2 (read flip)                            | PR3 (write flip) | PR4 (drop)      |
+| ------- | ------------------------- | ------------------------------------------ | ---------------- | --------------- |
+| PRD-165 | media.movies              | Done                                       | Done             | Done (39dfdaae) |
+| PRD-166 | media.tvShows             | Done                                       | Done             | Not started     |
+| PRD-167 | media.watchlist           | Done                                       | Done             | Not started     |
+| PRD-168 | media.watchHistory        | Done                                       | Done             | Not started     |
+| PRD-169 | media.library (read-flip) | Done (c7219031)                            | n/a              | n/a             |
+| PRD-170 | media.discovery           | PR1 only                                   | Not started      | Not started     |
+| PRD-171 | media.arr                 | Re-scoped: no slice to move                |
+| PRD-172 | media.plex                | Deferred: no schema to move                |
+| PRD-173 | inventory.items           | Done                                       | Not started      | Not started     |
+| PRD-174 | inventory.reports         | Done by construction (runtime aggregation) |
+| PRD-175 | inventory.connections     | Done                                       | Done             | Not started     |
+| PRD-176 | inventory.documents       | Done                                       | Done             | Not started     |
+| PRD-177 | inventory.paperless       | Done by construction (no tables)           |
+| PRD-178 | inventory.warranties      | Done by construction (no schema)           |
+| PRD-179 | cerebrum.engrams          | Done                                       | Done             | Not started     |
+| PRD-180 | cerebrum.plexus           | Done                                       | Done             | Not started     |
+| PRD-181 | cerebrum.glia             | Done                                       | Done             | Not started     |
+| PRD-182 | cerebrum.conversations    | Done                                       | Done             | Not started     |
+| PRD-183 | core.settings             | Done                                       | Done             | Not started     |
+| PRD-184 | core.tagRules cleanup     | Pending Epic 08a verification              |
+| PRD-185 | core.corrections cleanup  | Pending Epic 08a verification              |
+| PRD-186 | core.aiUsage              | Done                                       | Done             | Not started     |
 
 ## Blockers for PRD-213
 
@@ -153,8 +153,7 @@ zero non-test `getDrizzle()` calls remain. As of 2026-06-13:
    jobs, embeddings, inference-pricing, health, tag-suggester, ai-budget
    enforcement. These need owners assigned (or a dedicated PRD spun out
    under Epic 09) before PRD-213 can ship.
-4. **Three documentation-only / deferred PRDs** (171, 172, 174, 177,
-   178) carry no work. PRD-184 and PRD-185 still need Epic 08a
+4. **Three documentation-only / deferred PRDs** (171, 172, 174, 177, 178) carry no work. PRD-184 and PRD-185 still need Epic 08a
    verification.
 
 ## Recommended sequence into PRD-213
