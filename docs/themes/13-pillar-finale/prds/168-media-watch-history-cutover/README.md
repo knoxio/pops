@@ -35,6 +35,7 @@ Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business
 
 - Backfill is potentially large (years of history accumulated in `pops.db`). Batched INSERT-WHERE-NOT-EXISTS; runs at first boot post-cutover. Watch for slow first boot.
 - `media.watchHistory.byDateRange` is the heaviest query; preserve index on `watched_at` in per-pillar baseline.
+- **Mixed-tx writers (`logWatch`, `blacklistMovie`) follow the design in [notes/media-watch-history-mixed-tx-design.md](../../notes/media-watch-history-mixed-tx-design.md).** Cross-pillar `logWatch ↔ debrief` coupling is broken via Option D (split tx + SDK call + idempotent reconciliation); same-pillar writers (`blacklistMovie`) cut over with the handle.
 
 ## Edge Cases
 
@@ -52,6 +53,8 @@ Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business
 | 02  | [us-02-pr2-journal-split](us-02-pr2-journal-split.md)       | PR 2 — Drop from shared journal                                                              |
 | 03  | [us-03-pr3-cutover](us-03-pr3-cutover.md)                   | PR 3 — Flip leaf reads to `getMediaDrizzle()`; writes deferred (every writer is mixed-table) |
 | 04  | [us-04-pr4-shim-deletion](us-04-pr4-shim-deletion.md)       | PR 4 — Delete or defer shim                                                                  |
+
+Writer-cutover sequencing (PR 3.5 / pre-PR 4) is specified in [notes/media-watch-history-mixed-tx-design.md](../../notes/media-watch-history-mixed-tx-design.md).
 
 ## Out of Scope
 
