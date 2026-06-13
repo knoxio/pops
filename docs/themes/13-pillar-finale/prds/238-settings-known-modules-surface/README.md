@@ -2,7 +2,25 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 >
-> Status: **Not started**
+> Status: **Blocked — target exports missing**
+
+## Status note (2026-06-14)
+
+US-01 cannot proceed as written. Both candidate migration targets are unavailable today:
+
+- **Option A (per-pillar packages)** — no `@pops/pillar-core`, `@pops/pillar-media`, `@pops/pillar-cerebrum`, `@pops/pillar-inventory`, or `@pops/pillar-finance` package exists under `packages/`. Only `@pops/pillar-sdk` is published. The per-pillar contract packages (`@pops/<pillar>-contract`) exist but do not export `SettingsManifest` values.
+- **Option B (`@pops/pillar-sdk/settings`)** — `packages/pillar-sdk/src` has no `settings/` subpath and no `Manifest` exports today. The precedent (PR #3090) only added `ALL_MODULE_IDS` / `isKnownPillarId` / `isModuleId`; it did not introduce a settings surface.
+
+The per-pillar `SettingsManifest` values currently live only in `@pops/module-registry/src/settings/{core,inventory,finance,cerebrum,ego,media}/...` and are re-exported through `@pops/module-registry/settings`. Flipping the 8 consumers requires the target exports to exist first.
+
+**Prerequisite work** before this PRD can resume:
+
+1. Pick the target (decision is still A vs B per the original PRD).
+2. Land that target as its own PR — for Option B, scaffold `packages/pillar-sdk/src/settings/` with the 10 manifest re-exports (`aiConfigManifest`, `coreOperationalManifest`, `inventoryManifest`, `financeManifest`, `cerebrumManifest`, `egoManifest`, `arrManifest`, `plexManifest`, `rotationManifest`, `mediaOperationalManifest`) sourced from the canonical files in `@pops/module-registry/src/settings/**`, add the `./settings` export in `pillar-sdk/package.json`, extend the import-discipline allow-list in `eslint-config-pops`. For Option A, the same work multiplied by N new pillar packages.
+3. Then re-run US-01 to flip the 8 consumers.
+4. US-02 (delete `@pops/module-registry/settings`) follows unchanged.
+
+This PR records the block; no consumer changes ship in it.
 
 ## Overview
 

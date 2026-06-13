@@ -1,6 +1,8 @@
 # US-01: Pick the new settings-manifest home and migrate the eight call sites
 
 > PRD: [PRD-238 — Settings-imports migration off `@pops/module-registry`](README.md)
+>
+> Status: **Blocked** — see the status note in the [parent PRD](README.md#status-note-2026-06-14). Neither Option A nor Option B has its target exports in place today; prerequisite work must land before this US can ship.
 
 ## Description
 
