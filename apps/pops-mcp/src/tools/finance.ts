@@ -1,7 +1,44 @@
 import { getClient } from '../client.js';
-import { ok } from './utils.js';
+import { getPillar } from '../pillar-client.js';
+import { mapCallResult, ok } from './utils.js';
+
+import type { PillarHandle } from '@pops/pillar-sdk/client';
 
 import type { ToolDef } from './index.js';
+
+type TransactionListInput = {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  entityId?: string;
+  account?: string;
+  type?: 'income' | 'expense' | 'transfer';
+  limit?: number;
+  offset?: number;
+};
+
+type BudgetListInput = {
+  search?: string;
+  period?: 'monthly' | 'yearly';
+  active?: 'true' | 'false';
+  limit?: number;
+  offset?: number;
+};
+
+type FinancePillarShape = {
+  finance: {
+    transactions: {
+      list: (input: TransactionListInput) => unknown;
+    };
+    budgets: {
+      list: (input: BudgetListInput) => unknown;
+    };
+  };
+};
+
+function finance(): PillarHandle<FinancePillarShape>['finance'] {
+  return getPillar<FinancePillarShape>('finance').finance;
+}
 
 const ENTITY_TYPES = [
   'company',
@@ -37,7 +74,7 @@ const transactionsList: ToolDef = {
     },
   },
   handler: async (args) => {
-    const result = await getClient().finance.transactions.list.query({
+    const result = await finance().transactions.list({
       search: typeof args['search'] === 'string' ? args['search'] : undefined,
       startDate: typeof args['startDate'] === 'string' ? args['startDate'] : undefined,
       endDate: typeof args['endDate'] === 'string' ? args['endDate'] : undefined,
@@ -50,7 +87,7 @@ const transactionsList: ToolDef = {
       limit: typeof args['limit'] === 'number' ? args['limit'] : undefined,
       offset: typeof args['offset'] === 'number' ? args['offset'] : undefined,
     });
-    return ok(result);
+    return mapCallResult(result);
   },
 };
 
@@ -98,7 +135,7 @@ const budgetsList: ToolDef = {
     },
   },
   handler: async (args) => {
-    const result = await getClient().finance.budgets.list.query({
+    const result = await finance().budgets.list({
       search: typeof args['search'] === 'string' ? args['search'] : undefined,
       period:
         args['period'] === 'monthly' || args['period'] === 'yearly' ? args['period'] : undefined,
@@ -106,7 +143,7 @@ const budgetsList: ToolDef = {
       limit: typeof args['limit'] === 'number' ? args['limit'] : undefined,
       offset: typeof args['offset'] === 'number' ? args['offset'] : undefined,
     });
-    return ok(result);
+    return mapCallResult(result);
   },
 };
 

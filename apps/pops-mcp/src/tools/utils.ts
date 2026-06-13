@@ -1,11 +1,36 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
+import type { CallResult } from '@pops/pillar-sdk/client';
+
 export function ok(data: unknown): CallToolResult {
   return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
 }
 
 export function toolError(message: string): CallToolResult {
   return { content: [{ type: 'text', text: message }], isError: true };
+}
+
+/**
+ * Translate a `CallResult` from the pillar SDK into an MCP `CallToolResult`.
+ * `ok` rounds-trips the value JSON. The three failure shapes
+ * (`unavailable`, `degraded`, `contract-mismatch`) all surface as MCP
+ * `toolError` so the LLM can read the reason and self-correct or retry.
+ */
+export function mapCallResult<T>(result: CallResult<T>): CallToolResult {
+  if (result.kind === 'ok') return ok(result.value);
+  if (result.kind === 'unavailable') {
+    return toolError(`Pillar '${result.pillar}' is unavailable. Try again shortly.`);
+  }
+  if (result.kind === 'degraded') {
+    return toolError(
+      `Pillar '${result.pillar}' is reconciling (${result.reason}). Try again shortly.`
+    );
+  }
+  const expected = result.expected ?? 'unknown';
+  const actual = result.actual ?? 'unknown';
+  return toolError(
+    `Pillar '${result.pillar}' contract mismatch — expected ${expected}, got ${actual}.`
+  );
 }
 
 export function reqStr(args: Record<string, unknown>, key: string): string | null {

@@ -1,5 +1,22 @@
 import { vi } from 'vitest';
 
+import type { CallResult } from '@pops/pillar-sdk/client';
+
+export function callOk<T>(value: T): CallResult<T> {
+  return { kind: 'ok', value };
+}
+
+export const callUnavailable = (pillar: string): CallResult<never> => ({
+  kind: 'unavailable',
+  pillar,
+});
+
+export const callContractMismatch = (
+  pillar: string,
+  expected: string,
+  actual: string
+): CallResult<never> => ({ kind: 'contract-mismatch', pillar, expected, actual });
+
 const MOCK_LOCATION = { id: 'loc_1', name: 'Living Room', parentId: null, sortOrder: 0 };
 const MOCK_LOCATION_2 = { id: 'loc_2', name: 'Office', parentId: null, sortOrder: 1 };
 const MOCK_ITEM = {
@@ -45,6 +62,33 @@ export const MOCK_FIXTURE_CONN = {
   itemId: 'item_1',
   fixtureId: 'fixture_1',
   createdAt: '2024-01-01T00:00:00.000Z',
+};
+
+export const mockPillarInventory = {
+  inventory: {
+    locations: {
+      tree: vi.fn().mockResolvedValue(callOk({ data: [{ ...MOCK_LOCATION, children: [] }] })),
+      list: vi.fn().mockResolvedValue(callOk({ data: [MOCK_LOCATION], total: 1 })),
+      create: vi
+        .fn()
+        .mockResolvedValue(callOk({ data: MOCK_LOCATION_2, message: 'Location created' })),
+      update: vi
+        .fn()
+        .mockResolvedValue(callOk({ data: MOCK_LOCATION, message: 'Location updated' })),
+      delete: vi.fn().mockResolvedValue(callOk({ message: 'Location deleted' })),
+    },
+  },
+};
+
+export const mockPillarFinance = {
+  finance: {
+    transactions: {
+      list: vi.fn().mockResolvedValue(callOk({ data: [], pagination: { total: 0 } })),
+    },
+    budgets: {
+      list: vi.fn().mockResolvedValue(callOk({ data: [], pagination: { total: 0 } })),
+    },
+  },
 };
 
 export const mockClient = {
