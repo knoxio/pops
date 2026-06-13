@@ -1,0 +1,249 @@
+/**
+ * Boot-time backfill tests for `backfillCoreFromShared` (PRD-186 PR4).
+ *
+ * Exercises the ATTACH-based copy from the shared `pops.db` to the
+ * core pillar's `core.db` against on-disk SQLite files (in-memory DBs
+ * can't be ATTACHed). The trio covered by this PR is `ai_model_pricing`,
+ * `sync_job_results`, and `ai_usage` — the writer cutover that lets us
+ * retire each entry happens in the follow-up PR; until then this bridge
+ * runs on every boot. Confirms:
+ *   - first run carries existing rows across for all three tables,
+ *   - second run is a no-op (idempotent — the per-table NOT EXISTS dedupes),
+ *   - composite-key dedup honours (provider_id, model_id) for ai_model_pricing,
+ *   - missing source table is tolerated without throwing.
+ */
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import BetterSqlite3 from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { openCoreDb } from '@pops/core-db';
+
+import { backfillCoreFromShared } from './backfill-core-from-shared.js';
+
+let tmpDir: string;
+
+beforeEach(() => {
+  tmpDir = mkdtempSync(join(tmpdir(), 'core-backfill-'));
+});
+
+afterEach(() => {
+  rmSync(tmpDir, { recursive: true, force: true });
+});
+
+const AI_MODEL_PRICING_SQL = `
+CREATE TABLE ai_model_pricing (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  provider_id text NOT NULL,
+  model_id text NOT NULL,
+  display_name text,
+  input_cost_per_mtok real DEFAULT 0 NOT NULL,
+  output_cost_per_mtok real DEFAULT 0 NOT NULL,
+  context_window integer,
+  is_default integer DEFAULT 0 NOT NULL,
+  created_at text NOT NULL,
+  updated_at text NOT NULL
+);
+CREATE UNIQUE INDEX uq_ai_model_pricing_provider_model ON ai_model_pricing (provider_id, model_id);
+`;
+
+const SYNC_JOB_RESULTS_SQL = `
+CREATE TABLE sync_job_results (
+  id text PRIMARY KEY NOT NULL,
+  job_type text NOT NULL,
+  status text NOT NULL,
+  started_at text NOT NULL,
+  completed_at text,
+  duration_ms integer,
+  progress text,
+  result text,
+  error text,
+  created_at text DEFAULT (datetime('now')) NOT NULL
+);
+CREATE INDEX idx_sync_job_results_type_completed ON sync_job_results (job_type, completed_at);
+`;
+
+const AI_USAGE_SQL = `
+CREATE TABLE ai_usage (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  description text NOT NULL,
+  entity_name text,
+  category text,
+  input_tokens integer NOT NULL,
+  output_tokens integer NOT NULL,
+  cost_usd real NOT NULL,
+  cached integer DEFAULT 0 NOT NULL,
+  import_batch_id text,
+  created_at text NOT NULL
+);
+CREATE INDEX idx_ai_usage_created_at ON ai_usage (created_at);
+CREATE INDEX idx_ai_usage_batch ON ai_usage (import_batch_id);
+`;
+
+function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string {
+  const path = join(tmpDir, 'pops.db');
+  const raw = new BetterSqlite3(path);
+  raw.exec(AI_MODEL_PRICING_SQL);
+  raw.exec(SYNC_JOB_RESULTS_SQL);
+  raw.exec(AI_USAGE_SQL);
+  seed(raw);
+  raw.close();
+  return path;
+}
+
+function insertPricing(raw: BetterSqlite3.Database, providerId: string, modelId: string): void {
+  raw
+    .prepare(
+      `INSERT INTO ai_model_pricing
+        (provider_id, model_id, display_name, input_cost_per_mtok, output_cost_per_mtok, context_window, is_default, created_at, updated_at)
+       VALUES (?, ?, ?, 1.0, 5.0, 200000, 0, datetime('now'), datetime('now'))`
+    )
+    .run(providerId, modelId, `${providerId}/${modelId}`);
+}
+
+function insertSync(raw: BetterSqlite3.Database, id: string): void {
+  raw
+    .prepare(
+      `INSERT INTO sync_job_results
+        (id, job_type, status, started_at)
+       VALUES (?, 'plex_sync', 'completed', datetime('now'))`
+    )
+    .run(id);
+}
+
+function insertUsage(raw: BetterSqlite3.Database, description: string): void {
+  raw
+    .prepare(
+      `INSERT INTO ai_usage
+        (description, input_tokens, output_tokens, cost_usd, created_at)
+       VALUES (?, 100, 50, 0.001, datetime('now'))`
+    )
+    .run(description);
+}
+
+describe('backfillCoreFromShared', () => {
+  it('copies ai_model_pricing, sync_job_results, and ai_usage rows from shared on first run', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertPricing(raw, 'claude', 'claude-haiku-4-5');
+      insertSync(raw, 'job-a');
+      insertUsage(raw, 'seed-usage');
+    });
+
+    const core = openCoreDb(join(tmpDir, 'core.db'));
+    try {
+      backfillCoreFromShared(core, sharedPath);
+
+      const pricing = core.raw
+        .prepare('SELECT provider_id, model_id FROM ai_model_pricing')
+        .all() as { provider_id: string; model_id: string }[];
+      expect(pricing).toEqual([{ provider_id: 'claude', model_id: 'claude-haiku-4-5' }]);
+
+      const sync = core.raw.prepare('SELECT id, status FROM sync_job_results').all() as {
+        id: string;
+        status: string;
+      }[];
+      expect(sync).toEqual([{ id: 'job-a', status: 'completed' }]);
+
+      const usage = core.raw.prepare('SELECT description, input_tokens FROM ai_usage').all() as {
+        description: string;
+        input_tokens: number;
+      }[];
+      expect(usage).toEqual([{ description: 'seed-usage', input_tokens: 100 }]);
+    } finally {
+      core.raw.close();
+    }
+  });
+
+  it('is idempotent — a second run does not duplicate rows', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertPricing(raw, 'claude', 'claude-haiku-4-5');
+      insertSync(raw, 'job-a');
+      insertUsage(raw, 'seed-usage');
+    });
+
+    const core = openCoreDb(join(tmpDir, 'core.db'));
+    try {
+      backfillCoreFromShared(core, sharedPath);
+      backfillCoreFromShared(core, sharedPath);
+
+      const pricingCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_model_pricing').get() as { n: number }
+      ).n;
+      const syncCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM sync_job_results').get() as { n: number }
+      ).n;
+      const usageCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_usage').get() as { n: number }
+      ).n;
+      expect(pricingCount).toBe(1);
+      expect(syncCount).toBe(1);
+      expect(usageCount).toBe(1);
+    } finally {
+      core.raw.close();
+    }
+  });
+
+  it('skips ai_model_pricing rows whose (provider_id, model_id) already exists in core', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertPricing(raw, 'claude', 'claude-sonnet-4-6');
+      insertPricing(raw, 'claude', 'claude-opus-4');
+    });
+
+    const core = openCoreDb(join(tmpDir, 'core.db'));
+    try {
+      core.raw
+        .prepare(
+          `INSERT INTO ai_model_pricing
+            (provider_id, model_id, display_name, input_cost_per_mtok, output_cost_per_mtok, context_window, is_default, created_at, updated_at)
+           VALUES ('claude', 'claude-sonnet-4-6', 'Core overrides shared', 3.0, 15.0, 200000, 0, datetime('now'), datetime('now'))`
+        )
+        .run();
+
+      backfillCoreFromShared(core, sharedPath);
+
+      const rows = core.raw
+        .prepare(
+          'SELECT provider_id, model_id, display_name FROM ai_model_pricing ORDER BY model_id'
+        )
+        .all() as { provider_id: string; model_id: string; display_name: string }[];
+      expect(rows).toEqual([
+        { provider_id: 'claude', model_id: 'claude-opus-4', display_name: 'claude/claude-opus-4' },
+        {
+          provider_id: 'claude',
+          model_id: 'claude-sonnet-4-6',
+          display_name: 'Core overrides shared',
+        },
+      ]);
+    } finally {
+      core.raw.close();
+    }
+  });
+
+  it('tolerates a shared DB without the PR4 tables', () => {
+    const sharedPath = join(tmpDir, 'pops.db');
+    const raw = new BetterSqlite3(sharedPath);
+    raw.exec(`CREATE TABLE other_table (id integer PRIMARY KEY)`);
+    raw.close();
+
+    const core = openCoreDb(join(tmpDir, 'core.db'));
+    try {
+      expect(() => backfillCoreFromShared(core, sharedPath)).not.toThrow();
+      const pricingCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_model_pricing').get() as { n: number }
+      ).n;
+      const syncCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM sync_job_results').get() as { n: number }
+      ).n;
+      const usageCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_usage').get() as { n: number }
+      ).n;
+      expect(pricingCount).toBe(0);
+      expect(syncCount).toBe(0);
+      expect(usageCount).toBe(0);
+    } finally {
+      core.raw.close();
+    }
+  });
+});

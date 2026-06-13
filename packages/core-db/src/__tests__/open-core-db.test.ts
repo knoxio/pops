@@ -51,6 +51,37 @@ describe('openCoreDb', () => {
     }
   });
 
+  it('applies the PRD-186 PR4 ai_model_pricing, sync_job_results, and ai_usage migrations', () => {
+    const path = join(tmpDir, 'core.db');
+    const { raw } = openCoreDb(path);
+    try {
+      const tables = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(tables.has('ai_model_pricing')).toBe(true);
+      expect(tables.has('sync_job_results')).toBe(true);
+      expect(tables.has('ai_usage')).toBe(true);
+
+      const indexes = new Set(
+        (
+          raw.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as {
+            name: string;
+          }[]
+        ).map((r) => r.name)
+      );
+      expect(indexes.has('uq_ai_model_pricing_provider_model')).toBe(true);
+      expect(indexes.has('idx_sync_job_results_type_completed')).toBe(true);
+      expect(indexes.has('idx_ai_usage_created_at')).toBe(true);
+      expect(indexes.has('idx_ai_usage_batch')).toBe(true);
+    } finally {
+      raw.close();
+    }
+  });
+
   it('is idempotent — re-opening the same DB does not re-apply migrations', async () => {
     const path = join(tmpDir, 'core.db');
     const first = openCoreDb(path);

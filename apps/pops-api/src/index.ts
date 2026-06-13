@@ -6,7 +6,7 @@ config(); // loads apps/pops-api/.env if it exists
 config({ path: '../../.env', override: false }); // loads root .env without overriding
 
 import { createApp } from './app.js';
-import { closeDb, getCoreDrizzle } from './db.js';
+import { backfillCoreFromSharedDb, closeDb, getCoreDrizzle } from './db.js';
 import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
 import { getFinanceDrizzle } from './db/finance-handle.js';
 import { getFoodDrizzle } from './db/food-handle.js';
@@ -43,12 +43,17 @@ const port = Number(process.env['PORT'] ?? 3000);
 const app = createApp();
 
 // Eagerly open the core pillar's SQLite + apply its journal at boot so
-// the per-pillar migrations land before any request hits the API. After
-// the theme-13 core PR4 drop wave (service_accounts / settings /
-// ai-usage tables), every core-owned slice writes directly to core.db
-// and no bridge from the shared pops.db remains.
+// the per-pillar migrations land before any request hits the API. PRD-186
+// PR4 lands `ai_model_pricing`, `sync_job_results`, and `ai_usage` in
+// core.db; the writers still target the shared pops.db until the next
+// hot-path cutover PR flips them to `getCoreDrizzle()`, so the one-shot
+// `backfillCoreFromSharedDb` bridge carries any rows already written to
+// pops.db across each boot. It's idempotent (per-table `WHERE NOT EXISTS
+// (...)` filters) and non-fatal (partial failure logs + continues).
+// Retire the bridge once the cutover lands and is verified in prod.
 try {
   getCoreDrizzle();
+  backfillCoreFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the core pillar SQLite:', err);
   throw err;
