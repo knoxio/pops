@@ -1,6 +1,29 @@
 # PRD-212: pops.db readiness audit
 
 > Epic: [Drop pops.db](../../epics/09-drop-pops-db.md)
+>
+> Status: In progress — first audit snapshot landed 2026-06-13. See
+> [readiness-matrix.md](readiness-matrix.md) for the full per-table /
+> per-caller breakdown.
+
+## Snapshot (2026-06-13)
+
+- **30 tables** are still copied at boot via the seven
+  `apps/pops-api/src/db/*-backfill*.ts` `TABLE_COPIES` arrays.
+- **29 of 30 block PRD-213.** Only `movies` has had its PR4
+  drop-backfill step ship (commit `39dfdaae`).
+- **147 production files** still call the legacy `getDrizzle()` handle
+  (`pops.db`). Breakdown: media 70, core 21, food 19, cerebrum 18,
+  cross-pillar infra 13, finance 4, lists 2.
+- **9 cross-pillar infra hot-paths** (`jobs/*`, `lib/inference-pricing`,
+  `routes/health`, `shared/tag-suggester`, `ai-budgets/enforcement`)
+  have no owning Wave-3 PRD and need owners assigned before PRD-213.
+- **13 Wave-3 PRDs** have shipped PR3 (writer cutover) but owe PR4
+  (table drop + backfill entry removal).
+
+See [readiness-matrix.md](readiness-matrix.md) for the table-by-table
+matrix, residual call-site list, Wave-3 PRD cross-reference, and the
+recommended sequence into PRD-213.
 
 ## Overview
 
