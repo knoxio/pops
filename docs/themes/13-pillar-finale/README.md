@@ -39,8 +39,9 @@ Theme 13 finishes the architecture. Every pillar registers itself on boot with a
 | 10  | [FE pillar SDK + dispatcher generator](epics/10-fe-sdk-dispatcher-generator.md) | React hooks against the registry; PillarGuard rewrite; nginx config generated from registry            | Not started |
 | 12  | [CI leanness](epics/12-ci-leanness.md)                                          | Path-filter audit, affected-rebuild orchestrator, docs fast-path, pillar isolation, budget enforcement | In progress |
 | 13  | [Bridge pillars (HA, MQTT, ESPHome)](epics/13-bridge-pillars.md)                | Bridge-pillar pattern per ADR-032 — `pops-ha-bridge-api` first, MQTT + ESPHome follow                  | Not started |
+| 14  | [Cross-language interop](epics/14-cross-language-interop.md)                    | Wire-format spec + conformance suite that lets non-TS pillars (Rust, Go, Python) drop in as peers      | Not started |
 
-**Dependencies:** E00 → E01 → E02 → E05 is the critical foundation path. E03 (slice migrations) can run in parallel against the foundation. E04 (batching) gates legacy router deletion. E08a is independent and can ship as a Theme 12 postscript before Theme 13 starts proper. E08b is gated on ADR-029. E09 + E10 are finishing moves. E13 is a follow-on that depends on E00 / E01 / E02 / E06 / E07 — it implements the additive integration story ADR-032 declared, not part of Theme 13's main critical path.
+**Dependencies:** E00 → E01 → E02 → E05 is the critical foundation path. E03 (slice migrations) can run in parallel against the foundation. E04 (batching) gates legacy router deletion. E08a is independent and can ship as a Theme 12 postscript before Theme 13 starts proper. E08b is gated on ADR-029. E09 + E10 are finishing moves. E13 is a follow-on that depends on E00 / E01 / E02 / E06 / E07 — it implements the additive integration story ADR-032 declared, not part of Theme 13's main critical path. E14 is the Wave 6 cross-language enabler — it documents the wire format ADR-033 commits to and gates any future non-TS pillar.
 
 ## Key Decisions
 
