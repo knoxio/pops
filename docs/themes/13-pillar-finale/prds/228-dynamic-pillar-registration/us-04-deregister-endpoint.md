@@ -11,14 +11,14 @@ missed-heartbeat → unavailable → eviction chain.
 
 ## Acceptance Criteria
 
-- [ ] `POST /core.registry.deregister` is served by `pops-core-api` and allow-listed in the shell `nginx.conf` alongside register + heartbeat.
-- [ ] The handler validates `apiKey` via `crypto.timingSafeEqual` against `POPS_INTERNAL_API_KEY`. Mismatch returns 401 in constant time.
-- [ ] The handler verifies the stored `api_key_hash` matches `sha256(apiKey)` for that pillar row. Mismatch returns 401.
-- [ ] DELETE is idempotent — calling deregister for a pillar that doesn't exist returns `{ ok: true }` with no event emitted.
-- [ ] On a real DELETE a `{ type: 'deregistered', pillarId, origin: 'external', reason: 'requested' }` subscription event fires.
-- [ ] nginx regeneration is triggered (US-03's hook).
-- [ ] Attempting to deregister an `origin = 'internal'` pillar via this endpoint returns 403 with `{ reason: 'internal-pillar-not-deregisterable-externally' }` — internal pillars manage their own lifecycle via the in-network `/trpc/` surface.
-- [ ] Unit tests cover: happy path, bad key, key-hash mismatch, idempotent DELETE of missing pillar, refusal to delete an internal pillar.
+- [x] `POST /core.registry.deregister` is served by `pops-core-api` and allow-listed in the shell `nginx.conf` alongside register + heartbeat.
+- [x] The handler validates `apiKey` via `crypto.timingSafeEqual` against `POPS_INTERNAL_API_KEY`. Mismatch returns 401 in constant time.
+- [x] The handler verifies the stored `api_key_hash` matches `sha256(apiKey)` for that pillar row. Mismatch returns 401.
+- [x] DELETE is idempotent — calling deregister for a pillar that doesn't exist returns `{ ok: true }` with no event emitted.
+- [x] On a real DELETE a `{ type: 'deregistered', pillarId, origin: 'external', reason: 'requested' }` subscription event fires.
+- [x] nginx regeneration is triggered (US-03's hook).
+- [x] Attempting to deregister an `origin = 'internal'` pillar via this endpoint returns 403 with `{ reason: 'internal-pillar-not-deregisterable-externally' }` — internal pillars manage their own lifecycle via the in-network `/trpc/` surface.
+- [x] Unit tests cover: happy path, bad key, key-hash mismatch, idempotent DELETE of missing pillar, refusal to delete an internal pillar.
 
 ## Notes
 

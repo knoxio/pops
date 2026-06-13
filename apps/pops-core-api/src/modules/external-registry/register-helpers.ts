@@ -6,9 +6,9 @@
  * crypto utilities can be unit-tested in isolation without booting
  * Express.
  */
-import { createHash, timingSafeEqual } from 'node:crypto';
-
 import type { ValidationIssue } from '@pops/pillar-sdk';
+
+export { constantTimeEquals, sha256Hex } from './auth.js';
 
 export const PILLAR_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 export const HEARTBEAT_INTERVAL_MS = 10_000;
@@ -78,25 +78,4 @@ export function parseRegisterBody(input: unknown): BodyParseResult {
       apiKey: apiKey as string,
     },
   };
-}
-
-/**
- * Constant-time compare. `timingSafeEqual` requires equal-length buffers,
- * so we first short-circuit on length mismatch and still pay the same
- * compare cost against a zeroed buffer to avoid a fast-path length
- * oracle. Both sides are encoded as UTF-8 bytes.
- */
-export function constantTimeEquals(provided: string, expected: string): boolean {
-  const providedBuf = Buffer.from(provided, 'utf8');
-  const expectedBuf = Buffer.from(expected, 'utf8');
-  if (providedBuf.length !== expectedBuf.length) {
-    const dummy = Buffer.alloc(providedBuf.length);
-    timingSafeEqual(providedBuf, dummy);
-    return false;
-  }
-  return timingSafeEqual(providedBuf, expectedBuf);
-}
-
-export function sha256Hex(value: string): string {
-  return createHash('sha256').update(value, 'utf8').digest('hex');
 }

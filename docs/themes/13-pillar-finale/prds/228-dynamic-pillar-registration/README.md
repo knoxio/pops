@@ -40,7 +40,7 @@ CREATE INDEX idx_pillar_registry_origin ON pillar_registry(origin);
 
 | Column         | Purpose                                                                                                                                             |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `origin`       | `'internal'` for in-tree pillars (bootstrapPillar path, PRD-158); `'external'` for pillars that registered via the shared-key HTTP endpoint.         |
+| `origin`       | `'internal'` for in-tree pillars (bootstrapPillar path, PRD-158); `'external'` for pillars that registered via the shared-key HTTP endpoint.        |
 | `api_key_hash` | SHA-256 of the `POPS_INTERNAL_API_KEY` value at registration time. Lets a key rotation deregister stale external pillars without touching internal. |
 | `evicted_at`   | Set by the ticker when an external pillar registers but never heartbeats within the grace window. Distinguishes eviction from clean deregister.     |
 
@@ -66,10 +66,10 @@ Request:
 
 ```ts
 {
-  pillarId: string;        // e.g. 'recipes'
-  baseUrl: string;         // 'http://recipes-api:4010' — reachable from inside the docker network
+  pillarId: string; // e.g. 'recipes'
+  baseUrl: string; // 'http://recipes-api:4010' — reachable from inside the docker network
   manifest: ManifestPayload; // validated by PRD-157
-  apiKey: string;          // must match POPS_INTERNAL_API_KEY
+  apiKey: string; // must match POPS_INTERNAL_API_KEY
 }
 ```
 
@@ -135,7 +135,7 @@ PRD-217's generator becomes registry-driven:
 
 - Input: `core.registry.snapshot()` output.
 - Triggered on `registered`, `deregistered`, and `health-changed (→ unavailable
-  via eviction)` events.
+via eviction)` events.
 - Process: regenerate `default.conf` from the snapshot → `nginx -t` validate →
   on pass, `nginx -s reload`; on fail, log + keep current conf.
 
@@ -188,31 +188,33 @@ post-mutation hook) is deferred to implementation.
 
 ## Edge Cases
 
-| Case                                                            | Behaviour                                                                                                                                                                                                                          |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| External pillar registers but never sends a heartbeat           | 30s after registration the lifecycle ticker flips it to `unavailable`. 5 minutes later the eviction ticker DELETEs the row + regenerates nginx. Subscription event includes `evicted_at` and `reason: 'never-heartbeated'`.         |
-| External pillar registers with a stale (rotated) key            | Registration uses whatever key is currently set in env, so success — but its heartbeat fails 401 because the heartbeat path validates `api_key_hash` against the current key. The pillar must re-register; SDK handles the 401.     |
-| Duplicate registration (same pillarId, same baseUrl, same key)  | UPSERT no-op semantics: `last_heartbeat_at` updated, manifest fields refreshed, `registered_at` preserved, no subscription event if the manifest is bytewise identical. nginx regen still triggered (debounced).                    |
-| Duplicate registration with different `baseUrl`                 | UPSERT overwrites. Subscription event fires. nginx regen runs and the dispatcher block now points at the new URL. The old URL stops receiving traffic on the next reload.                                                           |
-| Two external pillars race the same `pillarId`                   | SQLite serialises writes; whichever lands last wins. The loser's heartbeats start failing with `not-registered`. Operational misconfig; not the registry's job to mediate.                                                          |
-| External pillar registers during core-api boot reconciliation   | PRD-164's reconciliation sets all rows to `unknown` on startup. A register call coming in during reconciliation lands a fresh `healthy` row and an event. Reconciliation completes around it without overwriting.                  |
-| External pillar tries to register as `finance` / `media` / etc. | 409 with `reason: 'pillar-id-reserved'`. The reserved list is the static in-tree `PILLARS` set at the time core-api was built.                                                                                                      |
-| Key rotation mid-flight (env var swap)                          | Internal pillars (`origin = 'internal'`) are unaffected — no key check. External pillars start getting 401 on heartbeat; they re-register with the new key. Brief window of `unavailable` in the dispatcher until reload settles.   |
-| nginx generator throws / `nginx -t` rejects the output          | Registration still completes (registry is the source of truth). Generator error is logged. Current `default.conf` stays in place. Next successful generation catches up. Health endpoint exposes `nginx_generator_last_error_at`.   |
-| External pillar deregisters while heartbeat is in flight        | Deregister DELETEs the row; the in-flight heartbeat lands on a row that's gone and returns `{ ok: false, reason: 'not-registered' }`. SDK on the external side stops sending heartbeats (it's mid-shutdown anyway).                 |
-| Subscription bus is down when registration succeeds             | Registration persists. Event emit failure is logged. nginx regen also runs off the event bus, so the regen is skipped; the next register / deregister catches up. PRD-163's recovery semantics apply.                              |
-| External pillar registers with a `baseUrl` core-api can't reach | Registration succeeds (no probe at registration time). nginx forwards traffic to a connection-refused upstream; clients see 502. Operator must fix the URL or deregister. Documented; not the registry's job to validate liveness.  |
+| Case                                                            | Behaviour                                                                                                                                                                                                                             |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| External pillar registers but never sends a heartbeat           | 30s after registration the lifecycle ticker flips it to `unavailable`. 5 minutes later the eviction ticker DELETEs the row + regenerates nginx. Subscription event includes `evicted_at` and `reason: 'never-heartbeated'`.           |
+| External pillar registers with a stale (rotated) key            | Registration uses whatever key is currently set in env, so success — but its heartbeat fails 401 because the heartbeat path validates `api_key_hash` against the current key. The pillar must re-register; SDK handles the 401.       |
+| Duplicate registration (same pillarId, same baseUrl, same key)  | UPSERT no-op semantics: `last_heartbeat_at` updated, manifest fields refreshed, `registered_at` preserved, no subscription event if the manifest is bytewise identical. nginx regen still triggered (debounced).                      |
+| Duplicate registration with different `baseUrl`                 | UPSERT overwrites. Subscription event fires. nginx regen runs and the dispatcher block now points at the new URL. The old URL stops receiving traffic on the next reload.                                                             |
+| Two external pillars race the same `pillarId`                   | SQLite serialises writes; whichever lands last wins. The loser's heartbeats start failing with `not-registered`. Operational misconfig; not the registry's job to mediate.                                                            |
+| External pillar registers during core-api boot reconciliation   | PRD-164's reconciliation sets all rows to `unknown` on startup. A register call coming in during reconciliation lands a fresh `healthy` row and an event. Reconciliation completes around it without overwriting.                     |
+| External pillar tries to register as `finance` / `media` / etc. | 409 with `reason: 'pillar-id-reserved'`. The reserved list is the static in-tree `PILLARS` set at the time core-api was built.                                                                                                        |
+| Key rotation mid-flight (env var swap)                          | Internal pillars (`origin = 'internal'`) are unaffected — no key check. External pillars start getting 401 on heartbeat; they re-register with the new key. Brief window of `unavailable` in the dispatcher until reload settles.     |
+| nginx generator throws / `nginx -t` rejects the output          | Registration still completes (registry is the source of truth). Generator error is logged. Current `default.conf` stays in place. Next successful generation catches up. Health endpoint exposes `nginx_generator_last_error_at`.     |
+| External pillar deregisters while heartbeat is in flight        | Deregister DELETEs the row; the in-flight heartbeat lands on a row that's gone and returns `{ ok: false, reason: 'not-registered' }`. SDK on the external side stops sending heartbeats (it's mid-shutdown anyway).                   |
+| Subscription bus is down when registration succeeds             | Registration persists. Event emit failure is logged. nginx regen also runs off the event bus, so the regen is skipped; the next register / deregister catches up. PRD-163's recovery semantics apply.                                 |
+| External pillar registers with a `baseUrl` core-api can't reach | Registration succeeds (no probe at registration time). nginx forwards traffic to a connection-refused upstream; clients see 502. Operator must fix the URL or deregister. Documented; not the registry's job to validate liveness.    |
 | Manifest schema bumps between SDK versions                      | If an external pillar registers with a manifest that's valid for an older schema, PRD-157's validator rejects it. ADR-031's coordinated-deploy guidance applies; external pillars track the published `@pops/pillar-contract` semver. |
 
 ## User Stories
 
-| #   | Story                                                                         | Summary                                                                                                                                  | Parallelisable                       |
-| --- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| 01  | [us-01-register-endpoint](us-01-register-endpoint.md)                         | Schema migration + `POST /core.registry.register` endpoint with key auth, manifest validation, UPSERT, and reserved-pillar-id rejection. | yes — independent                    |
-| 02  | [us-02-heartbeat-endpoint](us-02-heartbeat-endpoint.md)                       | `POST /core.registry.heartbeat` with key-hash verification, `not-registered` response path, and hard-eviction ticker for stale externals. | blocked by us-01                     |
-| 03  | [us-03-nginx-regen-integration](us-03-nginx-regen-integration.md)             | Wire the PRD-217 generator to registry events (register / deregister / evict); debounced regen + `nginx -t` + reload.                    | blocked by us-01 + PRD-217 generator |
-| 04  | [us-04-deregister-endpoint](us-04-deregister-endpoint.md)                     | `POST /core.registry.deregister` with key-hash verification, idempotent DELETE, and nginx regen trigger.                                 | blocked by us-01                     |
-| 05  | [us-05-e2e-external-pillar-dropin](us-05-e2e-external-pillar-dropin.md)       | End-to-end test: spin up a throwaway pillar container, register via the HTTP endpoint, hit it through the shell dispatcher, deregister.  | blocked by us-01..04                 |
+| #   | Story                                                                   | Summary                                                                                                                                   | Parallelisable                       |
+| --- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| 01  | [us-01-register-endpoint](us-01-register-endpoint.md)                   | Schema migration + `POST /core.registry.register` endpoint with key auth, manifest validation, UPSERT, and reserved-pillar-id rejection.  | yes — independent                    |
+| 02  | [us-02-heartbeat-endpoint](us-02-heartbeat-endpoint.md)                 | `POST /core.registry.heartbeat` with key-hash verification, `not-registered` response path, and hard-eviction ticker for stale externals. | blocked by us-01                     |
+| 03  | [us-03-nginx-regen-integration](us-03-nginx-regen-integration.md)       | Wire the PRD-217 generator to registry events (register / deregister / evict); debounced regen + `nginx -t` + reload.                     | blocked by us-01 + PRD-217 generator |
+| 04  | [us-04-deregister-endpoint](us-04-deregister-endpoint.md)               | `POST /core.registry.deregister` with key-hash verification, idempotent DELETE, and nginx regen trigger.                                  | blocked by us-01                     |
+| 05  | [us-05-e2e-external-pillar-dropin](us-05-e2e-external-pillar-dropin.md) | End-to-end test: spin up a throwaway pillar container, register via the HTTP endpoint, hit it through the shell dispatcher, deregister.   | blocked by us-01..04                 |
+
+Status: US-01 / US-02 / US-04 done; US-03 + US-05 outstanding.
 
 ## Out of Scope
 
