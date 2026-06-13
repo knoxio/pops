@@ -1,7 +1,38 @@
-import { getClient } from '../client.js';
-import { ok } from './utils.js';
+import { getPillar } from '../pillar-client.js';
+import { mapCallResult } from './utils.js';
+
+import type { PillarHandle } from '@pops/pillar-sdk/client';
 
 import type { ToolDef } from './index.js';
+
+type LibraryListInput = {
+  type: 'all' | 'movie' | 'tv';
+  search?: string;
+  genre?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+type WatchlistListInput = {
+  mediaType?: 'movie' | 'tv_show';
+  limit?: number;
+  offset?: number;
+};
+
+type MediaShape = {
+  media: {
+    library: {
+      list: (input: LibraryListInput) => unknown;
+    };
+    watchlist: {
+      list: (input: WatchlistListInput) => unknown;
+    };
+  };
+};
+
+function media(): PillarHandle<MediaShape>['media'] {
+  return getPillar<MediaShape>('media').media;
+}
 
 const libraryList: ToolDef = {
   name: 'media.library.list',
@@ -26,19 +57,16 @@ const libraryList: ToolDef = {
     },
   },
   handler: async (args) => {
-    let type: 'all' | 'movie' | 'tv' = 'all';
-    if (args['type'] === 'movie' || args['type'] === 'tv') {
-      type = args['type'];
-    }
+    const type: 'all' | 'movie' | 'tv' =
+      args['type'] === 'movie' || args['type'] === 'tv' ? args['type'] : 'all';
 
-    const result = await getClient().media.library.list.query({
-      type,
-      search: typeof args['search'] === 'string' ? args['search'] : undefined,
-      genre: typeof args['genre'] === 'string' ? args['genre'] : undefined,
-      page: typeof args['page'] === 'number' ? args['page'] : undefined,
-      pageSize: typeof args['pageSize'] === 'number' ? args['pageSize'] : undefined,
-    });
-    return ok(result);
+    const input: LibraryListInput = { type };
+    if (typeof args['search'] === 'string') input.search = args['search'];
+    if (typeof args['genre'] === 'string') input.genre = args['genre'];
+    if (typeof args['page'] === 'number') input.page = args['page'];
+    if (typeof args['pageSize'] === 'number') input.pageSize = args['pageSize'];
+
+    return mapCallResult(await media().library.list(input));
   },
 };
 
@@ -58,15 +86,14 @@ const watchlistList: ToolDef = {
     },
   },
   handler: async (args) => {
-    const result = await getClient().media.watchlist.list.query({
-      mediaType:
-        args['mediaType'] === 'movie' || args['mediaType'] === 'tv_show'
-          ? args['mediaType']
-          : undefined,
-      limit: typeof args['limit'] === 'number' ? args['limit'] : undefined,
-      offset: typeof args['offset'] === 'number' ? args['offset'] : undefined,
-    });
-    return ok(result);
+    const input: WatchlistListInput = {};
+    if (args['mediaType'] === 'movie' || args['mediaType'] === 'tv_show') {
+      input.mediaType = args['mediaType'];
+    }
+    if (typeof args['limit'] === 'number') input.limit = args['limit'];
+    if (typeof args['offset'] === 'number') input.offset = args['offset'];
+
+    return mapCallResult(await media().watchlist.list(input));
   },
 };
 

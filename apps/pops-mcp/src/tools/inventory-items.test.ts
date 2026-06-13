@@ -1,8 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { mockClient, parseResult } from './test-helpers.js';
+import {
+  callContractMismatch,
+  callOk,
+  callUnavailable,
+  mockPillarInventory,
+  parseResult,
+  pillarMockGetter,
+} from './test-helpers.js';
 
-vi.mock('../client.js', () => ({ getClient: () => mockClient }));
+vi.mock('../pillar-client.js', () => ({
+  getPillar: pillarMockGetter,
+  __resetPillarClientForTests: () => {},
+}));
 
 const { itemTools } = await import('./inventory-items.js');
 
@@ -12,13 +22,42 @@ function tool(name: string) {
   return t;
 }
 
+const items = mockPillarInventory.inventory.items;
+
+const MOCK_ITEM = {
+  id: 'item_1',
+  itemName: 'MacBook',
+  brand: 'Apple',
+  model: 'MacBook Pro 14"',
+  type: 'electronics',
+  condition: 'good',
+  locationId: 'loc_1',
+  inUse: true,
+  deductible: false,
+  assetId: 'MBP01',
+  notes: null,
+  purchaseDate: null,
+  warrantyExpires: null,
+  replacementValue: 3000,
+  resaleValue: 1500,
+  purchasePrice: 3200,
+  purchasedFromName: 'Apple Store',
+  lastEditedTime: '2025-01-01T00:00:00.000Z',
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
+  items.list.mockResolvedValue(
+    callOk({
+      data: [MOCK_ITEM],
+      pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+    })
+  );
+  items.get.mockResolvedValue(callOk({ data: MOCK_ITEM }));
+  items.create.mockResolvedValue(callOk({ data: MOCK_ITEM, message: 'Inventory item created' }));
+  items.update.mockResolvedValue(callOk({ data: MOCK_ITEM, message: 'Inventory item updated' }));
+  items.delete.mockResolvedValue(callOk({ message: 'Inventory item deleted' }));
 });
-
-// ---------------------------------------------------------------------------
-// Read
-// ---------------------------------------------------------------------------
 
 describe('inventory.items.list', () => {
   it('passes optional filters', async () => {
@@ -30,7 +69,7 @@ describe('inventory.items.list', () => {
       limit: 10,
       offset: 5,
     });
-    expect(mockClient.inventory.items.list.query).toHaveBeenCalledWith(
+    expect(items.list).toHaveBeenCalledWith(
       expect.objectContaining({
         search: 'mac',
         locationId: 'loc_1',
@@ -44,17 +83,23 @@ describe('inventory.items.list', () => {
 
   it('passes undefined for absent optional fields (not null)', async () => {
     await tool('inventory.items.list').handler({});
-    const call = mockClient.inventory.items.list.query.mock.lastCall?.[0];
+    const call = items.list.mock.lastCall?.[0];
     for (const value of Object.values(call as Record<string, unknown>)) {
       expect(value).not.toBeNull();
     }
   });
+
+  it('returns isError on unavailable', async () => {
+    items.list.mockResolvedValueOnce(callUnavailable('inventory'));
+    const result = await tool('inventory.items.list').handler({});
+    expect(result.isError).toBe(true);
+  });
 });
 
 describe('inventory.items.get', () => {
-  it('passes id to tRPC and returns the data envelope', async () => {
+  it('passes id and returns the data envelope', async () => {
     const result = await tool('inventory.items.get').handler({ id: 'item_1' });
-    expect(mockClient.inventory.items.get.query).toHaveBeenCalledWith({ id: 'item_1' });
+    expect(items.get).toHaveBeenCalledWith({ id: 'item_1' });
     const parsed = parseResult(result) as { data: { itemName: string } };
     expect(parsed.data.itemName).toBe('MacBook');
   });
@@ -68,16 +113,10 @@ describe('inventory.items.get', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Create
-// ---------------------------------------------------------------------------
-
 describe('inventory.items.create', () => {
   it('creates with only itemName', async () => {
     const result = await tool('inventory.items.create').handler({ itemName: 'Sony TV' });
-    expect(mockClient.inventory.items.create.mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ itemName: 'Sony TV' })
-    );
+    expect(items.create).toHaveBeenCalledWith(expect.objectContaining({ itemName: 'Sony TV' }));
     expect(result.isError).toBeUndefined();
     const parsed = parseResult(result) as { data: { id: string }; message: string };
     expect(parsed.data.id).toBe('item_1');
@@ -98,7 +137,7 @@ describe('inventory.items.create', () => {
       warrantyExpires: '2027-01-15',
       purchasedFromName: 'JB Hi-Fi',
     });
-    expect(mockClient.inventory.items.create.mutate).toHaveBeenCalledWith(
+    expect(items.create).toHaveBeenCalledWith(
       expect.objectContaining({
         brand: 'Sony',
         model: 'A95L',
@@ -114,7 +153,7 @@ describe('inventory.items.create', () => {
       inUse: true,
       deductible: false,
     });
-    expect(mockClient.inventory.items.create.mutate).toHaveBeenCalledWith(
+    expect(items.create).toHaveBeenCalledWith(
       expect.objectContaining({ inUse: true, deductible: false })
     );
   });
@@ -126,7 +165,7 @@ describe('inventory.items.create', () => {
       resaleValue: 5.5,
       purchasePrice: 12.99,
     });
-    expect(mockClient.inventory.items.create.mutate).toHaveBeenCalledWith(
+    expect(items.create).toHaveBeenCalledWith(
       expect.objectContaining({ replacementValue: 0, resaleValue: 5.5, purchasePrice: 12.99 })
     );
   });
@@ -134,64 +173,56 @@ describe('inventory.items.create', () => {
   it('returns isError when itemName is missing', async () => {
     const result = await tool('inventory.items.create').handler({ brand: 'Sony' });
     expect(result.isError).toBe(true);
-    expect(mockClient.inventory.items.create.mutate).not.toHaveBeenCalled();
+    expect(items.create).not.toHaveBeenCalled();
   });
 
   it('returns isError when itemName is empty string', async () => {
     expect((await tool('inventory.items.create').handler({ itemName: '' })).isError).toBe(true);
   });
-});
 
-// ---------------------------------------------------------------------------
-// Update
-// ---------------------------------------------------------------------------
+  it('returns isError on unavailable', async () => {
+    items.create.mockResolvedValueOnce(callUnavailable('inventory'));
+    const result = await tool('inventory.items.create').handler({ itemName: 'TV' });
+    expect(result.isError).toBe(true);
+  });
+});
 
 describe('inventory.items.update', () => {
   it('updates itemName only', async () => {
     await tool('inventory.items.update').handler({ id: 'item_1', itemName: 'MacBook Pro' });
-    expect(mockClient.inventory.items.update.mutate).toHaveBeenCalledWith(
+    expect(items.update).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'item_1', data: { itemName: 'MacBook Pro' } })
     );
   });
 
   it('clears a nullable string field with null', async () => {
     await tool('inventory.items.update').handler({ id: 'item_1', notes: null });
-    const call = mockClient.inventory.items.update.mutate.mock.lastCall?.[0] as {
-      data: Record<string, unknown>;
-    };
+    const call = items.update.mock.lastCall?.[0] as { data: Record<string, unknown> };
     expect(call.data.notes).toBeNull();
   });
 
   it('clears a nullable number field with null', async () => {
     await tool('inventory.items.update').handler({ id: 'item_1', replacementValue: null });
-    const call = mockClient.inventory.items.update.mutate.mock.lastCall?.[0] as {
-      data: Record<string, unknown>;
-    };
+    const call = items.update.mock.lastCall?.[0] as { data: Record<string, unknown> };
     expect(call.data.replacementValue).toBeNull();
   });
 
   it('does not include absent fields in data', async () => {
     await tool('inventory.items.update').handler({ id: 'item_1', itemName: 'MacBook Pro' });
-    const call = mockClient.inventory.items.update.mutate.mock.lastCall?.[0] as {
-      data: Record<string, unknown>;
-    };
+    const call = items.update.mock.lastCall?.[0] as { data: Record<string, unknown> };
     expect('brand' in call.data).toBe(false);
     expect('replacementValue' in call.data).toBe(false);
   });
 
   it('passes number 0 as valid (not omitted)', async () => {
     await tool('inventory.items.update').handler({ id: 'item_1', resaleValue: 0 });
-    const call = mockClient.inventory.items.update.mutate.mock.lastCall?.[0] as {
-      data: Record<string, unknown>;
-    };
+    const call = items.update.mock.lastCall?.[0] as { data: Record<string, unknown> };
     expect(call.data.resaleValue).toBe(0);
   });
 
   it('passes boolean fields correctly', async () => {
     await tool('inventory.items.update').handler({ id: 'item_1', inUse: false, deductible: true });
-    const call = mockClient.inventory.items.update.mutate.mock.lastCall?.[0] as {
-      data: Record<string, unknown>;
-    };
+    const call = items.update.mock.lastCall?.[0] as { data: Record<string, unknown> };
     expect(call.data.inUse).toBe(false);
     expect(call.data.deductible).toBe(true);
   });
@@ -199,22 +230,27 @@ describe('inventory.items.update', () => {
   it('returns isError when id is missing', async () => {
     const result = await tool('inventory.items.update').handler({ itemName: 'No ID' });
     expect(result.isError).toBe(true);
-    expect(mockClient.inventory.items.update.mutate).not.toHaveBeenCalled();
+    expect(items.update).not.toHaveBeenCalled();
   });
 
   it('returns isError when id is empty string', async () => {
     expect((await tool('inventory.items.update').handler({ id: '' })).isError).toBe(true);
   });
-});
 
-// ---------------------------------------------------------------------------
-// Delete
-// ---------------------------------------------------------------------------
+  it('returns isError on contract-mismatch', async () => {
+    items.update.mockResolvedValueOnce(callContractMismatch('inventory', '1.0.0', '2.0.0'));
+    const result = await tool('inventory.items.update').handler({
+      id: 'item_1',
+      itemName: 'New',
+    });
+    expect(result.isError).toBe(true);
+  });
+});
 
 describe('inventory.items.delete', () => {
   it('deletes item by id', async () => {
     const result = await tool('inventory.items.delete').handler({ id: 'item_1' });
-    expect(mockClient.inventory.items.delete.mutate).toHaveBeenCalledWith({ id: 'item_1' });
+    expect(items.delete).toHaveBeenCalledWith({ id: 'item_1' });
     expect(result.isError).toBeUndefined();
     expect((parseResult(result) as { message: string }).message).toBe('Inventory item deleted');
   });
@@ -222,7 +258,7 @@ describe('inventory.items.delete', () => {
   it('returns isError when id is missing', async () => {
     const result = await tool('inventory.items.delete').handler({});
     expect(result.isError).toBe(true);
-    expect(mockClient.inventory.items.delete.mutate).not.toHaveBeenCalled();
+    expect(items.delete).not.toHaveBeenCalled();
   });
 
   it('returns isError when id is empty string', async () => {
