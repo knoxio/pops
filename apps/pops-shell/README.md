@@ -83,3 +83,41 @@ copies this directory's three pieces:
 `/core.registry.register` endpoint. The manifest stays empty: the
 contract sentinel (`@pops/<id>-contract@v0.1.0`) is the only
 per-surface change.
+
+## Event-driven nginx reload (PRD-228 US-03)
+
+`pnpm gen:nginx:watch` runs `scripts/watch-registry-and-reload.ts` —
+a long-lived process that subscribes to `GET /registry/subscribe`
+(PRD-163) and, on each `pillar.registered`, `pillar.deregistered`, or
+`pillar.health-changed` frame, regenerates `nginx.conf` from the live
+registry (`pnpm gen:nginx:dynamic` logic) and executes a reload
+command. A trailing 250ms debounce coalesces bursts (multi-pillar
+boot, eviction-storms) into a single regen + reload. The initial
+`pillar.snapshot` frame is intentionally ignored — the dispatcher
+already reflects boot state.
+
+### Env
+
+| Var                      | Default                      | Purpose                                                          |
+| ------------------------ | ---------------------------- | ---------------------------------------------------------------- |
+| `CORE_REGISTRY_URL`      | `http://core-api:3001`       | Core-api base URL; SSE consumed from `<url>/registry/subscribe`. |
+| `POPS_NGINX_OUTPUT`      | `apps/pops-shell/nginx.conf` | Where the regenerated conf is written.                           |
+| `POPS_NGINX_RELOAD_CMD`  | `nginx -s reload`            | Shell command run after each successful regen.                   |
+| `POPS_NGINX_DEBOUNCE_MS` | `250`                        | Trailing-debounce window for coalescing bursts.                  |
+| `POPS_NGINX_BACKOFF_MS`  | `1000`                       | Initial reconnect backoff (caps at 30s, doubles per failure).    |
+
+### Deploy shape (follow-up)
+
+Two viable shapes — implementation choice is **deferred** to a
+follow-up so this PR can ship the watcher + tests in isolation:
+
+1. **Sidecar inside the nginx container.** Watcher writes
+   `/etc/nginx/conf.d/default.conf` and runs `nginx -s reload`
+   directly. Lowest latency, same container so `nginx` is on PATH.
+2. **Standalone Node container on the docker network.** Watcher
+   writes a shared volume mounted into nginx and triggers reload via
+   `POPS_NGINX_RELOAD_CMD="docker kill -s HUP pops-nginx"` (needs the
+   docker socket mounted into the watcher).
+
+Both shapes share the same script; only the env varies. Wiring into
+`docker-compose.yml` / `Dockerfile` is the follow-up PR's scope.
