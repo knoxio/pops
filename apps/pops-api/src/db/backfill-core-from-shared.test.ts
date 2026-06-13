@@ -5,9 +5,9 @@
  * core pillar's `core.db` against on-disk SQLite files (in-memory DBs
  * can't be ATTACHed). The set covered by this bridge is
  * `ai_model_pricing`, `sync_job_results`, `ai_usage`, `ai_alert_rules`,
- * and `ai_alerts` — the writer cutover that lets us retire each entry
- * happens once the handler flip lands; until then this bridge runs on
- * every boot. Confirms:
+ * `ai_alerts`, and `ai_providers` — the writer cutover that lets us
+ * retire each entry happens once the handler flip lands; until then
+ * this bridge runs on every boot. Confirms:
  *   - first run carries existing rows across for all tables,
  *   - second run is a no-op (idempotent — the per-table NOT EXISTS dedupes),
  *   - composite-key dedup honours (provider_id, model_id) for ai_model_pricing,
@@ -100,6 +100,23 @@ CREATE INDEX idx_ai_alert_rules_type ON ai_alert_rules (type);
 CREATE INDEX idx_ai_alert_rules_enabled ON ai_alert_rules (enabled);
 `;
 
+const AI_PROVIDERS_SQL = `
+CREATE TABLE ai_providers (
+  id text PRIMARY KEY NOT NULL,
+  name text NOT NULL,
+  type text NOT NULL,
+  base_url text,
+  api_key_ref text,
+  status text DEFAULT 'active' NOT NULL,
+  last_health_check text,
+  last_latency_ms integer,
+  created_at text NOT NULL,
+  updated_at text NOT NULL
+);
+CREATE INDEX idx_ai_providers_type ON ai_providers (type);
+CREATE INDEX idx_ai_providers_status ON ai_providers (status);
+`;
+
 const AI_ALERTS_SQL = `
 CREATE TABLE ai_alerts (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -129,9 +146,20 @@ function openSharedWithSeed(seed: (raw: BetterSqlite3.Database) => void): string
   raw.exec(AI_USAGE_SQL);
   raw.exec(AI_ALERT_RULES_SQL);
   raw.exec(AI_ALERTS_SQL);
+  raw.exec(AI_PROVIDERS_SQL);
   seed(raw);
   raw.close();
   return path;
+}
+
+function insertProvider(raw: BetterSqlite3.Database, id: string, type: string): void {
+  raw
+    .prepare(
+      `INSERT INTO ai_providers
+        (id, name, type, base_url, api_key_ref, status, created_at, updated_at)
+       VALUES (?, ?, ?, NULL, NULL, 'active', datetime('now'), datetime('now'))`
+    )
+    .run(id, `${id} provider`, type);
 }
 
 function insertPricing(raw: BetterSqlite3.Database, providerId: string, modelId: string): void {
@@ -187,13 +215,14 @@ function insertAlert(raw: BetterSqlite3.Database, ruleId: number, type: string):
 }
 
 describe('backfillCoreFromShared', () => {
-  it('copies ai_model_pricing, sync_job_results, ai_usage, ai_alert_rules, and ai_alerts rows from shared on first run', () => {
+  it('copies ai_model_pricing, sync_job_results, ai_usage, ai_alert_rules, ai_alerts, and ai_providers rows from shared on first run', () => {
     const sharedPath = openSharedWithSeed((raw) => {
       insertPricing(raw, 'claude', 'claude-haiku-4-5');
       insertSync(raw, 'job-a');
       insertUsage(raw, 'seed-usage');
       const ruleId = insertAlertRule(raw, 'budget-threshold');
       insertAlert(raw, ruleId, 'budget-threshold');
+      insertProvider(raw, 'claude', 'cloud');
     });
 
     const core = openCoreDb(join(tmpDir, 'core.db'));
@@ -238,6 +267,13 @@ describe('backfillCoreFromShared', () => {
           metric_value: 81,
         },
       ]);
+
+      const providers = core.raw
+        .prepare('SELECT id, name, type, status FROM ai_providers')
+        .all() as { id: string; name: string; type: string; status: string }[];
+      expect(providers).toEqual([
+        { id: 'claude', name: 'claude provider', type: 'cloud', status: 'active' },
+      ]);
     } finally {
       core.raw.close();
     }
@@ -250,6 +286,7 @@ describe('backfillCoreFromShared', () => {
       insertUsage(raw, 'seed-usage');
       const ruleId = insertAlertRule(raw, 'budget-threshold');
       insertAlert(raw, ruleId, 'budget-threshold');
+      insertProvider(raw, 'claude', 'cloud');
     });
 
     const core = openCoreDb(join(tmpDir, 'core.db'));
@@ -272,11 +309,46 @@ describe('backfillCoreFromShared', () => {
       const alertCount = (
         core.raw.prepare('SELECT count(*) AS n FROM ai_alerts').get() as { n: number }
       ).n;
+      const providerCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_providers').get() as { n: number }
+      ).n;
       expect(pricingCount).toBe(1);
       expect(syncCount).toBe(1);
       expect(usageCount).toBe(1);
       expect(ruleCount).toBe(1);
       expect(alertCount).toBe(1);
+      expect(providerCount).toBe(1);
+    } finally {
+      core.raw.close();
+    }
+  });
+
+  it('skips ai_providers rows whose id already exists in core', () => {
+    const sharedPath = openSharedWithSeed((raw) => {
+      insertProvider(raw, 'claude', 'cloud');
+      insertProvider(raw, 'ollama', 'local');
+    });
+
+    const core = openCoreDb(join(tmpDir, 'core.db'));
+    try {
+      core.raw
+        .prepare(
+          `INSERT INTO ai_providers
+            (id, name, type, base_url, api_key_ref, status, created_at, updated_at)
+           VALUES ('claude', 'Core overrides shared', 'cloud', NULL, NULL, 'active', datetime('now'), datetime('now'))`
+        )
+        .run();
+
+      backfillCoreFromShared(core, sharedPath);
+
+      const rows = core.raw.prepare('SELECT id, name FROM ai_providers ORDER BY id').all() as {
+        id: string;
+        name: string;
+      }[];
+      expect(rows).toEqual([
+        { id: 'claude', name: 'Core overrides shared' },
+        { id: 'ollama', name: 'ollama provider' },
+      ]);
     } finally {
       core.raw.close();
     }
@@ -371,11 +443,15 @@ describe('backfillCoreFromShared', () => {
       const alertCount = (
         core.raw.prepare('SELECT count(*) AS n FROM ai_alerts').get() as { n: number }
       ).n;
+      const providerCount = (
+        core.raw.prepare('SELECT count(*) AS n FROM ai_providers').get() as { n: number }
+      ).n;
       expect(pricingCount).toBe(0);
       expect(syncCount).toBe(0);
       expect(usageCount).toBe(0);
       expect(ruleCount).toBe(0);
       expect(alertCount).toBe(0);
+      expect(providerCount).toBe(0);
     } finally {
       core.raw.close();
     }

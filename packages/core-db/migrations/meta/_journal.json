@@ -71,6 +71,13 @@
       "when": 1782172800001,
       "tag": "0063_ai_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782259200000,
+      "tag": "0064_ai_providers",
+      "breakpoints": true
     }
   ]
 }

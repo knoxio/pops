@@ -5,20 +5,19 @@
  * `core.aiBudgets`) and the inference-middleware enforcement path can each
  * stay under the project's max-lines lint budget.
  *
- * Routing: `listApplicableBudgets`, the per-scope usage aggregation, and the
- * conflict-detection read in `migrateLegacyBudgetSettings` all forward into
- * `@pops/core-db`'s `aiUsageService` against `getCoreDrizzle()`, so reads
- * land on `core.db`. `findFallbackProvider` stays on the shared
- * `getDrizzle()` handle because it joins `ai_providers` and
- * `ai_model_pricing`, which are not part of the core-db package surface
- * yet — a future PR can lift those tables too.
+ * Routing: `listApplicableBudgets`, the per-scope usage aggregation, the
+ * conflict-detection read in `migrateLegacyBudgetSettings`, and the
+ * `findFallbackProvider` join over `ai_providers` + `ai_model_pricing`
+ * all forward into `@pops/core-db` against `getCoreDrizzle()` — both
+ * joined tables now live on `core.db` (PRD-186 PR4: `ai_model_pricing`
+ * from #3148, `ai_providers` from the ai_providers cascade).
  */
 import { and, asc, desc, eq } from 'drizzle-orm';
 
 import { aiUsageService, type AiBudgetRow } from '@pops/core-db';
 import { aiModelPricing, aiProviders } from '@pops/db-types';
 
-import { getCoreDrizzle, getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
 import { getSettingOrNull, setRawSetting } from '../settings/service.js';
 import { upsertBudget } from './service.js';
@@ -224,13 +223,12 @@ export function migrateLegacyBudgetSettings(): void {
  * `null` when no candidate is available — the middleware then treats fallback
  * as block.
  *
- * Stays on `getDrizzle()` (shared `pops.db`) because this query joins
- * `ai_providers` + `ai_model_pricing`, neither of which lives in
- * `@pops/core-db`. A future PR can lift those tables into the package
- * surface and complete the cutover.
+ * Joins `ai_providers` + `ai_model_pricing` — both now live in
+ * `@pops/core-db` (PRD-186 PR4 cascade), so the query resolves through
+ * `getCoreDrizzle()`.
  */
 export function findFallbackProvider(): { provider: string; model: string } | null {
-  const db = getDrizzle();
+  const db = getCoreDrizzle();
   const row = db
     .select({
       providerId: aiProviders.id,

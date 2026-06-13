@@ -2,10 +2,10 @@
  * Boot-time backfill from the legacy shared `pops.db` into the core
  * pillar's `core.db` for the tables PRD-186 PR4 lands in core-db:
  * `ai_model_pricing`, `sync_job_results`, `ai_usage`, `ai_alert_rules`,
- * and `ai_alerts`.
+ * `ai_alerts`, and `ai_providers`.
  *
  * Phase context: PR4 establishes the per-pillar table home for these
- * tables (`packages/core-db/migrations/0059..0063_*.sql`) ahead of the
+ * tables (`packages/core-db/migrations/0059..0064_*.sql`) ahead of the
  * hot-path writer cutover that flips the per-table writers from
  * `getDrizzle()` to `getCoreDrizzle()` in the same / next PR. Until each
  * cutover lands, writers still target `pops.db` — so this backfill
@@ -126,6 +126,22 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'acknowledged',
       'acknowledged_at',
       'created_at',
+    ],
+  },
+  {
+    table: 'ai_providers',
+    idColumns: ['id'],
+    columns: [
+      'id',
+      'name',
+      'type',
+      'base_url',
+      'api_key_ref',
+      'status',
+      'last_health_check',
+      'last_latency_ms',
+      'created_at',
+      'updated_at',
     ],
   },
 ];
