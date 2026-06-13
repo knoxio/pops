@@ -5,15 +5,13 @@
  * `core.aiBudgets`) and the inference-middleware enforcement path can each
  * stay under the project's max-lines lint budget.
  *
- * Read/write split (PRD-186 PR 2 cutover): `listApplicableBudgets` and the
- * per-scope usage aggregation forward to `@pops/core-db`'s `aiUsageService`
- * against `getCoreDrizzle()` so reads land on `core.db`. The conflict-
- * detection read in `migrateLegacyBudgetSettings` is routed through the
- * same package surface. `findFallbackProvider` stays on the legacy
+ * Routing: `listApplicableBudgets`, the per-scope usage aggregation, and the
+ * conflict-detection read in `migrateLegacyBudgetSettings` all forward into
+ * `@pops/core-db`'s `aiUsageService` against `getCoreDrizzle()`, so reads
+ * land on `core.db`. `findFallbackProvider` stays on the shared
  * `getDrizzle()` handle because it joins `ai_providers` and
- * `ai_model_pricing`, which are not part of the core-db package surface.
- * Writes (`upsertBudget`) keep flowing through the shared store until
- * PRD-186 PR 3 flips writes too.
+ * `ai_model_pricing`, which are not part of the core-db package surface
+ * yet — a future PR can lift those tables too.
  */
 import { and, asc, desc, eq } from 'drizzle-orm';
 
@@ -58,17 +56,11 @@ function monthStart(): string {
 }
 
 /**
- * Aggregate monthly token + cost usage for a single budget scope.
- *
- * Staleness window: reads from `core.db` via `aiUsageService`, but
- * inference logs are still inserted into the shared `pops.db` by
- * `apps/pops-api/src/lib/inference-middleware.ts`. The `core.db` copy is
- * only refreshed by the boot-time backfill, so any inference recorded
- * since process start is invisible here. Net effect: enforcement can
- * under-count usage and over-allow calls (fail to warn/block/fallback)
- * during normal uptime. Accepted risk during the read/write split window.
- * TODO(PRD-186 PR 3): drop this note once the inference writer flips to
- * `core.db` (or a dual-write path lands).
+ * Aggregate monthly token + cost usage for a single budget scope. Reads
+ * from `core.db` via `aiUsageService.sumInferenceLogUsage`; since the
+ * inference middleware writes to the same store, the aggregate reflects
+ * every recorded call immediately — there is no read/write staleness
+ * window.
  */
 function getUsageForScope(
   row: AiBudgetRow,

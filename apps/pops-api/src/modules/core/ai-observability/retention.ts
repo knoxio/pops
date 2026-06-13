@@ -5,19 +5,21 @@
  *  - `aggregateRowsToDaily` is a pure function over input rows used by the
  *    unit tests.
  *  - `runRetention` performs the full cycle (read → aggregate → upsert →
- *    delete) against `getDb()`.
+ *    delete) against `getCoreDrizzle()` — every `ai_inference_log` read,
+ *    `ai_inference_daily` upsert, and `ai_inference_log` delete lands on
+ *    `core.db`.
  *
  * The job is idempotent: a re-run with no aged-out rows returns zero
  * deletions, and re-running over the same horizon adds to existing daily
  * rows via the unique-key-aware upsert (it does not double-count because
  * the source rows have already been deleted by the previous run).
  */
-import { getDb } from '../../../db.js';
+import { type CoreDb } from '@pops/core-db';
+
+import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
 import { getSettingValue } from '../settings/service.js';
 import { deleteRowsByIds, fetchAgedBatch, upsertAggregate } from './retention-db.js';
-
-import type BetterSqlite3 from 'better-sqlite3';
 
 import type { DailyAggregate, RetentionInputRow, RetentionResult } from './retention-types.js';
 
@@ -142,19 +144,21 @@ export interface RunRetentionOptions {
   batchSize?: number;
   /** Override "now" — used by tests to pin the cutoff. */
   now?: Date;
-  /** Database handle. Defaults to `getDb()`. */
-  db?: BetterSqlite3.Database;
+  /** Core pillar drizzle handle. Defaults to `getCoreDrizzle()`. */
+  db?: CoreDb;
 }
 
 /**
  * Roll up and prune `ai_inference_log` rows older than the retention horizon.
  *
- * Each batch runs in its own transaction: aggregation upsert + delete are
- * atomic per-batch. If a batch fails partway, only that batch rolls back;
- * the next invocation re-processes it.
+ * Each batch runs in its own drizzle transaction: aggregation upsert + delete
+ * are atomic per-batch. If a batch fails partway, only that batch rolls back;
+ * the next invocation re-processes it. The transaction handle is passed
+ * through to the package helpers so writes target the same `core.db`
+ * connection that opened the batch.
  */
 export function runRetention(opts: RunRetentionOptions = {}): RetentionResult {
-  const db = opts.db ?? getDb();
+  const db = opts.db ?? getCoreDrizzle();
   const retentionDays = opts.retentionDays ?? getRetentionDays();
   const batchSize = opts.batchSize ?? RETENTION_BATCH_SIZE;
   const cutoff = computeCutoff(retentionDays, opts.now);
@@ -172,11 +176,10 @@ export function runRetention(opts: RunRetentionOptions = {}): RetentionResult {
     const aggregates = aggregateRowsToDaily(batch.map((b) => b.row));
     const ids = batch.map((b) => b.id);
 
-    const tx = db.transaction(() => {
-      for (const agg of aggregates) upsertAggregate(db, agg);
-      deleteRowsByIds(db, ids);
+    db.transaction((tx) => {
+      for (const agg of aggregates) upsertAggregate(tx, agg);
+      deleteRowsByIds(tx, ids);
     });
-    tx();
 
     rowsAggregated += batch.length;
     bucketsWritten += aggregates.length;

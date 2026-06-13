@@ -1,17 +1,17 @@
 /**
  * AI budgets module — CRUD + budget status for `core.aiBudgets.*`.
  *
- * Read/write split (PRD-186 PR 2 cutover): the pure read surface forwards
- * into `@pops/core-db`'s `aiUsageService` against `getCoreDrizzle()`, so
- * `listBudgets` and `getBudgetStatus` resolve against `core.db`.
- * Mutations (`upsertBudget`) still land via the shared `getDrizzle()`
- * handle — the legacy `pops.db -> core.db` boot-time backfill bridges the
- * gap until PRD-186 PR 3 flips the writer too. This matches the
- * watch-history cutover precedent (PR #3008).
+ * Every read and write goes through `@pops/core-db`'s `aiUsageService`
+ * resolved against `getCoreDrizzle()`, so `listBudgets`, `getBudgetStatus`,
+ * and `upsertBudget` all land on `core.db`. Per-budget usage aggregation
+ * (`sumInferenceLogUsage`) reads from the same store the inference middleware
+ * writes to, so there is no read/write staleness window — usage reflects
+ * every recorded call immediately. The boot-time `pops.db -> core.db`
+ * backfill carries any legacy rows forward; PR 4 drops the shim entirely.
  */
-import { aiBudgets, aiUsageService } from '@pops/core-db';
+import { aiUsageService, type AiBudgetRow } from '@pops/core-db';
 
-import { getCoreDrizzle, getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 
 export interface Budget {
   id: string;
@@ -70,59 +70,26 @@ export function listBudgets(): Budget[] {
 }
 
 /**
- * WRITE — upsert lands on the shared `pops.db` via `getDrizzle()`. The
- * boot-time `pops.db -> core.db` backfill propagates the new row to the
- * read store on the next boot. PRD-186 PR 3 flips this to `core.db`.
- *
- * The read-after-write hop deliberately uses the SAME `getDrizzle()` handle
- * the insert went to. Routing the readback through `getCoreDrizzle()` would
- * miss the freshly-inserted row until the next boot-time backfill, breaking
- * both the mutation response and `migrateLegacyBudgetSettings()` at startup.
+ * WRITE — upsert lands on `core.db` via `aiUsageService.upsertBudget`.
+ * Returns the persisted row including the canonicalised `scopeValue`
+ * (`null` for global scope regardless of the supplied value).
  */
 export function upsertBudget(input: UpsertBudgetInput): Budget {
-  const now = new Date().toISOString();
-  const db = getDrizzle();
-  db.insert(aiBudgets)
-    .values({
-      id: input.id,
-      scopeType: input.scopeType,
-      scopeValue: input.scopeValue ?? null,
-      monthlyTokenLimit: input.monthlyTokenLimit ?? null,
-      monthlyCostLimit: input.monthlyCostLimit ?? null,
-      action: input.action ?? 'warn',
-      createdAt: now,
-      updatedAt: now,
-    })
-    .onConflictDoUpdate({
-      target: aiBudgets.id,
-      set: {
-        scopeType: input.scopeType,
-        scopeValue: input.scopeValue ?? null,
-        monthlyTokenLimit: input.monthlyTokenLimit ?? null,
-        monthlyCostLimit: input.monthlyCostLimit ?? null,
-        action: input.action ?? 'warn',
-        updatedAt: now,
-      },
-    })
-    .run();
-  const row = aiUsageService.getBudgetOrNull(db, input.id);
-  if (!row) throw new Error(`Budget not found: ${input.id}`);
-  return row;
+  return aiUsageService.upsertBudget(getCoreDrizzle(), {
+    id: input.id,
+    scopeType: input.scopeType,
+    scopeValue: input.scopeValue ?? null,
+    monthlyTokenLimit: input.monthlyTokenLimit ?? null,
+    monthlyCostLimit: input.monthlyCostLimit ?? null,
+    action: input.action,
+  });
 }
 
 /**
  * READ — budgets come from `aiUsageService.listBudgets`; per-budget usage
- * comes from `aiUsageService.sumInferenceLogUsage` against `core.db` so
- * both the budget row and its rolled-up monthly usage stay on the same
- * read handle.
- *
- * Staleness window: until PRD-186 PR 3 cuts the inference-log writer over
- * to `core.db`, inference rows are still inserted into the shared `pops.db`
- * by `apps/pops-api/src/lib/inference-middleware.ts`. The `core.db` copy is
- * only refreshed by the boot-time backfill, so the reported monthly usage,
- * percentage, and projected exhaustion date can under-count any inference
- * recorded since process start. Accepted lag during the split window.
- * TODO(PRD-186 PR 3): drop this staleness note once writes flip to core.db.
+ * comes from `aiUsageService.sumInferenceLogUsage` against `core.db`. The
+ * inference middleware writes to the same store, so usage reflects every
+ * recorded call immediately — no read/write staleness window.
  */
 export function getBudgetStatus(): BudgetStatus[] {
   const start = monthStart();
@@ -132,10 +99,8 @@ export function getBudgetStatus(): BudgetStatus[] {
   return budgets.map((budget) => buildBudgetStatus(budget, start, monthStartDate));
 }
 
-type BudgetRow = typeof aiBudgets.$inferSelect;
-
 function getBudgetUsage(
-  budget: BudgetRow,
+  budget: AiBudgetRow,
   start: string
 ): { currentTokenUsage: number; currentCostUsage: number } {
   const usage = aiUsageService.sumInferenceLogUsage(getCoreDrizzle(), {
@@ -154,7 +119,7 @@ function getBudgetUsage(
 }
 
 function computeBudgetStatusFields(
-  budget: BudgetRow,
+  budget: AiBudgetRow,
   usage: { currentTokenUsage: number; currentCostUsage: number },
   monthStartDate: Date
 ): { percentageUsed: number | null; projectedExhaustionDate: string | null } {
@@ -181,7 +146,7 @@ function computeBudgetStatusFields(
   return { percentageUsed: null, projectedExhaustionDate: null };
 }
 
-function buildBudgetStatus(budget: BudgetRow, start: string, monthStartDate: Date): BudgetStatus {
+function buildBudgetStatus(budget: AiBudgetRow, start: string, monthStartDate: Date): BudgetStatus {
   const usage = getBudgetUsage(budget, start);
   const fields = computeBudgetStatusFields(budget, usage, monthStartDate);
   return { ...budget, ...usage, ...fields };

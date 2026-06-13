@@ -1,6 +1,22 @@
-import { aiInferenceLog } from '@pops/db-types';
+/**
+ * Inference middleware — wraps every AI provider call with the persisted
+ * `ai_inference_log` audit row, pricing/cost lookup, latency capture, error
+ * classification, and pre-call budget enforcement.
+ *
+ * Every log write goes through `@pops/core-db`'s `aiUsageService.createInferenceLog`
+ * resolved against the core pillar handle (`getCoreDrizzle()`), so each
+ * audit row lands in `core.db` instead of the shared `pops.db`. Budget
+ * enforcement reads land on the same store, so usage aggregation (cost,
+ * tokens) now sees freshly inserted rows immediately — the read/write
+ * staleness window that existed between PRD-186 PR 2 and PR 3 is gone.
+ *
+ * Errors during the log insert are swallowed and logged — the AI call's
+ * result still propagates so a transient DB failure doesn't turn a
+ * successful provider call into a hard error for the caller.
+ */
+import { aiUsageService } from '@pops/core-db';
 
-import { getDrizzle } from '../db.js';
+import { getCoreDrizzle } from '../db.js';
 import { enforceBudgets } from './inference-budget-enforcement.js';
 import { lookupPricing } from './inference-pricing.js';
 import { extractTokens } from './inference-tokens.js';
@@ -16,14 +32,7 @@ export type { TrackInferenceParams } from './inference-middleware-types.js';
 
 function insertLog(values: InferenceLogInsert): void {
   try {
-    getDrizzle()
-      .insert(aiInferenceLog)
-      .values({
-        ...values,
-        metadata: null,
-        createdAt: new Date().toISOString(),
-      })
-      .run();
+    aiUsageService.createInferenceLog(getCoreDrizzle(), values);
   } catch (err) {
     logger.warn({ err }, '[inference] Failed to log inference row');
   }

@@ -4,44 +4,65 @@
  * Carries the three hot tables behind `core.aiUsage.*`:
  *   - `ai_inference_log` — append-only per-call record written by the
  *     inference middleware on every provider invocation. The dashboard
- *     reads it for stats + history. PRD-186 lists the surface as
- *     `core.aiUsage.log.{create,list}`.
+ *     reads it for stats + history.
  *   - `ai_inference_daily` — aggregate roll-up written by the retention
  *     job (PRD-092 US-08) once raw rows pass the 90-day horizon. The
  *     dashboard reads it for the continuous timeline across the retention
- *     boundary.
+ *     boundary. Helpers live in `./ai-usage-retention.ts`.
  *   - `ai_budgets` — small CRUD surface that gates AI calls. Budgets are
- *     scoped global / per-provider / per-operation; `checkAvailable`
- *     (PRD-186) consults them on the hot path before the middleware fires.
+ *     scoped global / per-provider / per-operation; consulted on the hot
+ *     path before the middleware fires. CRUD lives in
+ *     `./ai-usage-budgets.ts`.
  *
  * Services take a `CoreDb` handle as their first argument; the calling
  * layer (pops-api modules) is responsible for resolving the singleton or
  * transaction handle to pass in. Mirrors `@pops/finance-db`'s service
  * signature pattern.
  *
- * The in-tree services in `apps/pops-api/src/modules/core/ai-usage/` and
- * `apps/pops-api/src/modules/core/ai-budgets/` still route through the
- * shared `getDrizzle()` handle for now — PRD-186 PR 3 flips that to
- * `getCoreDrizzle()` and routes through this module.
+ * Post-PRD-186 PR 3: the hot inference-log write path and the retention
+ * rollup in `apps/pops-api` route through this module against
+ * `getCoreDrizzle()`. A handful of dashboard read paths
+ * (`ai-observability/history.ts`, `group-stats.ts`, `summary.ts`,
+ * `service.ts`, plus `findFallbackProvider`) still query
+ * `ai_inference_log` / `ai_inference_daily` directly via `getDrizzle()`
+ * and migrate in a follow-up PR. The boot-time `pops.db -> core.db`
+ * backfill bridges any pre-cutover rows; PR 4 drops the legacy `ai_*`
+ * tables from the shared journal once the read sites move over.
  */
 import { and, desc, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 
-import { AiBudgetNotFoundError } from '../errors.js';
-import { aiBudgets, aiInferenceDaily, aiInferenceLog } from '../schema.js';
+import { aiInferenceDaily, aiInferenceLog } from '../schema.js';
 
 import type { CoreDb } from './internal.js';
+
+export {
+  deleteBudget,
+  getBudget,
+  getBudgetOrNull,
+  listBudgets,
+  upsertBudget,
+  type AiBudget,
+  type AiBudgetInsert,
+  type AiBudgetRow,
+  type UpsertBudgetInput,
+} from './ai-usage-budgets.js';
+
+export {
+  deleteInferenceLogsByIds,
+  fetchAgedInferenceLogs,
+  recordInferenceDaily,
+  type InferenceDailyAggregate,
+  type InferenceLogRetentionRow,
+} from './ai-usage-retention.js';
 
 /** Raw drizzle row shapes — persisted records. */
 export type AiInferenceLogRow = typeof aiInferenceLog.$inferSelect;
 export type AiInferenceLogInsert = typeof aiInferenceLog.$inferInsert;
 export type AiInferenceDailyRow = typeof aiInferenceDaily.$inferSelect;
-export type AiBudgetRow = typeof aiBudgets.$inferSelect;
-export type AiBudgetInsert = typeof aiBudgets.$inferInsert;
 
 /** Public aliases for the persisted records. */
 export type AiInferenceLog = AiInferenceLogRow;
 export type AiInferenceDaily = AiInferenceDailyRow;
-export type AiBudget = AiBudgetRow;
 
 /** Input for an `ai_inference_log` insert. `created_at` is auto-filled
  * to the current UTC ISO timestamp when the caller omits it so the log
@@ -73,17 +94,6 @@ export interface ListInferenceLogsFilter {
   domain?: string;
   status?: string;
   contextId?: string;
-}
-
-/** Input for {@link upsertBudget}. `scopeValue` is required for non-global
- * scopes. `action` defaults to `warn` to match the shared journal. */
-export interface UpsertBudgetInput {
-  id: string;
-  scopeType: 'global' | 'provider' | 'operation';
-  scopeValue?: string | null;
-  monthlyTokenLimit?: number | null;
-  monthlyCostLimit?: number | null;
-  action?: 'block' | 'warn' | 'fallback';
 }
 
 function buildInferenceLogInsert(input: CreateInferenceLogInput): AiInferenceLogInsert {
@@ -212,71 +222,4 @@ export function listInferenceDaily(
     .where(condition)
     .orderBy(desc(aiInferenceDaily.date), desc(aiInferenceDaily.id))
     .all();
-}
-
-/** Read all configured budgets in insertion order. */
-export function listBudgets(db: CoreDb): AiBudgetRow[] {
-  return db.select().from(aiBudgets).all();
-}
-
-/** Read a single budget by id; returns `null` when absent. */
-export function getBudgetOrNull(db: CoreDb, id: string): AiBudgetRow | null {
-  return db.select().from(aiBudgets).where(eq(aiBudgets.id, id)).get() ?? null;
-}
-
-/** Read a single budget by id; throws {@link AiBudgetNotFoundError} when
- * absent. Prefer {@link getBudgetOrNull} when the caller wants to
- * fall back. */
-export function getBudget(db: CoreDb, id: string): AiBudgetRow {
-  const row = getBudgetOrNull(db, id);
-  if (!row) throw new AiBudgetNotFoundError(id);
-  return row;
-}
-
-/**
- * Upsert a budget. Returns the persisted row. The `scopeValue` column is
- * normalised to `null` for the `global` scope so the unique scope key is
- * always `(scope_type, scope_value)`-shaped from the reader's POV.
- */
-export function upsertBudget(db: CoreDb, input: UpsertBudgetInput): AiBudgetRow {
-  const now = new Date().toISOString();
-  const scopeValue = input.scopeType === 'global' ? null : (input.scopeValue ?? null);
-  const monthlyTokenLimit = input.monthlyTokenLimit ?? null;
-  const monthlyCostLimit = input.monthlyCostLimit ?? null;
-  const action = input.action ?? 'warn';
-
-  db.insert(aiBudgets)
-    .values({
-      id: input.id,
-      scopeType: input.scopeType,
-      scopeValue,
-      monthlyTokenLimit,
-      monthlyCostLimit,
-      action,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .onConflictDoUpdate({
-      target: aiBudgets.id,
-      set: {
-        scopeType: input.scopeType,
-        scopeValue,
-        monthlyTokenLimit,
-        monthlyCostLimit,
-        action,
-        updatedAt: now,
-      },
-    })
-    .run();
-
-  return getBudget(db, input.id);
-}
-
-/** Delete a budget by id. Throws {@link AiBudgetNotFoundError} when no
- * row matched (`changes === 0`) — mirrors the in-tree pops-api service
- * so PRD-186 PR 3 can swap the handle without altering the error
- * contract observable from callers. */
-export function deleteBudget(db: CoreDb, id: string): void {
-  const result = db.delete(aiBudgets).where(eq(aiBudgets.id, id)).run();
-  if (result.changes === 0) throw new AiBudgetNotFoundError(id);
 }
