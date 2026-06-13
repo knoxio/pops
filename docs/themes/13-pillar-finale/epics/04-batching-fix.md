@@ -20,7 +20,7 @@ Recommended: A.
 | #   | PRD                                 | Summary                                                                                 | Status  |
 | --- | ----------------------------------- | --------------------------------------------------------------------------------------- | ------- |
 | 187 | `splitLink` strategy                | tRPC client config that routes per pillar; no cross-pillar batches                      | Done    |
-| 188 | Batching invariants                 | Document what invariants hold once `splitLink` is in: single-pillar-per-request maximum | Done    |
+| 188 | Batching invariants                 | Document what invariants hold once `splitLink` is in: single-pillar-per-request maximum | Partial |
 | 189 | Audit of remaining batch call-sites | Find every place a hand-built batch crosses pillar boundaries; fix or document          | Partial |
 | 190 | nginx dispatcher simplification     | With no batched URLs, dispatcher rules become prefix-match (faster, cleaner)            | Partial |
 

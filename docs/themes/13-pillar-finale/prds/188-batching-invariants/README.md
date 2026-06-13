@@ -2,7 +2,9 @@
 
 > Epic: [Batching fix](../../epics/04-batching-fix.md)
 >
-> Status: **Done**
+> Status: **Partial** — runtime assertions + tests shipped (US-01); US-02
+> deferred to PRD-189; US-03 (standalone `trpc.invariants.md`) is no
+> longer needed because the invariant list now lives inline in this PRD.
 
 ## Overview
 
@@ -41,7 +43,7 @@ A test that exercises every page's data loader, captures tRPC calls, and asserts
 
 - Runtime assertions log warnings in dev; do not crash.
 - CI assertions are hard failures.
-- The invariant set is documented in `apps/pops-shell/src/lib/trpc.invariants.md`.
+- The invariant set is documented inline in this PRD (see [API Surface → Invariants](#invariants)). A standalone `apps/pops-shell/src/lib/trpc.invariants.md` doc was originally planned and was dropped — keep the canonical list in one place.
 
 ## Acceptance Criteria
 
@@ -62,11 +64,11 @@ A test that exercises every page's data loader, captures tRPC calls, and asserts
 
 ## User Stories
 
-| #   | Story                                                                                                            | Status      |
-| --- | ---------------------------------------------------------------------------------------------------------------- | ----------- |
-| 01  | Pure assertion (`assertSingleTargetBatch` / `checkSingleTargetBatch`) + `CrossPillarBatchError` in `api-client`   | Done        |
-| 02  | E2E test: scan every page's tRPC traffic; assert single-namespace batches (superseded by PRD-189 audit inventory) | Deferred    |
-| 03  | Author `trpc.invariants.md` with the invariant list + rationale (this PRD now carries the invariant list inline) | Not started |
+| #   | Story                                                                                                                                                                        | Status   |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 01  | Pure assertion (`assertSingleTargetBatch` / `checkSingleTargetBatch`) + `CrossPillarBatchError` in `api-client`                                                              | Done     |
+| 02  | E2E test: scan every page's tRPC traffic; assert single-namespace batches (superseded by PRD-189 audit inventory)                                                            | Deferred |
+| 03  | Author `trpc.invariants.md` with the invariant list + rationale (superseded — the invariant list is carried inline in this PRD, see [API Surface → Invariants](#invariants)) | Dropped  |
 
 ## Out of Scope
 
