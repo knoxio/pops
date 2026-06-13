@@ -18,3 +18,5 @@ export type {
   PillarAdapterTarget,
   SearchAdapterInvoker,
 } from './types.js';
+export { summarisePartialFailures } from './partial.js';
+export type { PartialFailureSummary, FailedPillarSummary } from './partial.js';

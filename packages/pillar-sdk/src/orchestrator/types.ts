@@ -5,18 +5,19 @@
  * whose manifest advertises at least one search adapter
  * (`manifest.search.adapters`), merges the per-pillar `ScoredResult[]`
  * lists via {@link mergeResults} (PRD-198), and returns a single ranked
- * response plus a per-pillar partial-failure list (PRD-199).
+ * response plus a per-pillar partial-failure list (PRD-197 `failures`) and
+ * a per-pillar partial-failure summary block (PRD-199 `partial`).
  *
- * **Known limitation (interim shape).** As of this PRD-197 cut, the
- * manifest schema's `search.adapters` field is `readonly string[]` —
- * adapter names only. PRD-196's richer descriptor (`procedurePath`,
- * `queryShape`, `entityType`, `rankFieldName`) has not landed. Until it
- * does, the orchestrator cannot reject queries against an adapter that
- * does not advertise the requested dimensions (text / tags / dateRange /
- * scope) — every adapter is invoked unconditionally and is responsible
- * for returning `[]` if the query is unsupported. When PRD-196 lands,
- * the pre-filter belongs in {@link runFederatedSearch} so each adapter
- * does not pay the parse-and-reject cost.
+ * **Known limitation.** The manifest schema's `search.adapters` field now
+ * carries the full PRD-196 descriptor (`name`, `entityType`, `queryShape`,
+ * `procedurePath`, optional `rankFieldName`) and the orchestrator forwards
+ * `procedurePath` to the invoker. The remaining gap is that the
+ * orchestrator does not yet *use* `queryShape` to pre-filter targets:
+ * every adapter is invoked unconditionally and is responsible for
+ * returning `[]` if it cannot answer the requested dimensions
+ * (text / tags / dateRange / scope). Wiring the pre-filter into
+ * {@link runFederatedSearch} avoids paying the per-adapter parse-and-reject
+ * cost.
  *
  * Dispatch is delegated to a {@link SearchAdapterInvoker} so the
  * orchestrator does not need to know how the underlying procedure is
@@ -57,11 +58,14 @@ export interface FederatedSearchQuery {
  * One pillar's contribution to the fan-out. `pillarId` is a kebab-case
  * identifier (per the manifest schema's pillar id constraint);
  * `adapterName` is camelCase (PRD-196's manifest schema constraint on
- * `search.adapters`).
+ * `search.adapters`); `procedurePath` is the dotted tRPC path the
+ * invoker should dispatch to (carried verbatim from the manifest so
+ * invokers do not have to re-derive it from `pillarId`/`adapterName`).
  */
 export interface PillarAdapterTarget {
   readonly pillarId: string;
   readonly adapterName: string;
+  readonly procedurePath: string;
 }
 
 /**
@@ -74,11 +78,9 @@ export interface PillarAdapterTarget {
  * swappable. The orchestrator only requires that rejecting the
  * returned promise — including via abort — is treated as a failure.
  *
- * In production the invoker is expected to resolve `(pillarId,
- * adapterName)` to a procedure path. The current `search.adapters`
- * shape (PRD-197 interim — adapter names only) does not carry the
- * path itself; until PRD-196 lands, callers compose it by convention
- * (e.g. `${pillarId}.${adapterName}.search`).
+ * Targets carry the manifest's `procedurePath` directly, so invokers
+ * can dispatch without independently resolving `(pillarId, adapterName)`
+ * back to a path or duplicating registry state.
  */
 export type SearchAdapterInvoker = (
   target: PillarAdapterTarget,

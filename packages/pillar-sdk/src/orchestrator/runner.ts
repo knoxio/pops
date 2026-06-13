@@ -13,12 +13,13 @@
  * orchestrator does not need to know how the underlying procedure is
  * transported.
  *
- * See {@link FederatedSearchQuery} for the interim-shape limitation note
- * (the manifest currently exposes only adapter names; PRD-196 will add
- * `procedurePath` + `queryShape` so the orchestrator can pre-filter).
+ * See {@link FederatedSearchQuery} for the remaining limitation note
+ * (the manifest already carries `procedurePath` and `queryShape`, but
+ * the orchestrator does not yet pre-filter targets by `queryShape`).
  */
 
 import { mergeResults } from '../ranking/merge.js';
+import { summarisePartialFailures, type PartialFailureSummary } from './partial.js';
 
 import type { PillarSnapshot } from '../discovery/types.js';
 import type { MergedResult, PillarWeights, ScoredResult } from '../ranking/types.js';
@@ -62,6 +63,12 @@ export interface FederatedSearchOptions {
 export interface FederatedSearchResponse {
   readonly results: readonly MergedResult[];
   readonly failures: readonly FederatedSearchFailure[];
+  /**
+   * PRD-199 partial-failure summary. Always present, even when every
+   * pillar responded — empty `failedPillars` / `timeoutPillars` mean
+   * "no degradation, show the full result set".
+   */
+  readonly partial: PartialFailureSummary;
 }
 
 export class EmptyFederatedQueryError extends Error {
@@ -118,7 +125,9 @@ export async function runFederatedSearch(
     onWarn,
   });
 
-  return { results: merged, failures };
+  const partial = summarisePartialFailures(targets, failures);
+
+  return { results: merged, failures, partial };
 }
 
 interface CollectedOutcomes {
@@ -189,7 +198,11 @@ function collectTargets(
     if (allowed !== undefined && !allowed.has(pillar.pillarId)) continue;
 
     for (const adapter of pillar.manifest.search.adapters) {
-      targets.push({ pillarId: pillar.pillarId, adapterName: adapter.name });
+      targets.push({
+        pillarId: pillar.pillarId,
+        adapterName: adapter.name,
+        procedurePath: adapter.procedurePath,
+      });
     }
   }
 
