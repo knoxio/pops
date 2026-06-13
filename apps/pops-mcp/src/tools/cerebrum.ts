@@ -1,7 +1,41 @@
-import { getClient } from '../client.js';
-import { ok, toolError } from './utils.js';
+import { getPillar } from '../pillar-client.js';
+import { mapCallResult, toolError } from './utils.js';
+
+import type { PillarHandle } from '@pops/pillar-sdk/client';
 
 import type { ToolDef } from './index.js';
+
+type EngramListInput = {
+  search?: string;
+  type?: string;
+  scopes?: string[];
+  tags?: string[];
+  status?: 'active' | 'archived';
+  limit?: number;
+  offset?: number;
+};
+
+type SearchInput = {
+  query: string;
+  mode: 'semantic' | 'structured' | 'hybrid';
+  limit?: number;
+};
+
+type CerebrumShape = {
+  cerebrum: {
+    engrams: {
+      list: (input: EngramListInput) => unknown;
+      get: (input: { id: string }) => unknown;
+    };
+    retrieval: {
+      search: (input: SearchInput) => unknown;
+    };
+  };
+};
+
+function cerebrum(): PillarHandle<CerebrumShape>['cerebrum'] {
+  return getPillar<CerebrumShape>('cerebrum').cerebrum;
+}
 
 const engramsList: ToolDef = {
   name: 'cerebrum.engrams.list',
@@ -39,17 +73,16 @@ const engramsList: ToolDef = {
       ? (args['tags'] as unknown[]).filter((t): t is string => typeof t === 'string')
       : undefined;
 
-    const result = await getClient().cerebrum.engrams.list.query({
-      search: typeof args['search'] === 'string' ? args['search'] : undefined,
-      type: typeof args['type'] === 'string' ? args['type'] : undefined,
-      scopes,
-      tags,
-      status:
-        args['status'] === 'active' || args['status'] === 'archived' ? args['status'] : undefined,
-      limit: typeof args['limit'] === 'number' ? args['limit'] : undefined,
-      offset: typeof args['offset'] === 'number' ? args['offset'] : undefined,
-    });
-    return ok(result);
+    const input: EngramListInput = {};
+    if (typeof args['search'] === 'string') input.search = args['search'];
+    if (typeof args['type'] === 'string') input.type = args['type'];
+    if (scopes !== undefined) input.scopes = scopes;
+    if (tags !== undefined) input.tags = tags;
+    if (args['status'] === 'active' || args['status'] === 'archived') input.status = args['status'];
+    if (typeof args['limit'] === 'number') input.limit = args['limit'];
+    if (typeof args['offset'] === 'number') input.offset = args['offset'];
+
+    return mapCallResult(await cerebrum().engrams.list(input));
   },
 };
 
@@ -67,8 +100,7 @@ const engramGet: ToolDef = {
     if (typeof args['id'] !== 'string' || args['id'].length === 0) {
       return toolError('Invalid "id"');
     }
-    const result = await getClient().cerebrum.engrams.get.query({ id: args['id'] });
-    return ok(result);
+    return mapCallResult(await cerebrum().engrams.get({ id: args['id'] }));
   },
 };
 
@@ -93,15 +125,13 @@ const cerebrumSearch: ToolDef = {
     if (typeof args['query'] !== 'string' || args['query'].trim().length === 0) {
       return toolError('Invalid "query"');
     }
-    const result = await getClient().cerebrum.retrieval.search.query({
-      query: args['query'],
-      mode:
-        args['mode'] === 'semantic' || args['mode'] === 'structured' || args['mode'] === 'hybrid'
-          ? args['mode']
-          : 'hybrid',
-      limit: typeof args['limit'] === 'number' ? args['limit'] : undefined,
-    });
-    return ok(result);
+    const mode: 'semantic' | 'structured' | 'hybrid' =
+      args['mode'] === 'semantic' || args['mode'] === 'structured' || args['mode'] === 'hybrid'
+        ? args['mode']
+        : 'hybrid';
+    const input: SearchInput = { query: args['query'], mode };
+    if (typeof args['limit'] === 'number') input.limit = args['limit'];
+    return mapCallResult(await cerebrum().retrieval.search(input));
   },
 };
 

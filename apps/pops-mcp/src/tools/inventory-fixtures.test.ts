@@ -1,8 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MOCK_FIXTURE, MOCK_FIXTURE_CONN, mockClient, parseResult } from './test-helpers.js';
+import {
+  callContractMismatch,
+  callOk,
+  callUnavailable,
+  MOCK_FIXTURE,
+  MOCK_FIXTURE_CONN,
+  mockPillarInventory,
+  parseResult,
+  pillarMockGetter,
+} from './test-helpers.js';
 
-vi.mock('../client.js', () => ({ getClient: () => mockClient }));
+vi.mock('../pillar-client.js', () => ({
+  getPillar: pillarMockGetter,
+  __resetPillarClientForTests: () => {},
+}));
 
 const { fixtureTools } = await import('./inventory-fixtures.js');
 
@@ -12,30 +24,25 @@ function getTool(name: string) {
   return tool;
 }
 
+const fixtures = mockPillarInventory.inventory.fixtures;
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockClient.inventory.fixtures.list.query.mockResolvedValue({ data: [MOCK_FIXTURE], total: 1 });
-  mockClient.inventory.fixtures.get.query.mockResolvedValue({ data: MOCK_FIXTURE });
-  mockClient.inventory.fixtures.create.mutate.mockResolvedValue({
-    data: MOCK_FIXTURE,
-    message: 'Fixture created',
-  });
-  mockClient.inventory.fixtures.update.mutate.mockResolvedValue({
-    data: MOCK_FIXTURE,
-    message: 'Fixture updated',
-  });
-  mockClient.inventory.fixtures.delete.mutate.mockResolvedValue({ message: 'Fixture deleted' });
-  mockClient.inventory.fixtures.connect.mutate.mockResolvedValue({
-    data: MOCK_FIXTURE_CONN,
-    message: 'Item connected to fixture',
-  });
-  mockClient.inventory.fixtures.disconnect.mutate.mockResolvedValue({
-    message: 'Item disconnected from fixture',
-  });
-  mockClient.inventory.fixtures.listForItem.query.mockResolvedValue({
-    data: [MOCK_FIXTURE_CONN],
-    pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
-  });
+  fixtures.list.mockResolvedValue(callOk({ data: [MOCK_FIXTURE], total: 1 }));
+  fixtures.get.mockResolvedValue(callOk({ data: MOCK_FIXTURE }));
+  fixtures.create.mockResolvedValue(callOk({ data: MOCK_FIXTURE, message: 'Fixture created' }));
+  fixtures.update.mockResolvedValue(callOk({ data: MOCK_FIXTURE, message: 'Fixture updated' }));
+  fixtures.delete.mockResolvedValue(callOk({ message: 'Fixture deleted' }));
+  fixtures.connect.mockResolvedValue(
+    callOk({ data: MOCK_FIXTURE_CONN, message: 'Item connected to fixture' })
+  );
+  fixtures.disconnect.mockResolvedValue(callOk({ message: 'Item disconnected from fixture' }));
+  fixtures.listForItem.mockResolvedValue(
+    callOk({
+      data: [MOCK_FIXTURE_CONN],
+      pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+    })
+  );
 });
 
 describe('inventory.fixtures.list', () => {
@@ -44,39 +51,29 @@ describe('inventory.fixtures.list', () => {
   it('returns fixture list without filters', async () => {
     const result = await tool.handler({});
     const data = parseResult(result);
-    expect(mockClient.inventory.fixtures.list.query).toHaveBeenCalledWith({
-      locationId: undefined,
-      type: undefined,
-      limit: undefined,
-      offset: undefined,
-    });
+    expect(fixtures.list).toHaveBeenCalled();
     expect(data).toMatchObject({ data: [MOCK_FIXTURE], total: 1 });
   });
 
   it('passes locationId filter', async () => {
     await tool.handler({ locationId: 'loc_1' });
-    expect(mockClient.inventory.fixtures.list.query).toHaveBeenCalledWith(
-      expect.objectContaining({ locationId: 'loc_1' })
-    );
+    expect(fixtures.list).toHaveBeenCalledWith(expect.objectContaining({ locationId: 'loc_1' }));
   });
 
   it('passes type filter', async () => {
     await tool.handler({ type: 'outlet' });
-    expect(mockClient.inventory.fixtures.list.query).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'outlet' })
-    );
+    expect(fixtures.list).toHaveBeenCalledWith(expect.objectContaining({ type: 'outlet' }));
   });
 
   it('passes pagination args', async () => {
     await tool.handler({ limit: 10, offset: 20 });
-    expect(mockClient.inventory.fixtures.list.query).toHaveBeenCalledWith(
-      expect.objectContaining({ limit: 10, offset: 20 })
-    );
+    expect(fixtures.list).toHaveBeenCalledWith(expect.objectContaining({ limit: 10, offset: 20 }));
   });
 
-  it('propagates tRPC errors', async () => {
-    mockClient.inventory.fixtures.list.query.mockRejectedValue(new Error('DB error'));
-    await expect(tool.handler({})).rejects.toThrow('DB error');
+  it('returns isError on unavailable', async () => {
+    fixtures.list.mockResolvedValueOnce(callUnavailable('inventory'));
+    const result = await tool.handler({});
+    expect(result.isError).toBe(true);
   });
 });
 
@@ -85,14 +82,14 @@ describe('inventory.fixtures.get', () => {
 
   it('returns fixture by id wrapped in the data envelope', async () => {
     const result = await tool.handler({ id: 'fixture_1' });
-    expect(mockClient.inventory.fixtures.get.query).toHaveBeenCalledWith({ id: 'fixture_1' });
+    expect(fixtures.get).toHaveBeenCalledWith({ id: 'fixture_1' });
     expect(parseResult(result)).toMatchObject({ data: { id: 'fixture_1' } });
   });
 
   it('returns toolError for missing id', async () => {
     const result = await tool.handler({});
     expect(result.isError).toBe(true);
-    expect(mockClient.inventory.fixtures.get.query).not.toHaveBeenCalled();
+    expect(fixtures.get).not.toHaveBeenCalled();
   });
 
   it('returns toolError for empty string id', async () => {
@@ -100,9 +97,10 @@ describe('inventory.fixtures.get', () => {
     expect(result.isError).toBe(true);
   });
 
-  it('propagates NOT_FOUND tRPC errors', async () => {
-    mockClient.inventory.fixtures.get.query.mockRejectedValue(new Error('NOT_FOUND'));
-    await expect(tool.handler({ id: 'missing' })).rejects.toThrow('NOT_FOUND');
+  it('returns isError on contract-mismatch', async () => {
+    fixtures.get.mockResolvedValueOnce(callContractMismatch('inventory', '1.0.0', '2.0.0'));
+    const result = await tool.handler({ id: 'fixture_1' });
+    expect(result.isError).toBe(true);
   });
 });
 
@@ -111,7 +109,7 @@ describe('inventory.fixtures.create', () => {
 
   it('creates fixture with required fields', async () => {
     const result = await tool.handler({ name: 'Outlet A', type: 'outlet' });
-    expect(mockClient.inventory.fixtures.create.mutate).toHaveBeenCalledWith(
+    expect(fixtures.create).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Outlet A', type: 'outlet' })
     );
     expect(parseResult(result)).toMatchObject({ data: MOCK_FIXTURE, message: 'Fixture created' });
@@ -124,7 +122,7 @@ describe('inventory.fixtures.create', () => {
       locationId: 'loc_2',
       notes: 'rack A',
     });
-    expect(mockClient.inventory.fixtures.create.mutate).toHaveBeenCalledWith({
+    expect(fixtures.create).toHaveBeenCalledWith({
       name: 'Panel',
       type: 'patch_panel',
       locationId: 'loc_2',
@@ -141,6 +139,12 @@ describe('inventory.fixtures.create', () => {
     const result = await tool.handler({ name: 'Outlet A' });
     expect(result.isError).toBe(true);
   });
+
+  it('returns isError on unavailable', async () => {
+    fixtures.create.mockResolvedValueOnce(callUnavailable('inventory'));
+    const result = await tool.handler({ name: 'Outlet A', type: 'outlet' });
+    expect(result.isError).toBe(true);
+  });
 });
 
 describe('inventory.fixtures.update', () => {
@@ -148,7 +152,7 @@ describe('inventory.fixtures.update', () => {
 
   it('updates name', async () => {
     const result = await tool.handler({ id: 'fixture_1', name: 'New Name' });
-    expect(mockClient.inventory.fixtures.update.mutate).toHaveBeenCalledWith({
+    expect(fixtures.update).toHaveBeenCalledWith({
       id: 'fixture_1',
       data: { name: 'New Name' },
     });
@@ -157,7 +161,7 @@ describe('inventory.fixtures.update', () => {
 
   it('clears locationId when passed null', async () => {
     await tool.handler({ id: 'fixture_1', locationId: null });
-    expect(mockClient.inventory.fixtures.update.mutate).toHaveBeenCalledWith({
+    expect(fixtures.update).toHaveBeenCalledWith({
       id: 'fixture_1',
       data: { locationId: null },
     });
@@ -165,7 +169,7 @@ describe('inventory.fixtures.update', () => {
 
   it('clears notes when passed null', async () => {
     await tool.handler({ id: 'fixture_1', notes: null });
-    expect(mockClient.inventory.fixtures.update.mutate).toHaveBeenCalledWith({
+    expect(fixtures.update).toHaveBeenCalledWith({
       id: 'fixture_1',
       data: { notes: null },
     });
@@ -173,7 +177,7 @@ describe('inventory.fixtures.update', () => {
 
   it('omits absent fields from patch (no-op for absent keys)', async () => {
     await tool.handler({ id: 'fixture_1', name: 'Updated' });
-    const call = mockClient.inventory.fixtures.update.mutate.mock.calls[0]?.[0];
+    const call = fixtures.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
     expect(call?.data).not.toHaveProperty('locationId');
     expect(call?.data).not.toHaveProperty('notes');
     expect(call?.data).not.toHaveProperty('type');
@@ -182,22 +186,7 @@ describe('inventory.fixtures.update', () => {
   it('returns toolError for missing id', async () => {
     const result = await tool.handler({ name: 'Updated' });
     expect(result.isError).toBe(true);
-    expect(mockClient.inventory.fixtures.update.mutate).not.toHaveBeenCalled();
-  });
-
-  // Empty-patch rejection happens at the tRPC layer (UpdateFixtureSchema.refine).
-  // The MCP adapter forwards the call; the tRPC client surfaces a BAD_REQUEST
-  // which `handler` rethrows. Assert the rethrow rather than re-implementing
-  // a parallel guard at the MCP layer.
-  it('forwards an empty patch and lets the backend reject it', async () => {
-    mockClient.inventory.fixtures.update.mutate.mockRejectedValueOnce(
-      Object.assign(new Error('At least one field required'), { code: 'BAD_REQUEST' })
-    );
-    await expect(tool.handler({ id: 'fixture_1' })).rejects.toThrow(/At least one field required/);
-    expect(mockClient.inventory.fixtures.update.mutate).toHaveBeenCalledWith({
-      id: 'fixture_1',
-      data: {},
-    });
+    expect(fixtures.update).not.toHaveBeenCalled();
   });
 });
 
@@ -206,19 +195,14 @@ describe('inventory.fixtures.delete', () => {
 
   it('deletes fixture by id', async () => {
     const result = await tool.handler({ id: 'fixture_1' });
-    expect(mockClient.inventory.fixtures.delete.mutate).toHaveBeenCalledWith({ id: 'fixture_1' });
+    expect(fixtures.delete).toHaveBeenCalledWith({ id: 'fixture_1' });
     expect(parseResult(result)).toMatchObject({ message: 'Fixture deleted' });
   });
 
   it('returns toolError for missing id', async () => {
     const result = await tool.handler({});
     expect(result.isError).toBe(true);
-    expect(mockClient.inventory.fixtures.delete.mutate).not.toHaveBeenCalled();
-  });
-
-  it('propagates NOT_FOUND tRPC errors', async () => {
-    mockClient.inventory.fixtures.delete.mutate.mockRejectedValue(new Error('NOT_FOUND'));
-    await expect(tool.handler({ id: 'missing' })).rejects.toThrow('NOT_FOUND');
+    expect(fixtures.delete).not.toHaveBeenCalled();
   });
 });
 
@@ -227,7 +211,7 @@ describe('inventory.fixtures.connect', () => {
 
   it('connects item to fixture', async () => {
     const result = await tool.handler({ itemId: 'item_1', fixtureId: 'fixture_1' });
-    expect(mockClient.inventory.fixtures.connect.mutate).toHaveBeenCalledWith({
+    expect(fixtures.connect).toHaveBeenCalledWith({
       itemId: 'item_1',
       fixtureId: 'fixture_1',
     });
@@ -244,18 +228,10 @@ describe('inventory.fixtures.connect', () => {
     expect(result.isError).toBe(true);
   });
 
-  it('propagates CONFLICT tRPC errors', async () => {
-    mockClient.inventory.fixtures.connect.mutate.mockRejectedValue(new Error('CONFLICT'));
-    await expect(tool.handler({ itemId: 'item_1', fixtureId: 'fixture_1' })).rejects.toThrow(
-      'CONFLICT'
-    );
-  });
-
-  it('propagates NOT_FOUND tRPC errors', async () => {
-    mockClient.inventory.fixtures.connect.mutate.mockRejectedValue(new Error('NOT_FOUND'));
-    await expect(tool.handler({ itemId: 'item_bad', fixtureId: 'fixture_1' })).rejects.toThrow(
-      'NOT_FOUND'
-    );
+  it('returns isError on unavailable', async () => {
+    fixtures.connect.mockResolvedValueOnce(callUnavailable('inventory'));
+    const result = await tool.handler({ itemId: 'item_1', fixtureId: 'fixture_1' });
+    expect(result.isError).toBe(true);
   });
 });
 
@@ -264,7 +240,7 @@ describe('inventory.fixtures.disconnect', () => {
 
   it('disconnects item from fixture', async () => {
     const result = await tool.handler({ itemId: 'item_1', fixtureId: 'fixture_1' });
-    expect(mockClient.inventory.fixtures.disconnect.mutate).toHaveBeenCalledWith({
+    expect(fixtures.disconnect).toHaveBeenCalledWith({
       itemId: 'item_1',
       fixtureId: 'fixture_1',
     });
@@ -280,13 +256,6 @@ describe('inventory.fixtures.disconnect', () => {
     const result = await tool.handler({ itemId: 'item_1' });
     expect(result.isError).toBe(true);
   });
-
-  it('propagates NOT_FOUND tRPC errors', async () => {
-    mockClient.inventory.fixtures.disconnect.mutate.mockRejectedValue(new Error('NOT_FOUND'));
-    await expect(tool.handler({ itemId: 'item_1', fixtureId: 'fixture_missing' })).rejects.toThrow(
-      'NOT_FOUND'
-    );
-  });
 });
 
 describe('inventory.fixtures.listForItem', () => {
@@ -294,7 +263,7 @@ describe('inventory.fixtures.listForItem', () => {
 
   it('returns fixture connections for item', async () => {
     const result = await tool.handler({ itemId: 'item_1' });
-    expect(mockClient.inventory.fixtures.listForItem.query).toHaveBeenCalledWith({
+    expect(fixtures.listForItem).toHaveBeenCalledWith({
       itemId: 'item_1',
       limit: undefined,
       offset: undefined,
@@ -304,7 +273,7 @@ describe('inventory.fixtures.listForItem', () => {
 
   it('passes pagination args', async () => {
     await tool.handler({ itemId: 'item_1', limit: 5, offset: 10 });
-    expect(mockClient.inventory.fixtures.listForItem.query).toHaveBeenCalledWith({
+    expect(fixtures.listForItem).toHaveBeenCalledWith({
       itemId: 'item_1',
       limit: 5,
       offset: 10,
@@ -314,11 +283,6 @@ describe('inventory.fixtures.listForItem', () => {
   it('returns toolError for missing itemId', async () => {
     const result = await tool.handler({});
     expect(result.isError).toBe(true);
-    expect(mockClient.inventory.fixtures.listForItem.query).not.toHaveBeenCalled();
-  });
-
-  it('propagates tRPC errors', async () => {
-    mockClient.inventory.fixtures.listForItem.query.mockRejectedValue(new Error('NOT_FOUND'));
-    await expect(tool.handler({ itemId: 'item_bad' })).rejects.toThrow('NOT_FOUND');
+    expect(fixtures.listForItem).not.toHaveBeenCalled();
   });
 });

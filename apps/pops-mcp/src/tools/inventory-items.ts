@@ -1,6 +1,5 @@
-import { getClient } from '../client.js';
-import { itemWriteTools } from './inventory-items-write.js';
-import { ok, optBool, optNum, optStr, reqStr, toolError } from './utils.js';
+import { items, itemWriteTools } from './inventory-items-write.js';
+import { mapCallResult, optBool, optNum, optStr, reqStr, toolError } from './utils.js';
 
 import type { ToolDef } from './index.js';
 
@@ -24,16 +23,17 @@ const itemsList: ToolDef = {
     },
   },
   handler: async (args) => {
-    const result = await getClient().inventory.items.list.query({
-      search: optStr(args, 'search'),
-      locationId: optStr(args, 'locationId'),
-      includeChildren: optBool(args, 'includeChildren'),
-      type: optStr(args, 'type'),
-      condition: optStr(args, 'condition'),
-      limit: optNum(args, 'limit'),
-      offset: optNum(args, 'offset'),
-    });
-    return ok(result);
+    return mapCallResult(
+      await items().list({
+        search: optStr(args, 'search'),
+        locationId: optStr(args, 'locationId'),
+        includeChildren: optBool(args, 'includeChildren'),
+        type: optStr(args, 'type'),
+        condition: optStr(args, 'condition'),
+        limit: optNum(args, 'limit'),
+        offset: optNum(args, 'offset'),
+      })
+    );
   },
 };
 
@@ -48,8 +48,7 @@ const itemGet: ToolDef = {
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
-    const result = await getClient().inventory.items.get.query({ id });
-    return ok(result);
+    return mapCallResult(await items().get({ id }));
   },
 };
 

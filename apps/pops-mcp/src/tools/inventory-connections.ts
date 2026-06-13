@@ -1,7 +1,28 @@
-import { getClient } from '../client.js';
-import { ok, optNum, reqStr, toolError } from './utils.js';
+import { getPillar } from '../pillar-client.js';
+import { mapCallResult, optNum, reqStr, toolError } from './utils.js';
+
+import type { PillarHandle } from '@pops/pillar-sdk/client';
 
 import type { ToolDef } from './index.js';
+
+type ListForItemInput = { itemId: string; limit?: number; offset?: number };
+type GraphInput = { itemId: string; maxDepth?: number };
+type PairInput = { itemAId: string; itemBId: string };
+
+type ConnectionsShape = {
+  inventory: {
+    connections: {
+      listForItem: (input: ListForItemInput) => unknown;
+      graph: (input: GraphInput) => unknown;
+      connect: (input: PairInput) => unknown;
+      disconnect: (input: PairInput) => unknown;
+    };
+  };
+};
+
+function connections(): PillarHandle<ConnectionsShape>['inventory']['connections'] {
+  return getPillar<ConnectionsShape>('inventory').inventory.connections;
+}
 
 const connectionsList: ToolDef = {
   name: 'inventory.connections.list',
@@ -19,12 +40,12 @@ const connectionsList: ToolDef = {
   handler: async (args) => {
     const itemId = reqStr(args, 'itemId');
     if (!itemId) return toolError('Missing required field: itemId');
-    const result = await getClient().inventory.connections.listForItem.query({
-      itemId,
-      limit: optNum(args, 'limit'),
-      offset: optNum(args, 'offset'),
-    });
-    return ok(result);
+    const input: ListForItemInput = { itemId };
+    const limit = optNum(args, 'limit');
+    if (limit !== undefined) input.limit = limit;
+    const offset = optNum(args, 'offset');
+    if (offset !== undefined) input.offset = offset;
+    return mapCallResult(await connections().listForItem(input));
   },
 };
 
@@ -43,11 +64,10 @@ const connectionsGraph: ToolDef = {
   handler: async (args) => {
     const itemId = reqStr(args, 'itemId');
     if (!itemId) return toolError('Missing required field: itemId');
-    const result = await getClient().inventory.connections.graph.query({
-      itemId,
-      maxDepth: optNum(args, 'maxDepth'),
-    });
-    return ok(result);
+    const input: GraphInput = { itemId };
+    const maxDepth = optNum(args, 'maxDepth');
+    if (maxDepth !== undefined) input.maxDepth = maxDepth;
+    return mapCallResult(await connections().graph(input));
   },
 };
 
@@ -68,8 +88,7 @@ const connectionsConnect: ToolDef = {
     if (!itemAId) return toolError('Missing required field: itemAId');
     const itemBId = reqStr(args, 'itemBId');
     if (!itemBId) return toolError('Missing required field: itemBId');
-    const result = await getClient().inventory.connections.connect.mutate({ itemAId, itemBId });
-    return ok(result);
+    return mapCallResult(await connections().connect({ itemAId, itemBId }));
   },
 };
 
@@ -90,8 +109,7 @@ const connectionsDisconnect: ToolDef = {
     if (!itemAId) return toolError('Missing required field: itemAId');
     const itemBId = reqStr(args, 'itemBId');
     if (!itemBId) return toolError('Missing required field: itemBId');
-    const result = await getClient().inventory.connections.disconnect.mutate({ itemAId, itemBId });
-    return ok(result);
+    return mapCallResult(await connections().disconnect({ itemAId, itemBId }));
   },
 };
 

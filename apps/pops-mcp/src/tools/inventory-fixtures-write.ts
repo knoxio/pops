@@ -1,11 +1,45 @@
-import { getClient } from '../client.js';
-import { copyNullStr, copyOptStr, ok, optStr, reqStr, toolError } from './utils.js';
+import { getPillar } from '../pillar-client.js';
+import { copyNullStr, copyOptStr, mapCallResult, optStr, reqStr, toolError } from './utils.js';
+
+import type { PillarHandle } from '@pops/pillar-sdk/client';
 
 import type { ToolDef } from './index.js';
 
-type FixturePatch = Parameters<
-  ReturnType<typeof getClient>['inventory']['fixtures']['update']['mutate']
->[0]['data'];
+export type FixturePatch = {
+  name?: string;
+  type?: string;
+  locationId?: string | null;
+  notes?: string | null;
+};
+
+export type FixturesShape = {
+  inventory: {
+    fixtures: {
+      list: (input: {
+        locationId?: string;
+        type?: string;
+        limit?: number;
+        offset?: number;
+      }) => unknown;
+      get: (input: { id: string }) => unknown;
+      listForItem: (input: { itemId: string; limit?: number; offset?: number }) => unknown;
+      create: (input: {
+        name: string;
+        type: string;
+        locationId?: string;
+        notes?: string;
+      }) => unknown;
+      update: (input: { id: string; data: FixturePatch }) => unknown;
+      delete: (input: { id: string }) => unknown;
+      connect: (input: { itemId: string; fixtureId: string }) => unknown;
+      disconnect: (input: { itemId: string; fixtureId: string }) => unknown;
+    };
+  };
+};
+
+export function fixtures(): PillarHandle<FixturesShape>['inventory']['fixtures'] {
+  return getPillar<FixturesShape>('inventory').inventory.fixtures;
+}
 
 function buildFixturePatch(args: Record<string, unknown>): FixturePatch {
   const patch: FixturePatch = {};
@@ -38,13 +72,15 @@ const fixturesCreate: ToolDef = {
     if (!name) return toolError('Missing required field: name');
     const type = reqStr(args, 'type');
     if (!type) return toolError('Missing required field: type');
-    const result = await getClient().inventory.fixtures.create.mutate({
+    const input: { name: string; type: string; locationId?: string; notes?: string } = {
       name,
       type,
-      locationId: optStr(args, 'locationId'),
-      notes: optStr(args, 'notes'),
-    });
-    return ok(result);
+    };
+    const locationId = optStr(args, 'locationId');
+    if (locationId !== undefined) input.locationId = locationId;
+    const notes = optStr(args, 'notes');
+    if (notes !== undefined) input.notes = notes;
+    return mapCallResult(await fixtures().create(input));
   },
 };
 
@@ -63,15 +99,12 @@ const fixturesUpdate: ToolDef = {
     },
     required: ['id'],
   },
-  // Note: empty-patch rejection happens at the tRPC layer via
-  // UpdateFixtureSchema.refine, so we don't duplicate the guard here. The
-  // backend returns BAD_REQUEST which propagates through the tRPC client.
+  // Empty-patch rejection happens at the tRPC layer via UpdateFixtureSchema.refine.
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
     const data = buildFixturePatch(args);
-    const result = await getClient().inventory.fixtures.update.mutate({ id, data });
-    return ok(result);
+    return mapCallResult(await fixtures().update({ id, data }));
   },
 };
 
@@ -86,8 +119,7 @@ const fixturesDelete: ToolDef = {
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
-    const result = await getClient().inventory.fixtures.delete.mutate({ id });
-    return ok(result);
+    return mapCallResult(await fixtures().delete({ id }));
   },
 };
 
@@ -107,8 +139,7 @@ const fixturesConnect: ToolDef = {
     if (!itemId) return toolError('Missing required field: itemId');
     const fixtureId = reqStr(args, 'fixtureId');
     if (!fixtureId) return toolError('Missing required field: fixtureId');
-    const result = await getClient().inventory.fixtures.connect.mutate({ itemId, fixtureId });
-    return ok(result);
+    return mapCallResult(await fixtures().connect({ itemId, fixtureId }));
   },
 };
 
@@ -128,8 +159,7 @@ const fixturesDisconnect: ToolDef = {
     if (!itemId) return toolError('Missing required field: itemId');
     const fixtureId = reqStr(args, 'fixtureId');
     if (!fixtureId) return toolError('Missing required field: fixtureId');
-    const result = await getClient().inventory.fixtures.disconnect.mutate({ itemId, fixtureId });
-    return ok(result);
+    return mapCallResult(await fixtures().disconnect({ itemId, fixtureId }));
   },
 };
 

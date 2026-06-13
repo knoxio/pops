@@ -1,6 +1,5 @@
-import { getClient } from '../client.js';
-import { fixtureWriteTools } from './inventory-fixtures-write.js';
-import { ok, optNum, optStr, reqStr, toolError } from './utils.js';
+import { fixtureWriteTools, fixtures } from './inventory-fixtures-write.js';
+import { mapCallResult, optNum, optStr, reqStr, toolError } from './utils.js';
 
 import type { ToolDef } from './index.js';
 
@@ -20,13 +19,14 @@ const fixturesList: ToolDef = {
     },
   },
   handler: async (args) => {
-    const result = await getClient().inventory.fixtures.list.query({
-      locationId: optStr(args, 'locationId'),
-      type: optStr(args, 'type'),
-      limit: optNum(args, 'limit'),
-      offset: optNum(args, 'offset'),
-    });
-    return ok(result);
+    return mapCallResult(
+      await fixtures().list({
+        locationId: optStr(args, 'locationId'),
+        type: optStr(args, 'type'),
+        limit: optNum(args, 'limit'),
+        offset: optNum(args, 'offset'),
+      })
+    );
   },
 };
 
@@ -41,8 +41,7 @@ const fixturesGet: ToolDef = {
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
-    const result = await getClient().inventory.fixtures.get.query({ id });
-    return ok(result);
+    return mapCallResult(await fixtures().get({ id }));
   },
 };
 
@@ -61,12 +60,13 @@ const fixturesListForItem: ToolDef = {
   handler: async (args) => {
     const itemId = reqStr(args, 'itemId');
     if (!itemId) return toolError('Missing required field: itemId');
-    const result = await getClient().inventory.fixtures.listForItem.query({
-      itemId,
-      limit: optNum(args, 'limit'),
-      offset: optNum(args, 'offset'),
-    });
-    return ok(result);
+    return mapCallResult(
+      await fixtures().listForItem({
+        itemId,
+        limit: optNum(args, 'limit'),
+        offset: optNum(args, 'offset'),
+      })
+    );
   },
 };
 

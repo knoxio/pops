@@ -1,52 +1,88 @@
-import { getClient } from '../client.js';
+import { getPillar } from '../pillar-client.js';
 import {
   copyNullNum,
   copyNullStr,
   copyOptBool,
   copyOptStr,
-  nullNum,
-  nullStr,
-  ok,
-  optBool,
+  mapCallResult,
   reqStr,
   toolError,
 } from './utils.js';
 
+import type { PillarHandle } from '@pops/pillar-sdk/client';
+
 import type { ToolDef } from './index.js';
 
-// Hoist the patch type from the tRPC mutation signature so it tracks the
-// backend schema automatically — no manual interface duplication, no escape
-// `as` cast at the call site.
-type ItemPatch = Parameters<
-  ReturnType<typeof getClient>['inventory']['items']['update']['mutate']
->[0]['data'];
+export type ItemPatch = {
+  itemName?: string;
+  brand?: string | null;
+  model?: string | null;
+  itemId?: string | null;
+  room?: string | null;
+  type?: string | null;
+  condition?: string | null;
+  locationId?: string | null;
+  assetId?: string | null;
+  notes?: string | null;
+  purchaseDate?: string | null;
+  warrantyExpires?: string | null;
+  purchasedFromName?: string | null;
+  replacementValue?: number | null;
+  resaleValue?: number | null;
+  purchasePrice?: number | null;
+  inUse?: boolean;
+  deductible?: boolean;
+};
+
+type ItemCreateInput = ItemPatch & { itemName: string };
+
+export type ItemsShape = {
+  inventory: {
+    items: {
+      list: (input: {
+        search?: string;
+        locationId?: string;
+        includeChildren?: boolean;
+        type?: string;
+        condition?: string;
+        limit?: number;
+        offset?: number;
+      }) => unknown;
+      get: (input: { id: string }) => unknown;
+      create: (input: ItemCreateInput) => unknown;
+      update: (input: { id: string; data: ItemPatch }) => unknown;
+      delete: (input: { id: string }) => unknown;
+    };
+  };
+};
+
+const NULL_STR_FIELDS = [
+  'brand',
+  'model',
+  'itemId',
+  'room',
+  'type',
+  'condition',
+  'locationId',
+  'assetId',
+  'notes',
+  'purchaseDate',
+  'warrantyExpires',
+  'purchasedFromName',
+] as const;
+const NULL_NUM_FIELDS = ['replacementValue', 'resaleValue', 'purchasePrice'] as const;
+const OPT_BOOL_FIELDS = ['inUse', 'deductible'] as const;
+
+export function items(): PillarHandle<ItemsShape>['inventory']['items'] {
+  return getPillar<ItemsShape>('inventory').inventory.items;
+}
 
 function buildItemPatch(args: Record<string, unknown>): ItemPatch {
   const patch: ItemPatch = {};
-  // itemName is NOT NULL in the backend schema, so use copyOptStr (drops nulls).
   copyOptStr(patch, args, 'itemName');
-  for (const k of [
-    'brand',
-    'model',
-    'itemId',
-    'room',
-    'type',
-    'condition',
-    'locationId',
-    'assetId',
-    'notes',
-    'purchaseDate',
-    'warrantyExpires',
-    'purchasedFromName',
-  ]) {
-    copyNullStr(patch, args, k);
-  }
-  for (const k of ['replacementValue', 'resaleValue', 'purchasePrice']) {
-    copyNullNum(patch, args, k);
-  }
-  for (const k of ['inUse', 'deductible']) {
-    copyOptBool(patch, args, k);
-  }
+  for (const k of NULL_STR_FIELDS) copyNullStr(patch, args, k);
+  for (const k of NULL_NUM_FIELDS) copyNullNum(patch, args, k);
+  for (const k of OPT_BOOL_FIELDS) copyOptBool(patch, args, k);
   return patch;
 }
 
@@ -81,27 +117,8 @@ const itemsCreate: ToolDef = {
   handler: async (args) => {
     const itemName = reqStr(args, 'itemName');
     if (!itemName) return toolError('Missing required field: itemName');
-    const result = await getClient().inventory.items.create.mutate({
-      itemName,
-      brand: nullStr(args, 'brand'),
-      model: nullStr(args, 'model'),
-      itemId: nullStr(args, 'itemId'),
-      room: nullStr(args, 'room'),
-      type: nullStr(args, 'type'),
-      condition: nullStr(args, 'condition'),
-      locationId: nullStr(args, 'locationId'),
-      inUse: optBool(args, 'inUse'),
-      deductible: optBool(args, 'deductible'),
-      assetId: nullStr(args, 'assetId'),
-      notes: nullStr(args, 'notes'),
-      purchaseDate: nullStr(args, 'purchaseDate'),
-      warrantyExpires: nullStr(args, 'warrantyExpires'),
-      replacementValue: nullNum(args, 'replacementValue'),
-      resaleValue: nullNum(args, 'resaleValue'),
-      purchasePrice: nullNum(args, 'purchasePrice'),
-      purchasedFromName: nullStr(args, 'purchasedFromName'),
-    });
-    return ok(result);
+    const input: ItemCreateInput = { itemName, ...buildItemPatch(args) };
+    return mapCallResult(await items().create(input));
   },
 };
 
@@ -147,8 +164,7 @@ const itemsUpdate: ToolDef = {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
     const data = buildItemPatch(args);
-    const result = await getClient().inventory.items.update.mutate({ id, data });
-    return ok(result);
+    return mapCallResult(await items().update({ id, data }));
   },
 };
 
@@ -163,8 +179,7 @@ const itemsDelete: ToolDef = {
   handler: async (args) => {
     const id = reqStr(args, 'id');
     if (!id) return toolError('Missing required field: id');
-    const result = await getClient().inventory.items.delete.mutate({ id });
-    return ok(result);
+    return mapCallResult(await items().delete({ id }));
   },
 };
 
