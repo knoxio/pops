@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Plex integration has no tables to move. Every piece of state it owns lives in `core.settings` (encrypted token, server URL, Plex.tv username, client identifier, encryption seed, library section IDs, scheduler keys), and every table it orchestrates against — `movies`, `tv_shows`, `seasons`, `episodes`, `media_watchlist`, `watch_history` — is owned by a different slice. The Plex auth, scheduler, encryption, and HTTP-client surfaces stay on pops-api per the Theme 13 framework for orchestration code.
+The Plex integration has no tables to move. Every piece of state it owns lives in `core.settings` (encrypted token, server URL, Plex.tv username, client identifier, encryption seed, library section IDs, scheduler keys), and every table it orchestrates against — `movies`, `tv_shows`, `seasons`, `episodes`, `watchlist` (Drizzle export `mediaWatchlist`), `watch_history` — is owned by a different slice. The Plex auth, scheduler, encryption, and HTTP-client surfaces stay on pops-api per the Theme 13 framework for orchestration code.
 
 This PRD records the finding so future agents do not scaffold a `packages/media-db/src/services/plex.ts` that has nothing to host.
 
