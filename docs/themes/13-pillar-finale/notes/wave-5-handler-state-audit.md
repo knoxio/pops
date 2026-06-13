@@ -69,6 +69,29 @@ semantic search metadata resolution.
 **Count delta: 26 → 24** (the 2 migrated, the remaining 24 are either
 documented-pinned, on shared-only tables, or test-mocks).
 
+### Inventory (this branch — `feat/theme13-inventory-handlers-audit`)
+
+Raw `getDrizzle()` references under `apps/pops-api/src/modules/inventory/`: **0**.
+
+Breakdown:
+
+| Category                              | Count | Notes                                                                                                                                                                                                                        |
+| ------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Handler-real callers                  | 0     | Every production handler under `inventory/{items,locations,connections,documents,document-files,fixtures,photos,reports,paperless}` already resolves via `getInventoryDrizzle()` from `../../../db/inventory-handle.js`.     |
+| Documented intentional pins           | 0     | No inline JSDoc cross-pillar-pin rationale found.                                                                                                                                                                            |
+| Shared-only schema pins               | 0     | No reads/writes against shared-only tables. Every table consumed by inventory services is exposed by `@pops/inventory-db`.                                                                                                   |
+| JSDoc-only comment lines              | 0     | The JSDoc in `connections/service.ts`, `documents/service.ts`, `items/service.ts`, and `__integration__/inventory-handle-coverage.test.ts` references `getInventoryDrizzle()` (the pillar handle), not the shared handle.    |
+| Test-mock callers                     | 0     | No `vi.mock('.../db.js', () => ({ getDrizzle: ... }))` shapes under `inventory/`.                                                                                                                                            |
+| **Real handler migration candidates** | **0** | Pillar cutover is complete; no follow-up flips required.                                                                                                                                                                     |
+
+The only `apps/pops-api/src/db.js` reference inside the inventory tree
+is `__integration__/inventory-handle-coverage.test.ts` importing
+`closeDb` + `setDb` to seed the shared in-memory DB used by the test
+harness — these are lifecycle helpers, not `getDrizzle()` callers.
+
+**Count delta: 0 → 0** (audit-doc row only; no code changes shipped on
+this branch).
+
 ## Methodology lesson
 
 When sizing future pillar cutovers off `getDrizzle()` grep counts:
@@ -84,17 +107,17 @@ When sizing future pillar cutovers off `getDrizzle()` grep counts:
    shared-only, the call site cannot move until that table migrates or
    the join is refactored to per-pillar SDK lookups.
 
-Applying this filter to finance and cerebrum reduced raw counts from
-18 and 26 to **0 + 2 real handler-real-caller migrations** across both
-pillars. The original "~485 callers" Wave 5 sizing is almost certainly
-inflated by an order of magnitude.
+Applying this filter to finance, cerebrum, and inventory reduced raw
+counts from 18, 26, and 0 to **0 + 2 + 0 real handler-real-caller
+migrations** across all three pillars. The original "~485 callers"
+Wave 5 sizing is almost certainly inflated by an order of magnitude.
 
 ## Recommendation for next audits
 
 Before opening any further Wave 5 migration PR:
 
 1. Re-run the raw grep against the remaining pillars
-   (`core`, `media`, `inventory`, `lists`, `food`, `app-*`).
+   (`core`, `media`, `lists`, `food`, `app-*`).
 2. Bucket every hit into the four categories above (test-mock,
    documented-pin, shared-only schema, real-handler-candidate).
 3. Only the **real-handler-candidate** bucket is in scope for the
