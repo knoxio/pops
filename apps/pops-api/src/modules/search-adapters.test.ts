@@ -54,17 +54,18 @@ describe('getOwnedAdapters', () => {
   });
 
   it('only emits adapters whose owning module is in the install set', () => {
-    // The build-time MODULES projection (sourced from KNOWN_MODULES) is the
-    // ground truth. With every module installed (default state in this test
-    // run) the aggregator emits every adapter. The opposite case — a build
-    // with `POPS_APPS=finance` — is exercised by the search engine matrix in
-    // PRD-101 US-11; verifying it here would require a separate registry
-    // build, which is out of scope for a unit test.
+    // The runtime `INSTALLED_MODULES` shim (PRD-218 US-01) is the ground
+    // truth. With every module installed (default state in this test run —
+    // no `POPS_APPS` / `POPS_OVERLAYS` narrowing) the aggregator emits every
+    // adapter. The opposite case — a deploy with `POPS_APPS=finance` — is
+    // exercised by the search engine matrix in PRD-101 US-11; verifying it
+    // here would require process-level env manipulation, which is out of
+    // scope for a unit test.
     const owned = getOwnedAdapters();
     const moduleIds = new Set(owned.map((o) => o.moduleId));
-    // Every emitted module id must be `core` (always installed) or one that
-    // `isModuleId` accepts. Stale bindings would surface as a non-installed
-    // module id slipping through.
+    // Every emitted module id must be `core` (always installed) or one
+    // `isInstalledModule` accepts. Stale bindings would surface as a
+    // non-installed module id slipping through.
     for (const id of moduleIds) {
       if (id === 'core') continue;
       expect(moduleIds.has(id)).toBe(true);

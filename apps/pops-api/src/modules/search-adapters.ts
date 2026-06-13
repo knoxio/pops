@@ -19,7 +19,7 @@
  * cycle while the manifest stays the canonical declaration site
  * (cross-checked by `manifests.test.ts`).
  */
-import { isModuleId } from '@pops/module-registry';
+import { isInstalledModule } from '@pops/module-registry';
 
 import { entitiesSearchAdapter } from './core/entities/search-adapter.js';
 import { budgetsSearchAdapter } from './finance/budgets/search-adapter.js';
@@ -42,8 +42,9 @@ export interface OwnedAdapter {
  * match the corresponding module manifest's `search` slot —
  * `manifests.test.ts` is the cross-check.
  *
- * `core` is always installed (PRD-100); domain modules are gated against the
- * `MODULES` install set in `getOwnedAdapters`.
+ * `core` is always installed (PRD-100); domain modules are gated against
+ * the runtime `INSTALLED_MODULES` shim (PRD-218 US-01) in
+ * `getOwnedAdapters` so per-deploy `POPS_APPS` narrowing wins.
  */
 const ADAPTER_BINDINGS: readonly { moduleId: string; adapters: readonly SearchAdapter[] }[] = [
   { moduleId: 'core', adapters: [entitiesSearchAdapter] },
@@ -61,14 +62,16 @@ const ADAPTER_BINDINGS: readonly { moduleId: string; adapters: readonly SearchAd
  * — except the build-time `MODULES` constant carries metadata only, so this
  * helper joins the static adapter bindings to the install set.
  *
- * Filters out modules whose id is not in `MODULES` so a build with
- * `POPS_APPS=finance` never fans out to media or inventory adapters. `core`
- * is always installed and always passes the gate.
+ * Filters out modules whose id is not in `INSTALLED_MODULES` so a deploy
+ * with `POPS_APPS=finance` never fans out to media or inventory adapters.
+ * `core` is always installed and always passes the gate (it's also
+ * always present in `INSTALLED_MODULES`, but the explicit short-circuit
+ * documents the contract).
  */
 export function getOwnedAdapters(): readonly OwnedAdapter[] {
   const owned: OwnedAdapter[] = [];
   for (const { moduleId, adapters } of ADAPTER_BINDINGS) {
-    if (moduleId !== 'core' && !isModuleId(moduleId)) continue;
+    if (moduleId !== 'core' && !isInstalledModule(moduleId)) continue;
     for (const adapter of adapters) {
       owned.push({ moduleId, adapter });
     }

@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@pops/module-registry', () => ({
   MODULES: [{ id: 'mock', settings: mocks.manifests }],
+  INSTALLED_MODULES: ['mock'],
 }));
 
 vi.mock('@/lib/trpc', () => ({

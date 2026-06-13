@@ -23,7 +23,7 @@ import { manifest as foodManifest } from '@pops/app-food';
 import { manifest as inventoryManifest } from '@pops/app-inventory';
 import { manifest as listsManifest } from '@pops/app-lists';
 import { manifest as mediaManifest } from '@pops/app-media';
-import { MODULES } from '@pops/module-registry';
+import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
 import { manifest as egoManifest } from '@pops/overlay-ego';
 
 import type { RouteObject } from 'react-router';
@@ -71,25 +71,28 @@ function findKnownManifest(id: string): FrontendManifest | undefined {
 
 /**
  * Test-only override. When set, `installedFrontendManifests()` returns
- * this list verbatim instead of computing from the build-time registry.
+ * this list verbatim instead of computing from the registry intersection.
  * Reset between tests via `__resetInstalledFrontendManifestsOverride()`.
  *
- * The override exists because `MODULES` is `as const` literal data emitted
- * at build time — there is no public API for tests to inject synthetic
- * module manifests into it.
+ * The override exists because `MODULES` / `INSTALLED_MODULES` are
+ * computed at build / module-load time — there is no public API for
+ * tests to inject synthetic module manifests into either.
  */
 let testOverride: readonly FrontendManifest[] | null = null;
 
 /**
- * Frontend manifests considered "installed" for this build — present both
- * in `MODULES` (the build-time install set) and in `KNOWN_FRONTEND_MANIFESTS`.
- * Backend-only modules (`core`) are skipped at this layer: the shell has
- * no React routes to mount for them.
+ * Frontend manifests considered "installed" for this build — present in
+ * `MODULES` (the build-time superset), inside `INSTALLED_MODULES` (the
+ * runtime `POPS_APPS` / `POPS_OVERLAYS` install set per PRD-218 US-01),
+ * and bound in `KNOWN_FRONTEND_MANIFESTS`. Backend-only modules (`core`)
+ * are skipped at this layer: the shell has no React routes to mount for
+ * them.
  */
 export function installedFrontendManifests(): readonly FrontendManifest[] {
   if (testOverride !== null) return testOverride;
   const out: FrontendManifest[] = [];
   for (const m of MODULES) {
+    if (!INSTALLED_MODULES.includes(m.id)) continue;
     const live = findKnownManifest(m.id);
     if (live !== undefined) out.push(live);
   }
@@ -113,7 +116,8 @@ export function installedAppManifests(): readonly (FrontendManifest & {
 
 /**
  * Test-only: replace the installed-manifest source with `manifests`.
- * Pass `null` to restore the production behaviour (read from `MODULES`).
+ * Pass `null` to restore the production behaviour (read from `MODULES`
+ * intersected with `INSTALLED_MODULES`).
  */
 export function __setInstalledFrontendManifestsOverride(
   manifests: readonly FrontendManifest[] | null
