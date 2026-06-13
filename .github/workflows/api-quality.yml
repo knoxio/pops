@@ -2,20 +2,35 @@ name: API Quality
 
 on:
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "apps/pops-api/**"
+      - "packages/cerebrum-db/**"
+      - "packages/core-db/**"
+      - "packages/db-types/**"
+      - "packages/finance-contract/**"
+      - "packages/finance-db/**"
+      - "packages/food-db/**"
+      - "packages/inventory-db/**"
+      - "packages/lists-db/**"
+      - "packages/media-db/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - ".github/workflows/api-quality.yml"
   push:
     branches:
       - main
     paths:
       - "apps/pops-api/**"
       - "packages/cerebrum-db/**"
+      - "packages/core-db/**"
       - "packages/db-types/**"
+      - "packages/finance-contract/**"
       - "packages/finance-db/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
       - "packages/lists-db/**"
+      - "packages/media-db/**"
+      - "packages/pillar-sdk/**"
       - "packages/types/**"
       - ".github/workflows/api-quality.yml"
 
@@ -35,11 +50,15 @@ jobs:
             api:
               - 'apps/pops-api/**'
               - 'packages/cerebrum-db/**'
+              - 'packages/core-db/**'
               - 'packages/db-types/**'
+              - 'packages/finance-contract/**'
               - 'packages/finance-db/**'
               - 'packages/food-db/**'
               - 'packages/inventory-db/**'
               - 'packages/lists-db/**'
+              - 'packages/media-db/**'
+              - 'packages/pillar-sdk/**'
               - 'packages/types/**'
               - '.github/workflows/api-quality.yml'
 

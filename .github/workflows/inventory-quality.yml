@@ -4,16 +4,24 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/app-inventory/**"
-      - "packages/ui/**"
-      - "packages/db-types/**"
       - "packages/api-client/**"
+      - "packages/app-inventory/**"
+      - "packages/db-types/**"
+      - "packages/inventory-contract/**"
+      - "packages/pillar-sdk/**"
+      - "packages/ui/**"
       - ".github/workflows/inventory-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "packages/api-client/**"
+      - "packages/app-inventory/**"
+      - "packages/db-types/**"
+      - "packages/inventory-contract/**"
+      - "packages/pillar-sdk/**"
+      - "packages/ui/**"
+      - ".github/workflows/inventory-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:
@@ -29,10 +37,12 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/app-inventory/**'
-              - 'packages/ui/**'
-              - 'packages/db-types/**'
               - 'packages/api-client/**'
+              - 'packages/app-inventory/**'
+              - 'packages/db-types/**'
+              - 'packages/inventory-contract/**'
+              - 'packages/pillar-sdk/**'
+              - 'packages/ui/**'
               - '.github/workflows/inventory-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 

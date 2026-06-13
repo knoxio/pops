@@ -9,9 +9,11 @@ on:
       - ".github/workflows/cerebrum-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "packages/cerebrum-db/**"
+      - "packages/db-types/**"
+      - ".github/workflows/cerebrum-db-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:

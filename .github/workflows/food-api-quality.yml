@@ -5,14 +5,21 @@ on:
     branches: [main]
     paths:
       - "apps/pops-food-api/**"
-      - "packages/food-db/**"
       - "packages/db-types/**"
+      - "packages/food-contract/**"
+      - "packages/food-db/**"
+      - "packages/pillar-sdk/**"
       - ".github/workflows/food-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "apps/pops-food-api/**"
+      - "packages/db-types/**"
+      - "packages/food-contract/**"
+      - "packages/food-db/**"
+      - "packages/pillar-sdk/**"
+      - ".github/workflows/food-api-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:
@@ -29,8 +36,10 @@ jobs:
           filters: |
             relevant:
               - 'apps/pops-food-api/**'
-              - 'packages/food-db/**'
               - 'packages/db-types/**'
+              - 'packages/food-contract/**'
+              - 'packages/food-db/**'
+              - 'packages/pillar-sdk/**'
               - '.github/workflows/food-api-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 

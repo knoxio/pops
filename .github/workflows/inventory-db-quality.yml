@@ -9,9 +9,11 @@ on:
       - ".github/workflows/inventory-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "packages/inventory-db/**"
+      - "packages/db-types/**"
+      - ".github/workflows/inventory-db-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:

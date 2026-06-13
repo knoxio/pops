@@ -5,14 +5,21 @@ on:
     branches: [main]
     paths:
       - "apps/pops-cerebrum-api/**"
+      - "packages/cerebrum-contract/**"
       - "packages/cerebrum-db/**"
       - "packages/db-types/**"
+      - "packages/pillar-sdk/**"
       - ".github/workflows/cerebrum-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "apps/pops-cerebrum-api/**"
+      - "packages/cerebrum-contract/**"
+      - "packages/cerebrum-db/**"
+      - "packages/db-types/**"
+      - "packages/pillar-sdk/**"
+      - ".github/workflows/cerebrum-api-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:
@@ -29,8 +36,10 @@ jobs:
           filters: |
             relevant:
               - 'apps/pops-cerebrum-api/**'
+              - 'packages/cerebrum-contract/**'
               - 'packages/cerebrum-db/**'
               - 'packages/db-types/**'
+              - 'packages/pillar-sdk/**'
               - '.github/workflows/cerebrum-api-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
