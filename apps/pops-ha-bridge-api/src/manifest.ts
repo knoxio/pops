@@ -3,6 +3,8 @@ import {
   HA_ENTITIES_ENTITY_TYPE,
   HA_ENTITIES_PROCEDURE_PATH,
 } from './search/entities-adapter.js';
+import { mappings } from './sinks/mapping.js';
+import { validateSinkMappings } from './sinks/validator.js';
 
 /**
  * HA bridge pillar manifest (PRD-229).
@@ -16,11 +18,17 @@ import {
  *   - US-03 fills `ai.tools` with the read-only `ha.entity.list` and
  *     `ha.entity.getState` entries.
  *   - US-04 adds `ha.entity.callService` to `ai.tools`.
- *   - US-05 fills `sinks.descriptors` with `ha.notify` + `ha.event.fire`.
+ *
+ * PRD-237 US-01 derives the `sinks.descriptors` block from the mapping
+ * config (`src/sinks/mapping.ts`) — the same array drives the runtime
+ * `/_sinks/<eventType>` handler registry (US-02), so manifest and
+ * runtime cannot drift.
  */
 import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 export const HA_BRIDGE_PILLAR_ID = 'ha-bridge' as const;
+
+validateSinkMappings(mappings);
 
 export function buildHaBridgeManifest(version: string): ManifestPayload {
   return {
@@ -52,7 +60,13 @@ export function buildHaBridgeManifest(version: string): ManifestPayload {
       ],
     },
     ai: { tools: [] },
-    sinks: { descriptors: [] },
+    sinks: {
+      descriptors: mappings.map((mapping) => ({
+        eventType: mapping.eventType,
+        description: mapping.description,
+        schema: mapping.schema,
+      })),
+    },
     uri: { types: [] },
     settings: { keys: [] },
     healthcheck: { path: '/health' },
