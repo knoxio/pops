@@ -1,4 +1,3 @@
-import { homeInventory, itemConnections } from '../schema.js';
 /**
  * In-process BFS over the item-connections adjacency to build a node/edge
  * subgraph from a starting item up to `maxDepth`. Lives next to the
@@ -9,6 +8,7 @@ import { homeInventory, itemConnections } from '../schema.js';
  * `select *` — the BFS works on in-memory adjacency maps so cycles, deep
  * chains, and dense fan-out don't reissue queries per node.
  */
+import { homeInventory, itemConnections } from '../schema.js';
 import { ConnectionItemNotFoundError } from './connections-errors.js';
 
 import type { GraphData, GraphEdge, GraphNode } from './connections-types.js';
