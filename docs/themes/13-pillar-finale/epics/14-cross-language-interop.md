@@ -12,9 +12,10 @@ The wire-level specification, conformance harness, and reference materials that 
 
 | #   | PRD                                                                                          | Summary                                                                                                                                | Status      |
 | --- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 231 | [Cross-language SDK wire-format spec](../prds/231-cross-language-wire-format-spec/README.md) | Single-page wire-format spec covering envelope, batching, subscription, manifest, registration, health + a black-box conformance suite | Not started |
+| 231 | [Cross-language SDK wire-format spec](../prds/231-cross-language-wire-format-spec/README.md) | Single-page wire-format spec covering envelope, batching, subscription, manifest, registration, health + a black-box conformance suite | Done        |
+| 233 | [External pillar example (Rust)](../prds/233-external-pillar-example-repo/README.md)         | Minimal Rust reference pillar that implements the wire-format spec and proves it is implementable from scratch in a non-TS language    | In progress |
 
-Parallelisation: PRD-231's user stories split into spec authoring (US-01), publication target (US-02), and the conformance harness (US-03). US-01 must land first; US-02 + US-03 can ship in parallel against the frozen spec.
+Parallelisation: PRD-231's user stories split into spec authoring (US-01), publication target (US-02), and the conformance harness (US-03). US-01 must land first; US-02 + US-03 can ship in parallel against the frozen spec. PRD-233 depends on US-01 being frozen.
 
 ## Dependencies
 
