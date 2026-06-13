@@ -43,6 +43,20 @@
       "when": 1792000000000,
       "tag": "0026_media_dismissed_discover_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794000000000,
+      "tag": "0027_media_seasons_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794000001000,
+      "tag": "0028_media_episodes_baseline",
+      "breakpoints": true
     }
   ]
 }
