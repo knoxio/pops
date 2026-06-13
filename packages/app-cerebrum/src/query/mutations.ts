@@ -11,7 +11,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { extractMessage } from '../utils/errors';
 import { streamQuery } from './query-stream-client';
@@ -180,15 +180,19 @@ interface SaveResult {
 
 export function useSaveDocumentMutation(unknownErrorMessage: string) {
   const { t } = useTranslation('cerebrum');
-  return trpc.cerebrum.emit.generate.useMutation({
-    onSuccess: (result: SaveResult | undefined) => {
-      const title = result?.document?.title;
-      if (title) {
-        toast.success(t('query.saveDocument.success', { title }));
-        return;
-      }
-      toast.success(result?.notice ?? t('query.saveDocument.empty'));
-    },
-    onError: (err: unknown) => toast.error(extractMessage(err, unknownErrorMessage)),
-  });
+  return usePillarMutation<SaveDocumentRequest, SaveResult | undefined>(
+    'cerebrum',
+    ['emit', 'generate'],
+    {
+      onSuccess: (result) => {
+        const title = result?.document?.title;
+        if (title) {
+          toast.success(t('query.saveDocument.success', { title }));
+          return;
+        }
+        toast.success(result?.notice ?? t('query.saveDocument.empty'));
+      },
+      onError: (err) => toast.error(extractMessage(err, unknownErrorMessage)),
+    }
+  );
 }

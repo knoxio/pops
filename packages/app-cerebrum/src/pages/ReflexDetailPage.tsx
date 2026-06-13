@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, PageHeader, Skeleton, Switch } from '@pops/ui';
 
 import { extractMessage } from '../utils/errors';
@@ -25,28 +25,32 @@ interface ReflexMutations {
   onTest: (name: string) => void;
 }
 
-function useReflexMutations(name: string): ReflexMutations {
+function useReflexMutations(_name: string): ReflexMutations {
   const { t } = useTranslation('cerebrum');
-  const utils = trpc.useUtils();
-  const invalidate = () => {
-    void utils.cerebrum.reflex.get.invalidate({ name });
-    void utils.cerebrum.reflex.list.invalidate();
-  };
-  const enableMutation = trpc.cerebrum.reflex.enable.useMutation({
-    onSuccess: invalidate,
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
-  const disableMutation = trpc.cerebrum.reflex.disable.useMutation({
-    onSuccess: invalidate,
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
-  const testMutation = trpc.cerebrum.reflex.test.useMutation({
-    onSuccess: () => {
-      invalidate();
-      toast.success(t('reflex.list.fireSuccess'));
-    },
-    onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-  });
+  const enableMutation = usePillarMutation<{ name: string }, unknown>(
+    'cerebrum',
+    ['reflex', 'enable'],
+    {
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
+  const disableMutation = usePillarMutation<{ name: string }, unknown>(
+    'cerebrum',
+    ['reflex', 'disable'],
+    {
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
+  const testMutation = usePillarMutation<{ name: string }, unknown>(
+    'cerebrum',
+    ['reflex', 'test'],
+    {
+      onSuccess: () => {
+        toast.success(t('reflex.list.fireSuccess'));
+      },
+      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
+    }
+  );
   return {
     isPending: enableMutation.isPending || disableMutation.isPending || testMutation.isPending,
     onToggle: (n, next) =>
@@ -126,7 +130,10 @@ export function ReflexDetailPage() {
   const { t } = useTranslation('cerebrum');
   const params = useParams<{ name: string }>();
   const name = params.name ?? '';
-  const detail = trpc.cerebrum.reflex.get.useQuery({ name }, { enabled: name.length > 0 });
+  const detail = usePillarQuery<{
+    reflex: ReflexWithStatus | undefined;
+    history: ReflexExecution[];
+  }>('cerebrum', ['reflex', 'get'], { name }, { enabled: name.length > 0 });
   const mutations = useReflexMutations(name);
 
   if (detail.isLoading) {

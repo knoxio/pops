@@ -8,8 +8,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
+import { usePillarCall } from '../lib/pillar-call';
 import { extractMessage } from '../utils/errors';
 import { errorMessageKey, validateForm, type ValidatedRequest } from './form-mapping';
 import {
@@ -32,34 +33,62 @@ export interface DocumentsModel {
   onRegenerate: () => void;
 }
 
-export function useDocumentsModel(): DocumentsModel {
-  const { t } = useTranslation('cerebrum');
-  const utils = trpc.useUtils();
-  const [form, setForm] = useState<DocumentsFormState>(DEFAULT_DOCUMENTS_FORM);
-  const [preview, setPreview] = useState<PreviewResult | null>(null);
-  const [document, setDocument] = useState<GeneratedDocument | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [isPreviewing, setIsPreviewing] = useState(false);
+interface GenerateResult {
+  document?: GeneratedDocument | null;
+  notice?: string;
+}
 
-  const generateMutation = trpc.cerebrum.emit.generate.useMutation({
+function useGenerateMutation(
+  t: (key: string) => string,
+  setDocument: (next: GeneratedDocument | null) => void,
+  setNotice: (next: string | null) => void
+) {
+  return usePillarMutation<ValidatedRequest, GenerateResult>('cerebrum', ['emit', 'generate'], {
     onSuccess: (result) => {
       setDocument(result?.document ?? null);
       setNotice(result?.notice ?? null);
     },
     onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
   });
+}
 
+function usePreviewRunner(
+  setPreview: (next: PreviewResult | null) => void,
+  t: (key: string) => string
+) {
+  const pillarCall = usePillarCall();
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const runPreview = async (request: ValidatedRequest) => {
     setIsPreviewing(true);
     try {
-      const result = await utils.cerebrum.emit.preview.fetch(request);
-      setPreview(result ?? null);
+      const result = await pillarCall<PreviewResult | null>(
+        'cerebrum',
+        ['emit', 'preview'],
+        request
+      );
+      if (result.kind !== 'ok') {
+        toast.error(t('errors.unknown'));
+        return;
+      }
+      setPreview(result.value ?? null);
     } catch (err) {
       toast.error(extractMessage(err, t('errors.unknown')));
     } finally {
       setIsPreviewing(false);
     }
   };
+  return { runPreview, isPreviewing };
+}
+
+export function useDocumentsModel(): DocumentsModel {
+  const { t } = useTranslation('cerebrum');
+  const [form, setForm] = useState<DocumentsFormState>(DEFAULT_DOCUMENTS_FORM);
+  const [preview, setPreview] = useState<PreviewResult | null>(null);
+  const [document, setDocument] = useState<GeneratedDocument | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const generateMutation = useGenerateMutation(t, setDocument, setNotice);
+  const { runPreview, isPreviewing } = usePreviewRunner(setPreview, t);
 
   const runValidatedAction = (action: 'preview' | 'generate') => {
     const validated = validateForm(form);

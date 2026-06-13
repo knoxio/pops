@@ -6,26 +6,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockListQuery = vi.fn();
 const mockHealthMutate = vi.fn();
 const mockSyncMutate = vi.fn();
-const invalidateList = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      cerebrum: { plexus: { adapters: { list: { invalidate: invalidateList } } } },
-    }),
-    cerebrum: {
-      plexus: {
-        adapters: {
-          list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-          healthCheck: {
-            useMutation: () => ({ mutate: mockHealthMutate, isPending: false, error: null }),
-          },
-          sync: {
-            useMutation: () => ({ mutate: mockSyncMutate, isPending: false, error: null }),
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'plexus.adapters.list') return mockListQuery(input);
+    throw new Error(`Unexpected pillar query: ${key}`);
+  },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'plexus.adapters.healthCheck') {
+      return { mutate: mockHealthMutate, isPending: false, error: null };
+    }
+    if (key === 'plexus.adapters.sync') {
+      return { mutate: mockSyncMutate, isPending: false, error: null };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
   },
 }));
 

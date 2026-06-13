@@ -26,22 +26,18 @@ const mockEmitMutate = vi.fn();
 let emitPending = false;
 let emitCallbacks: { onSuccess?: (data: unknown) => void; onError?: (err: unknown) => void } = {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    cerebrum: {
-      emit: {
-        generate: {
-          useMutation: (cb: typeof emitCallbacks) => {
-            emitCallbacks = cb;
-            return {
-              mutate: (...args: unknown[]) => mockEmitMutate(...args),
-              isPending: emitPending,
-              error: null,
-            };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarMutation: (_pillarId: string, path: readonly string[], cb: typeof emitCallbacks) => {
+    const key = path.join('.');
+    if (key === 'emit.generate') {
+      emitCallbacks = cb;
+      return {
+        mutate: (...args: unknown[]) => mockEmitMutate(...args),
+        isPending: emitPending,
+        error: null,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
   },
 }));
 

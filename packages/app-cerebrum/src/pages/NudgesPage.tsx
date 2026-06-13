@@ -4,25 +4,38 @@
  * Displays pending nudges with dismiss/act actions. Fetched via
  * the existing nudges.list tRPC endpoint.
  */
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { ButtonPrimitive } from '@pops/ui';
 
 import { ContradictionsPanel } from '../components/ContradictionsPanel';
 import { NudgeCard } from '../components/NudgeCard';
 
-export function NudgesPage() {
-  const utils = trpc.useUtils();
-  const { data, isLoading, isError, error, refetch } = trpc.cerebrum.nudges.list.useQuery({
-    status: 'pending',
-    limit: 50,
-  });
+interface NudgeSummary {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  priority: string;
+  action: { label: string } | null;
+}
 
-  const dismissMutation = trpc.cerebrum.nudges.dismiss.useMutation({
-    onSuccess: () => utils.cerebrum.nudges.list.invalidate(),
-  });
-  const actMutation = trpc.cerebrum.nudges.act.useMutation({
-    onSuccess: () => utils.cerebrum.nudges.list.invalidate(),
-  });
+interface NudgeListResult {
+  nudges: NudgeSummary[];
+  total: number;
+}
+
+export function NudgesPage() {
+  const { data, isLoading, isError, error, refetch } = usePillarQuery<NudgeListResult>(
+    'cerebrum',
+    ['nudges', 'list'],
+    { status: 'pending', limit: 50 }
+  );
+
+  const dismissMutation = usePillarMutation<{ id: string }, unknown>('cerebrum', [
+    'nudges',
+    'dismiss',
+  ]);
+  const actMutation = usePillarMutation<{ id: string }, unknown>('cerebrum', ['nudges', 'act']);
 
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Loading nudges...</div>;

@@ -6,21 +6,42 @@
  */
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 type Decision = 'approve' | 'reject' | 'modify';
 
-export function ProposalQueuePage() {
-  const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.cerebrum.glia.actions.list.useQuery({
-    status: 'pending',
-    limit: 50,
-  });
+interface ProposalAction {
+  id: string;
+  actionType: string;
+  rationale: string;
+  affectedIds: string[];
+  createdAt: string;
+}
 
-  const decideMutation = trpc.cerebrum.glia.actions.decide.useMutation({
-    onSuccess: () => utils.cerebrum.glia.actions.list.invalidate(),
-  });
+interface ProposalListResult {
+  actions: ProposalAction[];
+  total: number;
+}
+
+interface DecideInput {
+  id: string;
+  decision: Decision;
+  note?: string;
+}
+
+export function ProposalQueuePage() {
+  const { data, isLoading } = usePillarQuery<ProposalListResult>(
+    'cerebrum',
+    ['glia', 'actions', 'list'],
+    { status: 'pending', limit: 50 }
+  );
+
+  const decideMutation = usePillarMutation<DecideInput, unknown>('cerebrum', [
+    'glia',
+    'actions',
+    'decide',
+  ]);
 
   const [noteState, setNoteState] = useState<Record<string, string>>({});
 

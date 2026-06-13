@@ -8,16 +8,27 @@
  */
 import { useCallback, useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { PillarCallError } from '@pops/pillar-sdk/client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { extractMessage } from '../utils/errors';
 import { clearDraft } from './draft-storage';
 import { findInvalidScopes, normaliseScope } from './scope-validation';
 import { useEngramFormState, type EngramFormState } from './useEngramFormState';
 
-import type { Engram } from './types';
+import type { Engram, EngramStatus } from './types';
 
 export type { EngramFormState } from './useEngramFormState';
+
+interface EngramUpdateInput {
+  id: string;
+  title?: string;
+  body?: string;
+  scopes?: string[];
+  tags?: string[];
+  status?: EngramStatus;
+  customFields?: Record<string, unknown>;
+}
 
 export interface EngramDetailModel {
   id: string;
@@ -63,6 +74,9 @@ function resolveError(
 }
 
 function isNotFound(err: unknown): boolean {
+  if (err instanceof PillarCallError) {
+    return err.result.kind === 'contract-mismatch';
+  }
   if (!err || typeof err !== 'object') return false;
   const data = (err as { data?: { code?: string } }).data;
   return data?.code === 'NOT_FOUND';
@@ -74,29 +88,41 @@ interface UseEngramDetailOptions {
   t: (key: string, vars?: Record<string, string>) => string;
 }
 
-export function useEngramDetailModel(options: UseEngramDetailOptions): EngramDetailModel {
-  const { id, storage, t } = options;
-  const utils = trpc.useUtils();
-
-  const getQuery = trpc.cerebrum.engrams.get.useQuery({ id });
+function useEngramQueries(id: string) {
+  const getQuery = usePillarQuery<{ engram: Engram | null; body: string }>(
+    'cerebrum',
+    ['engrams', 'get'],
+    { id }
+  );
   const engram = getQuery.data?.engram ?? null;
   const body = getQuery.data?.body ?? '';
   const linkIds = useMemo(() => engram?.links ?? [], [engram]);
-  const connectedQuery = trpc.cerebrum.engrams.list.useQuery(
+  const connectedQuery = usePillarQuery<{ engrams: Engram[]; total: number }>(
+    'cerebrum',
+    ['engrams', 'list'],
     { ids: linkIds, limit: linkIds.length || 1 },
     { enabled: linkIds.length > 0 }
   );
+  return { getQuery, engram, body, connectedQuery };
+}
 
+export function useEngramDetailModel(options: UseEngramDetailOptions): EngramDetailModel {
+  const { id, storage, t } = options;
+  const utils = usePillarUtils('cerebrum');
+  const { getQuery, engram, body, connectedQuery } = useEngramQueries(id);
   const formState = useEngramFormState({ engram, body, storage });
 
-  const updateMutation = trpc.cerebrum.engrams.update.useMutation({
-    onSuccess: async () => {
-      if (engram) clearDraft(engram.id, storage);
-      formState.finishEditing();
-      await utils.cerebrum.engrams.get.invalidate({ id });
-      await utils.cerebrum.engrams.list.invalidate();
-    },
-  });
+  const updateMutation = usePillarMutation<EngramUpdateInput, unknown>(
+    'cerebrum',
+    ['engrams', 'update'],
+    {
+      onSuccess: async () => {
+        if (engram) clearDraft(engram.id, storage);
+        formState.finishEditing();
+        await utils.invalidate(['engrams']);
+      },
+    }
+  );
 
   const validationErrors = useMemo(
     () => (formState.isEditing ? validate(formState.form, t) : []),

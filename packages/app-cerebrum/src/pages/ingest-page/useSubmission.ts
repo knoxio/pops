@@ -11,20 +11,31 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
-import type { BulkSegment } from './bulk-paste';
+import {
+  asResult,
+  buildQuickCapturePayload,
+  retrySegmentImpl,
+  runBulk,
+  toQuickCaptureShape,
+} from './submission-helpers';
+
+import type {
+  QuickCaptureMutation,
+  QuickCapturePayload,
+  QuickCaptureResponse,
+  SetBulkResults,
+  SubmitMutation,
+  SubmitPayload,
+  SubmitResponse,
+} from './submission-types';
 import type { BulkSegmentOutcome, IngestFormValues, SubmitResult } from './types';
 import type { useFormState } from './useFormState';
 
 type FormState = ReturnType<typeof useFormState>;
-type QuickCaptureMutation = ReturnType<typeof trpc.cerebrum.ingest.quickCapture.useMutation>;
-type QuickCaptureResponse = Awaited<ReturnType<QuickCaptureMutation['mutateAsync']>>;
-type SetBulkResults = (
-  next: BulkSegmentOutcome[] | ((prev: BulkSegmentOutcome[] | null) => BulkSegmentOutcome[] | null)
-) => void;
 
-function buildSubmitPayload(form: IngestFormValues) {
+function buildSubmitPayload(form: IngestFormValues): SubmitPayload {
   return {
     body: form.body,
     title: form.title || undefined,
@@ -32,21 +43,28 @@ function buildSubmitPayload(form: IngestFormValues) {
     scopes: form.scopes.length > 0 ? form.scopes : undefined,
     tags: form.tags.length > 0 ? form.tags : undefined,
     template: form.template || undefined,
-    source: 'manual' as const,
+    source: 'manual',
     customFields: Object.keys(form.customFields).length > 0 ? form.customFields : undefined,
   };
 }
 
-function buildQuickCapturePayload(form: IngestFormValues, body: string = form.body) {
-  return {
-    text: body,
-    source: 'manual' as const,
-    scopes: form.scopes.length > 0 ? form.scopes : undefined,
-  };
-}
-
-function asResult(r: QuickCaptureResponse): SubmitResult {
-  return { id: r.id, filePath: r.path, type: r.type };
+function useIngestMutations(setSubmitResult: (next: SubmitResult | null) => void) {
+  const submitMutation = usePillarMutation<SubmitPayload, SubmitResponse>(
+    'cerebrum',
+    ['ingest', 'submit'],
+    {
+      onSuccess: (result) => setSubmitResult(asResult(toQuickCaptureShape(result))),
+      onError: (error) => toast.error('Submit Engram failed', { description: error.message }),
+    }
+  );
+  const quickCaptureMutation = usePillarMutation<QuickCapturePayload, QuickCaptureResponse>(
+    'cerebrum',
+    ['ingest', 'quickCapture'],
+    {
+      onError: (error) => toast.error('Capture failed', { description: error.message }),
+    }
+  );
+  return { submitMutation, quickCaptureMutation };
 }
 
 export function useSubmission(formState: FormState) {
@@ -54,14 +72,7 @@ export function useSubmission(formState: FormState) {
   const [bulkResults, setBulkResults] = useState<BulkSegmentOutcome[] | null>(null);
   const [bulkInFlight, setBulkInFlight] = useState(false);
 
-  const submitMutation = trpc.cerebrum.ingest.submit.useMutation({
-    onSuccess: (result) => setSubmitResult(asResult(toQuickCaptureShape(result))),
-    onError: (error) => toast.error('Submit Engram failed', { description: error.message }),
-  });
-
-  const quickCaptureMutation = trpc.cerebrum.ingest.quickCapture.useMutation({
-    onError: (error) => toast.error('Capture failed', { description: error.message }),
-  });
+  const { submitMutation, quickCaptureMutation } = useIngestMutations(setSubmitResult);
 
   const handleSubmit = useCallback(
     (options?: { forceBulk?: boolean }) => {
@@ -110,25 +121,9 @@ export function useSubmission(formState: FormState) {
   };
 }
 
-/**
- * The submit endpoint returns `{ engram: { id, filePath, type }, ... }` while
- * quickCapture returns `{ id, path, type, scopes }`. Normalise to the latter
- * so `asResult` is the single shape converter.
- */
-function toQuickCaptureShape(submitResponse: {
-  engram: { id: string; filePath: string; type: string };
-}): QuickCaptureResponse {
-  return {
-    id: submitResponse.engram.id,
-    path: submitResponse.engram.filePath,
-    type: submitResponse.engram.type,
-    scopes: [],
-  };
-}
-
 interface DispatchArgs {
   formState: FormState;
-  submitMutation: ReturnType<typeof trpc.cerebrum.ingest.submit.useMutation>;
+  submitMutation: SubmitMutation;
   quickCaptureMutation: QuickCaptureMutation;
   forceBulk: boolean;
   setSubmitResult: (next: SubmitResult | null) => void;
@@ -155,77 +150,4 @@ async function dispatchSubmit(args: DispatchArgs): Promise<void> {
   }
   const r = await quickCaptureMutation.mutateAsync(buildQuickCapturePayload(form));
   args.setSubmitResult(asResult(r));
-}
-
-interface RunBulkArgs {
-  form: IngestFormValues;
-  segments: BulkSegment[];
-  mutateAsync: QuickCaptureMutation['mutateAsync'];
-  setBulkResults: SetBulkResults;
-  setBulkInFlight: (next: boolean) => void;
-}
-
-async function runBulk(args: RunBulkArgs): Promise<void> {
-  const { form, segments, mutateAsync, setBulkResults, setBulkInFlight } = args;
-  setBulkInFlight(true);
-  setBulkResults(segments.map((s) => ({ index: s.index, preview: s.preview, body: s.body })));
-  for (const seg of segments) {
-    await runSegment({ form, segment: seg, mutateAsync, setBulkResults });
-  }
-  setBulkInFlight(false);
-}
-
-interface RunSegmentArgs {
-  form: IngestFormValues;
-  segment: BulkSegment;
-  mutateAsync: QuickCaptureMutation['mutateAsync'];
-  setBulkResults: SetBulkResults;
-}
-
-async function runSegment(args: RunSegmentArgs): Promise<void> {
-  const { form, segment, mutateAsync, setBulkResults } = args;
-  try {
-    const r = await mutateAsync(buildQuickCapturePayload(form, segment.body));
-    setBulkResults((prev) =>
-      prev ? prev.map((b) => (b.index === segment.index ? { ...b, result: asResult(r) } : b)) : null
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Capture failed';
-    setBulkResults((prev) =>
-      prev ? prev.map((b) => (b.index === segment.index ? { ...b, error: message } : b)) : null
-    );
-  }
-}
-
-interface RetrySegmentArgs {
-  segmentIndex: number;
-  formValues: IngestFormValues;
-  bulkResults: BulkSegmentOutcome[] | null;
-  mutateAsync: QuickCaptureMutation['mutateAsync'];
-  setBulkResults: SetBulkResults;
-}
-
-async function retrySegmentImpl(args: RetrySegmentArgs): Promise<void> {
-  const { segmentIndex, formValues, bulkResults, mutateAsync, setBulkResults } = args;
-  const target = bulkResults?.find((b) => b.index === segmentIndex);
-  if (!target) return;
-  try {
-    const r = await mutateAsync(buildQuickCapturePayload(formValues, target.body));
-    setBulkResults((prev) =>
-      prev
-        ? prev.map((b) =>
-            b.index === segmentIndex ? { ...b, result: asResult(r), error: undefined } : b
-          )
-        : null
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Capture failed';
-    setBulkResults((prev) =>
-      prev
-        ? prev.map((b) =>
-            b.index === segmentIndex ? { ...b, error: message, result: undefined } : b
-          )
-        : null
-    );
-  }
 }

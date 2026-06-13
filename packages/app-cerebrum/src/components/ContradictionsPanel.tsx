@@ -9,7 +9,7 @@
  */
 import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 interface ContradictionRow {
   id: string;
@@ -63,10 +63,17 @@ function ContradictionCard({ row }: { row: ContradictionRow }) {
   );
 }
 
+interface ContradictionsResult {
+  contradictions: ContradictionRow[];
+  total: number;
+}
+
 export function ContradictionsPanel() {
-  const { data, isLoading, isError } = trpc.cerebrum.nudges.contradictions.useQuery({
-    limit: 50,
-  });
+  const { data, isLoading, isError } = usePillarQuery<ContradictionsResult>(
+    'cerebrum',
+    ['nudges', 'contradictions'],
+    { limit: 50 }
+  );
 
   if (isLoading) {
     return (
@@ -86,7 +93,7 @@ export function ContradictionsPanel() {
     );
   }
 
-  const rows = (data?.contradictions ?? []) as ContradictionRow[];
+  const rows = data?.contradictions ?? [];
   const total = data?.total ?? rows.length;
 
   return (

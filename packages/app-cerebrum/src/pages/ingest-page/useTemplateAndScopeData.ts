@@ -4,7 +4,7 @@
  */
 import { useMemo, useRef } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { ENGRAM_TYPE_LABELS, ENGRAM_TYPES } from './types';
 
@@ -16,9 +16,17 @@ const TYPE_OPTIONS = ENGRAM_TYPES.map((typeName) => ({
 }));
 
 export function useTemplateAndScopeData() {
-  const templatesQuery = trpc.cerebrum.templates.list.useQuery();
-  const scopesQuery = trpc.cerebrum.scopes.list.useQuery();
-  const tagsQuery = trpc.cerebrum.tags.list.useQuery();
+  const templatesQuery = usePillarQuery<{ templates: TemplateSummary[] }>(
+    'cerebrum',
+    ['templates', 'list'],
+    undefined
+  );
+  const scopesQuery = usePillarQuery<{ scopes: ScopeEntry[] }>(
+    'cerebrum',
+    ['scopes', 'list'],
+    undefined
+  );
+  const tagsQuery = usePillarQuery<{ tags: TagEntry[] }>('cerebrum', ['tags', 'list'], undefined);
 
   const templatesRef = useRef<TemplateSummary[]>([]);
   const rawTemplates = templatesQuery.data?.templates;

@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Button,
   Skeleton,
@@ -130,11 +130,15 @@ export function AuditTrailPanel() {
   const [actionType, setActionType] = useState<GliaActionType | null>(null);
   const [status, setStatus] = useState<GliaActionStatus | null>(null);
 
-  const query = trpc.cerebrum.glia.actions.list.useQuery({
-    ...(actionType ? { actionType } : {}),
-    ...(status ? { status } : {}),
-    limit: 100,
-  });
+  const query = usePillarQuery<{ actions: GliaAction[]; total: number }>(
+    'cerebrum',
+    ['glia', 'actions', 'list'],
+    {
+      ...(actionType ? { actionType } : {}),
+      ...(status ? { status } : {}),
+      limit: 100,
+    }
+  );
   const actions: GliaAction[] = query.data?.actions ?? [];
 
   return (

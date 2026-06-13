@@ -4,7 +4,7 @@
  */
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Badge,
   Button,
@@ -87,9 +87,17 @@ function TrustBody({ query, states }: TrustBodyProps) {
   );
 }
 
+interface TrustStateListResult {
+  states: GliaTrustState[];
+}
+
 export function TrustStatePanel() {
   const { t } = useTranslation('cerebrum');
-  const query = trpc.cerebrum.glia.trustState.list.useQuery();
+  const query = usePillarQuery<TrustStateListResult>(
+    'cerebrum',
+    ['glia', 'trustState', 'list'],
+    undefined
+  );
   const states: GliaTrustState[] = query.data?.states ?? [];
 
   return (

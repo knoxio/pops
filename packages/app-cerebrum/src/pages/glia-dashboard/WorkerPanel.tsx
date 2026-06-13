@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button, Checkbox } from '@pops/ui';
 
 import { extractMessage } from '../../utils/errors';
@@ -24,27 +24,41 @@ interface WorkerMutationState {
 
 function useSharedCallbacks() {
   const { t } = useTranslation('cerebrum');
-  const utils = trpc.useUtils();
   return {
-    onSuccess: () => utils.cerebrum.glia.actions.list.invalidate(),
     onError: (err: unknown) => toast.error(extractMessage(err, t('errors.unknown'))),
   };
 }
 
 function usePrunerMutation(): WorkerMutationState {
-  return trpc.cerebrum.glia.runPruner.useMutation(useSharedCallbacks());
+  return usePillarMutation<{ dryRun: boolean }, unknown>(
+    'cerebrum',
+    ['glia', 'runPruner'],
+    useSharedCallbacks()
+  );
 }
 
 function useConsolidatorMutation(): WorkerMutationState {
-  return trpc.cerebrum.glia.runConsolidator.useMutation(useSharedCallbacks());
+  return usePillarMutation<{ dryRun: boolean }, unknown>(
+    'cerebrum',
+    ['glia', 'runConsolidator'],
+    useSharedCallbacks()
+  );
 }
 
 function useLinkerMutation(): WorkerMutationState {
-  return trpc.cerebrum.glia.runLinker.useMutation(useSharedCallbacks());
+  return usePillarMutation<{ dryRun: boolean }, unknown>(
+    'cerebrum',
+    ['glia', 'runLinker'],
+    useSharedCallbacks()
+  );
 }
 
 function useAuditorMutation(): WorkerMutationState {
-  return trpc.cerebrum.glia.runAuditor.useMutation(useSharedCallbacks());
+  return usePillarMutation<{ dryRun: boolean }, unknown>(
+    'cerebrum',
+    ['glia', 'runAuditor'],
+    useSharedCallbacks()
+  );
 }
 
 interface WorkerRowProps {
