@@ -187,7 +187,7 @@ export const watchlistRouter = router({
   remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
     let plexRatingKey: string | null;
     try {
-      const entry = service.getSharedWatchlistEntry(input.id);
+      const entry = service.getWatchlistEntry(input.id);
       plexRatingKey = entry.plexRatingKey;
     } catch (err) {
       if (err instanceof NotFoundError) {

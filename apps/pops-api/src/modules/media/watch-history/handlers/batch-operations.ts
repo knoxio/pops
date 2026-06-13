@@ -1,21 +1,21 @@
 /**
- * `batchLogWatch` — mixed-table writer. PRD-168 PR3 left this on
- * `getDrizzle()` for the same reason as `logWatch`: the transaction
- * walks `seasons`/`episodes` to expand the input, dedups against
+ * `batchLogWatch` — Option D step 3 (MEDIA FULL EXIT). The transaction
+ * walks `seasons` / `episodes` to expand the input, dedups against
  * existing `watchHistory` rows, inserts the new events, then on a
- * fully-watched show deletes from `mediaWatchlist` and resequences
- * priorities. Every read and write must hit the same store within one
- * transaction; until `episodes`, `seasons`, and `mediaWatchlist` move
- * into `@pops/media-db` this whole orchestrator stays pinned to
- * `pops.db`.
+ * fully-watched show deletes from `mediaWatchlist`, resets staleness,
+ * and resequences priorities. Every table touched now lives on
+ * `media.db`, so the whole orchestrator runs inside a single
+ * `getMediaDrizzle().transaction(...)`.
  */
 import { and, countDistinct, eq, inArray, isNotNull, lte } from 'drizzle-orm';
 
 import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { resetStaleness } from '../../comparisons/staleness.js';
 import { resequencePriorities } from '../../watchlist/service.js';
+
+import type { MediaDb } from '@pops/media-db';
 
 import type { BatchLogWatchInput } from '../types.js';
 
@@ -24,7 +24,7 @@ export interface BatchLogResult {
   skipped: number;
 }
 
-type Tx = Parameters<Parameters<ReturnType<typeof getDrizzle>['transaction']>[0]>[0];
+type Tx = Parameters<Parameters<MediaDb['transaction']>[0]>[0];
 
 function getEpisodeIdsForBatch(
   tx: Tx,
@@ -150,7 +150,7 @@ function handleShowSideEffects(tx: Tx, input: BatchLogWatchInput): void {
   const tvShowId = resolveTvShowId(tx, input);
   if (tvShowId === undefined) return;
 
-  resetStaleness('tv_show', tvShowId);
+  resetStaleness('tv_show', tvShowId, tx);
   maybeRemoveCompletedShowFromWatchlist(tx, tvShowId);
 }
 
@@ -177,7 +177,7 @@ function runBatchLogTransaction(input: BatchLogWatchInput, completed: number, wa
 }
 
 export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const completed = input.completed ?? 1;
   const watchedAt = input.watchedAt ?? new Date().toISOString();
   return db.transaction(runBatchLogTransaction(input, completed, watchedAt));

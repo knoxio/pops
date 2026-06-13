@@ -1,30 +1,24 @@
 /**
  * Media pillar SQLite handle — lazy singleton + lifecycle.
  *
- * Lifted out of `db.ts` to keep that file under the eslint(max-lines) cap
- * once the core + media pillar handles both lived there. The behaviour
- * mirrors the core counterpart in shape (lazy open, idempotent close,
- * test-only swap).
- *
- * Phase 2 PR 3 of the media pillar migration: `apps/pops-api/src/index.ts`
- * eagerly calls `getMediaDrizzle` at boot so the per-pillar migrations land
- * before any request hits the API, and `backfillMediaFromShared` carries
- * existing shelf-impressions rows across from the legacy `pops.db` via
- * ATTACH. PR 4 drops the shelf_impressions table from the shared journal +
- * adds the Litestream config.
+ * Every media-owned table (`movies`, `tv_shows`, `seasons`, `episodes`,
+ * `shelf_impressions`, `watch_history`, `mediaWatchlist`,
+ * `dismissed_discover`, `comparison_staleness`) now writes directly to
+ * `media.db` via `getMediaDrizzle()`, so the boot-time ATTACH bridge from
+ * the shared `pops.db` has been retired — there is nothing left to carry
+ * forward. Mirrors the FULL EXIT precedent set by the core, inventory,
+ * finance, food, and lists pillars.
  */
 import { openMediaDb, type MediaDb, type OpenedMediaDb } from '@pops/media-db';
 
-import { backfillMediaFromShared as backfillMediaImpl } from './media-backfill.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
 
 let mediaDb: OpenedMediaDb | null = null;
 
 /**
  * Lazily open the media pillar's SQLite file and return the drizzle
- * handle. shelf-impressions traffic reads/writes against this handle as
- * of Phase 2 PR 3. The shared singleton in `db.ts` continues to serve the
- * rest of the media pillar's tables until subsequent slices migrate.
+ * handle. Every media module routes its reads + writes through this
+ * handle.
  */
 export function getMediaDrizzle(): MediaDb {
   if (!mediaDb) {
@@ -55,13 +49,4 @@ export function setMediaDb(next: OpenedMediaDb | null): OpenedMediaDb | null {
   const prev = mediaDb;
   mediaDb = next;
   return prev;
-}
-
-/**
- * Re-exported convenience wrapper around the standalone backfill in
- * `./media-backfill.ts`. Resolves the singleton's raw handle and
- * forwards. See `backfillMediaFromShared` for the documented contract.
- */
-export function backfillMediaFromShared(): void {
-  backfillMediaImpl(mediaDb?.raw ?? null);
 }

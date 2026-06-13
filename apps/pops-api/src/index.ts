@@ -12,7 +12,7 @@ import { getFinanceDrizzle } from './db/finance-handle.js';
 import { getFoodDrizzle } from './db/food-handle.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { getListsDrizzle } from './db/lists-handle.js';
-import { backfillMediaFromShared, getMediaDrizzle } from './db/media-db-handle.js';
+import { getMediaDrizzle } from './db/media-db-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
@@ -81,15 +81,15 @@ try {
   throw err;
 }
 
-// Eagerly open the media pillar's SQLite + apply its journal at boot so
-// the per-pillar migrations land before any request hits the API.
-// shelf-impressions traffic now reads/writes against this handle (phase 2
-// PR 3); the one-shot `backfillMediaFromShared` carries any rows that
-// still live in the legacy pops.db across. The backfill is idempotent
-// and non-fatal — partial failure logs and continues.
+// Eagerly open the media pillar's SQLite + apply its journal at boot.
+// Every media-owned table (`movies`, `tv_shows`, `seasons`, `episodes`,
+// `shelf_impressions`, `watch_history`, `mediaWatchlist`,
+// `dismissed_discover`, `comparison_staleness`) now writes directly to
+// media.db via getMediaDrizzle(), so the boot-time ATTACH bridge from
+// the shared pops.db has been retired — there is nothing left to carry
+// forward.
 try {
   getMediaDrizzle();
-  backfillMediaFromShared();
 } catch (err) {
   console.error('[db] Failed to bootstrap the media pillar SQLite:', err);
   throw err;

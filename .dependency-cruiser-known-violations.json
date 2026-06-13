@@ -1,6 +1,17 @@
 [
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/cerebrum/debrief/router.test.ts",
+    "to": "apps/pops-api/src/modules/media/debrief/service.ts",
+    "unresolvedTo": "../../media/debrief/service.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
     "to": "apps/pops-api/src/modules/media/debrief/service.ts",
     "unresolvedTo": "../../media/debrief/service.js",
@@ -12,9 +23,20 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/modules/cerebrum/debrief/router.test.ts",
-    "to": "apps/pops-api/src/modules/media/debrief/service.ts",
-    "unresolvedTo": "../../media/debrief/service.js",
+    "from": "apps/pops-api/src/modules/media/watch-history/handlers/cerebrum-fan-out.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
+    "unresolvedTo": "../../../cerebrum/debrief/router.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/watch-history/service.test.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
+    "unresolvedTo": "../../cerebrum/debrief/router.js",
     "dependencyTypes": ["local", "import"],
     "rule": {
       "severity": "error",
@@ -936,6 +958,17 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/comparisons/staleness.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/media/discovery/flags.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
@@ -1057,6 +1090,28 @@
   },
   {
     "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/thetvdb/refresh-episodes.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/thetvdb/service.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
     "from": "apps/pops-api/src/modules/media/tv-shows/tv-shows-base.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
@@ -1080,6 +1135,39 @@
   {
     "type": "dependency",
     "from": "apps/pops-api/src/modules/media/tv-shows/types-mappers.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/watch-history/handlers/auto-remove-show.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/watch-history/handlers/batch-operations.ts",
+    "to": "packages/media-db/dist/index.d.ts",
+    "unresolvedTo": "@pops/media-db",
+    "dependencyTypes": ["undetermined", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/media/watch-history/handlers/log-watch-event.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
     "dependencyTypes": ["undetermined", "type-only", "import"],
