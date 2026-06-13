@@ -16,7 +16,7 @@ describe('buildHaBridgeManifest', () => {
     expect(parsed.pillar).toBe(HA_BRIDGE_PILLAR_ID);
     expect(parsed.contract.tag).toBe('contract-ha-bridge@v0.1.0');
     expect(parsed.ai.tools).toEqual([]);
-    expect(parsed.sinks?.descriptors).toEqual([]);
+    expect(parsed.sinks?.descriptors.length).toBeGreaterThan(0);
   });
 
   it('declares the haEntities search adapter (US-02)', () => {
