@@ -706,6 +706,9 @@ importers:
       '@pops/overlay-ego':
         specifier: workspace:*
         version: link:../../packages/overlay-ego
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../packages/pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types

@@ -15,17 +15,22 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/trpc', () => ({
   trpc: {
-    core: {
-      settings: {
-        getBulk: {
-          useQuery: (input: unknown) => mocks.getBulk(input),
-        },
-        setBulk: {
-          useMutation: () => ({ mutate: mocks.setBulkMutate }),
-        },
-      },
-    },
     useUtils: () => ({ client: {} }),
+  },
+}));
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
+    if (pillarId === 'core' && path.join('.') === 'settings.getBulk') {
+      return mocks.getBulk(input);
+    }
+    return { data: undefined, isLoading: false, isUnavailable: false, isContractMismatch: false };
+  },
+  usePillarMutation: (pillarId: string, path: readonly string[]) => {
+    if (pillarId === 'core' && path.join('.') === 'settings.setBulk') {
+      return { mutate: mocks.setBulkMutate };
+    }
+    return { mutate: () => undefined };
   },
 }));
 
