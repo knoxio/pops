@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import BetterSqlite3 from 'better-sqlite3';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openMediaDb } from '@pops/media-db';
 
@@ -44,88 +44,10 @@ afterEach(() => {
   else process.env['SQLITE_PATH'] = originalSharedPath;
 });
 
-function openSharedWithRows(rows: { shelfId: string; shownAt: string }[]): string {
-  const path = join(tmpDir, 'pops.db');
-  const raw = new BetterSqlite3(path);
-  raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
-  const insert = raw.prepare('INSERT INTO shelf_impressions (shelf_id, shown_at) VALUES (?, ?)');
-  for (const row of rows) {
-    insert.run(row.shelfId, row.shownAt);
-  }
-  raw.close();
-  process.env['SQLITE_PATH'] = path;
-  return path;
-}
-
 describe('backfillMediaFromShared', () => {
   it('returns silently when the media handle is closed', () => {
     setMediaDb(null);
     expect(() => backfillMediaFromShared()).not.toThrow();
-  });
-
-  it('copies fresh rows on first run and is a no-op on the second', () => {
-    openSharedWithRows([
-      { shelfId: 'trending', shownAt: '2026-06-09 12:00:00' },
-      { shelfId: 'because-you-watched:42', shownAt: '2026-06-09 12:00:01' },
-    ]);
-    const media = openMediaDb(join(tmpDir, 'media.db'));
-    setMediaDb(media);
-
-    backfillMediaFromShared();
-    const after = media.raw
-      .prepare('SELECT id, shelf_id FROM shelf_impressions ORDER BY id')
-      .all() as { id: number; shelf_id: string }[];
-    expect(after.map((r) => r.shelf_id)).toEqual(['trending', 'because-you-watched:42']);
-
-    backfillMediaFromShared();
-    const second = media.raw.prepare('SELECT count(*) AS n FROM shelf_impressions').get() as {
-      n: number;
-    };
-    expect(second.n).toBe(2);
-  });
-
-  it('only inserts rows missing from the media copy', () => {
-    openSharedWithRows([
-      { shelfId: 'trending', shownAt: '2026-06-09 12:00:00' },
-      { shelfId: 'because-you-watched:42', shownAt: '2026-06-09 12:00:01' },
-    ]);
-    const media = openMediaDb(join(tmpDir, 'media.db'));
-    setMediaDb(media);
-    // Pre-seed id=1 in media so the backfill should skip it and only carry id=2 across.
-    media.raw
-      .prepare('INSERT INTO shelf_impressions (id, shelf_id, shown_at) VALUES (?, ?, ?)')
-      .run(1, 'pre-existing', '2026-06-08 09:00:00');
-
-    backfillMediaFromShared();
-    const rows = media.raw
-      .prepare('SELECT id, shelf_id FROM shelf_impressions ORDER BY id')
-      .all() as { id: number; shelf_id: string }[];
-    expect(rows).toEqual([
-      { id: 1, shelf_id: 'pre-existing' },
-      { id: 2, shelf_id: 'because-you-watched:42' },
-    ]);
-  });
-
-  it('tolerates a shared DB without the shelf_impressions table', () => {
-    const path = join(tmpDir, 'pops.db');
-    const raw = new BetterSqlite3(path);
-    raw.close();
-    process.env['SQLITE_PATH'] = path;
-
-    const media = openMediaDb(join(tmpDir, 'media.db'));
-    setMediaDb(media);
-
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    try {
-      expect(() => backfillMediaFromShared()).not.toThrow();
-      expect(warn).not.toHaveBeenCalled();
-    } finally {
-      warn.mockRestore();
-    }
-    const count = media.raw.prepare('SELECT count(*) AS n FROM shelf_impressions').get() as {
-      n: number;
-    };
-    expect(count.n).toBe(0);
   });
 
   describe('tv_shows (PRD-166 PR 1)', () => {
@@ -134,7 +56,6 @@ describe('backfillMediaFromShared', () => {
     ): string {
       const path = join(tmpDir, 'pops.db');
       const raw = new BetterSqlite3(path);
-      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
       raw.exec(TV_SHOWS_TABLE_SQL);
       const insert = raw.prepare(
         'INSERT INTO tv_shows (tvdb_id, name, first_air_date) VALUES (?, ?, ?)'
@@ -192,7 +113,6 @@ describe('backfillMediaFromShared', () => {
     it('carries every column across (full-shape roundtrip)', () => {
       const path = join(tmpDir, 'pops.db');
       const raw = new BetterSqlite3(path);
-      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
       raw.exec(TV_SHOWS_TABLE_SQL);
       raw
         .prepare(
@@ -274,7 +194,6 @@ describe('backfillMediaFromShared', () => {
     it('tolerates a shared DB without the tv_shows table', () => {
       const path = join(tmpDir, 'pops.db');
       const raw = new BetterSqlite3(path);
-      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
       raw.close();
       process.env['SQLITE_PATH'] = path;
 
@@ -299,7 +218,6 @@ describe('backfillMediaFromShared', () => {
     function openSharedWithWatchHistory(rows: WatchHistorySeed[]): string {
       const path = join(tmpDir, 'pops.db');
       const raw = new BetterSqlite3(path);
-      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
       raw.exec(WATCH_HISTORY_TABLE_SQL);
       const insert = raw.prepare(
         'INSERT INTO watch_history (media_type, media_id, watched_at, completed, blacklisted) VALUES (?, ?, ?, ?, ?)'
@@ -392,11 +310,8 @@ describe('backfillMediaFromShared', () => {
     });
 
     it('tolerates a shared DB without the watch_history table', () => {
-      // Shared DB has shelf_impressions but no watch_history — backfill
-      // copies shelf rows and skips watch_history without throwing.
       const path = join(tmpDir, 'pops.db');
       const raw = new BetterSqlite3(path);
-      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
       raw.close();
       process.env['SQLITE_PATH'] = path;
 
@@ -424,7 +339,6 @@ describe('backfillMediaFromShared', () => {
     function openSharedWithWatchlist(rows: WatchlistSeed[]): string {
       const path = join(tmpDir, 'pops.db');
       const raw = new BetterSqlite3(path);
-      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
       raw.exec(WATCHLIST_TABLE_SQL);
       const insert = raw.prepare(
         'INSERT INTO watchlist (media_type, media_id, priority, notes, source, plex_rating_key) VALUES (?, ?, ?, ?, ?, ?)'
@@ -518,11 +432,8 @@ describe('backfillMediaFromShared', () => {
     });
 
     it('tolerates a shared DB without the watchlist table', () => {
-      // Shared DB has shelf_impressions but no watchlist — backfill copies
-      // shelf rows and skips watchlist without throwing.
       const path = join(tmpDir, 'pops.db');
       const raw = new BetterSqlite3(path);
-      raw.exec(SHELF_IMPRESSIONS_TABLE_SQL);
       raw.close();
       process.env['SQLITE_PATH'] = path;
 
