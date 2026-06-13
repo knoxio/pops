@@ -3,9 +3,29 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { type Budget, BudgetFormSchema, type BudgetFormValues, DEFAULT_FORM_VALUES } from './types';
+
+interface BudgetsListResult {
+  data: Budget[];
+  pagination: { total: number };
+}
+
+interface CreateBudgetInput {
+  category: string;
+  period: string | null;
+  amount: number | null;
+  active: boolean;
+  notes: string | null;
+}
+interface UpdateBudgetInput {
+  id: string;
+  data: CreateBudgetInput;
+}
+interface DeleteBudgetInput {
+  id: string;
+}
 
 interface UseBudgetMutationsArgs {
   setIsDialogOpen: (v: boolean) => void;
@@ -14,32 +34,40 @@ interface UseBudgetMutationsArgs {
 }
 
 function useBudgetMutations(args: UseBudgetMutationsArgs) {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.finance.budgets.create.useMutation({
-    onSuccess: () => {
-      toast.success('Budget created');
-      void utils.finance.budgets.list.invalidate();
-      args.setIsDialogOpen(false);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const updateMutation = trpc.finance.budgets.update.useMutation({
-    onSuccess: () => {
-      toast.success('Budget updated');
-      void utils.finance.budgets.list.invalidate();
-      args.setIsDialogOpen(false);
-      args.setEditingBudget(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const deleteMutation = trpc.finance.budgets.delete.useMutation({
-    onSuccess: () => {
-      toast.success('Budget deleted');
-      void utils.finance.budgets.list.invalidate();
-      args.setDeletingId(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const createMutation = usePillarMutation<CreateBudgetInput, unknown>(
+    'finance',
+    ['budgets', 'create'],
+    {
+      onSuccess: () => {
+        toast.success('Budget created');
+        args.setIsDialogOpen(false);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  const updateMutation = usePillarMutation<UpdateBudgetInput, unknown>(
+    'finance',
+    ['budgets', 'update'],
+    {
+      onSuccess: () => {
+        toast.success('Budget updated');
+        args.setIsDialogOpen(false);
+        args.setEditingBudget(null);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  const deleteMutation = usePillarMutation<DeleteBudgetInput, unknown>(
+    'finance',
+    ['budgets', 'delete'],
+    {
+      onSuccess: () => {
+        toast.success('Budget deleted');
+        args.setDeletingId(null);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
   return { createMutation, updateMutation, deleteMutation };
 }
 
@@ -49,7 +77,7 @@ function buildSubmitHandler(
   updateMutation: ReturnType<typeof useBudgetMutations>['updateMutation']
 ) {
   return (values: BudgetFormValues) => {
-    const payload = {
+    const payload: CreateBudgetInput = {
       category: values.category,
       period: values.period || null,
       amount: values.amount ? Number(values.amount) : null,
@@ -66,7 +94,7 @@ export function useBudgetsPage() {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const query = trpc.finance.budgets.list.useQuery({ limit: 100 });
+  const query = usePillarQuery<BudgetsListResult>('finance', ['budgets', 'list'], { limit: 100 });
   const { createMutation, updateMutation, deleteMutation } = useBudgetMutations({
     setIsDialogOpen,
     setEditingBudget,

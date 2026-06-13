@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useImportStore } from '../../../store/importStore';
 import { groupByEntity } from './tagReviewUtils';
@@ -75,7 +75,11 @@ function useLocalTagsSync(confirmedTransactions: ConfirmedTransaction[]): LocalT
 }
 
 function useAvailableTags(localTags: Record<string, string[]>): string[] {
-  const { data: serverTags } = trpc.finance.transactions.availableTags.useQuery();
+  const { data: serverTags } = usePillarQuery<string[]>(
+    'finance',
+    ['transactions', 'availableTags'],
+    undefined
+  );
   return useMemo(() => {
     const local = Object.values(localTags).flat();
     return [...new Set([...(serverTags ?? []), ...local])].toSorted();

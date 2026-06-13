@@ -1,10 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { groupTransactionsByEntity } from '../../../lib/transaction-utils';
 import { useImportStore } from '../../../store/importStore';
+
+import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
+import type { ProcessImportOutput } from '@pops/api/modules/finance/imports';
+
+interface ReevaluateInput {
+  sessionId: string;
+  minConfidence: number;
+  pendingChangeSets: Array<{ changeSet: ChangeSet }>;
+}
+interface ReevaluateResponse {
+  result: ProcessImportOutput;
+  affectedCount: number;
+}
 
 export type ViewMode = 'list' | 'grouped';
 
@@ -38,7 +51,10 @@ function useReevalOnChangeSets(
   sessionId: string | null
 ) {
   const prevChangeSetsRef = useRef(pendingChangeSets);
-  const reevaluateMutation = trpc.finance.imports.reevaluateWithPendingRules.useMutation();
+  const reevaluateMutation = usePillarMutation<ReevaluateInput, ReevaluateResponse>('finance', [
+    'imports',
+    'reevaluateWithPendingRules',
+  ]);
   useEffect(() => {
     if (prevChangeSetsRef.current === pendingChangeSets) return;
     prevChangeSetsRef.current = pendingChangeSets;

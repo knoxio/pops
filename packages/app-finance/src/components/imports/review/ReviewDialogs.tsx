@@ -1,14 +1,27 @@
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { useImportStore } from '../../../store/importStore';
 import { CorrectionProposalDialog } from '../CorrectionProposalDialog';
 import { EntityCreateDialog } from '../EntityCreateDialog';
 
+import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
+import type { ProcessImportOutput } from '@pops/api/modules/finance/imports';
+
 import type { useBulkAssignment } from '../hooks/useBulkAssignment';
 import type { useProposalGeneration } from '../hooks/useProposalGeneration';
 import type { useTransactionReview } from '../hooks/useTransactionReview';
+
+interface ReevaluateInput {
+  sessionId: string;
+  minConfidence: number;
+  pendingChangeSets: Array<{ changeSet: ChangeSet }>;
+}
+interface ReevaluateResponse {
+  result: ProcessImportOutput;
+  affectedCount: number;
+}
 
 interface BrowseDialogProps {
   open: boolean;
@@ -26,7 +39,10 @@ function BrowseDialog({
   setLocalTransactions,
 }: BrowseDialogProps) {
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
-  const reevaluateMutation = trpc.finance.imports.reevaluateWithPendingRules.useMutation();
+  const reevaluateMutation = usePillarMutation<ReevaluateInput, ReevaluateResponse>('finance', [
+    'imports',
+    'reevaluateWithPendingRules',
+  ]);
   const onClose = (hadChanges: boolean) => {
     if (!hadChanges || !sessionId || pendingChangeSets.length === 0) return;
     reevaluateMutation.mutate(

@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import {
   DEFAULT_TRANSACTION_VALUES,
@@ -11,6 +12,13 @@ import {
   TransactionFormSchema,
 } from './types';
 import { useTransactionMutations } from './useTransactionMutations';
+
+import type { Transaction as ApiTransaction } from '@pops/api/modules/finance/transactions/types';
+
+interface TransactionsListResult {
+  data: ApiTransaction[];
+  pagination: { total: number };
+}
 
 /**
  * Build the API payload from the form values.
@@ -102,14 +110,25 @@ function useDialogHandlers(deps: DialogHandlersDeps) {
   return { handleAdd, handleEdit };
 }
 
+function useTransactionsPageQueries() {
+  const query = usePillarQuery<TransactionsListResult>('finance', ['transactions', 'list'], {
+    limit: 100,
+  });
+  const { data: availableTagsData } = usePillarQuery<string[]>(
+    'finance',
+    ['transactions', 'availableTags'],
+    undefined
+  );
+  const entitiesQuery = trpc.core.entities.list.useQuery({ limit: 500 });
+  return { query, availableTagsData, entitiesQuery };
+}
+
 export function useTransactionsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
 
-  const query = trpc.finance.transactions.list.useQuery({ limit: 100 });
-  const { data: availableTagsData } = trpc.finance.transactions.availableTags.useQuery();
-  const entitiesQuery = trpc.core.entities.list.useQuery({ limit: 500 });
+  const { query, availableTagsData, entitiesQuery } = useTransactionsPageQueries();
 
   const { createMutation, updateMutation, deleteMutation, confirmDelete } = useTransactionMutations(
     {

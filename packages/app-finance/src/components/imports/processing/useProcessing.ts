@@ -1,10 +1,31 @@
 import { useEffect, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useImportStore } from '../../../store/importStore';
 
-import type { ImportWarning, ProcessImportOutput } from '@pops/api/modules/finance/imports';
+import type {
+  ImportWarning,
+  ParsedTransaction,
+  ProcessImportOutput,
+} from '@pops/api/modules/finance/imports';
+
+interface ProcessImportInput {
+  transactions: ParsedTransaction[];
+  account: string;
+}
+interface ProcessImportResponse {
+  sessionId: string;
+}
+interface GetProgressInput {
+  sessionId: string;
+}
+interface ImportProgressShape {
+  sessionId: string;
+  status: 'processing' | 'completed' | 'failed';
+  result?: ProcessImportOutput;
+  errors?: Array<{ description: string; error: string }>;
+}
 
 export function useHasAlreadyProcessed(): boolean {
   const { processedTransactions, processedForFingerprint, parsedTransactionsFingerprint } =
@@ -25,15 +46,21 @@ export function useHasAlreadyProcessed(): boolean {
 export function useProcessingMutations() {
   const { setProcessSessionId, processSessionId } = useImportStore();
   const [pollingEnabled, setPollingEnabled] = useState(false);
-  const processImportMutation = trpc.finance.imports.processImport.useMutation({
-    onSuccess: (data) => {
-      setProcessSessionId(data.sessionId);
-      setPollingEnabled(true);
-    },
-    onError: (error) => console.error('Processing error:', error),
-  });
-  const progressQuery = trpc.finance.imports.getImportProgress.useQuery(
-    { sessionId: processSessionId ?? '' },
+  const processImportMutation = usePillarMutation<ProcessImportInput, ProcessImportResponse>(
+    'finance',
+    ['imports', 'processImport'],
+    {
+      onSuccess: (data) => {
+        setProcessSessionId(data.sessionId);
+        setPollingEnabled(true);
+      },
+      onError: (error) => console.error('Processing error:', error),
+    }
+  );
+  const progressQuery = usePillarQuery<ImportProgressShape | null>(
+    'finance',
+    ['imports', 'getImportProgress'],
+    { sessionId: processSessionId ?? '' } satisfies GetProgressInput,
     {
       enabled: pollingEnabled && !!processSessionId,
       refetchInterval: 1000,
@@ -51,7 +78,7 @@ export function useCompletionHandler(state: ProcessingState): void {
   useEffect(() => {
     if (progressQuery.data?.status === 'completed' && progressQuery.data.result) {
       setPollingEnabled(false);
-      const result = progressQuery.data.result as ProcessImportOutput;
+      const result = progressQuery.data.result;
       setProcessedTransactions(result);
       const hasCriticalError = result.warnings?.some(
         (w: ImportWarning) => w.type === 'AI_API_ERROR'

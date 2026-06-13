@@ -33,15 +33,18 @@ vi.mock('../../store/importStore', () => ({
 // Mock trpc
 // ---------------------------------------------------------------------------
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    if (path.join('.') === 'transactions.availableTags') {
+      return { data: ['Groceries', 'Transport', 'Subscriptions'] };
+    }
+    return { data: undefined };
+  },
+  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock('@pops/api-client', () => ({
   trpc: {
-    finance: {
-      transactions: {
-        availableTags: {
-          useQuery: () => ({ data: ['Groceries', 'Transport', 'Subscriptions'] }),
-        },
-      },
-    },
     core: {
       tagRules: {
         proposeTagRuleChangeSet: {
