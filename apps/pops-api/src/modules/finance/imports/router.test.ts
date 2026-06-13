@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { entities as entitiesTable } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import {
   createCaller,
   seedEntity,
@@ -380,7 +380,7 @@ describe('imports.createEntity', () => {
       name: 'SQLite Test Entity',
     });
 
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select()
       .from(entitiesTable)
       .where(eq(entitiesTable.id, result.entityId))

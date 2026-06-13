@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { wishList as wishListTable } from '@pops/db-types';
 
-import { getDrizzle } from '../../../db.js';
+import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { createCaller, seedWishListItem, setupTestContext } from '../../../shared/test-utils.js';
 
 import type { Database } from 'better-sqlite3';
@@ -270,7 +270,7 @@ describe('wishlist.create', () => {
   it('persists to the database', async () => {
     await caller.finance.wishlist.create({ item: 'New Item' });
 
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select()
       .from(wishListTable)
       .where(eq(wishListTable.item, 'New Item'))
@@ -337,7 +337,7 @@ describe('wishlist.update', () => {
 
     await caller.finance.wishlist.update({ id, data: { priority: 'Needing' } });
 
-    const row = getDrizzle()
+    const row = getFinanceDrizzle()
       .select({ lastEditedTime: wishListTable.lastEditedTime })
       .from(wishListTable)
       .where(eq(wishListTable.id, id))
@@ -397,7 +397,11 @@ describe('wishlist.delete', () => {
     expect(result.message).toBe('Wish list item deleted');
 
     // Verify gone from DB
-    const row = getDrizzle().select().from(wishListTable).where(eq(wishListTable.id, id)).get();
+    const row = getFinanceDrizzle()
+      .select()
+      .from(wishListTable)
+      .where(eq(wishListTable.id, id))
+      .get();
     expect(row).toBeUndefined();
   });
 
