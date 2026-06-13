@@ -1,15 +1,18 @@
 export { PillarSdkProvider, usePillarSdkOptions } from './provider.js';
 export type { PillarSdkProviderProps } from './provider.js';
 export {
+  pillarQueryArg,
   usePillarCallDynamic,
   usePillarCallDynamicMutation,
   usePillarInfiniteQuery,
   usePillarMutation,
+  usePillarQueries,
   usePillarQuery,
   usePillarUtils,
 } from './hooks.js';
 export type {
   PillarInfiniteBuildInput,
+  PillarQueryArg,
   PillarUpdater,
   UsePillarCallDynamicMutationArgs,
   UsePillarCallDynamicMutationOptions,
