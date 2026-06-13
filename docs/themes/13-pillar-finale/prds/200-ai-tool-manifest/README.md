@@ -42,11 +42,11 @@ Contract's `src/ai.ts` declares the tools array; manifest auto-regenerates.
 
 ## User Stories
 
-| #   | Story                                               | Summary                                                 |
-| --- | --------------------------------------------------- | ------------------------------------------------------- |
-| 01  | [us-01-schema-extension](us-01-schema-extension.md) | Extend manifest with tool fields                        |
-| 02  | [us-02-finance-pilot](us-02-finance-pilot.md)       | Populate finance contract: categorize, revise, etc.     |
-| 03  | [us-03-other-pillars](us-03-other-pillars.md)       | Roll out to media (movie recs), cerebrum (engram synth) |
+| #   | Story                                               | Summary                                                 | Status      |
+| --- | --------------------------------------------------- | ------------------------------------------------------- | ----------- |
+| 01  | [us-01-schema-extension](us-01-schema-extension.md) | Extend manifest with tool fields                        | Done        |
+| 02  | [us-02-finance-pilot](us-02-finance-pilot.md)       | Populate finance contract: categorize, revise, etc.     | Not started |
+| 03  | [us-03-other-pillars](us-03-other-pillars.md)       | Roll out to media (movie recs), cerebrum (engram synth) | Not started |
 
 ## Out of Scope
 

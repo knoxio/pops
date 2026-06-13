@@ -3,6 +3,7 @@ export {
   validateManifestPayload,
   checkContractPackageMatchesPillar,
   checkContractTagMatchesVersion,
+  checkAiToolAllowedUriTypesAreDeclared,
   pathToDotted,
   type ValidationResult,
   type ValidationIssue,

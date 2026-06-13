@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  checkAiToolAllowedUriTypesAreDeclared,
   checkContractPackageMatchesPillar,
   checkContractTagMatchesVersion,
   pathToDotted,
@@ -207,5 +208,72 @@ describe('cross-field checkers (pure)', () => {
     expect(issues).toHaveLength(1);
     expect(issues[0]!.field).toBe('contract.tag');
     expect(issues[0]!.schemaPath).toEqual(['contract', 'tag']);
+  });
+
+  describe('checkAiToolAllowedUriTypesAreDeclared', () => {
+    it('returns [] when no tool declares allowedUriTypes', () => {
+      expect(checkAiToolAllowedUriTypesAreDeclared(validManifest())).toEqual([]);
+    });
+
+    it('returns [] when every allowedUriType is declared in uri.types', () => {
+      const m = validManifest();
+      m.ai.tools[0]!.allowedUriTypes = ['finance/transaction', 'finance/budget'];
+      expect(checkAiToolAllowedUriTypesAreDeclared(m)).toEqual([]);
+    });
+
+    it('emits an issue per undeclared URI type', () => {
+      const m = validManifest();
+      m.ai.tools[0]!.allowedUriTypes = ['finance/transaction', 'finance/unknown'];
+      const issues = checkAiToolAllowedUriTypesAreDeclared(m);
+      expect(issues).toHaveLength(1);
+      expect(issues[0]!.field).toBe('ai.tools[0].allowedUriTypes[1]');
+      expect(issues[0]!.got).toBe('finance/unknown');
+      expect(issues[0]!.reason).toContain('not declared in uri.types');
+      expect(issues[0]!.schemaPath).toEqual(['ai', 'tools', 0, 'allowedUriTypes', 1]);
+    });
+
+    it('reports across multiple tools without short-circuiting', () => {
+      const m = validManifest();
+      m.ai.tools = [
+        {
+          name: 'first',
+          description: 'first tool with bad uri scope',
+          parameters: { type: 'object' },
+          allowedUriTypes: ['finance/missing-a'],
+        },
+        {
+          name: 'second',
+          description: 'second tool with bad uri scope',
+          parameters: { type: 'object' },
+          allowedUriTypes: ['finance/transaction', 'finance/missing-b'],
+        },
+      ];
+      const issues = checkAiToolAllowedUriTypesAreDeclared(m);
+      expect(issues).toHaveLength(2);
+      const fields = issues.map((i) => i.field).toSorted();
+      expect(fields).toEqual(['ai.tools[0].allowedUriTypes[0]', 'ai.tools[1].allowedUriTypes[1]']);
+    });
+  });
+});
+
+describe('validateManifestPayload — ai tool cross-field rules', () => {
+  it('rejects a manifest whose tool references an undeclared URI type', () => {
+    const m = validManifest();
+    m.ai.tools[0]!.allowedUriTypes = ['finance/not-declared'];
+    const result = validateManifestPayload(m);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues).toHaveLength(1);
+      expect(result.issues[0]!.field).toBe('ai.tools[0].allowedUriTypes[0]');
+      expect(result.issues[0]!.got).toBe('finance/not-declared');
+    }
+  });
+
+  it('accepts a manifest whose tool references only declared URI types', () => {
+    const m = validManifest();
+    m.ai.tools[0]!.allowedUriTypes = ['finance/transaction'];
+    m.ai.tools[0]!.requiredScopes = ['finance.write'];
+    const result = validateManifestPayload(m);
+    expect(result.ok).toBe(true);
   });
 });
