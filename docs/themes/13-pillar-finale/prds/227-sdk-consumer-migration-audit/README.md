@@ -2,6 +2,21 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 
+## Status (2026-06-13 refresh)
+
+| User Story                                  | Status | Notes                                                                                                            |
+| ------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| [us-01-shell-wiring](us-01-shell-wiring.md) | Done   | `PillarSdkProvider` mounted in `apps/pops-shell/src/app/App.tsx` (PR #3091).                                     |
+| [us-02-fe-canary](us-02-fe-canary.md)       | Done   | `NudgeIndicator.tsx` migrated to `usePillarQuery` (PR #3055).                                                    |
+| [us-03-mcp-canary](us-03-mcp-canary.md)     | Done   | `apps/pops-mcp/src/tools/inventory-locations.ts` (5 ops) + `finance.{transactions,budgets}.list` on SDK (#3083). |
+
+Preconditions:
+
+- `core.registry.list` alignment landed in PR #3059 — precondition #1 cleared. Browser-reachable `baseUrl` + URL-shape parity (preconditions #2 and #3) are still open and stay tracked here.
+- `ALL_MODULE_IDS` / `isModuleId` shipped in `@pops/pillar-sdk` (PR #3090) — PRD-218 consumer surface ready.
+
+The Wave 4 prioritisation lives in [consumer-migration-priority-top-50](../../notes/consumer-migration-priority-top-50.md) (refreshed 2026-06-13). It recasts every call site against the current per-pillar router scope (`finance-api`: wishlist + budgets + transactions CRUD; `inventory-api`: items + locations; `cerebrum-api`: nudges; `media-api`: watchlist + shelfImpressions; `core-api`: registry + serviceAccounts only). 31 sites that were Medium/Risky in the original audit are now Trivial because their target route already lives on its per-pillar router.
+
 ## Overview
 
 Catalogue every call site that currently issues HTTP / tRPC against a per-pillar router and assign each one a migration target on the unified `@pops/pillar-sdk` consumption surface (PRD-191 client, PRD-192 server, PRD-193 React hooks). Records preconditions so the consumer migrations can be parallelised against the right wave gate.
