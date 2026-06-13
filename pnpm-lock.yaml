@@ -2082,9 +2082,9 @@ importers:
       '@pops/api-client':
         specifier: workspace:*
         version: link:../api-client
-      '@pops/module-registry':
+      '@pops/pillar-sdk':
         specifier: workspace:*
-        version: link:../module-registry
+        version: link:../pillar-sdk
       '@pops/ui':
         specifier: workspace:*
         version: link:../ui

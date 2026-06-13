@@ -8,17 +8,17 @@ import { describe, expect, it } from 'vitest';
  * engine is the primary filter; this hook prevents stale or
  * misconfigured payloads from rendering links into uninstalled apps.
  */
-import { KNOWN_MODULES } from '@pops/module-registry';
+import { ALL_MODULE_IDS } from '@pops/pillar-sdk';
 
 import { isInstalledModule } from './installed-module';
 
 describe('isInstalledModule', () => {
-  it('treats core as always installed (it is the shell module, not in MODULES)', () => {
+  it('treats core as always installed (it is the shell module)', () => {
     expect(isInstalledModule('core')).toBe(true);
   });
 
-  it('returns true for every id in the build-time MODULES set', () => {
-    for (const id of KNOWN_MODULES) {
+  it('returns true for every id in the canonical ALL_MODULE_IDS set', () => {
+    for (const id of ALL_MODULE_IDS) {
       expect(isInstalledModule(id)).toBe(true);
     }
   });
