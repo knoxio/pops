@@ -68,7 +68,7 @@ but `apps/pops-api/Dockerfile` does NOT include any
 line. The Dockerfile's selective copy strategy (one `COPY .../package.json`
 per workspace dep) is now drifting against the workspace graph. Every
 pillar API Dockerfile inherits the same pattern — they likely have the
-same gap (see §4 follow-up).
+same gap (see §5 follow-up).
 
 ### Docker Build (the PR-time validator) is also red
 
@@ -218,16 +218,16 @@ the "healthy and deployed" clause is to be load-bearing.
 
 ## 6 — File pointers
 
-- `/Users/joao/dev/personal/pops8/.github/workflows/publish-images.yml`
-- `/Users/joao/dev/personal/pops8/.github/workflows/release.yml`
-- `/Users/joao/dev/personal/pops8/.github/workflows/docker-build.yml`
-- `/Users/joao/dev/personal/pops8/.github/workflows/pillar-images.yml`
-- `/Users/joao/dev/personal/pops8/infra/docker-compose.yml`
-- `/Users/joao/dev/personal/pops8/infra/docker-compose.dev.yml`
-- `/Users/joao/dev/personal/pops8/apps/pops-api/Dockerfile`
-- `/Users/joao/dev/personal/pops8/apps/pops-api/src/routes/health.ts`
-- `/Users/joao/dev/personal/pops8/apps/pops-api/src/routes/pillars.ts`
-- `/Users/joao/dev/personal/pops8/apps/pops-api/src/modules/core/pillars/health-probe.ts`
-- `/Users/joao/dev/personal/pops8/apps/pops-api/src/shared/pillar-smoke-harness.ts`
-- `/Users/joao/dev/personal/pops8/packages/pillar-sdk/src/orchestrator/runner.ts`
-- `/Users/joao/dev/personal/pops8/packages/pillar-sdk/src/manifest-schema/schema.ts`
+- `.github/workflows/publish-images.yml`
+- `.github/workflows/release.yml`
+- `.github/workflows/docker-build.yml`
+- `.github/workflows/pillar-images.yml`
+- `infra/docker-compose.yml`
+- `infra/docker-compose.dev.yml`
+- `apps/pops-api/Dockerfile`
+- `apps/pops-api/src/routes/health.ts`
+- `apps/pops-api/src/routes/pillars.ts`
+- `apps/pops-api/src/modules/core/pillars/health-probe.ts`
+- `apps/pops-api/src/shared/pillar-smoke-harness.ts`
+- `packages/pillar-sdk/src/orchestrator/runner.ts`
+- `packages/pillar-sdk/src/manifest-schema/schema.ts`
