@@ -8,11 +8,14 @@
  *  3. Sort descending by adjusted score.
  *  4. Break ties by the pillar's position in the input map (PRD-196 adapter
  *     priority is encoded by insertion order).
- *  5. If every adjusted score is 0, fall back to alphabetical order by
- *     `entityName` (PRD-198 "all results have score 0" edge case).
+ *  5. If every adjusted score is 0, fall back to a locale-independent
+ *     code-point comparison on `entityName` (PRD-198 "all results have
+ *     score 0" edge case). Determinism matters: relying on the runtime
+ *     locale would produce different orderings across environments.
  *
  * Pure function — no I/O, no settings reads. Callers (orchestrator in
- * PRD-197) are responsible for sourcing weights from `core.db.settings`.
+ * PRD-197) are responsible for sourcing weights from `core.db.settings`,
+ * and for passing an `onWarn` sink if they want misconfig warnings surfaced.
  */
 
 import type { MergedResult, MergeOptions, PillarWeights, ScoredResult } from './types.js';
@@ -43,6 +46,12 @@ function resolveWeight(
   onWarn: (message: string) => void
 ): number {
   const raw = weights?.get(pillarId) ?? DEFAULT_PILLAR_WEIGHT;
+  if (!Number.isFinite(raw)) {
+    onWarn(
+      `[ranking] Non-finite weight ${String(raw)} for pillar "${pillarId}" treated as default ${DEFAULT_PILLAR_WEIGHT} (misconfig).`
+    );
+    return DEFAULT_PILLAR_WEIGHT;
+  }
   if (raw < 0) {
     onWarn(`[ranking] Negative weight ${raw} for pillar "${pillarId}" treated as 0 (misconfig).`);
     return 0;
@@ -61,7 +70,7 @@ export function mergeResults(
   perPillarResults: ReadonlyMap<string, readonly ScoredResult[]>,
   options: MergeOptions = {}
 ): MergedResult[] {
-  const { limit, weights, onWarn = console.warn } = options;
+  const { limit, weights, onWarn = noopWarn } = options;
 
   const annotated: AnnotatedResult[] = [];
   let pillarIndex = 0;
@@ -72,12 +81,13 @@ export function mergeResults(
 
     const weight = resolveWeight(pillarId, weights, onWarn);
     const maxScore = results.reduce(
-      (acc, r) => (r.score > acc ? r.score : acc),
+      (acc, r) => (Number.isFinite(r.score) && r.score > acc ? r.score : acc),
       Number.NEGATIVE_INFINITY
     );
 
     for (const result of results) {
-      const normalised = maxScore > 0 ? result.score / maxScore : 0;
+      const safeScore = Number.isFinite(result.score) ? result.score : 0;
+      const normalised = maxScore > 0 ? safeScore / maxScore : 0;
       annotated.push({
         pillarId,
         pillarIndex: currentIndex,
@@ -91,7 +101,7 @@ export function mergeResults(
 
   annotated.sort((a, b) => {
     if (allZero) {
-      const nameCompare = a.original.entityName.localeCompare(b.original.entityName);
+      const nameCompare = compareCodepoints(a.original.entityName, b.original.entityName);
       if (nameCompare !== 0) return nameCompare;
       return a.pillarIndex - b.pillarIndex;
     }
@@ -102,7 +112,8 @@ export function mergeResults(
     return a.pillarIndex - b.pillarIndex;
   });
 
-  const sliced = limit !== undefined ? annotated.slice(0, limit) : annotated;
+  const effectiveLimit = clampLimit(limit);
+  const sliced = effectiveLimit !== undefined ? annotated.slice(0, effectiveLimit) : annotated;
 
   return sliced.map((a) => ({
     pillarId: a.pillarId,
@@ -111,4 +122,21 @@ export function mergeResults(
     data: a.original.data,
     adjustedScore: a.adjustedScore,
   }));
+}
+
+function noopWarn(_message: string): void {
+  /* default sink — see `MergeOptions.onWarn` JSDoc. */
+}
+
+function compareCodepoints(a: string, b: string): number {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
+function clampLimit(limit: number | undefined): number | undefined {
+  if (limit === undefined) return undefined;
+  if (!Number.isFinite(limit)) return 0;
+  if (limit < 0) return 0;
+  return Math.floor(limit);
 }

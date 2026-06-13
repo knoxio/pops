@@ -50,15 +50,18 @@ export interface MergedResult extends ScoredResult {
 /**
  * Per-pillar weights, typically sourced from `core.db.settings` under
  * `search.pillarWeights.<pillarId>`. A pillar not present in the map gets the
- * default weight (1.0). Negative weights are treated as 0 and a warning is
- * logged (see `mergeResults`).
+ * default weight (1.0). Negative weights are treated as 0; non-finite weights
+ * (`NaN`, `±Infinity`) fall back to the default weight. Both cases emit a
+ * warning through `MergeOptions.onWarn` (see `mergeResults`).
  */
 export type PillarWeights = ReadonlyMap<string, number>;
 
 export interface MergeOptions {
   /**
    * Optional cap on the number of results returned. When omitted, all merged
-   * results are returned in ranked order.
+   * results are returned in ranked order. Negative or non-finite limits are
+   * treated as 0 (no `slice(0, -1)` "all but the last" surprise); fractional
+   * limits are floored.
    */
   readonly limit?: number;
   /**
@@ -67,9 +70,10 @@ export interface MergeOptions {
    */
   readonly weights?: PillarWeights;
   /**
-   * Sink for misconfiguration warnings (e.g. negative weights). Defaults to
-   * `console.warn`; tests inject a spy to assert the message without polluting
-   * stdout.
+   * Sink for misconfiguration warnings (e.g. negative or non-finite weights).
+   * Defaults to a no-op so `mergeResults` stays a pure function with no I/O —
+   * callers that care about warnings (the orchestrator in PRD-197, tests) must
+   * inject their own logger / spy.
    */
   readonly onWarn?: (message: string) => void;
 }

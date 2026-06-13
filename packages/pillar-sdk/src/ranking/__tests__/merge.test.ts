@@ -178,6 +178,96 @@ describe('mergeResults', () => {
       expect(m.adjustedScore).toBe(1);
     }
   });
+
+  it('falls back to default weight when a configured weight is NaN', () => {
+    const onWarn = vi.fn();
+    const merged = mergeResults(
+      new Map([
+        ['finance', [r(10, 'tx-1')]],
+        ['media', [r(10, 'movie-1')]],
+      ]),
+      {
+        weights: new Map([
+          ['finance', Number.NaN],
+          ['media', 2],
+        ]),
+        onWarn,
+      }
+    );
+
+    expect(onWarn).toHaveBeenCalledOnce();
+    expect(onWarn.mock.calls[0]?.[0]).toContain('finance');
+    expect(onWarn.mock.calls[0]?.[0]).toContain('NaN');
+    const finance = merged.find((m) => m.pillarId === 'finance');
+    expect(finance?.adjustedScore).toBe(DEFAULT_PILLAR_WEIGHT);
+  });
+
+  it('falls back to default weight when a configured weight is Infinity', () => {
+    const onWarn = vi.fn();
+    const merged = mergeResults(new Map([['finance', [r(10, 'tx-1')]]]), {
+      weights: new Map([['finance', Number.POSITIVE_INFINITY]]),
+      onWarn,
+    });
+
+    expect(onWarn).toHaveBeenCalledOnce();
+    const finance = merged.find((m) => m.pillarId === 'finance');
+    expect(finance?.adjustedScore).toBe(DEFAULT_PILLAR_WEIGHT);
+    expect(Number.isFinite(finance?.adjustedScore)).toBe(true);
+  });
+
+  it('treats non-finite adapter scores as 0 instead of producing NaN', () => {
+    const merged = mergeResults(new Map([['finance', [r(Number.NaN, 'tx-nan'), r(10, 'tx-ok')]]]));
+
+    expect(merged.every((m) => Number.isFinite(m.adjustedScore))).toBe(true);
+    expect(merged[0]?.entityName).toBe('tx-ok');
+    expect(merged[0]?.adjustedScore).toBe(1);
+    const nanRow = merged.find((m) => m.entityName === 'tx-nan');
+    expect(nanRow?.adjustedScore).toBe(0);
+  });
+
+  it('returns an empty list when limit is negative (no `slice(0, -1)` surprise)', () => {
+    const merged = mergeResults(new Map([['finance', [r(10, 'a'), r(8, 'b')]]]), {
+      limit: -1,
+    });
+
+    expect(merged).toEqual([]);
+  });
+
+  it('returns an empty list when limit is non-finite', () => {
+    const merged = mergeResults(new Map([['finance', [r(10, 'a'), r(8, 'b')]]]), {
+      limit: Number.NaN,
+    });
+
+    expect(merged).toEqual([]);
+  });
+
+  it('floors fractional limits', () => {
+    const merged = mergeResults(new Map([['finance', [r(10, 'a'), r(8, 'b'), r(6, 'c')]]]), {
+      limit: 2.9,
+    });
+
+    expect(merged.map((m) => m.entityName)).toEqual(['a', 'b']);
+  });
+
+  it('does not invoke a default warning sink (mergeResults stays pure)', () => {
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      mergeResults(new Map([['finance', [r(10, 'tx-1')]]]), {
+        weights: new Map([['finance', -5]]),
+      });
+      expect(consoleWarn).not.toHaveBeenCalled();
+    } finally {
+      consoleWarn.mockRestore();
+    }
+  });
+
+  it('all-zero fallback ordering is deterministic regardless of host locale', () => {
+    const merged = mergeResults(
+      new Map([['finance', [r(0, 'Z'), r(0, 'a'), r(0, 'A'), r(0, 'b')]]])
+    );
+
+    expect(merged.map((m) => m.entityName)).toEqual(['A', 'Z', 'a', 'b']);
+  });
 });
 
 describe('pillarWeightSettingKey', () => {
