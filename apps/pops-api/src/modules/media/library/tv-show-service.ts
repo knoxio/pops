@@ -1,33 +1,29 @@
 import { eq } from 'drizzle-orm';
 
-import { episodes, seasons, tvShows } from '@pops/db-types';
+import { episodes, seasons, tvShows } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 
+import type { SeasonRow } from '@pops/db-types';
 /**
  * Add TV show to library — fetches TheTVDB metadata and inserts
- * show + seasons + episodes in a single transaction.
+ * show + seasons + episodes in a single transaction on `media.db`.
  *
- * Cross-store note (PRD-169): `addTvShow` stays on the shared
- * `getDrizzle()` handle. The atomic insert spans `tv_shows`, `seasons`,
- * and `episodes` — seasons and episodes have not been migrated to
- * `@pops/media-db` yet (see the doc on `tv-shows/tv-shows-base.ts` —
- * "Out of scope (per PRD-166): seasons-service.ts and episodes-service.ts
- * still route through getDrizzle()"). Wrapping the show insert on the
- * media handle and the seasons/episodes inserts on the shared handle
- * would split the transaction across two SQLite files and break the
- * atomicity guarantee callers rely on.
+ * As of Theme 13 PR4, `seasons` and `episodes` join `tv_shows` in
+ * `@pops/media-db`, so the whole atomic unit moves to
+ * `getMediaDrizzle()`. This preserves the all-or-nothing guarantee the
+ * library ingestion path relies on (a crash mid-transaction can't leave
+ * a parent `tv_shows` row without `seasons`/`episodes` children) while
+ * removing the last cross-store dependency that kept the library list /
+ * quick-picks reads on the shared handle.
  *
- * The library list-/quick-picks-side reads in `service.ts` and
- * `list-service.ts` therefore also stay on `getDrizzle()` until the
- * seasons/episodes (PRD-166 follow-up) and watch-history (PRD-168 PR 3)
- * writer cutovers land. Flipping just the reads would make newly-added
- * TV shows and watch events invisible to the library list, genres list,
- * and quick-picks until the next boot-time `backfillMediaFromShared()`.
- * The handle flip happens once the matching writers are on `media.db`.
+ * Callers that need to update the newly-inserted `tv_shows` row (notably
+ * `plex/sync-discover-show.ts`'s `discoverRatingKey` follow-up) must now
+ * also target `getMediaDrizzle()` — the row no longer lands in `pops.db`
+ * at all.
  */
-import type { SeasonRow, TvShowRow } from '@pops/db-types';
+import type { TvShowRow } from '@pops/media-db';
 
 import type { TheTvdbClient } from '../thetvdb/client.js';
 import type { TvdbArtwork, TvdbEpisode } from '../thetvdb/types.js';
@@ -58,7 +54,7 @@ async function fetchSeasonEpisodes(
 }
 
 interface InsertShowArgs {
-  tx: Parameters<Parameters<ReturnType<typeof getDrizzle>['transaction']>[0]>[0];
+  tx: Parameters<Parameters<ReturnType<typeof getMediaDrizzle>['transaction']>[0]>[0];
   detail: Awaited<ReturnType<TheTvdbClient['getSeriesExtended']>>;
   seasonEpisodes: Map<number, TvdbEpisode[]>;
   posterUrl: string | null;
@@ -172,34 +168,9 @@ function downloadShowImages(args: DownloadShowImagesArgs): void {
  *
  * - Idempotent: returns existing show if already in library.
  * - Fetches full detail + episodes from TheTVDB.
- * - Inserts show, seasons, and episodes in a single transaction.
- *
- * Cross-store note (PRD-166 PR 3): the `tv_shows` writer surface
- * migrated to `getMediaDrizzle()` in PR #3007, but this one transaction
- * stays on `getDrizzle()` (shared `pops.db`) because it co-mutates
- * `seasons` and `episodes` in the same atomic unit, and those tables
- * have not yet moved to `@pops/media-db`. Splitting the transaction
- * across two SQLite files would lose atomicity (a crash between the
- * `tv_shows` insert on media.db and the `seasons`/`episodes` inserts on
- * pops.db could leave a parent row without children, surfacing as
- * empty shows in the UI). Mirrors the mixed-table strategy used by
- * `rotation/download-candidate.ts` in PRD-165 PR 3.
- *
- * Until the migration completes, callers that need to update the
- * `tv_shows` row immediately after creation must address the row on
- * the SAME handle the insert landed on — i.e. `getDrizzle()` — or the
- * update will silently no-op (the `backfillMediaFromShared` bridge is
- * insert-only and only runs at boot, so a media.db update against an
- * id that lives only in pops.db hits zero rows). The post-`addTvShow`
- * `discoverRatingKey` update in `plex/sync-discover-show.ts` is
- * routed through `getDrizzle()` for this reason.
- *
- * TODO(PRD-166 follow-up): once `seasons` + `episodes` join `tv_shows`
- * in `@pops/media-db` (PRD-166 currently lists all three but only
- * `tv_shows` has shipped), flip this transaction to
- * `getMediaDrizzle()` and collapse the `tv_shows` entry in
- * `media-backfill.ts` along with the matching shared-journal table
- * drop.
+ * - Inserts show, seasons, and episodes in a single transaction on
+ *   `media.db` (Theme 13 PR4 cutover — all three tables now live in
+ *   `@pops/media-db`).
  */
 export async function addTvShow(
   tvdbId: number,
@@ -208,7 +179,7 @@ export async function addTvShow(
 ): Promise<AddTvShowResult> {
   const existing = getTvShowByTvdbId(tvdbId);
   if (existing) {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     const showSeasons = db.select().from(seasons).where(eq(seasons.tvShowId, existing.id)).all();
     return { show: existing, seasons: showSeasons, created: false };
   }
@@ -217,7 +188,7 @@ export async function addTvShow(
   const seasonEpisodes = await fetchSeasonEpisodes(tvdbId, client, detail);
   const { posterUrl, backdropUrl } = selectBestArtwork(detail.artworks);
 
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const now = new Date().toISOString();
 
   const result = db.transaction((tx) => {

@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm';
 
-import { tvShows } from '@pops/db-types';
+import { tvShows } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addTvShow } from '../library/tv-show-service.js';
 import {
@@ -84,12 +83,7 @@ export async function resolveShow(
 
     const { show: newShow } = await addTvShow(tvdbId, tvdbClient, imageCache);
     if (ratingKey) {
-      // addTvShow inserts via getDrizzle() (mixed-table tx with
-      // seasons + episodes — see tv-show-service.ts JSDoc). The new
-      // row lives only on pops.db until the next boot's backfill
-      // copies it across, so this update must hit the same handle or
-      // it would silently no-op against media.db.
-      getDrizzle()
+      mediaDb
         .update(tvShows)
         .set({ discoverRatingKey: ratingKey })
         .where(eq(tvShows.id, newShow.id))
