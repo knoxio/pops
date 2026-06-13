@@ -12,6 +12,7 @@ export interface HaFrame {
   success?: boolean;
   message?: string;
   result?: unknown;
+  error?: { code?: string; message?: string };
   event?: {
     event_type?: string;
     data?: {

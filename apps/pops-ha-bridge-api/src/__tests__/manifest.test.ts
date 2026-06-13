@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { ManifestPayloadSchema, validateManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
-import { ENTITY_GET_STATE_TOOL_NAME, ENTITY_LIST_TOOL_NAME } from '../ai-tools/index.js';
+import {
+  CALL_SERVICE_TOOL_NAME,
+  ENTITY_GET_STATE_TOOL_NAME,
+  ENTITY_LIST_TOOL_NAME,
+} from '../ai-tools/index.js';
 import { buildHaBridgeManifest, HA_BRIDGE_PILLAR_ID } from '../manifest.js';
 import {
   HA_ENTITIES_ADAPTER_NAME,
@@ -16,10 +20,9 @@ describe('buildHaBridgeManifest', () => {
     const parsed = ManifestPayloadSchema.parse(manifest);
     expect(parsed.pillar).toBe(HA_BRIDGE_PILLAR_ID);
     expect(parsed.contract.tag).toBe('contract-ha-bridge@v0.1.0');
-    expect(parsed.ai.tools.map((t) => t.name)).toEqual([
-      ENTITY_LIST_TOOL_NAME,
-      ENTITY_GET_STATE_TOOL_NAME,
-    ]);
+    expect(parsed.ai.tools.map((t) => t.name).toSorted()).toEqual(
+      [ENTITY_LIST_TOOL_NAME, ENTITY_GET_STATE_TOOL_NAME, CALL_SERVICE_TOOL_NAME].toSorted()
+    );
     expect(parsed.sinks?.descriptors.length).toBeGreaterThan(0);
   });
 
@@ -47,6 +50,21 @@ describe('buildHaBridgeManifest', () => {
     const props = parameters.properties ?? {};
     expect(Object.keys(props).toSorted()).toEqual(['entityId']);
     expect(parameters.required).toContain('entityId');
+  });
+
+  it('publishes the entityCallService AI tool descriptor (US-04)', () => {
+    const manifest = buildHaBridgeManifest('0.1.0');
+    const tool = manifest.ai.tools.find((t) => t.name === CALL_SERVICE_TOOL_NAME);
+    if (tool === undefined) throw new Error('entityCallService descriptor missing');
+    expect(tool.description.length).toBeGreaterThanOrEqual(10);
+    expect(tool.parameters).toMatchObject({ type: 'object' });
+    const parameters = tool.parameters as {
+      properties?: Record<string, unknown>;
+      required?: string[];
+    };
+    const props = parameters.properties ?? {};
+    expect(Object.keys(props).toSorted()).toEqual(['domain', 'entityId', 'service', 'serviceData']);
+    expect((parameters.required ?? []).toSorted()).toEqual(['domain', 'service']);
   });
 
   it('every published AI tool name matches the manifest schema camelCase regex', () => {

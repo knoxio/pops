@@ -1,5 +1,5 @@
 /**
- * HA bridge AI tool registry (PRD-229 US-03).
+ * HA bridge AI tool registry (PRD-229 US-03, US-04).
  *
  * Each descriptor projects an internal Zod input schema to the
  * JSON-Schema-shaped `parameters` field expected by the pillar manifest's
@@ -7,11 +7,17 @@
  * the future tool-router binding — adding a tool is one entry, no core
  * edit.
  *
- * US-03 ships the read-only `entityList` + `entityGetState` pair.
- * `ha.entity.callService` (US-04) stays out of scope.
+ * US-03 ships the read-only `entityList` + `entityGetState` pair. US-04
+ * adds `entityCallService` — the first outbound tool that lets the LLM
+ * drive HA via `call_service` over the existing WebSocket connection.
  */
 import { z } from 'zod';
 
+import {
+  CALL_SERVICE_TOOL_DESCRIPTION,
+  CALL_SERVICE_TOOL_NAME,
+  callServiceInputSchema,
+} from './call-service.js';
 import { ENTITY_GET_STATE_TOOL_NAME, entityGetStateInputSchema } from './entity-get-state.js';
 import { ENTITY_LIST_TOOL_NAME, entityListInputSchema } from './entity-list.js';
 
@@ -37,6 +43,11 @@ const sources: AiToolSource[] = [
     description:
       'Fetch the current mirrored state of a single Home Assistant entity by `entityId` (e.g. "light.kitchen"). Returns the full row — state, attributes, area, device class, timestamps — or a `not-found` discriminant if the entity is not mirrored. Read-only.',
     inputSchema: entityGetStateInputSchema,
+  },
+  {
+    name: CALL_SERVICE_TOOL_NAME,
+    description: CALL_SERVICE_TOOL_DESCRIPTION,
+    inputSchema: callServiceInputSchema,
   },
 ];
 
@@ -74,3 +85,19 @@ export {
   type EntityGetStateInput,
   type EntityGetStateOutput,
 } from './entity-get-state.js';
+
+export {
+  CALL_SERVICE_TOOL_DESCRIPTION,
+  CALL_SERVICE_TOOL_NAME,
+  callServiceInputSchema,
+  type CallServiceInput,
+  type CallServiceOutcome,
+  type CallServiceRejectionReason,
+} from './call-service.js';
+export {
+  CALL_SERVICE_DEFAULT_TIMEOUT_MS,
+  CallServiceSender,
+  type CallServiceLiveSocket,
+  type CallServiceResultFrame,
+  type CallServiceSenderDeps,
+} from './call-service-sender.js';
