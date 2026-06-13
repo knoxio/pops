@@ -38,3 +38,17 @@ export class DocumentItemNotFoundError extends Error {
     this.id = id;
   }
 }
+
+export class DocumentCreateFailedError extends Error {
+  override readonly name = 'DocumentCreateFailedError' as const;
+  readonly itemId: string;
+  readonly paperlessDocumentId: number;
+
+  constructor(itemId: string, paperlessDocumentId: number) {
+    super(
+      `Failed to create item document link for item '${itemId}' and paperless document '${paperlessDocumentId}'`
+    );
+    this.itemId = itemId;
+    this.paperlessDocumentId = paperlessDocumentId;
+  }
+}

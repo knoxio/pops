@@ -83,6 +83,7 @@ export { DOCUMENT_TYPES, toItemDocument } from './services/documents.js';
 
 export {
   DocumentConflictError,
+  DocumentCreateFailedError,
   DocumentItemNotFoundError,
   DocumentNotFoundError,
 } from './services/documents-errors.js';

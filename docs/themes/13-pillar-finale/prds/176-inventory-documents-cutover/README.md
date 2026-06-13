@@ -12,16 +12,15 @@ Documents are the linkage layer between inventory items and external document st
 
 Tables (move from shared to `packages/inventory-db`):
 
-- `item_documents` — { id, item_id, document_source ('paperless' | 'local'), document_ref, label, attached_at } (already in `inventory.db` after M4)
+- `item_documents` — { id, item_id, paperless_document_id, document_type ('receipt' | 'warranty' | 'manual' | 'invoice' | 'other'), title, created_at } (already in `inventory.db` after M4). Unique on `(item_id, paperless_document_id)`.
 
 ## API Surface
 
-| Procedure                    | Kind     |
-| ---------------------------- | -------- |
-| `inventory.documents.byItem` | query    |
-| `inventory.documents.attach` | mutation |
-| `inventory.documents.detach` | mutation |
-| `inventory.documents.update` | mutation |
+| Procedure                         | Kind     |
+| --------------------------------- | -------- |
+| `inventory.documents.listForItem` | query    |
+| `inventory.documents.link`        | mutation |
+| `inventory.documents.unlink`      | mutation |
 
 Files today: `apps/pops-api/src/modules/inventory/documents/{router.ts, service.ts}`.
 
@@ -31,13 +30,14 @@ Follows [PRD-165's 4-PR sequence](../165-media-movies-cutover/README.md#business
 
 - The paperless-ngx client (PRD-177) is a separate concern; this PRD only moves the linkage table.
 - Cutover gated on PRD-173 (items).
+- Duplicate `(item_id, paperless_document_id)` pairs are rejected as a typed conflict (no in-place update).
 
 ## Edge Cases
 
-| Case                                                               | Behaviour                                                              |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| Document references a paperless document_ref that no longer exists | Existing behaviour preserved; query returns the row, consumer handles. |
-| Attach without paperless reachable                                 | Pure DB write; doesn't probe paperless.                                |
+| Case                                                              | Behaviour                                                              |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Document references a paperless document_id that no longer exists | Existing behaviour preserved; query returns the row, consumer handles. |
+| Link without paperless reachable                                  | Pure DB write; doesn't probe paperless.                                |
 
 ## User Stories
 

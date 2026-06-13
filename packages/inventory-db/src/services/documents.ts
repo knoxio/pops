@@ -22,6 +22,7 @@ import { and, asc, count, eq } from 'drizzle-orm';
 import { homeInventory, itemDocuments } from '../schema.js';
 import {
   DocumentConflictError,
+  DocumentCreateFailedError,
   DocumentItemNotFoundError,
   DocumentNotFoundError,
 } from './documents-errors.js';
@@ -41,6 +42,7 @@ export {
 
 export {
   DocumentConflictError,
+  DocumentCreateFailedError,
   DocumentItemNotFoundError,
   DocumentNotFoundError,
 } from './documents-errors.js';
@@ -93,7 +95,7 @@ export function link(db: InventoryDb, input: LinkDocumentInput): ItemDocumentRow
     .run();
 
   const created = findByPair(db, input.itemId, input.paperlessDocumentId);
-  if (!created) throw new DocumentNotFoundError(0);
+  if (!created) throw new DocumentCreateFailedError(input.itemId, input.paperlessDocumentId);
   return created;
 }
 

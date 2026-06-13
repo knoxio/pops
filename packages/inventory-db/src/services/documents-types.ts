@@ -18,7 +18,7 @@ export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 export interface LinkDocumentInput {
   itemId: string;
   paperlessDocumentId: number;
-  documentType: string;
+  documentType: DocumentType;
   title?: string | null;
 }
 
