@@ -20,7 +20,9 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { closeDb, setDb } from '../../../../db.js';
+import { openCoreDb, type OpenedCoreDb } from '@pops/core-db';
+
+import { closeDb, setCoreDb, setDb } from '../../../../db.js';
 import { createTestDb } from '../../../../shared/test-utils.js';
 import { setRawSetting } from '../../../core/settings/service.js';
 import { resetCerebrumCache } from '../../instance.js';
@@ -292,6 +294,7 @@ propose_to_act_report_min_approved = 99
 describe('getGliaThresholds precedence', () => {
   let root: string;
   let db: Database;
+  let coreHandle: OpenedCoreDb | null = null;
   let originalEnv: string | undefined;
 
   beforeEach(() => {
@@ -302,9 +305,14 @@ describe('getGliaThresholds precedence', () => {
     resetGliaTomlCache();
     db = createTestDb();
     setDb(db);
+    coreHandle = openCoreDb(':memory:');
+    setCoreDb(coreHandle);
   });
 
   afterEach(() => {
+    setCoreDb(null);
+    coreHandle?.raw.close();
+    coreHandle = null;
     closeDb();
     rmSync(root, { recursive: true, force: true });
     if (originalEnv === undefined) delete process.env[ENV_KEY];
