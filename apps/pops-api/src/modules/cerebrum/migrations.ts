@@ -15,6 +15,13 @@ import { drizzleMigrations } from '../../db/load-drizzle-migration.js';
 import type { MigrationDescriptor } from '@pops/types';
 
 export const cerebrumMigrationTags: readonly string[] = [
+  // debrief_results + debrief_sessions — Theme-13 Wave-5 cascade ownership
+  // flip. The shared journal entry remains while the table copies stay on
+  // pops.db; the cerebrum baseline `0055_debrief_baseline.sql` mirrors the
+  // shape and the boot-time backfill bridges existing rows across.
+  '0018_high_excalibur',
+  // debrief_status — same Theme-13 Wave-5 cascade flip as 0018.
+  '0020_melodic_major_mapleleaf',
   // engram_index — knowledge graph file metadata table.
   '0031_romantic_hannibal_king',
   // embeddings — dense vector storage.

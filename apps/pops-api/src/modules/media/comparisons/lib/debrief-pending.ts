@@ -1,14 +1,12 @@
 import { count, desc, eq, or } from 'drizzle-orm';
 
-import {
-  comparisonDimensions,
-  debriefResults,
-  debriefSessions,
-  movies,
-  watchHistory,
-} from '@pops/db-types';
+import { debriefResults, debriefSessions } from '@pops/cerebrum-db';
+import { comparisonDimensions } from '@pops/db-types';
+import { movies, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
+import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { resolveMoviePoster } from '../pairs/movie-helpers.js';
 
 import type { PendingDebrief } from '../types.js';
@@ -21,7 +19,7 @@ interface SessionRow {
 }
 
 function fetchPendingSessions(): SessionRow[] {
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
   return db
     .select({
       sessionId: debriefSessions.id,
@@ -47,7 +45,7 @@ function getActiveDimensionCount(): number {
 }
 
 function getCompletedResultCount(sessionId: number): number {
-  const db = getDrizzle();
+  const db = getCerebrumDrizzle();
   return (
     db
       .select({ total: count() })
@@ -61,8 +59,8 @@ function buildPendingFromSession(
   session: SessionRow,
   activeDimCount: number
 ): PendingDebrief | null {
-  const db = getDrizzle();
-  const whEntry = db
+  const mediaDb = getMediaDrizzle();
+  const whEntry = mediaDb
     .select({
       mediaType: watchHistory.mediaType,
       mediaId: watchHistory.mediaId,
@@ -73,7 +71,7 @@ function buildPendingFromSession(
 
   if (!whEntry || whEntry.mediaType !== 'movie') return null;
 
-  const movieRow = db
+  const movieRow = mediaDb
     .select({
       id: movies.id,
       title: movies.title,

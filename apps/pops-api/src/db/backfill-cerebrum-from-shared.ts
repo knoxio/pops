@@ -8,9 +8,13 @@
  * (PRD-182) entries have been retired from the backfill — their PR3
  * writer cutovers were verified in prod, so no further rows can land
  * on the shared `pops.db` for those tables. The remaining bridges are
- * `nudge_log` (until Track M5 / PRD-149 flips the nudges writer) and
- * `embeddings` (PRD-076 / theme-13 wave-5 — the slice scaffold landed
- * here, hot-path writer cutover follows in a subsequent PR).
+ * `nudge_log` (until Track M5 / PRD-149 flips the nudges writer),
+ * `embeddings` (PRD-076 / theme-13 wave-5 — slice already cut over),
+ * and the debrief slice (`debrief_sessions`, `debrief_results`,
+ * `debrief_status`) — Theme-13 Wave 5 cascade per PR #3191's MEDIA
+ * exit audit. The shared `pops.db` copies of the debrief tables stay
+ * in place until prod verification, then the bridge entries retire in
+ * the same pattern as the other slices.
  *
  * Subsequent boots find the cerebrum copy already populated and become
  * a no-op via the `WHERE NOT EXISTS (...)` existence filter.
@@ -95,6 +99,50 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'model',
       'dimensions',
       'created_at',
+    ],
+  },
+  {
+    /**
+     * `id` is preserved so the dependent `debrief_results.session_id`
+     * foreign-key references continue to resolve after the bridge runs.
+     * The cerebrum.db is freshly empty on first boot, so there is no
+     * autoincrement collision risk; the SQLite sequence picks up from
+     * `MAX(id)+1` after the copy. Dedupe on `id` keeps subsequent boots
+     * idempotent.
+     */
+    table: 'debrief_sessions',
+    idColumns: ['id'],
+    columns: ['id', 'watch_history_id', 'media_type', 'media_id', 'status', 'created_at'],
+  },
+  {
+    /**
+     * Dedupe on `id` for the same reason as `debrief_sessions` — the
+     * row's `session_id` is the load-bearing identity, copying it across
+     * keeps history intact for any in-flight debrief that already had
+     * partial results on the shared pops.db.
+     */
+    table: 'debrief_results',
+    idColumns: ['id'],
+    columns: ['id', 'session_id', 'dimension_id', 'comparison_id', 'created_at'],
+  },
+  {
+    /**
+     * Composite natural key from `debrief_status_media_dimension_idx`
+     * (UNIQUE on `(media_type, media_id, dimension_id)`) — re-runs only
+     * insert tuples the cerebrum copy is missing. `debriefed` /
+     * `dismissed` flags follow whatever the shared row had at backfill
+     * time; subsequent writer activity on cerebrum.db wins.
+     */
+    table: 'debrief_status',
+    idColumns: ['media_type', 'media_id', 'dimension_id'],
+    columns: [
+      'media_type',
+      'media_id',
+      'dimension_id',
+      'debriefed',
+      'dismissed',
+      'created_at',
+      'updated_at',
     ],
   },
 ];

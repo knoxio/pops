@@ -1,14 +1,12 @@
 import { and, count, eq } from 'drizzle-orm';
 
-import {
-  comparisonDimensions,
-  debriefResults,
-  debriefSessions,
-  debriefStatus,
-  watchHistory,
-} from '@pops/db-types';
+import { debriefResults, debriefSessions, debriefStatus } from '@pops/cerebrum-db';
+import { comparisonDimensions } from '@pops/db-types';
+import { watchHistory } from '@pops/media-db';
 
 import { getDb, getDrizzle } from '../../../../db.js';
+import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../../../shared/errors.js';
 
 import type {
@@ -23,8 +21,9 @@ interface ValidationResult {
 }
 
 function loadAndValidate(input: RecordDebriefComparisonInput): ValidationResult {
-  const drizzleDb = getDrizzle();
-  const session = drizzleDb
+  const cerebrumDb = getCerebrumDrizzle();
+  const mediaDb = getMediaDrizzle();
+  const session = cerebrumDb
     .select()
     .from(debriefSessions)
     .where(eq(debriefSessions.id, input.sessionId))
@@ -34,14 +33,14 @@ function loadAndValidate(input: RecordDebriefComparisonInput): ValidationResult 
     throw new ValidationError('Debrief session is already complete');
   }
 
-  const watchEntry = drizzleDb
+  const watchEntry = mediaDb
     .select()
     .from(watchHistory)
     .where(eq(watchHistory.id, session.watchHistoryId))
     .get();
   if (!watchEntry) throw new NotFoundError('Watch history entry', String(session.watchHistoryId));
 
-  const existingResult = drizzleDb
+  const existingResult = cerebrumDb
     .select()
     .from(debriefResults)
     .where(
@@ -82,8 +81,8 @@ function recordComparisonForDebrief(
 }
 
 function markDebriefed(watchEntry: typeof watchHistory.$inferSelect, dimensionId: number): void {
-  const drizzleDb = getDrizzle();
-  drizzleDb
+  const cerebrumDb = getCerebrumDrizzle();
+  cerebrumDb
     .update(debriefStatus)
     .set({ debriefed: 1 })
     .where(
@@ -98,8 +97,8 @@ function markDebriefed(watchEntry: typeof watchHistory.$inferSelect, dimensionId
 
 function activateIfPending(sessionId: number, sessionStatus: string): void {
   if (sessionStatus !== 'pending') return;
-  const drizzleDb = getDrizzle();
-  drizzleDb
+  const cerebrumDb = getCerebrumDrizzle();
+  cerebrumDb
     .update(debriefSessions)
     .set({ status: 'active' })
     .where(eq(debriefSessions.id, sessionId))
@@ -107,13 +106,14 @@ function activateIfPending(sessionId: number, sessionStatus: string): void {
 }
 
 function checkAndCompleteSession(sessionId: number): boolean {
-  const drizzleDb = getDrizzle();
-  const activeDimCount = drizzleDb
+  const sharedDb = getDrizzle();
+  const cerebrumDb = getCerebrumDrizzle();
+  const activeDimCount = sharedDb
     .select({ cnt: count() })
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))
     .get();
-  const resultCount = drizzleDb
+  const resultCount = cerebrumDb
     .select({ cnt: count() })
     .from(debriefResults)
     .where(eq(debriefResults.sessionId, sessionId))
@@ -123,7 +123,7 @@ function checkAndCompleteSession(sessionId: number): boolean {
     resultCount !== undefined &&
     resultCount.cnt >= activeDimCount.cnt;
   if (sessionComplete) {
-    drizzleDb
+    cerebrumDb
       .update(debriefSessions)
       .set({ status: 'complete' })
       .where(eq(debriefSessions.id, sessionId))
@@ -146,12 +146,12 @@ export function recordDebriefComparison(
   sessionComplete: boolean;
 } {
   const { watchEntry, sessionStatus } = loadAndValidate(input);
-  const drizzleDb = getDrizzle();
+  const cerebrumDb = getCerebrumDrizzle();
   const rawDb = getDb();
 
   return rawDb.transaction(() => {
     const comparisonId = recordComparisonForDebrief(input, watchEntry, recordFn);
-    drizzleDb
+    cerebrumDb
       .insert(debriefResults)
       .values({
         sessionId: input.sessionId,

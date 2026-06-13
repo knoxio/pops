@@ -33,12 +33,8 @@ export const mediaMigrationTags: readonly string[] = [
   '0016_certain_namor',
   // comparison_staleness.
   '0017_loose_doomsday',
-  // debrief_results / debrief_sessions.
-  '0018_high_excalibur',
   // tier_overrides.
   '0019_little_diamondback',
-  // debrief_status.
-  '0020_melodic_major_mapleleaf',
   // comparisons elo deltas.
   '0022_elo_deltas',
   // comparisons source column.
