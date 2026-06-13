@@ -18,6 +18,7 @@ Make the front-end registry-aware end-to-end. Three pieces:
 | 216 | `PillarGuard` rewrite               | Reads live registry; subscribes to changes; per-route unavailable placeholders               | Not started |
 | 217 | nginx config generator              | Generated `default.conf` from registry snapshot; init container OR sidecar strategy          | Not started |
 | 218 | `@pops/module-registry` deprecation | The build-time registry becomes a thin wrapper around the runtime one (offline-dev fallback) | Not started |
+| 227 | SDK consumer migration audit        | Punch list of every `trpc.*` consumer with its `pillar()` migration target + preconditions   | Not started |
 
 ## Dependencies
 

@@ -133,24 +133,25 @@ Five waves. Each wave is a set of PRDs that can ship concurrently. Waves are gat
 
 **Goal:** repartition load-bearing cross-pillar code; FE registry-aware end-to-end.
 
-| PRD                                | Parallelism                     | Owner agent                     |
-| ---------------------------------- | ------------------------------- | ------------------------------- |
-| 196 search adapter manifest        | follows Wave 2 (registry alive) | `a:search-manifest`             |
-| 197 federated query orchestrator   | follows 196                     | `a:search-orchestrator`         |
-| 198 ranking strategy               | follows 197                     | `a:ranking`                     |
-| 199 partial failure semantics      | follows 197                     | `a:partial-failure`             |
-| 200 AI tool manifest               | follows Wave 2                  | `a:ai-manifest`                 |
-| 201 dynamic tool list              | follows 200                     | `a:dynamic-tools`               |
-| 202 tool call routing              | follows 201                     | `a:tool-routing`                |
-| 207 ADR-029 decision matrix        | follows Wave 3                  | `a:adr-029`                     |
-| 208 search orchestrator relocation | follows 207 + 197               | `a:search-api-container`        |
-| 209 AI orchestrator relocation     | follows 207 + 202               | `a:ai-api-container`            |
-| 210 worker partitioning audit      | follows 207 + Wave 3            | `a:worker-audit`                |
-| 211 URI dispatcher relocation      | follows 207                     | `a:uri-dispatcher`              |
-| 215 React SDK                      | follows Wave 2                  | `a:react-sdk`                   |
-| 216 PillarGuard rewrite            | follows 215                     | `a:pillar-guard`                |
-| 217 nginx config generator         | follows Wave 3                  | `a:nginx-gen`                   |
-| 218 module-registry deprecation    | follows 215                     | `a:module-registry-deprecation` |
+| PRD                                | Parallelism                      | Owner agent                     |
+| ---------------------------------- | -------------------------------- | ------------------------------- |
+| 196 search adapter manifest        | follows Wave 2 (registry alive)  | `a:search-manifest`             |
+| 197 federated query orchestrator   | follows 196                      | `a:search-orchestrator`         |
+| 198 ranking strategy               | follows 197                      | `a:ranking`                     |
+| 199 partial failure semantics      | follows 197                      | `a:partial-failure`             |
+| 200 AI tool manifest               | follows Wave 2                   | `a:ai-manifest`                 |
+| 201 dynamic tool list              | follows 200                      | `a:dynamic-tools`               |
+| 202 tool call routing              | follows 201                      | `a:tool-routing`                |
+| 207 ADR-029 decision matrix        | follows Wave 3                   | `a:adr-029`                     |
+| 208 search orchestrator relocation | follows 207 + 197                | `a:search-api-container`        |
+| 209 AI orchestrator relocation     | follows 207 + 202                | `a:ai-api-container`            |
+| 210 worker partitioning audit      | follows 207 + Wave 3             | `a:worker-audit`                |
+| 211 URI dispatcher relocation      | follows 207                      | `a:uri-dispatcher`              |
+| 215 React SDK                      | follows Wave 2                   | `a:react-sdk`                   |
+| 216 PillarGuard rewrite            | follows 215                      | `a:pillar-guard`                |
+| 217 nginx config generator         | follows Wave 3                   | `a:nginx-gen`                   |
+| 218 module-registry deprecation    | follows 215                      | `a:module-registry-deprecation` |
+| 227 SDK consumer migration audit   | follows Wave 2 (parallel w/ 215) | `a:sdk-consumer-audit`          |
 
 **Wave 4 exit criteria:**
 
@@ -397,6 +398,7 @@ Status legend: ⏳ Not started · 🔄 In progress · ✅ Done · ⛔ Blocked
 | 224     | ci-e2e-scoping                   | 3    | ⏳     | 221                    | CI leanness wave 3             |
 | 225     | ci-publish-narrowing             | 4    | ⏳     | 221                    | CI leanness wave 4             |
 | 226     | ci-budget-enforcement            | 5    | ⏳     | 220-225                | CI leanness wave 5             |
+| 227     | sdk-consumer-migration-audit     | 4    | ⏳     | 193, 215               | FE + Node `pillar()` rollout   |
 
 ---
 
