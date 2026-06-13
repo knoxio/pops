@@ -5,14 +5,21 @@ on:
     branches: [main]
     paths:
       - "apps/pops-media-api/**"
-      - "packages/media-db/**"
       - "packages/db-types/**"
+      - "packages/media-contract/**"
+      - "packages/media-db/**"
+      - "packages/pillar-sdk/**"
       - ".github/workflows/media-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "apps/pops-media-api/**"
+      - "packages/db-types/**"
+      - "packages/media-contract/**"
+      - "packages/media-db/**"
+      - "packages/pillar-sdk/**"
+      - ".github/workflows/media-api-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:
@@ -29,8 +36,10 @@ jobs:
           filters: |
             relevant:
               - 'apps/pops-media-api/**'
-              - 'packages/media-db/**'
               - 'packages/db-types/**'
+              - 'packages/media-contract/**'
+              - 'packages/media-db/**'
+              - 'packages/pillar-sdk/**'
               - '.github/workflows/media-api-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 

@@ -10,9 +10,12 @@ on:
       - ".github/workflows/navigation-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "packages/navigation/**"
+      - "packages/db-types/**"
+      - "packages/types/**"
+      - ".github/workflows/navigation-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:
@@ -29,6 +32,8 @@ jobs:
           filters: |
             relevant:
               - 'packages/navigation/**'
+              - 'packages/db-types/**'
+              - 'packages/types/**'
               - '.github/workflows/navigation-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 

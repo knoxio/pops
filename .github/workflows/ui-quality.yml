@@ -8,9 +8,10 @@ on:
       - ".github/workflows/ui-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "packages/ui/**"
+      - ".github/workflows/ui-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:

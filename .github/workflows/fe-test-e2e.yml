@@ -3,23 +3,33 @@ name: E2E Tests
 on:
   push:
     branches: [main, develop]
+    paths:
+      - "apps/pops-shell/**"
+      - "apps/pops-api/**"
+      - "apps/pops-*-api/**"
+      - "packages/api-client/**"
+      - "packages/app-*/**"
+      - "packages/*-contract/**"
+      - "packages/navigation/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "packages/ui/**"
+      - "packages/widgets/**"
+      - ".github/workflows/fe-test-e2e.yml"
   pull_request:
     paths:
-      - 'apps/pops-shell/**'
-      - 'apps/pops-api/**'
-      - 'packages/ui/**'
-      - 'packages/app-*/**'
-      - 'packages/api-client/**'
-      - 'packages/auth/**'
-      - 'packages/navigation/**'
-      - 'packages/widgets/**'
-      - 'packages/types/**'
-      - 'packages/db-types/**'
-      - 'packages/test-utils/**'
-      - 'packages/module-registry/**'
-      - 'packages/food-contracts/**'
-      - 'packages/*-db/**'
-      - '.github/workflows/fe-test-e2e.yml'
+      - "apps/pops-shell/**"
+      - "apps/pops-api/**"
+      - "apps/pops-*-api/**"
+      - "packages/api-client/**"
+      - "packages/app-*/**"
+      - "packages/*-contract/**"
+      - "packages/navigation/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - "packages/ui/**"
+      - "packages/widgets/**"
+      - ".github/workflows/fe-test-e2e.yml"
 
 jobs:
   changes:
@@ -37,18 +47,15 @@ jobs:
             e2e:
               - 'apps/pops-shell/**'
               - 'apps/pops-api/**'
-              - 'packages/ui/**'
-              - 'packages/app-*/**'
+              - 'apps/pops-*-api/**'
               - 'packages/api-client/**'
-              - 'packages/auth/**'
+              - 'packages/app-*/**'
+              - 'packages/*-contract/**'
               - 'packages/navigation/**'
-              - 'packages/widgets/**'
+              - 'packages/pillar-sdk/**'
               - 'packages/types/**'
-              - 'packages/db-types/**'
-              - 'packages/test-utils/**'
-              - 'packages/module-registry/**'
-              - 'packages/food-contracts/**'
-              - 'packages/*-db/**'
+              - 'packages/ui/**'
+              - 'packages/widgets/**'
               - '.github/workflows/fe-test-e2e.yml'
 
   e2e-tests:

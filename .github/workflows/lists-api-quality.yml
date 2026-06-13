@@ -5,14 +5,21 @@ on:
     branches: [main]
     paths:
       - "apps/pops-lists-api/**"
-      - "packages/lists-db/**"
       - "packages/db-types/**"
+      - "packages/lists-contract/**"
+      - "packages/lists-db/**"
+      - "packages/pillar-sdk/**"
       - ".github/workflows/lists-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "apps/pops-lists-api/**"
+      - "packages/db-types/**"
+      - "packages/lists-contract/**"
+      - "packages/lists-db/**"
+      - "packages/pillar-sdk/**"
+      - ".github/workflows/lists-api-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:
@@ -29,8 +36,10 @@ jobs:
           filters: |
             relevant:
               - 'apps/pops-lists-api/**'
-              - 'packages/lists-db/**'
               - 'packages/db-types/**'
+              - 'packages/lists-contract/**'
+              - 'packages/lists-db/**'
+              - 'packages/pillar-sdk/**'
               - '.github/workflows/lists-api-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 

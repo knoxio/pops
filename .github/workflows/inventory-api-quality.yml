@@ -5,14 +5,21 @@ on:
     branches: [main]
     paths:
       - "apps/pops-inventory-api/**"
-      - "packages/inventory-db/**"
       - "packages/db-types/**"
+      - "packages/inventory-contract/**"
+      - "packages/inventory-db/**"
+      - "packages/pillar-sdk/**"
       - ".github/workflows/inventory-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "apps/pops-inventory-api/**"
+      - "packages/db-types/**"
+      - "packages/inventory-contract/**"
+      - "packages/inventory-db/**"
+      - "packages/pillar-sdk/**"
+      - ".github/workflows/inventory-api-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:
@@ -29,8 +36,10 @@ jobs:
           filters: |
             relevant:
               - 'apps/pops-inventory-api/**'
-              - 'packages/inventory-db/**'
               - 'packages/db-types/**'
+              - 'packages/inventory-contract/**'
+              - 'packages/inventory-db/**'
+              - 'packages/pillar-sdk/**'
               - '.github/workflows/inventory-api-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 

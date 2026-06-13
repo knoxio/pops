@@ -10,9 +10,12 @@ on:
       - ".github/workflows/lists-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "packages/lists-db/**"
+      - "packages/db-types/**"
+      - "apps/pops-api/src/db/drizzle-migrations/0062_chemical_donald_blake.sql"
+      - ".github/workflows/lists-db-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
 
 jobs:
   changes:

@@ -5,19 +5,35 @@ on:
     branches: [main, develop]
     paths:
       - "apps/pops-api/**"
+      - "packages/auth/**"
       - "packages/cerebrum-db/**"
+      - "packages/core-db/**"
       - "packages/db-types/**"
+      - "packages/finance-contract/**"
       - "packages/finance-db/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
       - "packages/lists-db/**"
+      - "packages/media-db/**"
+      - "packages/pillar-sdk/**"
       - "packages/types/**"
-      - "packages/auth/**"
       - ".github/workflows/api-test.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - "apps/pops-api/**"
+      - "packages/auth/**"
+      - "packages/cerebrum-db/**"
+      - "packages/core-db/**"
+      - "packages/db-types/**"
+      - "packages/finance-contract/**"
+      - "packages/finance-db/**"
+      - "packages/food-db/**"
+      - "packages/inventory-db/**"
+      - "packages/lists-db/**"
+      - "packages/media-db/**"
+      - "packages/pillar-sdk/**"
+      - "packages/types/**"
+      - ".github/workflows/api-test.yml"
 
 jobs:
   changes:
@@ -34,14 +50,18 @@ jobs:
           filters: |
             backend:
               - 'apps/pops-api/**'
+              - 'packages/auth/**'
               - 'packages/cerebrum-db/**'
+              - 'packages/core-db/**'
               - 'packages/db-types/**'
+              - 'packages/finance-contract/**'
               - 'packages/finance-db/**'
               - 'packages/food-db/**'
               - 'packages/inventory-db/**'
               - 'packages/lists-db/**'
+              - 'packages/media-db/**'
+              - 'packages/pillar-sdk/**'
               - 'packages/types/**'
-              - 'packages/auth/**'
               - '.github/workflows/api-test.yml'
 
   test-backend:

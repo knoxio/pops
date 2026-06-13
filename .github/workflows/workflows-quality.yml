@@ -6,9 +6,8 @@ on:
     paths:
       - ".github/workflows/**"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
+    paths:
+      - ".github/workflows/**"
 
 jobs:
   changes:
