@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
 type SyncJobType =
   | 'plexSyncMovies'
@@ -37,6 +37,29 @@ interface SyncJobParams {
   sectionId?: string;
   movieSectionId?: string;
   tvSectionId?: string;
+}
+
+interface ActiveJobsResult {
+  data: SyncJob[];
+}
+
+interface SyncJobStatusResult {
+  data: SyncJob;
+}
+
+interface StartSyncJobInput {
+  jobType: SyncJobType;
+  sectionId?: string;
+  movieSectionId?: string;
+  tvSectionId?: string;
+}
+
+interface StartSyncJobResult {
+  data: { jobId: string };
+}
+
+interface LastSyncResultsResult {
+  data: Record<string, SyncJob | null>;
 }
 
 interface UseSyncJobReturn {
@@ -75,10 +98,15 @@ function useRestoreActiveJob(
   setRestoredJob: (j: SyncJob) => void
 ) {
   const restoredRef = useRef(false);
-  const activeJobs = trpc.media.plex.getActiveSyncJobs.useQuery(undefined, {
-    enabled: !jobId && !restoredRef.current,
-    refetchOnWindowFocus: false,
-  });
+  const activeJobs = usePillarQuery<ActiveJobsResult>(
+    'media',
+    ['plex', 'getActiveSyncJobs'],
+    undefined,
+    {
+      enabled: !jobId && !restoredRef.current,
+      refetchOnWindowFocus: false,
+    }
+  );
   const isRestoring = !restoredRef.current && !jobId && activeJobs.isLoading;
 
   useEffect(() => {
@@ -86,9 +114,7 @@ function useRestoreActiveJob(
     if (!activeJobs.data?.data) return;
     restoredRef.current = true;
 
-    const match = activeJobs.data.data.find(
-      (j) => j.jobType === jobType && j.status === 'running'
-    ) as SyncJob | undefined;
+    const match = activeJobs.data.data.find((j) => j.jobType === jobType && j.status === 'running');
     if (match) {
       setJobId(match.id);
       setRestoredJob(match);
@@ -103,7 +129,9 @@ function useStatusPolling(
   restoredJob: SyncJob | null,
   clearRestored: () => void
 ) {
-  const statusQuery = trpc.media.plex.getSyncJobStatus.useQuery(
+  const statusQuery = usePillarQuery<SyncJobStatusResult>(
+    'media',
+    ['plex', 'getSyncJobStatus'],
     { jobId: jobId ?? '' },
     {
       enabled: !!jobId,
@@ -164,16 +192,20 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
   const { isRestoring } = useRestoreActiveJob(jobType, jobId, setJobId, setRestoredJob);
   const statusQuery = useStatusPolling(jobId, restoredJob, () => setRestoredJob(null));
 
-  const startMutation = trpc.media.plex.startSyncJob.useMutation({
-    onSuccess: (res) => {
-      setJobId(res.data.jobId);
-    },
-    onError: (err) => {
-      toast.error(`Failed to start ${label}: ${err.message}`);
-    },
-  });
+  const startMutation = usePillarMutation<StartSyncJobInput, StartSyncJobResult>(
+    'media',
+    ['plex', 'startSyncJob'],
+    {
+      onSuccess: (res) => {
+        setJobId(res.data.jobId);
+      },
+      onError: (err) => {
+        toast.error(`Failed to start ${label}: ${err.message}`);
+      },
+    }
+  );
 
-  useCompletionToast(label, jobId, statusQuery.data?.data as SyncJob | undefined);
+  useCompletionToast(label, jobId, statusQuery.data?.data);
 
   const start = useCallback(
     (params?: SyncJobParams) => {
@@ -182,7 +214,7 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     [jobType, startMutation]
   );
 
-  const job = (statusQuery.data?.data as SyncJob | undefined) ?? restoredJob;
+  const job = statusQuery.data?.data ?? restoredJob;
   const isRunning = isRestoring || job?.status === 'running';
 
   return {
@@ -196,6 +228,10 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
 
 /** Hook to get "last synced" data for all sync types. */
 export function useLastSyncResults(): Record<string, SyncJob | null> {
-  const query = trpc.media.plex.getLastSyncResults.useQuery();
-  return (query.data?.data ?? {}) as Record<string, SyncJob | null>;
+  const query = usePillarQuery<LastSyncResultsResult>(
+    'media',
+    ['plex', 'getLastSyncResults'],
+    undefined
+  );
+  return query.data?.data ?? {};
 }

@@ -1,9 +1,8 @@
-import { AlertCircle, Library, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { Link } from 'react-router';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Button,
   Dialog,
@@ -12,89 +11,53 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Skeleton,
 } from '@pops/ui';
 
 import { PickCard } from './quick-pick/PickCard';
+import { EmptyView, ErrorView, FinishedView, PickLoading } from './quick-pick/PickViews';
 
-function PickLoading() {
-  return (
-    <div className="space-y-3">
-      <Skeleton className="aspect-[2/3] w-full rounded-lg" />
-      <Skeleton className="h-6 w-3/4" />
-      <Skeleton className="h-4 w-1/2" />
-    </div>
-  );
+interface QuickPickMovie {
+  id: number;
+  title: string;
+  posterUrl: string | null;
+  releaseDate: string | null;
+  genres: string | null;
+  overview: string | null;
+  voteAverage: number | null;
+  runtime: number | null;
 }
-
-function FinishedView({ onRefresh }: { onRefresh: () => void }) {
-  return (
-    <div className="text-center py-8 space-y-4">
-      <Sparkles className="h-10 w-10 mx-auto text-app-accent" />
-      <p className="text-muted-foreground">You&apos;ve seen all the picks!</p>
-      <Button onClick={onRefresh} variant="outline">
-        Get More Picks
-      </Button>
-    </div>
-  );
+interface QuickPickResult {
+  data: QuickPickMovie[];
 }
-
-function EmptyView() {
-  return (
-    <div className="text-center py-8 space-y-4">
-      <Library className="h-10 w-10 mx-auto text-muted-foreground" />
-      <div className="space-y-1">
-        <p className="font-medium">Nothing to pick from</p>
-        <p className="text-sm text-muted-foreground">
-          All your library movies are watched or already on your watchlist.
-        </p>
-      </div>
-      <Link to="/media/search">
-        <Button variant="outline" size="sm">
-          Find something new
-        </Button>
-      </Link>
-    </div>
-  );
-}
-
-function ErrorView({ message }: { message: string }) {
-  return (
-    <div className="text-center py-8 space-y-3">
-      <AlertCircle className="h-10 w-10 mx-auto text-destructive/70" />
-      <div className="space-y-1">
-        <p className="font-medium">Couldn't load picks</p>
-        <p className="text-sm text-muted-foreground">{message}</p>
-      </div>
-    </div>
-  );
+interface AddToWatchlistInput {
+  mediaType: 'movie';
+  mediaId: number;
 }
 
 function useQuickPickModel() {
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const utils = trpc.useUtils();
 
-  const { data, isLoading, error, refetch } = trpc.media.discovery.quickPick.useQuery(
+  const { data, isLoading, error, refetch } = usePillarQuery<QuickPickResult>(
+    'media',
+    ['discovery', 'quickPick'],
     { count: 5 },
     { enabled: open }
   );
 
-  const addToWatchlist = trpc.media.watchlist.add.useMutation({
-    onSuccess: () => {
-      toast.success('Added to watchlist!');
-      void utils.media.watchlist.list.invalidate();
-      setOpen(false);
-    },
-    onError: (err: { message: string; data?: { code?: string } | null }) => {
-      if (err.data?.code === 'CONFLICT') {
-        toast.info('Already on watchlist');
+  const addToWatchlist = usePillarMutation<AddToWatchlistInput, unknown>(
+    'media',
+    ['watchlist', 'add'],
+    {
+      onSuccess: () => {
+        toast.success('Added to watchlist!');
         setOpen(false);
-      } else {
+      },
+      onError: (err) => {
         toast.error(`Failed to add: ${err.message}`);
-      }
-    },
-  });
+      },
+    }
+  );
 
   const movies = data?.data ?? [];
   const currentMovie = movies[currentIndex];

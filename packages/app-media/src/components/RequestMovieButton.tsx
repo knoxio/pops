@@ -1,6 +1,6 @@
 import { Download } from 'lucide-react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * RequestMovieButton — requests a movie via Radarr.
  *
@@ -14,6 +14,14 @@ import { Button } from '@pops/ui';
 
 import { ConditionalModalButton } from './ConditionalModalButton';
 import { RequestMovieModal } from './RequestMovieModal';
+
+interface ArrConfigResult {
+  data: { radarrConfigured: boolean; sonarrConfigured: boolean };
+}
+
+interface MovieStatusResult {
+  data: { status: string; label: string } | null;
+}
 
 type ButtonVariant = 'standard' | 'compact';
 
@@ -84,9 +92,15 @@ function RequestButtonShell({
 }
 
 function useRequestMovieGate(tmdbId: number) {
-  const { data: configData } = trpc.media.arr.getConfig.useQuery();
+  const { data: configData } = usePillarQuery<ArrConfigResult>(
+    'media',
+    ['arr', 'getConfig'],
+    undefined
+  );
   const config = configData?.data;
-  const movieStatus = trpc.media.arr.getMovieStatus.useQuery(
+  const movieStatus = usePillarQuery<MovieStatusResult>(
+    'media',
+    ['arr', 'getMovieStatus'],
     { tmdbId },
     { enabled: config?.radarrConfigured === true }
   );

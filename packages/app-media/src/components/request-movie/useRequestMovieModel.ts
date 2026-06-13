@@ -1,6 +1,38 @@
 import { useEffect, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+
+interface QualityProfile {
+  id: number;
+  name: string;
+}
+
+interface RootFolder {
+  path: string;
+  freeSpace: number;
+}
+
+interface QualityProfilesResult {
+  data: QualityProfile[];
+}
+
+interface RootFoldersResult {
+  data: RootFolder[];
+}
+
+interface AddMovieInput {
+  tmdbId: number;
+  title: string;
+  year: number;
+  qualityProfileId: number;
+  rootFolderPath: string;
+}
+
+interface DownloadAndProtectInput {
+  tmdbId: number;
+  title: string;
+  year: number;
+}
 
 interface RequestMovieModelArgs {
   open: boolean;
@@ -12,11 +44,13 @@ interface RequestMovieModelArgs {
 }
 
 function useProfilesAndFolders(open: boolean, isDownloadMode: boolean) {
-  const profiles = trpc.media.arr.getQualityProfiles.useQuery(undefined, {
-    enabled: open && !isDownloadMode,
-    retry: false,
-  });
-  const folders = trpc.media.arr.getRootFolders.useQuery(undefined, {
+  const profiles = usePillarQuery<QualityProfilesResult>(
+    'media',
+    ['arr', 'getQualityProfiles'],
+    undefined,
+    { enabled: open && !isDownloadMode, retry: false }
+  );
+  const folders = usePillarQuery<RootFoldersResult>('media', ['arr', 'getRootFolders'], undefined, {
     enabled: open && !isDownloadMode,
     retry: false,
   });
@@ -56,33 +90,34 @@ function useDefaults({
 }
 
 interface MutationArgs {
-  tmdbId: number;
   onClose: () => void;
   resetState: () => void;
   setError: (v: string | null) => void;
   setSuccess: (v: boolean) => void;
 }
 
-function useRequestMutations({ tmdbId, onClose, resetState, setError, setSuccess }: MutationArgs) {
-  const utils = trpc.useUtils();
+function useRequestMutations({ onClose, resetState, setError, setSuccess }: MutationArgs) {
   const onMutationSuccess = () => {
     setSuccess(true);
     setError(null);
-    void utils.media.arr.getMovieStatus.invalidate({ tmdbId });
     setTimeout(() => {
       onClose();
       resetState();
     }, 1500);
   };
   const onMutationError = (err: { message: string }) => setError(err.message);
-  const addMovie = trpc.media.arr.addMovie.useMutation({
+  const addMovie = usePillarMutation<AddMovieInput, unknown>('media', ['arr', 'addMovie'], {
     onSuccess: onMutationSuccess,
     onError: onMutationError,
   });
-  const downloadAndProtect = trpc.media.arr.downloadAndProtect.useMutation({
-    onSuccess: onMutationSuccess,
-    onError: onMutationError,
-  });
+  const downloadAndProtect = usePillarMutation<DownloadAndProtectInput, unknown>(
+    'media',
+    ['arr', 'downloadAndProtect'],
+    {
+      onSuccess: onMutationSuccess,
+      onError: onMutationError,
+    }
+  );
   return { addMovie, downloadAndProtect };
 }
 
@@ -111,7 +146,6 @@ export function useRequestMovieModel(args: RequestMovieModelArgs) {
   };
 
   const { addMovie, downloadAndProtect } = useRequestMutations({
-    tmdbId,
     onClose,
     resetState,
     setError,

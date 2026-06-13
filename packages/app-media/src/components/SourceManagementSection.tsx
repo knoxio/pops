@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * SourceManagementSection — CRUD UI for rotation source management.
  *
@@ -12,6 +12,10 @@ import { SourceCard } from './source-management/SourceCard';
 import { SourceForm } from './source-management/SourceForm';
 
 import type { Source, SourceFormValues } from './source-management/types';
+
+interface SourceTypesResult {
+  types: string[];
+}
 
 function parseConfig(raw: string | null): Record<string, unknown> {
   if (!raw) return {};
@@ -65,8 +69,12 @@ function SourceList({
 }
 
 export function SourceManagementSection() {
-  const sourcesQuery = trpc.media.rotation.listSources.useQuery();
-  const sourceTypesQuery = trpc.media.rotation.sourceTypes.useQuery();
+  const sourcesQuery = usePillarQuery<Source[]>('media', ['rotation', 'listSources'], undefined);
+  const sourceTypesQuery = usePillarQuery<SourceTypesResult>(
+    'media',
+    ['rotation', 'sourceTypes'],
+    undefined
+  );
 
   const [showForm, setShowForm] = useState<'create' | 'edit' | null>(null);
   const [editingSource, setEditingSource] = useState<SourceFormValues | null>(null);

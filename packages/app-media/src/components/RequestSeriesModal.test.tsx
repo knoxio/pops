@@ -9,27 +9,30 @@ const mockLanguagesQuery = vi.fn();
 const mockAddSeriesMutate = vi.fn();
 let addSeriesOpts: Record<string, unknown> = {};
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    media: {
-      arr: {
-        getSonarrQualityProfiles: {
-          useQuery: (...args: unknown[]) => mockProfilesQuery(...args),
-        },
-        getSonarrRootFolders: {
-          useQuery: (...args: unknown[]) => mockFoldersQuery(...args),
-        },
-        getSonarrLanguageProfiles: {
-          useQuery: (...args: unknown[]) => mockLanguagesQuery(...args),
-        },
-        addSeries: {
-          useMutation: (opts: Record<string, unknown>) => {
-            addSeriesOpts = opts;
-            return { mutate: mockAddSeriesMutate, isPending: false };
-          },
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    _input: unknown,
+    opts?: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'arr.getSonarrQualityProfiles') return mockProfilesQuery(_input, opts);
+    if (key === 'arr.getSonarrRootFolders') return mockFoldersQuery(_input, opts);
+    if (key === 'arr.getSonarrLanguageProfiles') return mockLanguagesQuery(_input, opts);
+    return { data: null, isLoading: false, error: null };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'arr.addSeries') {
+      addSeriesOpts = opts;
+      return { mutate: mockAddSeriesMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
   },
 }));
 

@@ -11,8 +11,11 @@ const mockGetPendingDebriefs = vi.fn();
 const mockGetLeavingMovies = vi.fn();
 
 vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    if (path.join('.') === 'comparisons.getPendingDebriefs') return mockGetPendingDebriefs();
+  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+    const key = path.join('.');
+    if (key === 'comparisons.getPendingDebriefs') return mockGetPendingDebriefs();
+    if (key === 'library.list') return mockListQuery(input);
+    if (key === 'library.genres') return mockGenresQuery();
     return { data: undefined, isLoading: false };
   },
   usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
@@ -21,10 +24,6 @@ vi.mock('@pops/pillar-sdk/react', () => ({
 vi.mock('@pops/api-client', () => ({
   trpc: {
     media: {
-      library: {
-        list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-        genres: { useQuery: () => mockGenresQuery() },
-      },
       comparisons: {
         getPendingDebriefs: { useQuery: () => mockGetPendingDebriefs() },
       },

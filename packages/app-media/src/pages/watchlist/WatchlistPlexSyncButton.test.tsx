@@ -7,24 +7,34 @@ const mockGetStatus = vi.fn();
 const mockInvalidateWatchlist = vi.fn();
 let capturedStartOpts: Record<string, (...args: unknown[]) => unknown> = {};
 
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (
+    _pillarId: string,
+    path: readonly string[],
+    input: unknown,
+    opts?: Record<string, unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'plex.getActiveSyncJobs') return mockGetActive(input, opts);
+    if (key === 'plex.getSyncJobStatus') return mockGetStatus(input, opts);
+    return { data: undefined, isLoading: false };
+  },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts: Record<string, (...args: unknown[]) => unknown>
+  ) => {
+    const key = path.join('.');
+    if (key === 'plex.startSyncJob') {
+      capturedStartOpts = opts;
+      return { mutate: mockStartMutate, isPending: false };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+}));
+
 vi.mock('@pops/api-client', () => ({
   trpc: {
-    media: {
-      plex: {
-        getActiveSyncJobs: {
-          useQuery: (...args: unknown[]) => mockGetActive(...args),
-        },
-        getSyncJobStatus: {
-          useQuery: (...args: unknown[]) => mockGetStatus(...args),
-        },
-        startSyncJob: {
-          useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
-            capturedStartOpts = opts;
-            return { mutate: mockStartMutate, isPending: false };
-          },
-        },
-      },
-    },
     useUtils: () => ({
       media: {
         watchlist: { list: { invalidate: mockInvalidateWatchlist } },

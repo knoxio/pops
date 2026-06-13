@@ -1,4 +1,4 @@
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 export type MediaType = 'all' | 'movie' | 'tv';
 export type SortOption = 'title' | 'dateAdded' | 'releaseDate' | 'rating';
@@ -14,6 +14,23 @@ export interface MediaItem {
   voteAverage: number | null;
   createdAt: string;
   releaseDate: string | null;
+}
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+interface LibraryListResult {
+  data: MediaItem[];
+  pagination: Pagination;
+}
+
+interface GenresResult {
+  data: string[];
 }
 
 export interface UseMediaLibraryParams {
@@ -41,17 +58,23 @@ function buildListInput(params: UseMediaLibraryParams) {
 }
 
 export function useMediaLibrary(params: UseMediaLibraryParams) {
-  const { data, isLoading, error, refetch } = trpc.media.library.list.useQuery(
+  const { data, isLoading, error, refetch } = usePillarQuery<LibraryListResult>(
+    'media',
+    ['library', 'list'],
     buildListInput(params)
   );
 
-  const { data: genresData } = trpc.media.library.genres.useQuery();
+  const { data: genresData } = usePillarQuery<GenresResult>(
+    'media',
+    ['library', 'genres'],
+    undefined
+  );
 
   const total = data?.pagination.total ?? 0;
   const isEmpty = !isLoading && !error && total === 0;
 
   return {
-    items: (data?.data ?? []) as MediaItem[],
+    items: data?.data ?? [],
     isLoading,
     error,
     refetch,

@@ -1,9 +1,36 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { SourceFormValues } from './types';
+
+interface PlexFriend {
+  uuid: string;
+  username: string;
+}
+
+type PlexFriendsResult =
+  | { error: string; friends: PlexFriend[] }
+  | { error: null; friends: PlexFriend[] };
+
+interface CreateSourceInput {
+  type: string;
+  name: string;
+  priority: number;
+  enabled: boolean;
+  syncIntervalHours: number;
+  config: Record<string, unknown>;
+}
+
+interface UpdateSourceInput {
+  id: number;
+  name: string;
+  priority: number;
+  enabled: boolean;
+  syncIntervalHours: number;
+  config: Record<string, unknown>;
+}
 
 interface UseSourceFormArgs {
   mode: 'create' | 'edit';
@@ -60,23 +87,28 @@ function useSourceFormState(initialValues: SourceFormValues | undefined, sourceT
 }
 
 function useSourceMutations(onClose: () => void) {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.media.rotation.createSource.useMutation({
-    onSuccess: () => {
-      toast.success('Source created');
-      void utils.media.rotation.listSources.invalidate();
-      onClose();
-    },
-    onError: () => toast.error('Failed to create source'),
-  });
-  const updateMutation = trpc.media.rotation.updateSource.useMutation({
-    onSuccess: () => {
-      toast.success('Source updated');
-      void utils.media.rotation.listSources.invalidate();
-      onClose();
-    },
-    onError: () => toast.error('Failed to update source'),
-  });
+  const createMutation = usePillarMutation<CreateSourceInput, unknown>(
+    'media',
+    ['rotation', 'createSource'],
+    {
+      onSuccess: () => {
+        toast.success('Source created');
+        onClose();
+      },
+      onError: () => toast.error('Failed to create source'),
+    }
+  );
+  const updateMutation = usePillarMutation<UpdateSourceInput, unknown>(
+    'media',
+    ['rotation', 'updateSource'],
+    {
+      onSuccess: () => {
+        toast.success('Source updated');
+        onClose();
+      },
+      onError: () => toast.error('Failed to update source'),
+    }
+  );
   return { createMutation, updateMutation };
 }
 
@@ -88,9 +120,12 @@ export function useSourceFormModel({
 }: UseSourceFormArgs) {
   const state = useSourceFormState(initialValues, sourceTypes);
   const { createMutation, updateMutation } = useSourceMutations(onClose);
-  const plexFriendsQuery = trpc.media.rotation.listPlexFriends.useQuery(undefined, {
-    enabled: state.type === 'plex_friends',
-  });
+  const plexFriendsQuery = usePillarQuery<PlexFriendsResult>(
+    'media',
+    ['rotation', 'listPlexFriends'],
+    undefined,
+    { enabled: state.type === 'plex_friends' }
+  );
 
   const handleSubmit = () => {
     if (!state.name.trim()) {

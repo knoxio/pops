@@ -1,8 +1,35 @@
 import { useEffect } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import type { SeasonInfo } from '../RequestSeriesModal';
+
+interface QualityProfile {
+  id: number;
+  name: string;
+}
+
+interface RootFolder {
+  path: string;
+  freeSpace: number;
+}
+
+interface LanguageProfile {
+  id: number;
+  name: string;
+}
+
+interface QualityProfilesResult {
+  data: QualityProfile[];
+}
+
+interface RootFoldersResult {
+  data: RootFolder[];
+}
+
+interface LanguageProfilesResult {
+  data: LanguageProfile[];
+}
 
 function isFutureSeason(firstAirDate: string | null): boolean {
   if (!firstAirDate) return true;
@@ -25,18 +52,24 @@ interface DefaultsArgs {
 }
 
 export function useSeriesQueries(open: boolean) {
-  const profiles = trpc.media.arr.getSonarrQualityProfiles.useQuery(undefined, {
-    enabled: open,
-    retry: false,
-  });
-  const folders = trpc.media.arr.getSonarrRootFolders.useQuery(undefined, {
-    enabled: open,
-    retry: false,
-  });
-  const languages = trpc.media.arr.getSonarrLanguageProfiles.useQuery(undefined, {
-    enabled: open,
-    retry: false,
-  });
+  const profiles = usePillarQuery<QualityProfilesResult>(
+    'media',
+    ['arr', 'getSonarrQualityProfiles'],
+    undefined,
+    { enabled: open, retry: false }
+  );
+  const folders = usePillarQuery<RootFoldersResult>(
+    'media',
+    ['arr', 'getSonarrRootFolders'],
+    undefined,
+    { enabled: open, retry: false }
+  );
+  const languages = usePillarQuery<LanguageProfilesResult>(
+    'media',
+    ['arr', 'getSonarrLanguageProfiles'],
+    undefined,
+    { enabled: open, retry: false }
+  );
   return { profiles, folders, languages };
 }
 
