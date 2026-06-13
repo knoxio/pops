@@ -7,7 +7,7 @@
 
 Grepped `apps/pops-mcp/src/` and `apps/pops-cli/src/` for: `trpc.<pillar>.*`, `@pops/api` imports, `@pops/<pillar>-api` imports, direct `getXxxDrizzle()` calls, raw `fetch` against `/trpc/`. Test files (`*.test.ts`, `__tests__/`) excluded — they mock and have to track whatever shape the production code lands on.
 
-Both apps share the same legacy pattern: a thin tRPC wrapper imported from `@pops/api`'s mono `AppRouter` type. None of the consumers use `pillar()` from `@pops/pillar-sdk` yet — PRD-227 US-03 (the `inventory-locations.ts` canary) is scaffolded but unlanded.
+Both apps target the mono `pops-api` tRPC surface, but through different transports: `pops-mcp` uses a typed wrapper that imports `@pops/api`'s `AppRouter`, while `pops-cli` rolls its own minimal stringly-typed `fetch` client in `apps/pops-cli/src/api-client.ts` (kept dependency-free so the CLI binary stays small). Neither app uses `pillar()` from `@pops/pillar-sdk` yet — PRD-227 US-03 (the `inventory-locations.ts` canary) is scaffolded but unlanded.
 
 ## Rubric (mirrors PRD-204)
 
