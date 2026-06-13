@@ -9,8 +9,16 @@
  *   - second run is a no-op (idempotent — the per-table WHERE filter dedupes),
  *   - mixed state (some rows already in finance) only inserts the missing ones,
  *   - missing source table is tolerated without throwing,
- *   - FK-bearing tables (transactions, corrections, tag rules) land after
- *     their `entities` parents because the TABLE_COPIES order puts parents first.
+ *   - FK-bearing `transactions` lands after its `entities` parent because
+ *     the TABLE_COPIES order puts parents first.
+ *
+ * `transaction_corrections`, `transaction_tag_rules`, `tag_vocabulary`,
+ * and `budgets` left the bridge in Theme 13 PR4 round 2 once every
+ * consumer flipped to `getFinanceDrizzle()`. Their fixtures are still
+ * imported here so the shared-DB seed mirrors a realistic legacy
+ * `pops.db` (those tables still exist on disk for older deploys), but
+ * the backfill is no longer asserted to copy them — the per-table
+ * describe blocks were removed alongside their TABLE_COPIES entries.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -104,12 +112,6 @@ describe('backfillFinanceFromShared', () => {
       expect(() => backfillFinanceFromShared(finance, sharedPath)).not.toThrow();
       expect(countRows(finance.raw, 'entities')).toBe(0);
       expect(countRows(finance.raw, 'transactions')).toBe(0);
-      expect(countRows(finance.raw, 'transaction_corrections')).toBe(0);
-      expect(countRows(finance.raw, 'transaction_tag_rules')).toBe(0);
-      expect(countRows(finance.raw, 'budgets')).toBe(0);
-      const seeded = countRows(finance.raw, 'tag_vocabulary');
-      backfillFinanceFromShared(finance, sharedPath);
-      expect(countRows(finance.raw, 'tag_vocabulary')).toBe(seeded);
     } finally {
       finance.raw.close();
     }
@@ -211,150 +213,8 @@ describe('backfillFinanceFromShared', () => {
     });
   });
 
-  describe('transaction_corrections', () => {
-    it('copies corrections with FK to entities and is idempotent', () => {
-      const sharedPath = openSharedWithSeed((raw) => {
-        raw.exec(
-          `INSERT INTO entities (id, name, last_edited_time) VALUES ('ent-1', 'Acme', '2026-06-10T00:00:00Z')`
-        );
-        raw.exec(
-          `INSERT INTO transaction_corrections (id, description_pattern, entity_id) VALUES ('corr-1', 'COFFEE.*', 'ent-1')`
-        );
-      });
-
-      const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-      try {
-        backfillFinanceFromShared(finance, sharedPath);
-        backfillFinanceFromShared(finance, sharedPath);
-        const rows = finance.raw
-          .prepare('SELECT id, entity_id FROM transaction_corrections ORDER BY id')
-          .all() as { id: string; entity_id: string }[];
-        expect(rows).toEqual([{ id: 'corr-1', entity_id: 'ent-1' }]);
-      } finally {
-        finance.raw.close();
-      }
-    });
-  });
-
-  describe('transaction_tag_rules', () => {
-    it('copies tag rules with FK to entities and is idempotent', () => {
-      const sharedPath = openSharedWithSeed((raw) => {
-        raw.exec(
-          `INSERT INTO entities (id, name, last_edited_time) VALUES ('ent-1', 'Acme', '2026-06-10T00:00:00Z')`
-        );
-        raw.exec(
-          `INSERT INTO transaction_tag_rules (id, description_pattern, entity_id, tags) VALUES ('rule-1', 'COFFEE.*', 'ent-1', '["Coffee"]')`
-        );
-      });
-
-      const finance = openFinanceForCutover(join(tmpDir, 'finance.db'));
-      try {
-        backfillFinanceFromShared(finance, sharedPath);
-        backfillFinanceFromShared(finance, sharedPath);
-        const rows = finance.raw
-          .prepare('SELECT id, entity_id, tags FROM transaction_tag_rules ORDER BY id')
-          .all() as { id: string; entity_id: string; tags: string }[];
-        expect(rows).toEqual([{ id: 'rule-1', entity_id: 'ent-1', tags: '["Coffee"]' }]);
-      } finally {
-        finance.raw.close();
-      }
-    });
-  });
-
-  describe('tag_vocabulary', () => {
-    it('copies user-source tags from the shared DB without duplicating seeded rows', () => {
-      const sharedPath = openSharedWithSeed((raw) => {
-        // The seed list lives in the finance-db baseline migration. Insert a
-        // user-source tag here that is NOT in the seed list so we can assert
-        // it lands without colliding with the seed.
-        raw.exec(`INSERT INTO tag_vocabulary (tag, source) VALUES ('Avocado Toast', 'user')`);
-      });
-
-      const finance = openFinanceForCutover(join(tmpDir, 'finance.db'));
-      try {
-        const beforeCount = countRows(finance.raw, 'tag_vocabulary');
-        backfillFinanceFromShared(finance, sharedPath);
-        backfillFinanceFromShared(finance, sharedPath);
-        const afterCount = countRows(finance.raw, 'tag_vocabulary');
-        expect(afterCount).toBe(beforeCount + 1);
-        const userTag = finance.raw
-          .prepare(`SELECT tag, source FROM tag_vocabulary WHERE tag = 'Avocado Toast'`)
-          .get() as { tag: string; source: string };
-        expect(userTag).toEqual({ tag: 'Avocado Toast', source: 'user' });
-      } finally {
-        finance.raw.close();
-      }
-    });
-
-    it('uses `tag` as the existence key — shared rows already present in finance are skipped', () => {
-      // The seed list pre-loaded in openFinanceForCutover includes 'Groceries'.
-      // If we insert it again from the shared DB with source='user', the
-      // existence filter on `tag` (the PK) must skip it.
-      const sharedPath = openSharedWithSeed((raw) => {
-        raw.exec(`INSERT INTO tag_vocabulary (tag, source) VALUES ('Groceries', 'user')`);
-      });
-
-      const finance = openFinanceForCutover(join(tmpDir, 'finance.db'));
-      try {
-        const before = finance.raw
-          .prepare(`SELECT source FROM tag_vocabulary WHERE tag = 'Groceries'`)
-          .get() as { source: string };
-        expect(before.source).toBe('seed');
-        backfillFinanceFromShared(finance, sharedPath);
-        const after = finance.raw
-          .prepare(`SELECT source FROM tag_vocabulary WHERE tag = 'Groceries'`)
-          .get() as { source: string };
-        expect(after.source).toBe('seed');
-      } finally {
-        finance.raw.close();
-      }
-    });
-  });
-
-  describe('budgets', () => {
-    it('copies budgets rows on first run and is idempotent', () => {
-      const sharedPath = openSharedWithSeed((raw) => {
-        raw.exec(
-          `INSERT INTO budgets (id, category, period, amount, last_edited_time) VALUES ('bud-1', 'Groceries', '2026-06', 800.0, '2026-06-10T00:00:00Z')`
-        );
-        raw.exec(
-          `INSERT INTO budgets (id, category, period, amount, last_edited_time) VALUES ('bud-2', 'Coffee', NULL, 60.0, '2026-06-10T00:00:00Z')`
-        );
-      });
-
-      const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-      try {
-        backfillFinanceFromShared(finance, sharedPath);
-        backfillFinanceFromShared(finance, sharedPath);
-        expect(countRows(finance.raw, 'budgets')).toBe(2);
-      } finally {
-        finance.raw.close();
-      }
-    });
-
-    it('re-running does not violate the UNIQUE(category, COALESCE(period, char(0))) index', () => {
-      // The `WHERE id NOT IN (...)` filter must protect the composite-unique
-      // index from a re-insert that would otherwise duplicate (category, period)
-      // for an already-copied row.
-      const sharedPath = openSharedWithSeed((raw) => {
-        raw.exec(
-          `INSERT INTO budgets (id, category, period, amount, last_edited_time) VALUES ('bud-1', 'Groceries', '2026-06', 800.0, '2026-06-10T00:00:00Z')`
-        );
-      });
-
-      const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-      try {
-        backfillFinanceFromShared(finance, sharedPath);
-        expect(() => backfillFinanceFromShared(finance, sharedPath)).not.toThrow();
-        expect(countRows(finance.raw, 'budgets')).toBe(1);
-      } finally {
-        finance.raw.close();
-      }
-    });
-  });
-
-  describe('FK-safe ordering across the full finance set', () => {
-    it('copies parents (entities) before children (transactions / corrections / tag rules) with foreign_keys = ON', () => {
+  describe('FK-safe ordering across the bridge set', () => {
+    it('copies parents (entities) before children (transactions) with foreign_keys = ON', () => {
       const sharedPath = openSharedWithSeed((raw) => {
         raw.exec(
           `INSERT INTO entities (id, name, last_edited_time) VALUES ('ent-1', 'Acme', '2026-06-10T00:00:00Z')`
@@ -367,12 +227,6 @@ describe('backfillFinanceFromShared', () => {
            VALUES ('tx-1', 'Coffee', 'checking', -4.5, '2026-06-10', 'purchase', 'ent-1', '2026-06-10T00:00:00Z'),
                   ('tx-2', 'Lunch', 'checking', -18.0, '2026-06-10', 'purchase', 'ent-2', '2026-06-10T00:00:00Z')`
         );
-        raw.exec(
-          `INSERT INTO transaction_corrections (id, description_pattern, entity_id) VALUES ('corr-1', 'COFFEE.*', 'ent-1')`
-        );
-        raw.exec(
-          `INSERT INTO transaction_tag_rules (id, description_pattern, entity_id, tags) VALUES ('rule-1', 'LUNCH.*', 'ent-2', '["Eat Out"]')`
-        );
       });
 
       const finance = openFinanceForCutover(join(tmpDir, 'finance.db'));
@@ -380,57 +234,52 @@ describe('backfillFinanceFromShared', () => {
         backfillFinanceFromShared(finance, sharedPath);
         expect(countRows(finance.raw, 'entities')).toBe(2);
         expect(countRows(finance.raw, 'transactions')).toBe(2);
-        expect(countRows(finance.raw, 'transaction_corrections')).toBe(1);
-        expect(countRows(finance.raw, 'transaction_tag_rules')).toBe(1);
       } finally {
         finance.raw.close();
       }
     });
   });
 
-  it('copies tag_vocabulary rows from the shared DB on first run (Track N5 PR 3)', () => {
-    const sharedPath = openSharedWithSeed((raw) => {
-      raw.exec(
-        `INSERT INTO tag_vocabulary (tag, source, is_active) VALUES ('backfill-test-tag-1', 'seed', 1)`
-      );
-      raw.exec(
-        `INSERT INTO tag_vocabulary (tag, source, is_active) VALUES ('backfill-test-tag-2', 'user', 1)`
-      );
+  describe('dropped tables (Theme 13 PR4 round 2)', () => {
+    it('does not copy transaction_corrections / transaction_tag_rules / tag_vocabulary / budgets even when the shared DB has rows', () => {
+      // These four tables left TABLE_COPIES once every consumer flipped to
+      // `getFinanceDrizzle()`. The bridge must no longer pull them across
+      // — finance.db is now the canonical source and the shared rows are
+      // stale (or absent on freshly-provisioned deploys).
+      const sharedPath = openSharedWithSeed((raw) => {
+        raw.exec(
+          `INSERT INTO entities (id, name, last_edited_time) VALUES ('ent-1', 'Acme', '2026-06-10T00:00:00Z')`
+        );
+        raw.exec(
+          `INSERT INTO transaction_corrections (id, description_pattern, entity_id) VALUES ('corr-stale', 'COFFEE.*', 'ent-1')`
+        );
+        raw.exec(
+          `INSERT INTO transaction_tag_rules (id, description_pattern, entity_id, tags) VALUES ('rule-stale', 'LUNCH.*', 'ent-1', '["Eat Out"]')`
+        );
+        raw.exec(`INSERT INTO tag_vocabulary (tag, source) VALUES ('stale-bridge-tag', 'user')`);
+        raw.exec(
+          `INSERT INTO budgets (id, category, period, amount, last_edited_time) VALUES ('bud-stale', 'Stale', '2026-06', 1.0, '2026-06-10T00:00:00Z')`
+        );
+      });
+
+      const finance = openFinanceForCutover(join(tmpDir, 'finance.db'));
+      try {
+        backfillFinanceFromShared(finance, sharedPath);
+        expect(
+          finance.raw.prepare(`SELECT 1 FROM transaction_corrections WHERE id = 'corr-stale'`).get()
+        ).toBeUndefined();
+        expect(
+          finance.raw.prepare(`SELECT 1 FROM transaction_tag_rules WHERE id = 'rule-stale'`).get()
+        ).toBeUndefined();
+        expect(
+          finance.raw.prepare(`SELECT 1 FROM tag_vocabulary WHERE tag = 'stale-bridge-tag'`).get()
+        ).toBeUndefined();
+        expect(
+          finance.raw.prepare(`SELECT 1 FROM budgets WHERE id = 'bud-stale'`).get()
+        ).toBeUndefined();
+      } finally {
+        finance.raw.close();
+      }
     });
-
-    const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-    try {
-      backfillFinanceFromShared(finance, sharedPath);
-      const rows = finance.raw
-        .prepare('SELECT tag, source, is_active FROM tag_vocabulary ORDER BY tag')
-        .all() as { tag: string; source: string; is_active: number }[];
-      // The package's own migration seeds many `seed` rows into finance.db;
-      // assert presence of the carried rows rather than full equality.
-      const byTag = new Map(rows.map((r) => [r.tag, r]));
-      expect(byTag.get('backfill-test-tag-1')).toMatchObject({ source: 'seed', is_active: 1 });
-      expect(byTag.get('backfill-test-tag-2')).toMatchObject({ source: 'user', is_active: 1 });
-    } finally {
-      finance.raw.close();
-    }
-  });
-
-  it('tag_vocabulary backfill is idempotent — second run does not duplicate', () => {
-    const sharedPath = openSharedWithSeed((raw) => {
-      raw.exec(
-        `INSERT INTO tag_vocabulary (tag, source, is_active) VALUES ('Pet supplies', 'user', 1)`
-      );
-    });
-
-    const finance = openFinanceDb(join(tmpDir, 'finance.db'));
-    try {
-      backfillFinanceFromShared(finance, sharedPath);
-      backfillFinanceFromShared(finance, sharedPath);
-      const count = finance.raw
-        .prepare(`SELECT count(*) AS n FROM tag_vocabulary WHERE tag = 'Pet supplies'`)
-        .get() as { n: number };
-      expect(count.n).toBe(1);
-    } finally {
-      finance.raw.close();
-    }
   });
 });

@@ -12,13 +12,18 @@
  * Order matters for FK enforcement (with `foreign_keys = ON`):
  *   entities (no parent)
  *     → transactions (FK → entities)
- *     → transaction_corrections (FK → entities)
- *     → transaction_tag_rules (FK → entities)
- *   tag_vocabulary (no FK, PK is `tag`)
- *   budgets (no FK, UNIQUE on category+period)
  *
  * `wish_list` was retired from the bridge once its read + write surface
  * landed entirely on `finance.db` (Theme 13, PRD-212 PR4).
+ *
+ * `transaction_corrections`, `transaction_tag_rules`, `tag_vocabulary`,
+ * and `budgets` were retired from the bridge once every consumer (core
+ * corrections handlers, finance-internal modules, the tag-suggester job,
+ * and finance budgets/search adapters) had been flipped to
+ * `getFinanceDrizzle()` (Theme 13 PR4 round 2). `entities` and
+ * `transactions` stay on the bridge because `core/entities/service.ts`
+ * and `core/entities/search-adapter.ts` still read + write the shared
+ * `pops.db` via `getDrizzle()`.
  *
  * Each table is wrapped in `tryCopyTable` so a missing source table
  * (post-PR-4 drop scenario, or a stale on-disk pops.db) doesn't bring
@@ -82,62 +87,6 @@ const TABLE_COPIES: readonly TableCopy[] = [
       'notes',
       'checksum',
       'raw_row',
-      'last_edited_time',
-    ],
-  },
-  {
-    table: 'transaction_corrections',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'description_pattern',
-      'match_type',
-      'entity_id',
-      'entity_name',
-      'location',
-      'tags',
-      'transaction_type',
-      'is_active',
-      'confidence',
-      'priority',
-      'times_applied',
-      'created_at',
-      'last_used_at',
-    ],
-  },
-  {
-    table: 'transaction_tag_rules',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'description_pattern',
-      'match_type',
-      'entity_id',
-      'tags',
-      'is_active',
-      'confidence',
-      'priority',
-      'times_applied',
-      'created_at',
-      'last_used_at',
-    ],
-  },
-  {
-    table: 'tag_vocabulary',
-    idColumn: 'tag',
-    columns: ['tag', 'source', 'is_active', 'created_at'],
-  },
-  {
-    table: 'budgets',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'notion_id',
-      'category',
-      'period',
-      'amount',
-      'active',
-      'notes',
       'last_edited_time',
     ],
   },
