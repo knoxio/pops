@@ -38,6 +38,10 @@ Standard substitutions:
 | Test fixture uses old namespace                | Updated alongside source.                |
 | Hardcoded URL in nginx vhost                   | Caught by PRD-206's dispatcher review.   |
 
+## Inventory
+
+The per-call-site audit (file, line, pillar.router.proc, query/mutation kind, hook, call shape, migration category) lives in [inventory.md](./inventory.md). The inventory is the source of truth for the per-PR split — read it before scheduling any of the user stories below.
+
 ## User Stories
 
 | #   | Story                                               | Summary                                                               |
