@@ -32,12 +32,17 @@ import { resolveSqlitePath } from './sqlite-path.js';
  * `tvShowsService.{create,update,delete}` already routed there. With
  * every `tv_shows` write site on the media handle, the boot bridge has
  * nothing left to carry for this table, so the entry is retired.
- * Sibling `seasons` and `episodes` stay on the bridge —
- * `thetvdb/service.ts` still upserts them via `getDrizzle()` during a
- * refresh, so the shared store can still receive new rows between
- * boots. Same deploy-order constraint as movies and shelf_impressions:
- * #3098 must already be live in prod before this drop ships, otherwise
+ * Same deploy-order constraint as movies and shelf_impressions: #3098
+ * must already be live in prod before this drop ships, otherwise
  * late-arriving rows on `pops.db.tv_shows` would be stranded.
+ *
+ * PRD-166 `seasons` and `episodes` follow post-#3103: `thetvdb/service.ts`
+ * (and the refresh-episodes helpers) now upsert through
+ * `getMediaDrizzle()`, and every other read site already routes through
+ * the media handle. With no remaining writer against `pops.db.seasons`
+ * or `pops.db.episodes`, the boot bridge has nothing left to carry, so
+ * both entries are retired. Same deploy-order constraint as `tv_shows`:
+ * #3103 must already be live in prod before this drop ships.
  *
  * No FK relationships exist between the listed media tables, so order
  * is independent — but each entry is wrapped in `tryCopyTable` so a
@@ -87,39 +92,6 @@ interface TableCopy {
 }
 
 const TABLE_COPIES: readonly TableCopy[] = [
-  {
-    table: 'seasons',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'tv_show_id',
-      'tvdb_id',
-      'season_number',
-      'name',
-      'overview',
-      'poster_path',
-      'air_date',
-      'episode_count',
-      'created_at',
-    ],
-  },
-  {
-    table: 'episodes',
-    idColumn: 'id',
-    columns: [
-      'id',
-      'season_id',
-      'tvdb_id',
-      'episode_number',
-      'name',
-      'overview',
-      'air_date',
-      'still_path',
-      'vote_average',
-      'runtime',
-      'created_at',
-    ],
-  },
   {
     table: 'watch_history',
     idColumn: 'id',
