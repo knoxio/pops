@@ -12,14 +12,15 @@ Make the front-end registry-aware end-to-end. Three pieces:
 
 ## PRDs
 
-| #   | PRD                                  | Summary                                                                                                                 | Status      |
-| --- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 215 | React SDK                            | `usePillar`, `useUriResolver`, `usePillarQuery`, `usePillarMutation` hooks                                              | Partial     |
-| 216 | `PillarGuard` rewrite                | Reads live registry; subscribes to changes; per-route unavailable placeholders                                          | Partial     |
-| 217 | nginx config generator               | Generated `default.conf` from registry snapshot; init container OR sidecar strategy                                     | Not started |
-| 218 | `@pops/module-registry` deprecation  | The build-time registry becomes a thin wrapper around the runtime one (offline-dev fallback)                            | Not started |
-| 227 | SDK consumer migration audit         | Punch list of every `trpc.*` consumer with its `pillar()` migration target + preconditions                              | Not started |
-| 238 | Settings-imports off module-registry | Migrate the 8 `apps/pops-api` sites still importing per-pillar `SettingsManifest` from `@pops/module-registry/settings` | Not started |
+| #   | PRD                                   | Summary                                                                                                                                                       | Status                                                                                    |
+| --- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 215 | React SDK                             | `usePillar`, `useUriResolver`, `usePillarQuery`, `usePillarMutation` hooks                                                                                    | Partial                                                                                   |
+| 216 | `PillarGuard` rewrite                 | Reads live registry; subscribes to changes; per-route unavailable placeholders                                                                                | Partial                                                                                   |
+| 217 | nginx config generator                | Generated `default.conf` from registry snapshot; init container OR sidecar strategy                                                                           | Not started                                                                               |
+| 218 | `@pops/module-registry` deprecation   | The build-time registry becomes a thin wrapper around the runtime one (offline-dev fallback)                                                                  | Not started                                                                               |
+| 227 | SDK consumer migration audit          | Punch list of every `trpc.*` consumer with its `pillar()` migration target + preconditions                                                                    | Not started                                                                               |
+| 238 | Settings-imports off module-registry  | Migrate the 8 `apps/pops-api` sites still importing per-pillar `SettingsManifest` from `@pops/module-registry/settings`                                       | Partial — US-01 done (consumers on `@pops/pillar-sdk/settings`); US-02 blocked on PRD-239 |
+| 239 | Settings-manifest physical relocation | Move the 10 manifests out of `@pops/module-registry/src/settings` into per-pillar contract packages; repoint `@pops/pillar-sdk/settings`; close PRD-238 US-02 | Not started                                                                               |
 
 ## Dependencies
 
