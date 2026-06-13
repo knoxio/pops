@@ -1,4 +1,4 @@
-import { inventoryManifest } from '@pops/module-registry/settings';
+import { inventoryManifest } from '@pops/pillar-sdk/settings';
 
 /**
  * Inventory domain — home inventory items, locations, connections, and photos.

@@ -13,8 +13,8 @@ import { parseUri } from './parse.js';
  *
  * The registry view is passed as an argument rather than imported as a global
  * so the unit tests can supply minimal fakes without a full backend stand-up.
- * Once `@pops/module-registry` (PRD-101 US-02) ships, the production wiring
- * just substitutes the generated `MODULES` constant.
+ * Production wiring substitutes the live `installedManifests()` aggregator
+ * (see `apps/pops-api/src/modules/installed-modules.ts`).
  */
 import type { ModuleManifest, UriResolverResult } from '@pops/types';
 
