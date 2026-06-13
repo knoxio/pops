@@ -41,9 +41,24 @@ export function parseFrame(raw: unknown): HaFrame | undefined {
   return undefined;
 }
 
+/**
+ * Normalises every `ws` `RawData` shape — `string`, `Buffer`, `ArrayBuffer`,
+ * `Uint8Array`, or `Buffer[]` (fragmented frame) — to a UTF-8 string ready
+ * for `JSON.parse`. `ws` does not collapse fragments for us when the
+ * `WebSocket` is configured with the default `binaryType`, so frames that
+ * span multiple TCP reads arrive as `Buffer[]` and must be concatenated
+ * before parsing or they would be silently dropped.
+ */
 function toJsonText(raw: unknown): string | undefined {
   if (typeof raw === 'string') return raw;
-  if (raw instanceof Buffer) return raw.toString('utf8');
+  if (Buffer.isBuffer(raw)) return raw.toString('utf8');
+  if (raw instanceof ArrayBuffer) return Buffer.from(raw).toString('utf8');
+  if (ArrayBuffer.isView(raw)) {
+    return Buffer.from(raw.buffer, raw.byteOffset, raw.byteLength).toString('utf8');
+  }
+  if (Array.isArray(raw) && raw.every((chunk): chunk is Buffer => Buffer.isBuffer(chunk))) {
+    return Buffer.concat(raw).toString('utf8');
+  }
   return undefined;
 }
 

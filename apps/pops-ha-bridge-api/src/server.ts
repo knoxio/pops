@@ -68,11 +68,25 @@ const haToken = process.env['HA_TOKEN'];
 
 const haBridgeDb = openHaBridgeDb(resolveHaBridgeSqlitePath());
 
+// Opt-in subscriber logging. Default is silent ("degrades silently" per
+// PRD-229) so unconfigured deployments stay quiet; set HA_BRIDGE_LOG=warn
+// to surface connection / auth events on the container's stdout.
+const subscriberLogger =
+  process.env['HA_BRIDGE_LOG'] === 'warn'
+    ? {
+        info: (msg: string, meta?: Record<string, unknown>) =>
+          console.warn(`[ha-bridge] ${msg}`, meta ?? {}),
+        warn: (msg: string, meta?: Record<string, unknown>) =>
+          console.warn(`[ha-bridge] ${msg}`, meta ?? {}),
+      }
+    : undefined;
+
 const subscriber = new HaWebSocketSubscriber({
   db: haBridgeDb,
   url: haUrl,
   token: haToken,
   webSocketFactory: defaultWebSocketFactory,
+  logger: subscriberLogger,
 });
 
 const manifest = buildHaBridgeManifest(version);

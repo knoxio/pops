@@ -86,9 +86,14 @@ export class HaWebSocketSubscriber {
     this.setTimeoutImpl = options.setTimeoutImpl ?? setTimeout;
     this.clearTimeoutImpl = options.clearTimeoutImpl ?? clearTimeout;
     this.now = options.now ?? (() => Date.now());
+    // Default to a no-op logger so degraded mode (missing config / auth
+    // failure / reconnect churn) really is silent unless the caller opts
+    // in by injecting their own logger. The PR/PRD describe this surface
+    // as "degrades silently" — wiring `console.warn` here contradicted
+    // that contract and spammed unconfigured deployments.
     this.logger = options.logger ?? {
-      info: (msg, meta) => console.warn(`[ha-bridge] ${msg}`, meta ?? {}),
-      warn: (msg, meta) => console.warn(`[ha-bridge] ${msg}`, meta ?? {}),
+      info: () => undefined,
+      warn: () => undefined,
     };
     this.connectionState =
       this.url === undefined || this.token === undefined
