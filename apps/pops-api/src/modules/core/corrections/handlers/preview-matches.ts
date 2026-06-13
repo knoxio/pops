@@ -17,7 +17,7 @@ import { desc } from 'drizzle-orm';
 
 import { transactions } from '@pops/db-types';
 
-import { getDrizzle } from '../../../../db.js';
+import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { parseJsonStringArray } from '../../../../shared/json.js';
 import { patternMatchesDescription } from '../lib/pattern-match.js';
 
@@ -77,7 +77,7 @@ function toMatchTransaction(row: TransactionRow): PreviewMatchTransaction {
  */
 export function previewMatches(input: PreviewMatchInput): PreviewMatchResult {
   const limit = Math.min(input.limit ?? DEFAULT_LIMIT, HARD_LIMIT);
-  const db = getDrizzle();
+  const db = getFinanceDrizzle();
 
   const rows = db.select().from(transactions).orderBy(desc(transactions.date)).all();
 
