@@ -2,39 +2,56 @@
 /**
  * Generate `apps/pops-shell/nginx.conf` from a single source of truth.
  *
- * Theme 13 PRD-217. Before this script, adding a new pillar required
- * hand-editing the `location /trpc-<pillar>/ { … }` block in `nginx.conf`,
- * which left two registries (the SDK's `PILLARS` constant and the nginx
- * config) free to drift apart. The generator collapses that into one:
- * it reads `PILLARS` from `@pops/pillar-sdk`, pairs each id with its
- * upstream `host:port` from `PILLAR_UPSTREAMS` below, and renders the
- * full server block deterministically.
+ * Theme 13 PRD-217 + PRD-232. Two render modes share the same template:
  *
- * Scope, intentionally narrow (PRD-217 phase 1):
- *   - Same shape as the committed hand-written conf — same `/trpc-<id>/`
- *     dispatchers, same `/trpc` fallback, same `/pillars*`, `/media/images/`,
- *     `/health`, `/docs/`, and SPA fallback blocks.
- *   - Only the canonical seven pillars from `PILLARS` (`core`, `finance`,
- *     `media`, `inventory`, `cerebrum`, `food`, `lists`).
- *   - No external/dynamic pillar registration. That's the follow-up.
+ *   - **Static** (default) — reads `PILLARS` from `@pops/pillar-sdk` and
+ *     `PILLAR_UPSTREAMS` below. Used at image-build time so the committed
+ *     `nginx.conf` is reproducible without a live core-api. The drift
+ *     test guards this output.
  *
- * The drift-detection test (`generate-nginx-conf.test.ts`) renders the
- * config in-memory and compares against the committed file, so any
- * hand-edit to `nginx.conf` that diverges from the generator output
- * fails CI. The generator is the single source of truth.
+ *   - **Dynamic** (`--dynamic`) — PRD-232, Wave 6 BE-lego. Reads the
+ *     live `pillar_registry` via `core.registry.list` (HTTP tRPC GET)
+ *     and emits one `/trpc-<pillar>/` block per registered pillar. Used
+ *     at boot-time inside the cluster: an init container (or a future
+ *     subscription-bus watcher, PRD-163) runs the script with
+ *     `--dynamic` so newly-registered external pillars (PRD-228) pick
+ *     up routing without a fresh shell image.
+ *
+ *     Known core pillars (those in `PILLAR_UPSTREAMS`) keep their
+ *     canonical docker `host:port` even when the registry advertises a
+ *     different `baseUrl`; this protects the in-cluster routing from
+ *     drift if a pillar registers itself with a `localhost`-shaped URL
+ *     during development. Unknown pillars fall back to parsing
+ *     `host:port` out of their registry `baseUrl`.
+ *
+ * The drift-detection test renders the static mode in-memory and
+ * compares against the committed file. The dynamic mode is exercised
+ * with an injected registry fetcher so the test suite never needs a
+ * live core-api.
  *
  * Usage:
- *   pnpm gen:nginx                  # writes apps/pops-shell/nginx.conf
- *   pnpm gen:nginx:check            # exits 1 if the committed file drifts
- *   tsx generate-nginx-conf.ts ...  # equivalent direct invocation
+ *   pnpm gen:nginx                              # static, writes apps/pops-shell/nginx.conf
+ *   pnpm gen:nginx:check                        # static, exits 1 on drift
+ *   pnpm gen:nginx:dynamic                      # dynamic, renders from live registry
+ *   tsx generate-nginx-conf.ts --dynamic --out … --registry-url=http://core-api:3001
+ *
+ * The event-driven `nginx -s reload` wrapper that re-runs the dynamic
+ * mode on each `core.registry` subscription event is intentionally NOT
+ * shipped here; see PRD-163 follow-up.
  */
-import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk';
 
+import { parseCliArgs, type CliOptions } from './nginx-cli-args.ts';
+import { assertDynamicNotCheck, runDynamic, runStatic } from './nginx-cli-main.ts';
 import { NGINX_CONF_HEAD, NGINX_CONF_TAIL } from './nginx-conf-template.ts';
+import {
+  fetchRegistryViaTrpc,
+  type RegistryFetcher,
+  type RegistryListEntry,
+} from './nginx-registry-client.ts';
 
 /**
  * Internal port assignment for each pillar's API container. Matches every
@@ -69,6 +86,14 @@ const PILLAR_RENDER_ORDER: readonly KnownPillarId[] = [
   'cerebrum',
 ];
 
+const DEFAULT_REGISTRY_URL = 'http://core-api:3001';
+
+export interface PillarUpstream {
+  readonly pillarId: string;
+  readonly host: string;
+  readonly port: number;
+}
+
 function assertRenderOrderCoversAllPillars(): void {
   const ordered = new Set<KnownPillarId>(PILLAR_RENDER_ORDER);
   const missing = PILLARS.filter((id) => !ordered.has(id));
@@ -88,100 +113,152 @@ function assertRenderOrderCoversAllPillars(): void {
   }
 }
 
-function renderPillarBlock(id: KnownPillarId): string {
-  const upstream = PILLAR_UPSTREAMS[id];
+function isKnownPillarId(id: string): id is KnownPillarId {
+  return (PILLARS as readonly string[]).includes(id);
+}
+
+function nginxVarName(pillarId: string): string {
+  return pillarId.replace(/-/g, '_');
+}
+
+function renderPillarBlockFromUpstream(upstream: PillarUpstream): string {
+  const varName = nginxVarName(upstream.pillarId);
   return [
-    `    location /trpc-${id}/ {`,
-    `        rewrite ^/trpc-${id}/(.*)$ /trpc/$1 break;`,
-    `        set $trpc_${id}_upstream http://${upstream.host}:${upstream.port};`,
-    `        proxy_pass $trpc_${id}_upstream;`,
+    `    location /trpc-${upstream.pillarId}/ {`,
+    `        rewrite ^/trpc-${upstream.pillarId}/(.*)$ /trpc/$1 break;`,
+    `        set $trpc_${varName}_upstream http://${upstream.host}:${upstream.port};`,
+    `        proxy_pass $trpc_${varName}_upstream;`,
     `        include /etc/nginx/snippets/_pillar-proxy.conf;`,
     `    }`,
   ].join('\n');
 }
 
+function renderPillarBlock(id: KnownPillarId): string {
+  const upstream = PILLAR_UPSTREAMS[id];
+  return renderPillarBlockFromUpstream({ pillarId: id, host: upstream.host, port: upstream.port });
+}
+
 /**
- * Pure renderer. Takes the ordered pillar list and returns the full
- * `nginx.conf` body. Exported so the drift-detection test can call it
- * without touching the filesystem.
+ * Pure renderer (static mode). Takes the ordered pillar list and returns
+ * the full `nginx.conf` body. Exported so the drift-detection test can
+ * call it without touching the filesystem.
  */
 export function renderNginxConf(order: readonly KnownPillarId[] = PILLAR_RENDER_ORDER): string {
   const pillarBlocks = order.map(renderPillarBlock).join('\n\n');
   return `${NGINX_CONF_HEAD}\n${pillarBlocks}\n\n${NGINX_CONF_TAIL}`;
 }
 
+/**
+ * Pure renderer (dynamic mode). Takes an explicit list of upstreams in
+ * the order they should appear in the output. Empty input is valid and
+ * produces a config with zero `/trpc-<pillar>/` dispatchers (the legacy
+ * `/trpc` catch-all in the tail still routes to pops-api).
+ */
+export function renderNginxConfFromUpstreams(upstreams: readonly PillarUpstream[]): string {
+  if (upstreams.length === 0) {
+    return `${NGINX_CONF_HEAD}\n${NGINX_CONF_TAIL}`;
+  }
+  const pillarBlocks = upstreams.map(renderPillarBlockFromUpstream).join('\n\n');
+  return `${NGINX_CONF_HEAD}\n${pillarBlocks}\n\n${NGINX_CONF_TAIL}`;
+}
+
+/**
+ * Map a registry entry to its `host:port` pair.
+ *
+ * For known pillars (those baked into `PILLAR_UPSTREAMS`) the canonical
+ * in-cluster upstream wins — registering with a localhost URL during
+ * development must not break docker-network routing. Unknown pillars
+ * fall back to parsing the registry's `baseUrl`.
+ */
+export function resolveUpstreamForEntry(entry: RegistryListEntry): PillarUpstream {
+  if (isKnownPillarId(entry.pillarId)) {
+    const known = PILLAR_UPSTREAMS[entry.pillarId];
+    return { pillarId: entry.pillarId, host: known.host, port: known.port };
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(entry.baseUrl);
+  } catch {
+    throw new Error(
+      `generate-nginx-conf: pillar "${entry.pillarId}" has invalid baseUrl "${entry.baseUrl}"`
+    );
+  }
+  if (parsed.hostname.length === 0) {
+    throw new Error(
+      `generate-nginx-conf: pillar "${entry.pillarId}" baseUrl "${entry.baseUrl}" has no host`
+    );
+  }
+  const defaultPort = parsed.protocol === 'https:' ? '443' : '80';
+  const portString = parsed.port.length > 0 ? parsed.port : defaultPort;
+  const port = Number.parseInt(portString, 10);
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error(
+      `generate-nginx-conf: pillar "${entry.pillarId}" baseUrl "${entry.baseUrl}" has invalid port`
+    );
+  }
+  return { pillarId: entry.pillarId, host: parsed.hostname, port };
+}
+
+/**
+ * Sort entries deterministically for stable rendered output. Known
+ * pillars appear first in `PILLAR_RENDER_ORDER`, then any unknown ones
+ * in ascending alphabetical order by pillarId.
+ */
+export function orderUpstreams(upstreams: readonly PillarUpstream[]): readonly PillarUpstream[] {
+  const indexOf = new Map<string, number>();
+  PILLAR_RENDER_ORDER.forEach((id, i) => indexOf.set(id, i));
+  return upstreams.toSorted((a, b) => {
+    const ia = indexOf.get(a.pillarId);
+    const ib = indexOf.get(b.pillarId);
+    if (ia !== undefined && ib !== undefined) return ia - ib;
+    if (ia !== undefined) return -1;
+    if (ib !== undefined) return 1;
+    return a.pillarId.localeCompare(b.pillarId, 'en');
+  });
+}
+
+export async function renderNginxConfDynamic(
+  registryUrl: string,
+  fetcher: RegistryFetcher = fetchRegistryViaTrpc
+): Promise<string> {
+  const response = await fetcher(registryUrl);
+  const upstreams = response.pillars.map(resolveUpstreamForEntry);
+  const ordered = orderUpstreams(upstreams);
+  return renderNginxConfFromUpstreams(ordered);
+}
+
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_OUTPUT_PATH = resolve(SCRIPT_DIR, '..', 'nginx.conf');
 
-interface CliOptions {
-  outputPath: string;
-  check: boolean;
+function cliDefaults(): { outputPath: string; registryUrl: string } {
+  return {
+    outputPath: DEFAULT_OUTPUT_PATH,
+    registryUrl: process.env['CORE_REGISTRY_URL'] ?? DEFAULT_REGISTRY_URL,
+  };
 }
 
-function parseCliArgs(argv: readonly string[]): CliOptions {
-  let outputPath: string = DEFAULT_OUTPUT_PATH;
-  let check = false;
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    if (arg === '--check') {
-      check = true;
-      continue;
-    }
-    if (arg === '--out') {
-      const next = argv[i + 1];
-      if (next === undefined) {
-        throw new Error('generate-nginx-conf: --out requires a path argument');
-      }
-      outputPath = resolve(next);
-      i += 1;
-      continue;
-    }
-    if (arg !== undefined && !arg.startsWith('--')) {
-      outputPath = resolve(arg);
-      continue;
-    }
-    throw new Error(`generate-nginx-conf: unknown argument "${String(arg)}"`);
-  }
-  return { outputPath, check };
-}
-
-async function runCheck(outputPath: string, expected: string): Promise<void> {
-  let actual: string;
-  try {
-    actual = await readFile(outputPath, 'utf8');
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`generate-nginx-conf --check: cannot read ${outputPath}: ${message}\n`);
-    process.exit(1);
-    return;
-  }
-  if (actual !== expected) {
-    process.stderr.write(
-      `generate-nginx-conf --check: ${outputPath} is out of date.\n` +
-        `Run \`pnpm gen:nginx\` and commit the result.\n`
-    );
-    process.exit(1);
-    return;
-  }
-  process.stdout.write(`generate-nginx-conf --check: ${outputPath} is up to date.\n`);
+export function parseCliArgsForGenerator(argv: readonly string[]): CliOptions {
+  return parseCliArgs(argv, cliDefaults());
 }
 
 async function main(): Promise<void> {
   assertRenderOrderCoversAllPillars();
-  const { outputPath, check } = parseCliArgs(process.argv.slice(2));
-  const expected = renderNginxConf();
-
-  if (check) {
-    await runCheck(outputPath, expected);
+  const opts = parseCliArgsForGenerator(process.argv.slice(2));
+  assertDynamicNotCheck(opts);
+  if (opts.dynamic) {
+    await runDynamic({
+      outputPath: opts.outputPath,
+      registryUrl: opts.registryUrl,
+      render: renderNginxConfDynamic,
+    });
     return;
   }
-
-  await writeFile(outputPath, expected, 'utf8');
-  process.stdout.write(
-    `generate-nginx-conf: wrote ${PILLAR_RENDER_ORDER.length} pillar block${
-      PILLAR_RENDER_ORDER.length === 1 ? '' : 's'
-    } → ${outputPath}\n`
-  );
+  await runStatic({
+    outputPath: opts.outputPath,
+    check: opts.check,
+    expected: renderNginxConf(),
+    pillarCount: PILLAR_RENDER_ORDER.length,
+  });
 }
 
 const invokedAsScript =
@@ -195,4 +272,9 @@ if (invokedAsScript) {
   });
 }
 
-export { PILLAR_UPSTREAMS, PILLAR_RENDER_ORDER, assertRenderOrderCoversAllPillars };
+export {
+  PILLAR_UPSTREAMS,
+  PILLAR_RENDER_ORDER,
+  DEFAULT_REGISTRY_URL,
+  assertRenderOrderCoversAllPillars,
+};
