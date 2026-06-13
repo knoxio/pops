@@ -6,6 +6,7 @@ import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3'
 
 import { openCoreDb, type CoreDb, type OpenedCoreDb } from '@pops/core-db';
 
+import { backfillCoreFromShared } from './db/backfill-core-from-shared.js';
 import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
 import { closeCerebrumDb } from './db/cerebrum-handle.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
@@ -294,6 +295,18 @@ export function setCoreDb(next: OpenedCoreDb | null): OpenedCoreDb | null {
   const prev = coreDb;
   coreDb = next;
   return prev;
+}
+
+/**
+ * Run the one-shot ATTACH backfill from the legacy shared pops.db into
+ * the core pillar's core.db for the PRD-186 PR4 trio (`ai_model_pricing`,
+ * `sync_job_results`, `ai_usage`). No-op if the core handle isn't open.
+ * Idempotent against repeated boots via per-table `WHERE NOT EXISTS (...)`
+ * filters. See `backfill-core-from-shared.ts` for the table catalogue.
+ */
+export function backfillCoreFromSharedDb(sharedPath: string): void {
+  if (!coreDb) return;
+  backfillCoreFromShared(coreDb, sharedPath);
 }
 
 // `getMediaDrizzle` / `closeMediaDb` / `setMediaDb` live in
