@@ -1,22 +1,21 @@
 /**
  * Thin re-export of the `@pops/core-db` pricing cache, bound to the
- * shared drizzle handle. The cache + DB SELECT logic lives in
+ * core pillar drizzle handle. The cache + DB SELECT logic lives in
  * `@pops/core-db`'s `ai-model-pricing` service per the Theme 13
  * hot-path migration audit (row 5).
  *
- * The handle is the shared `pops.db` for now because the underlying
- * `ai_model_pricing` table cutover into `core.db` is sequenced behind
- * PRD-186 PR 4. After that lands the only line that changes is
- * `getDrizzle()` -> `getCoreDrizzle()`.
+ * Reads resolve against `getCoreDrizzle()` now that PRD-186 PR 4 cut
+ * the `ai_model_pricing` table over into `core.db`. The shared
+ * `pops.db` copy still exists for fallback.
  */
 import { aiModelPricingService, type PricingCache } from '@pops/core-db';
 
-import { getDrizzle } from '../db.js';
+import { getCoreDrizzle } from '../db.js';
 
 let cache: PricingCache | null = null;
 
 function getCache(): PricingCache {
-  cache ??= aiModelPricingService.createPricingCache(getDrizzle());
+  cache ??= aiModelPricingService.createPricingCache(getCoreDrizzle());
   return cache;
 }
 
