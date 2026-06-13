@@ -11,6 +11,13 @@ const PROCEDURE_PATH = z
     'must match <pillar>.<router>.<procedure>'
   );
 
+/**
+ * camelCase identifier — used for `ai.tools[].name` and
+ * `search.adapters[].name`. No dots, no hyphens. The tool-router composes
+ * the qualified name `<pillarId>.<toolName>` at call time. See
+ * [ADR-036](../../../../../docs/architecture/adr-036-pillar-id-tool-name-conventions.md)
+ * for the rationale and worked examples.
+ */
 const CAMEL_IDENTIFIER = z.string().regex(/^[a-z][a-zA-Z0-9]*$/, 'must be camelCase identifier');
 
 const KEBAB_IDENTIFIER = z
@@ -56,7 +63,9 @@ const AI_TOOL = z
  *
  * Naming discipline is enforced at manifest-validation time so that two
  * pillars cannot accidentally pick the same event type with diverging
- * payload shapes.
+ * payload shapes. See
+ * [ADR-036](../../../../../docs/architecture/adr-036-pillar-id-tool-name-conventions.md)
+ * for the full convention (pillar id + tool name + sink event type).
  */
 const SINK_EVENT_TYPE = z
   .string()
