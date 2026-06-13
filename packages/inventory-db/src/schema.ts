@@ -14,4 +14,4 @@
  * `getLocationItems` / `getDeleteStats`, and downstream slice PRs (items,
  * connections, documents, photos, fixtures) will need it too.
  */
-export { homeInventory, itemConnections, locations } from '@pops/db-types';
+export { homeInventory, itemConnections, itemDocuments, locations } from '@pops/db-types';
