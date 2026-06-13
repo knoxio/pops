@@ -2,25 +2,18 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 >
-> Status: **Blocked — target exports missing**
+> Status: **Unblocked — prerequisite landed; US-01 ready**
 
 ## Status note (2026-06-14)
 
-US-01 cannot proceed as written. Both candidate migration targets are unavailable today:
+The Option B prerequisite shipped — `packages/pillar-sdk/src/settings/index.ts` now re-exports the 10 manifests (`aiConfigManifest`, `coreOperationalManifest`, `inventoryManifest`, `financeManifest`, `cerebrumManifest`, `egoManifest`, `arrManifest`, `plexManifest`, `rotationManifest`, `mediaOperationalManifest`) from `@pops/module-registry/settings`, the `./settings` subpath is declared in `pillar-sdk/package.json`'s `exports`, and pillar-sdk picks up a workspace dep on `@pops/module-registry`.
 
-- **Option A (per-pillar packages)** — no `@pops/pillar-core`, `@pops/pillar-media`, `@pops/pillar-cerebrum`, `@pops/pillar-inventory`, or `@pops/pillar-finance` package exists under `packages/`. Only `@pops/pillar-sdk` is published. The per-pillar contract packages (`@pops/<pillar>-contract`) exist but do not export `SettingsManifest` values.
-- **Option B (`@pops/pillar-sdk/settings`)** — `packages/pillar-sdk/src` has no `settings/` subpath and no `Manifest` exports today. The precedent (PR #3090) only added `ALL_MODULE_IDS` / `isKnownPillarId` / `isModuleId`; it did not introduce a settings surface.
+Status of the two options going into US-01:
 
-The per-pillar `SettingsManifest` values currently live only in `@pops/module-registry/src/settings/{core,inventory,finance,cerebrum,ego,media}/...` and are re-exported through `@pops/module-registry/settings`. Flipping the 8 consumers requires the target exports to exist first.
+- **Option A (per-pillar packages)** — still unavailable. No `@pops/pillar-core`, `@pops/pillar-media`, `@pops/pillar-cerebrum`, `@pops/pillar-inventory`, or `@pops/pillar-finance` package exists under `packages/`; the per-pillar contract packages (`@pops/<pillar>-contract`) do not export `SettingsManifest` values. Picking Option A still requires scaffolding those packages first.
+- **Option B (`@pops/pillar-sdk/settings`)** — landed. US-01 can flip the 8 consumers to `import { … } from '@pops/pillar-sdk/settings'` today.
 
-**Prerequisite work** before this PRD can resume:
-
-1. Pick the target (decision is still A vs B per the original PRD).
-2. Land that target as its own PR — for Option B, scaffold `packages/pillar-sdk/src/settings/` with the 10 manifest re-exports (`aiConfigManifest`, `coreOperationalManifest`, `inventoryManifest`, `financeManifest`, `cerebrumManifest`, `egoManifest`, `arrManifest`, `plexManifest`, `rotationManifest`, `mediaOperationalManifest`) sourced from the canonical files in `@pops/module-registry/src/settings/**`, add the `./settings` export in `pillar-sdk/package.json`, extend the import-discipline allow-list in `eslint-config-pops`. For Option A, the same work multiplied by N new pillar packages.
-3. Then re-run US-01 to flip the 8 consumers.
-4. US-02 (delete `@pops/module-registry/settings`) follows unchanged.
-
-This PR records the block; no consumer changes ship in it.
+US-01 picks the available target (Option B) and runs the mechanical sweep. US-02 (delete `@pops/module-registry/settings`) follows unchanged.
 
 ## Overview
 
