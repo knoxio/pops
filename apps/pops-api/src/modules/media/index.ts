@@ -9,7 +9,7 @@ import {
   mediaOperationalManifest,
   plexManifest,
   rotationManifest,
-} from '@pops/module-registry/settings';
+} from '@pops/pillar-sdk/settings';
 
 import { router } from '../../trpc.js';
 import { arrRouter } from './arr/index.js';

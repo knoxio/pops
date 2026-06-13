@@ -1,4 +1,4 @@
-import { financeManifest } from '@pops/module-registry/settings';
+import { financeManifest } from '@pops/pillar-sdk/settings';
 
 /**
  * Finance domain — transactions, budgets, imports, wishlist.

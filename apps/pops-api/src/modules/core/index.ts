@@ -1,4 +1,4 @@
-import { aiConfigManifest, coreOperationalManifest } from '@pops/module-registry/settings';
+import { aiConfigManifest, coreOperationalManifest } from '@pops/pillar-sdk/settings';
 
 /**
  * Core domain — cross-cutting concerns shared across finance & inventory.

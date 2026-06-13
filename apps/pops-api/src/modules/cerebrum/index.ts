@@ -2,7 +2,7 @@
  * Cerebrum domain — engram storage and retrieval.
  * See docs/themes/06-cerebrum for the full spec.
  */
-import { cerebrumManifest } from '@pops/module-registry/settings';
+import { cerebrumManifest } from '@pops/pillar-sdk/settings';
 
 import { mergeRouters, router } from '../../trpc.js';
 import { cerebrumAiTools } from './ai-tools/index.js';

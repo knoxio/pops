@@ -88,6 +88,7 @@
     "@pops/lists-db": "workspace:*",
     "@pops/media-db": "workspace:*",
     "@pops/module-registry": "workspace:*",
+    "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@trpc/client": "11.17.0",
     "@trpc/server": "^11.17.0",

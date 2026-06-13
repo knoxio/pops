@@ -7,7 +7,7 @@
  *   ego.context.setScopes                    — explicit scope override (US-04)
  *   ego.context.getActive                    — current context state (US-03)
  */
-import { egoManifest } from '@pops/module-registry/settings';
+import { egoManifest } from '@pops/pillar-sdk/settings';
 
 import { mergeRouters, router } from '../../../trpc.js';
 import { contextRouter } from './router-context.js';

@@ -4,9 +4,9 @@ import { installedManifests } from './installed-modules.js';
  * Backend module manifests — convenience wrapper around `installedManifests()`
  * (PRD-101 US-05) for cross-cutting aggregators that need the live module
  * manifests with their code-bearing slots attached (router, URI handler,
- * AI tools, …). Settings have moved to `@pops/module-registry`'s `MODULES`
- * constant (PRD-101 US-04 follow-up) — consumers read them directly via
- * `MODULES.flatMap(m => m.settings ?? [])`.
+ * AI tools, …). Settings live on each module's `SettingsManifest` export
+ * surfaced via `@pops/pillar-sdk/settings`; consumers that just need the
+ * settings shape read it directly from there.
  */
 import type { ModuleManifest } from '@pops/types';
 
