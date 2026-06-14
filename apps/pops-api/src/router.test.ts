@@ -112,8 +112,9 @@ describe('PRD-101 US-03 root router composition', () => {
 
 /**
  * The shape of the root tRPC router is the install-set Pick over
- * `KNOWN_ROUTERS`. These compile-time assertions guard the contract that
- * makes US-03 load-bearing: if a future change accidentally widens the
+ * `KNOWN_ROUTERS_GENERATED`. These compile-time assertions guard the
+ * contract that makes US-03 load-bearing: if a future change accidentally
+ * widens the
  * inferred AppRouter type back to a generic `Router<any>`-style shape,
  * the build fails here.
  */

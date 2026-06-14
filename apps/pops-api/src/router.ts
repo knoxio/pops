@@ -7,11 +7,11 @@
  * filtered for installed modules. `core` is always mounted (it's the
  * always-installed platform shell, not a domain module).
  *
- * PRD-242 US-02: the in-repo catalogue source has moved from the hand-
- * curated `KNOWN_ROUTERS` literal below to the codegen output emitted by
- * `apps/pops-api/scripts/generate-known-routers.ts`
- * (`KNOWN_ROUTERS_GENERATED`). The literal stays in place during the US-02
- * window for `git blame` continuity and is physically deleted by US-03.
+ * PRD-242 closes audit H3 by sourcing the in-repo catalogue exclusively from
+ * the codegen output `KNOWN_ROUTERS_GENERATED`
+ * (`apps/pops-api/scripts/generate-known-routers.ts`). Adding a new in-repo
+ * pillar requires no edit here — the codegen picks up the router at build
+ * time from the workspace manifest.
  *
  * The static `AppRouter` type narrows to the modules present in `MODULES`
  * — frontend code that references an absent module fails the build via a
@@ -27,41 +27,10 @@
  * holder so external pillars registered after boot appear without a restart.
  */
 import { KNOWN_ROUTERS_GENERATED } from './generated/known-routers.js';
-import { egoRouter } from './modules/cerebrum/ego/index.js';
-import { cerebrumRouter } from './modules/cerebrum/index.js';
-import { coreRouter } from './modules/core/index.js';
-import { financeRouter } from './modules/finance/index.js';
-import { foodRouter } from './modules/food/index.js';
 import { installedManifests } from './modules/installed-modules.js';
-import { inventoryRouter } from './modules/inventory/index.js';
-import { listsRouter } from './modules/lists/index.js';
-import { mediaRouter } from './modules/media/index.js';
 import { router } from './trpc.js';
 
 import type { InstalledModule } from '@pops/module-registry';
-
-/**
- * The full mapping of module id → tRPC router for every module the API
- * binary knows how to mount. Pre-PRD-242 this was the only source of truth.
- * Today the live composition reads `KNOWN_ROUTERS_GENERATED` (PRD-242 US-01)
- * from the codegen output; the literal below is retained for `git blame`
- * continuity until PRD-242 US-03 deletes it.
- *
- * Per-property types are preserved (not widened to a common Router base)
- * so the literal shape we project to `appRouter` carries the exact nested
- * router type per key.
- */
-const _KNOWN_ROUTERS_LEGACY = {
-  core: coreRouter,
-  cerebrum: cerebrumRouter,
-  ego: egoRouter,
-  finance: financeRouter,
-  food: foodRouter,
-  inventory: inventoryRouter,
-  lists: listsRouter,
-  media: mediaRouter,
-};
-void _KNOWN_ROUTERS_LEGACY;
 
 type KnownRouters = typeof KNOWN_ROUTERS_GENERATED;
 type KnownRouterId = keyof KnownRouters;
