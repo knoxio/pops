@@ -1,30 +1,43 @@
+/**
+ * PRD-098/099 frontend module manifests — structural validation.
+ *
+ * PRD-243 US-04 migrated this test off the per-pillar named-import literal
+ * (audit finding M7). The manifest set is now derived from
+ * `installedFrontendManifests()` — the same registry-walk getter the
+ * shell uses at boot — so adding a new in-repo pillar requires no edit
+ * here.
+ */
 import { describe, expect, it } from 'vitest';
 
-import { manifest as aiManifest } from '@pops/app-ai';
-import { manifest as cerebrumManifest } from '@pops/app-cerebrum';
-import { manifest as financeManifest } from '@pops/app-finance';
-import { manifest as foodManifest } from '@pops/app-food';
-import { manifest as inventoryManifest } from '@pops/app-inventory';
-import { manifest as listsManifest } from '@pops/app-lists';
-import { manifest as mediaManifest } from '@pops/app-media';
-import { manifest as egoManifest } from '@pops/overlay-ego';
 import { assertModuleManifest, type ModuleManifest } from '@pops/types';
 
-const pageRoutedApps: ReadonlyArray<readonly [string, ModuleManifest]> = [
-  ['ai', aiManifest],
-  ['cerebrum', cerebrumManifest],
-  ['finance', financeManifest],
-  ['food', foodManifest],
-  ['inventory', inventoryManifest],
-  ['lists', listsManifest],
-  ['media', mediaManifest],
-];
+import { installedFrontendManifests } from '../app/installed-modules';
 
-const overlayModules: ReadonlyArray<readonly [string, ModuleManifest]> = [['ego', egoManifest]];
+type LabelledManifest = readonly [string, ModuleManifest];
 
-const allManifests = [...pageRoutedApps, ...overlayModules];
+function labelled(manifests: readonly ModuleManifest[]): LabelledManifest[] {
+  return manifests.map((m) => [m.id, m] as const);
+}
+
+const allManifests: LabelledManifest[] = labelled(installedFrontendManifests());
+
+const pageRoutedApps: LabelledManifest[] = allManifests.filter(
+  ([, m]) => m.surfaces.includes('app') && Array.isArray(m.frontend?.routes)
+);
+
+const overlayModules: LabelledManifest[] = allManifests.filter(([, m]) =>
+  m.surfaces.includes('overlay')
+);
 
 describe('PRD-098/099 frontend module manifests', () => {
+  it('the registry walk surfaces at least one installed manifest', () => {
+    expect(allManifests.length).toBeGreaterThan(0);
+  });
+
+  it('the registry walk surfaces at least one page-routed app', () => {
+    expect(pageRoutedApps.length).toBeGreaterThan(0);
+  });
+
   it.each(allManifests)('%s manifest is structurally valid', (label, m) => {
     expect(() => assertModuleManifest(m, label)).not.toThrow();
   });
