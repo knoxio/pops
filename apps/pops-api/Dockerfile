@@ -65,6 +65,7 @@ COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
+COPY apps/pops-api/scripts ./apps/pops-api/scripts
 
 # Build shared packages first
 WORKDIR /app/packages/db-types
