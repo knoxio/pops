@@ -12,13 +12,19 @@ import { SettingNotFoundError, settingsService } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { getSyncQueue } from '../../../jobs/queues.js';
+import { FeatureNotFoundError } from '../../core/features/errors.js';
 import { isEnabled } from '../../core/features/index.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 import { getLastSyncAt, getLastSyncCounts, getLastSyncError } from './scheduler-sync-logs.js';
 import { getPlexSectionIds } from './service.js';
 
 function isPlexSchedulerEnabled(): boolean {
-  return isEnabled('media.plex.scheduler');
+  try {
+    return isEnabled('media.plex.scheduler');
+  } catch (err) {
+    if (err instanceof FeatureNotFoundError) return false;
+    throw err;
+  }
 }
 
 export {
