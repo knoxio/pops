@@ -19,7 +19,7 @@ export function pillar(id: string, baseUrl: string, lastSeenAt = new Date()): Pi
       subscriptions: [],
     },
     uri: { types: [`${id}/entity`] },
-    settings: { keys: [`${id}.defaultThing`] },
+    consumedSettings: { keys: [`${id}.defaultThing`] },
   };
   return {
     pillarId: id,

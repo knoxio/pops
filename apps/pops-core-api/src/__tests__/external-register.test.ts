@@ -51,7 +51,7 @@ function recipesManifest(overrides?: Partial<ManifestPayload>): ManifestPayload 
     search: { adapters: [] },
     ai: { tools: [] },
     uri: { types: ['recipes/recipe'] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/health' },
     ...overrides,
   };
@@ -256,7 +256,7 @@ describe('POST /core.registry.register — manifest validation', () => {
           search: { adapters: [] },
           ai: { tools: [] },
           uri: { types: [] },
-          settings: { keys: [] },
+          consumedSettings: { keys: [] },
           healthcheck: { path: '/' },
         },
         apiKey: VALID_API_KEY,

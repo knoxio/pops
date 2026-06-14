@@ -126,17 +126,17 @@ describe('ManifestPayloadSchema', () => {
     );
   });
 
-  describe('settings keys regex', () => {
+  describe('consumedSettings keys regex', () => {
     it.each(['Foo', '.foo', 'foo.', '1foo', 'foo..bar'])('rejects %s', (key) => {
       const m = validManifest();
-      m.settings.keys = [key];
+      m.consumedSettings.keys = [key];
       const result = ManifestPayloadSchema.safeParse(m);
       expect(result.success).toBe(false);
     });
 
     it.each(['finance', 'finance.defaultCurrency', 'finance.a.b.c'])('accepts %s', (key) => {
       const m = validManifest();
-      m.settings.keys = [key];
+      m.consumedSettings.keys = [key];
       const result = ManifestPayloadSchema.safeParse(m);
       expect(result.success).toBe(true);
     });
@@ -481,6 +481,147 @@ describe('ManifestPayloadSchema', () => {
         sinks: { descriptors: [{ ...validSink(), description: 'short' }] },
       };
       const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('settings dimension (PRD-240 / ADR-037)', () => {
+    const financeSettingsDescriptor = () => ({
+      id: 'finance',
+      title: 'Finance',
+      icon: 'DollarSign',
+      order: 140,
+      groups: [
+        {
+          id: 'aiCategorizer',
+          title: 'AI Categorizer',
+          description: 'Model and limits for AI-powered transaction categorisation.',
+          fields: [
+            {
+              key: 'finance.aiCategorizer.model',
+              label: 'Categorizer Model',
+              type: 'text' as const,
+              default: 'claude-haiku-4-5-20251001',
+            },
+            {
+              key: 'finance.aiCategorizer.maxTokens',
+              label: 'Max Tokens',
+              type: 'number' as const,
+              default: '200',
+              validation: { min: 50, max: 2000 },
+            },
+          ],
+        },
+      ],
+    });
+
+    const egoSettingsDescriptor = () => ({
+      id: 'ego',
+      title: 'Ego',
+      order: 210,
+      groups: [
+        {
+          id: 'identity',
+          title: 'Identity',
+          fields: [{ key: 'ego.displayName', label: 'Display Name', type: 'text' as const }],
+        },
+      ],
+    });
+
+    it('accepts a manifest with settings omitted (backwards-compatible)', () => {
+      const result = ManifestPayloadSchema.safeParse(validManifest());
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts an empty settings manifests array', () => {
+      const m = { ...validManifest(), settings: { manifests: [] } };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a single valid SettingsManifestDescriptor', () => {
+      const m = {
+        ...validManifest(),
+        settings: { manifests: [financeSettingsDescriptor()] },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts multiple SettingsManifestDescriptors (cerebrum + ego case)', () => {
+      const m = {
+        ...validManifest(),
+        settings: {
+          manifests: [
+            { ...financeSettingsDescriptor(), id: 'cerebrum', title: 'Cerebrum' },
+            egoSettingsDescriptor(),
+          ],
+        },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects a SettingsManifestDescriptor missing the required id field', () => {
+      const { id: _omitted, ...descriptorMissingId } = financeSettingsDescriptor();
+      const m = {
+        ...validManifest(),
+        settings: { manifests: [descriptorMissingId] },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an unknown field on the settings block (strict mode)', () => {
+      const m = {
+        ...validManifest(),
+        settings: { manifests: [financeSettingsDescriptor()], sneaky: true },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an unknown field on a SettingsManifestDescriptor (strict mode)', () => {
+      const m = {
+        ...validManifest(),
+        settings: {
+          manifests: [{ ...financeSettingsDescriptor(), sneaky: true }],
+        },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an empty id on a SettingsManifestDescriptor', () => {
+      const m = {
+        ...validManifest(),
+        settings: { manifests: [{ ...financeSettingsDescriptor(), id: '' }] },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects an unrecognised settings field type', () => {
+      const descriptor = financeSettingsDescriptor();
+      descriptor.groups[0]!.fields[0]!.type = 'mystery' as never;
+      const m = { ...validManifest(), settings: { manifests: [descriptor] } };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('consumedSettings rename (PRD-240 US-01)', () => {
+    it('accepts the renamed consumedSettings block on a valid manifest', () => {
+      const m = validManifest();
+      m.consumedSettings = { keys: ['finance.defaultCurrency', 'finance.locale'] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects the legacy top-level `settings: { keys }` shape (now unknown field under strict)', () => {
+      const { consumedSettings: _omitted, ...rest } = validManifest();
+      const legacy = { ...rest, settings: { keys: ['finance.locale'] } };
+      const result = ManifestPayloadSchema.safeParse(legacy);
       expect(result.success).toBe(false);
     });
   });

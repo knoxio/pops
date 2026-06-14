@@ -37,7 +37,7 @@ describe('buildShellManifest', () => {
     expect(manifest.search.adapters).toEqual([]);
     expect(manifest.ai.tools).toEqual([]);
     expect(manifest.uri.types).toEqual([]);
-    expect(manifest.settings.keys).toEqual([]);
+    expect(manifest.consumedSettings.keys).toEqual([]);
   });
 });
 
@@ -87,7 +87,7 @@ describe('registerShellWithRegistry — happy path', () => {
       search: { adapters: [] },
       ai: { tools: [] },
       uri: { types: [] },
-      settings: { keys: [] },
+      consumedSettings: { keys: [] },
       healthcheck: { path: '/health' },
     });
   });

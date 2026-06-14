@@ -71,7 +71,7 @@ export function buildHaBridgeManifest(version: string): ManifestPayload {
       })),
     },
     uri: { types: [] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/health' },
   };
 }

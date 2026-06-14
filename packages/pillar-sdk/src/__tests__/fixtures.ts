@@ -58,7 +58,7 @@ export function validManifest(): ManifestPayload {
       ],
     },
     uri: { types: ['finance/transaction', 'finance/budget'] },
-    settings: { keys: ['finance.defaultCurrency', 'finance.locale'] },
+    consumedSettings: { keys: ['finance.defaultCurrency', 'finance.locale'] },
     healthcheck: { path: '/healthz' },
   };
 }

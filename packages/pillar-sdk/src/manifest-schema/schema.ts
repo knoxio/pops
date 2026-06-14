@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { SettingsBlockSchema, type SettingsManifestDescriptor } from './settings.js';
+
 const PILLAR_ID = z.string().regex(/^[a-z][a-z0-9-]*$/, 'pillar id must be lowercase kebab-case');
 
 const SEMVER = z.string().regex(/^\d+\.\d+\.\d+(-[a-z0-9.]+)?$/, 'must be semver');
@@ -141,7 +143,7 @@ const URI = z
   })
   .strict();
 
-const SETTINGS = z
+const CONSUMED_SETTINGS = z
   .object({
     keys: z.array(SETTINGS_KEY),
   })
@@ -163,11 +165,14 @@ export const ManifestPayloadSchema = z
     ai: AI,
     sinks: SINKS.optional(),
     uri: URI,
-    settings: SETTINGS,
+    consumedSettings: CONSUMED_SETTINGS,
+    settings: SettingsBlockSchema.optional(),
     healthcheck: HEALTHCHECK,
   })
   .strict();
 
 export type SinkDescriptor = z.infer<typeof SINK_DESCRIPTOR>;
+
+export type { SettingsManifestDescriptor };
 
 export type ManifestPayload = z.infer<typeof ManifestPayloadSchema>;

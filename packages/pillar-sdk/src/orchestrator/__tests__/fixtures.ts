@@ -30,7 +30,7 @@ export function manifest(pillarId: string, adapters: readonly string[]): Manifes
     },
     ai: { tools: [] },
     uri: { types: [`${pillarId}/entity`] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/health' },
   };
 }

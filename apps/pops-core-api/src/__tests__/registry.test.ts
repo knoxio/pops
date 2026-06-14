@@ -85,7 +85,7 @@ function financeManifest(overrides?: Partial<ManifestPayload>): ManifestPayload 
       ],
     },
     uri: { types: ['finance/transaction'] },
-    settings: { keys: ['finance.defaultCurrency'] },
+    consumedSettings: { keys: ['finance.defaultCurrency'] },
     healthcheck: { path: '/healthz' },
     ...overrides,
   };
@@ -122,7 +122,7 @@ function mediaManifest(): ManifestPayload {
     },
     ai: { tools: [] },
     uri: { types: ['media/movie'] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/healthz' },
   };
 }
@@ -154,7 +154,7 @@ describe('core.registry.register', () => {
       search: { adapters: [] },
       ai: { tools: [] },
       uri: { types: [] },
-      settings: { keys: [] },
+      consumedSettings: { keys: [] },
       healthcheck: { path: '/' },
     };
     const res = await c.core.registry.register({

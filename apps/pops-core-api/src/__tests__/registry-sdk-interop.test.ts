@@ -111,7 +111,7 @@ function financeManifest(): ManifestPayload {
     search: { adapters: [] },
     ai: { tools: [] },
     uri: { types: ['finance/transaction'] },
-    settings: { keys: ['finance.defaultCurrency'] },
+    consumedSettings: { keys: ['finance.defaultCurrency'] },
     healthcheck: { path: '/healthz' },
   };
 }
