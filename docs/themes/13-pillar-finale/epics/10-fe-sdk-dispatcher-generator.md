@@ -22,6 +22,7 @@ Make the front-end registry-aware end-to-end. Three pieces:
 | 238 | Settings-imports off module-registry  | Migrate the 8 `apps/pops-api` sites still importing per-pillar `SettingsManifest` from `@pops/module-registry/settings`                                                                                      | Partial — US-01 done; US-02 closes via PRD-240 US-05                                              |
 | 239 | Settings-manifest physical relocation | Move the 10 manifests out of `@pops/module-registry/src/settings` into per-pillar contract packages; repoint `@pops/pillar-sdk/settings`; close PRD-238 US-02                                                | In progress — US-01 / US-03 / US-04 / US-05 done; US-02 in flight; US-06 folds into PRD-240 US-05 |
 | 240 | Settings as a manifest dimension      | Promote settings to a first-class manifest dimension peer of `searchAdapters` / `aiTools` / `sinks`; replace the static SDK barrel with `discoverSettings()`; closes PRD-238 US-02 + PRD-239 US-06 (ADR-037) | Not started                                                                                       |
+| 241 | Registry-driven `known-modules`       | Replace `MANIFEST_SOURCES` literal in `packages/module-registry/scripts/known-modules.ts` with workspace discovery over `@pops/*-contract` packages; closes audit H1; strict predecessor to PRD-218          | Not started                                                                                       |
 
 ## Dependencies
 

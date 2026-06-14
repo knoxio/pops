@@ -117,7 +117,8 @@ Should NOT touch PRD content beyond status + framing. Domain redesigns are separ
 
 ### Trial run before committing
 
-Before doing the in-repo reorg, validate the layout on the next *external* pillar:
+Before doing the in-repo reorg, validate the layout on the next _external_ pillar:
+
 - If the HA bridge container moves into the homelab repo, ship it with `pillars/ha-bridge/` shape locally.
 - Or promote PRD-233 Rust pillar to its own repo with the same layout.
 - That gives a working precedent. If the layout creates friction in a self-contained external pillar, it'll create more friction in the monorepo — back off.
