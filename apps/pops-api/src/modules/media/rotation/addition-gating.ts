@@ -9,9 +9,10 @@ import { eq } from 'drizzle-orm';
  * PRD-070 US-05
  */
 import { settingsService } from '@pops/core-db';
-import { rotationCandidates } from '@pops/db-types';
+import { rotationCandidates } from '@pops/media-db';
 
-import { getCoreDrizzle, getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getRadarrClient } from '../arr/service.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
 import { getImageCache, getTmdbClient } from '../tmdb/index.js';
@@ -98,7 +99,7 @@ function loadRadarrConfig(): RadarrConfig | null {
 }
 
 function markCandidate(candidateId: number, status: 'added' | 'skipped'): void {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   db.update(rotationCandidates).set({ status }).where(eq(rotationCandidates.id, candidateId)).run();
 }
 

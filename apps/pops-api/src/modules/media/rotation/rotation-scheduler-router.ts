@@ -1,9 +1,9 @@
 import { asc, count, desc, eq, isNull, sql, sum } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { movies, rotationLog } from '@pops/db-types';
+import { movies, rotationLog } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { protectedProcedure } from '../../../trpc.js';
 import { getRadarrClient } from '../arr/service.js';
 import { cancelLeaving } from './leaving-lifecycle.js';
@@ -57,7 +57,7 @@ export const rotationSchedulerProcedures = {
 
   /** Get movies currently in the 'leaving' state, sorted by expiry. */
   getLeavingMovies: protectedProcedure.query(() => {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     return db
       .select({
         id: movies.id,
@@ -75,7 +75,7 @@ export const rotationSchedulerProcedures = {
 
   /** Get the last rotation cycle log entry. */
   getLastCycleLog: protectedProcedure.query(() => {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     return db.select().from(rotationLog).orderBy(desc(rotationLog.id)).limit(1).get() ?? null;
   }),
 
@@ -109,7 +109,7 @@ export const rotationSchedulerProcedures = {
         .default({ limit: 20, offset: 0 })
     )
     .query(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       const items = db
         .select()
         .from(rotationLog)
@@ -123,7 +123,7 @@ export const rotationSchedulerProcedures = {
 
   /** Summary statistics for the rotation log page. PRD-072 US-06. */
   getRotationLogStats: protectedProcedure.query(() => {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
 
     const totals = db
       .select({

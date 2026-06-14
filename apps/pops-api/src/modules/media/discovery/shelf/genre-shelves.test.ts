@@ -11,6 +11,7 @@ const mockLibraryIds = vi.hoisted(() => ({ value: new Set<number>() }));
 const mockTmdbResults = vi.hoisted(() => ({ value: [] as TmdbSearchResult[] }));
 
 vi.mock('../../../../db.js', () => ({ getDrizzle: vi.fn() }));
+vi.mock('../../../../db/media-db-handle.js', () => ({ getMediaDrizzle: vi.fn() }));
 
 vi.mock('@pops/db-types', () => ({
   movies: { id: 'id', tmdbId: 'tmdb_id', title: 'title' },
@@ -21,6 +22,16 @@ vi.mock('@pops/db-types', () => ({
     score: 'score',
   },
   comparisonDimensions: { id: 'id' },
+}));
+
+vi.mock('@pops/media-db', () => ({
+  movies: { id: 'id', tmdbId: 'tmdb_id', title: 'title' },
+  mediaScores: {
+    mediaId: 'media_id',
+    mediaType: 'media_type',
+    dimensionId: 'dimension_id',
+    score: 'score',
+  },
 }));
 
 vi.mock('../../tmdb/index.js', () => ({
@@ -83,6 +94,7 @@ vi.mock('../service.js', () => ({
 vi.mock('./registry.js', () => ({ registerShelf: vi.fn() }));
 
 import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import {
   bestInGenreShelf,
@@ -92,7 +104,22 @@ import {
 } from './genre-shelves.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
+const mockGetMediaDrizzle = vi.mocked(getMediaDrizzle);
 const mockGetTmdbClient = vi.mocked(getTmdbClient);
+
+/**
+ * Wrap `mockGetDrizzle.mockReturnValue` so it also primes the media handle.
+ * `topDimensionShelf` and `dimensionInspiredShelf` migrated to
+ * `getMediaDrizzle()` after the media_scores PR4 cutover; the other shelves
+ * in this file (best-in-genre, genre-crossover) still resolve via
+ * `getDrizzle()`. Re-routing through both handles keeps existing tests
+ * working without each describe having to repeat the mock setup.
+ */
+const sharedMockReturnValue = mockGetDrizzle.mockReturnValue.bind(mockGetDrizzle);
+mockGetDrizzle.mockReturnValue = ((value: ReturnType<typeof getDrizzle>) => {
+  mockGetMediaDrizzle.mockReturnValue(value as unknown as ReturnType<typeof getMediaDrizzle>);
+  return sharedMockReturnValue(value);
+}) as typeof mockGetDrizzle.mockReturnValue;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

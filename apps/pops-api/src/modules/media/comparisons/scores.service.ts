@@ -1,8 +1,8 @@
 import { and, desc, eq } from 'drizzle-orm';
 
-import { mediaScores } from '@pops/db-types';
+import { mediaScores } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 import type { MediaScoreRow } from './types.js';
 
@@ -11,7 +11,7 @@ export function getScoresForMedia(
   mediaId: number,
   dimensionId?: number
 ): MediaScoreRow[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const conditions = [eq(mediaScores.mediaType, mediaType), eq(mediaScores.mediaId, mediaId)];
   if (dimensionId) {

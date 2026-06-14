@@ -1,8 +1,10 @@
 import { and, eq, or } from 'drizzle-orm';
 
-import { comparisons, mediaScores } from '@pops/db-types';
+import { comparisons } from '@pops/db-types';
+import { mediaScores } from '@pops/media-db';
 
 import { getDb, getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
 import { getDimension } from '../dimensions.service.js';
 import { recalcDimensionElo } from './score-management.js';
@@ -18,14 +20,14 @@ export function excludeFromDimension(
   dimensionId: number
 ): { comparisonsDeleted: number } {
   getDimension(dimensionId); // verify exists
-  const drizzleDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
+  const sharedDb = getDrizzle();
   const rawDb = getDb();
 
   let comparisonsDeleted = 0;
 
   rawDb.transaction(() => {
-    // Upsert media_scores row with excluded=1
-    const existing = drizzleDb
+    const existing = mediaDb
       .select()
       .from(mediaScores)
       .where(
@@ -38,13 +40,13 @@ export function excludeFromDimension(
       .get();
 
     if (existing) {
-      drizzleDb
+      mediaDb
         .update(mediaScores)
         .set({ excluded: 1, updatedAt: new Date().toISOString() })
         .where(eq(mediaScores.id, existing.id))
         .run();
     } else {
-      drizzleDb
+      mediaDb
         .insert(mediaScores)
         .values({
           mediaType,
@@ -57,8 +59,7 @@ export function excludeFromDimension(
         .run();
     }
 
-    // Delete all comparisons involving this media item for this dimension
-    const result = drizzleDb
+    const result = sharedDb
       .delete(comparisons)
       .where(
         and(
@@ -73,7 +74,6 @@ export function excludeFromDimension(
 
     comparisonsDeleted = result.changes;
 
-    // Recalculate ELO for this dimension
     recalcDimensionElo(dimensionId);
   })();
 
@@ -85,7 +85,7 @@ export function excludeFromDimension(
  */
 export function includeInDimension(mediaType: string, mediaId: number, dimensionId: number): void {
   getDimension(dimensionId); // verify exists
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
 
   const existing = drizzleDb
     .select()

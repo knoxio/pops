@@ -233,7 +233,15 @@ describe('runPerPillarMigrations', () => {
     // 0027_media_seasons_baseline + 0028_media_episodes_baseline (Theme 13 PRD-166 PR 4
     // prep — seasons + episodes scaffolded so the addTvShow mixed-tx can move atomically),
     // 0029_media_comparison_staleness_baseline (Theme 13 MEDIA FULL EXIT —
-    // comparison_staleness lives on the media handle alongside watch_history);
+    // comparison_staleness lives on the media handle alongside watch_history),
+    // 0030_media_scores_baseline (Theme 13 Wave-5 cascade — media_scores
+    // mirrored from shared `0002_magical_kid_colt` + `0015_condemned_anthem`
+    // ahead of the comparisons / scores writer cutover; dimension_id stays
+    // a soft pointer into pops.db.comparison_dimensions), and
+    // 0031_rotation_baseline (Theme 13 Wave-5 cascade — rotation_log +
+    // rotation_sources + rotation_candidates + rotation_exclusions mirrored
+    // from shared `0028_needy_terror` + `0029_curved_revanche`; intra-pillar
+    // `rotation_candidates.source_id → rotation_sources.id` FK preserved);
     // `inventory` owns `packages/inventory-db/migrations/` with
     // 0005_fancy_crystal (inventory pillar Phase 1 PR 2),
     // 0006_inventory_pillar_baseline (inventory pillar Phase 2 PR 3 —
@@ -271,6 +279,8 @@ describe('runPerPillarMigrations', () => {
         '0027_media_seasons_baseline',
         '0028_media_episodes_baseline',
         '0029_media_comparison_staleness_baseline',
+        '0030_media_scores_baseline',
+        '0031_rotation_baseline',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
         '0050_engrams_baseline',

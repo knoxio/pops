@@ -76,4 +76,97 @@ describe('openMediaDb', () => {
       second.raw.close();
     }
   });
+
+  it('applies the media_scores baseline (0030) with the unique tuple + dimension index', () => {
+    const path = join(tmpDir, 'media.db');
+    const { raw } = openMediaDb(path);
+    try {
+      const columns = raw.prepare(`PRAGMA table_info(media_scores)`).all() as {
+        name: string;
+        notnull: number;
+        dflt_value: string | null;
+      }[];
+      const names = new Set(columns.map((c) => c.name));
+      expect(names).toEqual(
+        new Set([
+          'id',
+          'media_type',
+          'media_id',
+          'dimension_id',
+          'score',
+          'comparison_count',
+          'excluded',
+          'updated_at',
+        ])
+      );
+
+      const indexes = raw.prepare(`PRAGMA index_list(media_scores)`).all() as {
+        name: string;
+        unique: number;
+      }[];
+      const idxByName = new Map(indexes.map((i) => [i.name, i.unique === 1]));
+      expect(idxByName.get('idx_media_scores_unique')).toBe(true);
+      expect(idxByName.has('idx_media_scores_dimension')).toBe(true);
+
+      raw
+        .prepare(
+          `INSERT INTO media_scores (media_type, media_id, dimension_id, score, comparison_count, excluded) VALUES (?, ?, ?, ?, ?, ?)`
+        )
+        .run('movie', 1, 1, 1500, 0, 0);
+
+      expect(() =>
+        raw
+          .prepare(
+            `INSERT INTO media_scores (media_type, media_id, dimension_id, score, comparison_count, excluded) VALUES (?, ?, ?, ?, ?, ?)`
+          )
+          .run('movie', 1, 1, 1600, 0, 0)
+      ).toThrow(/UNIQUE/);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('applies the rotation baseline (0031) with the intra-pillar source FK preserved', () => {
+    const path = join(tmpDir, 'media.db');
+    const { raw } = openMediaDb(path);
+    try {
+      const tables = raw
+        .prepare(
+          `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('rotation_log','rotation_sources','rotation_candidates','rotation_exclusions')`
+        )
+        .all() as { name: string }[];
+      expect(new Set(tables.map((t) => t.name))).toEqual(
+        new Set(['rotation_log', 'rotation_sources', 'rotation_candidates', 'rotation_exclusions'])
+      );
+
+      const source = raw
+        .prepare(
+          `INSERT INTO rotation_sources (type, name) VALUES ('manual', 'Manual Queue') RETURNING id`
+        )
+        .get() as { id: number };
+      raw
+        .prepare(
+          `INSERT INTO rotation_candidates (source_id, tmdb_id, title, status) VALUES (?, ?, ?, ?)`
+        )
+        .run(source.id, 555, 'Test', 'pending');
+
+      // Cascade delete on rotation_sources cleans rotation_candidates.
+      raw.prepare(`DELETE FROM rotation_sources WHERE id = ?`).run(source.id);
+      const remaining = raw.prepare(`SELECT COUNT(*) as c FROM rotation_candidates`).get() as {
+        c: number;
+      };
+      expect(remaining.c).toBe(0);
+
+      // Orphan FK insert (no parent row) must fail because FK enforcement is on.
+      expect(() =>
+        raw
+          .prepare(
+            `INSERT INTO rotation_candidates (source_id, tmdb_id, title, status) VALUES (?, ?, ?, ?)`
+          )
+          .run(9999, 9, 'Orphan', 'pending')
+      ).toThrow(/FOREIGN KEY/);
+    } finally {
+      raw.close();
+    }
+  });
 });

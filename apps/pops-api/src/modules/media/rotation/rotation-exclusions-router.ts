@@ -1,9 +1,9 @@
 import { count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { rotationCandidates, rotationExclusions } from '@pops/db-types';
+import { rotationCandidates, rotationExclusions } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { protectedProcedure } from '../../../trpc.js';
 
 export const rotationExclusionsProcedures = {
@@ -18,7 +18,7 @@ export const rotationExclusionsProcedures = {
         .default({ limit: 50, offset: 0 })
     )
     .query(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       const items = db
         .select()
         .from(rotationExclusions)
@@ -41,7 +41,7 @@ export const rotationExclusionsProcedures = {
       })
     )
     .mutation(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       db.insert(rotationExclusions)
         .values({
           tmdbId: input.tmdbId,
@@ -61,7 +61,7 @@ export const rotationExclusionsProcedures = {
   removeExclusion: protectedProcedure
     .input(z.object({ tmdbId: z.number().int().positive() }))
     .mutation(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       const result = db
         .delete(rotationExclusions)
         .where(eq(rotationExclusions.tmdbId, input.tmdbId))

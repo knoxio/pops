@@ -7,9 +7,9 @@ import { eq, sql } from 'drizzle-orm';
  * PRD-071 US-02: syncSource(sourceId) implementation.
  * PRD-071 US-07: syncAllSources() — batch sync with interval gating.
  */
-import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
+import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getRegisteredTypes, getSourceAdapter } from './source-registry.js';
 
 export interface SyncSourceResult {
@@ -26,7 +26,7 @@ interface ResolvedSource {
 }
 
 function loadAndValidateSource(sourceId: number): ResolvedSource {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const source = db.select().from(rotationSources).where(eq(rotationSources.id, sourceId)).get();
   if (!source) throw new Error(`Rotation source ${sourceId} not found`);
   if (!source.enabled) {
@@ -39,7 +39,7 @@ function loadAndValidateSource(sourceId: number): ResolvedSource {
 }
 
 function fetchExcludedTmdbIds(): Set<number> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   return new Set(
     db
       .select({ tmdbId: rotationExclusions.tmdbId })
@@ -61,7 +61,7 @@ function upsertCandidates(
   >,
   excludedTmdbIds: Set<number>
 ): UpsertCounts {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   let inserted = 0;
   let skipped = 0;
   for (const candidate of candidates) {
@@ -103,7 +103,7 @@ export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
   const excludedTmdbIds = fetchExcludedTmdbIds();
   const { inserted, skipped } = upsertCandidates(sourceId, candidates, excludedTmdbIds);
 
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   db.update(rotationSources)
     .set({ lastSyncedAt: sql`datetime('now')` })
     .where(eq(rotationSources.id, sourceId))
@@ -143,7 +143,7 @@ export interface SyncAllResult {
  * Each source is synced independently — one failure does not block others.
  */
 export async function syncAllSources(): Promise<SyncAllResult> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const sources = db.select().from(rotationSources).where(eq(rotationSources.enabled, 1)).all();
 

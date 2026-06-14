@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 
 import { settingsService } from '@pops/core-db';
-import { movies, rotationCandidates } from '@pops/db-types';
+import { movies, rotationCandidates } from '@pops/media-db';
 
-import { getCoreDrizzle, getDrizzle } from '../../../db.js';
+import { getCoreDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { getRadarrClient } from '../arr/service.js';
@@ -16,7 +16,7 @@ interface RadarrConfig {
 }
 
 function loadCandidate(candidateId: number): typeof rotationCandidates.$inferSelect {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const candidate = db
     .select()
     .from(rotationCandidates)
@@ -52,7 +52,7 @@ function loadRadarrConfig(): RadarrConfig {
 export async function downloadCandidateImpl(
   candidateId: number
 ): Promise<{ success: boolean; alreadyInRadarr: boolean }> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const candidate = loadCandidate(candidateId);
 
   const client = getRadarrClient();
@@ -91,8 +91,7 @@ export async function downloadCandidateImpl(
     .where(eq(rotationCandidates.id, candidateId))
     .run();
 
-  getMediaDrizzle()
-    .update(movies)
+  db.update(movies)
     .set({ rotationStatus: 'protected' })
     .where(eq(movies.tmdbId, candidate.tmdbId))
     .run();

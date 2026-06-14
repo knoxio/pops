@@ -1,8 +1,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 
-import { mediaScores, movies, watchHistory } from '@pops/db-types';
+import { mediaScores, movies, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { movieCols, toResult } from './local-shelves-helpers.js';
 import { registerShelf } from './registry.js';
 
@@ -22,7 +22,7 @@ export const comfortPicksShelf: ShelfDefinition = {
         emoji: '🛋️',
         score: 0.7,
         query: ({ limit, offset }) => {
-          const db = getDrizzle();
+          const db = getMediaDrizzle();
           const rows = db
             .select({
               ...movieCols,
@@ -59,7 +59,7 @@ export const undiscoveredShelf: ShelfDefinition = {
         emoji: '🔍',
         score: 0.65,
         query: ({ limit, offset }) => {
-          const db = getDrizzle();
+          const db = getMediaDrizzle();
           const rows = db
             .select(movieCols)
             .from(movies)
@@ -99,7 +99,7 @@ export const recentlyAddedShelf: ShelfDefinition = {
         emoji: '✨',
         score: 0.8,
         query: ({ limit, offset }) => {
-          const db = getDrizzle();
+          const db = getMediaDrizzle();
           const rows = db
             .select(movieCols)
             .from(movies)

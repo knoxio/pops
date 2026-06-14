@@ -7,9 +7,9 @@ import { and, eq, sql } from 'drizzle-orm';
  * Each seed generates one ShelfInstance that queries TMDB recommendations for that movie.
  * Instance score is derived from genre alignment between the seed movie and the user profile.
  */
-import { mediaScores, movies, watchHistory } from '@pops/db-types';
+import { mediaScores, movies, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
@@ -38,7 +38,7 @@ interface SeedMovie {
  * Returns an array of recent and older seeds split by the 30-day boundary.
  */
 function selectSeeds(): { recent: SeedMovie[]; older: SeedMovie[] } {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const rows = db
     .select({

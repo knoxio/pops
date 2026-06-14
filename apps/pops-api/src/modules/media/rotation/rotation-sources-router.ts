@@ -1,9 +1,9 @@
 import { count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { rotationCandidates, rotationSources } from '@pops/db-types';
+import { rotationCandidates, rotationSources } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure } from '../../../trpc.js';
 import { fetchPlexFriends } from '../plex/friends.js';
@@ -43,7 +43,7 @@ export const rotationSourcesProcedures = {
 
   /** List all configured sources with candidate counts. */
   listSources: protectedProcedure.query(() => {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     return db
       .select({
         id: rotationSources.id,
@@ -77,7 +77,7 @@ export const rotationSourcesProcedures = {
       })
     )
     .mutation(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       return db
         .insert(rotationSources)
         .values({
@@ -105,7 +105,7 @@ export const rotationSourcesProcedures = {
       })
     )
     .mutation(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       const updates: Record<string, unknown> = {};
       if (input.name !== undefined) updates.name = input.name;
       if (input.priority !== undefined) updates.priority = input.priority;
@@ -131,7 +131,7 @@ export const rotationSourcesProcedures = {
   deleteSource: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
 
       const source = db
         .select({ type: rotationSources.type })

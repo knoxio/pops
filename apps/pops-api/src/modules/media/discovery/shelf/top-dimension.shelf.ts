@@ -1,8 +1,8 @@
 import { and, desc, eq } from 'drizzle-orm';
 
-import { mediaScores, movies } from '@pops/db-types';
+import { mediaScores, movies } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { getLibraryTmdbIds } from '../tmdb-service.js';
 import { getActiveDimensions } from './genre-shelves-common.js';
@@ -19,7 +19,7 @@ interface TopMovieRow {
 }
 
 function getTopMoviesForDimension(dimensionId: number, limit: number): TopMovieRow[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   return db
     .select({
       movieId: movies.id,
