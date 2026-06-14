@@ -39,7 +39,9 @@ migration for inventory).
 
 - **Zero runtime deps on `@pops/inventory-db`.** `inventory-db` is not a
   dependency of this package; the router type is extracted from
-  `@pops/inventory-api` (dev-only). Consumers depend on this package.
+  `@pops/inventory-api` (declared as an optional peer so the package can
+  re-export the router type without forming a build-graph cycle through
+  `@pops/pillar-sdk`). Consumers depend on this package.
 - **Types and schemas agree.** `z.infer<typeof XSchema>` must structurally
   equal `X` from `./types`. The round-trip test in `__tests__/schemas.test.ts`
   is the gate.

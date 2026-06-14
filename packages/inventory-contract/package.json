@@ -30,6 +30,10 @@
       "types": "./dist/manifest.d.ts",
       "default": "./dist/manifest.js"
     },
+    "./settings": {
+      "types": "./dist/settings/index.d.ts",
+      "default": "./dist/settings/index.js"
+    },
     "./openapi": "./openapi/inventory.openapi.json",
     "./package.json": "./package.json"
   },
@@ -47,9 +51,16 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@pops/inventory-api": "workspace:*",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
+  },
+  "peerDependencies": {
+    "@pops/inventory-api": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@pops/inventory-api": {
+      "optional": true
+    }
   }
 }

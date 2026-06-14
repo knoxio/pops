@@ -1999,6 +1999,9 @@ importers:
 
   packages/inventory-contract:
     dependencies:
+      '@pops/inventory-api':
+        specifier: workspace:*
+        version: link:../../apps/pops-inventory-api
       '@pops/types':
         specifier: workspace:*
         version: link:../types
@@ -2006,9 +2009,6 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@pops/inventory-api':
-        specifier: workspace:*
-        version: link:../../apps/pops-inventory-api
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -2150,6 +2150,9 @@ importers:
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../finance-contract
+      '@pops/inventory-contract':
+        specifier: workspace:*
+        version: link:../inventory-contract
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../media-contract
@@ -2296,6 +2299,9 @@ importers:
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../finance-contract
+      '@pops/inventory-contract':
+        specifier: workspace:*
+        version: link:../inventory-contract
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../media-contract

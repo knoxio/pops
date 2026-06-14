@@ -25,14 +25,13 @@
 import { cerebrumManifest, egoManifest } from '@pops/cerebrum-contract/settings';
 import { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
 import { financeManifest } from '@pops/finance-contract/settings';
+import { inventoryManifest } from '@pops/inventory-contract/settings';
 import {
   arrManifest,
   mediaOperationalManifest,
   plexManifest,
   rotationManifest,
 } from '@pops/media-contract/settings';
-
-import { inventoryManifest } from '../src/settings/index.js';
 
 import type { ModuleManifest } from '@pops/types';
 
