@@ -1767,13 +1767,13 @@ importers:
       '@pops/types':
         specifier: workspace:*
         version: link:../types
+      '@trpc/server':
+        specifier: ^11.17.0
+        version: 11.17.0(typescript@6.0.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@pops/cerebrum-api':
-        specifier: workspace:*
-        version: link:../../apps/pops-cerebrum-api
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -2141,6 +2141,9 @@ importers:
         specifier: workspace:*
         version: link:../types
     devDependencies:
+      '@pops/cerebrum-contract':
+        specifier: workspace:*
+        version: link:../cerebrum-contract
       '@pops/core-contract':
         specifier: workspace:*
         version: link:../core-contract
@@ -2284,6 +2287,9 @@ importers:
 
   packages/pillar-sdk:
     dependencies:
+      '@pops/cerebrum-contract':
+        specifier: workspace:*
+        version: link:../cerebrum-contract
       '@pops/core-contract':
         specifier: workspace:*
         version: link:../core-contract
