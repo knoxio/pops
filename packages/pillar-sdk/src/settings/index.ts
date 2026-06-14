@@ -8,6 +8,7 @@
  * Pure re-export — no shape change, no runtime behaviour change.
  */
 export { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
+export { financeManifest } from '@pops/finance-contract/settings';
 export {
   arrManifest,
   plexManifest,
@@ -16,7 +17,6 @@ export {
 } from '@pops/media-contract/settings';
 export {
   inventoryManifest,
-  financeManifest,
   cerebrumManifest,
   egoManifest,
 } from '@pops/module-registry/settings';

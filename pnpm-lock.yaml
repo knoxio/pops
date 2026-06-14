@@ -2144,6 +2144,9 @@ importers:
       '@pops/core-contract':
         specifier: workspace:*
         version: link:../core-contract
+      '@pops/finance-contract':
+        specifier: workspace:*
+        version: link:../finance-contract
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../media-contract
@@ -2284,6 +2287,9 @@ importers:
       '@pops/core-contract':
         specifier: workspace:*
         version: link:../core-contract
+      '@pops/finance-contract':
+        specifier: workspace:*
+        version: link:../finance-contract
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../media-contract
@@ -2294,9 +2300,6 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@pops/finance-contract':
-        specifier: workspace:*
-        version: link:../finance-contract
       '@tanstack/react-query':
         specifier: 5.101.0
         version: 5.101.0(react@19.2.7)
