@@ -1,18 +1,19 @@
-/**
- * The media pillar's tRPC router *type*. Type-only re-export from
- * `apps/pops-media-api` — no runtime tRPC code crosses the contract
- * boundary. Consumers use this to type the `pillar('media').foo.bar(…)`
- * SDK calls (Epic 05 / PRD-191).
- *
- * Current shape: `typeof mediaRouter`. Until PRD-153 us-04 + PRD-155 land
- * the build-time declaration bundler, this re-export means the contract's
- * emitted `.d.ts` still references `@pops/media-api` (which transitively
- * references `@pops/media-db`). The lint rule in PRD-156 stays focused
- * on *value* imports; type-only references through the contract are
- * tolerated as the migration intermediate. A committed OpenAPI snapshot
- * at `openapi/media.openapi.json` is the wire-typed alternative consumers
- * (e.g. iOS Swift codegen) can use instead.
- */
-import type { mediaRouter } from '@pops/media-api/router';
+import type { AnyTRPCRouter } from '@trpc/server';
 
-export type MediaRouter = typeof mediaRouter;
+/**
+ * Opaque tRPC router type for the media pillar. Mirrors the finance-contract
+ * pattern: until PRD-155 ships the declaration bundler, `MediaRouter` is the
+ * generic `AnyTRPCRouter` — consumers using `pillar<MediaRouter>('media')` get
+ * a fully opaque `PillarHandle` with no route or procedure keys preserved.
+ * The committed OpenAPI snapshot at `openapi/media.openapi.json` is the
+ * wire-typed alternative until PRD-155 lands.
+ *
+ * This shape was previously `typeof mediaRouter` (re-exporting from
+ * `@pops/media-api`), but that import-type closed a build-graph cycle
+ * (pillar-sdk → media-contract → media-api → pillar-sdk) once
+ * `@pops/pillar-sdk/settings` started pulling `arrManifest`, `plexManifest`,
+ * `rotationManifest`, and `mediaOperationalManifest` from this package
+ * (PRD-239 US-05). PRD-155's declaration bundler will restore the concrete
+ * per-procedure types without re-introducing the cycle.
+ */
+export type MediaRouter = AnyTRPCRouter;

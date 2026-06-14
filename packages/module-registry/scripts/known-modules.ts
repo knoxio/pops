@@ -23,16 +23,19 @@
  * and `us-04-settings-from-registry.md`.
  */
 import {
-  aiConfigManifest,
   arrManifest,
+  mediaOperationalManifest,
+  plexManifest,
+  rotationManifest,
+} from '@pops/media-contract/settings';
+
+import {
+  aiConfigManifest,
   cerebrumManifest,
   coreOperationalManifest,
   egoManifest,
   financeManifest,
   inventoryManifest,
-  mediaOperationalManifest,
-  plexManifest,
-  rotationManifest,
 } from '../src/settings/index.js';
 
 import type { ModuleManifest } from '@pops/types';
