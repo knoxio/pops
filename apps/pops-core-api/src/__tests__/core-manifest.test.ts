@@ -29,4 +29,21 @@ describe('buildCoreManifest — PRD-240 US-03 settings dimension', () => {
     expect(ids).toContain('ai.config');
     expect(ids).toContain('core.operational');
   });
+
+  describe('PRD-243 US-02 — backend-only pillar omits UI dimensions', () => {
+    it('does not declare a nav block', () => {
+      const manifest = buildCoreManifest('0.0.1-test');
+      expect(manifest.nav).toBeUndefined();
+    });
+
+    it('does not declare a pages block', () => {
+      const manifest = buildCoreManifest('0.0.1-test');
+      expect(manifest.pages).toBeUndefined();
+    });
+
+    it('does not declare an assetsBaseUrl', () => {
+      const manifest = buildCoreManifest('0.0.1-test');
+      expect(manifest.assetsBaseUrl).toBeUndefined();
+    });
+  });
 });

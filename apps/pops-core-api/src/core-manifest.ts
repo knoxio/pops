@@ -5,6 +5,11 @@
  * import the builder without triggering the boot side-effects that
  * `server.ts` runs at module top-level (`openCoreDb`, `app.listen`,
  * signal handlers).
+ *
+ * PRD-243 US-02: core is backend-only and intentionally omits the
+ * optional `nav` and `pages` UI dimensions. The shell-side aggregator
+ * skips backend-only pillars when walking the registry for app-rail
+ * entries and routes.
  */
 import { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
 

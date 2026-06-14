@@ -40,4 +40,54 @@ describe('buildFinanceManifest', () => {
     const manifest = buildFinanceManifest('not-a-semver');
     expect(() => ManifestPayloadSchema.parse(manifest)).toThrow();
   });
+
+  describe('PRD-243 US-02 — nav + pages UI dimensions', () => {
+    it('declares the finance nav descriptor with id, basePath, order, and items', () => {
+      const manifest = buildFinanceManifest('0.1.0');
+      expect(manifest.nav).toMatchObject({
+        id: 'finance',
+        label: 'Finance',
+        labelKey: 'finance',
+        icon: 'dollar-sign',
+        color: 'emerald',
+        basePath: '/finance',
+        order: 10,
+      });
+      expect(manifest.nav?.items.map((item) => item.path)).toEqual([
+        '',
+        '/transactions',
+        '/entities',
+        '/budgets',
+        '/wishlist',
+        '/import',
+        '/rules',
+        '/prompts',
+      ]);
+    });
+
+    it('declares pages covering every finance route surface', () => {
+      const manifest = buildFinanceManifest('0.1.0');
+      expect(manifest.pages).toEqual([
+        { path: '', index: true, bundleSlot: 'finance-dashboard' },
+        { path: 'transactions', bundleSlot: 'finance-transactions' },
+        { path: 'entities', bundleSlot: 'finance-entities' },
+        { path: 'budgets', bundleSlot: 'finance-budgets' },
+        { path: 'wishlist', bundleSlot: 'finance-wishlist' },
+        { path: 'import', bundleSlot: 'finance-import' },
+        { path: 'rules', bundleSlot: 'finance-rules' },
+        { path: 'prompts', bundleSlot: 'finance-prompts' },
+      ]);
+    });
+
+    it('omits assetsBaseUrl for the in-repo case', () => {
+      const manifest = buildFinanceManifest('0.1.0');
+      expect(manifest.assetsBaseUrl).toBeUndefined();
+    });
+
+    it('passes wire-shaped validation with the new UI dimensions populated', () => {
+      const manifest = buildFinanceManifest('0.1.0');
+      const result = validateManifestPayload(manifest);
+      expect(result.ok).toBe(true);
+    });
+  });
 });
