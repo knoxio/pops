@@ -35,47 +35,26 @@ vi.mock('../../store/importStore', () => ({
 
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    if (path.join('.') === 'transactions.availableTags') {
+    const key = path.join('.');
+    if (key === 'transactions.availableTags') {
       return { data: ['Groceries', 'Transport', 'Subscriptions'] };
+    }
+    if (key === 'tagRules.proposeTagRuleChangeSet') {
+      return {
+        data: null,
+        isLoading: false,
+        isError: false,
+        error: null,
+      };
     }
     return { data: undefined };
   },
-  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false }),
-}));
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    core: {
-      tagRules: {
-        proposeTagRuleChangeSet: {
-          useQuery: () => ({
-            data: null,
-            isLoading: false,
-            isError: false,
-            error: null,
-          }),
-        },
-        applyTagRuleChangeSet: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-        rejectTagRuleChangeSet: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-        listVocabulary: {
-          invalidate: vi.fn(),
-        },
-      },
-    },
-    useUtils: () => ({
-      core: {
-        tagRules: {
-          listVocabulary: {
-            invalidate: vi.fn(),
-          },
-        },
-      },
-    }),
-  },
+  usePillarMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  usePillarUtils: () => ({
+    invalidate: vi.fn(),
+    setData: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 // ---------------------------------------------------------------------------

@@ -3,34 +3,74 @@ import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { DEFAULT_RULE_FORM_VALUES, type RuleFormValues, RuleFormSchema } from './types';
 
-import type { Correction } from '../types';
+import type { Correction, MatchType } from '../types';
 
 interface UseRuleFormStateOptions {
   onClose: () => void;
 }
 
+interface RuleEntityRef {
+  id: string;
+  name: string;
+}
+
+interface EntitiesListResult {
+  data: RuleEntityRef[];
+  pagination: { total: number };
+}
+
+interface CreateRulePayload {
+  descriptionPattern: string;
+  matchType: MatchType;
+  entityId: string | null;
+  tags: string[];
+  priority: number;
+}
+
+interface UpdateRulePayload {
+  descriptionPattern: string;
+  matchType: MatchType;
+  entityId: string | null;
+  tags: string[];
+  priority: number;
+  isActive: boolean;
+}
+
+interface UpdateRuleInput {
+  id: string;
+  data: UpdateRulePayload;
+}
+
 function useRuleMutations(onClose: () => void) {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.core.corrections.createOrUpdate.useMutation({
-    onSuccess: () => {
-      toast.success('Rule saved');
-      void utils.core.corrections.list.invalidate();
-      onClose();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const updateMutation = trpc.core.corrections.update.useMutation({
-    onSuccess: () => {
-      toast.success('Rule updated');
-      void utils.core.corrections.list.invalidate();
-      onClose();
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const utils = usePillarUtils('core');
+  const createMutation = usePillarMutation<CreateRulePayload, unknown>(
+    'core',
+    ['corrections', 'createOrUpdate'],
+    {
+      onSuccess: () => {
+        toast.success('Rule saved');
+        void utils.invalidate(['corrections', 'list']);
+        onClose();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  const updateMutation = usePillarMutation<UpdateRuleInput, unknown>(
+    'core',
+    ['corrections', 'update'],
+    {
+      onSuccess: () => {
+        toast.success('Rule updated');
+        void utils.invalidate(['corrections', 'list']);
+        onClose();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
   return { createMutation, updateMutation };
 }
 
@@ -78,8 +118,11 @@ function buildSubmit(
  *   - Create — `core.corrections.createOrUpdate`
  *   - Edit — `core.corrections.update`
  *
- * Pattern + matchType updates rely on the schema/handler additions in
- * `correction-schemas.ts` and `query-helpers.ts`.
+ * Multi-call site: this hook issues two independent `usePillarQuery('core', …)`
+ * calls (one for the corrections mutations and one for the entities list).
+ * Per PRD-244 Option A, `isSubmitting` aggregates the two mutation `isPending`
+ * flags by hand. Flagged as a candidate Option B pain point in the
+ * cross-pillar SDK post-mortem (PRD-244 US-03).
  */
 export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
   const [editingRule, setEditingRule] = useState<Correction | null>(null);
@@ -91,7 +134,9 @@ export function useRuleFormState({ onClose }: UseRuleFormStateOptions) {
     defaultValues: DEFAULT_RULE_FORM_VALUES,
   });
   const { createMutation, updateMutation } = useRuleMutations(onClose);
-  const entitiesQuery = trpc.core.entities.list.useQuery({ limit: 500 });
+  const entitiesQuery = usePillarQuery<EntitiesListResult>('core', ['entities', 'list'], {
+    limit: 500,
+  });
   const entities = (entitiesQuery.data?.data ?? []).map((e) => ({ id: e.id, name: e.name }));
 
   const handleAdd = useCallback(() => {

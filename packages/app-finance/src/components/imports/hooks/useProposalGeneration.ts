@@ -1,9 +1,27 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, type UsePillarMutationResult } from '@pops/pillar-sdk/react';
 
 import type { ProcessedTransaction } from '../../../store/importStore';
+
+interface AnalyzeCorrectionInput {
+  description: string;
+  entityName: string;
+  amount: number;
+}
+
+interface AnalyzeCorrectionOutput {
+  data: {
+    pattern: string;
+    matchType: 'exact' | 'contains' | 'regex';
+  } | null;
+}
+
+type AnalyzeCorrectionMutation = UsePillarMutationResult<
+  AnalyzeCorrectionInput,
+  AnalyzeCorrectionOutput
+>;
 
 export interface ProposalSignal {
   descriptionPattern: string;
@@ -50,7 +68,7 @@ interface GenerateArgs {
 }
 
 interface GenerateDeps {
-  analyzeCorrectionMutation: ReturnType<typeof trpc.core.corrections.analyzeCorrection.useMutation>;
+  analyzeCorrectionMutation: AnalyzeCorrectionMutation;
   setProposalSignal: React.Dispatch<React.SetStateAction<ProposalSignal | null>>;
   setProposalTriggeringTransaction: React.Dispatch<
     React.SetStateAction<TriggeringTransaction | null>
@@ -109,7 +127,10 @@ export function useProposalGeneration() {
     useState<TriggeringTransaction | null>(null);
   const [browseOpen, setBrowseOpen] = useState(false);
 
-  const analyzeCorrectionMutation = trpc.core.corrections.analyzeCorrection.useMutation();
+  const analyzeCorrectionMutation = usePillarMutation<
+    AnalyzeCorrectionInput,
+    AnalyzeCorrectionOutput
+  >('core', ['corrections', 'analyzeCorrection']);
 
   const generateProposal = useCallback(
     (args: GenerateArgs) =>

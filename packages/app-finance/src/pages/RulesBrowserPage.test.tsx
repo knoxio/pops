@@ -16,68 +16,70 @@ const mockPreviewQuery = vi.fn((..._args: unknown[]) => ({
   refetch: vi.fn(),
 }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    core: {
-      entities: {
-        list: {
-          useQuery: () => ({
-            data: { data: [], pagination: { total: 0, limit: 500, offset: 0 } },
-            isLoading: false,
-          }),
-        },
-      },
-      corrections: {
-        list: { useQuery: (...args: unknown[]) => mockListQuery(...args) },
-        previewMatches: { useQuery: (...args: unknown[]) => mockPreviewQuery(...args) },
-        delete: {
-          useMutation: (opts: { onSuccess?: () => void }) => ({
-            mutate: (...args: unknown[]) => {
-              mockDeleteMutate(...args);
-              opts.onSuccess?.();
-            },
-            isPending: false,
-          }),
-        },
-        adjustConfidence: {
-          useMutation: (opts: { onSuccess?: () => void }) => ({
-            mutate: (...args: unknown[]) => {
-              mockAdjustMutate(...args);
-              const callOpts = args[1] as { onSuccess?: () => void } | undefined;
-              callOpts?.onSuccess?.();
-              opts.onSuccess?.();
-            },
-            isPending: false,
-          }),
-        },
-        createOrUpdate: {
-          useMutation: (opts: { onSuccess?: () => void; onError?: (e: Error) => void }) => ({
-            mutate: (...args: unknown[]) => {
-              mockCreateMutate(...args);
-              opts.onSuccess?.();
-            },
-            isPending: false,
-          }),
-        },
-        update: {
-          useMutation: (opts: { onSuccess?: () => void; onError?: (e: Error) => void }) => ({
-            mutate: (...args: unknown[]) => {
-              mockUpdateMutate(...args);
-              opts.onSuccess?.();
-            },
-            isPending: false,
-          }),
-        },
-      },
-    },
-    useUtils: () => ({
-      core: {
-        corrections: {
-          list: { invalidate: mockInvalidate },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
+    const key = path.join('.');
+    if (key === 'entities.list') {
+      return {
+        data: { data: [], pagination: { total: 0, limit: 500, offset: 0 } },
+        isLoading: false,
+      };
+    }
+    if (key === 'corrections.list') return mockListQuery(...args);
+    if (key === 'corrections.previewMatches') return mockPreviewQuery(...args);
+    return { data: undefined, isLoading: false };
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: () => void; onError?: (e: Error) => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'corrections.delete') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockDeleteMutate(...args);
+          opts?.onSuccess?.();
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'corrections.adjustConfidence') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockAdjustMutate(...args);
+          const callOpts = args[1] as { onSuccess?: () => void } | undefined;
+          callOpts?.onSuccess?.();
+          opts?.onSuccess?.();
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'corrections.createOrUpdate') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockCreateMutate(...args);
+          opts?.onSuccess?.();
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'corrections.update') {
+      return {
+        mutate: (...args: unknown[]) => {
+          mockUpdateMutate(...args);
+          opts?.onSuccess?.();
+        },
+        isPending: false,
+      };
+    }
+    return { mutate: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    invalidate: mockInvalidate,
+    setData: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 vi.mock('@pops/ui', async () => {

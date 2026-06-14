@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import {
   applyBrowsePriorityReorder,
@@ -18,6 +18,11 @@ interface UseBrowseRulesArgs {
   setLocalOps: React.Dispatch<React.SetStateAction<LocalOp[]>>;
 }
 
+interface CorrectionsListMergedResult {
+  data: CorrectionRule[];
+  pagination: { total: number; limit: number; offset: number };
+}
+
 export function useBrowseRules({ open, localOps, browseSearch, setLocalOps }: UseBrowseRulesArgs) {
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
   const pendingInput = useMemo(
@@ -28,7 +33,9 @@ export function useBrowseRules({ open, localOps, browseSearch, setLocalOps }: Us
   // BEFORE slicing, so the client never sees `NotFoundError` for an op
   // targeting a rule outside the page window. The render surface is capped
   // at 500 to keep DnD-driven priority reorders responsive.
-  const browseListQuery = trpc.core.corrections.listMerged.useQuery(
+  const browseListQuery = usePillarQuery<CorrectionsListMergedResult>(
+    'core',
+    ['corrections', 'listMerged'],
     { pendingChangeSets: pendingInput, limit: 500, offset: 0 },
     { enabled: open, staleTime: 30_000 }
   );

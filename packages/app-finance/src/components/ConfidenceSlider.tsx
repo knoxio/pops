@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Slider, useDebouncedCallback } from '@pops/ui';
 
 interface ConfidenceSliderProps {
@@ -9,10 +9,15 @@ interface ConfidenceSliderProps {
   onAutoDelete: (id: string) => void;
 }
 
+interface AdjustConfidenceInput {
+  id: string;
+  delta: number;
+}
+
 export function ConfidenceSlider({ ruleId, initial, onAutoDelete }: ConfidenceSliderProps) {
   const [value, setValue] = useState(initial);
   const initialRef = useRef(initial);
-  const utils = trpc.useUtils();
+  const utils = usePillarUtils('core');
 
   // Keep initialRef in sync when the prop changes (e.g. after query invalidation)
   useEffect(() => {
@@ -20,11 +25,15 @@ export function ConfidenceSlider({ ruleId, initial, onAutoDelete }: ConfidenceSl
     setValue(initial);
   }, [initial]);
 
-  const adjustMutation = trpc.core.corrections.adjustConfidence.useMutation({
-    onSuccess: () => {
-      void utils.core.corrections.list.invalidate();
-    },
-  });
+  const adjustMutation = usePillarMutation<AdjustConfidenceInput, unknown>(
+    'core',
+    ['corrections', 'adjustConfidence'],
+    {
+      onSuccess: () => {
+        void utils.invalidate(['corrections', 'list']);
+      },
+    }
+  );
 
   const commit = useCallback(
     (newValue: number) => {

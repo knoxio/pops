@@ -6,17 +6,24 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import { useImportStore } from '../../../store/importStore';
 import { localOpsToChangeSet, serverOpToLocalOp } from './useLocalOps';
 
-import type { ServerChangeSet } from '../correction-proposal-shared';
+import type {
+  RejectChangeSetInput,
+  ReviseChangeSetInput,
+  ReviseChangeSetOutput,
+  ServerChangeSet,
+} from '../correction-proposal-shared';
 import type { AiMessage } from '../CorrectionProposalDialogPanels';
 import type {
   UseApplyRejectMutationsOptions,
   UseApplyRejectMutationsReturn,
 } from './applyRejectTypes';
+
+type ReviseMutateAsync = (input: ReviseChangeSetInput) => Promise<ReviseChangeSetOutput>;
 
 export type {
   UseApplyRejectMutationsOptions,
@@ -59,9 +66,7 @@ interface AiSubmitDeps {
   setAiInstruction: React.Dispatch<React.SetStateAction<string>>;
   setAiMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>;
   setAiBusy: React.Dispatch<React.SetStateAction<boolean>>;
-  reviseMutateAsync: ReturnType<
-    typeof trpc.core.corrections.reviseChangeSet.useMutation
-  >['mutateAsync'];
+  reviseMutateAsync: ReviseMutateAsync;
 }
 
 async function runAiRevise(deps: AiSubmitDeps) {
@@ -111,14 +116,22 @@ function useRejectAndAi(
   }
 ) {
   const { signal, localOps, combinedPreview, onClose } = options;
-  const rejectMutation = trpc.core.corrections.rejectChangeSet.useMutation({
-    onSuccess: () => {
-      toast.success('Proposal rejected — feedback recorded');
-      onClose();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const reviseMutation = trpc.core.corrections.reviseChangeSet.useMutation({ retry: false });
+  const rejectMutation = usePillarMutation<RejectChangeSetInput, unknown>(
+    'core',
+    ['corrections', 'rejectChangeSet'],
+    {
+      onSuccess: () => {
+        toast.success('Proposal rejected — feedback recorded');
+        onClose();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  const reviseMutation = usePillarMutation<ReviseChangeSetInput, ReviseChangeSetOutput>(
+    'core',
+    ['corrections', 'reviseChangeSet'],
+    { retry: false }
+  );
   const handleConfirmReject = useCallback(() => {
     if (!signal) return;
     const changeSet = localOpsToChangeSet(localOps);

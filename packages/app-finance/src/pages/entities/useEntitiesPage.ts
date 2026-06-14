@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import {
   DEFAULT_FORM_VALUES,
@@ -13,6 +13,30 @@ import {
   type ENTITY_TYPES,
 } from './types';
 
+interface EntitiesListResult {
+  data: Entity[];
+  pagination: { total: number };
+}
+
+interface CreateEntityInput {
+  name: string;
+  type: (typeof ENTITY_TYPES)[number];
+  abn: string | null;
+  aliases: string[];
+  defaultTransactionType: string | null;
+  defaultTags: string[];
+  notes: string | null;
+}
+
+interface UpdateEntityInput {
+  id: string;
+  data: CreateEntityInput;
+}
+
+interface DeleteEntityInput {
+  id: string;
+}
+
 interface MutationDeps {
   setIsDialogOpen: (v: boolean) => void;
   setEditingEntity: (e: Entity | null) => void;
@@ -20,32 +44,44 @@ interface MutationDeps {
 }
 
 function useEntityMutations(deps: MutationDeps) {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.core.entities.create.useMutation({
-    onSuccess: () => {
-      toast.success('Entity created');
-      void utils.core.entities.list.invalidate();
-      deps.setIsDialogOpen(false);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const updateMutation = trpc.core.entities.update.useMutation({
-    onSuccess: () => {
-      toast.success('Entity updated');
-      void utils.core.entities.list.invalidate();
-      deps.setIsDialogOpen(false);
-      deps.setEditingEntity(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const deleteMutation = trpc.core.entities.delete.useMutation({
-    onSuccess: () => {
-      toast.success('Entity deleted');
-      void utils.core.entities.list.invalidate();
-      deps.setDeletingId(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const utils = usePillarUtils('core');
+  const createMutation = usePillarMutation<CreateEntityInput, unknown>(
+    'core',
+    ['entities', 'create'],
+    {
+      onSuccess: () => {
+        toast.success('Entity created');
+        void utils.invalidate(['entities', 'list']);
+        deps.setIsDialogOpen(false);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  const updateMutation = usePillarMutation<UpdateEntityInput, unknown>(
+    'core',
+    ['entities', 'update'],
+    {
+      onSuccess: () => {
+        toast.success('Entity updated');
+        void utils.invalidate(['entities', 'list']);
+        deps.setIsDialogOpen(false);
+        deps.setEditingEntity(null);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+  const deleteMutation = usePillarMutation<DeleteEntityInput, unknown>(
+    'core',
+    ['entities', 'delete'],
+    {
+      onSuccess: () => {
+        toast.success('Entity deleted');
+        void utils.invalidate(['entities', 'list']);
+        deps.setDeletingId(null);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
   return { createMutation, updateMutation, deleteMutation };
 }
 
@@ -55,7 +91,7 @@ function buildSubmit(
   updateMutation: ReturnType<typeof useEntityMutations>['updateMutation']
 ) {
   return (values: EntityFormValues) => {
-    const payload = {
+    const payload: CreateEntityInput = {
       name: values.name,
       type: values.type as (typeof ENTITY_TYPES)[number],
       abn: values.abn || null,
@@ -75,7 +111,7 @@ export function useEntitiesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showOrphanedOnly, setShowOrphanedOnly] = useState(false);
 
-  const query = trpc.core.entities.list.useQuery({
+  const query = usePillarQuery<EntitiesListResult>('core', ['entities', 'list'], {
     limit: 100,
     orphanedOnly: showOrphanedOnly || undefined,
   });

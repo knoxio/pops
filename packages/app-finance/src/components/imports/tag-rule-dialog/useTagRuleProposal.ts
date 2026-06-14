@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import {
   collectNewTagNames,
@@ -133,7 +133,9 @@ export function useTagRuleProposal(props: TagRuleProposalDialogProps) {
       }),
     [props.signal, props.previewTransactions, form.pattern, form.matchType, form.tagsText]
   );
-  const proposeQuery = trpc.core.tagRules.proposeTagRuleChangeSet.useQuery(
+  const proposeQuery = usePillarQuery<ProposeOutput>(
+    'core',
+    ['tagRules', 'proposeTagRuleChangeSet'],
     proposeInput ?? DISABLED_INPUT,
     { enabled: Boolean(props.open && proposeInput), staleTime: 0, retry: false }
   );

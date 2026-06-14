@@ -42,59 +42,60 @@ vi.mock('../../store/importStore', () => ({
   },
 }));
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    core: {
-      corrections: {
-        proposeChangeSet: {
-          useQuery: () => ({
-            data: mockProposeData,
-            isFetching: false,
-            isError: false,
-            error: null,
-            isLoading: mockProposeData === null,
-          }),
-        },
-        previewChangeSet: {
-          useMutation: () => ({
-            mutateAsync: mockPreviewMutateAsync,
-            isPending: false,
-          }),
-        },
-        list: {
-          useQuery: (...args: unknown[]) => mockListQuery(...args),
-        },
-        listMerged: {
-          useQuery: (...args: unknown[]) => mockListQuery(...args),
-        },
-        rejectChangeSet: {
-          useMutation: (opts: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-            rejectOnSuccess = opts.onSuccess;
-            return {
-              mutate: (...args: unknown[]) => {
-                mockRejectMutate(...args);
-                rejectOnSuccess?.();
-              },
-              isPending: false,
-            };
-          },
-        },
-        reviseChangeSet: {
-          useMutation: () => ({
-            mutateAsync: mockReviseMutateAsync,
-            isPending: false,
-          }),
-        },
-      },
-    },
-    finance: {
-      transactions: {
-        listDescriptionsForPreview: {
-          useQuery: () => ({ data: { data: [], total: 0, truncated: false }, isLoading: false }),
-        },
-      },
-    },
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
+    const key = path.join('.');
+    if (key === 'corrections.proposeChangeSet') {
+      return {
+        data: mockProposeData,
+        isFetching: false,
+        isError: false,
+        error: null,
+        isLoading: mockProposeData === null,
+      };
+    }
+    if (key === 'corrections.list') return mockListQuery(...args);
+    if (key === 'corrections.listMerged') return mockListQuery(...args);
+    if (key === 'transactions.listDescriptionsForPreview') {
+      return { data: { data: [], total: 0, truncated: false }, isLoading: false };
+    }
+    return { data: undefined };
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: { onSuccess?: () => void; onError?: (err: Error) => void }
+  ) => {
+    const key = path.join('.');
+    if (key === 'corrections.previewChangeSet') {
+      return {
+        mutateAsync: mockPreviewMutateAsync,
+        isPending: false,
+      };
+    }
+    if (key === 'corrections.rejectChangeSet') {
+      rejectOnSuccess = opts?.onSuccess;
+      return {
+        mutate: (...args: unknown[]) => {
+          mockRejectMutate(...args);
+          rejectOnSuccess?.();
+        },
+        isPending: false,
+      };
+    }
+    if (key === 'corrections.reviseChangeSet') {
+      return {
+        mutateAsync: mockReviseMutateAsync,
+        isPending: false,
+      };
+    }
+    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    invalidate: vi.fn(),
+    setData: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 vi.mock('sonner', () => ({

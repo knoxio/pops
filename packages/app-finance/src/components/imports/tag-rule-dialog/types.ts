@@ -1,9 +1,14 @@
-import type { inferRouterOutputs } from '@trpc/server';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
+export type ProposeInput =
+  inferRouterInputs<AppRouter>['core']['tagRules']['proposeTagRuleChangeSet'];
 export type ProposeOutput =
   inferRouterOutputs<AppRouter>['core']['tagRules']['proposeTagRuleChangeSet'];
+export type ApplyInput = inferRouterInputs<AppRouter>['core']['tagRules']['applyTagRuleChangeSet'];
+export type RejectInput =
+  inferRouterInputs<AppRouter>['core']['tagRules']['rejectTagRuleChangeSet'];
 export type RejectOutput =
   inferRouterOutputs<AppRouter>['core']['tagRules']['rejectTagRuleChangeSet'];
 
