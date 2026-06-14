@@ -2165,9 +2165,15 @@ importers:
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../finance-contract
+      '@pops/food-contract':
+        specifier: workspace:*
+        version: link:../food-contract
       '@pops/inventory-contract':
         specifier: workspace:*
         version: link:../inventory-contract
+      '@pops/lists-contract':
+        specifier: workspace:*
+        version: link:../lists-contract
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../media-contract

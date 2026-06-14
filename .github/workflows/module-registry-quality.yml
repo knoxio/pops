@@ -55,10 +55,8 @@ jobs:
           node-version: "22"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build shared packages
-        run: pnpm --filter @pops/types build
-      - name: Regenerate registry
-        run: pnpm registry:build
+      - name: Regenerate registry (turbo builds contract deps first per turbo.json ^build)
+        run: pnpm turbo run registry:build --filter=@pops/module-registry
       - name: Verify generated.ts is up to date
         run: |
           if ! git diff --exit-code -- packages/module-registry/src/generated.ts; then
