@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import { comparisonDimensions } from '@pops/db-types';
+import { comparisonDimensions } from '@pops/media-db';
 
-import { getDb, getDrizzle } from '../../../db.js';
+import { getMediaDrizzle, getMediaRawDb } from '../../../db/media-db-handle.js';
 import { resolvePosterUrl, type RankingRowBase } from './rankings-helpers.js';
 import { calculateOverallConfidence, type RankedMediaEntry } from './types.js';
 
@@ -22,7 +22,7 @@ interface OverallRow extends RankingRowBase {
 }
 
 function getActiveDimensionIds(): number[] {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   return drizzleDb
     .select({ id: comparisonDimensions.id })
     .from(comparisonDimensions)
@@ -55,7 +55,7 @@ function buildFilterContext(
 }
 
 function fetchOverallCount(ctx: FilterContext): number {
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   const result = rawDb
     .prepare(
       `SELECT COUNT(*) as total FROM (
@@ -71,7 +71,7 @@ function fetchOverallCount(ctx: FilterContext): number {
 }
 
 function fetchOverallRows(ctx: FilterContext, limit: number, offset: number): OverallRow[] {
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   return rawDb
     .prepare(
       `SELECT

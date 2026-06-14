@@ -1,4 +1,4 @@
-import { getDb } from '../../../../db.js';
+import { getMediaRawDb } from '../../../../db/media-db-handle.js';
 import { getSettingValue } from '../../../core/settings/service.js';
 import { getDimension } from '../dimensions.service.js';
 import { getTierOverrides } from '../tier-overrides.js';
@@ -52,7 +52,7 @@ function toTierListMovie(row: ScoreRow, tierOverrideMap: Map<number, string>): T
 }
 
 function fetchEligibleRows(dimensionId: number): ScoreRow[] {
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   return rawDb
     .prepare(
       `SELECT
@@ -78,7 +78,7 @@ function fetchEligibleRows(dimensionId: number): ScoreRow[] {
 }
 
 function fetchExistingPairKeys(dimensionId: number): Set<string> {
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   const pairRows = rawDb
     .prepare(
       `SELECT media_a_type, media_a_id, media_b_type, media_b_id

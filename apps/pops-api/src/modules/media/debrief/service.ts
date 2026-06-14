@@ -3,14 +3,12 @@ import { and, asc, eq, inArray } from 'drizzle-orm';
 /**
  * Debrief service — auto-queue and manage post-watch debrief sessions.
  * Theme-13 Wave-5 cascade: debrief tables routed through
- * `getCerebrumDrizzle()`, `watch_history` / `movies` via `getMediaDrizzle()`,
- * `comparison_dimensions` still on shared `getDrizzle()`.
+ * `getCerebrumDrizzle()`, `watch_history` / `movies` /
+ * `comparison_dimensions` via `getMediaDrizzle()`.
  */
 import { debriefResults, debriefSessions } from '@pops/cerebrum-db';
-import { comparisonDimensions } from '@pops/db-types';
-import { movies, watchHistory } from '@pops/media-db';
+import { comparisonDimensions, movies, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { NotFoundError } from '../../../shared/errors.js';
@@ -117,9 +115,9 @@ function buildDebriefDimensions(
   sessionId: number,
   watchEntry: typeof watchHistory.$inferSelect
 ): DebriefDimension[] {
-  const sharedDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
   const cerebrumDb = getCerebrumDrizzle();
-  const dims = sharedDb
+  const dims = mediaDb
     .select()
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))

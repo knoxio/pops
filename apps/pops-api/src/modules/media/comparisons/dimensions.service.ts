@@ -1,8 +1,8 @@
 import { asc, eq } from 'drizzle-orm';
 
-import { comparisonDimensions } from '@pops/db-types';
+import { comparisonDimensions } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 
 import type {
@@ -25,7 +25,7 @@ const DEFAULT_DIMENSIONS = [
 
 /** Seed default dimensions if none exist. Returns true if seeded. */
 export function seedDefaultDimensions(): boolean {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const existing = db.select({ id: comparisonDimensions.id }).from(comparisonDimensions).get();
   if (existing) return false;
 
@@ -38,7 +38,7 @@ export function seedDefaultDimensions(): boolean {
 }
 
 export function listDimensions(): ComparisonDimensionRow[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const rows = db
     .select()
     .from(comparisonDimensions)
@@ -56,14 +56,14 @@ export function listDimensions(): ComparisonDimensionRow[] {
 }
 
 export function getDimension(id: number): ComparisonDimensionRow {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const row = db.select().from(comparisonDimensions).where(eq(comparisonDimensions.id, id)).get();
   if (!row) throw new NotFoundError('Dimension', String(id));
   return row;
 }
 
 export function createDimension(input: CreateDimensionInput): ComparisonDimensionRow {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const existing = db
     .select({ id: comparisonDimensions.id })
@@ -89,7 +89,7 @@ export function createDimension(input: CreateDimensionInput): ComparisonDimensio
 }
 
 export function updateDimension(id: number, input: UpdateDimensionInput): ComparisonDimensionRow {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   getDimension(id); // verify exists
 
   const updates: Partial<typeof comparisonDimensions.$inferInsert> = {};

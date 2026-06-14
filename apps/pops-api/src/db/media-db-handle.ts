@@ -17,6 +17,8 @@ import { openMediaDb, type MediaDb, type OpenedMediaDb } from '@pops/media-db';
 import { backfillMediaFromShared } from './backfill-media-from-shared.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
 
+import type BetterSqlite3 from 'better-sqlite3';
+
 let mediaDb: OpenedMediaDb | null = null;
 
 /**
@@ -29,6 +31,20 @@ export function getMediaDrizzle(): MediaDb {
     mediaDb = openMediaDb(resolveMediaSqlitePath());
   }
   return mediaDb.db;
+}
+
+/**
+ * Lazily open the media pillar's SQLite file and return the raw
+ * better-sqlite3 handle. Used by hot paths that compose multi-statement
+ * SQL — e.g. the overall rankings join across `media_scores`,
+ * `comparison_dimensions`, `movies`, and `tv_shows` — where drizzle's
+ * query builder loses too much fidelity to be useful.
+ */
+export function getMediaRawDb(): BetterSqlite3.Database {
+  if (!mediaDb) {
+    mediaDb = openMediaDb(resolveMediaSqlitePath());
+  }
+  return mediaDb.raw;
 }
 
 /**

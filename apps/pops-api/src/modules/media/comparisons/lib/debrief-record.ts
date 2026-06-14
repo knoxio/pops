@@ -1,10 +1,8 @@
 import { and, count, eq } from 'drizzle-orm';
 
 import { debriefResults, debriefSessions, debriefStatus } from '@pops/cerebrum-db';
-import { comparisonDimensions } from '@pops/db-types';
-import { watchHistory } from '@pops/media-db';
+import { comparisonDimensions, watchHistory } from '@pops/media-db';
 
-import { getDb, getDrizzle } from '../../../../db.js';
 import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../../../shared/errors.js';
@@ -106,9 +104,9 @@ function activateIfPending(sessionId: number, sessionStatus: string): void {
 }
 
 function checkAndCompleteSession(sessionId: number): boolean {
-  const sharedDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
   const cerebrumDb = getCerebrumDrizzle();
-  const activeDimCount = sharedDb
+  const activeDimCount = mediaDb
     .select({ cnt: count() })
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))
@@ -147,9 +145,8 @@ export function recordDebriefComparison(
 } {
   const { watchEntry, sessionStatus } = loadAndValidate(input);
   const cerebrumDb = getCerebrumDrizzle();
-  const rawDb = getDb();
 
-  return rawDb.transaction(() => {
+  return cerebrumDb.transaction(() => {
     const comparisonId = recordComparisonForDebrief(input, watchEntry, recordFn);
     cerebrumDb
       .insert(debriefResults)
@@ -163,5 +160,5 @@ export function recordDebriefComparison(
     activateIfPending(input.sessionId, sessionStatus);
     const sessionComplete = checkAndCompleteSession(input.sessionId);
     return { comparisonId, sessionComplete };
-  })();
+  });
 }

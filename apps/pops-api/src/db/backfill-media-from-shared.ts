@@ -1,15 +1,17 @@
 /**
  * Boot-time backfill from the legacy shared `pops.db` into the media
  * pillar's `media.db` for the Theme-13 Wave-5 PR4 tables: `media_scores`,
- * `rotation_log`, `rotation_sources`, `rotation_candidates`, and
- * `rotation_exclusions`.
+ * `rotation_log`, `rotation_sources`, `rotation_candidates`,
+ * `rotation_exclusions`, `comparison_dimensions`, `comparisons`,
+ * `comparison_skip_cooloffs`, and `sync_logs`.
  *
  * Phase context: the earlier media slices (movies / tv_shows / seasons /
  * episodes / watchlist / watch_history / dismissed_discover /
  * shelf_impressions / comparison_staleness) finished their PR4 writer
  * cutovers in earlier rounds, so the original `media-backfill.ts` was
  * retired. This module brings the bridge back for the new tables landing
- * in `0030_media_scores_baseline.sql` and `0031_rotation_baseline.sql`.
+ * in `0030_media_scores_baseline.sql`, `0031_rotation_baseline.sql`,
+ * `0032_comparisons_baseline.sql`, and `0033_sync_logs_baseline.sql`.
  * Each TABLE_COPIES entry retires after its writer cutover is verified in
  * prod and the shared `pops.db` stops receiving new rows.
  *
@@ -45,6 +47,73 @@ interface TableCopy {
 }
 
 const TABLE_COPIES: readonly TableCopy[] = [
+  {
+    /**
+     * `comparison_dimensions` must land before `comparisons`,
+     * `comparison_skip_cooloffs`, and `media_scores` because each of those
+     * has a FK on `dimension_id`. We copy `id` from the shared side so the
+     * FK linkage from the rows we're about to copy into `comparisons` /
+     * `comparison_skip_cooloffs` / `media_scores` (each carrying the
+     * original shared `dimension_id`) keeps working. The (name) uniqueness
+     * index doubles as the dedup key against `seedDefaultDimensions()` —
+     * if media-db already auto-seeded "Cinematography" at id=1 the shared
+     * row collides on name and gets skipped by the NOT EXISTS filter; in
+     * the steady state both sides agree on (id, name) pairs because the
+     * seed list is stable.
+     */
+    table: 'comparison_dimensions',
+    idColumns: ['name'],
+    columns: ['id', 'name', 'description', 'active', 'sort_order', 'weight', 'created_at'],
+  },
+  {
+    /**
+     * `id` is intentionally omitted — surrogate PKs are owned per-DB.
+     * The composite (dimension_id, media_a_type, media_a_id, media_b_type,
+     * media_b_id, compared_at) is enough to identify a row but
+     * `comparisons` has no natural-key UNIQUE index, so we fall back to
+     * the surrogate id from the shared side. Realistically `comparisons`
+     * is append-only and the shared id space is dense, so collisions with
+     * the media autoincrement (which starts at 1 against a freshly seeded
+     * dimensions table) only matter if writers double up on both sides.
+     * The writer cutover in this PR closes that window.
+     */
+    table: 'comparisons',
+    idColumns: ['id'],
+    columns: [
+      'id',
+      'dimension_id',
+      'media_a_type',
+      'media_a_id',
+      'media_b_type',
+      'media_b_id',
+      'winner_type',
+      'winner_id',
+      'draw_tier',
+      'source',
+      'delta_a',
+      'delta_b',
+      'compared_at',
+    ],
+  },
+  {
+    /**
+     * Skip cooloffs are short-lived and the unique tuple
+     * (dimension_id, media_a_type, media_a_id, media_b_type, media_b_id)
+     * serves as the business key — copy on that so the upsert semantics
+     * in `lib/skip-cooloff.ts` survive a partial backfill.
+     */
+    table: 'comparison_skip_cooloffs',
+    idColumns: ['dimension_id', 'media_a_type', 'media_a_id', 'media_b_type', 'media_b_id'],
+    columns: [
+      'dimension_id',
+      'media_a_type',
+      'media_a_id',
+      'media_b_type',
+      'media_b_id',
+      'skip_until',
+      'created_at',
+    ],
+  },
   {
     table: 'media_scores',
     /**
@@ -125,6 +194,17 @@ const TABLE_COPIES: readonly TableCopy[] = [
     table: 'rotation_exclusions',
     idColumns: ['tmdb_id'],
     columns: ['tmdb_id', 'title', 'reason', 'excluded_at'],
+  },
+  {
+    /**
+     * `sync_logs` is append-only (Plex sync ledger) and has no natural
+     * UNIQUE key — fall back to the surrogate id from the shared side,
+     * same shape as `rotation_log`. The writer cutover in this PR closes
+     * the dual-write window so the id space stops splitting.
+     */
+    table: 'sync_logs',
+    idColumns: ['id'],
+    columns: ['id', 'synced_at', 'movies_synced', 'tv_shows_synced', 'errors', 'duration_ms'],
   },
 ];
 

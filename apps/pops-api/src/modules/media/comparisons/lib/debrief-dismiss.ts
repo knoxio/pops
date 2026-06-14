@@ -1,10 +1,8 @@
 import { and, count, eq } from 'drizzle-orm';
 
 import { debriefResults, debriefSessions, debriefStatus } from '@pops/cerebrum-db';
-import { comparisonDimensions } from '@pops/db-types';
-import { watchHistory } from '@pops/media-db';
+import { comparisonDimensions, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
 import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../../../shared/errors.js';
@@ -61,9 +59,9 @@ function markDebriefStatusDismissed(watchHistoryId: number, dimensionId: number)
 }
 
 function autoCompleteIfFinished(sessionId: number): void {
-  const sharedDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
   const cerebrumDb = getCerebrumDrizzle();
-  const activeDims = sharedDb
+  const activeDims = mediaDb
     .select({ id: comparisonDimensions.id })
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))
@@ -90,8 +88,9 @@ function autoCompleteIfFinished(sessionId: number): void {
  * dimensions have results.
  *
  * Theme-13 Wave-5 cascade: debrief* tables routed via `getCerebrumDrizzle()`;
- * `watch_history` lookup hops to `getMediaDrizzle()`; `comparison_dimensions`
- * stays on the shared `pops.db` until that slice cuts over.
+ * `watch_history` + `comparison_dimensions` reads now hop to
+ * `getMediaDrizzle()` (closing the cross-pillar JOIN that previously routed
+ * `comparison_dimensions` through the shared `pops.db`).
  */
 export function dismissDebriefDimension(sessionId: number, dimensionId: number): void {
   const db = getCerebrumDrizzle();

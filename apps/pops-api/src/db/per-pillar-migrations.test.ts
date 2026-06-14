@@ -241,7 +241,15 @@ describe('runPerPillarMigrations', () => {
     // 0031_rotation_baseline (Theme 13 Wave-5 cascade — rotation_log +
     // rotation_sources + rotation_candidates + rotation_exclusions mirrored
     // from shared `0028_needy_terror` + `0029_curved_revanche`; intra-pillar
-    // `rotation_candidates.source_id → rotation_sources.id` FK preserved);
+    // `rotation_candidates.source_id → rotation_sources.id` FK preserved),
+    // 0032_comparisons_baseline (Theme 13 Wave-5 cascade — comparison_dimensions
+    // + comparisons + comparison_skip_cooloffs mirrored from the shared journal
+    // ancestry, restoring the intra-pillar
+    // `media_scores.dimension_id → comparison_dimensions.id` FK that #3212
+    // dropped because the cross-SQLite-file constraint was impossible), and
+    // 0033_sync_logs_baseline (Theme 13 Wave-5 cascade — sync_logs Plex
+    // ledger mirrored from shared `0009_red_quasimodo` ahead of the
+    // scheduler writer cutover);
     // `inventory` owns `packages/inventory-db/migrations/` with
     // 0005_fancy_crystal (inventory pillar Phase 1 PR 2),
     // 0006_inventory_pillar_baseline (inventory pillar Phase 2 PR 3 —
@@ -283,6 +291,8 @@ describe('runPerPillarMigrations', () => {
         '0029_media_comparison_staleness_baseline',
         '0030_media_scores_baseline',
         '0031_rotation_baseline',
+        '0032_comparisons_baseline',
+        '0033_sync_logs_baseline',
         '0039_dry_fabian_cortez',
         '0044_nudge_log',
         '0050_engrams_baseline',

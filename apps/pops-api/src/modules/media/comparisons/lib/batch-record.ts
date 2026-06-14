@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import { comparisons } from '@pops/db-types';
+import { comparisons } from '@pops/media-db';
 
-import { getDb, getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { ValidationError } from '../../../../shared/errors.js';
 import { getDimension } from '../dimensions.service.js';
 import { findExistingComparison } from './comparison-queries.js';
@@ -40,7 +40,7 @@ function insertWithoutDelta(
   item: BatchComparisonItem,
   source: string | null | undefined
 ): void {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   drizzleDb
     .insert(comparisons)
     .values({
@@ -62,7 +62,7 @@ function insertWithDelta(
   item: BatchComparisonItem,
   source: string | null | undefined
 ): void {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const comparisonInput: RecordComparisonInput = {
     dimensionId,
     mediaAType: item.mediaAType,
@@ -94,7 +94,7 @@ function insertWithDelta(
 
 function processItem(args: ProcessItemArgs): void {
   const { dimensionId, item, source, state } = args;
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const existing = findExistingComparison({
     dimensionId,
     mediaAType: item.mediaAType,
@@ -141,15 +141,15 @@ export function batchRecordComparisons(
   }
 
   const state: BatchState = { insertedCount: 0, skippedCount: 0, hasOverrides: false };
-  const rawDb = getDb();
-  rawDb.transaction(() => {
+  const db = getMediaDrizzle();
+  db.transaction(() => {
     for (const item of items) {
       processItem({ dimensionId, item, source, state });
     }
     if (state.hasOverrides) {
       recalcDimensionElo(dimensionId);
     }
-  })();
+  });
 
   return { count: state.insertedCount, skipped: state.skippedCount };
 }

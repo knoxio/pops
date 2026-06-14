@@ -1,9 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 
-import { comparisonDimensions } from '@pops/db-types';
-import { mediaScores, movies } from '@pops/media-db';
+import { comparisonDimensions, mediaScores, movies } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { movieCols, toResult } from './local-shelves-helpers.js';
 import { registerShelf } from './registry.js';
@@ -61,7 +59,7 @@ export const friendProofShelf: ShelfDefinition = {
         emoji: '🍿',
         score: 0.75,
         query: ({ limit, offset }) => {
-          const db = getDrizzle();
+          const db = getMediaDrizzle();
           const allScored = db
             .select({
               ...movieCols,

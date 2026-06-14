@@ -1,10 +1,8 @@
 import { count, desc, eq, or } from 'drizzle-orm';
 
 import { debriefResults, debriefSessions } from '@pops/cerebrum-db';
-import { comparisonDimensions } from '@pops/db-types';
-import { movies, watchHistory } from '@pops/media-db';
+import { comparisonDimensions, movies, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
 import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { resolveMoviePoster } from '../pairs/movie-helpers.js';
@@ -34,7 +32,7 @@ function fetchPendingSessions(): SessionRow[] {
 }
 
 function getActiveDimensionCount(): number {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   return (
     db
       .select({ total: count() })

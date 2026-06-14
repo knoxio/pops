@@ -1,9 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 
-import { comparisons } from '@pops/db-types';
-import { mediaScores, movies, watchHistory } from '@pops/media-db';
+import { comparisons, mediaScores, movies, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getDimension } from '../dimensions.service.js';
 import { resolveMoviePoster } from '../pairs/movie-helpers.js';
@@ -51,7 +49,7 @@ function fetchComparedAgainstIds(
   mediaId: number,
   dimensionId: number
 ): Set<number> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const ids = new Set<number>();
   const compsA = db
     .select({ mediaBId: comparisons.mediaBId })

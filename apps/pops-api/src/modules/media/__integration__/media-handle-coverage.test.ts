@@ -31,9 +31,6 @@ import { createCaller, createTestDb } from '../../../shared/test-utils.js';
  * removes the entry once the call resolves via `getMediaDrizzle()`.
  */
 const MEDIA_IGNORE = new Set<string>([
-  // `sync_logs` lives on shared (`src/db/schema.ts`), not in createTestDb's
-  // synthetic schema. Pillar handle not involved.
-  'media.plex.getSyncLogs',
   // `sync_job_results` lives on shared, not in createTestDb. Pillar
   // handle not involved.
   'media.plex.getLastSyncResults',

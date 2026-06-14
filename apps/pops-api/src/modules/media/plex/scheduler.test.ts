@@ -97,12 +97,37 @@ vi.mock('@pops/core-db', () => ({
   },
 }));
 
+vi.mock('../../../db/media-db-handle.js', () => ({
+  getMediaDrizzle: vi.fn(() => ({
+    select: () => ({
+      from: () => ({
+        orderBy: () => ({
+          limit: () => ({
+            get: (): unknown => null,
+            all: (): unknown[] => mockSelectSyncLogs() as unknown[],
+          }),
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: (vals: Record<string, unknown>) => {
+        if ('syncedAt' in vals) mockInsertSyncLog(vals);
+        return { run: vi.fn() };
+      },
+    }),
+  })),
+}));
+
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((_col: unknown, val: unknown) => val),
   desc: vi.fn(),
 }));
 
 vi.mock('@pops/db-types', () => ({
+  syncLogs: { syncedAt: 'synced_at', id: 'id', errors: 'errors' },
+}));
+
+vi.mock('@pops/media-db', () => ({
   syncLogs: { syncedAt: 'synced_at', id: 'id', errors: 'errors' },
 }));
 

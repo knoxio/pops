@@ -1,15 +1,15 @@
 import { and, desc, eq } from 'drizzle-orm';
 
-import { comparisons, mediaWatchlist, watchHistory } from '@pops/db-types';
+import { comparisons, mediaWatchlist, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getDimension } from '../dimensions.service.js';
 import { fetchMovieRow, toRandomPairMovie } from './movie-helpers.js';
 
 import type { RandomPair } from '../types.js';
 
 function getEligibleWatchedMovieIds(): number[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const allWatchedIds = db
     .select({ mediaId: watchHistory.mediaId })
     .from(watchHistory)
@@ -33,7 +33,7 @@ function getEligibleWatchedMovieIds(): number[] {
 function getRecentPairs(dimensionId: number, avoidRecent: number): Set<string> {
   const recentPairs = new Set<string>();
   if (avoidRecent <= 0) return recentPairs;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const recent = db
     .select({
       mediaAId: comparisons.mediaAId,

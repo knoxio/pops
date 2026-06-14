@@ -1,25 +1,25 @@
 import { eq } from 'drizzle-orm';
 
 import { debriefStatus } from '@pops/cerebrum-db';
-import { comparisonDimensions } from '@pops/db-types';
+import { comparisonDimensions } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 /**
  * Queue debrief status rows for a media item — one per active dimension.
  *
  * Side-by-side handles (Theme-13 Wave-5 cascade): `comparison_dimensions`
- * still lives on the shared `pops.db` and is read through `getDrizzle()`;
- * the `debrief_status` upserts target the cerebrum handle. On conflict
- * (re-watch), `debriefed` / `dismissed` reset to 0 so the user is prompted
- * to debrief again.
+ * lives on the media handle (closing the cross-pillar JOIN that previously
+ * routed through the shared `pops.db`); the `debrief_status` upserts target
+ * the cerebrum handle. On conflict (re-watch), `debriefed` / `dismissed`
+ * reset to 0 so the user is prompted to debrief again.
  */
 export function queueDebriefStatus(mediaType: string, mediaId: number): number {
-  const sharedDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
   const cerebrumDb = getCerebrumDrizzle();
 
-  const dims = sharedDb
+  const dims = mediaDb
     .select({ id: comparisonDimensions.id })
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))
