@@ -84,6 +84,10 @@ vi.mock('@pops/media-db', () => ({
     score: 'score',
     dimensionId: 'dimension_id',
   },
+  comparisonDimensions: {
+    id: 'id',
+    name: 'name',
+  },
 }));
 
 vi.mock('./registry.js', () => ({

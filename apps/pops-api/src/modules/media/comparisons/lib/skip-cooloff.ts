@@ -1,8 +1,8 @@
 import { and, eq } from 'drizzle-orm';
 
-import { comparisonSkipCooloffs } from '@pops/db-types';
+import { comparisonSkipCooloffs } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getGlobalComparisonCount } from '../global-count.js';
 import { normalizePairOrder } from './comparison-queries.js';
 
@@ -21,7 +21,7 @@ export interface SkipCooloffPair {
  */
 export function recordSkip(input: SkipCooloffPair): number {
   const { dimensionId, mediaAType, mediaAId, mediaBType, mediaBId } = input;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const globalCount = getGlobalComparisonCount();
   const skipUntil = globalCount + 10;
 
@@ -74,7 +74,7 @@ export function recordSkip(input: SkipCooloffPair): number {
  */
 export function isPairOnCooloff(input: SkipCooloffPair): boolean {
   const { dimensionId, mediaAType, mediaAId, mediaBType, mediaBId } = input;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const globalCount = getGlobalComparisonCount();
 
   const [normAType, normAId, normBType, normBId] = normalizePairOrder(

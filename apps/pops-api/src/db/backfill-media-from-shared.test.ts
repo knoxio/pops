@@ -104,14 +104,97 @@ CREATE TABLE rotation_exclusions (
 CREATE UNIQUE INDEX idx_rotation_exclusions_tmdb_id ON rotation_exclusions (tmdb_id);
 `;
 
+const COMPARISON_DIMENSIONS_SQL = `
+CREATE TABLE comparison_dimensions (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name text NOT NULL,
+  description text,
+  active integer DEFAULT 1 NOT NULL,
+  sort_order integer DEFAULT 0 NOT NULL,
+  weight real DEFAULT 1 NOT NULL,
+  created_at text DEFAULT (datetime('now')) NOT NULL
+);
+CREATE UNIQUE INDEX idx_comparison_dimensions_name ON comparison_dimensions (name);
+`;
+
+const COMPARISONS_SQL = `
+CREATE TABLE comparisons (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  dimension_id integer NOT NULL REFERENCES comparison_dimensions(id),
+  media_a_type text NOT NULL,
+  media_a_id integer NOT NULL,
+  media_b_type text NOT NULL,
+  media_b_id integer NOT NULL,
+  winner_type text NOT NULL,
+  winner_id integer NOT NULL,
+  draw_tier text,
+  source text,
+  delta_a integer,
+  delta_b integer,
+  compared_at text DEFAULT (datetime('now')) NOT NULL
+);
+`;
+
+const COMPARISON_SKIP_COOLOFFS_SQL = `
+CREATE TABLE comparison_skip_cooloffs (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  dimension_id integer NOT NULL REFERENCES comparison_dimensions(id),
+  media_a_type text NOT NULL,
+  media_a_id integer NOT NULL,
+  media_b_type text NOT NULL,
+  media_b_id integer NOT NULL,
+  skip_until integer NOT NULL,
+  created_at text DEFAULT (datetime('now')) NOT NULL
+);
+CREATE UNIQUE INDEX idx_comparison_skip_cooloffs_pair ON comparison_skip_cooloffs (dimension_id, media_a_type, media_a_id, media_b_type, media_b_id);
+`;
+
+const SYNC_LOGS_SQL = `
+CREATE TABLE sync_logs (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  synced_at text NOT NULL,
+  movies_synced integer DEFAULT 0 NOT NULL,
+  tv_shows_synced integer DEFAULT 0 NOT NULL,
+  errors text,
+  duration_ms integer
+);
+`;
+
 function seedSharedDb(): string {
   const sharedPath = join(tmpDir, 'pops.db');
   const shared = new BetterSqlite3(sharedPath);
+  shared.exec(COMPARISON_DIMENSIONS_SQL);
+  shared.exec(COMPARISONS_SQL);
+  shared.exec(COMPARISON_SKIP_COOLOFFS_SQL);
   shared.exec(MEDIA_SCORES_SQL);
   shared.exec(ROTATION_LOG_SQL);
   shared.exec(ROTATION_SOURCES_SQL);
   shared.exec(ROTATION_CANDIDATES_SQL);
   shared.exec(ROTATION_EXCLUSIONS_SQL);
+  shared.exec(SYNC_LOGS_SQL);
+
+  shared
+    .prepare(
+      `INSERT INTO comparison_dimensions (name, description, active, sort_order, weight) VALUES (?, ?, 1, 0, 1.0)`
+    )
+    .run('Cinematography', 'visual quality');
+  shared
+    .prepare(
+      `INSERT INTO comparison_dimensions (name, description, active, sort_order, weight) VALUES (?, ?, 1, 1, 0.8)`
+    )
+    .run('Soundtrack', 'audio quality');
+
+  shared
+    .prepare(
+      `INSERT INTO comparisons (id, dimension_id, media_a_type, media_a_id, media_b_type, media_b_id, winner_type, winner_id, draw_tier, source, delta_a, delta_b, compared_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, datetime('now'))`
+    )
+    .run(1, 1, 'movie', 1, 'movie', 2, 'movie', 1, 'arena', 16, -16);
+
+  shared
+    .prepare(
+      `INSERT INTO comparison_skip_cooloffs (dimension_id, media_a_type, media_a_id, media_b_type, media_b_id, skip_until, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
+    )
+    .run(1, 'movie', 3, 'movie', 4, 100);
 
   shared
     .prepare(
@@ -147,6 +230,12 @@ function seedSharedDb(): string {
       `INSERT INTO rotation_exclusions (tmdb_id, title, reason, excluded_at) VALUES (?, ?, ?, datetime('now'))`
     )
     .run(222, 'Excluded Movie', 'manual');
+
+  shared
+    .prepare(
+      `INSERT INTO sync_logs (id, synced_at, movies_synced, tv_shows_synced, errors, duration_ms) VALUES (?, datetime('now'), ?, ?, NULL, ?)`
+    )
+    .run(1, 10, 4, 2500);
 
   shared.close();
   return sharedPath;
@@ -191,6 +280,32 @@ describe('backfillMediaFromShared', () => {
       }[];
       expect(exclusions).toHaveLength(1);
       expect(exclusions[0]?.tmdb_id).toBe(222);
+
+      const dimensions = media.raw
+        .prepare(`SELECT id, name, weight FROM comparison_dimensions ORDER BY id`)
+        .all() as { id: number; name: string; weight: number }[];
+      expect(dimensions).toHaveLength(2);
+      expect(dimensions[0]?.name).toBe('Cinematography');
+      expect(dimensions[1]?.weight).toBe(0.8);
+
+      const comparisons = media.raw
+        .prepare(`SELECT id, dimension_id, source FROM comparisons`)
+        .all() as { id: number; dimension_id: number; source: string | null }[];
+      expect(comparisons).toHaveLength(1);
+      expect(comparisons[0]?.source).toBe('arena');
+
+      const cooloffs = media.raw
+        .prepare(`SELECT dimension_id, media_a_id, skip_until FROM comparison_skip_cooloffs`)
+        .all() as { dimension_id: number; media_a_id: number; skip_until: number }[];
+      expect(cooloffs).toHaveLength(1);
+      expect(cooloffs[0]?.skip_until).toBe(100);
+
+      const syncLogs = media.raw.prepare(`SELECT id, movies_synced FROM sync_logs`).all() as {
+        id: number;
+        movies_synced: number;
+      }[];
+      expect(syncLogs).toHaveLength(1);
+      expect(syncLogs[0]?.movies_synced).toBe(10);
     } finally {
       media.raw.close();
     }
@@ -230,9 +345,15 @@ describe('backfillMediaFromShared', () => {
     const mediaPath = join(tmpDir, 'media.db');
     const media = openMediaDb(mediaPath);
     try {
-      // Pre-seed media.db with one of the score rows already present so the
-      // existence filter has to recognise the business-key collision instead
-      // of just the surrogate id.
+      // Pre-seed media.db with the dimension (the new intra-pillar FK on
+      // media_scores.dimension_id requires it) and one of the score rows so
+      // the existence filter has to recognise the business-key collision
+      // instead of just the surrogate id.
+      media.raw
+        .prepare(
+          `INSERT INTO comparison_dimensions (id, name, description, active, sort_order, weight) VALUES (?, ?, ?, ?, ?, ?)`
+        )
+        .run(1, 'Cinematography', 'visual quality', 1, 0, 1.0);
       media.raw
         .prepare(
           `INSERT INTO media_scores (media_type, media_id, dimension_id, score, comparison_count, excluded) VALUES (?, ?, ?, ?, ?, ?)`
@@ -259,7 +380,13 @@ describe('backfillMediaFromShared', () => {
   it('is non-fatal when the shared pops.db is missing the source tables', () => {
     const sharedPath = join(tmpDir, 'pops.db');
     const shared = new BetterSqlite3(sharedPath);
+    shared.exec(COMPARISON_DIMENSIONS_SQL);
     shared.exec(MEDIA_SCORES_SQL);
+    shared
+      .prepare(
+        `INSERT INTO comparison_dimensions (id, name, description, active, sort_order, weight) VALUES (1, 'Cinematography', NULL, 1, 0, 1.0)`
+      )
+      .run();
     shared
       .prepare(
         `INSERT INTO media_scores (media_type, media_id, dimension_id, score, comparison_count, excluded, updated_at) VALUES ('movie', 1, 1, 1500, 0, 0, datetime('now'))`

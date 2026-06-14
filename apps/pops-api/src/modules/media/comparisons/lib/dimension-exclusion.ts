@@ -1,9 +1,7 @@
 import { and, eq, or } from 'drizzle-orm';
 
-import { comparisons } from '@pops/db-types';
-import { mediaScores } from '@pops/media-db';
+import { comparisons, mediaScores } from '@pops/media-db';
 
-import { getDb, getDrizzle } from '../../../../db.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
 import { getDimension } from '../dimensions.service.js';
@@ -21,12 +19,10 @@ export function excludeFromDimension(
 ): { comparisonsDeleted: number } {
   getDimension(dimensionId); // verify exists
   const mediaDb = getMediaDrizzle();
-  const sharedDb = getDrizzle();
-  const rawDb = getDb();
 
   let comparisonsDeleted = 0;
 
-  rawDb.transaction(() => {
+  mediaDb.transaction(() => {
     const existing = mediaDb
       .select()
       .from(mediaScores)
@@ -59,7 +55,7 @@ export function excludeFromDimension(
         .run();
     }
 
-    const result = sharedDb
+    const result = mediaDb
       .delete(comparisons)
       .where(
         and(
@@ -75,7 +71,7 @@ export function excludeFromDimension(
     comparisonsDeleted = result.changes;
 
     recalcDimensionElo(dimensionId);
-  })();
+  });
 
   return { comparisonsDeleted };
 }

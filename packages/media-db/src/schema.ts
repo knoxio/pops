@@ -12,6 +12,9 @@
  * subsequent Phase 1 PRs migrate additional media tables into this package.
  */
 export {
+  comparisonDimensions,
+  comparisons,
+  comparisonSkipCooloffs,
   comparisonStaleness,
   dismissedDiscover,
   episodes,
@@ -24,6 +27,7 @@ export {
   rotationSources,
   seasons,
   shelfImpressions,
+  syncLogs,
   tvShows,
   watchHistory,
 } from '@pops/db-types';

@@ -1,8 +1,8 @@
 import { and, count, desc, eq, inArray, like, or, type SQL } from 'drizzle-orm';
 
-import { comparisons, movies } from '@pops/db-types';
+import { comparisons, movies } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 
 import type { ComparisonRow } from '../types.js';
 
@@ -43,7 +43,7 @@ export function findExistingComparison(
   input: FindExistingComparisonInput
 ): ComparisonRow | undefined {
   const { dimensionId, mediaAType, mediaAId, mediaBType, mediaBId } = input;
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const [normAType, normAId, normBType, normBId] = normalizePairOrder(
     mediaAType,
     mediaAId,
@@ -85,7 +85,7 @@ export interface ListComparisonsForMediaInput {
 
 export function listComparisonsForMedia(input: ListComparisonsForMediaInput): ComparisonListResult {
   const { mediaType, mediaId, dimensionId, limit, offset } = input;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const mediaCondition = or(
     and(eq(comparisons.mediaAType, mediaType), eq(comparisons.mediaAId, mediaId)),
@@ -120,7 +120,7 @@ export function listAllComparisons(
   limit: number,
   offset: number
 ): ComparisonListResult {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const conditions: SQL[] = [];
   if (dimensionId) conditions.push(eq(comparisons.dimensionId, dimensionId));

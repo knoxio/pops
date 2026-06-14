@@ -78,6 +78,20 @@
       "when": 1797000001000,
       "tag": "0031_rotation_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1798000000000,
+      "tag": "0032_comparisons_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1798000001000,
+      "tag": "0033_sync_logs_baseline",
+      "breakpoints": true
     }
   ]
 }

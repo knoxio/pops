@@ -6,9 +6,9 @@ import {
   mediaScores,
   movies,
   watchHistory,
-} from '@pops/db-types';
+} from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 import type {
   DimensionWeight,
@@ -18,7 +18,7 @@ import type {
 } from './types.js';
 
 function getGenreAffinities(): GenreAffinity[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   return db
     .select({
       genre: sql<string>`g.value`,
@@ -38,7 +38,7 @@ function getGenreAffinities(): GenreAffinity[] {
 }
 
 function getDimensionWeights(): DimensionWeight[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const compCountExpr = sql<number>`COALESCE(SUM(${mediaScores.comparisonCount}), 0)`;
   return db
     .select({
@@ -56,7 +56,7 @@ function getDimensionWeights(): DimensionWeight[] {
 }
 
 function getGenreDistribution(): { genres: GenreDistribution[]; totalWatched: number } {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const [totalResult] = db
     .select({ cnt: sql<number>`COUNT(DISTINCT ${watchHistory.mediaId})` })
     .from(watchHistory)
@@ -91,7 +91,7 @@ function getGenreDistribution(): { genres: GenreDistribution[]; totalWatched: nu
 }
 
 function getTotalComparisons(): number {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const [result] = db.select({ cnt: count() }).from(comparisons).all();
   return result?.cnt ?? 0;
 }

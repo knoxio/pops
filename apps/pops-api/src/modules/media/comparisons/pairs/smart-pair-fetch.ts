@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import { mediaWatchlist } from '@pops/db-types';
+import { mediaWatchlist } from '@pops/media-db';
 
-import { getDb, getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle, getMediaRawDb } from '../../../../db/media-db-handle.js';
 import { getGlobalComparisonCount } from '../global-count.js';
 
 export interface WatchedMovie {
@@ -25,7 +25,7 @@ export interface ScoreRow {
 }
 
 export function fetchWatchedMovies(): WatchedMovie[] {
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   return rawDb
     .prepare(
       `SELECT wh.media_id as mediaId,
@@ -40,7 +40,7 @@ export function fetchWatchedMovies(): WatchedMovie[] {
 }
 
 export function fetchWatchlistedIds(): Set<number> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   return new Set(
     db
       .select({ mediaId: mediaWatchlist.mediaId })
@@ -52,7 +52,7 @@ export function fetchWatchlistedIds(): Set<number> {
 }
 
 export function fetchExcludedIds(dimensionId: number): Set<number> {
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   const rows = rawDb
     .prepare(
       `SELECT media_id FROM media_scores
@@ -63,7 +63,7 @@ export function fetchExcludedIds(dimensionId: number): Set<number> {
 }
 
 export function fetchCooloffPairs(dimensionId: number): Set<string> {
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   const globalCount = getGlobalComparisonCount();
   const rows = rawDb
     .prepare(
@@ -85,7 +85,7 @@ export function fetchScoreMap(
   movieIds: number[]
 ): Map<number, { score: number; comparisonCount: number }> {
   if (movieIds.length === 0) return new Map();
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   const placeholders = movieIds.map(() => '?').join(',');
   const scoreRows = rawDb
     .prepare(
@@ -103,7 +103,7 @@ export function fetchScoreMap(
 
 export function fetchPairCountMap(dimensionId: number, movieIds: number[]): Map<string, number> {
   if (movieIds.length === 0) return new Map();
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   const placeholders = movieIds.map(() => '?').join(',');
   const rows = rawDb
     .prepare(
@@ -131,7 +131,7 @@ export function fetchPairCountMap(dimensionId: number, movieIds: number[]): Map<
 
 export function fetchMovieMetaMap(movieIds: number[]): Map<number, MovieMeta> {
   if (movieIds.length === 0) return new Map();
-  const rawDb = getDb();
+  const rawDb = getMediaRawDb();
   const placeholders = movieIds.map(() => '?').join(',');
   const rows = rawDb
     .prepare(

@@ -1,9 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 
-import { comparisonDimensions, comparisons } from '@pops/db-types';
-import { mediaScores } from '@pops/media-db';
+import { comparisonDimensions, comparisons, mediaScores } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { drawTierOutcome, expectedScore, getEloK } from './elo-calculator.js';
 
@@ -111,7 +109,6 @@ export function updateEloScores(input: RecordComparisonInput): { deltaA: number;
  */
 export function recalcDimensionElo(dimensionId: number): void {
   const mediaDb = getMediaDrizzle();
-  const sharedDb = getDrizzle();
 
   mediaDb
     .update(mediaScores)
@@ -119,7 +116,7 @@ export function recalcDimensionElo(dimensionId: number): void {
     .where(eq(mediaScores.dimensionId, dimensionId))
     .run();
 
-  const remaining = sharedDb
+  const remaining = mediaDb
     .select()
     .from(comparisons)
     .where(eq(comparisons.dimensionId, dimensionId))
@@ -138,7 +135,7 @@ export function recalcDimensionElo(dimensionId: number): void {
       drawTier: comp.drawTier as 'high' | 'mid' | 'low' | null,
     });
 
-    sharedDb.update(comparisons).set({ deltaA, deltaB }).where(eq(comparisons.id, comp.id)).run();
+    mediaDb.update(comparisons).set({ deltaA, deltaB }).where(eq(comparisons.id, comp.id)).run();
   }
 }
 
@@ -147,8 +144,8 @@ export function recalcDimensionElo(dimensionId: number): void {
  * Used after bulk data changes (e.g. dedupe migration).
  */
 export function recalcAllDimensions(): number {
-  const drizzleDb = getDrizzle();
-  const dims = drizzleDb
+  const db = getMediaDrizzle();
+  const dims = db
     .select({ id: comparisonDimensions.id })
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))

@@ -1,8 +1,8 @@
 import { desc } from 'drizzle-orm';
 
-import { syncLogs } from '@pops/db-types';
+import { syncLogs } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 export interface SyncLogEntry {
   id: number;
@@ -23,7 +23,7 @@ export interface SyncLogRecord {
 
 export function writeSyncLog(record: SyncLogRecord): void {
   const { syncedAt, movieCount, tvCount, errors, durationMs } = record;
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   db.insert(syncLogs)
     .values({
       syncedAt,
@@ -36,7 +36,7 @@ export function writeSyncLog(record: SyncLogRecord): void {
 }
 
 export function getSyncLogs(limit = 20): SyncLogEntry[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const rows = db.select().from(syncLogs).orderBy(desc(syncLogs.syncedAt)).limit(limit).all();
   return rows.map((row) => ({
     id: row.id,
@@ -50,7 +50,7 @@ export function getSyncLogs(limit = 20): SyncLogEntry[] {
 
 export function getLastSyncAt(): string | null {
   try {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     const row = db
       .select({ syncedAt: syncLogs.syncedAt })
       .from(syncLogs)
@@ -65,7 +65,7 @@ export function getLastSyncAt(): string | null {
 
 export function getLastSyncCounts(): { moviesSynced: number; tvShowsSynced: number } {
   try {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     const row = db
       .select({ moviesSynced: syncLogs.moviesSynced, tvShowsSynced: syncLogs.tvShowsSynced })
       .from(syncLogs)
@@ -83,7 +83,7 @@ export function getLastSyncCounts(): { moviesSynced: number; tvShowsSynced: numb
 
 export function getLastSyncError(): string | null {
   try {
-    const db = getDrizzle();
+    const db = getMediaDrizzle();
     const row = db
       .select({ errors: syncLogs.errors, syncedAt: syncLogs.syncedAt })
       .from(syncLogs)

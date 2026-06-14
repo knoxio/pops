@@ -5,9 +5,8 @@ import { and, eq, or, sql } from 'drizzle-orm';
  *
  * Core orchestrators live here; extracted modules in lib/ handle specific domains.
  */
-import { comparisons, watchHistory } from '@pops/db-types';
+import { comparisons, watchHistory } from '@pops/media-db';
 
-import { getDb, getDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getDimension } from './dimensions.service.js';
@@ -70,14 +69,14 @@ function validateRecordInput(input: RecordComparisonInput): void {
 }
 
 function fetchInserted(insertId: number): ComparisonRow {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const inserted = drizzleDb.select().from(comparisons).where(eq(comparisons.id, insertId)).get();
   if (!inserted) throw new Error('Failed to retrieve recorded comparison');
   return inserted;
 }
 
 function insertOverride(input: RecordComparisonInput, newSource: string): ComparisonRow {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const result = drizzleDb
     .insert(comparisons)
     .values({
@@ -97,7 +96,7 @@ function insertOverride(input: RecordComparisonInput, newSource: string): Compar
 }
 
 function insertIncremental(input: RecordComparisonInput, newSource: string): ComparisonRow {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const { deltaA, deltaB } = updateEloScores(input);
   const result = drizzleDb
     .insert(comparisons)
@@ -126,9 +125,8 @@ function insertIncremental(input: RecordComparisonInput, newSource: string): Com
 export function recordComparison(input: RecordComparisonInput): ComparisonRow {
   validateRecordInput(input);
   const newSource = input.source ?? 'arena';
-  const drizzleDb = getDrizzle();
-  const rawDb = getDb();
-  return rawDb.transaction(() => {
+  const drizzleDb = getMediaDrizzle();
+  return drizzleDb.transaction(() => {
     const existing = findExistingComparison({
       dimensionId: input.dimensionId,
       mediaAType: input.mediaAType,
@@ -146,7 +144,7 @@ export function recordComparison(input: RecordComparisonInput): ComparisonRow {
       return insertOverride(input, newSource);
     }
     return insertIncremental(input, newSource);
-  })();
+  });
 }
 
 /**
@@ -154,25 +152,21 @@ export function recordComparison(input: RecordComparisonInput): ComparisonRow {
  * Replays all remaining comparisons in chronological order to ensure accuracy.
  */
 export function deleteComparison(id: number): void {
-  const drizzleDb = getDrizzle();
-  const rawDb = getDb();
+  const drizzleDb = getMediaDrizzle();
 
   const comparison = drizzleDb.select().from(comparisons).where(eq(comparisons.id, id)).get();
   if (!comparison) throw new NotFoundError('Comparison', String(id));
 
   const dimensionId = comparison.dimensionId;
 
-  rawDb.transaction(() => {
-    // Delete the comparison
+  drizzleDb.transaction(() => {
     drizzleDb.delete(comparisons).where(eq(comparisons.id, id)).run();
-
-    // Recalculate ELO for the affected dimension
     recalcDimensionElo(dimensionId);
-  })();
+  });
 }
 
 function findAffectedDimensionIds(mediaType: string, mediaId: number): number[] {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const affectedComparisons = drizzleDb
     .select()
     .from(comparisons)
@@ -187,20 +181,16 @@ function findAffectedDimensionIds(mediaType: string, mediaId: number): number[] 
 }
 
 /**
- * Blacklist a movie: mark all its watch_history rows as blacklisted,
- * delete all comparisons involving it, and recalculate ELO for affected
- * dimensions. The `watch_history` UPDATE runs on the media handle; the
- * `comparisons` delete + ELO recalc stay on the shared handle (Track L2
- * scope). The outer transaction stays bound to the shared `pops.db` for
- * the comparisons writes — the media UPDATE is a single, idempotent
- * statement that can be replayed safely if a subsequent step fails.
+ * Blacklist a movie: mark all its watch_history rows as blacklisted, delete
+ * all comparisons involving it, and recalculate ELO for affected dimensions.
+ * After the Theme-13 Wave-5 cascade both `watch_history` and `comparisons` (+
+ * `media_scores`) live on the media handle, so the whole flow runs inside a
+ * single intra-pillar drizzle transaction.
  */
 export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMovieResult {
-  const drizzleDb = getDrizzle();
   const mediaDb = getMediaDrizzle();
-  const rawDb = getDb();
 
-  return rawDb.transaction(() => {
+  return mediaDb.transaction(() => {
     const blacklistResult = mediaDb
       .update(watchHistory)
       .set({ blacklisted: 1 })
@@ -215,7 +205,7 @@ export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMov
     const blacklistedCount = blacklistResult.changes;
 
     const affectedDimensionIds = findAffectedDimensionIds(mediaType, mediaId);
-    const deleteResult = drizzleDb
+    const deleteResult = mediaDb
       .delete(comparisons)
       .where(
         or(
@@ -234,7 +224,7 @@ export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMov
       comparisonsDeleted: deleteResult.changes,
       dimensionsRecalculated: affectedDimensionIds.length,
     };
-  })();
+  });
 }
 
 /**
