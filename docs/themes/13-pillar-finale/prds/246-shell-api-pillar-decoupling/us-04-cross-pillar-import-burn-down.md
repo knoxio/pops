@@ -1,6 +1,6 @@
 # US-04: Burn down the 8 H8 cross-pillar imports in `apps/pops-api/src/modules/`
 
-> PRD: [PRD-245 — Shell + API pillar decoupling](README.md)
+> PRD: [PRD-246 — Shell + API pillar decoupling](README.md)
 
 ## Description
 
@@ -11,7 +11,7 @@ As a pillar maintainer, I want each of the 8 cross-pillar runtime import sites i
 For each of the 8 sites listed below, exactly one of:
 
 - the site's call paths convert to a typed `pillar('<other>').*` SDK call against the target pillar's `-api`, AND the matching entry in `.dependency-cruiser-known-violations.json` is removed in the same commit, OR
-- the site is explicitly blocked behind a tracked successor (named below or in a follow-up PRD reference) and PRD-245's epic table marks the site `Blocked` with the successor link.
+- the site is explicitly blocked behind a tracked successor (named below or in a follow-up PRD reference) and PRD-246's epic table marks the site `Blocked` with the successor link.
 
 The 8 sites (verified against [`pillar-isolation-audit.md`](../../notes/pillar-isolation-audit.md) §H8):
 
@@ -26,7 +26,7 @@ The 8 sites (verified against [`pillar-isolation-audit.md`](../../notes/pillar-i
 
 - **Files**: `apps/pops-api/src/modules/core/tag-rules/router.ts`, `service.ts`, `preview.ts`
 - **Target**: `@pops/finance-db` (`tagVocabularyService`)
-- **Proposed SDK shape**: `pillar('finance').tagVocabulary.*`. Epic 08a will eventually relocate `tag-rules` into finance-api; PRD-245's scope is the import-decoupling only. The relocation closes the cross-pillar shape entirely.
+- **Proposed SDK shape**: `pillar('finance').tagVocabulary.*`. Epic 08a will eventually relocate `tag-rules` into finance-api; PRD-246's scope is the import-decoupling only. The relocation closes the cross-pillar shape entirely.
 - **Acceptance**: the three files contain no `@pops/finance-db` import; the matching allow-list entry is gone; the tag-rules router + preview tests pass.
 
 ### Site 3 — core → finance corrections
@@ -73,7 +73,7 @@ The 8 sites (verified against [`pillar-isolation-audit.md`](../../notes/pillar-i
 
 ### Cross-cutting acceptance
 
-- [ ] `.dependency-cruiser-known-violations.json` shrinks by exactly the entries PRD-245 closes. The file is not deleted (sites blocked behind successors keep their entries; new entries cannot land without [PRD-156](../156-consumer-import-discipline/README.md)'s gate).
+- [ ] `.dependency-cruiser-known-violations.json` shrinks by exactly the entries PRD-246 closes. The file is not deleted (sites blocked behind successors keep their entries; new entries cannot land without [PRD-156](../156-consumer-import-discipline/README.md)'s gate).
 - [ ] The full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean after each site lands. CI must stay green commit-to-commit; do not batch up a broken intermediate.
 - [ ] Husky pre-commit + pre-push pass without `--no-verify`.
 
@@ -81,5 +81,5 @@ The 8 sites (verified against [`pillar-isolation-audit.md`](../../notes/pillar-i
 
 - Sites can land in any order and any grouping. Site 8 (media → core settings reads) is the largest by file count and likely the highest-leverage single PR. Sites 2 + 3 (core → finance) overlap with Epic 08a's reclaim; coordinate with whoever picks up 08a so the import decoupling and the file relocation don't fight each other.
 - Sites 4 + 5 + 6 all share the cerebrum-debrief mixed-tx concern. Read [`media-watch-history-mixed-tx-design.md`](../../notes/media-watch-history-mixed-tx-design.md) before starting any of them. If the mixed-tx coordination strategy is not yet decided, those sites are the natural place to make the call (or hand off to a sibling PRD).
-- For each site, the rewrite is a function-by-function call-site change; the data shape exposed by the target pillar's typed proxy comes from its existing contract package. If the proxy does not expose the required shape, surface it as a [PRD-244](../244-cross-pillar-sdk-surface/README.md) input rather than landing a `pillar.<other>.callDynamic` escape hatch inside PRD-245.
+- For each site, the rewrite is a function-by-function call-site change; the data shape exposed by the target pillar's typed proxy comes from its existing contract package. If the proxy does not expose the required shape, surface it as a [PRD-244](../244-cross-pillar-sdk-surface/README.md) input rather than landing a `pillar.<other>.callDynamic` escape hatch inside PRD-246.
 - US-04 is independent of US-01..US-03. The H8 burn-down is parallel work to the H9 cleanup.

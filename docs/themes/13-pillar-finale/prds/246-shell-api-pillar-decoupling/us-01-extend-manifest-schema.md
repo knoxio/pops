@@ -1,6 +1,6 @@
 # US-01: Extend `ManifestPayloadSchema` with `frontend.captureOverlay`
 
-> PRD: [PRD-245 — Shell + API pillar decoupling](README.md)
+> PRD: [PRD-246 — Shell + API pillar decoupling](README.md)
 
 ## Description
 

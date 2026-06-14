@@ -1,6 +1,6 @@
 # US-03: Rewrite `CaptureModal.tsx` against the registry walk
 
-> PRD: [PRD-245 — Shell + API pillar decoupling](README.md)
+> PRD: [PRD-246 — Shell + API pillar decoupling](README.md)
 
 ## Description
 

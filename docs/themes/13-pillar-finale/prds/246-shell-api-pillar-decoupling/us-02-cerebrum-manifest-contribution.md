@@ -1,6 +1,6 @@
 # US-02: Cerebrum's manifest declares `frontend.captureOverlay`
 
-> PRD: [PRD-245 — Shell + API pillar decoupling](README.md)
+> PRD: [PRD-246 — Shell + API pillar decoupling](README.md)
 
 ## Description
 

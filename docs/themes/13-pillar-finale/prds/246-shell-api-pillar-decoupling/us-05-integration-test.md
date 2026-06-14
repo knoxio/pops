@@ -1,6 +1,6 @@
 # US-05: Integration test — synthetic pillar contributes `frontend.captureOverlay`
 
-> PRD: [PRD-245 — Shell + API pillar decoupling](README.md)
+> PRD: [PRD-246 — Shell + API pillar decoupling](README.md)
 
 ## Description
 
@@ -25,5 +25,5 @@ The test mirrors [PRD-243](../243-registry-driven-shell-ui/README.md) US-04's sy
 
 - This US is blocked by US-03 (the shell rewrite). US-02 is not strictly required — the synthetic pillar in the test fixture stands in for cerebrum — but in practice US-02 will land alongside US-03.
 - The test pattern is lifted from [PRD-243](../243-registry-driven-shell-ui/README.md) US-04's `manifests.test.ts` migration (commit 82a23d6b). Re-read that test as the template.
-- The `__setInstalledFrontendManifestsOverride()` hook PRD-243 introduced is the reuse point. PRD-245 does not introduce a separate override surface for capture overlays.
+- The `__setInstalledFrontendManifestsOverride()` hook PRD-243 introduced is the reuse point. PRD-246 does not introduce a separate override surface for capture overlays.
 - The bundle-map spy / mock approach matters because TypeScript's static analysis sees `@pops/app-cerebrum` referenced from the bundle map regardless of runtime selection. The test asserts the runtime path, not the static graph.
