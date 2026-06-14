@@ -18,7 +18,7 @@ export const MEDIA_PILLAR_ID = 'media' as const;
  *
  * Mirrors `@pops/app-media`'s `navConfig` field-for-field; Lucide names
  * are rewritten as kebab-case identifiers per the wire schema from
- * PR #3230. `order: 200` matches today's position in
+ * PR #3230. `order: 20` matches today's position in
  * `apps/pops-shell/src/app/nav/registry.ts` (`registeredApps[1]`).
  */
 const MEDIA_NAV: NavConfigDescriptor = {
@@ -28,7 +28,7 @@ const MEDIA_NAV: NavConfigDescriptor = {
   icon: 'film',
   color: 'indigo',
   basePath: '/media',
-  order: 200,
+  order: 20,
   items: [
     { path: '', label: 'Library', labelKey: 'media.library', icon: 'library' },
     { path: '/watchlist', label: 'Watchlist', labelKey: 'media.watchlist', icon: 'bookmark' },

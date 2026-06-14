@@ -11,7 +11,7 @@ export const LISTS_PILLAR_ID = 'lists' as const;
  *
  * Mirrors `@pops/app-lists`'s `navConfig` (`packages/app-lists/src/routes.tsx`)
  * field-for-field; Lucide names are rewritten as kebab-case identifiers
- * per the wire schema from PR #3230. `order: 500` matches today's
+ * per the wire schema from PR #3230. `order: 50` matches today's
  * position in `apps/pops-shell/src/app/nav/registry.ts`
  * (`registeredApps[4]`). Detail pages (`/lists/:id`) intentionally stay
  * off the rail — they remain deep links, declared on the `pages`
@@ -24,7 +24,7 @@ const LISTS_NAV: NavConfigDescriptor = {
   icon: 'list-checks',
   color: 'sky',
   basePath: '/lists',
-  order: 500,
+  order: 50,
   items: [{ path: '', label: 'Home', labelKey: 'lists.home', icon: 'layout-dashboard' }],
 };
 

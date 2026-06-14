@@ -58,7 +58,7 @@ describe('buildCerebrumManifest', () => {
       expect(manifest.nav?.basePath).toBe('/cerebrum');
       expect(manifest.nav?.icon).toBe('book-open');
       expect(manifest.nav?.color).toBe('sky');
-      expect(manifest.nav?.order).toBe(600);
+      expect(manifest.nav?.order).toBe(60);
     });
 
     it('mirrors the shell-side nav item count + paths (no drift)', () => {

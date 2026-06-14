@@ -14,7 +14,7 @@ export const CEREBRUM_PILLAR_ID = 'cerebrum' as const;
  * Mirrors the shell-side `navConfig` exported from `@pops/app-cerebrum`
  * (`packages/app-cerebrum/src/routes.tsx`) — same items, same order — with
  * the runtime Lucide icon names rewritten as kebab-case identifiers per
- * the `NavConfigDescriptor` wire shape from PR #3230. `order: 600` places
+ * the `NavConfigDescriptor` wire shape from PR #3230. `order: 60` places
  * cerebrum sixth in the shell's `registeredApps` array
  * (`apps/pops-shell/src/app/nav/registry.ts`), matching today's layout.
  */
@@ -25,7 +25,7 @@ const CEREBRUM_NAV: NavConfigDescriptor = {
   icon: 'book-open',
   color: 'sky',
   basePath: '/cerebrum',
-  order: 600,
+  order: 60,
   items: [
     { path: '', label: 'Ingest', labelKey: 'cerebrum.ingest', icon: 'file-text' },
     { path: '/engrams', label: 'Engrams', labelKey: 'cerebrum.engrams.nav', icon: 'library' },
