@@ -87,15 +87,15 @@ The four landed PRDs collectively closed 7 findings (5 HIGH, 1 MEDIUM, 1 LOW) �
 ### H8 — Cross-pillar code imports in `apps/pops-api/src/modules/`
 
 - **Status**: In Progress
-- **Owning PRD**: [PRD-156](../prds/156-consumer-import-discipline/README.md) gates _new_ violations; the existing list is in `.dependency-cruiser-known-violations.json`. The burn-down has no dedicated PRD.
+- **Owning PRD**: [PRD-156](../prds/156-consumer-import-discipline/README.md) gates _new_ violations; the existing list is in `.dependency-cruiser-known-violations.json`. The burn-down lives under [PRD-246](../prds/246-shell-api-pillar-decoupling/README.md) US-04.
 - **Severity (re-rated)**: HIGH (no change)
 - **What remains**: 8 distinct cross-pillar import sites (core→cerebrum embeddings, core→finance tag vocabulary/corrections, media→cerebrum debrief writes, media→cerebrum debrief reads, media→cerebrum watch-history reads, media→core settings reads across ~10 files). The media→core settings reads alone are ~half the list and could be one "settings read goes through the SDK" PR. The media→cerebrum debrief writes have a design in [`media-watch-history-mixed-tx-design.md`](media-watch-history-mixed-tx-design.md).
-- **Proposed owner**: **needs new PRD** for a burn-down tracker with per-pair user stories. The core↔finance pair has its own context in [`corrections-finance-coupling.md`](corrections-finance-coupling.md).
+- **Proposed owner**: scoped under [PRD-246](../prds/246-shell-api-pillar-decoupling/README.md) US-04 (per-site burn-down with target SDK shape). The core↔finance pair has its own context in [`corrections-finance-coupling.md`](corrections-finance-coupling.md).
 
 ### H9 — `apps/pops-shell/src/app/capture/CaptureModal.tsx` couples shell to cerebrum
 
 - **Status**: Open
-- **Owning PRD**: **needs new PRD** (small — promote "capture" to a manifest slot, let pillars register capture overlays)
+- **Owning PRD**: [PRD-246](../prds/246-shell-api-pillar-decoupling/README.md) US-01..US-03, US-05 (promotes capture to `frontend.captureOverlay` manifest dimension; shell discovers via registry walk)
 - **Severity (re-rated)**: HIGH (no change)
 - **What remains**: `CaptureModal.tsx:10` still imports `IngestForm` and `useIngestPageModel` from `@pops/app-cerebrum`. PRD-243 introduced the dimension-driven shell pattern but explicitly scoped capture/overlay slots out. The natural extension is a `frontend.captureOverlay?: { component, hotkey }` manifest dimension that lets cerebrum (or any other pillar) register the active capture form. Multiple-contributor semantics need a one-paragraph rule.
 
@@ -242,19 +242,18 @@ The four landed PRDs collectively closed 7 findings (5 HIGH, 1 MEDIUM, 1 LOW) �
 
 Aggregating the "needs new PRD" entries above so they can be triaged in one pass:
 
-| Finding(s)        | Proposed PRD                                                 | Size    | Notes                                                                                 |
-| ----------------- | ------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------- |
-| H7                | Cross-pillar FK drop tracker                                 | Medium  | 3 user stories (inventory→finance, inventory→core, finance→core); blocks SQLite split |
-| H8                | `apps/pops-api/src/modules/` cross-pillar import burn-down   | Medium  | Likely 4-6 user stories grouped by source/target pair                                 |
-| H9                | Capture overlay manifest slot                                | Small   | Promote `CaptureModal` to `frontend.captureOverlay` dimension                         |
-| M1                | Backend `installed-modules.ts` registry-driven               | Small   | Lift PRD-242 US-01 codegen pattern; could fold into PRD-218                           |
-| M3 + L4           | Filesystem discovery for `scripts/contract/pillar-list.ts`   | Small   | Single trivial change; L4 closes by side-effect                                       |
-| M4                | Collapse `pnpm-workspace.yaml` to `packages/*`               | Trivial | Single-commit PR                                                                      |
-| M7                | i18n manifest slot                                           | Small   | `frontend.i18n: { namespace, resources }` aggregated at shell boot                    |
-| M8 + L2 + L3 + L5 | CI / infra consolidation                                     | Medium  | Single PRD covering compose template + matrix-over-glob in 4 workflow files           |
-| M9                | `IndexRedirect` derives from `nav.order`                     | Trivial | Single-commit follow-up to PRD-243                                                    |
-| L8                | Delete dead `manifest-pillar.ts` (verify zero callers first) | Trivial | Single-commit cleanup                                                                 |
-| L9                | Delete `pillar-sdk/src/contracts/index.ts`                   | Trivial | SDK should not name pillars                                                           |
+| Finding(s)        | Proposed PRD                                                 | Size    | Notes                                                                                                         |
+| ----------------- | ------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
+| H7                | Cross-pillar FK drop tracker                                 | Medium  | 3 user stories (inventory→finance, inventory→core, finance→core); blocks SQLite split                         |
+| H8 + H9           | [PRD-246](../prds/246-shell-api-pillar-decoupling/README.md) | Medium  | Scoped — H9 lands as `frontend.captureOverlay` dimension (US-01..US-03, US-05); H8 burn-down per site (US-04) |
+| M1                | Backend `installed-modules.ts` registry-driven               | Small   | Lift PRD-242 US-01 codegen pattern; could fold into PRD-218                                                   |
+| M3 + L4           | Filesystem discovery for `scripts/contract/pillar-list.ts`   | Small   | Single trivial change; L4 closes by side-effect                                                               |
+| M4                | Collapse `pnpm-workspace.yaml` to `packages/*`               | Trivial | Single-commit PR                                                                                              |
+| M7                | i18n manifest slot                                           | Small   | `frontend.i18n: { namespace, resources }` aggregated at shell boot                                            |
+| M8 + L2 + L3 + L5 | CI / infra consolidation                                     | Medium  | Single PRD covering compose template + matrix-over-glob in 4 workflow files                                   |
+| M9                | `IndexRedirect` derives from `nav.order`                     | Trivial | Single-commit follow-up to PRD-243                                                                            |
+| L8                | Delete dead `manifest-pillar.ts` (verify zero callers first) | Trivial | Single-commit cleanup                                                                                         |
+| L9                | Delete `pillar-sdk/src/contracts/index.ts`                   | Trivial | SDK should not name pillars                                                                                   |
 
 Adjacent (already-scoped) PRDs that also chip at remaining findings:
 
@@ -268,5 +267,5 @@ For triage at a glance:
 
 - **H6** — `db-types` decomposition (in progress via per-pillar cutovers; no tracker PRD)
 - **H7** — Cross-pillar FKs in `db-types` (partly addressed for debrief; 4 pairs still open)
-- **H8** — Cross-pillar code imports in `apps/pops-api/src/modules/` (gated by PRD-156, no burn-down PRD)
-- **H9** — `CaptureModal` couples shell to cerebrum (no PRD)
+- **H8** — Cross-pillar code imports in `apps/pops-api/src/modules/` (gated by PRD-156; burn-down scoped under PRD-246 US-04)
+- **H9** — `CaptureModal` couples shell to cerebrum (scoped under PRD-246 US-01..US-03, US-05)
