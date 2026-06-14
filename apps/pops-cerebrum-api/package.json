@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@pops/cerebrum-contract": "workspace:*",
     "@pops/cerebrum-db": "workspace:*",
     "@pops/core-db": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",

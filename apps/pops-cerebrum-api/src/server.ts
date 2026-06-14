@@ -27,8 +27,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { createCerebrumApiApp } from './app.js';
 import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
-
-import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
+import { buildCerebrumManifest } from './manifest.js';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -38,28 +37,6 @@ function resolvePort(): number {
     throw new Error(`[cerebrum-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
-}
-
-function buildCerebrumManifest(version: string): ManifestPayload {
-  return {
-    pillar: 'cerebrum',
-    version,
-    contract: {
-      package: '@pops/cerebrum-contract',
-      version,
-      tag: `contract-cerebrum@v${version}`,
-    },
-    routes: {
-      queries: ['cerebrum.nudges.list', 'cerebrum.nudges.get', 'cerebrum.nudges.contradictions'],
-      mutations: ['cerebrum.nudges.dismiss'],
-      subscriptions: [],
-    },
-    search: { adapters: [] },
-    ai: { tools: [] },
-    uri: { types: [] },
-    consumedSettings: { keys: [] },
-    healthcheck: { path: '/health' },
-  };
 }
 
 const port = resolvePort();
