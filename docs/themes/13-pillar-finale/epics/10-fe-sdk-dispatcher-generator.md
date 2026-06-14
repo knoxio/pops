@@ -25,6 +25,7 @@ Make the front-end registry-aware end-to-end. Three pieces:
 | 241 | Registry-driven `known-modules`       | Replace `MANIFEST_SOURCES` literal in `packages/module-registry/scripts/known-modules.ts` with workspace discovery over `@pops/*-contract` packages; closes audit H1; strict predecessor to PRD-218          | Not started                                                                                       |
 | 242 | Dynamic `AppRouter` composition       | Replace the hand-curated `KNOWN_ROUTERS` literal in `apps/pops-api/src/router.ts` with a workspace-scan codegen catalogue + runtime `mergeRouters` over PRD-228 externals; closes pillar-isolation audit H3  | Not started                                                                                       |
 | 243 | Registry-driven shell UI aggregation  | Replace shell's hand-curated `installed-modules.ts` + `nav/registry.ts` with a registry walk; add `nav` / `pages` / `assetsBaseUrl` manifest dimensions; closes audit H4 + H5 + M7                           | Not started                                                                                       |
+| 244 | Cross-pillar SDK surface              | Unblock `app-ai` (14 sites) + `app-finance` batch 2 (23 sites) using `pillar('core').*` (Option A); post-mortem decides whether `crossPillarQuery` (Option B) ships in a successor PRD                       | Not started                                                                                       |
 
 ## Dependencies
 
