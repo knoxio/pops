@@ -102,7 +102,7 @@ function financeManifest(): ManifestPayload {
       ],
     },
     uri: { types: ['finance/transaction'] },
-    settings: { keys: ['finance.defaultCurrency'] },
+    consumedSettings: { keys: ['finance.defaultCurrency'] },
     healthcheck: { path: '/healthz' },
   };
 }

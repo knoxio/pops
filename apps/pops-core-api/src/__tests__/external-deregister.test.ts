@@ -48,7 +48,7 @@ function recipesManifest(overrides?: Partial<ManifestPayload>): ManifestPayload 
     search: { adapters: [] },
     ai: { tools: [] },
     uri: { types: ['recipes/recipe'] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/health' },
     ...overrides,
   };

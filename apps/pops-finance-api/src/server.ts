@@ -77,7 +77,7 @@ function buildFinanceManifest(version: string): ManifestPayload {
     search: { adapters: [] },
     ai: { tools: [] },
     uri: { types: ['finance/transaction', 'finance/wishlist-item', 'finance/budget'] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/health' },
   };
 }

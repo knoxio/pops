@@ -55,7 +55,7 @@ function buildFoodManifest(version: string): ManifestPayload {
     search: { adapters: [] },
     ai: { tools: [] },
     uri: { types: [] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/health' },
   };
 }

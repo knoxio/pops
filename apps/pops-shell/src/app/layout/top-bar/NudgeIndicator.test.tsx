@@ -61,7 +61,7 @@ function cerebrumDiscoveredPillar(): DiscoveredPillar {
       search: { adapters: [] },
       ai: { tools: [] },
       uri: { types: [] },
-      settings: { keys: [] },
+      consumedSettings: { keys: [] },
       healthcheck: { path: '/healthz' },
     },
   };

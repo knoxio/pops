@@ -1,4 +1,9 @@
-export { ManifestPayloadSchema, type ManifestPayload, type SinkDescriptor } from './schema.js';
+export {
+  ManifestPayloadSchema,
+  type ManifestPayload,
+  type SinkDescriptor,
+  type SettingsManifestDescriptor,
+} from './schema.js';
 export {
   validateManifestPayload,
   checkContractPackageMatchesPillar,

@@ -91,7 +91,7 @@ function financeManifest(): ManifestPayload {
     },
     ai: { tools: [] },
     uri: { types: ['finance/transaction'] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/healthz' },
   };
 }
@@ -127,7 +127,7 @@ function mediaManifest(): ManifestPayload {
     },
     ai: { tools: [] },
     uri: { types: ['media/movie'] },
-    settings: { keys: [] },
+    consumedSettings: { keys: [] },
     healthcheck: { path: '/healthz' },
   };
 }
