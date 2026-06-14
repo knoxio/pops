@@ -48,19 +48,12 @@
   },
   "dependencies": {
     "@pops/types": "workspace:*",
+    "@trpc/server": "^11.17.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
-  },
-  "peerDependencies": {
-    "@pops/inventory-api": "workspace:*"
-  },
-  "peerDependenciesMeta": {
-    "@pops/inventory-api": {
-      "optional": true
-    }
   }
 }
