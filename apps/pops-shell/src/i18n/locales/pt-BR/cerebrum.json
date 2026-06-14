@@ -1,4 +1,5 @@
 {
+  "captureOverlay.label": "Capturar",
   "ingest.title": "Capturar",
   "ingest.description": "Solte um pensamento no Cerebrum — tipo, escopo e tags são inferidos depois.",
   "ingest.type": "Tipo",

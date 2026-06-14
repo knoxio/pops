@@ -51,21 +51,6 @@ const CEREBRUM_NAV: NavConfigDescriptor = {
 };
 
 /**
- * Wire-format pages contribution for the cerebrum pillar (PRD-243 US-02).
- *
- * One descriptor per route declared in `@pops/app-cerebrum`'s `routes`
- * array. `bundleSlot` is the kebab-case identifier the shell-side
- * workspace bundle map (PRD-243 US-03) will resolve back to the React
- * component currently held in `installed-modules.ts`.
- *
- * The `chat` route hosts ego's chat panel (PRD-099) — it lives in
- * `@pops/app-cerebrum` so it stays mounted under `/cerebrum/*` even
- * though the chat panel itself ships from `@pops/overlay-ego`. Ego's
- * overlay surface (the floating FAB) is NOT carried here: the current
- * `NavConfigDescriptor` does not support overlay/shortcut shapes — that
- * gap is tracked for follow-up (see PR body).
- */
-/**
  * Wire-format capture overlay contribution for the cerebrum pillar
  * (PRD-246 US-02).
  *
@@ -88,6 +73,21 @@ const CEREBRUM_CAPTURE_OVERLAY: CaptureOverlayDescriptor = {
   labelKey: 'cerebrum.captureOverlay.label',
 };
 
+/**
+ * Wire-format pages contribution for the cerebrum pillar (PRD-243 US-02).
+ *
+ * One descriptor per route declared in `@pops/app-cerebrum`'s `routes`
+ * array. `bundleSlot` is the kebab-case identifier the shell-side
+ * workspace bundle map (PRD-243 US-03) will resolve back to the React
+ * component currently held in `installed-modules.ts`.
+ *
+ * The `chat` route hosts ego's chat panel (PRD-099) — it lives in
+ * `@pops/app-cerebrum` so it stays mounted under `/cerebrum/*` even
+ * though the chat panel itself ships from `@pops/overlay-ego`. Ego's
+ * overlay surface (the floating FAB) is NOT carried here: the current
+ * `NavConfigDescriptor` does not support overlay/shortcut shapes — that
+ * gap is tracked for follow-up (see PR body).
+ */
 const CEREBRUM_PAGES: readonly PageDescriptor[] = [
   { path: '', index: true, bundleSlot: 'cerebrum-ingest' },
   { path: 'chat', bundleSlot: 'cerebrum-chat' },

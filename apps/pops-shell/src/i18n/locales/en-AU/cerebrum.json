@@ -1,4 +1,5 @@
 {
+  "captureOverlay.label": "Capture",
   "ingest.title": "Capture",
   "ingest.description": "Drop a thought into Cerebrum \u2014 type, scope, and tags get inferred after.",
   "ingest.type": "Type",

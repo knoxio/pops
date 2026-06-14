@@ -1,6 +1,8 @@
-# US-02: Cerebrum's manifest declares `frontend.captureOverlay`
+# US-02: Cerebrum's manifest declares `captureOverlay`
 
 > PRD: [PRD-246 — Shell + API pillar decoupling](README.md)
+
+> **Wire-shape note.** PRD-246 drafts used `frontend.captureOverlay` as a conceptual grouping with the other UI dimensions. The actual wire shape PRD-246 US-01 (PR #3249) shipped is **top-level `captureOverlay`** on `ManifestPayload` — same level as `nav`, `pages`, `assetsBaseUrl`. References to `frontend.captureOverlay` below mean that top-level field.
 
 ## Description
 
