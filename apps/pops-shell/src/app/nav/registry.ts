@@ -1,31 +1,69 @@
 /**
- * App registry — single source of truth for navigation.
+ * App-rail registry — derived from a registry walk over the workspace
+ * bundle map (PRD-243 US-03).
  *
- * To add a new app:
- * 1. Create a package in packages/app-<name>/
- * 2. Export a navConfig: AppNavConfig from its index.ts
- * 3. Import it here and add to the registeredApps array
- * 4. Add its routes to the shell router (app/router.tsx)
+ * Replaces the pre-PRD-243 hand-curated `registeredApps` literal that
+ * imported each `@pops/app-*` package's `navConfig` by name. The walk
+ * iterates the workspace bundle map, picks up each entry's
+ * `manifest.frontend.navConfig`, and sorts by the manifest-level
+ * `navOrder` (mirrors `nav.order` on the pillar's wire-format manifest
+ * payload, per PRD-243 US-02). Ties break lexicographically on the nav
+ * `id` so authoring order is deterministic without tight numbering.
+ *
+ * Today every workspace bundle map entry that contributes a `navConfig`
+ * is in-repo. External pillars (PRD-228, US-05 deferred) will join the
+ * walk via the same path once their assets-base-url loading mechanism
+ * lands; for now their bundle map entries do not exist.
  */
-import { navConfig as aiNavConfig } from '@pops/app-ai';
-import { navConfig as cerebrumNavConfig } from '@pops/app-cerebrum';
-import { navConfig as financeNavConfig } from '@pops/app-finance';
-import { navConfig as foodNavConfig } from '@pops/app-food';
-import { navConfig as inventoryNavConfig } from '@pops/app-inventory';
-import { navConfig as listsNavConfig } from '@pops/app-lists';
-import { navConfig as mediaNavConfig } from '@pops/app-media';
+import { WORKSPACE_BUNDLE_MAP, type BundleEntry } from '../bundle-map';
 
 import type { AppNavConfig } from './types';
 
-/** All registered app nav configs. Order determines display order in the app rail. */
-export const registeredApps: AppNavConfig[] = [
-  financeNavConfig,
-  mediaNavConfig,
-  inventoryNavConfig,
-  foodNavConfig,
-  listsNavConfig,
-  cerebrumNavConfig,
-  aiNavConfig,
-];
+interface RankedNavConfig {
+  readonly order: number;
+  readonly nav: AppNavConfig;
+}
+
+function navConfigFromManifest(manifest: unknown): AppNavConfig | undefined {
+  if (typeof manifest !== 'object' || manifest === null) return undefined;
+  const frontend = (manifest as { frontend?: { navConfig?: unknown } }).frontend;
+  if (frontend === undefined) return undefined;
+  const navConfig = frontend.navConfig;
+  if (typeof navConfig !== 'object' || navConfig === null) return undefined;
+  return navConfig as AppNavConfig;
+}
+
+function compareRankedNav(a: RankedNavConfig, b: RankedNavConfig): number {
+  if (a.order !== b.order) return a.order - b.order;
+  if (a.nav.id === b.nav.id) return 0;
+  return a.nav.id < b.nav.id ? -1 : 1;
+}
+
+/**
+ * Build the app-rail registry from a bundle map snapshot. Exported so
+ * the US-03 test suite can exercise the walk against a synthetic bundle
+ * map without mutating the live `WORKSPACE_BUNDLE_MAP` singleton.
+ */
+export function buildRegisteredAppsFromBundleMap(
+  bundleMap: Readonly<Record<string, BundleEntry>>
+): AppNavConfig[] {
+  const ranked: RankedNavConfig[] = [];
+  for (const entry of Object.values(bundleMap)) {
+    const nav = navConfigFromManifest(entry.manifest);
+    if (nav === undefined) continue;
+    ranked.push({ order: entry.navOrder, nav });
+  }
+  ranked.sort(compareRankedNav);
+  return ranked.map((entry) => entry.nav);
+}
+
+/**
+ * All registered app nav configs. Sorted by `navOrder` ascending with a
+ * stable lexicographic tiebreak on `id`. Today's display order
+ * (`finance, media, inventory, food, lists, cerebrum, ai`) is preserved
+ * by the reconciled sparse scheme in `bundle-map.ts`.
+ */
+export const registeredApps: AppNavConfig[] =
+  buildRegisteredAppsFromBundleMap(WORKSPACE_BUNDLE_MAP);
 
 export type { AppNavConfig, AppNavItem } from './types';

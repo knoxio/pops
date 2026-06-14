@@ -10,6 +10,21 @@ describe('nav registry', () => {
     expect(registeredApps.length).toBeGreaterThan(0);
   });
 
+  // Parity gate — the seven in-repo pillars must render in the same order
+  // as the pre-PRD-243 hand-curated `registeredApps` literal. Drift here
+  // means audit H5's observable behaviour has regressed.
+  it('preserves the pre-PRD-243 app-rail order', () => {
+    expect(registeredApps.map((app) => app.id)).toEqual([
+      'finance',
+      'media',
+      'inventory',
+      'food',
+      'lists',
+      'cerebrum',
+      'ai',
+    ]);
+  });
+
   it.each(registeredApps.map((app) => [app.id, app] as const))(
     '%s app icon resolves through iconMap',
     (_, app) => {
