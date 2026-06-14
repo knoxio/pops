@@ -3,6 +3,9 @@ export {
   type ManifestPayload,
   type SinkDescriptor,
   type SettingsManifestDescriptor,
+  type NavConfigDescriptor,
+  type NavItemDescriptor,
+  type PageDescriptor,
 } from './schema.js';
 export {
   validateManifestPayload,

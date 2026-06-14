@@ -625,4 +625,113 @@ describe('ManifestPayloadSchema', () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe('ui dimensions (PRD-243 US-01)', () => {
+    const financeNavDescriptor = () => ({
+      id: 'finance',
+      label: 'Finance',
+      labelKey: 'finance',
+      icon: 'dollar-sign',
+      color: 'emerald' as const,
+      basePath: '/finance',
+      order: 140,
+      items: [
+        { path: '', label: 'Dashboard', labelKey: 'finance.dashboard', icon: 'layout-dashboard' },
+        {
+          path: 'transactions',
+          label: 'Transactions',
+          labelKey: 'finance.transactions',
+          icon: 'list',
+        },
+      ],
+    });
+
+    const financePages = () => [
+      { path: '', index: true, bundleSlot: 'finance-dashboard' },
+      { path: 'transactions', bundleSlot: 'finance-transactions' },
+    ];
+
+    it('accepts a manifest with nav / pages / assetsBaseUrl all omitted (backwards-compatible)', () => {
+      const result = ManifestPayloadSchema.safeParse(validManifest());
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a manifest with a valid nav + pages contribution', () => {
+      const m = { ...validManifest(), nav: financeNavDescriptor(), pages: financePages() };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts an empty pages array', () => {
+      const m = { ...validManifest(), pages: [] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects nav without the required order field', () => {
+      const { order: _omitted, ...nav } = financeNavDescriptor();
+      const m = { ...validManifest(), nav };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it.each(['finance', 'finance/dashboard', ''])(
+      'rejects nav.basePath that does not start with / (%s)',
+      (basePath) => {
+        const m = { ...validManifest(), nav: { ...financeNavDescriptor(), basePath } };
+        const result = ManifestPayloadSchema.safeParse(m);
+        expect(result.success).toBe(false);
+      }
+    );
+
+    it('rejects an unknown color enum value on nav', () => {
+      const m = { ...validManifest(), nav: { ...financeNavDescriptor(), color: 'crimson' } };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a non-kebab-case icon identifier', () => {
+      const m = { ...validManifest(), nav: { ...financeNavDescriptor(), icon: 'DollarSign' } };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects unknown field on nav descriptor (strict mode)', () => {
+      const m = { ...validManifest(), nav: { ...financeNavDescriptor(), sneaky: true } };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects unknown field on a page descriptor (strict mode)', () => {
+      const pages = [{ ...financePages()[0]!, sneaky: true }];
+      const m = { ...validManifest(), pages };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects a page descriptor missing bundleSlot', () => {
+      const m = { ...validManifest(), pages: [{ path: 'transactions' }] };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it.each([
+      'https://assets.example.com/finance/',
+      'https://cdn.example.com/v1/bundles/finance',
+      'http://localhost:5173/finance',
+    ])('accepts a valid absolute assetsBaseUrl (%s)', (assetsBaseUrl) => {
+      const m = { ...validManifest(), assetsBaseUrl };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it.each(['/finance', 'finance/bundles', 'not a url', ''])(
+      'rejects a non-URL assetsBaseUrl (%s)',
+      (assetsBaseUrl) => {
+        const m = { ...validManifest(), assetsBaseUrl };
+        const result = ManifestPayloadSchema.safeParse(m);
+        expect(result.success).toBe(false);
+      }
+    );
+  });
 });

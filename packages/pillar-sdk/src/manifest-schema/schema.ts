@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
 import { SettingsBlockSchema, type SettingsManifestDescriptor } from './settings.js';
+import {
+  AssetsBaseUrlSchema,
+  NavConfigDescriptorSchema,
+  PageDescriptorSchema,
+  type NavConfigDescriptor,
+  type NavItemDescriptor,
+  type PageDescriptor,
+} from './ui.js';
 
 const PILLAR_ID = z.string().regex(/^[a-z][a-z0-9-]*$/, 'pillar id must be lowercase kebab-case');
 
@@ -167,6 +175,9 @@ export const ManifestPayloadSchema = z
     uri: URI,
     consumedSettings: CONSUMED_SETTINGS,
     settings: SettingsBlockSchema.optional(),
+    nav: NavConfigDescriptorSchema.optional(),
+    pages: z.array(PageDescriptorSchema).optional(),
+    assetsBaseUrl: AssetsBaseUrlSchema.optional(),
     healthcheck: HEALTHCHECK,
   })
   .strict();
@@ -174,5 +185,7 @@ export const ManifestPayloadSchema = z
 export type SinkDescriptor = z.infer<typeof SINK_DESCRIPTOR>;
 
 export type { SettingsManifestDescriptor };
+
+export type { NavConfigDescriptor, NavItemDescriptor, PageDescriptor };
 
 export type ManifestPayload = z.infer<typeof ManifestPayloadSchema>;
