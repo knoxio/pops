@@ -1,11 +1,45 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { ErrorAlert, PageHeader } from '@pops/ui';
 
 import { AiUsageMainContent } from './ai-usage/ai-usage-main-content';
 import { AiUsagePageSkeleton } from './ai-usage/ai-usage-page-skeleton';
+
+import type { HistoryPayload } from './ai-usage/types';
+
+interface BreakdownRow {
+  key: string;
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
+interface StatsOutput {
+  totalCalls: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCostUsd: number;
+  cacheHitRate: number;
+  errorRate: number;
+  byProvider: BreakdownRow[];
+  byModel: BreakdownRow[];
+  byDomain: BreakdownRow[];
+  byOperation: BreakdownRow[];
+}
+
+interface QualityMetrics {
+  byModel: Array<{
+    provider: string;
+    model: string;
+    cacheHitRate: number;
+    errorRate: number;
+    timeoutRate: number;
+    averageLatencyMs: number;
+  }>;
+}
 
 export function AiUsagePage() {
   const [startDate, setStartDate] = useState('');
@@ -20,15 +54,19 @@ export function AiUsagePage() {
     data: stats,
     isLoading: statsLoading,
     error: statsError,
-  } = trpc.core.aiObservability.getStats.useQuery(filters);
+  } = usePillarQuery<StatsOutput>('core', ['aiObservability', 'getStats'], filters);
 
   const {
     data: history,
     isLoading: historyLoading,
     error: historyError,
-  } = trpc.core.aiObservability.getHistory.useQuery(filters);
+  } = usePillarQuery<HistoryPayload>('core', ['aiObservability', 'getHistory'], filters);
 
-  const { data: quality } = trpc.core.aiObservability.getQualityMetrics.useQuery(filters);
+  const { data: quality } = usePillarQuery<QualityMetrics>(
+    'core',
+    ['aiObservability', 'getQualityMetrics'],
+    filters
+  );
 
   const { t } = useTranslation('ai');
   const isLoading = statsLoading || historyLoading;

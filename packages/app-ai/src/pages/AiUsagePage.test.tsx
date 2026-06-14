@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock trpc hooks
 const mockGetStats = vi.fn();
 const mockGetHistory = vi.fn();
 const mockGetQualityMetrics = vi.fn();
@@ -10,58 +9,38 @@ const mockGetLatencyStats = vi.fn();
 const mockCacheStats = vi.fn();
 const mockClearStaleMutate = vi.fn();
 const mockClearAllMutate = vi.fn();
-const mockInvalidateCacheStats = vi.fn();
+const mockInvalidate = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    core: {
-      aiObservability: {
-        getStats: { useQuery: () => mockGetStats() },
-        getHistory: { useQuery: () => mockGetHistory() },
-        getQualityMetrics: { useQuery: () => mockGetQualityMetrics() },
-        getLatencyStats: { useQuery: () => mockGetLatencyStats() },
-      },
-      aiUsage: {
-        cacheStats: {
-          useQuery: () => mockCacheStats(),
-        },
-        clearStaleCache: {
-          useMutation: (_opts: Record<string, unknown>) => ({
-            mutate: mockClearStaleMutate,
-            isPending: false,
-          }),
-        },
-        clearAllCache: {
-          useMutation: (_opts: Record<string, unknown>) => ({
-            mutate: mockClearAllMutate,
-            isPending: false,
-          }),
-        },
-      },
-      aiProviders: {
-        list: { useQuery: () => ({ data: [], isLoading: false }) },
-        healthCheck: {
-          useMutation: (_opts: Record<string, unknown>) => ({
-            mutate: vi.fn(),
-            isPending: false,
-          }),
-        },
-      },
-      aiBudgets: {
-        getBudgetStatus: { useQuery: () => ({ data: [], isLoading: false }) },
-      },
-    },
-    useUtils: () => ({
-      core: {
-        aiUsage: {
-          cacheStats: { invalidate: mockInvalidateCacheStats },
-        },
-        aiProviders: {
-          list: { invalidate: vi.fn() },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'aiObservability.getStats') return mockGetStats();
+    if (key === 'aiObservability.getHistory') return mockGetHistory();
+    if (key === 'aiObservability.getQualityMetrics') return mockGetQualityMetrics();
+    if (key === 'aiObservability.getLatencyStats') return mockGetLatencyStats();
+    if (key === 'aiUsage.cacheStats') return mockCacheStats();
+    if (key === 'aiProviders.list') return { data: [], isLoading: false };
+    if (key === 'aiBudgets.getBudgetStatus') return { data: [], isLoading: false };
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'aiUsage.clearStaleCache') {
+      return { mutate: mockClearStaleMutate, isPending: false };
+    }
+    if (key === 'aiUsage.clearAllCache') {
+      return { mutate: mockClearAllMutate, isPending: false };
+    }
+    if (key === 'aiProviders.healthCheck') {
+      return { mutate: vi.fn(), isPending: false };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: mockInvalidate,
+    setData: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 vi.mock('sonner', () => ({
@@ -210,9 +189,7 @@ describe('CacheManagement', () => {
   it('calls clearAllCache mutation when confirmed', async () => {
     const user = userEvent.setup();
     render(<AiUsagePage />);
-    // Open dialog
     await user.click(screen.getByRole('button', { name: /Clear All/i }));
-    // The AlertDialogAction is the confirm button inside the dialog
     const dialogActions = screen.getAllByRole('button', { name: /Clear All/i });
     await user.click(dialogActions.at(-1)!);
     expect(mockClearAllMutate).toHaveBeenCalled();
@@ -238,7 +215,6 @@ describe('CacheManagement', () => {
   it('shows loading skeleton when cache stats are loading', () => {
     setupMocks({ cacheLoading: true });
     render(<AiUsagePage />);
-    // Cache section should show skeleton, but page still renders
     expect(screen.getByText('AI Observability')).toBeInTheDocument();
   });
 });

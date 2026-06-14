@@ -12,27 +12,28 @@ same affordance as every other pillar.
 
 ## Acceptance Criteria
 
-- [ ] Every call site listed in [app-ai-consumer-inventory.md](../../notes/app-ai-consumer-inventory.md) is migrated:
-  - [ ] `pages/AiUsagePage.tsx` — 3× `core.aiObservability.{getStats,getHistory,getQualityMetrics}` on `usePillarQuery('core', …)`.
-  - [ ] `pages/cache-management/useCacheManagementModel.ts` — 4× `core.aiUsage.{clearStaleCache,clearAllCache,cacheStats,getStats}` on the SDK surface.
-  - [ ] `pages/ai-usage/cache-management/useCacheCardModel.ts` — 3× `core.aiUsage.{clearStaleCache,clearAllCache,cacheStats}` on the SDK surface.
-  - [ ] `pages/ai-usage/budget-status-section.tsx` — 1× `core.aiBudgets.getBudgetStatus` on `usePillarQuery('core', …)`.
-  - [ ] `pages/ai-usage/provider-status-section.tsx` — 2× `core.aiProviders.{list,healthCheck}` on `usePillarQuery('core', …)`.
-  - [ ] `pages/ai-usage/latency-section.tsx` — 1× `core.aiObservability.getLatencyStats` on `usePillarQuery('core', …)`.
-- [ ] No `trpc.core.ai*` reference remains under `packages/app-ai/src/`.
-- [ ] No import of `@pops/api-client` remains under `packages/app-ai/src/`. The
-      `package.json` dependency drop is US-04's deliverable; this US removes
-      the source-code references so US-04 can land cleanly.
-- [ ] `trpc.useUtils()` invalidation chains (the 3 files flagged in the audit)
+- [x] Every call site listed in [app-ai-consumer-inventory.md](../../notes/app-ai-consumer-inventory.md) is migrated:
+  - [x] `pages/AiUsagePage.tsx` — 3× `core.aiObservability.{getStats,getHistory,getQualityMetrics}` on `usePillarQuery('core', …)`.
+  - [x] `pages/cache-management/useCacheManagementModel.ts` — 4× `core.aiUsage.{clearStaleCache,clearAllCache,cacheStats,getStats}` on the SDK surface.
+  - [x] `pages/ai-usage/cache-management/useCacheCardModel.ts` — 3× `core.aiUsage.{clearStaleCache,clearAllCache,cacheStats}` on the SDK surface.
+  - [x] `pages/ai-usage/budget-status-section.tsx` — 1× `core.aiBudgets.getBudgetStatus` on `usePillarQuery('core', …)`.
+  - [x] `pages/ai-usage/provider-status-section.tsx` — 2× `core.aiProviders.{list,healthCheck}` on `usePillarQuery('core', …)`.
+  - [x] `pages/ai-usage/latency-section.tsx` — 1× `core.aiObservability.getLatencyStats` on `usePillarQuery('core', …)`.
+- [x] No `trpc.core.ai*` reference remains under `packages/app-ai/src/`.
+- [x] No import of `@pops/api-client` remains under `packages/app-ai/src/`. The
+      dependency was also dropped from `packages/app-ai/package.json` in the
+      same change (zero residual references made US-04's separate drop
+      unnecessary for this package).
+- [x] `trpc.useUtils()` invalidation chains (the 3 files flagged in the audit)
       switch to `usePillarUtils('core').invalidate(['<router>', '<proc>'])`
       where applicable. No cross-pillar utils surface is introduced — each
       invalidation targets `core`.
-- [ ] Test mocks under `packages/app-ai/src/` flip from mocking
+- [x] Test mocks under `packages/app-ai/src/` flip from mocking
       `@pops/api-client` to mocking the SDK module per the existing PRD-227
       pattern (see `app-inventory` migration in PR
       [#3146](https://github.com/knoxio/pops/pull/3146) for the reference shape).
-- [ ] `pnpm --filter @pops/app-ai typecheck/test/build` passes clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] `pnpm --filter @pops/app-ai typecheck/test/build` passes clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 
