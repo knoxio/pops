@@ -108,9 +108,9 @@ function resolveRetentionDays(): number | undefined {
   const raw = process.env['HA_HISTORY_RETENTION_DAYS'];
   if (raw === undefined || raw === '') return undefined;
   const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0) {
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 3650) {
     throw new Error(
-      `[ha-bridge] HA_HISTORY_RETENTION_DAYS must be a non-negative integer; got '${raw}'`
+      `[ha-bridge] HA_HISTORY_RETENTION_DAYS must be an integer between 0 and 3650; got '${raw}'`
     );
   }
   return parsed;

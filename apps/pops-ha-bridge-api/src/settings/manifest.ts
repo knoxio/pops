@@ -5,9 +5,10 @@ import type { SettingsManifest } from '@pops/types';
  * settings UI / `discoverSettings` (ADR-037 / PRD-240) can render and
  * validate the bridge's retention knob.
  *
- * The history retention worker (`src/retention-worker.ts`) reads
- * `HA_HISTORY_RETENTION_DAYS` from env at boot. This descriptor declares
- * the same key + default + bounds so the setting is discoverable; the
+ * The boot path (`src/server.ts`) reads `HA_HISTORY_RETENTION_DAYS` from
+ * env and passes the resolved value into `startRetentionWorker()`; the
+ * worker itself does not touch env. This descriptor declares the same
+ * key + default + bounds so the setting is discoverable; the
  * `envFallback` hint tells consumers which env var the runtime currently
  * resolves from when no user-set value exists.
  */
