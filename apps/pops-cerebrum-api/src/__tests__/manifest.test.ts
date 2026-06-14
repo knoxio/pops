@@ -136,4 +136,30 @@ describe('buildCerebrumManifest', () => {
       expect(parsed.pages?.length).toBeGreaterThan(0);
     });
   });
+
+  describe('PRD-246 US-02 captureOverlay dimension', () => {
+    it('declares a captureOverlay block resolving to cerebrum IngestForm', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      expect(manifest.captureOverlay).toEqual({
+        bundleSlot: 'ingest-form',
+        order: 10,
+        hotkey: 'cmd+shift+k',
+        labelKey: 'cerebrum.captureOverlay.label',
+      });
+    });
+
+    it('passes ManifestPayloadSchema with the captureOverlay dimension present', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const parsed = ManifestPayloadSchema.parse(manifest);
+      expect(parsed.captureOverlay?.bundleSlot).toBe('ingest-form');
+    });
+
+    it('round-trips the captureOverlay dimension through JSON', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const roundTripped: unknown = JSON.parse(JSON.stringify(manifest));
+      const parsed = ManifestPayloadSchema.parse(roundTripped);
+      expect(parsed.captureOverlay?.hotkey).toBe('cmd+shift+k');
+      expect(parsed.captureOverlay?.order).toBe(10);
+    });
+  });
 });
