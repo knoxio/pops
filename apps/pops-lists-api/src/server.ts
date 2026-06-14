@@ -26,9 +26,8 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 
 import { createListsApiApp } from './app.js';
 import { resolveListsSqlitePath } from './lists-sqlite-path.js';
+import { buildListsManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
-
-import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
@@ -41,24 +40,6 @@ function resolvePort(): number {
     throw new Error(`[lists-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
-}
-
-function buildListsManifest(version: string): ManifestPayload {
-  return {
-    pillar: 'lists',
-    version,
-    contract: {
-      package: '@pops/lists-contract',
-      version,
-      tag: `contract-lists@v${version}`,
-    },
-    routes: { queries: [], mutations: [], subscriptions: [] },
-    search: { adapters: [] },
-    ai: { tools: [] },
-    uri: { types: [] },
-    consumedSettings: { keys: [] },
-    healthcheck: { path: '/health' },
-  };
 }
 
 const port = resolvePort();
