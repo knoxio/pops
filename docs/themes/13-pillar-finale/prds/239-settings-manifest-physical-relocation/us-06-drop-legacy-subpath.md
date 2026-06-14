@@ -1,6 +1,8 @@
 # US-06: Drop the `@pops/module-registry/settings` subpath and close PRD-238 US-02
 
 > PRD: [PRD-239 — Settings-manifest physical relocation](README.md)
+>
+> **Status: Deferred — folds into [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md).** [ADR-037](../../../../architecture/adr-037-settings-as-manifest-dimension.md) promotes settings to a first-class manifest dimension; the static SDK barrel that this US would have re-pointed away from `@pops/module-registry/settings` is being deleted entirely in PRD-240 US-05. Do not implement this US in isolation — its checklist (subpath delete, workspace-dep drop, PRD-238 US-02 closure) is absorbed by PRD-240 US-05's combined cleanup. Per-pillar source relocations US-01 … US-05 in this PRD remain load-bearing prerequisites for PRD-240.
 
 ## Description
 

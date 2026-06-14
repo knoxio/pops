@@ -2,18 +2,15 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 >
-> Status: **Unblocked — prerequisite landed; US-01 ready**
+> Status: **US-01 done; US-02 superseded — closes via [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md)**
 
-## Status note (2026-06-14)
+## Status note (2026-06-14, post-ADR-037)
 
-The Option B prerequisite shipped — `packages/pillar-sdk/src/settings/index.ts` now re-exports the 10 manifests (`aiConfigManifest`, `coreOperationalManifest`, `inventoryManifest`, `financeManifest`, `cerebrumManifest`, `egoManifest`, `arrManifest`, `plexManifest`, `rotationManifest`, `mediaOperationalManifest`) from `@pops/module-registry/settings`, the `./settings` subpath is declared in `pillar-sdk/package.json`'s `exports`, and pillar-sdk picks up a workspace dep on `@pops/module-registry`.
+[ADR-037](../../../../architecture/adr-037-settings-as-manifest-dimension.md) promotes settings to a first-class manifest dimension. The static `@pops/pillar-sdk/settings` named-export barrel that PR [#3176](https://github.com/knoxio/pops/pull/3176) flipped this PRD's six active call sites onto is being retired by [PRD-240](../240-settings-as-manifest-dimension/README.md). PRD-238 US-02 (delete `@pops/module-registry/settings`) is no longer on this PRD's critical path — the legacy subpath deletes inside [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md), together with the static SDK barrel and the `pillar-sdk` → `@pops/module-registry` workspace dep. The closure tracker for US-02 lives in PRD-240 US-05's PR; this PRD's US-02 checkboxes flip Done there.
 
-Status of the two options going into US-01:
+## Original status note (2026-06-14, pre-ADR-037)
 
-- **Option A (per-pillar packages)** — still unavailable. No `@pops/pillar-core`, `@pops/pillar-media`, `@pops/pillar-cerebrum`, `@pops/pillar-inventory`, or `@pops/pillar-finance` package exists under `packages/`; the per-pillar contract packages (`@pops/<pillar>-contract`) do not export `SettingsManifest` values. Picking Option A still requires scaffolding those packages first.
-- **Option B (`@pops/pillar-sdk/settings`)** — landed. US-01 can flip the 8 consumers to `import { … } from '@pops/pillar-sdk/settings'` today.
-
-US-01 picks the available target (Option B) and runs the mechanical sweep. US-02 (delete `@pops/module-registry/settings`) follows unchanged.
+The Option B prerequisite shipped — `packages/pillar-sdk/src/settings/index.ts` re-exports the 10 manifests (`aiConfigManifest`, `coreOperationalManifest`, `inventoryManifest`, `financeManifest`, `cerebrumManifest`, `egoManifest`, `arrManifest`, `plexManifest`, `rotationManifest`, `mediaOperationalManifest`) from `@pops/module-registry/settings`, the `./settings` subpath is declared in `pillar-sdk/package.json`'s `exports`, and pillar-sdk picks up a workspace dep on `@pops/module-registry`. US-01 picked Option B and migrated the six active import sites + two docstring refs.
 
 ## Overview
 
