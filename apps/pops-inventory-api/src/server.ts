@@ -24,9 +24,8 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { createInventoryApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
+import { buildInventoryManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
-
-import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -36,39 +35,6 @@ function resolvePort(): number {
     throw new Error(`[inventory-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
-}
-
-function buildInventoryManifest(version: string): ManifestPayload {
-  return {
-    pillar: 'inventory',
-    version,
-    contract: {
-      package: '@pops/inventory-contract',
-      version,
-      tag: `contract-inventory@v${version}`,
-    },
-    routes: {
-      queries: [
-        'inventory.locations.tree',
-        'inventory.locations.list',
-        'inventory.locations.get',
-        'inventory.locations.getPath',
-        'inventory.locations.children',
-        'inventory.locations.deleteStats',
-      ],
-      mutations: [
-        'inventory.locations.create',
-        'inventory.locations.update',
-        'inventory.locations.delete',
-      ],
-      subscriptions: [],
-    },
-    search: { adapters: [] },
-    ai: { tools: [] },
-    uri: { types: [] },
-    consumedSettings: { keys: [] },
-    healthcheck: { path: '/health' },
-  };
 }
 
 const port = resolvePort();
