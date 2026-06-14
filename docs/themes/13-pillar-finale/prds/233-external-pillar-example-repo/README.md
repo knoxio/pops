@@ -29,6 +29,10 @@ Out-of-tree from `pnpm-workspace.yaml`. No crate-level publishing.
 
 `examples/` is deliberately outside the workspace glob, so [PRD-241](../241-registry-driven-known-modules/README.md)'s build-time discovery walk over `@pops/*-contract` packages does not see this pillar — and never should. The Rust example reaches `core-api` via [ADR-027](../../../../architecture/adr-027-runtime-pillar-registry.md)'s runtime registry: it POSTs `core.registry.register` on boot (per [PRD-228](../228-dynamic-pillar-registration/README.md) §6) and is reflected in `pillar_registry` at runtime, not in `packages/module-registry/src/generated.ts`. PRD-241 (in-repo, build-time) and ADR-027 (external, runtime) are the two halves of the same discovery story; this PRD exercises the second.
 
+### Consumer-side onboarding
+
+A consumer in `pops/` calling into this Rust pillar uses `pillar('example-rust').callDynamic(routerName, procName, input, kind)` from `@pops/pillar-sdk`, not the typed `pillar('example-rust').<router>.<proc>` proxy. The Rust pillar's procedure shapes are not in the codegen-derived `AppRouter` catalogue ([PRD-242](../242-dynamic-approuter/README.md)), so consumers declare the response shape at the call site. See the developer note: [in-repo pillars vs external pillars](../../notes/internal-vs-external-pillar-call-sites.md).
+
 ## API Surface
 
 The example implements the subset of v1 needed to demonstrate end-to-end correctness:
