@@ -394,6 +394,9 @@ importers:
       '@pops/db-types':
         specifier: workspace:*
         version: link:../../packages/db-types
+      '@pops/finance-contract':
+        specifier: workspace:*
+        version: link:../../packages/finance-contract
       '@pops/finance-db':
         specifier: workspace:*
         version: link:../../packages/finance-db
