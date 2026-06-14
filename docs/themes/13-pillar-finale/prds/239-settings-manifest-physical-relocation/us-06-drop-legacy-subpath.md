@@ -2,7 +2,7 @@
 
 > PRD: [PRD-239 — Settings-manifest physical relocation](README.md)
 >
-> **Status: Deferred — folds into [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md).** [ADR-037](../../../../architecture/adr-037-settings-as-manifest-dimension.md) promotes settings to a first-class manifest dimension; the static SDK barrel that this US would have re-pointed away from `@pops/module-registry/settings` is being deleted entirely in PRD-240 US-05. Do not implement this US in isolation — its checklist (subpath delete, workspace-dep drop, PRD-238 US-02 closure) is absorbed by PRD-240 US-05's combined cleanup. Per-pillar source relocations US-01 … US-05 in this PRD remain load-bearing prerequisites for PRD-240.
+> **Status: Done** — closed alongside [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md) (folded cleanup). [ADR-037](../../../../architecture/adr-037-settings-as-manifest-dimension.md) promoted settings to a first-class manifest dimension; the static SDK barrel and the `@pops/module-registry/settings` subpath were deleted together in PRD-240 US-05, which also closed [PRD-238 US-02](../238-settings-known-modules-surface/us-02-delete-legacy-settings-subpath.md). Per-pillar source relocations US-01 … US-05 in this PRD were load-bearing prerequisites and are also Done.
 
 ## Description
 
@@ -10,16 +10,16 @@ As a maintainer retiring `@pops/module-registry`, I want the `./settings` subpat
 
 ## Acceptance Criteria
 
-- [ ] `packages/module-registry/src/settings/` is deleted (the directory is already emptied by US-01 … US-05; only `index.ts` remains — delete it too).
-- [ ] The `./settings` entry is removed from `packages/module-registry/package.json`'s `exports` map.
-- [ ] `packages/module-registry`'s root barrel (`src/index.ts`) does not re-export anything from the deleted directory — confirm and remove any stale lines.
-- [ ] `packages/pillar-sdk/package.json` removes `@pops/module-registry` from `dependencies` — the SDK no longer references it for any reason.
-- [ ] `packages/pillar-sdk/src/settings/index.ts` has zero references to `@pops/module-registry` (already true after US-01 … US-05 land; verify).
-- [ ] `grep -rn "@pops/module-registry/settings" packages apps` returns zero matches under any `src/` directory (build artefacts under `dist/` are ignored).
-- [ ] [PRD-238 US-02](../238-settings-known-modules-surface/us-02-delete-legacy-settings-subpath.md) is marked **Done** in its checkboxes and the PRD-238 status table.
-- [ ] `pnpm --filter @pops/module-registry typecheck/test/build`, `pnpm --filter @pops/pillar-sdk typecheck/test/build`, and the full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` all pass clean.
-- [ ] `pnpm --filter @pops/api test` passes.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] `packages/module-registry/src/settings/` is deleted (the directory is already emptied by US-01 … US-05; only `index.ts` remains — delete it too).
+- [x] The `./settings` entry is removed from `packages/module-registry/package.json`'s `exports` map.
+- [x] `packages/module-registry`'s root barrel (`src/index.ts`) does not re-export anything from the deleted directory — confirm and remove any stale lines.
+- [x] `packages/pillar-sdk/package.json` removes `@pops/module-registry` from `dependencies` — the SDK no longer references it for any reason.
+- [x] `packages/pillar-sdk/src/settings/index.ts` has zero references to `@pops/module-registry` (already true after US-01 … US-05 land; verify).
+- [x] `grep -rn "@pops/module-registry/settings" packages apps` returns zero matches under any `src/` directory (build artefacts under `dist/` are ignored).
+- [x] [PRD-238 US-02](../238-settings-known-modules-surface/us-02-delete-legacy-settings-subpath.md) is marked **Done** in its checkboxes and the PRD-238 status table.
+- [x] `pnpm --filter @pops/module-registry typecheck/test/build`, `pnpm --filter @pops/pillar-sdk typecheck/test/build`, and the full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` all pass clean.
+- [x] `pnpm --filter @pops/api test` passes.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

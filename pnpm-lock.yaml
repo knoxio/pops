@@ -2335,9 +2335,6 @@ importers:
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../media-contract
-      '@pops/module-registry':
-        specifier: workspace:*
-        version: link:../module-registry
       zod:
         specifier: ^4.4.3
         version: 4.4.3

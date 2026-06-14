@@ -2,7 +2,7 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 >
-> Status: **US-01 done; US-02 superseded — closes via [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md)**
+> Status: **Done** — US-01 shipped; US-02 closed alongside [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md) (folded cleanup)
 
 ## Status note (2026-06-14, post-ADR-037)
 
@@ -68,10 +68,10 @@ The implementation in US-01 picks one option, justifies it inline, and applies i
 
 ## User Stories
 
-| #   | Story                                                                           | Summary                                                                                                                       | Parallelisable                                  |
-| --- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| 01  | [us-01-pick-target-and-migrate](us-01-pick-target-and-migrate.md)               | Pick Option A or B, host the per-pillar `SettingsManifest` exports there, flip all 6 active import sites and 2 docstring refs | No — single mechanical sweep across the 8 files |
-| 02  | [us-02-delete-legacy-settings-subpath](us-02-delete-legacy-settings-subpath.md) | Delete `@pops/module-registry/settings` subpath + exports; confirm no consumers remain                                        | Blocked by us-01                                |
+| #   | Story                                                                           | Summary                                                                                                                                                                                                                 | Parallelisable                                  |
+| --- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| 01  | [us-01-pick-target-and-migrate](us-01-pick-target-and-migrate.md)               | Pick Option A or B, host the per-pillar `SettingsManifest` exports there, flip all 6 active import sites and 2 docstring refs                                                                                           | No — single mechanical sweep across the 8 files |
+| 02  | [us-02-delete-legacy-settings-subpath](us-02-delete-legacy-settings-subpath.md) | Delete `@pops/module-registry/settings` subpath + exports; confirm no consumers remain. **Done** — closed via [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md). | Blocked by us-01                                |
 
 ## Acceptance Criteria
 

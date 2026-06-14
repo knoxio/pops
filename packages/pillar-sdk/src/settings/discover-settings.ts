@@ -12,14 +12,7 @@
  * no module-level fetch. The helper does not own discovery; it consumes
  * it.
  *
- * Lookup by id replaces the named-import pattern the legacy
- * `@pops/pillar-sdk/settings` barrel exposed. Consumers migrate from:
- *
- * ```ts
- * import { financeManifest } from '@pops/pillar-sdk/settings';
- * ```
- *
- * to:
+ * Typical usage:
  *
  * ```ts
  * import { discoverSettings, findSettingsManifest } from '@pops/pillar-sdk/settings';
@@ -88,10 +81,6 @@ export async function discoverSettings(
 
 /**
  * Find a single settings manifest by id in a discovery result.
- *
- * The named-import replacement: where consumers used to write
- * `import { financeManifest } from '@pops/pillar-sdk/settings'`, they now
- * write `findSettingsManifest(await discoverSettings({ discovery }), 'finance')`.
  *
  * Returns `undefined` when no manifest with the given id is present —
  * callers decide whether that is a soft miss (pillar not deployed in this

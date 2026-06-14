@@ -77,7 +77,6 @@
     "@pops/finance-contract": "workspace:*",
     "@pops/inventory-contract": "workspace:*",
     "@pops/media-contract": "workspace:*",
-    "@pops/module-registry": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

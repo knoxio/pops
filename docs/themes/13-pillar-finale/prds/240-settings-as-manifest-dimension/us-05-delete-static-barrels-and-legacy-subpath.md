@@ -1,6 +1,8 @@
 # US-05: Delete the static settings barrel + the `@pops/module-registry/settings` subpath
 
 > PRD: [PRD-240 — Settings as a first-class manifest dimension](README.md)
+>
+> Status: **Done**
 
 ## Description
 
@@ -8,17 +10,17 @@ As a maintainer closing the loop on the registry-discovery direction, I want eve
 
 ## Acceptance Criteria
 
-- [ ] `packages/pillar-sdk/src/settings/index.ts` exports only `discoverSettings` + `findSettingsManifest`. Every `export { financeManifest }`-style named re-export is removed. The file is small (helpers + re-exports of helpers; no manifest imports).
-- [ ] `packages/pillar-sdk/package.json` removes `@pops/module-registry` from `dependencies` — the SDK no longer references it for any reason.
-- [ ] `packages/module-registry/src/settings/` is deleted (the directory is already emptied by PRD-239 US-01 … US-05; this US deletes the residual `index.ts` and the directory itself).
-- [ ] The `./settings` entry is removed from `packages/module-registry/package.json`'s `exports` map.
-- [ ] `packages/module-registry`'s root barrel (`src/index.ts`) does not re-export anything from the deleted directory — confirm and remove any stale lines.
-- [ ] `grep -rn "@pops/module-registry/settings" packages apps` returns zero matches under any `src/` directory.
-- [ ] `grep -rn "from '@pops/pillar-sdk/settings'" packages apps` returns only `discoverSettings` / `findSettingsManifest` references — zero named-manifest imports.
-- [ ] [PRD-238 US-02](../238-settings-known-modules-surface/us-02-delete-legacy-settings-subpath.md) is marked **Done** in its checkboxes and the PRD-238 status table.
-- [ ] [PRD-239 US-06](../239-settings-manifest-physical-relocation/us-06-drop-legacy-subpath.md) is marked **Done** in its checkboxes and the PRD-239 status table.
-- [ ] `pnpm --filter @pops/module-registry typecheck/test/build`, `pnpm --filter @pops/pillar-sdk typecheck/test/build`, `pnpm --filter @pops/api typecheck/test`, and the full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` all pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] `packages/pillar-sdk/src/settings/index.ts` exports only `discoverSettings` + `findSettingsManifest`. Every `export { financeManifest }`-style named re-export is removed. The file is small (helpers + re-exports of helpers; no manifest imports).
+- [x] `packages/pillar-sdk/package.json` removes `@pops/module-registry` from `dependencies` — the SDK no longer references it for any reason.
+- [x] `packages/module-registry/src/settings/` is deleted (the directory is already emptied by PRD-239 US-01 … US-05; this US deletes the residual `index.ts` and the directory itself).
+- [x] The `./settings` entry is removed from `packages/module-registry/package.json`'s `exports` map.
+- [x] `packages/module-registry`'s root barrel (`src/index.ts`) does not re-export anything from the deleted directory — confirm and remove any stale lines.
+- [x] `grep -rn "@pops/module-registry/settings" packages apps` returns zero matches under any `src/` directory.
+- [x] `grep -rn "from '@pops/pillar-sdk/settings'" packages apps` returns only `discoverSettings` / `findSettingsManifest` references — zero named-manifest imports.
+- [x] [PRD-238 US-02](../238-settings-known-modules-surface/us-02-delete-legacy-settings-subpath.md) is marked **Done** in its checkboxes and the PRD-238 status table.
+- [x] [PRD-239 US-06](../239-settings-manifest-physical-relocation/us-06-drop-legacy-subpath.md) is marked **Done** in its checkboxes and the PRD-239 status table.
+- [x] `pnpm --filter @pops/module-registry typecheck/test/build`, `pnpm --filter @pops/pillar-sdk typecheck/test/build`, `pnpm --filter @pops/api typecheck/test`, and the full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` all pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 
