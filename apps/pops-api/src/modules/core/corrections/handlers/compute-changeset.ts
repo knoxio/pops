@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 
-import { transactionCorrections } from '@pops/db-types';
+import { transactionCorrections } from '@pops/core-db';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { buildTargetRulesMap } from '../pure-service.js';

@@ -1,7 +1,8 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-import { entities } from './entities.js';
+import { entities } from '@pops/core-db';
+
 import { locations } from './locations.js';
 import { transactions } from './transactions.js';
 

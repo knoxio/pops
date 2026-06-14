@@ -12,6 +12,7 @@
  */
 export * from './errors.js';
 export * from './schema.js';
+export * from './schema/row-schemas.js';
 
 export type { CoreDb } from './services/internal.js';
 
