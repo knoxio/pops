@@ -8,6 +8,8 @@
 
 The build-time `@pops/module-registry` (PRD-101) was the shell's static install-set registry. After Theme 13, the runtime registry (Epic 02) is authoritative. This PRD deprecates the build-time registry: it becomes a thin shim around the runtime registry, with an offline-dev fallback for cases where the registry isn't reachable.
 
+[PRD-241](../241-registry-driven-known-modules/README.md) is a strict predecessor: `module-registry` cannot be retired until its hand-curated `MANIFEST_SOURCES` literal in `scripts/known-modules.ts` is replaced by the workspace discovery walk. PRD-241 reshapes the build script; this PRD then retires the package on top of that.
+
 ## Data Model
 
 No data.

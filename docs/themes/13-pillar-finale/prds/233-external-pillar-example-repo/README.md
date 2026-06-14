@@ -25,6 +25,10 @@ examples/pops-pillar-rust-example/
 
 Out-of-tree from `pnpm-workspace.yaml`. No crate-level publishing.
 
+### Discovery boundary
+
+`examples/` is deliberately outside the workspace glob, so [PRD-241](../241-registry-driven-known-modules/README.md)'s build-time discovery walk over `@pops/*-contract` packages does not see this pillar — and never should. The Rust example reaches `core-api` via [ADR-027](../../../../architecture/adr-027-runtime-pillar-registry.md)'s runtime registry: it POSTs `core.registry.register` on boot (per [PRD-228](../228-dynamic-pillar-registration/README.md) §6) and is reflected in `pillar_registry` at runtime, not in `packages/module-registry/src/generated.ts`. PRD-241 (in-repo, build-time) and ADR-027 (external, runtime) are the two halves of the same discovery story; this PRD exercises the second.
+
 ## API Surface
 
 The example implements the subset of v1 needed to demonstrate end-to-end correctness:

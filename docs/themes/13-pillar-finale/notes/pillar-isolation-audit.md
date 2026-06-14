@@ -28,7 +28,8 @@ This file is the source of truth that `pnpm registry:build` consumes to emit `pa
 
 - **Why HIGH** — it is the root that every other hand-curation in this audit ultimately mirrors. Adding a pillar (in-repo or external) cannot work until this file knows about it.
 - **Remediation** — replace the literal `MANIFEST_SOURCES` array with a build step that discovers `packages/<id>-contract/manifest.{ts,json}` (or `apps/pops-<id>-api/manifest.{ts,json}`) and aggregates them. For external pillars, the runtime registry (ADR-027) already does this via the `POPS_PILLARS` env var + `GET /manifest.json` per registered URL. The build-time `KNOWN_MODULES` is only needed for type narrowing — emit it from the discovered set. Settings manifests landed in per-pillar contract packages by PRD-239 already; the next step is to drop `MANIFEST_SOURCES` and discover via convention.
-- **In-flight** — PRD-218 (module-registry deprecation) plans to retire the package; this finding amplifies the case for ordering that work alongside the pillar discovery work.
+- **Closed by** — [PRD-241](../prds/241-registry-driven-known-modules/README.md): replaces `MANIFEST_SOURCES` with a build-time discovery walk over `@pops/*-contract` workspace packages. The external-pillar half of the remediation (workspace glob excludes `examples/`; external pillars take the ADR-027 runtime path) is documented in PRD-241 US-03 and cross-referenced from [ADR-027](../../../architecture/adr-027-runtime-pillar-registry.md), [PRD-218](../prds/218-module-registry-deprecation/README.md), and [PRD-233](../prds/233-external-pillar-example-repo/README.md).
+- **In-flight** — PRD-218 (module-registry deprecation) still retires the package itself; PRD-241 is a strict predecessor — `module-registry` cannot be retired until its hand-curated `known-modules.ts` is replaced. PRD-218 remains tracked against the broader `module-registry` retirement (and L1 closes with it), not against H1 specifically.
 
 #### H2 — `packages/pillar-sdk/src/settings/index.ts` is a hand-curated SDK barrel
 
@@ -265,7 +266,8 @@ A spot-check across `docs/architecture/adr-026-pillar-architecture.md`, `adr-035
 
 - **PRD-239** (settings manifest physical relocation) — relocates 10 settings manifests from `module-registry` into per-pillar `-contract/settings`. Does NOT eliminate the `pillar-sdk/settings` barrel itself — just changes where it re-exports from. Closes the H2 _location_ but not its hand-curation shape.
 - **"PRD-240"** (not yet numbered; user described as the discoverSettings replacement) — proposes replacing the hand-curated `pillar-sdk/settings/index.ts` with a runtime `discoverSettings()` over the registry. Closes H2.
-- **PRD-218** (module-registry deprecation) — retires `@pops/module-registry`. Closes H1, L1.
+- **PRD-241** (registry-driven `known-modules`) — replaces the `MANIFEST_SOURCES` literal with a workspace discovery walk. Closes H1. Strict predecessor to PRD-218.
+- **PRD-218** (module-registry deprecation) — retires `@pops/module-registry`. Closes L1; depends on PRD-241 for the build-script reshape that frees the package to be retired.
 - **ADR-026 migration roadmap** (private, `.claude/pillar-migration-roadmap.md`) — drives the per-pillar `-db` / `-api` split. Closes H3, H6, M1, M2, M5, L7, L8.
 - **PRD-228** (dynamic pillar registration) — runtime registry growth. Adjacent to H4, H5, H9, M7.
 - **PRD-156** (consumer import discipline) — produces `.dependency-cruiser.rules.generated.cjs`. Already gates new cross-pillar imports; existing violations are tracked in `.dependency-cruiser-known-violations.json` and itemised by H8.

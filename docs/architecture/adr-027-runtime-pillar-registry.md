@@ -35,3 +35,9 @@ The registry is a **directory** (look up baseUrl + manifest, then call directly)
 - ❌ Boot ordering: pillars need core-api up to register. Mitigation: pillars retry registration with backoff; consumers tolerate `unknown` state during reconciliation windows.
 - ❌ core-api becomes a critical dependency for capability discovery. Mitigation: registry is read-mostly, cached aggressively, and tolerates short core-api outages.
 - ❌ One more table in core.db. Acceptable.
+
+## Related
+
+- [PRD-241 — Registry-driven `known-modules`](../themes/13-pillar-finale/prds/241-registry-driven-known-modules/README.md) covers **in-repo** discovery for workspace pillars: a build-time walk over `@pops/*-contract` packages that replaces the hand-curated `MANIFEST_SOURCES` literal. The workspace glob deliberately excludes `examples/`, so external pillars never appear in `packages/module-registry/src/generated.ts`. This ADR's runtime registry is the path for **external** (non-workspace) pillars — see PRD-241 US-03 for the boundary statement.
+- [PRD-228 — Dynamic pillar registration](../themes/13-pillar-finale/prds/228-dynamic-pillar-registration/README.md) implements the runtime register / heartbeat / deregister API external pillars call.
+- [PRD-233 — External pillar example (Rust)](../themes/13-pillar-finale/prds/233-external-pillar-example-repo/README.md) is the worked example that exercises the runtime path end-to-end.

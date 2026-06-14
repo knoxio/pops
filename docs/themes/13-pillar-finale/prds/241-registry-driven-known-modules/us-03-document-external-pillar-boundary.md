@@ -8,13 +8,13 @@ As a future pillar author, I want the docs to spell out where PRD-241's in-repo 
 
 ## Acceptance Criteria
 
-- [ ] The [pillar-isolation audit](../../notes/pillar-isolation-audit.md)'s `### H1 — packages/module-registry/scripts/known-modules.ts hand-curates every pillar` entry gains a status line: **Closed by [PRD-241](../prds/241-registry-driven-known-modules/README.md)**. The "In-flight" reference to PRD-218 stays; PRD-241 is the closer for H1 specifically.
-- [ ] [ADR-027](../../../../architecture/adr-027-runtime-pillar-registry.md) gains (or has confirmed already-present) a cross-reference to PRD-241 in the "Related" / "References" section: "PRD-241 covers in-repo discovery for workspace pillars; ADR-027's runtime registry covers external (non-workspace) pillars."
-- [ ] [PRD-218](../218-module-registry-deprecation/README.md) README acknowledges PRD-241 as a strict predecessor: `module-registry` cannot be retired until its hand-curated `known-modules.ts` is replaced. One sentence in the PRD-218 background or sequencing notes is enough.
-- [ ] [PRD-233](../233-external-pillar-example-repo/README.md) README explicitly notes the boundary: the Rust example pillar lives in `examples/` (outside the workspace glob), so PRD-241's discovery does not pick it up. The Rust pillar's path is the runtime registry per ADR-027. One sentence or short "Discovery boundary" note in the PRD background.
-- [ ] The PRD-241 README's `## Out of Scope` and `## Edge Cases` already describe the boundary. US-03 does not duplicate that prose — it makes the audit + ADR-027 + PRD-233 + PRD-218 mutually consistent so a reader landing on any one of them sees the same boundary articulated.
-- [ ] `pnpm format docs/` is clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] The [pillar-isolation audit](../../notes/pillar-isolation-audit.md)'s `### H1 — packages/module-registry/scripts/known-modules.ts hand-curates every pillar` entry gains a status line: **Closed by [PRD-241](../prds/241-registry-driven-known-modules/README.md)**. The "In-flight" reference to PRD-218 stays; PRD-241 is the closer for H1 specifically.
+- [x] [ADR-027](../../../../architecture/adr-027-runtime-pillar-registry.md) gains (or has confirmed already-present) a cross-reference to PRD-241 in the "Related" / "References" section: "PRD-241 covers in-repo discovery for workspace pillars; ADR-027's runtime registry covers external (non-workspace) pillars."
+- [x] [PRD-218](../218-module-registry-deprecation/README.md) README acknowledges PRD-241 as a strict predecessor: `module-registry` cannot be retired until its hand-curated `known-modules.ts` is replaced. One sentence in the PRD-218 background or sequencing notes is enough.
+- [x] [PRD-233](../233-external-pillar-example-repo/README.md) README explicitly notes the boundary: the Rust example pillar lives in `examples/` (outside the workspace glob), so PRD-241's discovery does not pick it up. The Rust pillar's path is the runtime registry per ADR-027. One sentence or short "Discovery boundary" note in the PRD background.
+- [x] The PRD-241 README's `## Out of Scope` and `## Edge Cases` already describe the boundary. US-03 does not duplicate that prose — it makes the audit + ADR-027 + PRD-233 + PRD-218 mutually consistent so a reader landing on any one of them sees the same boundary articulated.
+- [x] `pnpm format docs/` is clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 
