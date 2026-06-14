@@ -1,4 +1,8 @@
-import { aiConfigManifest, coreOperationalManifest } from '@pops/pillar-sdk/settings';
+import {
+  aiConfigManifest as ownAiConfigManifest,
+  coreOperationalManifest as ownCoreOperationalManifest,
+} from '@pops/core-contract/settings';
+import { discoverSettings, findSettingsManifest } from '@pops/pillar-sdk/settings';
 
 /**
  * Core domain — cross-cutting concerns shared across finance & inventory.
@@ -7,6 +11,7 @@ import { aiConfigManifest, coreOperationalManifest } from '@pops/pillar-sdk/sett
  * not included here.
  */
 import { router } from '../../trpc.js';
+import { getLocalSettingsDiscoverySnapshot } from '../settings-discovery-snapshot.js';
 import { aiAlertsRouter } from './ai-alerts/router.js';
 import { aiBudgetsRouter } from './ai-budgets/router.js';
 import { aiObservabilityRouter } from './ai-observability/router.js';
@@ -26,7 +31,7 @@ import { shellRouter } from './shell/router.js';
 import { tagRulesRouter } from './tag-rules/router.js';
 import { uriRouter } from './uri/router.js';
 
-import type { ModuleManifest } from '@pops/types';
+import type { ModuleManifest, SettingsManifest } from '@pops/types';
 
 export const coreRouter = router({
   entities: entitiesRouter,
@@ -45,6 +50,15 @@ export const coreRouter = router({
   shell: shellRouter,
   uri: uriRouter,
 });
+
+const discoveredSettings = await discoverSettings({
+  discovery: getLocalSettingsDiscoverySnapshot(),
+});
+
+const aiConfigManifest: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'ai.config') ?? ownAiConfigManifest;
+const coreOperationalManifest: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'core.operational') ?? ownCoreOperationalManifest;
 
 /**
  * PRD-098 manifest. Core is the always-mounted shell module that every
