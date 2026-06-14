@@ -1,3 +1,7 @@
+/**
+ * Root App component with all providers
+ */
+import { isNetworkError } from '@/lib/network-error';
 import { trpc, trpcClient } from '@/lib/trpc';
 import { useThemeStore } from '@/store/themeStore';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -6,10 +10,6 @@ import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
 import { toast } from 'sonner';
 
-/**
- * Root App component with all providers
- */
-import { isNetworkError } from '@pops/api-client';
 import { PillarSdkProvider } from '@pops/pillar-sdk/react';
 import { Toaster, TooltipProvider } from '@pops/ui';
 
