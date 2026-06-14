@@ -315,6 +315,9 @@ importers:
 
   apps/pops-core-api:
     dependencies:
+      '@pops/core-contract':
+        specifier: workspace:*
+        version: link:../../packages/core-contract
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
