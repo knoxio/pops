@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@pops/media-contract": "workspace:*",
     "@pops/media-db": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",

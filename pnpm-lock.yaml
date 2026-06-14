@@ -673,6 +673,9 @@ importers:
 
   apps/pops-media-api:
     dependencies:
+      '@pops/media-contract':
+        specifier: workspace:*
+        version: link:../../packages/media-contract
       '@pops/media-db':
         specifier: workspace:*
         version: link:../../packages/media-db
