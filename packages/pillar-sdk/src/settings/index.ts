@@ -8,6 +8,7 @@
  * Pure re-export — no shape change, no runtime behaviour change.
  */
 export { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
+export { cerebrumManifest, egoManifest } from '@pops/cerebrum-contract/settings';
 export { financeManifest } from '@pops/finance-contract/settings';
 export {
   arrManifest,
@@ -15,8 +16,4 @@ export {
   rotationManifest,
   mediaOperationalManifest,
 } from '@pops/media-contract/settings';
-export {
-  inventoryManifest,
-  cerebrumManifest,
-  egoManifest,
-} from '@pops/module-registry/settings';
+export { inventoryManifest } from '@pops/module-registry/settings';

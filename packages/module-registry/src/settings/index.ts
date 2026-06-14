@@ -5,5 +5,3 @@
  * runtime dependencies beyond `@pops/types`.
  */
 export { inventoryManifest } from './inventory/index.js';
-export { cerebrumManifest } from './cerebrum/index.js';
-export { egoManifest } from './ego/index.js';

@@ -72,6 +72,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@pops/cerebrum-contract": "workspace:*",
     "@pops/core-contract": "workspace:*",
     "@pops/finance-contract": "workspace:*",
     "@pops/media-contract": "workspace:*",

@@ -22,6 +22,7 @@
  * See `docs/themes/01-foundation/prds/101-plugin-contract/us-02-build-time-registry.md`
  * and `us-04-settings-from-registry.md`.
  */
+import { cerebrumManifest, egoManifest } from '@pops/cerebrum-contract/settings';
 import { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
 import { financeManifest } from '@pops/finance-contract/settings';
 import {
@@ -31,11 +32,7 @@ import {
   rotationManifest,
 } from '@pops/media-contract/settings';
 
-import {
-  cerebrumManifest,
-  egoManifest,
-  inventoryManifest,
-} from '../src/settings/index.js';
+import { inventoryManifest } from '../src/settings/index.js';
 
 import type { ModuleManifest } from '@pops/types';
 
