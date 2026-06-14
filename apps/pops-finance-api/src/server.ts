@@ -27,8 +27,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { createFinanceApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
-
-import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
+import { buildFinanceManifest } from './manifest.js';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
@@ -40,46 +39,6 @@ function resolvePort(): number {
     throw new Error(`[finance-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
-}
-
-function buildFinanceManifest(version: string): ManifestPayload {
-  return {
-    pillar: 'finance',
-    version,
-    contract: {
-      package: '@pops/finance-contract',
-      version,
-      tag: `contract-finance@v${version}`,
-    },
-    routes: {
-      queries: [
-        'finance.wishlist.list',
-        'finance.wishlist.get',
-        'finance.budgets.list',
-        'finance.budgets.get',
-        'finance.transactions.list',
-        'finance.transactions.get',
-      ],
-      mutations: [
-        'finance.wishlist.create',
-        'finance.wishlist.update',
-        'finance.wishlist.delete',
-        'finance.budgets.create',
-        'finance.budgets.update',
-        'finance.budgets.delete',
-        'finance.transactions.create',
-        'finance.transactions.update',
-        'finance.transactions.delete',
-        'finance.transactions.restore',
-      ],
-      subscriptions: [],
-    },
-    search: { adapters: [] },
-    ai: { tools: [] },
-    uri: { types: ['finance/transaction', 'finance/wishlist-item', 'finance/budget'] },
-    consumedSettings: { keys: [] },
-    healthcheck: { path: '/health' },
-  };
 }
 
 const port = resolvePort();
