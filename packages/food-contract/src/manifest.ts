@@ -4,5 +4,21 @@
  * `pnpm -F @pops/food-contract generate:manifest` (Theme 13 PRD-155).
  * This file remains the stable import path (`@pops/food-contract/manifest`)
  * so downstream consumers don't move with the generator output.
+ *
+ * PRD-241 US-01 adds the runtime `ModuleManifest` value for `food` here.
+ * Mirrors the entry currently inlined in
+ * `packages/module-registry/scripts/known-modules.ts`'s `MANIFEST_SOURCES`.
+ * PRD-241 US-02 will replace that literal with a workspace discovery walk
+ * that consumes this export. Food declares no settings dimension today.
  */
+import type { ModuleManifest } from '@pops/types';
+
 export type { FoodContract } from './manifest.generated.js';
+
+export const foodManifest: ModuleManifest = {
+  id: 'food',
+  name: 'Food',
+  version: '0.1.0',
+  surfaces: ['app'],
+  description: 'Recipes, ingredients, meal planning, and multimodal ingestion.',
+};
