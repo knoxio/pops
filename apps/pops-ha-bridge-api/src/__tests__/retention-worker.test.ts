@@ -9,6 +9,7 @@ vi.mock('@pops/ha-bridge-db', () => ({
 }));
 
 const { startRetentionWorker } = await import('../retention-worker.js');
+const { HA_BRIDGE_DEFAULT_RETENTION_DAYS } = await import('../settings/manifest.js');
 
 const fakeDb = { __tag: 'fake-db' } as unknown as HaBridgeDb;
 
@@ -86,6 +87,29 @@ describe('startRetentionWorker (PRD-229 US-01)', () => {
     vi.advanceTimersByTime(intervalMs * 10);
 
     expect(pruneHistoryMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the manifest default retention when no option is provided', () => {
+    const handle = startRetentionWorker({ db: fakeDb });
+
+    const expectedCutoff = Date.now() - HA_BRIDGE_DEFAULT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    expect(pruneHistoryMock).toHaveBeenLastCalledWith(fakeDb, expectedCutoff);
+
+    handle.stop();
+  });
+
+  it('is a no-op when no expired rows exist (pruneHistory returns 0)', () => {
+    pruneHistoryMock.mockReturnValueOnce(0);
+    const info = vi.fn();
+
+    const handle = startRetentionWorker({ db: fakeDb, retentionDays: 30, logger: { info } });
+
+    expect(info).toHaveBeenCalledWith(
+      'ha-bridge retention prune complete',
+      expect.objectContaining({ deleted: 0, retentionDays: 30 })
+    );
+
+    handle.stop();
   });
 
   it('logs deleted count via info logger after a successful prune', () => {

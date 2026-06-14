@@ -13,6 +13,10 @@ import {
   HA_ENTITIES_ENTITY_TYPE,
   HA_ENTITIES_PROCEDURE_PATH,
 } from '../search/entities-adapter.js';
+import {
+  HA_BRIDGE_DEFAULT_RETENTION_DAYS,
+  HA_BRIDGE_RETENTION_SETTING_KEY,
+} from '../settings/manifest.js';
 
 describe('buildHaBridgeManifest', () => {
   it('produces a payload that passes the central manifest schema', () => {
@@ -99,5 +103,21 @@ describe('buildHaBridgeManifest', () => {
   it('rejects non-semver versions at the schema boundary', () => {
     const manifest = buildHaBridgeManifest('not-a-semver');
     expect(() => ManifestPayloadSchema.parse(manifest)).toThrow();
+  });
+
+  it('publishes the retention settings manifest (PRD-229 retention worker cron)', () => {
+    const manifest = buildHaBridgeManifest('0.1.0');
+    expect(manifest.settings?.manifests).toHaveLength(1);
+    const settingsManifest = manifest.settings?.manifests[0];
+    if (settingsManifest === undefined) throw new Error('haBridge settings manifest missing');
+    expect(settingsManifest.id).toBe('haBridge');
+    const field = settingsManifest.groups
+      .flatMap((group) => group.fields)
+      .find((f) => f.key === HA_BRIDGE_RETENTION_SETTING_KEY);
+    if (field === undefined) throw new Error('retention field missing');
+    expect(field.type).toBe('number');
+    expect(field.default).toBe(String(HA_BRIDGE_DEFAULT_RETENTION_DAYS));
+    expect(field.envFallback).toBe('HA_HISTORY_RETENTION_DAYS');
+    expect(field.validation?.min).toBe(0);
   });
 });

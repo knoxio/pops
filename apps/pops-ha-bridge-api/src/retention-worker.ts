@@ -11,6 +11,8 @@
  */
 import { pruneHistory, type HaBridgeDb } from '@pops/ha-bridge-db';
 
+import { HA_BRIDGE_DEFAULT_RETENTION_DAYS } from './settings/manifest.js';
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface RetentionWorkerLogger {
@@ -32,7 +34,7 @@ export interface RetentionWorkerHandle {
 
 export function startRetentionWorker(options: RetentionWorkerOptions): RetentionWorkerHandle {
   const intervalMs = options.intervalMs ?? DAY_MS;
-  const retentionDays = options.retentionDays ?? 30;
+  const retentionDays = options.retentionDays ?? HA_BRIDGE_DEFAULT_RETENTION_DAYS;
   const now = options.now ?? Date.now;
   const logger = options.logger;
 

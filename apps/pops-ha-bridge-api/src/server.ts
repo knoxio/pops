@@ -105,12 +105,12 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
 subscriber.start();
 
 function resolveRetentionDays(): number | undefined {
-  const raw = process.env['HA_BRIDGE_RETENTION_DAYS'];
+  const raw = process.env['HA_HISTORY_RETENTION_DAYS'];
   if (raw === undefined || raw === '') return undefined;
   const parsed = Number(raw);
   if (!Number.isInteger(parsed) || parsed < 0) {
     throw new Error(
-      `[ha-bridge] HA_BRIDGE_RETENTION_DAYS must be a non-negative integer; got '${raw}'`
+      `[ha-bridge] HA_HISTORY_RETENTION_DAYS must be a non-negative integer; got '${raw}'`
     );
   }
   return parsed;

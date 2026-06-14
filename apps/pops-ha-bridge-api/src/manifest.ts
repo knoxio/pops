@@ -4,6 +4,7 @@ import {
   HA_ENTITIES_ENTITY_TYPE,
   HA_ENTITIES_PROCEDURE_PATH,
 } from './search/entities-adapter.js';
+import { haBridgeSettingsManifest } from './settings/manifest.js';
 import { mappings } from './sinks/mapping.js';
 import { validateSinkMappings } from './sinks/validator.js';
 
@@ -72,6 +73,7 @@ export function buildHaBridgeManifest(version: string): ManifestPayload {
     },
     uri: { types: [] },
     consumedSettings: { keys: [] },
+    settings: { manifests: [haBridgeSettingsManifest] },
     healthcheck: { path: '/health' },
   };
 }
