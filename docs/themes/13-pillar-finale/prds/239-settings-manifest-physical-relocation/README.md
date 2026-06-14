@@ -2,7 +2,13 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 >
-> Status: **Not started**
+> Status: **In progress — US-01 / US-03 / US-04 / US-05 done; US-02 in flight; US-06 deferred → folds into [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md)**
+
+## Status note (2026-06-14, post-ADR-037)
+
+[ADR-037](../../../../architecture/adr-037-settings-as-manifest-dimension.md) promotes settings to a first-class manifest dimension. The per-pillar source relocations US-01 … US-05 remain **load-bearing prerequisites** for [PRD-240](../240-settings-as-manifest-dimension/README.md) — each pillar's manifest source must live in its owning contract package before the pillar can declare it on the new manifest dimension. US-06 (drop the legacy subpath + `pillar-sdk`'s `@pops/module-registry` workspace dep) **defers** — it folds into [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md)'s combined cleanup, which deletes the legacy subpath, the static SDK barrel, and the workspace dep together with closing US-06 here and [PRD-238 US-02](../238-settings-known-modules-surface/us-02-delete-legacy-settings-subpath.md). Do not start US-06 in isolation — its work happens inside PRD-240 US-05's PR.
+
+The parallel-merge collision that surfaced the underlying architectural smell was real: PRs [#3210](https://github.com/knoxio/pops/pull/3210), [#3207](https://github.com/knoxio/pops/pull/3207), [#3209](https://github.com/knoxio/pops/pull/3209) all conflicted on `packages/pillar-sdk/src/settings/index.ts` while landing US-01 / US-03 / US-04 in parallel. That collision file goes away inside PRD-240 US-05.
 
 ## Overview
 
