@@ -11,7 +11,7 @@ export const FOOD_PILLAR_ID = 'food' as const;
  *
  * Mirrors `@pops/app-food`'s `navConfig` (`packages/app-food/src/routes.tsx`)
  * field-for-field; Lucide names are rewritten as kebab-case identifiers
- * per the wire schema from PR #3230. `order: 400` matches today's
+ * per the wire schema from PR #3230. `order: 40` matches today's
  * position in `apps/pops-shell/src/app/nav/registry.ts`
  * (`registeredApps[3]`).
  */
@@ -22,7 +22,7 @@ const FOOD_NAV: NavConfigDescriptor = {
   icon: 'utensils',
   color: 'amber',
   basePath: '/food',
-  order: 400,
+  order: 40,
   items: [
     { path: '', label: 'Home', labelKey: 'food.home', icon: 'layout-dashboard' },
     { path: '/recipes', label: 'Recipes', labelKey: 'food.recipes', icon: 'book-open' },

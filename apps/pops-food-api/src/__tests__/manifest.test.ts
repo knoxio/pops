@@ -43,7 +43,7 @@ describe('buildFoodManifest', () => {
       expect(manifest.nav?.basePath).toBe('/food');
       expect(manifest.nav?.icon).toBe('utensils');
       expect(manifest.nav?.color).toBe('amber');
-      expect(manifest.nav?.order).toBe(400);
+      expect(manifest.nav?.order).toBe(40);
     });
 
     it('mirrors the shell-side nav item count + paths (no drift)', () => {

@@ -43,7 +43,7 @@ describe('buildListsManifest', () => {
       expect(manifest.nav?.basePath).toBe('/lists');
       expect(manifest.nav?.icon).toBe('list-checks');
       expect(manifest.nav?.color).toBe('sky');
-      expect(manifest.nav?.order).toBe(500);
+      expect(manifest.nav?.order).toBe(50);
     });
 
     it('mirrors the shell-side nav item count + paths (home only, no deep links)', () => {

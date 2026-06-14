@@ -68,7 +68,7 @@ describe('buildMediaManifest', () => {
       expect(payload.nav?.basePath).toBe('/media');
       expect(payload.nav?.icon).toBe('film');
       expect(payload.nav?.color).toBe('indigo');
-      expect(payload.nav?.order).toBe(200);
+      expect(payload.nav?.order).toBe(20);
     });
 
     it('mirrors the shell-side nav item count + paths (no drift)', () => {
