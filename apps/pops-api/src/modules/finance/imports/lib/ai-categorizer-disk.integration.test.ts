@@ -28,7 +28,6 @@ vi.mock('../../../../db.js', () => {
     })),
   };
   return {
-    getDrizzle: vi.fn(() => stubDrizzle),
     getCoreDrizzle: vi.fn(() => stubDrizzle),
     isNamedEnvContext: vi.fn().mockReturnValue(false),
   };
