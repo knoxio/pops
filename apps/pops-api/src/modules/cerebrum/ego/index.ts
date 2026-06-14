@@ -7,13 +7,15 @@
  *   ego.context.setScopes                    — explicit scope override (US-04)
  *   ego.context.getActive                    — current context state (US-03)
  */
-import { egoManifest } from '@pops/pillar-sdk/settings';
+import { egoManifest as ownEgoManifest } from '@pops/cerebrum-contract/settings';
+import { discoverSettings, findSettingsManifest } from '@pops/pillar-sdk/settings';
 
 import { mergeRouters, router } from '../../../trpc.js';
+import { getLocalSettingsDiscoverySnapshot } from '../../settings-discovery-snapshot.js';
 import { contextRouter } from './router-context.js';
 import { chatRouter, conversationsRouter } from './router.js';
 
-import type { ModuleManifest } from '@pops/types';
+import type { ModuleManifest, SettingsManifest } from '@pops/types';
 
 export const egoRouter = mergeRouters(
   chatRouter,
@@ -22,6 +24,13 @@ export const egoRouter = mergeRouters(
     context: contextRouter,
   })
 );
+
+const discoveredSettings = await discoverSettings({
+  discovery: getLocalSettingsDiscoverySnapshot(),
+});
+
+const egoSettings: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'ego') ?? ownEgoManifest;
 
 /**
  * PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader.
@@ -36,5 +45,5 @@ export const manifest: ModuleManifest<typeof egoRouter> = {
   surfaces: ['app'],
   description: 'Conversational AI interface to Cerebrum (PRD-087).',
   backend: { router: egoRouter },
-  settings: [egoManifest],
+  settings: [egoSettings],
 };

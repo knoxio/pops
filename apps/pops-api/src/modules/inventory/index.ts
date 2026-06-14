@@ -1,9 +1,11 @@
-import { inventoryManifest } from '@pops/pillar-sdk/settings';
+import { inventoryManifest as ownInventoryManifest } from '@pops/inventory-contract/settings';
+import { discoverSettings, findSettingsManifest } from '@pops/pillar-sdk/settings';
 
 /**
  * Inventory domain — home inventory items, locations, connections, and photos.
  */
 import { router } from '../../trpc.js';
+import { getLocalSettingsDiscoverySnapshot } from '../settings-discovery-snapshot.js';
 import { connectionsRouter } from './connections/index.js';
 import { documentFilesRouter } from './document-files/index.js';
 import { documentsRouter } from './documents/index.js';
@@ -17,7 +19,7 @@ import { photosRouter } from './photos/index.js';
 import { reportsRouter } from './reports/index.js';
 import { inventoryUriHandler } from './uri-handler.js';
 
-import type { ModuleManifest } from '@pops/types';
+import type { ModuleManifest, SettingsManifest } from '@pops/types';
 
 export const inventoryRouter = router({
   items: itemsRouter,
@@ -31,6 +33,13 @@ export const inventoryRouter = router({
   paperless: paperlessRouter,
 });
 
+const discoveredSettings = await discoverSettings({
+  discovery: getLocalSettingsDiscoverySnapshot(),
+});
+
+const inventorySettings: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'inventory') ?? ownInventoryManifest;
+
 /** PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader. */
 export const manifest: ModuleManifest<typeof inventoryRouter> = {
   id: 'inventory',
@@ -39,7 +48,7 @@ export const manifest: ModuleManifest<typeof inventoryRouter> = {
   surfaces: ['app'],
   description: 'Home items, locations, connections, warranties, and documents.',
   backend: { router: inventoryRouter },
-  settings: [inventoryManifest],
+  settings: [inventorySettings],
   features: [inventoryFeaturesManifest],
   search: [inventoryItemsSearchAdapter],
   uriHandler: inventoryUriHandler,

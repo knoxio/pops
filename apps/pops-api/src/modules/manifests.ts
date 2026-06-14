@@ -4,9 +4,10 @@ import { installedManifests } from './installed-modules.js';
  * Backend module manifests — convenience wrapper around `installedManifests()`
  * (PRD-101 US-05) for cross-cutting aggregators that need the live module
  * manifests with their code-bearing slots attached (router, URI handler,
- * AI tools, …). Settings live on each module's `SettingsManifest` export
- * surfaced via `@pops/pillar-sdk/settings`; consumers that just need the
- * settings shape read it directly from there.
+ * AI tools, …). Settings sections are resolved at each module's `index.ts`
+ * via `discoverSettings()` + `findSettingsManifest()` from
+ * `@pops/pillar-sdk/settings` (PRD-240 US-04) with the contract-package
+ * descriptor as the local fallback; consumers just read `m.settings`.
  */
 import type { ModuleManifest } from '@pops/types';
 

@@ -2,9 +2,11 @@
  * Cerebrum domain — engram storage and retrieval.
  * See docs/themes/06-cerebrum for the full spec.
  */
-import { cerebrumManifest } from '@pops/pillar-sdk/settings';
+import { cerebrumManifest as ownCerebrumManifest } from '@pops/cerebrum-contract/settings';
+import { discoverSettings, findSettingsManifest } from '@pops/pillar-sdk/settings';
 
 import { mergeRouters, router } from '../../trpc.js';
+import { getLocalSettingsDiscoverySnapshot } from '../settings-discovery-snapshot.js';
 import { cerebrumAiTools } from './ai-tools/index.js';
 import { debriefRouter } from './debrief/router.js';
 import { emitRouter } from './emit/router.js';
@@ -23,7 +25,7 @@ import { templatesRouter } from './templates/router.js';
 import { indexRouter } from './thalamus/router.js';
 import { gliaRouter as gliaWorkersRouter } from './workers/router.js';
 
-import type { ModuleManifest } from '@pops/types';
+import type { ModuleManifest, SettingsManifest } from '@pops/types';
 
 export const cerebrumRouter = router({
   engrams: engramsRouter,
@@ -42,6 +44,13 @@ export const cerebrumRouter = router({
   debrief: debriefRouter,
 });
 
+const discoveredSettings = await discoverSettings({
+  discovery: getLocalSettingsDiscoverySnapshot(),
+});
+
+const cerebrumSettings: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'cerebrum') ?? ownCerebrumManifest;
+
 /** PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader. */
 export const manifest: ModuleManifest<typeof cerebrumRouter> = {
   id: 'cerebrum',
@@ -51,5 +60,5 @@ export const manifest: ModuleManifest<typeof cerebrumRouter> = {
   description:
     'Engram storage, retrieval, ingest/emit, plexus, reflex, glia — knowledge graph and agents.',
   backend: { router: cerebrumRouter, aiTools: cerebrumAiTools, migrations: cerebrumMigrations },
-  settings: [cerebrumManifest],
+  settings: [cerebrumSettings],
 };

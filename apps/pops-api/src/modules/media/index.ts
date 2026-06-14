@@ -5,13 +5,15 @@
 import './rotation/register-sources.js';
 
 import {
-  arrManifest,
-  mediaOperationalManifest,
-  plexManifest,
-  rotationManifest,
-} from '@pops/pillar-sdk/settings';
+  arrManifest as ownArrManifest,
+  mediaOperationalManifest as ownMediaOperationalManifest,
+  plexManifest as ownPlexManifest,
+  rotationManifest as ownRotationManifest,
+} from '@pops/media-contract/settings';
+import { discoverSettings, findSettingsManifest } from '@pops/pillar-sdk/settings';
 
 import { router } from '../../trpc.js';
+import { getLocalSettingsDiscoverySnapshot } from '../settings-discovery-snapshot.js';
 import { arrRouter } from './arr/index.js';
 import { comparisonsRouter } from './comparisons/index.js';
 import { discoveryRouter } from './discovery/index.js';
@@ -29,7 +31,7 @@ import { mediaUriHandler } from './uri-handler.js';
 import { watchHistoryRouter } from './watch-history/router.js';
 import { watchlistRouter } from './watchlist/router.js';
 
-import type { ModuleManifest } from '@pops/types';
+import type { ModuleManifest, SettingsManifest } from '@pops/types';
 
 export const mediaRouter = router({
   movies: moviesRouter,
@@ -45,6 +47,19 @@ export const mediaRouter = router({
   rotation: rotationRouter,
 });
 
+const discoveredSettings = await discoverSettings({
+  discovery: getLocalSettingsDiscoverySnapshot(),
+});
+
+const plexSettings: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'media.plex') ?? ownPlexManifest;
+const arrSettings: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'media.arr') ?? ownArrManifest;
+const rotationSettings: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'media.rotation') ?? ownRotationManifest;
+const mediaOperationalSettings: SettingsManifest =
+  findSettingsManifest(discoveredSettings, 'media.operational') ?? ownMediaOperationalManifest;
+
 /**
  * PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader.
  * Media owns multiple settings manifests (Plex, Arr, Rotation, Operational);
@@ -57,7 +72,7 @@ export const manifest: ModuleManifest<typeof mediaRouter> = {
   surfaces: ['app'],
   description: 'Movies, TV shows, watchlist, watch history, Plex/TMDB/TVDB sync.',
   backend: { router: mediaRouter, migrations: mediaMigrations },
-  settings: [plexManifest, arrManifest, rotationManifest, mediaOperationalManifest],
+  settings: [plexSettings, arrSettings, rotationSettings, mediaOperationalSettings],
   features: [mediaFeaturesManifest],
   search: [moviesSearchAdapter, tvShowsSearchAdapter],
   uriHandler: mediaUriHandler,

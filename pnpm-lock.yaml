@@ -63,15 +63,24 @@ importers:
       '@pops/app-lists-db':
         specifier: workspace:*
         version: link:../../packages/app-lists-db
+      '@pops/cerebrum-contract':
+        specifier: workspace:*
+        version: link:../../packages/cerebrum-contract
       '@pops/cerebrum-db':
         specifier: workspace:*
         version: link:../../packages/cerebrum-db
+      '@pops/core-contract':
+        specifier: workspace:*
+        version: link:../../packages/core-contract
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
       '@pops/db-types':
         specifier: workspace:*
         version: link:../../packages/db-types
+      '@pops/finance-contract':
+        specifier: workspace:*
+        version: link:../../packages/finance-contract
       '@pops/finance-db':
         specifier: workspace:*
         version: link:../../packages/finance-db
@@ -81,12 +90,18 @@ importers:
       '@pops/food-db':
         specifier: workspace:*
         version: link:../../packages/food-db
+      '@pops/inventory-contract':
+        specifier: workspace:*
+        version: link:../../packages/inventory-contract
       '@pops/inventory-db':
         specifier: workspace:*
         version: link:../../packages/inventory-db
       '@pops/lists-db':
         specifier: workspace:*
         version: link:../../packages/lists-db
+      '@pops/media-contract':
+        specifier: workspace:*
+        version: link:../../packages/media-contract
       '@pops/media-db':
         specifier: workspace:*
         version: link:../../packages/media-db
