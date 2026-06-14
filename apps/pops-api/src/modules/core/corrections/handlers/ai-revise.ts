@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-import { transactionCorrections } from '@pops/db-types';
+import { transactionCorrections } from '@pops/core-db';
 
 import { isNamedEnvContext } from '../../../../db.js';
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';

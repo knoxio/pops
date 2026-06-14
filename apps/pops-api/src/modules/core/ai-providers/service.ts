@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import { aiModelPricing, aiProviders } from '@pops/db-types';
+import { aiModelPricing, aiProviders } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { getAnthropicApiKey } from '../../../lib/anthropic-api-key.js';

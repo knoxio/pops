@@ -9,7 +9,7 @@
  */
 import { and, desc, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 
-import { aiAlerts } from '@pops/db-types';
+import { aiAlerts } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { alertRowToAlert } from './mappers.js';

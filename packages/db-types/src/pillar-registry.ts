@@ -11,9 +11,9 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
-import type { pillarRegistry } from './schema/pillar-registry.js';
+import type { pillarRegistry } from '@pops/core-db';
 
-export { pillarRegistry } from './schema/pillar-registry.js';
+export { pillarRegistry } from '@pops/core-db';
 
 export type PillarRegistryRow = InferSelectModel<typeof pillarRegistry>;
 export type PillarRegistryInsert = InferInsertModel<typeof pillarRegistry>;

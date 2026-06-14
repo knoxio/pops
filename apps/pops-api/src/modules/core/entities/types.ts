@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { ENTITY_TYPES } from '@pops/db-types';
 
-import type { EntityRow } from '@pops/db-types';
+import type { EntityRow } from '@pops/core-db';
 
 export type { EntityRow };
 export { ENTITY_TYPES };
