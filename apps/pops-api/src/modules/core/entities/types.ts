@@ -38,7 +38,7 @@ export function toEntity(row: EntityRow & { transactionCount?: number }): Entity
     aliases: row.aliases
       ? row.aliases
           .split(',')
-          .map((s) => s.trim())
+          .map((s: string) => s.trim())
           .filter(Boolean)
       : [],
     defaultTransactionType: row.defaultTransactionType,
