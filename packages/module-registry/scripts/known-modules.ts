@@ -22,6 +22,7 @@
  * See `docs/themes/01-foundation/prds/101-plugin-contract/us-02-build-time-registry.md`
  * and `us-04-settings-from-registry.md`.
  */
+import { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
 import {
   arrManifest,
   mediaOperationalManifest,
@@ -30,9 +31,7 @@ import {
 } from '@pops/media-contract/settings';
 
 import {
-  aiConfigManifest,
   cerebrumManifest,
-  coreOperationalManifest,
   egoManifest,
   financeManifest,
   inventoryManifest,

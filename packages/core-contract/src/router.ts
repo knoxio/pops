@@ -1,18 +1,18 @@
-/**
- * The core pillar's tRPC router *type*. Type-only re-export from
- * `apps/pops-core-api` — no runtime tRPC code crosses the contract
- * boundary. Consumers use this to type the `pillar('core').foo.bar(…)`
- * SDK calls (Epic 05 / PRD-191).
- *
- * Current shape: `typeof coreRouter`. Until PRD-153 us-04 + PRD-155 land
- * the build-time declaration bundler, this re-export means the contract's
- * emitted `.d.ts` still references `@pops/core-api` (which transitively
- * references `@pops/core-db`). The lint rule in PRD-156 stays focused
- * on *value* imports; type-only references through the contract are
- * tolerated as the migration intermediate. A committed OpenAPI snapshot
- * at `openapi/core.openapi.json` is the wire-typed alternative consumers
- * (e.g. iOS Swift codegen) can use instead.
- */
-import type { coreRouter } from '@pops/core-api/router';
+import type { AnyTRPCRouter } from '@trpc/server';
 
-export type CoreRouter = typeof coreRouter;
+/**
+ * Opaque tRPC router type for the core pillar. Until PRD-155 ships the
+ * declaration bundler, `CoreRouter` is the generic `AnyTRPCRouter` —
+ * consumers using `pillar<CoreRouter>('core')` get a fully opaque
+ * `PillarHandle` with no route or procedure keys preserved. The committed
+ * OpenAPI snapshot at `openapi/core.openapi.json` is the wire-typed
+ * alternative until PRD-155 lands.
+ *
+ * This shape was previously `typeof coreRouter` (re-exporting from
+ * `@pops/core-api`), but that import-type closed a build-graph cycle
+ * (`pillar-sdk → core-contract → core-api → pillar-sdk`) once
+ * `pillar-sdk/settings` re-exported `aiConfigManifest` from this package
+ * (PRD-239 US-01). Mirrors the precedent established for
+ * `@pops/finance-contract` in #2998.
+ */
+export type CoreRouter = AnyTRPCRouter;

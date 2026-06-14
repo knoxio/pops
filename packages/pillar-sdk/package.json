@@ -72,6 +72,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@pops/core-contract": "workspace:*",
     "@pops/media-contract": "workspace:*",
     "@pops/module-registry": "workspace:*",
     "zod": "^4.4.3"
