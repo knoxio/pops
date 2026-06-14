@@ -240,7 +240,7 @@ interface E2eEnv {
   readonly throwaway: ThrowawayPillar;
 }
 
-let env: E2eEnv;
+let env: E2eEnv | undefined;
 
 beforeEach(async () => {
   const tmpDir = mkdtempSync(join(tmpdir(), 'prd-242-us-04-'));
@@ -266,12 +266,33 @@ beforeEach(async () => {
 
 afterEach(async () => {
   __resetSharedPillarClient();
-  await env.throwaway.close().catch(() => undefined);
-  await new Promise<void>((resolve, reject) =>
-    env.coreApiServer.close((err) => (err ? reject(err) : resolve()))
-  ).catch(() => undefined);
-  env.coreDb.raw.close();
-  rmSync(env.tmpDir, { recursive: true, force: true });
+  // Defensive: beforeEach may have thrown before env was fully populated.
+  // Each step independently catches so a failure mid-cleanup doesn't mask
+  // the original setup error or leak the remaining resources.
+  try {
+    await env?.throwaway?.close();
+  } catch {
+    // noop — best-effort cleanup
+  }
+  try {
+    if (env?.coreApiServer) {
+      await new Promise<void>((resolve, reject) =>
+        env.coreApiServer.close((err) => (err ? reject(err) : resolve()))
+      );
+    }
+  } catch {
+    // noop
+  }
+  try {
+    env?.coreDb?.raw.close();
+  } catch {
+    // noop
+  }
+  try {
+    if (env?.tmpDir) rmSync(env.tmpDir, { recursive: true, force: true });
+  } catch {
+    // noop
+  }
 });
 
 function makePillarHandle(coreApiBaseUrl: string): PillarHandle<unknown> {
@@ -342,13 +363,7 @@ describe('PRD-242 US-04 — external pillar register + callDynamic + deregister'
     expect(dereg.body).toMatchObject({ ok: true, removed: true });
     expect(pillarRegistryService.getPillarRegistration(env.coreDb.db, PILLAR_ID)).toBeNull();
 
-    const postDeregHandle = makePillarHandle(env.coreApiBaseUrl);
-    const afterDereg = await postDeregHandle.callDynamic(
-      'echo',
-      'echo',
-      { value: 'ping' },
-      'query'
-    );
+    const afterDereg = await handle.callDynamic('echo', 'echo', { value: 'ping' }, 'query');
     expect(afterDereg.kind).toBe('unavailable');
     if (afterDereg.kind === 'unavailable') {
       expect(afterDereg.pillar).toBe(PILLAR_ID);
