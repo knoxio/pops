@@ -3,8 +3,10 @@ import { z } from 'zod';
 import { SettingsBlockSchema, type SettingsManifestDescriptor } from './settings.js';
 import {
   AssetsBaseUrlSchema,
+  CaptureOverlayDescriptorSchema,
   NavConfigDescriptorSchema,
   PageDescriptorSchema,
+  type CaptureOverlayDescriptor,
   type NavConfigDescriptor,
   type NavItemDescriptor,
   type PageDescriptor,
@@ -178,6 +180,7 @@ export const ManifestPayloadSchema = z
     nav: NavConfigDescriptorSchema.optional(),
     pages: z.array(PageDescriptorSchema).optional(),
     assetsBaseUrl: AssetsBaseUrlSchema.optional(),
+    captureOverlay: CaptureOverlayDescriptorSchema.optional(),
     healthcheck: HEALTHCHECK,
   })
   .strict();
@@ -186,6 +189,6 @@ export type SinkDescriptor = z.infer<typeof SINK_DESCRIPTOR>;
 
 export type { SettingsManifestDescriptor };
 
-export type { NavConfigDescriptor, NavItemDescriptor, PageDescriptor };
+export type { CaptureOverlayDescriptor, NavConfigDescriptor, NavItemDescriptor, PageDescriptor };
 
 export type ManifestPayload = z.infer<typeof ManifestPayloadSchema>;
