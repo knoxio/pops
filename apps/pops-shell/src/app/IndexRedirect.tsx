@@ -2,17 +2,18 @@ import { Navigate } from 'react-router';
 
 import { usePillarQuery } from '@pops/pillar-sdk/react';
 
+import { registeredApps } from './nav/registry';
+
 /**
  * `/` redirect that respects the installed-modules manifest (PRD-100).
- * Picks the first installed app in `APP_ORDER`; falls back to `/settings`
- * if no apps are installed (which means `core` is the only operational
- * surface).
+ * Picks the first installed app from `registeredApps` (manifest `nav.order`
+ * ascending, lexicographic tiebreak — see `nav/registry.ts`); falls back
+ * to `/settings` if no apps are installed.
  *
  * Default deployments (POPS_APPS unset → all installed) land on `/finance`
- * just like before.
+ * because finance carries the lowest `nav.order` (10) in the workspace
+ * bundle map.
  */
-const APP_ORDER = ['finance', 'media', 'inventory', 'cerebrum'] as const;
-
 type ShellManifest = {
   apps: readonly string[];
   overlays: readonly string[];
@@ -34,6 +35,6 @@ export function IndexRedirect() {
     return <Navigate to="/finance" replace />;
   }
 
-  const target = APP_ORDER.find((id) => data.apps.includes(id));
-  return <Navigate to={target ? `/${target}` : '/settings'} replace />;
+  const target = registeredApps.find((app) => data.apps.includes(app.id));
+  return <Navigate to={target ? `/${target.id}` : '/settings'} replace />;
 }

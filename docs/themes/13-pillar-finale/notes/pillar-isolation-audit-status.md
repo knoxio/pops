@@ -7,11 +7,11 @@ Companion to [`pillar-isolation-audit.md`](pillar-isolation-audit.md). The origi
 | Bucket         | Closed | In Progress | Open   | Needs scoping |
 | -------------- | ------ | ----------- | ------ | ------------- |
 | HIGH (9)       | 5      | 1           | 3      | 0             |
-| MEDIUM (9)     | 1      | 2           | 3      | 3             |
-| LOW (10)       | 1      | 1           | 5      | 3             |
+| MEDIUM (9)     | 2      | 2           | 3      | 2             |
+| LOW (10)       | 0      | 1           | 5      | 4             |
 | **Total (28)** | **7**  | **4**       | **11** | **6**         |
 
-The four landed PRDs collectively closed 7 findings (5 HIGH, 1 MEDIUM, 1 LOW) — the entire top of the "shell + appRouter + module-registry + settings-barrel" anti-lego cluster. The remaining HIGH bucket is dominated by physical-decomposition work: `db-types` retirement (H6), the cross-pillar FKs that block the per-pillar SQLite split (H7), the cross-pillar runtime imports inside `apps/pops-api/src/modules/` (H8), and the shell↔cerebrum coupling in `CaptureModal` (H9).
+The four landed PRDs collectively closed 6 findings (5 HIGH, 1 MEDIUM); a follow-up batch closed M9 (`IndexRedirect` now derives from `registeredApps`) and reopened L8 after a verification grep found live consumers of the `manifest-pillar.ts` shim. The remaining HIGH bucket is dominated by physical-decomposition work: `db-types` retirement (H6), the cross-pillar FKs that block the per-pillar SQLite split (H7), the cross-pillar runtime imports inside `apps/pops-api/src/modules/` (H8), and the shell↔cerebrum coupling in `CaptureModal` (H9).
 
 ## How to read this doc
 
@@ -161,11 +161,11 @@ The four landed PRDs collectively closed 7 findings (5 HIGH, 1 MEDIUM, 1 LOW) �
 
 ### M9 — `apps/pops-shell/src/app/IndexRedirect.tsx` hand-curates default app order
 
-- **Status**: Open
-- **Owning PRD**: could fold into a follow-up to PRD-243 (manifest field `frontend.defaultRouteRank?: number`); not currently scoped.
-- **Severity (re-rated)**: LOW (downgraded — the catch-all route handles missing pillars; the only real cost is that new pillars are silently invisible to `/`. Now that `nav.order` exists on every manifest per PRD-243, falling back to `nav.order` ascending is a 5-line PR.)
-- **What remains**: Replace `APP_ORDER` literal with derivation from `nav.order`. Trivially small now that PRD-243 added the field.
-- **Proposed owner**: **needs new PRD** (trivial; could be a single-commit follow-up to PRD-243).
+- **Status**: Closed
+- **Closer PR**: small-audit-fixes batch — `IndexRedirect` now derives its candidate order from `registeredApps` (nav.order ascending, lexicographic tiebreak), so the literal is gone and external pillars are automatically eligible for the `/` redirect once their manifest enters the registry walk.
+- **Owning PRD**: [PRD-243](../prds/243-registry-driven-shell-ui/README.md) by side-effect (registeredApps consumer)
+- **Severity (re-rated)**: LOW (no change at closure)
+- **Notes**: Five-line change. The historical default (`/finance`) is preserved because finance carries the lowest `navOrder` (10) in the workspace bundle map.
 
 ## LOW findings
 
@@ -220,11 +220,13 @@ The four landed PRDs collectively closed 7 findings (5 HIGH, 1 MEDIUM, 1 LOW) �
 
 ### L8 — `apps/pops-shell/src/app/pillars/manifest-pillar.ts` is a deliberate no-op shim
 
-- **Status**: Closed
-- **Closer PR**: incidentally closes alongside #3241 (PRD-243 US-03) — when the shell rewrote `installed-modules.ts` against the registry walk, `pillarIdForModule()` is no longer load-bearing; manifests now declare their pillar baseUrl directly.
-- **Owning PRD**: [PRD-243](../prds/243-registry-driven-shell-ui/README.md) by side-effect
+- **Status**: Open (originally logged as Closed; follow-up grep on 2026-06-14 found live consumers — see Notes)
+- **Owning PRD**: needs new PRD (trivial — collapse `CORE_PILLAR_ID` + `pillarIdForModule` into the pillar baseUrl on the manifest, then delete the shim)
 - **Severity (re-rated)**: LOW (no change)
-- **Notes**: Worth a follow-up grep to confirm zero callers remain; the file itself may still exist as a dead export. If so, a single-commit deletion PR closes it definitively. (See "Open follow-ups" below.)
+- **Notes**: Re-verification on 2026-06-14 found two real consumers that the original closure note missed:
+  - `apps/pops-shell/src/app/router.tsx:78` still calls `pillarIdForModule(manifest.id)` to label each `PillarGuard`'s `pillarId` prop.
+  - `apps/pops-shell/src/app/pillars/pillar-registry-client.ts:87` still consumes `CORE_PILLAR_ID` for the synthetic `SELF_ENTRY` fallback.
+    Until both sites are migrated (router takes pillar id from the manifest directly; registry client inlines the `'core'` literal or sources it from a shared constant), the shim cannot be deleted. The L8 entry is reopened.
 
 ### L9 — `packages/pillar-sdk/src/contracts/index.ts` exports finance-only
 
@@ -251,8 +253,7 @@ Aggregating the "needs new PRD" entries above so they can be triaged in one pass
 | M4                | Collapse `pnpm-workspace.yaml` to `packages/*`               | Trivial | Single-commit PR                                                                                              |
 | M7                | i18n manifest slot                                           | Small   | `frontend.i18n: { namespace, resources }` aggregated at shell boot                                            |
 | M8 + L2 + L3 + L5 | CI / infra consolidation                                     | Medium  | Single PRD covering compose template + matrix-over-glob in 4 workflow files                                   |
-| M9                | `IndexRedirect` derives from `nav.order`                     | Trivial | Single-commit follow-up to PRD-243                                                                            |
-| L8                | Delete dead `manifest-pillar.ts` (verify zero callers first) | Trivial | Single-commit cleanup                                                                                         |
+| L8                | Retire `manifest-pillar.ts` shim                             | Small   | Re-verified open: 2 live consumers (`router.tsx`, `pillar-registry-client.ts`). Migrate then delete.          |
 | L9                | Delete `pillar-sdk/src/contracts/index.ts`                   | Trivial | SDK should not name pillars                                                                                   |
 
 Adjacent (already-scoped) PRDs that also chip at remaining findings:
