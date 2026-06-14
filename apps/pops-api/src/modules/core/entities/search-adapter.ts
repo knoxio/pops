@@ -1,6 +1,6 @@
 import { like } from 'drizzle-orm';
 
-import { entities } from '@pops/core-db';
+import { entities } from '@pops/db-types';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 

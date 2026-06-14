@@ -1,6 +1,6 @@
 import { index, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-import { entities } from '@pops/core-db';
+import { entities } from './entities.js';
 
 export const transactions = sqliteTable(
   'transactions',

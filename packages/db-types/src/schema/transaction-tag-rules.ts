@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { entities } from '@pops/core-db';
+import { entities } from './entities.js';
 
 export const transactionTagRules = sqliteTable(
   'transaction_tag_rules',

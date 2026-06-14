@@ -8,7 +8,7 @@
  */
 import { and, eq, gte, sql } from 'drizzle-orm';
 
-import { aiBudgets, aiInferenceLog } from '@pops/core-db';
+import { aiBudgets, aiInferenceLog } from '@pops/db-types';
 
 import type { getCoreDrizzle } from '../../../../db.js';
 import type { AlertCandidate, AlertRule, AlertSeverity } from '../types.js';

@@ -1,6 +1,6 @@
 import { and, desc, gte, lte, sql } from 'drizzle-orm';
 
-import { aiInferenceLog } from '@pops/core-db';
+import { aiInferenceLog } from '@pops/db-types';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { buildGroupings } from './group-stats.js';

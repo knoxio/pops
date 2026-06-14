@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 
-import { transactionCorrections } from '@pops/core-db';
-import { transactions } from '@pops/db-types';
+import { transactionCorrections, transactions } from '@pops/db-types';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { parseJsonStringArray } from '../../../../shared/json.js';

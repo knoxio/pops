@@ -6,25 +6,20 @@
  */
 import type { InferInsertModel } from 'drizzle-orm';
 
-import type {
-  aiUsage,
-  entities,
-  environments,
-  settings,
-  transactionCorrections,
-} from '@pops/core-db';
-import type { syncJobResults } from '@pops/core-db';
-
+import type { aiUsage } from './schema/ai-usage.js';
 import type { budgets } from './schema/budgets.js';
 import type { comparisonDimensions } from './schema/comparison-dimensions.js';
 import type { comparisonSkipCooloffs } from './schema/comparison-skip-cooloffs.js';
 import type { comparisonStaleness } from './schema/comparison-staleness.js';
 import type { comparisons } from './schema/comparisons.js';
+import type { transactionCorrections } from './schema/corrections.js';
 import type { debriefResults } from './schema/debrief-results.js';
 import type { debriefSessions } from './schema/debrief-sessions.js';
 import type { debriefStatus } from './schema/debrief-status.js';
 import type { dismissedDiscover } from './schema/dismissed-discover.js';
 import type { engramIndex, engramLinks, engramScopes, engramTags } from './schema/engrams.js';
+import type { entities } from './schema/entities.js';
+import type { environments } from './schema/environments.js';
 import type { episodes } from './schema/episodes.js';
 import type { homeInventory } from './schema/inventory.js';
 import type { itemConnections } from './schema/item-connections.js';
@@ -42,7 +37,9 @@ import type { rotationExclusions } from './schema/rotation-exclusions.js';
 import type { rotationLog } from './schema/rotation-log.js';
 import type { rotationSources } from './schema/rotation-sources.js';
 import type { seasons } from './schema/seasons.js';
+import type { settings } from './schema/settings.js';
 import type { shelfImpressions } from './schema/shelf-impressions.js';
+import type { syncJobResults } from './schema/sync-job-results.js';
 import type { syncLogs } from './schema/sync-logs.js';
 import type { tierOverrides } from './schema/tier-overrides.js';
 import type { transactions } from './schema/transactions.js';

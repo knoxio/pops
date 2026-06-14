@@ -6,8 +6,7 @@ import { and, count, eq, like, ne, sql } from 'drizzle-orm';
  * Entity service — CRUD operations using Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
-import { entities } from '@pops/core-db';
-import { transactions } from '@pops/db-types';
+import { entities, transactions } from '@pops/db-types';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';

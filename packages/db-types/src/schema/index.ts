@@ -1,35 +1,28 @@
-export {
-  aiAlertRules,
-  aiAlerts,
-  aiBudgets,
-  aiInferenceDaily,
-  aiInferenceLog,
-  aiModelPricing,
-  aiProviders,
-  aiUsage,
-  entities,
-  environments,
-  pillarRegistry,
-  serviceAccounts,
-  settings,
-  syncJobResults,
-  transactionCorrections,
-  userSettings,
-} from '@pops/core-db';
+export { aiAlertRules } from './ai-alert-rules.js';
+export { aiAlerts } from './ai-alerts.js';
+export { aiBudgets } from './ai-budgets.js';
+export { aiInferenceDaily } from './ai-inference-daily.js';
+export { aiInferenceLog } from './ai-inference-log.js';
+export { aiModelPricing } from './ai-model-pricing.js';
+export { aiProviders } from './ai-providers.js';
+export { aiUsage } from './ai-usage.js';
+export { embeddings } from './core/embeddings.js';
 export { budgets } from './budgets.js';
 export { comparisonDimensions } from './comparison-dimensions.js';
 export { comparisonSkipCooloffs } from './comparison-skip-cooloffs.js';
 export { comparisonStaleness } from './comparison-staleness.js';
 export { comparisons } from './comparisons.js';
+export { transactionCorrections } from './corrections.js';
 export { debriefResults } from './debrief-results.js';
 export { debriefSessions } from './debrief-sessions.js';
 export { debriefStatus } from './debrief-status.js';
 export { dismissedDiscover } from './dismissed-discover.js';
 export { conversations, conversationContext, messages } from './ego.js';
-export { embeddings } from './core/embeddings.js';
 export { engramIndex, engramLinks, engramScopes, engramTags } from './engrams.js';
 export { reflexExecutions } from './reflex-executions.js';
+export { entities } from './entities.js';
 export { gliaActions, gliaTrustState } from './glia.js';
+export { environments } from './environments.js';
 export { episodes } from './episodes.js';
 export { fixtures } from './fixtures.js';
 export {
@@ -68,13 +61,18 @@ export { mediaScores } from './media-scores.js';
 export { mediaWatchlist } from './media-watchlist.js';
 export { movies } from './movies.js';
 export { nudgeLog } from './nudge-log.js';
+export { pillarRegistry } from './pillar-registry.js';
 export { plexusAdapters, plexusFilters } from './plexus.js';
 export { rotationCandidates } from './rotation-candidates.js';
 export { rotationExclusions } from './rotation-exclusions.js';
 export { rotationLog } from './rotation-log.js';
 export { rotationSources } from './rotation-sources.js';
 export { seasons } from './seasons.js';
+export { serviceAccounts } from './service-accounts.js';
+export { settings } from './settings.js';
+export { userSettings } from './user-settings.js';
 export { shelfImpressions } from './shelf-impressions.js';
+export { syncJobResults } from './sync-job-results.js';
 export { syncLogs } from './sync-logs.js';
 export { tagVocabulary } from './tag-vocabulary.js';
 export { tierOverrides } from './tier-overrides.js';
