@@ -64,6 +64,32 @@ export const PageDescriptorSchema = z
  */
 export const AssetsBaseUrlSchema = z.string().url();
 
+/**
+ * Wire-shaped descriptor of a pillar's capture overlay contribution. The
+ * shell discovers overlays through the manifest registry the same way it
+ * discovers `nav` / `pages` (PRD-243) and mounts the React component
+ * resolved from the workspace bundle map at the shell side — no
+ * shell-side edit that names the pillar (PRD-246).
+ *
+ * `bundleSlot` follows the `PageDescriptor.bundleSlot` convention: a
+ * kebab-case identifier the workspace bundle map resolves to a component
+ * reference. `order` mirrors `NavConfigDescriptor.order`: ascending,
+ * ties broken alphabetically by pillar id at the shell. `hotkey` is
+ * wire-shaped (e.g. `'cmd+shift+k'`); semantic validation of the key
+ * combo is the shell's responsibility at bind time. `label` / `labelKey`
+ * pair the same way `NavConfigDescriptor` pairs them.
+ */
+export const CaptureOverlayDescriptorSchema = z
+  .object({
+    bundleSlot: KEBAB_IDENTIFIER,
+    order: z.number().int(),
+    hotkey: z.string().min(1).optional(),
+    label: z.string().min(1).optional(),
+    labelKey: I18N_KEY.optional(),
+  })
+  .strict();
+
 export type NavConfigDescriptor = z.infer<typeof NavConfigDescriptorSchema>;
 export type NavItemDescriptor = z.infer<typeof NAV_ITEM_DESCRIPTOR>;
 export type PageDescriptor = z.infer<typeof PageDescriptorSchema>;
+export type CaptureOverlayDescriptor = z.infer<typeof CaptureOverlayDescriptorSchema>;

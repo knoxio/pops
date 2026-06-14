@@ -3,6 +3,7 @@ export {
   type ManifestPayload,
   type SinkDescriptor,
   type SettingsManifestDescriptor,
+  type CaptureOverlayDescriptor,
   type NavConfigDescriptor,
   type NavItemDescriptor,
   type PageDescriptor,

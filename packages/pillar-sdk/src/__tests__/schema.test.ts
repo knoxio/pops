@@ -734,4 +734,82 @@ describe('ManifestPayloadSchema', () => {
       }
     );
   });
+
+  describe('captureOverlay dimension (PRD-246 US-01)', () => {
+    const cerebrumCaptureOverlay = () => ({
+      bundleSlot: 'ingest-form',
+      order: 100,
+      hotkey: 'cmd+shift+k',
+      label: 'Capture',
+      labelKey: 'cerebrum.capture',
+    });
+
+    it('accepts a manifest with captureOverlay omitted (backwards-compatible)', () => {
+      const m = validManifest();
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.captureOverlay).toBeUndefined();
+      }
+    });
+
+    it('accepts a manifest with a valid captureOverlay contribution', () => {
+      const m = { ...validManifest(), captureOverlay: cerebrumCaptureOverlay() };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts a minimal captureOverlay with only the required fields', () => {
+      const m = {
+        ...validManifest(),
+        captureOverlay: { bundleSlot: 'ingest-form', order: 0 },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects captureOverlay missing the required bundleSlot field', () => {
+      const { bundleSlot: _omitted, ...rest } = cerebrumCaptureOverlay();
+      const m = { ...validManifest(), captureOverlay: rest };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects captureOverlay missing the required order field', () => {
+      const { order: _omitted, ...rest } = cerebrumCaptureOverlay();
+      const m = { ...validManifest(), captureOverlay: rest };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it.each(['IngestForm', 'ingest_form', '-ingest', 'ingest--form'])(
+      'rejects a non-kebab-case bundleSlot (%s)',
+      (bundleSlot) => {
+        const m = {
+          ...validManifest(),
+          captureOverlay: { ...cerebrumCaptureOverlay(), bundleSlot },
+        };
+        const result = ManifestPayloadSchema.safeParse(m);
+        expect(result.success).toBe(false);
+      }
+    );
+
+    it('rejects an empty-string hotkey', () => {
+      const m = {
+        ...validManifest(),
+        captureOverlay: { ...cerebrumCaptureOverlay(), hotkey: '' },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects unknown field on captureOverlay descriptor (strict mode)', () => {
+      const m = {
+        ...validManifest(),
+        captureOverlay: { ...cerebrumCaptureOverlay(), sneaky: true },
+      };
+      const result = ManifestPayloadSchema.safeParse(m);
+      expect(result.success).toBe(false);
+    });
+  });
 });
