@@ -56,24 +56,6 @@ vi.mock('../../../db.js', () => ({
       },
     }),
   })),
-  getDrizzle: vi.fn(() => ({
-    select: () => ({
-      from: () => ({
-        orderBy: () => ({
-          limit: () => ({
-            get: (): unknown => null,
-            all: (): unknown[] => mockSelectSyncLogs() as unknown[],
-          }),
-        }),
-      }),
-    }),
-    insert: () => ({
-      values: (vals: Record<string, unknown>) => {
-        if ('syncedAt' in vals) mockInsertSyncLog(vals);
-        return { run: vi.fn() };
-      },
-    }),
-  })),
 }));
 
 vi.mock('@pops/core-db', () => ({

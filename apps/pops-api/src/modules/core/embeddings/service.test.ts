@@ -30,7 +30,6 @@ let testDrizzle: ReturnType<typeof drizzle>;
 let vecAvailable = true;
 
 vi.mock('../../../db.js', () => ({
-  getDrizzle: () => testDrizzle,
   getDb: () => testDb,
   isVecAvailable: () => vecAvailable,
 }));

@@ -47,14 +47,6 @@ vi.mock('../tmdb/index.js', () => ({
   getTmdbClient: vi.fn(() => ({})),
 }));
 
-vi.mock('../../../db.js', () => ({
-  getDrizzle: vi.fn(() => ({
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    all: vi.fn(() => []),
-  })),
-}));
-
 import { createCaller } from '../../../shared/test-utils.js';
 import * as service from './service.js';
 import * as registry from './shelf/registry.js';

@@ -56,10 +56,6 @@ vi.mock('../../modules/cerebrum/engrams/scope-reconciliation.js', () => ({
   }),
 }));
 
-vi.mock('../../db.js', () => ({
-  getDrizzle: () => ({}),
-}));
-
 vi.mock('../../db/cerebrum-handle.js', () => ({
   getCerebrumDrizzle: () => ({}),
 }));

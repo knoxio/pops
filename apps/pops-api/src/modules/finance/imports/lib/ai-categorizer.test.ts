@@ -34,7 +34,6 @@ vi.mock('../../../../db.js', () => {
     })),
   };
   return {
-    getDrizzle: vi.fn(() => stubDrizzle),
     getCoreDrizzle: vi.fn(() => stubDrizzle),
     // Always return false: tests exercise the real API path, not the named-env skip
     isNamedEnvContext: vi.fn().mockReturnValue(false),

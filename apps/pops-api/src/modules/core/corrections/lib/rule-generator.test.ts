@@ -21,7 +21,6 @@ vi.mock('../../../../db.js', () => {
     }),
   };
   return {
-    getDrizzle: () => stubDrizzle,
     getCoreDrizzle: () => stubDrizzle,
   };
 });
