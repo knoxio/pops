@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { aiConfigManifest } from './ai-manifest.js';
+import { aiConfigManifest } from '../settings/ai-manifest.js';
 
 import type { SettingsField, SettingsGroup } from '@pops/types';
 

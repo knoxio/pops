@@ -30,6 +30,10 @@
       "types": "./dist/manifest.d.ts",
       "default": "./dist/manifest.js"
     },
+    "./settings": {
+      "types": "./dist/settings/index.d.ts",
+      "default": "./dist/settings/index.js"
+    },
     "./openapi": "./openapi/core.openapi.json",
     "./package.json": "./package.json"
   },
@@ -44,10 +48,10 @@
   },
   "dependencies": {
     "@pops/types": "workspace:*",
+    "@trpc/server": "^11.17.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@pops/core-api": "workspace:*",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
