@@ -6,7 +6,7 @@ import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
  *
  * PRD-070 US-02
  */
-import { mediaWatchlist, movies } from '@pops/db-types';
+import { mediaWatchlist, movies } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';

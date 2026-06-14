@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 
-import { seasons } from '@pops/db-types';
+import { seasons } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';

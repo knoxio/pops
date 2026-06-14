@@ -2,7 +2,7 @@
  * Context-aware picks service — fetches TMDB discover results
  * for the currently active context collections.
  */
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { type ContextCollection, getActiveCollections } from './context-collections.js';

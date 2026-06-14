@@ -13,7 +13,7 @@
  */
 import { and, eq, sql } from 'drizzle-orm';
 
-import { comparisonStaleness } from '@pops/db-types';
+import { comparisonStaleness } from '@pops/media-db';
 
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 

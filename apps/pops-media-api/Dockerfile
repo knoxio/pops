@@ -31,12 +31,15 @@ COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-media-api/tsconfig.json ./apps/pops-media-api/
 COPY apps/pops-media-api/src ./apps/pops-media-api/src
 
-# Build shared packages first
+# Build shared packages first.
+# media-db owns the canonical media table schemas and is now a leaf
+# package; db-types re-exports them via a transition shim, so media-db
+# must build BEFORE db-types (PRD-245 US-04 / audit H6).
+WORKDIR /app/packages/media-db
+RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
-RUN pnpm build
-WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/finance-contract
 RUN pnpm build

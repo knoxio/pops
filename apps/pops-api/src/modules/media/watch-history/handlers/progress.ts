@@ -1,6 +1,6 @@
 import { and, count, countDistinct, eq, inArray } from 'drizzle-orm';
 
-import { episodes, seasons, tvShows, watchHistory } from '@pops/db-types';
+import { episodes, seasons, tvShows, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
 import { NotFoundError } from '../../../../shared/errors.js';

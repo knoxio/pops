@@ -3,7 +3,7 @@ import * as plexService from './service.js';
 
 import type { Job } from 'bullmq';
 
-import type { syncJobResults } from '@pops/db-types';
+import type { syncJobResults } from '@pops/media-db';
 
 import type { SyncQueueJobData } from '../../../jobs/types.js';
 import type { PlexClient } from './client.js';

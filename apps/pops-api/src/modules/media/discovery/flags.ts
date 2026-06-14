@@ -12,7 +12,7 @@ import { eq } from 'drizzle-orm';
  * still pinned to the shared journal — flipping them belongs with each
  * table's own slice cutover, not this dismiss-pile move.
  */
-import { mediaWatchlist, movies, watchHistory } from '@pops/db-types';
+import { mediaWatchlist, movies, watchHistory } from '@pops/media-db';
 import { dismissedDiscoverService } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';

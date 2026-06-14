@@ -4,7 +4,7 @@ import { desc, eq, isNotNull } from 'drizzle-orm';
  * Discovery TMDB service — trending movies and recommendations from TMDB,
  * enriched with library membership status.
  */
-import { mediaWatchlist, movies } from '@pops/db-types';
+import { mediaWatchlist, movies } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';

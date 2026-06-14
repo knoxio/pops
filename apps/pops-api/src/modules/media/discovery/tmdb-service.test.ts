@@ -8,7 +8,7 @@ vi.mock('../../../db.js', () => ({
   getDrizzle: vi.fn(),
 }));
 
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/media-db', () => ({
   movies: { tmdbId: 'tmdb_id', id: 'id' },
   mediaWatchlist: { mediaId: 'media_id', mediaType: 'media_type', addedAt: 'added_at' },
 }));

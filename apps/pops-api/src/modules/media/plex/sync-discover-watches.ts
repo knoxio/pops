@@ -1,4 +1,4 @@
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';

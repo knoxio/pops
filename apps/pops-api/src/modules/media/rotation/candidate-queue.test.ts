@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 import { settingsService } from '@pops/core-db';
-import { rotationCandidates, rotationSources } from '@pops/db-types';
+import { rotationCandidates, rotationSources } from '@pops/media-db';
 
 import { getCoreDrizzle, getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';

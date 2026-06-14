@@ -5,7 +5,7 @@ import type { PreferenceProfile } from '../types.js';
 
 // Mock dependencies before imports
 vi.mock('../../../../db.js', () => ({ getDrizzle: vi.fn() }));
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/media-db', () => ({
   watchHistory: { mediaType: 'media_type', completed: 'completed', watchedAt: 'watched_at' },
   movies: { id: 'id', releaseDate: 'release_date' },
 }));

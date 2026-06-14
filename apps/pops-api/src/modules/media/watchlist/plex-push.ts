@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
  * Plex watchlist push — resolves Plex Discover ratingKeys for manually added
  * watchlist items so they can be pushed to the Plex cloud watchlist.
  */
-import { mediaWatchlist } from '@pops/db-types';
+import { mediaWatchlist } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { getMovie } from '../movies/service.js';

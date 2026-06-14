@@ -9,7 +9,7 @@
  */
 import { and, countDistinct, eq, inArray, isNotNull, lte } from 'drizzle-orm';
 
-import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/db-types';
+import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/media-db';
 
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { resetStaleness } from '../../comparisons/staleness.js';

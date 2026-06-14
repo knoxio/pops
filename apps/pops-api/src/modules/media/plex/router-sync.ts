@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { syncJobResults } from '@pops/db-types';
+import { syncJobResults } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { getSyncQueue } from '../../../jobs/queues.js';

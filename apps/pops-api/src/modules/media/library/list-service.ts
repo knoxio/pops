@@ -1,6 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 
-import { movies, tvShows } from '@pops/db-types';
+import { movies, tvShows } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 

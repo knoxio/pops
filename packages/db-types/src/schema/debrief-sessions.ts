@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { watchHistory } from './watch-history.js';
+import { watchHistory } from '@pops/media-db';
 
 /**
  * Debrief sessions — one row per (re-)watch tracked by the cerebrum

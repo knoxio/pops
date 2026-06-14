@@ -10,13 +10,10 @@ vi.mock('../../../db/media-db-handle.js', () => ({
   getMediaDrizzle: vi.fn(() => mockMediaDb),
 }));
 
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/media-db', () => ({
   movies: { id: 'id', tmdbId: 'tmdb_id' },
   watchHistory: { mediaId: 'media_id', mediaType: 'media_type' },
   mediaWatchlist: { mediaId: 'media_id', mediaType: 'media_type' },
-}));
-
-vi.mock('@pops/media-db', () => ({
   dismissedDiscoverService: {
     getDismissedTmdbIdSet: vi.fn(),
   },

@@ -2,7 +2,7 @@
  * Discovery Plex service — trending movies from the Plex Discover API,
  * enriched with library membership status and dismissed filtering.
  */
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { getPlexClient } from '../plex/service.js';

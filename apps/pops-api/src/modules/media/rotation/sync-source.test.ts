@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { rotationCandidates, rotationSources } from '@pops/db-types';
+import { rotationCandidates, rotationSources } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { setupTestContext } from '../../../shared/test-utils.js';

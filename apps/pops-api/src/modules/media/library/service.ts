@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 
-import { movies, watchHistory } from '@pops/db-types';
+import { movies, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { createMovie, getMovie, getMovieByTmdbId, updateMovie } from '../movies/service.js';

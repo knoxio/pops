@@ -1,6 +1,6 @@
 import { and, eq, isNotNull, sql } from 'drizzle-orm';
 
-import { movies, watchHistory } from '@pops/db-types';
+import { movies, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
 import { movieCols, toResult } from './local-shelves-helpers.js';

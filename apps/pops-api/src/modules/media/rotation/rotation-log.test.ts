@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
  *
  * PRD-072 US-06
  */
-import { rotationLog } from '@pops/db-types';
+import { rotationLog } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';

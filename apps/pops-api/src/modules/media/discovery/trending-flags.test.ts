@@ -17,7 +17,7 @@ vi.mock('../../../db.js', () => ({
   getDrizzle: vi.fn(),
 }));
 
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/media-db', () => ({
   movies: { tmdbId: 'tmdb_id' },
 }));
 

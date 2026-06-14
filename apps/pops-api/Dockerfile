@@ -67,7 +67,12 @@ COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 COPY apps/pops-api/scripts ./apps/pops-api/scripts
 
-# Build shared packages first
+# Build shared packages first.
+# media-db owns the canonical media table schemas and is now a leaf
+# package; db-types re-exports them via a transition shim, so media-db
+# must build BEFORE db-types (PRD-245 US-04 / audit H6).
+WORKDIR /app/packages/media-db
+RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
@@ -81,8 +86,6 @@ RUN pnpm build
 WORKDIR /app/packages/finance-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db
-RUN pnpm build
-WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
 RUN pnpm build

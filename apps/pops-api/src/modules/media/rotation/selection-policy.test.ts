@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { movies, rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
+import { movies, rotationCandidates, rotationExclusions, rotationSources } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { setupTestContext } from '../../../shared/test-utils.js';

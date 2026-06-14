@@ -43,7 +43,7 @@ import { and, eq, isNotNull } from 'drizzle-orm';
  * split-brain window, and retire the shared-store TOCTOU shim
  * (`getSharedWatchlistEntry`) in `watchlist/service.ts`.
  */
-import { mediaWatchlist } from '@pops/db-types';
+import { mediaWatchlist } from '@pops/media-db';
 
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getPlexClientId } from './service.js';

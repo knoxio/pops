@@ -123,10 +123,6 @@ vi.mock('drizzle-orm', () => ({
   desc: vi.fn(),
 }));
 
-vi.mock('@pops/db-types', () => ({
-  syncLogs: { syncedAt: 'synced_at', id: 'id', errors: 'errors' },
-}));
-
 vi.mock('@pops/media-db', () => ({
   syncLogs: { syncedAt: 'synced_at', id: 'id', errors: 'errors' },
 }));

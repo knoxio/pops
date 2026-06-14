@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-import { comparisonDimensions } from './comparison-dimensions.js';
+import { comparisonDimensions } from '@pops/media-db';
 
 export const debriefStatus = sqliteTable(
   'debrief_status',

@@ -1,6 +1,6 @@
 import { and, eq, notInArray, sql } from 'drizzle-orm';
 
-import { mediaWatchlist, movies, watchHistory } from '@pops/db-types';
+import { mediaWatchlist, movies, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { TMDB_GENRE_MAP } from './types.js';
