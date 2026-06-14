@@ -22,13 +22,12 @@ import { openCoreDb } from '@pops/core-db';
 import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createCoreApiApp } from './app.js';
+import { buildCoreManifest } from './core-manifest.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { reconcileRegistryOnBoot } from './modules/registry/boot.js';
 import { startEvictionTicker } from './modules/registry/eviction-ticker.js';
 import { startHeartbeatTicker } from './modules/registry/ticker.js';
 import { parseBareOrigin } from './pillars/env.js';
-
-import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   const raw = process.env['PORT'];
@@ -38,34 +37,6 @@ function resolvePort(): number {
     throw new Error(`[core-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
-}
-
-function buildCoreManifest(version: string): ManifestPayload {
-  return {
-    pillar: 'core',
-    version,
-    contract: {
-      package: '@pops/core-contract',
-      version,
-      tag: `contract-core@v${version}`,
-    },
-    routes: {
-      queries: ['core.registry.list', 'core.registry.get', 'core.serviceAccounts.list'],
-      mutations: [
-        'core.registry.register',
-        'core.registry.deregister',
-        'core.registry.heartbeat',
-        'core.serviceAccounts.create',
-        'core.serviceAccounts.revoke',
-      ],
-      subscriptions: [],
-    },
-    search: { adapters: [] },
-    ai: { tools: [] },
-    uri: { types: [] },
-    consumedSettings: { keys: [] },
-    healthcheck: { path: '/health' },
-  };
 }
 
 const port = resolvePort();
