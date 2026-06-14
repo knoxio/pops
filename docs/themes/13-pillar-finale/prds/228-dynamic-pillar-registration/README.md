@@ -239,3 +239,9 @@ shipping `nginx-generator-health.ts` and the watcher e2e harness.
   (PRD-163) is the audit trail; consumers tail it if they need history.
 - Rate limiting on the register / heartbeat endpoints. Single-host single-user
   with a shared key in a docker network; not a realistic abuse surface.
+
+## References
+
+- [Consumer call sites — in-repo pillars vs external pillars](../../notes/internal-vs-external-pillar-call-sites.md) — which SDK surface (`pillar('<id>').<router>.<proc>` vs `pillar('<id>').callDynamic`) to use once an external pillar is registered.
+- [PRD-242](../242-dynamic-approuter/README.md) — dynamic `AppRouter` composition; the type-level catch-up to PRD-228's runtime registration.
+- [PRD-233](../233-external-pillar-example-repo/README.md) — Rust external-pillar example exercising the loop end-to-end.

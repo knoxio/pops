@@ -2,7 +2,7 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 >
-> Status: **Not started**
+> Status: **In progress** — US-01 (#3232), US-02 (#3239), US-03 (#3240), US-05 done; US-04 (e2e external-pillar `callDynamic` integration test) in flight.
 
 ## Overview
 
@@ -138,6 +138,14 @@ The eight hand-imported pillar routers no longer appear in any source file under
 | 05  | [us-05-developer-doc-typed-vs-calldynamic](us-05-developer-doc-typed-vs-calldynamic.md) _(optional)_ | Author the developer-facing note that documents the "in-repo pillar → typed proxy; external pillar → `callDynamic`" split. Lives under `docs/themes/13-pillar-finale/notes/` and cross-links from PRD-228 + PRD-233.                                                                        | Yes — independent of us-01..04                                                            |
 
 US-01 is foundational. US-02 and US-03 are mutually independent once US-01 lands — US-02 wires the runtime composition without removing the literal; US-03 removes the literal once US-02's substitute is live. US-04 is the integration test that proves the loop closes end-to-end. US-05 is a low-cost documentation deliverable that can run in parallel from day one.
+
+| US  | Status                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------- |
+| 01  | Done (#3232)                                                                                                        |
+| 02  | Done (#3239)                                                                                                        |
+| 03  | Done (#3240)                                                                                                        |
+| 04  | In progress                                                                                                         |
+| 05  | Done — note at [`internal-vs-external-pillar-call-sites.md`](../../notes/internal-vs-external-pillar-call-sites.md) |
 
 ## Acceptance Criteria
 

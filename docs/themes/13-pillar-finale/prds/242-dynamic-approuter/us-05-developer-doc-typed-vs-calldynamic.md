@@ -8,16 +8,16 @@ As an external-pillar author or an in-repo developer adding a new consumer call 
 
 ## Acceptance Criteria
 
-- [ ] A note exists at `docs/themes/13-pillar-finale/notes/internal-vs-external-pillar-call-sites.md` (or equivalent path inside `docs/themes/13-pillar-finale/notes/`).
-- [ ] The note explains the two consumer-side paths:
+- [x] A note exists at `docs/themes/13-pillar-finale/notes/internal-vs-external-pillar-call-sites.md` (or equivalent path inside `docs/themes/13-pillar-finale/notes/`).
+- [x] The note explains the two consumer-side paths:
   - **In-repo pillar** → `trpc.<pillar>.<router>.<proc>` typed proxy (existing pattern). Static type comes from the codegen-derived `AppRouter`.
   - **External pillar** → `pillar(id).callDynamic(routerName, procName, input, kind)` runtime escape hatch from [PR #3131](https://github.com/knoxio/pops/pull/3131). Return type is `CallResult<unknown>`; caller validates the response shape.
-- [ ] The note explains _why_ the split exists (TypeScript cannot know an out-of-repo pillar's procedure shape at compile time without a generated SDK package; PRD-242 deliberately stops short of that step).
-- [ ] The note gives one runnable example for each path.
-- [ ] The note cross-links to: [PRD-228](../228-dynamic-pillar-registration/README.md) (the registration surface), [PRD-233](../233-external-pillar-example-repo/README.md) (the Rust example pillar), [PRD-242](README.md) (this PRD), and `packages/pillar-sdk/src/client/proxy.ts:26-72` (`CallDynamicFn`).
-- [ ] The note is linked from the PRD-228 README's "References" section and the PRD-233 README's developer-onboarding section.
-- [ ] The note is < 1 page (per `docs/CLAUDE.md`'s sizing rule).
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] The note explains _why_ the split exists (TypeScript cannot know an out-of-repo pillar's procedure shape at compile time without a generated SDK package; PRD-242 deliberately stops short of that step).
+- [x] The note gives one runnable example for each path.
+- [x] The note cross-links to: [PRD-228](../228-dynamic-pillar-registration/README.md) (the registration surface), [PRD-233](../233-external-pillar-example-repo/README.md) (the Rust example pillar), [PRD-242](README.md) (this PRD), and `packages/pillar-sdk/src/client/proxy.ts:26-72` (`CallDynamicFn`).
+- [x] The note is linked from the PRD-228 README's "References" section and the PRD-233 README's developer-onboarding section.
+- [x] The note is < 1 page (per `docs/CLAUDE.md`'s sizing rule).
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 
