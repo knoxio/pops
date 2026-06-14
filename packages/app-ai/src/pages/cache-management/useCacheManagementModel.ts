@@ -1,18 +1,26 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
-type UsageStats = {
+interface UsageStats {
   totalApiCalls?: number;
   totalCacheHits?: number;
   cacheHitRate?: number;
-};
+}
 
-type CacheStats = {
+interface CacheStats {
   totalEntries?: number;
   diskSizeBytes?: number;
-};
+}
+
+interface ClearResult {
+  removed: number;
+}
+
+interface ClearStaleInput {
+  maxAgeDays: number;
+}
 
 function deriveDisplayMetrics(usage: UsageStats | undefined, cache: CacheStats | undefined) {
   const totalCacheHits = usage?.totalCacheHits ?? 0;
@@ -25,11 +33,11 @@ function deriveDisplayMetrics(usage: UsageStats | undefined, cache: CacheStats |
 }
 
 function useClearStaleMutation() {
-  const utils = trpc.useUtils();
-  return trpc.core.aiUsage.clearStaleCache.useMutation({
+  const utils = usePillarUtils('core');
+  return usePillarMutation<ClearStaleInput, ClearResult>('core', ['aiUsage', 'clearStaleCache'], {
     onSuccess: (data) => {
       toast.success(`Removed ${data.removed} stale cache entries`);
-      void utils.core.aiUsage.cacheStats.invalidate();
+      void utils.invalidate(['aiUsage', 'cacheStats']);
     },
     onError: () => {
       toast.error('Failed to clear stale cache');
@@ -38,11 +46,11 @@ function useClearStaleMutation() {
 }
 
 function useClearAllMutation() {
-  const utils = trpc.useUtils();
-  return trpc.core.aiUsage.clearAllCache.useMutation({
+  const utils = usePillarUtils('core');
+  return usePillarMutation<void, ClearResult>('core', ['aiUsage', 'clearAllCache'], {
     onSuccess: (data) => {
       toast.success(`Cleared ${data.removed} cache entries`);
-      void utils.core.aiUsage.cacheStats.invalidate();
+      void utils.invalidate(['aiUsage', 'cacheStats']);
     },
     onError: () => {
       toast.error('Failed to clear cache');
@@ -57,8 +65,12 @@ export function useCacheManagementModel() {
     data: cacheStats,
     isLoading: cacheLoading,
     error: cacheError,
-  } = trpc.core.aiUsage.cacheStats.useQuery();
-  const { data: usageStats, isLoading: usageLoading } = trpc.core.aiUsage.getStats.useQuery();
+  } = usePillarQuery<CacheStats>('core', ['aiUsage', 'cacheStats'], undefined);
+  const { data: usageStats, isLoading: usageLoading } = usePillarQuery<UsageStats>(
+    'core',
+    ['aiUsage', 'getStats'],
+    undefined
+  );
 
   const clearStaleMutation = useClearStaleMutation();
   const clearAllMutation = useClearAllMutation();

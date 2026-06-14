@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CacheManagementPage } from './CacheManagementPage';
 
-// Mock sonner toast
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
 vi.mock('sonner', () => ({
@@ -15,57 +14,46 @@ vi.mock('sonner', () => ({
   },
 }));
 
-// Mock tRPC
 const mockClearStale = vi.fn();
 const mockClearAll = vi.fn();
-const mockInvalidate = vi.fn();
+const mockInvalidate = vi.fn().mockResolvedValue(undefined);
 const mockCacheStats = vi.fn();
 const mockGetStats = vi.fn();
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    useUtils: () => ({
-      core: {
-        aiUsage: {
-          cacheStats: { invalidate: mockInvalidate },
-        },
-      },
-    }),
-    core: {
-      aiUsage: {
-        cacheStats: {
-          useQuery: () => mockCacheStats(),
-        },
-        getStats: {
-          useQuery: () => mockGetStats(),
-        },
-        clearStaleCache: {
-          useMutation: ({
-            onSuccess,
-            onError,
-          }: {
-            onSuccess: (d: unknown) => void;
-            onError: () => void;
-          }) => ({
-            mutate: (input: unknown) => mockClearStale(input, { onSuccess, onError }),
-            isPending: false,
-          }),
-        },
-        clearAllCache: {
-          useMutation: ({
-            onSuccess,
-            onError,
-          }: {
-            onSuccess: (d: unknown) => void;
-            onError: () => void;
-          }) => ({
-            mutate: () => mockClearAll({ onSuccess, onError }),
-            isPending: false,
-          }),
-        },
-      },
-    },
+interface MutationHandlers {
+  onSuccess: (d: unknown) => void;
+  onError: () => void;
+}
+
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'aiUsage.cacheStats') return mockCacheStats();
+    if (key === 'aiUsage.getStats') return mockGetStats();
+    throw new Error(`Unexpected pillar query: ${key}`);
   },
+  usePillarMutation: (_pillarId: string, path: readonly string[], options: MutationHandlers) => {
+    const key = path.join('.');
+    const { onSuccess, onError } = options;
+    if (key === 'aiUsage.clearStaleCache') {
+      return {
+        mutate: (input: unknown) => mockClearStale(input, { onSuccess, onError }),
+        isPending: false,
+      };
+    }
+    if (key === 'aiUsage.clearAllCache') {
+      return {
+        mutate: () => mockClearAll({ onSuccess, onError }),
+        isPending: false,
+      };
+    }
+    throw new Error(`Unexpected pillar mutation: ${key}`);
+  },
+  usePillarUtils: () => ({
+    invalidate: mockInvalidate,
+    setData: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 function renderPage() {
@@ -118,7 +106,6 @@ beforeEach(() => {
 });
 
 describe('CacheManagementPage', () => {
-  // AC: Cache stats display — total entries, disk size, hit rate
   it('displays cache stats: total entries, disk size, and hit rate', () => {
     setupDefaults({ totalEntries: 150, diskSizeBytes: 24576, cacheHitRate: 0.75 });
     renderPage();
@@ -131,7 +118,6 @@ describe('CacheManagementPage', () => {
     expect(screen.getByText('75.0%')).toBeInTheDocument();
   });
 
-  // AC: "Clear stale" button — removes entries older than configurable N days
   it('calls clearStaleCache with configured days and shows toast', async () => {
     setupDefaults();
     mockClearStale.mockImplementation(
@@ -142,7 +128,6 @@ describe('CacheManagementPage', () => {
     renderPage();
 
     const user = userEvent.setup();
-    // Days input defaults to 30; verify it's present and the button fires with that value
     const daysInput = screen.getByLabelText('Days threshold for stale entries');
     expect(daysInput).toHaveValue(30);
 
@@ -152,7 +137,6 @@ describe('CacheManagementPage', () => {
     expect(mockToastSuccess).toHaveBeenCalledWith('Removed 12 stale cache entries');
   });
 
-  // AC: "Clear all" button with confirmation dialog
   it('shows confirmation dialog before clearing all, then clears and toasts', async () => {
     setupDefaults({ totalEntries: 150 });
     mockClearAll.mockImplementation(
@@ -165,17 +149,14 @@ describe('CacheManagementPage', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /Clear All/i }));
 
-    // Dialog should appear with entry count
     expect(screen.getByText('Clear entire AI cache?')).toBeInTheDocument();
     expect(screen.getByText(/150 cached/)).toBeInTheDocument();
 
-    // Confirm
     await user.click(screen.getByRole('button', { name: 'Clear All' }));
     expect(mockClearAll).toHaveBeenCalled();
     expect(mockToastSuccess).toHaveBeenCalledWith('Cleared 150 cache entries');
   });
 
-  // AC: Stats refresh after clearing
   it('invalidates cacheStats query after clearing', async () => {
     setupDefaults();
     mockClearStale.mockImplementation(
@@ -193,7 +174,6 @@ describe('CacheManagementPage', () => {
     });
   });
 
-  // AC: Hit Rate shows — when there are no AI usage events
   it('shows — for hit rate when there are no AI usage events', () => {
     setupDefaults({ totalApiCalls: 0, totalCacheHits: 0, cacheHitRate: 0 });
     renderPage();
@@ -203,12 +183,10 @@ describe('CacheManagementPage', () => {
     expect(screen.queryByText(/\d+\.\d+%/)).not.toBeInTheDocument();
   });
 
-  // AC: Toast confirmation showing how many entries were removed
   it('shows loading skeletons while data loads', () => {
     setupDefaults({ loading: true });
     renderPage();
 
-    // Stat cards replaced by skeletons, no values visible
     expect(screen.queryByText('Total Entries')).not.toBeInTheDocument();
     expect(screen.queryByText('Disk Size')).not.toBeInTheDocument();
     expect(screen.queryByText('Hit Rate')).not.toBeInTheDocument();

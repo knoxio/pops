@@ -1,5 +1,18 @@
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Badge, Card, Skeleton } from '@pops/ui';
+
+interface BudgetStatus {
+  id: string;
+  scopeType: string;
+  scopeValue: string | null;
+  monthlyTokenLimit: number | null;
+  monthlyCostLimit: number | null;
+  action: string;
+  currentTokenUsage: number;
+  currentCostUsage: number;
+  percentageUsed: number | null;
+  projectedExhaustionDate: string | null;
+}
 
 function budgetUsageLabel(b: {
   monthlyCostLimit: number | null;
@@ -23,7 +36,11 @@ function barColorClass(pct: number) {
 }
 
 export function BudgetStatusSection() {
-  const { data: budgetStatuses, isLoading } = trpc.core.aiBudgets.getBudgetStatus.useQuery();
+  const { data: budgetStatuses, isLoading } = usePillarQuery<BudgetStatus[]>(
+    'core',
+    ['aiBudgets', 'getBudgetStatus'],
+    undefined
+  );
 
   if (isLoading) return <Skeleton className="h-24" />;
   if (!budgetStatuses?.length) return null;

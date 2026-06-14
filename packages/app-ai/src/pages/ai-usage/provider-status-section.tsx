@@ -1,25 +1,67 @@
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { ProviderCard } from './provider-card';
 
-export function ProviderStatusSection() {
-  const utils = trpc.useUtils();
-  const { data: providers, isLoading } = trpc.core.aiProviders.list.useQuery();
+interface ProviderModel {
+  id: number;
+  modelId: string;
+  displayName: string | null;
+  inputCostPerMtok: number;
+  outputCostPerMtok: number;
+  contextWindow: number | null;
+  isDefault: boolean;
+}
 
-  const healthCheckMutation = trpc.core.aiProviders.healthCheck.useMutation({
-    onSuccess: (result) => {
-      if (result.status === 'active') {
-        toast.success(`Provider healthy (${result.latencyMs}ms)`);
-      } else {
-        toast.error(`Provider unhealthy: ${result.error ?? 'unknown error'}`);
-      }
-      void utils.core.aiProviders.list.invalidate();
-    },
-    onError: () => toast.error('Health check failed'),
-  });
+interface Provider {
+  id: string;
+  name: string;
+  type: string;
+  baseUrl: string | null;
+  apiKeyRef: string | null;
+  status: string;
+  lastHealthCheck: string | null;
+  lastLatencyMs: number | null;
+  createdAt: string;
+  updatedAt: string;
+  models: ProviderModel[];
+}
+
+interface HealthCheckInput {
+  providerId: string;
+}
+
+interface HealthCheckResult {
+  status: 'active' | 'error';
+  latencyMs: number;
+  error?: string;
+}
+
+export function ProviderStatusSection() {
+  const utils = usePillarUtils('core');
+  const { data: providers, isLoading } = usePillarQuery<Provider[]>(
+    'core',
+    ['aiProviders', 'list'],
+    undefined
+  );
+
+  const healthCheckMutation = usePillarMutation<HealthCheckInput, HealthCheckResult>(
+    'core',
+    ['aiProviders', 'healthCheck'],
+    {
+      onSuccess: (result) => {
+        if (result.status === 'active') {
+          toast.success(`Provider healthy (${result.latencyMs}ms)`);
+        } else {
+          toast.error(`Provider unhealthy: ${result.error ?? 'unknown error'}`);
+        }
+        void utils.invalidate(['aiProviders', 'list']);
+      },
+      onError: () => toast.error('Health check failed'),
+    }
+  );
 
   if (isLoading) return <Skeleton className="h-32" />;
   if (!providers?.length) return null;
