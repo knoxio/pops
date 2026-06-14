@@ -1,128 +1,181 @@
 /**
- * Canonical metadata for every buildable module (PRD-101 US-02 + US-04 follow-up).
+ * Workspace-discovered manifest sources for the registry build (PRD-241 US-02).
  *
- * The `KNOWN_MODULES` list below is the source of truth for which module ids
- * the registry knows about. Each entry is a structurally complete
- * `ModuleManifest` describing the module's identity, surfaces, and
- * cross-cutting slot declarations — the slots that are aggregated by the
- * platform after PRD-101.
+ * Discovery contract:
  *
- * Settings (the only pure-data cross-cutting slot today, PRD-093) live in
- * `src/settings/` so both this build script and the runtime API consume them
- * from a single source of truth. Pure data, no runtime dependencies beyond
- * `@pops/types`.
+ *   - Enumerate workspace packages matching `@pops/*-contract`
+ *     (`packages/*-contract/package.json`).
+ *   - For each contract package that declares a `./manifest` subpath in its
+ *     `exports`, dynamically import `@pops/<x>-contract/manifest` and collect
+ *     every exported value that satisfies `ModuleManifest` (a contract
+ *     package may export more than one — `@pops/core-contract/manifest`
+ *     carries both `coreManifest` and `aiManifest`; `@pops/cerebrum-contract`
+ *     carries `cerebrumManifest` and `egoManifest`).
+ *   - Packages without a `./manifest` subpath (e.g. the legacy
+ *     `@pops/food-contracts` plural variant, or contracts for surfaces not
+ *     yet promoted to pillar) are skipped with a build-log info line.
  *
- * Code-bearing slots (`backend.router`, `frontend.routes`, handler functions)
- * stay where they are; consumer wiring in US-03..US-10 joins them back to the
- * registry metadata at the call site. The duplicated metadata fields (id,
- * name, surfaces, …) below mirror each app's runtime manifest — `pnpm
- * registry:build` validates every entry via `assertModuleManifest()` and
- * cross-checks against the live aggregator on the API side.
- *
- * See `docs/themes/01-foundation/prds/101-plugin-contract/us-02-build-time-registry.md`
- * and `us-04-settings-from-registry.md`.
+ * No file in `@pops/module-registry` names a pillar id. Adding a new in-repo
+ * pillar = adding a contract package with a `./manifest` export and pinning
+ * it in `module-registry/package.json` devDependencies. See PRD-241 README.
  */
-import { cerebrumManifest, egoManifest } from '@pops/cerebrum-contract/settings';
-import { aiConfigManifest, coreOperationalManifest } from '@pops/core-contract/settings';
-import { financeManifest } from '@pops/finance-contract/settings';
-import { inventoryManifest } from '@pops/inventory-contract/settings';
-import {
-  arrManifest,
-  mediaOperationalManifest,
-  plexManifest,
-  rotationManifest,
-} from '@pops/media-contract/settings';
+import { readdir, readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import type { ModuleManifest } from '@pops/types';
+import { assertModuleManifest, type ModuleManifest } from '@pops/types';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const PACKAGE_ROOT = join(here, '..');
+const PACKAGES_ROOT = join(PACKAGE_ROOT, '..');
+
+const CONTRACT_SUFFIX = '-contract';
+const MANIFEST_SUBPATH = './manifest';
+
+interface ContractPackage {
+  readonly name: string;
+  readonly dir: string;
+  readonly manifestEntry: string | undefined;
+}
+
+interface ManifestExportsEntry {
+  readonly default?: string;
+}
+
+type ExportsField = Record<string, string | ManifestExportsEntry | undefined>;
+
+interface ContractPackageJson {
+  readonly name?: string;
+  readonly exports?: ExportsField;
+}
+
+function isContractPackageJson(value: unknown): value is ContractPackageJson {
+  if (value === null || typeof value !== 'object') return false;
+  const candidate = value as { name?: unknown; exports?: unknown };
+  if (candidate.name !== undefined && typeof candidate.name !== 'string') return false;
+  if (
+    candidate.exports !== undefined &&
+    (candidate.exports === null || typeof candidate.exports !== 'object')
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function pickManifestEntry(exportsField: ExportsField | undefined): string | undefined {
+  const entry = exportsField?.[MANIFEST_SUBPATH];
+  if (entry === undefined) return undefined;
+  if (typeof entry === 'string') return entry;
+  return entry.default;
+}
+
+async function listContractPackages(packagesRoot: string): Promise<ContractPackage[]> {
+  const entries = await readdir(packagesRoot, { withFileTypes: true });
+  const candidates = entries
+    .filter((entry) => entry.isDirectory() && entry.name.endsWith(CONTRACT_SUFFIX))
+    .map((entry) => entry.name)
+    .toSorted((a, b) => a.localeCompare(b, 'en'));
+
+  const out: ContractPackage[] = [];
+  for (const dirName of candidates) {
+    const pkgPath = join(packagesRoot, dirName, 'package.json');
+    const raw = await readFile(pkgPath, 'utf8');
+    const parsed: unknown = JSON.parse(raw);
+    if (!isContractPackageJson(parsed)) {
+      throw new Error(`malformed package.json at ${pkgPath}`);
+    }
+    const name = parsed.name;
+    if (name === undefined || !name.startsWith('@pops/') || !name.endsWith(CONTRACT_SUFFIX)) {
+      continue;
+    }
+    out.push({
+      name,
+      dir: join(packagesRoot, dirName),
+      manifestEntry: pickManifestEntry(parsed.exports),
+    });
+  }
+  return out;
+}
+
+function looksLikeModuleManifest(value: unknown): value is ModuleManifest {
+  if (value === null || typeof value !== 'object') return false;
+  const candidate = value as { id?: unknown; name?: unknown; surfaces?: unknown };
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    Array.isArray(candidate.surfaces)
+  );
+}
+
+function collectModuleManifests(mod: Record<string, unknown>, pkgName: string): ModuleManifest[] {
+  const collected: ModuleManifest[] = [];
+  for (const [exportName, value] of Object.entries(mod)) {
+    if (!looksLikeModuleManifest(value)) continue;
+    assertModuleManifest(value, `${pkgName}/manifest export '${exportName}'`);
+    collected.push(value);
+  }
+  return collected;
+}
+
+export interface DiscoverOptions {
+  /** Override the packages directory; defaults to the monorepo `packages/`. */
+  readonly packagesRoot?: string;
+  /**
+   * Resolve `@pops/<id>-contract/manifest` to a module spec. Defaults to the
+   * file-URL of the package's `exports['./manifest']` entry — works under
+   * `tsx`, vitest, and compiled Node identically. Overridden by tests that
+   * want to inject fixtures without touching disk.
+   */
+  readonly importManifest?: (pkg: ContractPackage) => Promise<Record<string, unknown>>;
+  /** Build-log sink for the "skipped — no ./manifest" info lines. */
+  readonly log?: (message: string) => void;
+}
+
+async function defaultImportManifest(pkg: ContractPackage): Promise<Record<string, unknown>> {
+  if (pkg.manifestEntry === undefined) {
+    throw new Error(`contract package '${pkg.name}' has no './manifest' export`);
+  }
+  const url = pathToFileURL(join(pkg.dir, pkg.manifestEntry)).href;
+  const mod: unknown = await import(url);
+  if (mod === null || typeof mod !== 'object') {
+    throw new Error(`'${pkg.name}/manifest' did not resolve to a module`);
+  }
+  return mod as Record<string, unknown>;
+}
 
 /**
- * Source manifest for each module the registry knows about. Order does not
- * matter — the build script sorts deterministically by id before emitting
- * `generated.ts`.
- *
- * `core` is always installed (PRD-100 contract: it's the platform shell, not
- * a domain module). `resolveInstalledIds` keeps it in the install set
- * regardless of `POPS_APPS` / `POPS_OVERLAYS`.
+ * Walk `packages/*-contract` and return every `ModuleManifest` exported by a
+ * contract package's `./manifest` subpath. Results are sorted by manifest id
+ * so the downstream sort is stable regardless of filesystem iteration order.
  */
-export const MANIFEST_SOURCES: readonly ModuleManifest[] = [
-  {
-    id: 'core',
-    name: 'Core',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description:
-      'Cross-cutting platform services: entities, AI usage/providers, settings, features, search.',
-    settings: [aiConfigManifest, coreOperationalManifest],
-  },
-  {
-    id: 'finance',
-    name: 'Finance',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description: 'Transactions, budgets, entities, and import pipeline.',
-    settings: [financeManifest],
-  },
-  {
-    id: 'food',
-    name: 'Food',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description: 'Recipes, ingredients, meal planning, and multimodal ingestion.',
-  },
-  {
-    id: 'lists',
-    name: 'Lists',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description: 'Generic lists — shopping, packing, todo. Food is the first consumer.',
-  },
-  {
-    id: 'media',
-    name: 'Media',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description: 'Movies, TV shows, watch history, and Plex/TMDB/TVDB sync.',
-    settings: [plexManifest, arrManifest, rotationManifest, mediaOperationalManifest],
-  },
-  {
-    id: 'inventory',
-    name: 'Inventory',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description: 'Home items, locations, connections, warranties, and documents.',
-    settings: [inventoryManifest],
-  },
-  {
-    id: 'ai',
-    name: 'AI Ops',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description: 'AI usage, providers, model config, prompts, and rules browser.',
-  },
-  {
-    id: 'cerebrum',
-    name: 'Cerebrum',
-    version: '0.1.0',
-    surfaces: ['app'],
-    description:
-      'Engram storage, retrieval, ingest/emit, plexus, reflex, glia — knowledge graph and agents.',
-    settings: [cerebrumManifest],
-  },
-  {
-    id: 'ego',
-    name: 'Ego',
-    version: '0.1.0',
-    surfaces: ['app', 'overlay'],
-    description: 'Conversational AI interface to Cerebrum (PRD-087).',
-    frontend: {
-      overlay: {
-        chromeSlot: 'assistant',
-        shortcut: 'mod+i',
-      },
-    },
-    settings: [egoManifest],
-  },
-];
+export async function discoverManifestSources(
+  options: DiscoverOptions = {}
+): Promise<readonly ModuleManifest[]> {
+  const {
+    packagesRoot = PACKAGES_ROOT,
+    importManifest = defaultImportManifest,
+    log = (message) => process.stdout.write(`${message}\n`),
+  } = options;
+
+  const contracts = await listContractPackages(packagesRoot);
+  const manifests: ModuleManifest[] = [];
+
+  for (const pkg of contracts) {
+    if (pkg.manifestEntry === undefined) {
+      log(`[known-modules] skipping ${pkg.name}: no './manifest' export`);
+      continue;
+    }
+    const mod = await importManifest(pkg);
+    const fromPkg = collectModuleManifests(mod, pkg.name);
+    if (fromPkg.length === 0) {
+      log(`[known-modules] skipping ${pkg.name}: './manifest' exports no ModuleManifest values`);
+      continue;
+    }
+    manifests.push(...fromPkg);
+  }
+
+  return manifests.toSorted((a, b) => a.id.localeCompare(b.id, 'en'));
+}
 
 /**
  * Module ids that are always present in `MODULES` regardless of `POPS_APPS` /
@@ -130,10 +183,3 @@ export const MANIFEST_SOURCES: readonly ModuleManifest[] = [
  * gate *optional* modules only (PRD-100).
  */
 export const ALWAYS_INSTALLED_IDS: readonly string[] = ['core'];
-
-/**
- * Canonical id list — the subset of module ids buildable in this monorepo.
- * Independent of install (the `MODULES` constant emitted by the build
- * narrows further when `POPS_APPS` / `POPS_OVERLAYS` are set).
- */
-export const KNOWN_MODULE_IDS: readonly string[] = MANIFEST_SOURCES.map((m) => m.id);

@@ -11,8 +11,8 @@
  * different `POPS_APPS` values without mutating the committed registry.
  *
  * This script bypasses the `generated.ts → tsc` path entirely. It uses
- * `buildRegistrySource()`'s pure pipeline pieces (`MANIFEST_SOURCES`,
- * `KNOWN_MODULE_IDS`, `ALWAYS_INSTALLED_IDS`, `resolveInstalledIds`,
+ * the same pure pipeline pieces the registry build does
+ * (`discoverManifestSources`, `ALWAYS_INSTALLED_IDS`, `resolveInstalledIds`,
  * `validateManifests`, `project`) to compute the same `MODULES`
  * projection the canonical build would produce, then emits a single
  * plain-JS module file ready to be `resolve.alias`-pointed at by Vite.
@@ -36,8 +36,7 @@ import { dirname, resolve } from 'node:path';
 
 import {
   ALWAYS_INSTALLED_IDS,
-  KNOWN_MODULE_IDS,
-  MANIFEST_SOURCES,
+  discoverManifestSources,
 } from '../../../packages/module-registry/scripts/known-modules.ts';
 import {
   project,
@@ -89,10 +88,12 @@ async function main(): Promise<void> {
   }
   const outputPath = resolve(outputArg);
 
-  validateManifests(MANIFEST_SOURCES);
-  const installedIds = resolveInstalledIds(KNOWN_MODULE_IDS, process.env, ALWAYS_INSTALLED_IDS);
+  const manifestSources = await discoverManifestSources();
+  const knownModuleIds = manifestSources.map((m) => m.id);
+  validateManifests(manifestSources);
+  const installedIds = resolveInstalledIds(knownModuleIds, process.env, ALWAYS_INSTALLED_IDS);
   const installed = new Set(installedIds);
-  const selected = MANIFEST_SOURCES.filter((m) => installed.has(m.id));
+  const selected = manifestSources.filter((m) => installed.has(m.id));
   const sorted = selected.toSorted((a, b) => a.id.localeCompare(b.id, 'en'));
   const projected = sorted.map(project);
   const installedIdsSorted = [...installedIds].toSorted((a, b) => a.localeCompare(b, 'en'));
@@ -105,7 +106,7 @@ async function main(): Promise<void> {
   // `generated.ts` happens to conflate the two because its default
   // install set is "everything"; this snapshot reflects the router's
   // intended semantic for restricted install sets.
-  const knownIdsSorted = [...KNOWN_MODULE_IDS].toSorted((a, b) => a.localeCompare(b, 'en'));
+  const knownIdsSorted = [...knownModuleIds].toSorted((a, b) => a.localeCompare(b, 'en'));
 
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(

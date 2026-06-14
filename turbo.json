@@ -28,6 +28,7 @@
       "outputs": []
     },
     "registry:build": {
+      "dependsOn": ["^build"],
       "inputs": [
         "scripts/**/*.ts",
         "scripts/**/*.json",
