@@ -12,8 +12,18 @@ import cron, { type ScheduledTask } from 'node-cron';
 import { SettingNotFoundError, settingsService } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
+import { FeatureNotFoundError } from '../../core/features/errors.js';
 import { isEnabled } from '../../core/features/index.js';
 import { emptyResult } from './rotation-cycle-types.js';
+
+function isRotationEnabled(): boolean {
+  try {
+    return isEnabled('media.rotation');
+  } catch (err) {
+    if (err instanceof FeatureNotFoundError) return false;
+    throw err;
+  }
+}
 import { executeRotationCycle } from './rotation-cycle.js';
 import { writeRotationLog } from './rotation-log.js';
 
@@ -126,7 +136,7 @@ export function getRotationSchedulerStatus(): RotationSchedulerStatus {
 }
 
 export function resumeRotationSchedulerIfEnabled(): RotationSchedulerStatus | null {
-  if (!isEnabled('media.rotation')) return null;
+  if (!isRotationEnabled()) return null;
   const savedCron = getSetting(SETTINGS_KEYS.cronExpression) ?? DEFAULT_CRON;
   console.warn(`[Rotation] Auto-resuming scheduler (cron: ${savedCron})`);
   return startRotationScheduler({ cronExpression: savedCron });
