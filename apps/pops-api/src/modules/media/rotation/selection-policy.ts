@@ -9,9 +9,9 @@ import { eq } from 'drizzle-orm';
  *
  * PRD-071 US-05
  */
-import { movies, rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
+import { movies, rotationCandidates, rotationExclusions, rotationSources } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,7 +53,7 @@ interface DedupedCandidate {
 }
 
 function fetchPendingCandidates(): PendingRow[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   return db
     .select({
       candidateId: rotationCandidates.id,
@@ -70,7 +70,7 @@ function fetchPendingCandidates(): PendingRow[] {
 }
 
 function buildSourcePriorityMap(): Map<number, number> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const sources = db
     .select({ id: rotationSources.id, priority: rotationSources.priority })
     .from(rotationSources)
@@ -79,7 +79,7 @@ function buildSourcePriorityMap(): Map<number, number> {
 }
 
 function buildExcludedSets(): { excludedTmdbIds: Set<number>; libraryTmdbIds: Set<number> } {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const exclusions = db
     .select({ tmdbId: rotationExclusions.tmdbId })
     .from(rotationExclusions)

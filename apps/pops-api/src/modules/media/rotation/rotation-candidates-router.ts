@@ -1,9 +1,9 @@
 import { and, count, desc, eq, like, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
+import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure } from '../../../trpc.js';
 import { downloadCandidateImpl } from './download-candidate.js';
@@ -24,7 +24,7 @@ export const rotationCandidatesProcedures = {
       })
     )
     .mutation(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
 
       return db.transaction((tx) => {
         const excluded = tx
@@ -70,7 +70,7 @@ export const rotationCandidatesProcedures = {
   getCandidateStatus: protectedProcedure
     .input(z.object({ tmdbId: z.number().int().positive() }))
     .query(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
 
       const candidate = db
         .select({ status: rotationCandidates.status, id: rotationCandidates.id })
@@ -96,7 +96,7 @@ export const rotationCandidatesProcedures = {
   removeFromQueue: protectedProcedure
     .input(z.object({ tmdbId: z.number().int().positive() }))
     .mutation(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
       const result = db
         .delete(rotationCandidates)
         .where(
@@ -119,7 +119,7 @@ export const rotationCandidatesProcedures = {
         .default({ status: 'pending', limit: 20, offset: 0 })
     )
     .query(({ input }) => {
-      const db = getDrizzle();
+      const db = getMediaDrizzle();
 
       const statusFilter = eq(rotationCandidates.status, input.status);
       const whereClause = input.search

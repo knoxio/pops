@@ -12,6 +12,10 @@ vi.mock('../../../../db.js', () => ({
   getDrizzle: vi.fn(),
 }));
 
+vi.mock('../../../../db/media-db-handle.js', () => ({
+  getMediaDrizzle: vi.fn(),
+}));
+
 vi.mock('@pops/db-types', () => ({
   movies: {
     id: 'id',
@@ -49,6 +53,39 @@ vi.mock('@pops/db-types', () => ({
   },
 }));
 
+vi.mock('@pops/media-db', () => ({
+  movies: {
+    id: 'id',
+    tmdbId: 'tmdb_id',
+    title: 'title',
+    overview: 'overview',
+    releaseDate: 'release_date',
+    posterPath: 'poster_path',
+    backdropPath: 'backdrop_path',
+    voteAverage: 'vote_average',
+    voteCount: 'vote_count',
+    genres: 'genres',
+    runtime: 'runtime',
+    createdAt: 'created_at',
+    rotationStatus: 'rotation_status',
+    rotationExpiresAt: 'rotation_expires_at',
+  },
+  watchHistory: {
+    id: 'id',
+    mediaId: 'media_id',
+    mediaType: 'media_type',
+    completed: 'completed',
+    watchedAt: 'watched_at',
+  },
+  mediaScores: {
+    id: 'id',
+    mediaId: 'media_id',
+    mediaType: 'media_type',
+    score: 'score',
+    dimensionId: 'dimension_id',
+  },
+}));
+
 vi.mock('./registry.js', () => ({
   registerShelf: vi.fn(),
   getRegisteredShelves: vi.fn(() => []),
@@ -56,6 +93,7 @@ vi.mock('./registry.js', () => ({
 }));
 
 import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import {
   comfortPicksShelf,
   franchiseCompletionsShelf,
@@ -69,6 +107,21 @@ import {
 } from './local-shelves.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
+const mockGetMediaDrizzle = vi.mocked(getMediaDrizzle);
+
+/**
+ * Set both shared + media handles to the same chain mock. After the
+ * media_scores / rotation_* PR4 cutover, `polarizingShelf`,
+ * `comfortPicksShelf`, `undiscoveredShelf`, and `recentlyAddedShelf` use
+ * `getMediaDrizzle()` while `friendProofShelf` and the runtime/misc shelves
+ * stay on `getDrizzle()`. Tests stage the chain via this helper instead of
+ * direct `mockGetDrizzle.mockReturnValue(...)` so handler flips are
+ * silent at the test layer.
+ */
+function stageDb(db: ReturnType<typeof getDrizzle>): void {
+  mockGetDrizzle.mockReturnValue(db);
+  mockGetMediaDrizzle.mockReturnValue(db as unknown as ReturnType<typeof getMediaDrizzle>);
+}
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -138,7 +191,7 @@ describe('shortWatchShelf', () => {
 
   it('returns empty when no short unwatched movies', async () => {
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = shortWatchShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -148,7 +201,7 @@ describe('shortWatchShelf', () => {
   it('returns mapped DiscoverResults for short movies', async () => {
     const row = makeMovieRow({ runtime: 85 });
     const { db } = makeChainMock([row]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = shortWatchShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -173,7 +226,7 @@ describe('longEpicShelf', () => {
 
   it('returns empty when no long unwatched movies', async () => {
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = longEpicShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -183,7 +236,7 @@ describe('longEpicShelf', () => {
   it('returns mapped DiscoverResults for long movies', async () => {
     const row = makeMovieRow({ runtime: 180 });
     const { db } = makeChainMock([row]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = longEpicShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -205,7 +258,7 @@ describe('comfortPicksShelf', () => {
 
   it('returns empty when no movies watched 2+ times', async () => {
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = comfortPicksShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -215,7 +268,7 @@ describe('comfortPicksShelf', () => {
   it('marks results as watched', async () => {
     const row = { ...makeMovieRow(), watchCount: 3 };
     const { db } = makeChainMock([row]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = comfortPicksShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -236,7 +289,7 @@ describe('undiscoveredShelf', () => {
 
   it('returns empty when all movies are watched or compared', async () => {
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = undiscoveredShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -246,7 +299,7 @@ describe('undiscoveredShelf', () => {
   it('returns library movies with no watch/comparison history', async () => {
     const row = makeMovieRow();
     const { db } = makeChainMock([row]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = undiscoveredShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -269,7 +322,7 @@ describe('polarizingShelf', () => {
 
   it('returns empty when no movies have score spread > 200', async () => {
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = polarizingShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -279,7 +332,7 @@ describe('polarizingShelf', () => {
   it('returns movies with large ELO spread', async () => {
     const row = { ...makeMovieRow(), scoreRange: 350 };
     const { db } = makeChainMock([row]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = polarizingShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -301,7 +354,7 @@ describe('friendProofShelf', () => {
 
   it('returns empty when no movies have both dimension scores', async () => {
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = friendProofShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -319,7 +372,7 @@ describe('friendProofShelf', () => {
       { ...makeMovieRow({ tmdbId: 4 }), avgFriendScore: 1400 },
     ];
     const { db } = makeChainMock(rows);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = friendProofShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -342,7 +395,7 @@ describe('recentlyAddedShelf', () => {
 
   it('returns empty when no unwatched movies', async () => {
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = recentlyAddedShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -352,7 +405,7 @@ describe('recentlyAddedShelf', () => {
   it('returns recently added unwatched movies', async () => {
     const row = makeMovieRow({ createdAt: '2024-12-01T00:00:00Z' });
     const { db } = makeChainMock([row]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = recentlyAddedShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -394,7 +447,7 @@ describe('franchiseCompletionsShelf', () => {
     const db = { select: vi.fn().mockReturnValue(chain) } as unknown as ReturnType<
       typeof getDrizzle
     >;
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = franchiseCompletionsShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -434,7 +487,7 @@ describe('franchiseCompletionsShelf', () => {
         return selectCallCount === 1 ? watchedChain : unwatchedChain;
       }),
     } as unknown as ReturnType<typeof getDrizzle>;
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = franchiseCompletionsShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -472,7 +525,7 @@ describe('franchiseCompletionsShelf', () => {
         return selectCallCount === 1 ? watchedChain : unwatchedChain;
       }),
     } as unknown as ReturnType<typeof getDrizzle>;
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const [instance] = franchiseCompletionsShelf.generate(profile);
     const results = await instance!.query({ limit: 10, offset: 0 });
@@ -494,7 +547,7 @@ describe('leavingSoonShelf', () => {
   it('returns empty and no instances when no leaving movies', () => {
     // generate() checks DB before returning instances; empty result → no instances
     const { db } = makeChainMock([]);
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const instances = leavingSoonShelf.generate(profile);
     expect(instances).toHaveLength(0);
@@ -502,7 +555,7 @@ describe('leavingSoonShelf', () => {
 
   it('returns one instance when leaving movies exist', () => {
     const { db } = makeChainMock([{ id: 1 }]); // existence check returns a row
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const instances = leavingSoonShelf.generate(profile);
     expect(instances).toHaveLength(1);
@@ -525,14 +578,14 @@ describe('leavingSoonShelf', () => {
         return selectCount === 1 ? chain.db.select() : queryChain.db.select();
       }),
     } as unknown as ReturnType<typeof getDrizzle>;
-    mockGetDrizzle.mockReturnValue(db);
+    stageDb(db);
 
     const instances = leavingSoonShelf.generate(profile);
     expect(instances).toHaveLength(1);
 
     // Mock DB for query call
     const queryDb = makeChainMock([leavingRow]);
-    mockGetDrizzle.mockReturnValue(queryDb.db);
+    stageDb(queryDb.db);
 
     const results = await instances[0]!.query({ limit: 10, offset: 0 });
     expect(results).toHaveLength(1);

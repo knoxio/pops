@@ -1,8 +1,10 @@
 import { and, asc, eq } from 'drizzle-orm';
 
-import { comparisonDimensions, comparisons, mediaScores } from '@pops/db-types';
+import { comparisonDimensions, comparisons } from '@pops/db-types';
+import { mediaScores } from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { drawTierOutcome, expectedScore, getEloK } from './elo-calculator.js';
 
 import type { MediaScoreRow, RecordComparisonInput } from '../types.js';
@@ -12,7 +14,7 @@ export function getOrCreateScore(
   mediaId: number,
   dimensionId: number
 ): MediaScoreRow {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const existing = db
     .select()
@@ -55,7 +57,7 @@ export function getOrCreateScore(
 }
 
 export function updateEloScores(input: RecordComparisonInput): { deltaA: number; deltaB: number } {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   const scoreA = getOrCreateScore(input.mediaAType, input.mediaAId, input.dimensionId);
   const scoreB = getOrCreateScore(input.mediaBType, input.mediaBId, input.dimensionId);
@@ -108,17 +110,16 @@ export function updateEloScores(input: RecordComparisonInput): { deltaA: number;
  * all comparisons in chronological order.
  */
 export function recalcDimensionElo(dimensionId: number): void {
-  const drizzleDb = getDrizzle();
+  const mediaDb = getMediaDrizzle();
+  const sharedDb = getDrizzle();
 
-  // Reset all scores for this dimension
-  drizzleDb
+  mediaDb
     .update(mediaScores)
     .set({ score: 1500.0, comparisonCount: 0, updatedAt: new Date().toISOString() })
     .where(eq(mediaScores.dimensionId, dimensionId))
     .run();
 
-  // Replay all remaining comparisons in chronological order, updating stored deltas
-  const remaining = drizzleDb
+  const remaining = sharedDb
     .select()
     .from(comparisons)
     .where(eq(comparisons.dimensionId, dimensionId))
@@ -137,7 +138,7 @@ export function recalcDimensionElo(dimensionId: number): void {
       drawTier: comp.drawTier as 'high' | 'mid' | 'low' | null,
     });
 
-    drizzleDb.update(comparisons).set({ deltaA, deltaB }).where(eq(comparisons.id, comp.id)).run();
+    sharedDb.update(comparisons).set({ deltaA, deltaB }).where(eq(comparisons.id, comp.id)).run();
   }
 }
 

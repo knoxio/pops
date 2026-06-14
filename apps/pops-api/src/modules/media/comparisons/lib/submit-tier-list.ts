@@ -1,8 +1,9 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
-import { mediaScores } from '@pops/db-types';
+import { mediaScores } from '@pops/media-db';
 
-import { getDb, getDrizzle } from '../../../../db.js';
+import { getDb } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getSettingValue } from '../../../core/settings/service.js';
 import { convertTierPlacements } from '../tier-conversion.js';
 import { setTierOverride } from '../tier-overrides.js';
@@ -20,7 +21,7 @@ function getDefaultScore(): number {
 }
 
 function fetchScoresMap(movieIds: number[], dimensionId: number): Map<number, number> {
-  const drizzleDb = getDrizzle();
+  const drizzleDb = getMediaDrizzle();
   const map = new Map<number, number>();
   if (movieIds.length === 0) return map;
   const rows = drizzleDb

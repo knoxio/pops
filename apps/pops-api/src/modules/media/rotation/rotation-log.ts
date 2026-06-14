@@ -1,11 +1,11 @@
-import { rotationLog } from '@pops/db-types';
+import { rotationLog } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 import type { RotationCycleResult } from './rotation-cycle-types.js';
 
 export function writeRotationLog(result: RotationCycleResult): void {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const hasDetails =
     result.marked.length > 0 ||
     result.removed.length > 0 ||

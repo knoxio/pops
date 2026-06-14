@@ -1,8 +1,10 @@
 import { and, asc, eq } from 'drizzle-orm';
 
-import { comparisons, mediaScores, movies, watchHistory } from '@pops/db-types';
+import { comparisons } from '@pops/db-types';
+import { mediaScores, movies, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getDimension } from '../dimensions.service.js';
 import { resolveMoviePoster } from '../pairs/movie-helpers.js';
 
@@ -14,7 +16,7 @@ interface ScoreRow {
 }
 
 function fetchAllScores(mediaType: string, dimensionId: number): ScoreRow[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   return db
     .select({ mediaId: mediaScores.mediaId, score: mediaScores.score })
     .from(mediaScores)
@@ -30,7 +32,7 @@ function fetchAllScores(mediaType: string, dimensionId: number): ScoreRow[] {
 }
 
 function fetchBlacklistedIds(mediaType: string): Set<number> {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const rows = db
     .select({ mediaId: watchHistory.mediaId })
     .from(watchHistory)
@@ -99,7 +101,7 @@ function pickClosestToMedian(eligible: ScoreRow[]): ScoreRow | null {
 }
 
 function buildOpponent(closest: ScoreRow): DebriefOpponent | null {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const movieRow = db
     .select({
       id: movies.id,

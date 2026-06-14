@@ -8,9 +8,9 @@ import { eq, sql } from 'drizzle-orm';
  * Director shelf queries /discover/movie?with_crew={personId}.
  * Actor shelf queries /discover/movie?with_cast={personId}.
  */
-import { mediaScores, movies } from '@pops/db-types';
+import { mediaScores, movies } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
@@ -39,7 +39,7 @@ interface SeedMovie {
  * Returns up to MAX_SEEDS movies ordered by ELO descending.
  */
 function selectSeedMovies(): SeedMovie[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
 
   // Get all movies with their avg ELO scores
   const rows = db

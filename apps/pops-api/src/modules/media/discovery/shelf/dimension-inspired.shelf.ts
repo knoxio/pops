@@ -1,8 +1,8 @@
 import { and, desc, eq } from 'drizzle-orm';
 
-import { comparisonDimensions, mediaScores, movies } from '@pops/db-types';
+import { mediaScores, movies } from '@pops/media-db';
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
@@ -20,7 +20,7 @@ interface SeedRow {
 }
 
 function getHighScoringMovieForDimension(dimensionId: number): SeedRow | null {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const rows = db
     .select({
       movieId: movies.id,
@@ -29,7 +29,6 @@ function getHighScoringMovieForDimension(dimensionId: number): SeedRow | null {
     })
     .from(mediaScores)
     .innerJoin(movies, and(eq(movies.id, mediaScores.mediaId), eq(mediaScores.mediaType, 'movie')))
-    .innerJoin(comparisonDimensions, eq(comparisonDimensions.id, mediaScores.dimensionId))
     .where(eq(mediaScores.dimensionId, dimensionId))
     .orderBy(desc(mediaScores.score))
     .limit(1)

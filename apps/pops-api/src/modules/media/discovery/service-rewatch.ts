@@ -1,8 +1,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 
-import { mediaScores, movies, watchHistory } from '@pops/db-types';
+import { mediaScores, movies, watchHistory } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 
 import type { RewatchSuggestion } from './types.js';
 
@@ -17,7 +17,7 @@ interface RewatchRow {
 }
 
 function fetchRewatchCandidates(): RewatchRow[] {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const sixMonthsAgo = sql`datetime('now', '-6 months')`;
   return db
     .select({

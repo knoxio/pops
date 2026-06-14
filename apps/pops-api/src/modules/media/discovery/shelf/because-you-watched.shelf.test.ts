@@ -9,11 +9,11 @@ const mockWatchlistIds = vi.hoisted(() => ({ value: new Set<number>() }));
 const mockLibraryIds = vi.hoisted(() => ({ value: new Set<number>() }));
 const mockTmdbResults = vi.hoisted(() => ({ value: [] as TmdbSearchResult[] }));
 
-vi.mock('../../../../db.js', () => ({
-  getDrizzle: vi.fn(),
+vi.mock('../../../../db/media-db-handle.js', () => ({
+  getMediaDrizzle: vi.fn(),
 }));
 
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/media-db', () => ({
   movies: { id: 'id', tmdbId: 'tmdb_id', title: 'title', genres: 'genres' },
   watchHistory: {
     mediaId: 'media_id',
@@ -90,10 +90,10 @@ vi.mock('./registry.js', () => ({
   getRegisteredShelves: vi.fn(() => []),
 }));
 
-import { getDrizzle } from '../../../../db.js';
+import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { becauseYouWatchedShelf } from './because-you-watched.shelf.js';
 
-const mockGetDrizzle = vi.mocked(getDrizzle);
+const mockGetDrizzle = vi.mocked(getMediaDrizzle);
 
 function makeMockDb(rows: Record<string, unknown>[]) {
   const mockAll = vi.fn().mockReturnValue(rows);
@@ -104,7 +104,7 @@ function makeMockDb(rows: Record<string, unknown>[]) {
   const mockInnerJoin = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin });
   const mockFrom = vi.fn().mockReturnValue({ innerJoin: mockInnerJoin });
   return { select: vi.fn().mockReturnValue({ from: mockFrom }) } as unknown as ReturnType<
-    typeof getDrizzle
+    typeof getMediaDrizzle
   >;
 }
 
