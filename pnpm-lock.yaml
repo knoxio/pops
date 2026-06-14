@@ -541,6 +541,9 @@ importers:
       '@pops/db-types':
         specifier: workspace:*
         version: link:../../packages/db-types
+      '@pops/inventory-contract':
+        specifier: workspace:*
+        version: link:../../packages/inventory-contract
       '@pops/inventory-db':
         specifier: workspace:*
         version: link:../../packages/inventory-db
