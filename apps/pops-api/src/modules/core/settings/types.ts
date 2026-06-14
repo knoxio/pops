@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { SettingRow } from '@pops/core-db';
+import type { SettingRow } from '@pops/db-types';
 import type { SettingsKey } from '@pops/types';
 
 export type { SettingRow };

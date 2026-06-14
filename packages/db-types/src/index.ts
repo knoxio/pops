@@ -7,16 +7,26 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
+import type { aiAlertRules } from './schema/ai-alert-rules.js';
+import type { aiAlerts } from './schema/ai-alerts.js';
+import type { aiBudgets } from './schema/ai-budgets.js';
+import type { aiInferenceLog } from './schema/ai-inference-log.js';
+import type { aiModelPricing } from './schema/ai-model-pricing.js';
+import type { aiProviders } from './schema/ai-providers.js';
+import type { aiUsage } from './schema/ai-usage.js';
 import type { budgets } from './schema/budgets.js';
 import type { comparisonDimensions } from './schema/comparison-dimensions.js';
 import type { comparisonSkipCooloffs } from './schema/comparison-skip-cooloffs.js';
 import type { comparisonStaleness } from './schema/comparison-staleness.js';
 import type { comparisons } from './schema/comparisons.js';
+import type { transactionCorrections } from './schema/corrections.js';
 import type { debriefResults } from './schema/debrief-results.js';
 import type { debriefSessions } from './schema/debrief-sessions.js';
 import type { debriefStatus } from './schema/debrief-status.js';
 import type { dismissedDiscover } from './schema/dismissed-discover.js';
 import type { engramIndex, engramLinks, engramScopes, engramTags } from './schema/engrams.js';
+import type { entities } from './schema/entities.js';
+import type { environments } from './schema/environments.js';
 import type { episodes } from './schema/episodes.js';
 import type { fixtures } from './schema/fixtures.js';
 import type { homeInventory } from './schema/inventory.js';
@@ -37,7 +47,9 @@ import type { rotationExclusions } from './schema/rotation-exclusions.js';
 import type { rotationLog } from './schema/rotation-log.js';
 import type { rotationSources } from './schema/rotation-sources.js';
 import type { seasons } from './schema/seasons.js';
+import type { settings } from './schema/settings.js';
 import type { shelfImpressions } from './schema/shelf-impressions.js';
+import type { syncJobResults } from './schema/sync-job-results.js';
 import type { syncLogs } from './schema/sync-logs.js';
 import type { tagVocabulary } from './schema/tag-vocabulary.js';
 import type { tierOverrides } from './schema/tier-overrides.js';
@@ -133,32 +145,29 @@ export {
 
 // Select types (what you get back from a SELECT query)
 export type TransactionRow = InferSelectModel<typeof transactions>;
+export type EntityRow = InferSelectModel<typeof entities>;
 export type BudgetRow = InferSelectModel<typeof budgets>;
 export type InventoryRow = InferSelectModel<typeof homeInventory>;
 export type WishListRow = InferSelectModel<typeof wishList>;
+export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrections>;
 export type TagVocabularyRow = InferSelectModel<typeof tagVocabulary>;
 export type TransactionTagRuleRow = InferSelectModel<typeof transactionTagRules>;
-export type {
-  AiAlertInsert,
-  AiAlertRow,
-  AiAlertRuleInsert,
-  AiAlertRuleRow,
-  AiBudgetInsert,
-  AiBudgetRow,
-  AiInferenceDailyInsert,
-  AiInferenceDailyRow,
-  AiInferenceLogInsert,
-  AiInferenceLogRow,
-  AiModelPricingInsert,
-  AiModelPricingRow,
-  AiProviderInsert,
-  AiProviderRow,
-  AiUsageRow,
-  EntityRow,
-  EnvironmentRow,
-  TransactionCorrectionRow,
-} from '@pops/core-db';
+export type AiUsageRow = InferSelectModel<typeof aiUsage>;
+export type AiInferenceLogRow = InferSelectModel<typeof aiInferenceLog>;
+export type AiInferenceLogInsert = InferInsertModel<typeof aiInferenceLog>;
+export type { AiInferenceDailyInsert, AiInferenceDailyRow } from './schema/ai-inference-daily.js';
+export type AiProviderRow = InferSelectModel<typeof aiProviders>;
+export type AiProviderInsert = InferInsertModel<typeof aiProviders>;
+export type AiModelPricingRow = InferSelectModel<typeof aiModelPricing>;
+export type AiModelPricingInsert = InferInsertModel<typeof aiModelPricing>;
+export type AiBudgetRow = InferSelectModel<typeof aiBudgets>;
+export type AiBudgetInsert = InferInsertModel<typeof aiBudgets>;
+export type AiAlertRuleRow = InferSelectModel<typeof aiAlertRules>;
+export type AiAlertRuleInsert = InferInsertModel<typeof aiAlertRules>;
+export type AiAlertRow = InferSelectModel<typeof aiAlerts>;
+export type AiAlertInsert = InferInsertModel<typeof aiAlerts>;
 export * from './embeddings.js';
+export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type MovieRow = InferSelectModel<typeof movies>;
 export type TvShowRow = InferSelectModel<typeof tvShows>;
 export type SeasonRow = InferSelectModel<typeof seasons>;
@@ -178,10 +187,10 @@ export type ItemFixtureConnectionRow = InferSelectModel<typeof itemFixtureConnec
 export type ItemPhotoRow = InferSelectModel<typeof itemPhotos>;
 export type ItemUploadedFileRow = InferSelectModel<typeof itemUploadedFiles>;
 export type ItemDocumentRow = InferSelectModel<typeof itemDocuments>;
-export type { SettingRow } from '@pops/core-db';
+export type SettingRow = InferSelectModel<typeof settings>;
 
 export type SyncLogRow = InferSelectModel<typeof syncLogs>;
-export type { SyncJobResultRow } from '@pops/core-db';
+export type SyncJobResultRow = InferSelectModel<typeof syncJobResults>;
 export type DismissedDiscoverRow = InferSelectModel<typeof dismissedDiscover>;
 export type EngramIndexRow = InferSelectModel<typeof engramIndex>;
 export type EngramScopeRow = InferSelectModel<typeof engramScopes>;

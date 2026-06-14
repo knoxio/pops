@@ -17,7 +17,7 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { aiAlertRules } from '@pops/core-db';
+import { aiAlertRules } from '@pops/db-types';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';
