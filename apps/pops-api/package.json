@@ -54,7 +54,8 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsx scripts/generate-known-routers.ts && tsc",
+    "generate:known-routers": "tsx scripts/generate-known-routers.ts",
     "start": "node dist/index.js",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "dev:init": "tsx scripts/init-db.ts",
