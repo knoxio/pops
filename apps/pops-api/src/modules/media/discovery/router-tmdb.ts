@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure } from '../../../trpc.js';

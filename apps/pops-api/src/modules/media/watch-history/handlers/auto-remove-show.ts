@@ -10,7 +10,7 @@
  */
 import { and, countDistinct, eq, inArray } from 'drizzle-orm';
 
-import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/db-types';
+import { episodes, mediaWatchlist, seasons, watchHistory } from '@pops/media-db';
 
 import type { MediaDb } from '@pops/media-db';
 

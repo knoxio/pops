@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addMovie } from '../library/service.js';

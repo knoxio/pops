@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 
-import { episodes, seasons } from '@pops/db-types';
+import { episodes, seasons } from '@pops/media-db';
 
 import { logWatch } from '../watch-history/service.js';
 import { resolveShow } from './sync-discover-show.js';

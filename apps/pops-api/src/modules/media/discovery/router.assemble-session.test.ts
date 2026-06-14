@@ -12,17 +12,21 @@ vi.mock('./shelf/session.service.js', () => ({
   assembleSession: vi.fn(() => mockAssembledShelves.value),
 }));
 
-vi.mock('@pops/media-db', () => ({
-  shelfImpressionsService: {
-    getRecentImpressions: vi.fn(() => mockImpressions.value),
-    recordImpressions: vi.fn((_db: unknown, ids: string[]) => {
-      mockImpressionsRecorded.value.push(...ids);
-    }),
-    getShelfFreshness: vi.fn(() => 1.0),
-    cleanupOldImpressions: vi.fn(),
-    initImpressionsService: vi.fn(),
-  },
-}));
+vi.mock(import('@pops/media-db'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    shelfImpressionsService: {
+      getRecentImpressions: vi.fn(() => mockImpressions.value),
+      recordImpressions: vi.fn((_db: unknown, ids: string[]) => {
+        mockImpressionsRecorded.value.push(...ids);
+      }),
+      getShelfFreshness: vi.fn(() => 1.0),
+      cleanupOldImpressions: vi.fn(),
+      initImpressionsService: vi.fn(),
+    },
+  };
+});
 
 vi.mock('./service.js', () => ({
   getPreferenceProfile: vi.fn(() => ({

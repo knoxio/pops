@@ -6,7 +6,7 @@ import { like } from 'drizzle-orm';
  * Registered domain: "movies"
  * Scoring: exact=1.0, prefix=0.8, contains=0.5
  */
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getDrizzle } from '../../../db.js';
 

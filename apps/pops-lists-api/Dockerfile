@@ -6,6 +6,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 
 # Copy workspace package.json files (for dep resolution)
 COPY packages/db-types/package.json ./packages/db-types/
+COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/types/package.json ./packages/types/
 COPY packages/lists-db/package.json ./packages/lists-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
@@ -19,6 +20,9 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # Copy shared package sources
 COPY packages/db-types/src ./packages/db-types/src
 COPY packages/db-types/tsconfig.json ./packages/db-types/
+COPY packages/media-db/src ./packages/media-db/src
+COPY packages/media-db/tsconfig.json ./packages/media-db/
+COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
 COPY packages/lists-db/src ./packages/lists-db/src
@@ -31,7 +35,12 @@ COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-lists-api/tsconfig.json ./apps/pops-lists-api/
 COPY apps/pops-lists-api/src ./apps/pops-lists-api/src
 
-# Build shared packages first
+# Build shared packages first.
+# media-db owns the canonical media table schemas and is now a leaf
+# package; db-types re-exports them via a transition shim, so media-db
+# must build BEFORE db-types (PRD-245 US-04 / audit H6).
+WORKDIR /app/packages/media-db
+RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types

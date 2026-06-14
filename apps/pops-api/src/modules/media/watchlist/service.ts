@@ -15,7 +15,7 @@
  */
 import { asc, desc, eq } from 'drizzle-orm';
 
-import { mediaWatchlist } from '@pops/db-types';
+import { mediaWatchlist } from '@pops/media-db';
 import {
   watchlistService,
   WatchlistEntryNotFoundError,

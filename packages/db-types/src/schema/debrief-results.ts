@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { comparisonDimensions } from './comparison-dimensions.js';
-import { comparisons } from './comparisons.js';
+import { comparisonDimensions, comparisons } from '@pops/media-db';
+
 import { debriefSessions } from './debrief-sessions.js';
 
 export const debriefResults = sqliteTable('debrief_results', {

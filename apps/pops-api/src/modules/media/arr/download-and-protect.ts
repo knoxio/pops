@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 
 import { settingsService } from '@pops/core-db';
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';

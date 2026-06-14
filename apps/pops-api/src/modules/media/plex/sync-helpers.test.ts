@@ -19,7 +19,7 @@ vi.mock('../watch-history/service.js', () => ({
   logWatch: vi.fn(),
 }));
 
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/media-db', () => ({
   episodes: { seasonId: 'seasonId', episodeNumber: 'episodeNumber', id: 'id' },
   seasons: { tvShowId: 'tvShowId', seasonNumber: 'seasonNumber', id: 'id' },
 }));

@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
  *
  * PRD-070 US-03
  */
-import { movies } from '@pops/db-types';
+import { movies } from '@pops/media-db';
 
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 

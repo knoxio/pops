@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte, type SQL } from 'drizzle-orm';
 
-import { episodes, movies, seasons, tvShows, watchHistory } from '@pops/db-types';
+import { episodes, movies, seasons, tvShows, watchHistory } from '@pops/media-db';
 
 import { getDrizzle } from '../../../../db.js';
 
