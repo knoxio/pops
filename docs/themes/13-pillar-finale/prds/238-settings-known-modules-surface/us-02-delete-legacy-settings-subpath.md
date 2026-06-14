@@ -1,6 +1,8 @@
 # US-02: Delete the `@pops/module-registry/settings` subpath
 
 > PRD: [PRD-238 — Settings-imports migration off `@pops/module-registry`](README.md)
+>
+> Status: **Done** — closed alongside [PRD-240 US-05](../240-settings-as-manifest-dimension/us-05-delete-static-barrels-and-legacy-subpath.md) (folded cleanup per PRD-240 business rules).
 
 ## Description
 
@@ -8,13 +10,13 @@ As a maintainer retiring `@pops/module-registry`, I want the `./settings` subpat
 
 ## Acceptance Criteria
 
-- [ ] `grep -rn "@pops/module-registry/settings" apps packages` returns zero matches in `src/` (build artefacts under `dist/` are ignored).
-- [ ] The `./settings` entry is removed from `packages/module-registry/package.json`'s `exports` map.
-- [ ] The corresponding source directory (today: `packages/module-registry/src/settings/`) is deleted.
-- [ ] `packages/module-registry`'s own tests still pass — the subpath retirement should not break anything else in the package.
-- [ ] `pnpm --filter @pops/module-registry typecheck`, `pnpm --filter @pops/module-registry test`, `pnpm --filter @pops/module-registry build` all clean.
-- [ ] Full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] `grep -rn "@pops/module-registry/settings" apps packages` returns zero matches in `src/` (build artefacts under `dist/` are ignored).
+- [x] The `./settings` entry is removed from `packages/module-registry/package.json`'s `exports` map.
+- [x] The corresponding source directory (today: `packages/module-registry/src/settings/`) is deleted.
+- [x] `packages/module-registry`'s own tests still pass — the subpath retirement should not break anything else in the package.
+- [x] `pnpm --filter @pops/module-registry typecheck`, `pnpm --filter @pops/module-registry test`, `pnpm --filter @pops/module-registry build` all clean.
+- [x] Full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

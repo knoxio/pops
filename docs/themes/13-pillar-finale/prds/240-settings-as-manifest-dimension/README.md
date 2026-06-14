@@ -2,7 +2,7 @@
 
 > Epic: [FE pillar SDK + dispatcher generator](../../epics/10-fe-sdk-dispatcher-generator.md)
 >
-> Status: **Not started**
+> Status: **Done**
 >
 > ADR: [ADR-037](../../../../architecture/adr-037-settings-as-manifest-dimension.md)
 
