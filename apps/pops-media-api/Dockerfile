@@ -9,6 +9,12 @@ COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
+COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
+COPY packages/core-contract/package.json ./packages/core-contract/
+COPY packages/inventory-contract/package.json ./packages/inventory-contract/
+COPY packages/media-contract/package.json ./packages/media-contract/
+COPY packages/food-contract/package.json ./packages/food-contract/
+COPY packages/lists-contract/package.json ./packages/lists-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY apps/pops-media-api/package.json ./apps/pops-media-api/
 
@@ -25,6 +31,12 @@ COPY packages/media-db/src ./packages/media-db/src
 COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/finance-contract/ ./packages/finance-contract/
+COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
+COPY packages/core-contract/ ./packages/core-contract/
+COPY packages/inventory-contract/ ./packages/inventory-contract/
+COPY packages/media-contract/ ./packages/media-contract/
+COPY packages/food-contract/ ./packages/food-contract/
+COPY packages/lists-contract/ ./packages/lists-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 
 # Copy media-api source
@@ -42,6 +54,18 @@ RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/finance-contract
+RUN pnpm build
+WORKDIR /app/packages/cerebrum-contract
+RUN pnpm build
+WORKDIR /app/packages/core-contract
+RUN pnpm build
+WORKDIR /app/packages/inventory-contract
+RUN pnpm build
+WORKDIR /app/packages/media-contract
+RUN pnpm build
+WORKDIR /app/packages/food-contract
+RUN pnpm build
+WORKDIR /app/packages/lists-contract
 RUN pnpm build
 WORKDIR /app/packages/pillar-sdk
 RUN pnpm build

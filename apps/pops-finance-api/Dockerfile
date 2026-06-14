@@ -11,6 +11,12 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
+COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
+COPY packages/core-contract/package.json ./packages/core-contract/
+COPY packages/inventory-contract/package.json ./packages/inventory-contract/
+COPY packages/media-contract/package.json ./packages/media-contract/
+COPY packages/food-contract/package.json ./packages/food-contract/
+COPY packages/lists-contract/package.json ./packages/lists-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY apps/pops-finance-api/package.json ./apps/pops-finance-api/
 
@@ -33,6 +39,12 @@ COPY packages/finance-db/src ./packages/finance-db/src
 COPY packages/finance-db/tsconfig.json ./packages/finance-db/
 COPY packages/finance-db/migrations ./packages/finance-db/migrations
 COPY packages/finance-contract/ ./packages/finance-contract/
+COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
+COPY packages/core-contract/ ./packages/core-contract/
+COPY packages/inventory-contract/ ./packages/inventory-contract/
+COPY packages/media-contract/ ./packages/media-contract/
+COPY packages/food-contract/ ./packages/food-contract/
+COPY packages/lists-contract/ ./packages/lists-contract/
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/
 
@@ -55,6 +67,18 @@ RUN pnpm build
 WORKDIR /app/packages/finance-db
 RUN pnpm build
 WORKDIR /app/packages/finance-contract
+RUN pnpm build
+WORKDIR /app/packages/cerebrum-contract
+RUN pnpm build
+WORKDIR /app/packages/core-contract
+RUN pnpm build
+WORKDIR /app/packages/inventory-contract
+RUN pnpm build
+WORKDIR /app/packages/media-contract
+RUN pnpm build
+WORKDIR /app/packages/food-contract
+RUN pnpm build
+WORKDIR /app/packages/lists-contract
 RUN pnpm build
 WORKDIR /app/packages/pillar-sdk
 RUN pnpm build
