@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { computeMergedEntities } from '../../../../lib/merged-state';
 import { useImportStore } from '../../../../store/importStore';
@@ -10,10 +10,21 @@ import { type LocalTxState, moveToMatched, pluralize, type UseBulkAssignmentArgs
 
 import type { Dispatch, SetStateAction } from 'react';
 
+import type { Entity } from '@pops/api/modules/core/entities/types';
+
 import type { ProcessedTransaction } from '../../../../store/importStore';
 
+interface EntitiesListResult {
+  data: Entity[];
+  pagination: { total: number };
+}
+
 export function useEntities() {
-  const { data: dbEntitiesData } = trpc.core.entities.list.useQuery({});
+  const { data: dbEntitiesData } = usePillarQuery<EntitiesListResult>(
+    'core',
+    ['entities', 'list'],
+    {}
+  );
   const pendingEntities = useImportStore((s) => s.pendingEntities);
   const addPendingEntity = useImportStore((s) => s.addPendingEntity);
   const entities = useMemo(

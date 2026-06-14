@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import { useImportStore } from '../../../../store/importStore';
 import { useApplyRejectMutations } from '../../hooks/useApplyRejectMutations';
@@ -9,6 +9,7 @@ import { usePreviewEffects } from '../../hooks/usePreviewEffects';
 
 import type {
   CorrectionSignal,
+  ProposeChangeSetOutput,
   ServerChangeSet,
   TriggeringTransactionContext,
 } from '../../correction-proposal-shared';
@@ -37,7 +38,9 @@ export function useProposalQuery(
     () => (signal ? { signal, minConfidence, maxPreviewItems: 200 } : null),
     [signal, minConfidence]
   );
-  return trpc.core.corrections.proposeChangeSet.useQuery(
+  return usePillarQuery<ProposeChangeSetOutput>(
+    'core',
+    ['corrections', 'proposeChangeSet'],
     proposeInput ?? { signal: disabledSignal, minConfidence, maxPreviewItems: 200 },
     { enabled: Boolean(open && proposeInput), staleTime: 0, retry: false }
   );

@@ -5,7 +5,7 @@ import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
  *
  * Extracted from correction-proposal-shared.ts and CorrectionProposalDialogPanels.tsx (tb-365).
  */
-import type { AppRouter } from '@pops/api-client';
+import type { AppRouter } from '@pops/api';
 
 import type { CorrectionRule } from '../RulePicker';
 
@@ -15,9 +15,19 @@ import type { CorrectionRule } from '../RulePicker';
 
 export type CorrectionSignal =
   inferRouterInputs<AppRouter>['core']['corrections']['proposeChangeSet']['signal'];
+export type PreviewChangeSetInput =
+  inferRouterInputs<AppRouter>['core']['corrections']['previewChangeSet'];
 export type PreviewChangeSetOutput =
   inferRouterOutputs<AppRouter>['core']['corrections']['previewChangeSet'];
-type ProposeChangeSetOutput =
+export type RejectChangeSetInput =
+  inferRouterInputs<AppRouter>['core']['corrections']['rejectChangeSet'];
+export type ReviseChangeSetInput =
+  inferRouterInputs<AppRouter>['core']['corrections']['reviseChangeSet'];
+export type ReviseChangeSetOutput =
+  inferRouterOutputs<AppRouter>['core']['corrections']['reviseChangeSet'];
+export type ProposeChangeSetInput =
+  inferRouterInputs<AppRouter>['core']['corrections']['proposeChangeSet'];
+export type ProposeChangeSetOutput =
   inferRouterOutputs<AppRouter>['core']['corrections']['proposeChangeSet'];
 type ServerChangeSet = ProposeChangeSetOutput['changeSet'];
 type ServerChangeSetOp = ServerChangeSet['ops'][number];

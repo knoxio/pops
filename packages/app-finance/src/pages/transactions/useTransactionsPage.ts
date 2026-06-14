@@ -2,7 +2,6 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { trpc } from '@pops/api-client';
 import { usePillarQuery } from '@pops/pillar-sdk/react';
 
 import {
@@ -17,6 +16,17 @@ import type { Transaction as ApiTransaction } from '@pops/api/modules/finance/tr
 
 interface TransactionsListResult {
   data: ApiTransaction[];
+  pagination: { total: number };
+}
+
+interface EntityRef {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface EntitiesListResult {
+  data: EntityRef[];
   pagination: { total: number };
 }
 
@@ -119,7 +129,9 @@ function useTransactionsPageQueries() {
     ['transactions', 'availableTags'],
     undefined
   );
-  const entitiesQuery = trpc.core.entities.list.useQuery({ limit: 500 });
+  const entitiesQuery = usePillarQuery<EntitiesListResult>('core', ['entities', 'list'], {
+    limit: 500,
+  });
   return { query, availableTagsData, entitiesQuery };
 }
 

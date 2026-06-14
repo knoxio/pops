@@ -1,8 +1,12 @@
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { useDebouncedValue } from '@pops/ui';
 
 import type { MatchType } from '../types';
 import type { RulePreviewResult } from './types';
+
+interface PreviewMatchesOutput {
+  data: RulePreviewResult;
+}
 
 interface UseRulePreviewArgs {
   pattern: string;
@@ -59,7 +63,9 @@ export function useRulePreview({
   const trimmed = debouncedPattern.trim();
   const isIdle = trimmed.length === 0;
 
-  const query = trpc.core.corrections.previewMatches.useQuery(
+  const query = usePillarQuery<PreviewMatchesOutput>(
+    'core',
+    ['corrections', 'previewMatches'],
     { descriptionPattern: trimmed, matchType: debouncedMatchType },
     {
       enabled: enabled && !isIdle,

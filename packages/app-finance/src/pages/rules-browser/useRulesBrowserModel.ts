@@ -1,12 +1,21 @@
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import { useRuleFormState } from './rule-form/useRuleFormState';
 
 import type { Correction, MatchType } from './types';
 
 export const PAGE_SIZE = 50;
+
+interface CorrectionsListResult {
+  data: Correction[];
+  pagination: { total: number; limit: number; offset: number };
+}
+
+interface DeleteCorrectionInput {
+  id: string;
+}
 
 function parseMatchType(value: string): MatchType | undefined {
   return value === 'exact' || value === 'contains' || value === 'regex' ? value : undefined;
@@ -34,14 +43,18 @@ function useFilterState(): FilterState {
 function useDeleteFlow() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
-  const utils = trpc.useUtils();
-  const deleteMutation = trpc.core.corrections.delete.useMutation({
-    onSuccess: () => {
-      void utils.core.corrections.list.invalidate();
-      setDeleteId(null);
-      setRemovedIds(new Set());
-    },
-  });
+  const utils = usePillarUtils('core');
+  const deleteMutation = usePillarMutation<DeleteCorrectionInput, unknown>(
+    'core',
+    ['corrections', 'delete'],
+    {
+      onSuccess: () => {
+        void utils.invalidate(['corrections', 'list']);
+        setDeleteId(null);
+        setRemovedIds(new Set());
+      },
+    }
+  );
   const handleDelete = useCallback(() => {
     if (!deleteId) return;
     deleteMutation.mutate({ id: deleteId });
@@ -52,6 +65,15 @@ function useDeleteFlow() {
   return { deleteId, setDeleteId, removedIds, deleteMutation, handleDelete, handleAutoDelete };
 }
 
+function useCorrectionsListQuery(filters: FilterState) {
+  return usePillarQuery<CorrectionsListResult>('core', ['corrections', 'list'], {
+    minConfidence: filters.minConfidence ? parseFloat(filters.minConfidence) : undefined,
+    matchType: parseMatchType(filters.matchType),
+    limit: PAGE_SIZE,
+    offset: filters.offset,
+  });
+}
+
 export function useRulesBrowserModel() {
   const filters = useFilterState();
   const del = useDeleteFlow();
@@ -59,14 +81,7 @@ export function useRulesBrowserModel() {
 
   const ruleForm = useRuleFormState({ onClose: () => setIsFormOpen(false) });
 
-  const queryInput = {
-    minConfidence: filters.minConfidence ? parseFloat(filters.minConfidence) : undefined,
-    matchType: parseMatchType(filters.matchType),
-    limit: PAGE_SIZE,
-    offset: filters.offset,
-  };
-
-  const { data, isLoading, isError, refetch } = trpc.core.corrections.list.useQuery(queryInput);
+  const { data, isLoading, isError, refetch } = useCorrectionsListQuery(filters);
 
   const corrections: Correction[] = (data?.data ?? []).filter(
     (c: Correction) => !del.removedIds.has(c.id)

@@ -2,13 +2,14 @@ import { useEffect } from 'react';
 
 import { runPreview } from './preview-effects-runner';
 
-import type { trpc } from '@pops/api-client';
-
 import type {
   LocalOp,
+  PreviewChangeSetInput,
   PreviewChangeSetOutput,
   ServerChangeSet,
 } from '../correction-proposal-shared';
+
+export type PreviewMutateAsync = (input: PreviewChangeSetInput) => Promise<PreviewChangeSetOutput>;
 
 export interface PreviewSlotState {
   preview: PreviewChangeSetOutput | null;
@@ -28,9 +29,7 @@ interface BaseEffectShared {
   pendingChangeSets: Array<{ changeSet: ServerChangeSet }>;
   normalisedDbTransactions: Array<{ checksum?: string; description: string }>;
   rerunToken: number;
-  previewMutateAsync: ReturnType<
-    typeof trpc.core.corrections.previewChangeSet.useMutation
-  >['mutateAsync'];
+  previewMutateAsync: PreviewMutateAsync;
 }
 
 export interface CombinedEffectArgs extends BaseEffectShared {

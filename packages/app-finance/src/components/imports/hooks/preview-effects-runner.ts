@@ -1,13 +1,12 @@
 import { EMPTY_PREVIEW_SUMMARY, scopeAndBudget, subsetPreview } from './preview-helpers';
 import { localOpsToChangeSet } from './useLocalOps';
 
-import type { trpc } from '@pops/api-client';
-
 import type {
   LocalOp,
   PreviewChangeSetOutput,
   ServerChangeSet,
 } from '../correction-proposal-shared';
+import type { PreviewMutateAsync } from './preview-effect-hooks';
 
 interface ApplyResultArgs {
   res: PreviewChangeSetOutput;
@@ -39,9 +38,7 @@ interface RunPreviewArgs {
   dbTxns: Array<{ checksum?: string; description: string }>;
   minConfidence: number;
   pendingChangeSets: Array<{ changeSet: ServerChangeSet }>;
-  previewMutateAsync: ReturnType<
-    typeof trpc.core.corrections.previewChangeSet.useMutation
-  >['mutateAsync'];
+  previewMutateAsync: PreviewMutateAsync;
   setSession: (p: PreviewChangeSetOutput | null) => void;
   setDb: (p: PreviewChangeSetOutput | null) => void;
   setError: (e: string | null) => void;

@@ -1,12 +1,14 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
 
 import {
   collectNewTagNames,
   parseTags,
+  type ApplyInput,
   type ProposeOutput,
+  type RejectInput,
   type RejectOutput,
   type TagRuleProposalDialogProps,
 } from './types';
@@ -33,7 +35,7 @@ function buildRejectInput(
   props: TagRuleProposalDialogProps,
   form: FormStateForMutations,
   feedback: string
-) {
+): RejectInput | null {
   if (!props.signal) return null;
   return {
     changeSet: proposal.changeSet,
@@ -55,30 +57,38 @@ function buildRejectInput(
 
 export function useTagRuleMutations(args: MutationsArgs) {
   const { props, form, proposal } = args;
-  const utils = trpc.useUtils();
-  const applyMutation = trpc.core.tagRules.applyTagRuleChangeSet.useMutation({
-    onError: (e) => toast.error(e.message),
-  });
-  const rejectMutation = trpc.core.tagRules.rejectTagRuleChangeSet.useMutation({
-    onSuccess: (data: RejectOutput) => {
-      if (data.followUpProposal) {
-        form.setFollowUpProposal(data.followUpProposal);
-        form.setRejectOpen(false);
-        form.setRejectFeedback('');
-        toast.message('Proposal revised based on your feedback');
-      } else {
-        toast.message('Proposal dismissed');
-        props.onOpenChange(false);
-      }
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  const utils = usePillarUtils('core');
+  const applyMutation = usePillarMutation<ApplyInput, unknown>(
+    'core',
+    ['tagRules', 'applyTagRuleChangeSet'],
+    {
+      onError: (e) => toast.error(e.message),
+    }
+  );
+  const rejectMutation = usePillarMutation<RejectInput, RejectOutput>(
+    'core',
+    ['tagRules', 'rejectTagRuleChangeSet'],
+    {
+      onSuccess: (data: RejectOutput) => {
+        if (data.followUpProposal) {
+          form.setFollowUpProposal(data.followUpProposal);
+          form.setRejectOpen(false);
+          form.setRejectFeedback('');
+          toast.message('Proposal revised based on your feedback');
+        } else {
+          toast.message('Proposal dismissed');
+          props.onOpenChange(false);
+        }
+      },
+      onError: (e) => toast.error(e.message),
+    }
+  );
 
   const handleApply = useCallback(async () => {
     if (!proposal) return;
     const changeSet = proposal.changeSet;
     await applyMutation.mutateAsync({ changeSet, acceptedNewTags: [...form.acceptedNewTags] });
-    await utils.core.tagRules.listVocabulary.invalidate();
+    await utils.invalidate(['tagRules', 'listVocabulary']);
     toast.success('Tag rule saved');
     props.onApplied?.(changeSet, proposal.preview.affected);
     props.onOpenChange(false);

@@ -5,10 +5,11 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarMutation } from '@pops/pillar-sdk/react';
 
 import {
   type PreviewSlotState,
+  type PreviewMutateAsync,
   useCombinedEffect,
   useSelectedOpEffect,
 } from './preview-effect-hooks';
@@ -21,6 +22,7 @@ import {
 
 import type {
   LocalOp,
+  PreviewChangeSetInput,
   PreviewChangeSetOutput,
   ServerChangeSet,
 } from '../correction-proposal-shared';
@@ -56,9 +58,7 @@ interface RunEffectsArgs {
   selected: Slot;
   refs: Refs;
   rerunToken: number;
-  previewMutateAsync: ReturnType<
-    typeof trpc.core.corrections.previewChangeSet.useMutation
-  >['mutateAsync'];
+  previewMutateAsync: PreviewMutateAsync;
   normalisedDbTransactions: Array<{ description: string; checksum?: string }>;
 }
 
@@ -111,7 +111,11 @@ export function usePreviewEffects(
   const selected = useSlot();
   const refs = usePreviewRefs();
   const [rerunToken, setRerunToken] = useState(0);
-  const previewMutation = trpc.core.corrections.previewChangeSet.useMutation({ retry: false });
+  const previewMutation = usePillarMutation<PreviewChangeSetInput, PreviewChangeSetOutput>(
+    'core',
+    ['corrections', 'previewChangeSet'],
+    { retry: false }
+  );
 
   const clearDirtyFlags = useCallback(
     () => setLocalOps((prev) => prev.map((o) => (o.dirty ? { ...o, dirty: false } : o))),

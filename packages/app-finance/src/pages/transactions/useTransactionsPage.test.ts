@@ -18,6 +18,7 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     const key = path.join('.');
     if (key === 'transactions.list') return mockListQuery(input);
     if (key === 'transactions.availableTags') return mockAvailableTagsQuery(input);
+    if (key === 'entities.list') return mockEntitiesListQuery(input);
     return { data: undefined, isLoading: false };
   },
   usePillarMutation: (_pillarId: string, path: readonly string[]) => {
@@ -35,16 +36,6 @@ vi.mock('@pops/pillar-sdk/react', () => ({
       return { mutate: (...args: unknown[]) => mockRestoreMutate(...args), isPending: false };
     }
     return { mutate: vi.fn(), isPending: false };
-  },
-}));
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    core: {
-      entities: {
-        list: { useQuery: (...args: unknown[]) => mockEntitiesListQuery(...args) },
-      },
-    },
   },
 }));
 

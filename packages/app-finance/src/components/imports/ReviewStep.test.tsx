@@ -8,14 +8,19 @@ const mockEntitiesQuery = vi.fn();
 const mockReevaluateMutate = vi.fn();
 
 vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    if (path.join('.') === 'transactions.listDescriptionsForPreview') {
+  usePillarQuery: (_pillarId: string, path: readonly string[], ...args: unknown[]) => {
+    const key = path.join('.');
+    if (key === 'transactions.listDescriptionsForPreview') {
       return { data: { data: [], total: 0, truncated: false }, isLoading: false };
     }
+    if (key === 'entities.list') return mockEntitiesQuery(...args);
+    if (key === 'corrections.list') return { data: { data: [] }, isLoading: false, isError: false };
+    if (key === 'corrections.proposeChangeSet') return { data: null, isFetching: false };
     return { data: undefined };
   },
   usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    if (path.join('.') === 'imports.reevaluateWithPendingRules') {
+    const key = path.join('.');
+    if (key === 'imports.reevaluateWithPendingRules') {
       return {
         mutate: (
           _input: unknown,
@@ -28,58 +33,37 @@ vi.mock('@pops/pillar-sdk/react', () => ({
         isPending: false,
       };
     }
+    if (key === 'corrections.analyzeCorrection') {
+      return {
+        mutateAsync: mockAnalyzeCorrectionMutateAsync,
+        isPending: false,
+      };
+    }
+    if (key === 'corrections.previewChangeSet') {
+      return {
+        mutate: vi.fn(),
+        mutateAsync: vi.fn().mockResolvedValue({
+          diffs: [],
+          summary: {
+            total: 0,
+            newMatches: 0,
+            removedMatches: 0,
+            statusChanges: 0,
+            netMatchedDelta: 0,
+          },
+        }),
+        isPending: false,
+        isError: false,
+        error: null,
+      };
+    }
     return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
   },
-}));
-
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    core: {
-      entities: {
-        list: {
-          useQuery: (...args: unknown[]) => mockEntitiesQuery(...args),
-        },
-      },
-      corrections: {
-        analyzeCorrection: {
-          useMutation: () => ({
-            mutateAsync: mockAnalyzeCorrectionMutateAsync,
-            isPending: false,
-          }),
-        },
-        list: {
-          useQuery: () => ({ data: { data: [] }, isLoading: false, isError: false }),
-        },
-        proposeChangeSet: {
-          useQuery: () => ({ data: null, isFetching: false }),
-        },
-        previewChangeSet: {
-          useMutation: () => ({
-            mutate: vi.fn(),
-            mutateAsync: vi.fn().mockResolvedValue({
-              diffs: [],
-              summary: {
-                total: 0,
-                newMatches: 0,
-                removedMatches: 0,
-                statusChanges: 0,
-                netMatchedDelta: 0,
-              },
-            }),
-            isPending: false,
-            isError: false,
-            error: null,
-          }),
-        },
-        applyChangeSet: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-        rejectChangeSet: {
-          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-      },
-    },
-  },
+  usePillarUtils: () => ({
+    invalidate: vi.fn(),
+    setData: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 const mockToastSuccess = vi.fn();

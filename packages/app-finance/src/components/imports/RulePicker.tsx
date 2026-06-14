@@ -1,7 +1,7 @@
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Badge,
   Button,
@@ -16,12 +16,14 @@ import {
   PopoverTrigger,
 } from '@pops/ui';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import type { Correction } from '@pops/api/modules/core/corrections/types';
 
-import type { AppRouter } from '@pops/api-client';
+export type CorrectionRule = Correction;
 
-type CorrectionListOutput = inferRouterOutputs<AppRouter>['core']['corrections']['list'];
-export type CorrectionRule = CorrectionListOutput['data'][number];
+interface CorrectionsListResult {
+  data: CorrectionRule[];
+  pagination: { total: number; limit: number; offset: number };
+}
 
 export interface RulePickerProps {
   /** Currently selected rule id, or null. */
@@ -46,7 +48,9 @@ export interface RulePickerProps {
 function useRulePickerState(props: RulePickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const listQuery = trpc.core.corrections.list.useQuery(
+  const listQuery = usePillarQuery<CorrectionsListResult>(
+    'core',
+    ['corrections', 'list'],
     { limit: 200, offset: 0 },
     { enabled: open, staleTime: 30_000 }
   );

@@ -32,54 +32,51 @@ let mockRejectOnSuccess:
   | undefined;
 let _mockRejectOnError: ((err: Error) => void) | undefined;
 
-vi.mock('@pops/api-client', () => ({
-  trpc: {
-    core: {
-      tagRules: {
-        proposeTagRuleChangeSet: {
-          useQuery: () => ({
-            data: mockProposeData,
-            isLoading: false,
-            isError: false,
-            error: null,
-          }),
-        },
-        applyTagRuleChangeSet: {
-          useMutation: () => ({
-            mutateAsync: mockApplyMutateAsync,
-            isPending: false,
-          }),
-        },
-        rejectTagRuleChangeSet: {
-          useMutation: (opts: {
-            onSuccess?: (data: { message: string; followUpProposal: ProposeData }) => void;
-            onError?: (err: Error) => void;
-          }) => {
-            mockRejectOnSuccess = opts.onSuccess;
-            _mockRejectOnError = opts.onError;
-            return {
-              mutate: (...args: unknown[]) => {
-                mockRejectMutate(...args);
-              },
-              isPending: false,
-            };
-          },
-        },
-        listVocabulary: {
-          invalidate: mockInvalidate,
-        },
-      },
-    },
-    useUtils: () => ({
-      core: {
-        tagRules: {
-          listVocabulary: {
-            invalidate: mockInvalidate,
-          },
-        },
-      },
-    }),
+vi.mock('@pops/pillar-sdk/react', () => ({
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
+    const key = path.join('.');
+    if (key === 'tagRules.proposeTagRuleChangeSet') {
+      return {
+        data: mockProposeData,
+        isLoading: false,
+        isError: false,
+        error: null,
+      };
+    }
+    return { data: undefined };
   },
+  usePillarMutation: (
+    _pillarId: string,
+    path: readonly string[],
+    opts?: {
+      onSuccess?: (data: { message: string; followUpProposal: ProposeData }) => void;
+      onError?: (err: Error) => void;
+    }
+  ) => {
+    const key = path.join('.');
+    if (key === 'tagRules.applyTagRuleChangeSet') {
+      return {
+        mutateAsync: mockApplyMutateAsync,
+        isPending: false,
+      };
+    }
+    if (key === 'tagRules.rejectTagRuleChangeSet') {
+      mockRejectOnSuccess = opts?.onSuccess;
+      _mockRejectOnError = opts?.onError;
+      return {
+        mutate: (...args: unknown[]) => {
+          mockRejectMutate(...args);
+        },
+        isPending: false,
+      };
+    }
+    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+  },
+  usePillarUtils: () => ({
+    invalidate: mockInvalidate,
+    setData: vi.fn(),
+    fetchQuery: vi.fn(),
+  }),
 }));
 
 vi.mock('sonner', () => ({
