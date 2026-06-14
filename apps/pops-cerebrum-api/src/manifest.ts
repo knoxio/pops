@@ -1,6 +1,7 @@
 import { cerebrumManifest, egoManifest } from '@pops/cerebrum-contract/settings';
 
 import type {
+  CaptureOverlayDescriptor,
   ManifestPayload,
   NavConfigDescriptor,
   PageDescriptor,
@@ -64,6 +65,29 @@ const CEREBRUM_NAV: NavConfigDescriptor = {
  * `NavConfigDescriptor` does not support overlay/shortcut shapes — that
  * gap is tracked for follow-up (see PR body).
  */
+/**
+ * Wire-format capture overlay contribution for the cerebrum pillar
+ * (PRD-246 US-02).
+ *
+ * Declares the global capture surface the shell currently hard-codes as
+ * `CaptureModal` (`apps/pops-shell/src/app/capture/CaptureModal.tsx`).
+ * `bundleSlot: 'ingest-form'` is the kebab-case identifier the shell-side
+ * workspace bundle map (PRD-246 US-03) will resolve back to cerebrum's
+ * `IngestForm` export. `order: 10` follows the sparse 10/20/30 scheme
+ * called out in the US so finance / inventory / lists can slot overlays
+ * later without renumbering. `hotkey: 'cmd+shift+k'` matches the wire
+ * shape the US prescribes; the live binding is currently a single key
+ * resolved from the `CEREBRUM_CAPTURE_HOTKEY` setting (default `'c'`) at
+ * the shell, so US-03 reconciles the manifest-declared hotkey with the
+ * settings-driven override.
+ */
+const CEREBRUM_CAPTURE_OVERLAY: CaptureOverlayDescriptor = {
+  bundleSlot: 'ingest-form',
+  order: 10,
+  hotkey: 'cmd+shift+k',
+  labelKey: 'cerebrum.captureOverlay.label',
+};
+
 const CEREBRUM_PAGES: readonly PageDescriptor[] = [
   { path: '', index: true, bundleSlot: 'cerebrum-ingest' },
   { path: 'chat', bundleSlot: 'cerebrum-chat' },
@@ -95,6 +119,11 @@ const CEREBRUM_PAGES: readonly PageDescriptor[] = [
  * pillar carries its own app-rail entry + routable pages; ego's overlay
  * surface stays mounted via `@pops/overlay-ego`'s manifest and is not
  * representable in today's `NavConfigDescriptor` shape (deferred).
+ *
+ * PRD-246 US-02 adds the `captureOverlay` UI dimension. Cerebrum is the
+ * sole capture contributor today, so the shell-side hard-coded
+ * `CaptureModal` import (PRD-081 US-09) is lifted to a manifest-driven
+ * registry walk in US-03.
  */
 export function buildCerebrumManifest(version: string): ManifestPayload {
   return {
@@ -117,6 +146,7 @@ export function buildCerebrumManifest(version: string): ManifestPayload {
     settings: { manifests: [cerebrumManifest, egoManifest] },
     nav: CEREBRUM_NAV,
     pages: [...CEREBRUM_PAGES],
+    captureOverlay: CEREBRUM_CAPTURE_OVERLAY,
     healthcheck: { path: '/health' },
   };
 }
