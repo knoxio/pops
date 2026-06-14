@@ -26,9 +26,8 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 
 import { createFoodApiApp } from './app.js';
 import { resolveFoodSqlitePath } from './food-sqlite-path.js';
+import { buildFoodManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
-
-import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
@@ -40,24 +39,6 @@ function resolvePort(): number {
     throw new Error(`[food-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
-}
-
-function buildFoodManifest(version: string): ManifestPayload {
-  return {
-    pillar: 'food',
-    version,
-    contract: {
-      package: '@pops/food-contracts',
-      version,
-      tag: `contract-food@v${version}`,
-    },
-    routes: { queries: [], mutations: [], subscriptions: [] },
-    search: { adapters: [] },
-    ai: { tools: [] },
-    uri: { types: [] },
-    consumedSettings: { keys: [] },
-    healthcheck: { path: '/health' },
-  };
 }
 
 const port = resolvePort();

@@ -50,4 +50,90 @@ describe('buildCerebrumManifest', () => {
   it('rejects non-semver versions at the schema boundary', () => {
     expect(() => ManifestPayloadSchema.parse(buildCerebrumManifest('not-a-semver'))).toThrow();
   });
+
+  describe('PRD-243 US-02 nav + pages dimensions', () => {
+    it('declares a nav block matching the shell-side cerebrum navConfig', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      expect(manifest.nav?.id).toBe('cerebrum');
+      expect(manifest.nav?.basePath).toBe('/cerebrum');
+      expect(manifest.nav?.icon).toBe('book-open');
+      expect(manifest.nav?.color).toBe('sky');
+      expect(manifest.nav?.order).toBe(600);
+    });
+
+    it('mirrors the shell-side nav item count + paths (no drift)', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const paths = manifest.nav?.items.map((i) => i.path) ?? [];
+      expect(paths).toEqual([
+        '',
+        '/engrams',
+        '/query',
+        '/documents',
+        '/nudges',
+        '/proposals',
+        '/glia',
+        '/reflex',
+        '/plexus',
+      ]);
+    });
+
+    it('rewrites every nav icon as a kebab-case wire identifier', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const icons = [manifest.nav?.icon, ...(manifest.nav?.items.map((i) => i.icon) ?? [])].filter(
+        (v): v is string => typeof v === 'string'
+      );
+      for (const icon of icons) {
+        expect(icon).toMatch(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/);
+      }
+    });
+
+    it('declares a pages descriptor for every cerebrum route surface', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const paths = manifest.pages?.map((p) => p.path) ?? [];
+      expect(paths).toEqual([
+        '',
+        'chat',
+        'nudges',
+        'proposals',
+        'engrams',
+        'engrams/:id',
+        'documents',
+        'query',
+        'reflex',
+        'reflex/:name',
+        'plexus',
+        'plexus/:adapterId',
+        'glia',
+      ]);
+    });
+
+    it('flags the index page (and only the index page)', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const indexes = manifest.pages?.filter((p) => p.index === true) ?? [];
+      expect(indexes).toHaveLength(1);
+      expect(indexes[0]?.bundleSlot).toBe('cerebrum-ingest');
+    });
+
+    it('gives every page a unique kebab-case bundleSlot', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const slots = manifest.pages?.map((p) => p.bundleSlot) ?? [];
+      expect(new Set(slots).size).toBe(slots.length);
+      for (const slot of slots) {
+        expect(slot).toMatch(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/);
+      }
+    });
+
+    it('does NOT declare assetsBaseUrl (deferred to US-05)', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      expect(manifest.assetsBaseUrl).toBeUndefined();
+    });
+
+    it('round-trips the nav + pages dimensions through JSON', () => {
+      const manifest = buildCerebrumManifest('0.1.0');
+      const roundTripped: unknown = JSON.parse(JSON.stringify(manifest));
+      const parsed = ManifestPayloadSchema.parse(roundTripped);
+      expect(parsed.nav?.id).toBe('cerebrum');
+      expect(parsed.pages?.length).toBeGreaterThan(0);
+    });
+  });
 });
