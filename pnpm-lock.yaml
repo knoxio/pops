@@ -232,6 +232,9 @@ importers:
 
   apps/pops-cerebrum-api:
     dependencies:
+      '@pops/cerebrum-contract':
+        specifier: workspace:*
+        version: link:../../packages/cerebrum-contract
       '@pops/cerebrum-db':
         specifier: workspace:*
         version: link:../../packages/cerebrum-db
