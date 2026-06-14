@@ -1,10 +1,10 @@
 # US-08: Delete `packages/db-types/src/schema/` and finalise the decomposition
 
-> PRD: [PRD-244 — `@pops/db-types` decomposition](README.md)
+> PRD: [PRD-245 — `@pops/db-types` decomposition](README.md)
 
 ## Description
 
-As a maintainer finishing PRD-244, I want the `@pops/db-types/schema/` directory deleted and drizzle-kit pointed at the per-pillar `-db` packages, so the audit H6 finding is fully closed and `@pops/db-types` no longer hosts any table definition.
+As a maintainer finishing PRD-245, I want the `@pops/db-types/schema/` directory deleted and drizzle-kit pointed at the per-pillar `-db` packages, so the audit H6 finding is fully closed and `@pops/db-types` no longer hosts any table definition.
 
 ## Acceptance Criteria
 

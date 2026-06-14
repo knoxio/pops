@@ -1,6 +1,6 @@
 # US-06: Relocate lists schemas into `@pops/app-lists-db`
 
-> PRD: [PRD-244 — `@pops/db-types` decomposition](README.md)
+> PRD: [PRD-245 — `@pops/db-types` decomposition](README.md)
 
 ## Description
 
@@ -20,4 +20,4 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the lists-owned tab
 ## Notes
 
 - Smallest US in the PRD — single source file, no cross-pillar references, single consumer module.
-- Serial-merge order per PRD-244: late in the sequence is fine. Any time after US-07 works.
+- Serial-merge order per PRD-245: late in the sequence is fine. Any time after US-07 works.

@@ -1,4 +1,4 @@
-# PRD-244: `@pops/db-types` decomposition + cross-pillar FK drop
+# PRD-245: `@pops/db-types` decomposition + cross-pillar FK drop
 
 > Epic: [Remaining data migrations](../../epics/03-remaining-data-migrations.md)
 >

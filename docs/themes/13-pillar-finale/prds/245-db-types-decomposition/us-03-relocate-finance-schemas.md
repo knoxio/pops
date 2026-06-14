@@ -1,6 +1,6 @@
 # US-03: Relocate finance schemas into `@pops/finance-db` + drop finance → core FKs
 
-> PRD: [PRD-244 — `@pops/db-types` decomposition](README.md)
+> PRD: [PRD-245 — `@pops/db-types` decomposition](README.md)
 
 ## Description
 
@@ -10,7 +10,7 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the finance-owned t
 
 - [ ] The following files move from `packages/db-types/src/schema/` to `packages/finance-db/src/schema/`, alongside their matching `*-row-schemas.ts`:
       `transactions.ts`, `transaction-tag-rules.ts`, `budgets.ts`, `corrections.ts`, `tag-vocabulary.ts`, `wishlist.ts`, `tier-overrides.ts`.
-- [ ] The two cross-pillar `.references()` calls listed in PRD-244's H7 table are deleted:
+- [ ] The two cross-pillar `.references()` calls listed in PRD-245's H7 table are deleted:
   - `transactions.ts:18` (`entity_id` → `entities.id`) — column stays, `.references(() => entities.id, { onDelete: 'set null' })` clause is removed; the `import { entities } from './entities.js'` is dropped.
   - `transaction-tag-rules.ts:17` (`entity_id` → `entities.id`) — column stays, clause removed, import dropped.
 - [ ] The intra-finance FK in `corrections.ts:16` (`entity_id` → `entities.id` — **wait**: this one is `corrections` → `entities`, which audit attributes as `core → core` because both `transactionCorrections` and `entities` are described as intra-core in the audit table) — verify owner before this US lands. If `corrections.ts` is core-owned, it moves under US-07 not here; if it is finance-owned, the FK to core's `entities` is also a cross-pillar FK and gets dropped on the way through. Resolve and document the answer on the US PR.
@@ -26,4 +26,4 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the finance-owned t
 
 - `entity_id` is the description-on-transaction-row reference into core's `entities` table. The FK was already moot at runtime (SQLite-per-pillar); dropping it brings the schema in line with the runtime behaviour. Application-level resolution lives in finance services today and is unchanged.
 - `tagVocabularyService` is currently consumed by core modules per audit H8 — repointing those consumers is **out of scope** here (it's a separate audit finding). This US only changes the schema's physical home and the finance-owned import sites.
-- Serial-merge order per PRD-244: lands **after** US-07 (core) so the FK target `entities` is settled before this US drops references to it.
+- Serial-merge order per PRD-245: lands **after** US-07 (core) so the FK target `entities` is settled before this US drops references to it.

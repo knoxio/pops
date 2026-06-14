@@ -1,6 +1,6 @@
 # US-04: Relocate media schemas into `@pops/media-db`
 
-> PRD: [PRD-244 — `@pops/db-types` decomposition](README.md)
+> PRD: [PRD-245 — `@pops/db-types` decomposition](README.md)
 
 ## Description
 
@@ -24,4 +24,4 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the media-owned tab
 
 - This US is the FK-target settling step for US-01 — cerebrum drops its references into `watchHistory`, `comparisonDimensions`, `comparisons`. Landing media first means cerebrum's drops have a stable target.
 - No new application logic. Pure relocation.
-- Serial-merge order per PRD-244: lands **after** US-07 (core) and **before** US-01 (cerebrum).
+- Serial-merge order per PRD-245: lands **after** US-07 (core) and **before** US-01 (cerebrum).

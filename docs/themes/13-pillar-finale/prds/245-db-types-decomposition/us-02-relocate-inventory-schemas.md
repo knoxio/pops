@@ -1,6 +1,6 @@
 # US-02: Relocate inventory schemas into `@pops/inventory-db` + drop inventory → finance / core FKs
 
-> PRD: [PRD-244 — `@pops/db-types` decomposition](README.md)
+> PRD: [PRD-245 — `@pops/db-types` decomposition](README.md)
 
 ## Description
 
@@ -26,4 +26,4 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the inventory-owned
 
 - `purchase_transaction_id` and `purchased_from_id` were already moot at runtime — SQLite-per-pillar cannot enforce a FK into a database file on a different disk. Dropping the schema declaration brings the source of truth in line with the runtime behaviour. Application-level resolution (loading the entity / transaction) happens via the URI dispatcher and is unchanged.
 - The `onDelete: 'set null'` semantics disappear with the FK. Inventory rows with a dangling `purchased_from_id` simply keep the dangling id; resolution-time lookup decides what to do. Verify that no consumer of `home_inventory` relied on the cascading `set null` for correctness — none was identified during scoping, but flag any new finding on the PR.
-- Serial-merge order per PRD-244: lands **after** US-07 (core) and US-03 (finance), since this US drops references to tables owned by those pillars.
+- Serial-merge order per PRD-245: lands **after** US-07 (core) and US-03 (finance), since this US drops references to tables owned by those pillars.

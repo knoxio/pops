@@ -1,6 +1,6 @@
 # US-07: Relocate core schemas into `@pops/core-db`
 
-> PRD: [PRD-244 — `@pops/db-types` decomposition](README.md)
+> PRD: [PRD-245 — `@pops/db-types` decomposition](README.md)
 
 ## Description
 
@@ -23,4 +23,4 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the core-owned tabl
 
 - This is the FK-target settling step for US-02 (inventory → core), US-03 (finance → core), and indirectly US-01 (which only drops references into media but benefits from `core/embeddings.ts` having a final home).
 - `ai-*` tables park under core per audit attribution (ai is a sub-domain of core today, same reasoning as PRD-239's `aiConfigManifest` placement under `@pops/core-contract`). A future `@pops/ai-db` split is out of scope.
-- Serial-merge order per PRD-244: **first** in the sequence.
+- Serial-merge order per PRD-245: **first** in the sequence.

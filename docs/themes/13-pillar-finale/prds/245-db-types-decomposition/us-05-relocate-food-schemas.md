@@ -1,6 +1,6 @@
 # US-05: Relocate food schemas into `@pops/food-db` / `@pops/app-food-db`
 
-> PRD: [PRD-244 — `@pops/db-types` decomposition](README.md)
+> PRD: [PRD-245 — `@pops/db-types` decomposition](README.md)
 
 ## Description
 
@@ -23,4 +23,4 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the food-owned tabl
 ## Notes
 
 - `aiInferenceLog` and `IngestSourceKind` are AI / core surfaces consumed by food; they stay in their owner's package (core US-07) and food keeps importing them from there.
-- Serial-merge order per PRD-244: order relative to other USs is flexible since food does not cross-pillar-FK anything; safest is **after** US-07 (core) since `aiInferenceLog` references move with core.
+- Serial-merge order per PRD-245: order relative to other USs is flexible since food does not cross-pillar-FK anything; safest is **after** US-07 (core) since `aiInferenceLog` references move with core.
