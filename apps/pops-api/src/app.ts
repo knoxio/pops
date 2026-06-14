@@ -1,5 +1,5 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
-import express from 'express';
+import express, { type RequestHandler } from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { createOpenApiExpressMiddleware } from 'trpc-to-openapi';
@@ -22,7 +22,10 @@ import inventoryPhotosRouter from './routes/inventory/photos.js';
 import mediaImagesRouter from './routes/media/images.js';
 import pillarsRouter from './routes/pillars.js';
 import upBankRouter from './routes/webhooks/up-bank.js';
+import { getRuntimeAppRouter } from './runtime/index.js';
 import { createContext } from './trpc.js';
+
+import type { AnyRouter } from '@trpc/server';
 
 /**
  * Create and configure the Express application.
@@ -116,7 +119,10 @@ export function createApp(): express.Express {
   // Swagger UI — serves the interactive API docs
   app.use('/api/docs', ...swaggerUi.serve, swaggerUi.setup(openApiDocument, { explorer: true }));
 
-  // OpenAPI REST handler — mounted after auth; tRPC remains primary for the React frontend
+  // OpenAPI REST handler — mounted after auth; tRPC remains primary for the
+  // React frontend. The OpenAPI surface is statically typed at boot from the
+  // in-repo router; external (PRD-228) pillars are not OpenAPI-documented, so
+  // this consumer continues to read from the static export.
   app.use(
     '/api/v1',
     createOpenApiExpressMiddleware({
@@ -125,14 +131,31 @@ export function createApp(): express.Express {
     })
   );
 
-  // tRPC handler (auth via context/procedures)
-  app.use(
-    '/trpc',
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    })
-  );
+  // tRPC handler — reads the runtime router holder per request so external
+  // pillars registered after boot (PRD-228) become reachable without a
+  // restart. The static `appRouter` import above stays the type source for
+  // in-repo clients; the runtime accessor wraps it with the merged externals.
+  app.use('/trpc', createDynamicTrpcMiddleware());
 
   return app;
+}
+
+/**
+ * Build a tRPC express middleware that resolves the live router per request
+ * via `getRuntimeAppRouter()`. The underlying `createExpressMiddleware`
+ * closes over its `router` argument, so we re-create the inner handler when
+ * the runtime router reference changes (recompose). Strict identity check
+ * keeps the per-request overhead at one pointer compare in the steady state.
+ */
+function createDynamicTrpcMiddleware(): RequestHandler {
+  let lastRouter: AnyRouter | null = null;
+  let cached: RequestHandler | null = null;
+  return (req, res, next) => {
+    const current = getRuntimeAppRouter();
+    if (current !== lastRouter || cached === null) {
+      lastRouter = current;
+      cached = createExpressMiddleware({ router: current, createContext });
+    }
+    cached(req, res, next);
+  };
 }
