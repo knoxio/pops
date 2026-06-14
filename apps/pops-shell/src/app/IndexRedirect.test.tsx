@@ -71,7 +71,7 @@ describe('IndexRedirect', () => {
     expect(screen.getByTestId('landed')).toHaveTextContent('/finance');
   });
 
-  it('picks the first installed app in APP_ORDER (finance > media > inventory > cerebrum)', () => {
+  it('picks the first installed app by nav.order ascending (finance > media > inventory > food > lists > cerebrum > ai)', () => {
     mocks.query.mockReturnValue(
       queryResult({ data: { apps: ['cerebrum', 'media', 'inventory'], overlays: [] } })
     );
@@ -79,7 +79,7 @@ describe('IndexRedirect', () => {
     expect(screen.getByTestId('landed')).toHaveTextContent('/media');
   });
 
-  it('redirects to /settings when no app from APP_ORDER is installed', () => {
+  it('redirects to /settings when no registered app is installed', () => {
     mocks.query.mockReturnValue(queryResult({ data: { apps: ['unknown'], overlays: [] } }));
     renderAt();
     expect(screen.getByTestId('landed')).toHaveTextContent('/settings');
