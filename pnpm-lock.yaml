@@ -2093,13 +2093,13 @@ importers:
       '@pops/types':
         specifier: workspace:*
         version: link:../types
+      '@trpc/server':
+        specifier: ^11.17.0
+        version: 11.17.0(typescript@6.0.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@pops/media-api':
-        specifier: workspace:*
-        version: link:../../apps/pops-media-api
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -2141,6 +2141,9 @@ importers:
         specifier: workspace:*
         version: link:../types
     devDependencies:
+      '@pops/media-contract':
+        specifier: workspace:*
+        version: link:../media-contract
       '@types/node':
         specifier: ^25.9.3
         version: 25.9.3
@@ -2275,6 +2278,9 @@ importers:
 
   packages/pillar-sdk:
     dependencies:
+      '@pops/media-contract':
+        specifier: workspace:*
+        version: link:../media-contract
       '@pops/module-registry':
         specifier: workspace:*
         version: link:../module-registry

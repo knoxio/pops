@@ -28,6 +28,7 @@
     "@pops/types": "workspace:*"
   },
   "devDependencies": {
+    "@pops/media-contract": "workspace:*",
     "@types/node": "^25.9.3",
     "@vitest/coverage-v8": "^4.1.8",
     "tsx": "^4.22.4",

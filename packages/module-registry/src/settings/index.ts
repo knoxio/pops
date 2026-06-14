@@ -10,5 +10,3 @@ export { financeManifest } from './finance/index.js';
 export { inventoryManifest } from './inventory/index.js';
 export { cerebrumManifest } from './cerebrum/index.js';
 export { egoManifest } from './ego/index.js';
-export { arrManifest, plexManifest, rotationManifest } from './media/manifests.js';
-export { mediaOperationalManifest } from './media/operational-manifest.js';
