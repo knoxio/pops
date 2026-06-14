@@ -21,9 +21,8 @@ import { openMediaDb, shelfImpressionsService } from '@pops/media-db';
 import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { createMediaApiApp } from './app.js';
+import { buildMediaManifest } from './manifest.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
-
-import type { ManifestPayload } from '@pops/pillar-sdk/manifest-schema';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api.
@@ -34,31 +33,6 @@ function resolvePort(): number {
     throw new Error(`[media-api] PORT must be a positive integer in 1-65535; got '${raw}'`);
   }
   return parsed;
-}
-
-function buildMediaManifest(version: string): ManifestPayload {
-  return {
-    pillar: 'media',
-    version,
-    contract: {
-      package: '@pops/media-contract',
-      version,
-      tag: `contract-media@v${version}`,
-    },
-    routes: {
-      queries: [
-        'media.shelfImpressions.getRecentImpressions',
-        'media.shelfImpressions.getShelfFreshness',
-      ],
-      mutations: ['media.shelfImpressions.recordImpressions', 'media.shelfImpressions.cleanup'],
-      subscriptions: [],
-    },
-    search: { adapters: [] },
-    ai: { tools: [] },
-    uri: { types: [] },
-    consumedSettings: { keys: [] },
-    healthcheck: { path: '/health' },
-  };
 }
 
 const port = resolvePort();
