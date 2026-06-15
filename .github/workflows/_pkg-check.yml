@@ -41,7 +41,9 @@ jobs:
         if: inputs.skip != 'true'
       - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build --if-present
+        run: |
+          PKG_NAME=$(node -e "console.log(require(\"./${{ inputs.package-path }}/package.json\").name)")
+          pnpm --filter "$PKG_NAME^..." --filter "!./apps/*" build
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
         if: inputs.skip != 'true'
 
@@ -66,7 +68,9 @@ jobs:
         if: inputs.skip != 'true'
       - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build --if-present
+        run: |
+          PKG_NAME=$(node -e "console.log(require(\"./${{ inputs.package-path }}/package.json\").name)")
+          pnpm --filter "$PKG_NAME^..." --filter "!./apps/*" build
       - name: Run tests (with coverage if configured)
         if: inputs.skip != 'true'
         run: |
