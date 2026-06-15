@@ -275,7 +275,6 @@ beforeAll(async () => {
     coreDb,
     version: '0.0.1-itest',
     selfBaseUrl: 'http://127.0.0.1:0',
-    resolveApiKey: () => sa.plaintextKey,
   });
   const coreApiServer = await listenOnEphemeralPort(coreApiApp);
   const coreApiBaseUrl = baseUrlOf(coreApiServer);

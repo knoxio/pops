@@ -2,13 +2,10 @@
  * Pure helpers for the PRD-228 register HTTP endpoint.
  *
  * Split out of `register.ts` so the handler stays focused on the
- * response shape + persistence orchestration and the body-parser /
- * crypto utilities can be unit-tested in isolation without booting
- * Express.
+ * response shape + persistence orchestration and the body-parser can
+ * be unit-tested in isolation without booting Express.
  */
 import type { ValidationIssue } from '@pops/pillar-sdk';
-
-export { constantTimeEquals, sha256Hex } from './auth.js';
 
 export const PILLAR_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 export const HEARTBEAT_INTERVAL_MS = 10_000;
@@ -17,7 +14,6 @@ export interface ValidRegisterBody {
   readonly pillarId: string;
   readonly baseUrl: string;
   readonly manifest: unknown;
-  readonly apiKey: string;
 }
 
 export type BodyParseResult =
@@ -49,22 +45,14 @@ function validateBaseUrl(value: unknown, issues: ValidationIssue[]): void {
   }
 }
 
-function validateApiKey(value: unknown, issues: ValidationIssue[]): void {
-  if (typeof value !== 'string' || value.length === 0) {
-    const got = typeof value === 'string' ? '<redacted>' : value;
-    issues.push(issue('apiKey', 'apiKey must be a non-empty string', got));
-  }
-}
-
 export function parseRegisterBody(input: unknown): BodyParseResult {
   if (!isPlainObject(input)) {
     return { ok: false, issues: [issue('', 'expected an object body', input)] };
   }
   const issues: ValidationIssue[] = [];
-  const { pillarId, baseUrl, manifest, apiKey } = input;
+  const { pillarId, baseUrl, manifest } = input;
   validateStringField(pillarId, 'pillarId', issues);
   validateBaseUrl(baseUrl, issues);
-  validateApiKey(apiKey, issues);
   if (manifest === undefined) {
     issues.push(issue('manifest', 'manifest is required', manifest));
   }
@@ -75,7 +63,6 @@ export function parseRegisterBody(input: unknown): BodyParseResult {
       pillarId: pillarId as string,
       baseUrl: baseUrl as string,
       manifest,
-      apiKey: apiKey as string,
     },
   };
 }

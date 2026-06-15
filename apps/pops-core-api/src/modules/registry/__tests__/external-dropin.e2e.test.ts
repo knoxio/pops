@@ -22,7 +22,7 @@
  *   5. Backdate the heartbeat + flip status to `unavailable` past the
  *      eviction threshold; run one eviction tick — assert DELETE plus
  *      a `deregistered` event with `reason: 'lost-heartbeat'`.
- *   6. POST register again — assert live + rotated `apiKeyHash`.
+ *   6. POST register again — assert live.
  *   7. POST deregister → assert DELETE + `deregistered` event with
  *      `reason: 'requested'`.
  *
@@ -30,7 +30,6 @@
  * than waiting on the 30s `setInterval`, so the whole test runs in well
  * under a second.
  */
-import { createHash } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -51,7 +50,6 @@ import type { AddressInfo } from 'node:net';
 
 import type { ManifestPayload } from '@pops/pillar-sdk';
 
-const VALID_API_KEY = 'super-secret-shared-key';
 const PILLAR_ID = 'drop-in';
 
 function dropInManifest(overrides?: Partial<ManifestPayload>): ManifestPayload {
@@ -77,23 +75,17 @@ function dropInManifest(overrides?: Partial<ManifestPayload>): ManifestPayload {
   };
 }
 
-function sha256(value: string): string {
-  return createHash('sha256').update(value, 'utf8').digest('hex');
-}
-
 let tmpDir: string;
 let coreDb: OpenedCoreDb;
 let coreApiServer: Server;
 let coreApiBaseUrl: string;
 let pillar: FixturePillar;
-let resolvedKey: string | undefined;
 let capturedEvents: RegistryEventPayload[];
 let eventListener: (payload: RegistryEventPayload) => void;
 
 beforeEach(async () => {
   tmpDir = mkdtempSync(join(tmpdir(), 'core-api-dropin-'));
   coreDb = openCoreDb(join(tmpDir, 'core.db'));
-  resolvedKey = VALID_API_KEY;
   capturedEvents = [];
   eventListener = (payload) => capturedEvents.push(payload);
   registryEventBus.on('registry:event', eventListener);
@@ -102,7 +94,6 @@ beforeEach(async () => {
     coreDb,
     version: '0.0.1-test',
     selfBaseUrl: 'http://localhost:0',
-    resolveApiKey: () => resolvedKey,
   });
   coreApiServer = createServer(app);
   await new Promise<void>((resolve) => coreApiServer.listen(0, '127.0.0.1', resolve));
@@ -134,7 +125,6 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
       pillarId: PILLAR_ID,
       baseUrl: pillar.baseUrl,
       manifest: dropInManifest(),
-      apiKey: VALID_API_KEY,
     });
     expect(reg.status).toBe(200);
     expect(reg.body).toMatchObject({ ok: true, pillarId: PILLAR_ID });
@@ -142,10 +132,9 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
     const persisted = pillarRegistryService.getPillarRegistration(coreDb.db, PILLAR_ID);
     expect(persisted?.origin).toBe('external');
     expect(persisted?.status).toBe('healthy');
-    expect(persisted?.apiKeyHash).toBe(sha256(VALID_API_KEY));
+    expect(persisted?.apiKeyHash).toBeNull();
     expect(persisted?.baseUrl).toBe(pillar.baseUrl);
     const firstRegisteredAt = persisted?.registeredAt;
-    const firstKeyHash = persisted?.apiKeyHash;
 
     const registered = capturedEvents.filter((e) => e.event === 'registered');
     expect(registered).toHaveLength(1);
@@ -185,8 +174,6 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
     const renderedAfterEviction = await renderNginxConfDynamic(coreApiBaseUrl);
     expect(renderedAfterEviction).not.toContain(`location /trpc-${PILLAR_ID}/`);
 
-    const rotatedKey = 'rotated-shared-key';
-    resolvedKey = rotatedKey;
     capturedEvents = [];
 
     const reReg = await request(coreApiBaseUrl)
@@ -195,22 +182,19 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
         pillarId: PILLAR_ID,
         baseUrl: pillar.baseUrl,
         manifest: dropInManifest({ version: '0.2.0' }),
-        apiKey: rotatedKey,
       });
     expect(reReg.status).toBe(200);
 
     const reReged = pillarRegistryService.getPillarRegistration(coreDb.db, PILLAR_ID);
     expect(reReged).not.toBeNull();
     expect(reReged?.status).toBe('healthy');
-    expect(reReged?.apiKeyHash).toBe(sha256(rotatedKey));
-    expect(reReged?.apiKeyHash).not.toBe(firstKeyHash);
+    expect(reReged?.apiKeyHash).toBeNull();
     expect(reReged?.registeredAt).not.toBe(firstRegisteredAt);
     expect(capturedEvents.filter((e) => e.event === 'registered')).toHaveLength(1);
 
     capturedEvents = [];
     const dereg = await request(coreApiBaseUrl).post('/core.registry.deregister').send({
       pillarId: PILLAR_ID,
-      apiKey: rotatedKey,
     });
     expect(dereg.status).toBe(200);
     expect(dereg.body).toMatchObject({ ok: true, removed: true });
@@ -233,7 +217,6 @@ describe('PRD-228 US-05 — external pillar drop-in lifecycle', () => {
       pillarId: PILLAR_ID,
       baseUrl: 'http://drop-in-api:4242',
       manifest: dropInManifest(),
-      apiKey: VALID_API_KEY,
     });
 
     const rendered = await renderNginxConfDynamic(coreApiBaseUrl);
