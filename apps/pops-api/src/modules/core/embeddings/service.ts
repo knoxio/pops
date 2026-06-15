@@ -1,17 +1,35 @@
 import { createHash } from 'node:crypto';
 
-import { eq, sql } from 'drizzle-orm';
-
-import { embeddings } from '@pops/cerebrum-db';
+import {
+  EmbeddingsGetStatusOutputSchema,
+  EmbeddingsListSourceIdsByTypeOutputSchema,
+} from '@pops/cerebrum-contract/schemas';
+import { pillar } from '@pops/pillar-sdk/server';
 
 import { getDb, isVecAvailable } from '../../../db.js';
-import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { embedContent } from '../../../jobs/embed-content.js';
 import { logger } from '../../../lib/logger.js';
 import { getEmbeddingConfig, getEmbedding } from '../../../shared/embedding-client.js';
 import { getRedis, isRedisAvailable, redisKey } from '../../../shared/redis-client.js';
 
 import type { SearchResult, SearchOptions, EmbeddingStatus } from './types.js';
+
+/**
+ * Local shape for the cross-pillar `cerebrum.embeddings.*` SDK surface
+ * (PRD-249). Mirrors `apps/pops-mcp/src/tools/inventory-connections.ts`'s
+ * pattern: until `@pops/cerebrum-contract/router`'s `CerebrumRouter`
+ * carries the concrete per-procedure types (blocked on PRD-155's
+ * declaration bundler), the typed-proxy needs a structural router shape
+ * to resolve the `pillar('cerebrum').embeddings.*` paths. The shape
+ * here is structural-only — the wire contract is the zod schema parsed
+ * on the result.
+ */
+type CerebrumEmbeddingsShape = {
+  embeddings: {
+    getStatus: (input: { sourceType?: string }) => unknown;
+    listSourceIdsByType: (input: { sourceType: string }) => unknown;
+  };
+};
 
 const QUERY_CACHE_TTL_SECONDS = 300; // 5 minutes
 
@@ -114,40 +132,47 @@ export async function semanticSearch(
     }));
 }
 
-/** Return embedding coverage stats for a source type (or all types). */
-export function getEmbeddingStatus(sourceType?: string): EmbeddingStatus {
-  const db = getCerebrumDrizzle();
-  const baseQuery = db.select({ count: sql<number>`count(*)` }).from(embeddings);
-  const rows = sourceType
-    ? baseQuery.where(eq(embeddings.sourceType, sourceType)).all()
-    : baseQuery.all();
-
-  const total = rows[0]?.count ?? 0;
-
-  // Pending and stale counts require cross-table knowledge of source records.
-  // Since embeddings covers multiple source types, we return 0 here as a safe
-  // default — callers that track pending state should implement per-source queries.
-  return { total, pending: 0, stale: 0 };
+/**
+ * Return embedding coverage stats for a source type (or all types).
+ *
+ * Reads via the cross-pillar `cerebrum.embeddings.getStatus` SDK surface
+ * (PRD-249) — the cerebrum-internal embedding worker owns the underlying
+ * `embeddings` table; this core-side caller no longer touches
+ * `@pops/cerebrum-db` at runtime. `PillarCallError` propagates so the
+ * caller surfaces an unavailable-pillar signal rather than silently
+ * masking it.
+ *
+ * The response is parsed through the contract's output schema so the
+ * `unknown` shape returned by the typed-proxy's `.orThrow()` (a
+ * consequence of `CerebrumRouter` being `AnyTRPCRouter` until PRD-155
+ * lands the declaration bundler) is narrowed without `as` casts.
+ */
+export async function getEmbeddingStatus(sourceType?: string): Promise<EmbeddingStatus> {
+  const input = sourceType === undefined ? {} : { sourceType };
+  const raw = await pillar<CerebrumEmbeddingsShape>('cerebrum').embeddings.getStatus.orThrow(input);
+  return EmbeddingsGetStatusOutputSchema.parse(raw);
 }
 
 /**
  * Enqueue re-embedding jobs for given source records.
  * Returns the number of jobs enqueued.
+ *
+ * The "list all source ids for this type" branch goes through the
+ * `cerebrum.embeddings.listSourceIdsByType` SDK surface (PRD-249); the
+ * per-id `embedContent({ sourceType, sourceId })` enqueue stays
+ * in-pillar (it's a worker enqueue, not a cerebrum-db read).
  */
 export async function reindexEmbeddings(sourceType: string, sourceIds?: string[]): Promise<number> {
-  const db = getCerebrumDrizzle();
-
-  let ids: string[];
+  let ids: readonly string[];
   if (sourceIds && sourceIds.length > 0) {
     ids = sourceIds;
   } else {
-    // Re-index all records of this source type
-    const rows = db
-      .selectDistinct({ sourceId: embeddings.sourceId })
-      .from(embeddings)
-      .where(eq(embeddings.sourceType, sourceType))
-      .all();
-    ids = rows.map((r) => r.sourceId);
+    const raw = await pillar<CerebrumEmbeddingsShape>(
+      'cerebrum'
+    ).embeddings.listSourceIdsByType.orThrow({
+      sourceType,
+    });
+    ids = EmbeddingsListSourceIdsByTypeOutputSchema.parse(raw).sourceIds;
   }
 
   let enqueued = 0;

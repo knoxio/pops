@@ -8,25 +8,25 @@ As a cross-pillar caller, I want `pops-core-api` to expose `core.settings.{get, 
 
 ## Acceptance Criteria
 
-- [ ] `apps/pops-core-api/src/modules/settings/router.ts` exists and mounts the six procedures:
+- [x] `apps/pops-core-api/src/modules/settings/router.ts` exists and mounts the six procedures:
   - [x] `get({ key })` → `{ data: Setting | null }` _(contract schema pinned in `@pops/core-contract`)_
   - [x] `set({ key, value })` → `{ data: Setting, message: string }` _(contract schema pinned)_
   - [x] `ensure({ key, value })` → `{ data: Setting }` (upsert-return) _(contract schema pinned)_
   - [x] `delete({ key })` → `{ message: string }` _(contract schema pinned)_
   - [x] `getMany({ keys: string[] })` → `{ settings: Record<string, string> }` (missing keys omitted) _(contract schema pinned)_
   - [x] `setMany({ entries: { key, value }[] })` → `{ settings: Record<string, string> }` (transactional) _(contract schema pinned)_
-- [ ] `apps/pops-core-api/src/router.ts` mounts `settings: settingsRouter` under `coreRouter`. Procedure paths are `core.settings.*`.
-- [ ] The router reuses `@pops/core-db`'s `settingsService` against `getCoreDrizzle()` resolved from the app context. No table-shape duplication.
+- [x] `apps/pops-core-api/src/router.ts` mounts `settings: settingsRouter` under `coreRouter`. Procedure paths are `core.settings.*`.
+- [x] The router reuses `@pops/core-db`'s `settingsService` against the core DB handle resolved from the app context (`ctx.coreDb`, the per-pillar handle injected by `createCoreTrpcContextFactory`). No table-shape duplication.
 - [ ] `apps/pops-api/src/modules/core/settings/router.ts` is updated in the same PR:
   - [ ] `getBulk` → `getMany` (procedure rename + zod alias kept for one minor version if any consumer still depends on the old path; document in PR body).
   - [ ] `setBulk` → `setMany`.
   - [ ] `ensure` newly exposed (binds to existing `service.ensureSetting`).
   - [ ] Tests under `apps/pops-api/src/modules/core/settings/settings.test.ts` updated to new names.
-- [ ] Contract package (`packages/contracts-core/...`) regenerated so `pillar<CoreRouter>('core').settings.*` resolves at the type level.
-- [ ] `pnpm --filter @pops/pops-core-api typecheck/test/build` passes clean.
+- [x] Contract package (`packages/core-contract/...`) emits the typed procedure schemas so `pillar<CoreRouter>('core').settings.*` resolves at the type level.
+- [x] `pnpm --filter @pops/core-api typecheck/test/build` passes clean.
 - [ ] `pnpm --filter @pops/pops-api typecheck/test/build` passes clean.
-- [ ] Monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] Monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

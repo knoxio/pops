@@ -6,10 +6,12 @@
  * clients call `cerebrum.nudges.list`, and cerebrum-api answers on the
  * same path.
  */
+import { embeddingsRouter } from './modules/embeddings/router.js';
 import { nudgesRouter } from './modules/nudges/router.js';
 import { router } from './trpc.js';
 
 export const cerebrumRouter = router({
+  embeddings: embeddingsRouter,
   nudges: nudgesRouter,
 });
 

@@ -1,8 +1,5 @@
 import BetterSqlite3 from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { embeddings } from '@pops/cerebrum-db';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -26,7 +23,6 @@ vi.mock('../../../jobs/embed-content.js', () => ({
 }));
 
 let testDb: BetterSqlite3.Database;
-let testDrizzle: ReturnType<typeof drizzle>;
 let vecAvailable = true;
 
 vi.mock('../../../db.js', () => ({
@@ -34,15 +30,30 @@ vi.mock('../../../db.js', () => ({
   isVecAvailable: () => vecAvailable,
 }));
 
-vi.mock('../../../db/cerebrum-handle.js', () => ({
-  getCerebrumDrizzle: () => testDrizzle,
-  getCerebrumRawDb: () => testDb,
+/**
+ * Mocks for the cross-pillar `pillar('cerebrum').embeddings.*` SDK
+ * surface (PRD-249). The service flipped off its direct
+ * `@pops/cerebrum-db` reads onto these procedures; the tests now
+ * stub the proxy-built handle the `pillar('cerebrum')` call returns.
+ */
+const getStatusStub = vi.fn<(input: { sourceType?: string }) => Promise<unknown>>();
+const listSourceIdsByTypeStub = vi.fn<(input: { sourceType: string }) => Promise<unknown>>();
+
+vi.mock('@pops/pillar-sdk/server', () => ({
+  pillar: () => ({
+    embeddings: {
+      getStatus: { orThrow: getStatusStub },
+      listSourceIdsByType: { orThrow: listSourceIdsByTypeStub },
+    },
+  }),
 }));
 
 import { semanticSearch, getEmbeddingStatus, reindexEmbeddings } from './service.js';
 
 // ---------------------------------------------------------------------------
-// DB setup
+// DB setup (semanticSearch uses the in-pillar vec0 path; still backed by
+// an in-memory SQLite + a stand-in `embeddings_vec` table because the
+// real `sqlite-vec` extension is not present in test env)
 // ---------------------------------------------------------------------------
 
 function createSearchTestDb(): BetterSqlite3.Database {
@@ -63,8 +74,6 @@ function createSearchTestDb(): BetterSqlite3.Database {
       UNIQUE (source_type, source_id, chunk_index)
     );
 
-    -- Stand-in table for embeddings_vec (no sqlite-vec extension in test env)
-    -- Columns match what semanticSearch's JOIN expects.
     CREATE TABLE embeddings_vec (
       rowid    INTEGER PRIMARY KEY,
       vector   BLOB NOT NULL,
@@ -100,7 +109,6 @@ function seedEmbedding(
 
 beforeEach(() => {
   testDb = createSearchTestDb();
-  testDrizzle = drizzle(testDb, { schema: { embeddings } });
   vecAvailable = true;
   vi.clearAllMocks();
 });
@@ -110,7 +118,7 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// semanticSearch — edge cases (no sqlite-vec needed)
+// semanticSearch — edge cases
 // ---------------------------------------------------------------------------
 
 describe('semanticSearch — edge cases', () => {
@@ -136,7 +144,6 @@ describe('semanticSearch — correct results from seeded embedding set', () => {
     seedEmbedding(testDb, 'transactions', 'tx-1', 'WOOLWORTHS groceries', 0.1);
     seedEmbedding(testDb, 'transactions', 'tx-2', 'NETFLIX subscription', 0.5);
 
-    // Override prepare to return our seeded rows (MATCH/k syntax not supported outside sqlite-vec)
     const originalPrepare = testDb.prepare.bind(testDb);
     vi.spyOn(testDb, 'prepare').mockImplementation((sql: string) => {
       if (sql.includes('MATCH')) {
@@ -213,78 +220,73 @@ describe('semanticSearch — correct results from seeded embedding set', () => {
 });
 
 // ---------------------------------------------------------------------------
-// getEmbeddingStatus
+// getEmbeddingStatus — now goes through pillar('cerebrum').embeddings
 // ---------------------------------------------------------------------------
 
-describe('getEmbeddingStatus', () => {
-  it('returns total count of all embeddings', () => {
-    const now = new Date().toISOString();
-    testDb
-      .prepare(
-        `INSERT INTO embeddings (source_type, source_id, chunk_index, content_hash, content_preview, model, dimensions, created_at)
-         VALUES ('transactions', 'tx-1', 0, 'h1', 'p1', 'm', 1536, ?),
-                ('transactions', 'tx-2', 0, 'h2', 'p2', 'm', 1536, ?)`
-      )
-      .run(now, now);
-
-    const status = getEmbeddingStatus();
-    expect(status.total).toBe(2);
+describe('getEmbeddingStatus (cross-pillar SDK)', () => {
+  it('forwards `{}` to cerebrum.embeddings.getStatus when no sourceType given', async () => {
+    getStatusStub.mockResolvedValue({ total: 2, pending: 0, stale: 0 });
+    const status = await getEmbeddingStatus();
+    expect(status).toEqual({ total: 2, pending: 0, stale: 0 });
+    expect(getStatusStub).toHaveBeenCalledWith({});
   });
 
-  it('returns 0 when no embeddings exist', () => {
-    const status = getEmbeddingStatus();
-    expect(status.total).toBe(0);
+  it('forwards the sourceType filter to cerebrum.embeddings.getStatus', async () => {
+    getStatusStub.mockResolvedValue({ total: 1, pending: 0, stale: 0 });
+    const status = await getEmbeddingStatus('transactions');
+    expect(status).toEqual({ total: 1, pending: 0, stale: 0 });
+    expect(getStatusStub).toHaveBeenCalledWith({ sourceType: 'transactions' });
   });
 
-  it('filters by sourceType when provided', () => {
-    const now = new Date().toISOString();
-    testDb
-      .prepare(
-        `INSERT INTO embeddings (source_type, source_id, chunk_index, content_hash, content_preview, model, dimensions, created_at)
-         VALUES ('transactions', 'tx-1', 0, 'h1', 'p1', 'm', 1536, ?),
-                ('notes', 'note-1', 0, 'h2', 'p2', 'm', 1536, ?)`
-      )
-      .run(now, now);
+  it('returns zeros when cerebrum reports an unknown source type', async () => {
+    getStatusStub.mockResolvedValue({ total: 0, pending: 0, stale: 0 });
+    const status = await getEmbeddingStatus('other');
+    expect(status).toEqual({ total: 0, pending: 0, stale: 0 });
+  });
 
-    expect(getEmbeddingStatus('transactions').total).toBe(1);
-    expect(getEmbeddingStatus('notes').total).toBe(1);
-    expect(getEmbeddingStatus('other').total).toBe(0);
+  it('propagates errors from the SDK call (no fallback to direct cerebrum-db read)', async () => {
+    getStatusStub.mockRejectedValue(new Error("Pillar call failed: pillar 'cerebrum' unavailable"));
+    await expect(getEmbeddingStatus()).rejects.toThrow(/cerebrum/);
   });
 });
 
 // ---------------------------------------------------------------------------
-// reindexEmbeddings
+// reindexEmbeddings — now goes through pillar('cerebrum').embeddings
 // ---------------------------------------------------------------------------
 
-describe('reindexEmbeddings', () => {
-  it('enqueues jobs for all embeddings of a source type', async () => {
-    const now = new Date().toISOString();
-    testDb
-      .prepare(
-        `INSERT INTO embeddings (source_type, source_id, chunk_index, content_hash, content_preview, model, dimensions, created_at)
-         VALUES ('transactions', 'tx-1', 0, 'h1', 'p1', 'm', 1536, ?),
-                ('transactions', 'tx-2', 0, 'h2', 'p2', 'm', 1536, ?)`
-      )
-      .run(now, now);
-
+describe('reindexEmbeddings (cross-pillar SDK)', () => {
+  it('enqueues jobs for ids returned by cerebrum.embeddings.listSourceIdsByType', async () => {
+    listSourceIdsByTypeStub.mockResolvedValue({ sourceIds: ['tx-1', 'tx-2'] });
     const { embedContent } = await import('../../../jobs/embed-content.js');
     const count = await reindexEmbeddings('transactions');
     expect(count).toBe(2);
+    expect(listSourceIdsByTypeStub).toHaveBeenCalledWith({ sourceType: 'transactions' });
     expect(embedContent).toHaveBeenCalledTimes(2);
+    expect(embedContent).toHaveBeenCalledWith({ sourceType: 'transactions', sourceId: 'tx-1' });
+    expect(embedContent).toHaveBeenCalledWith({ sourceType: 'transactions', sourceId: 'tx-2' });
   });
 
-  it('enqueues jobs for specific source IDs only', async () => {
+  it('skips the SDK call when explicit sourceIds are supplied', async () => {
     const { embedContent } = await import('../../../jobs/embed-content.js');
     const count = await reindexEmbeddings('transactions', ['tx-specific']);
     expect(count).toBe(1);
+    expect(listSourceIdsByTypeStub).not.toHaveBeenCalled();
     expect(embedContent).toHaveBeenCalledWith({
       sourceType: 'transactions',
       sourceId: 'tx-specific',
     });
   });
 
-  it('returns 0 when no embeddings exist for a source type', async () => {
+  it('returns 0 when the SDK reports no source ids for the type', async () => {
+    listSourceIdsByTypeStub.mockResolvedValue({ sourceIds: [] });
     const count = await reindexEmbeddings('no_such_type');
     expect(count).toBe(0);
+  });
+
+  it('propagates errors from the SDK call', async () => {
+    listSourceIdsByTypeStub.mockRejectedValue(
+      new Error("Pillar call failed: pillar 'cerebrum' unavailable")
+    );
+    await expect(reindexEmbeddings('transactions')).rejects.toThrow(/cerebrum/);
   });
 });

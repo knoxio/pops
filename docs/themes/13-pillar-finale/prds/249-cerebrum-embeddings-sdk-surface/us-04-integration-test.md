@@ -10,17 +10,17 @@ As an operator, I want a single integration test that boots `pops-cerebrum-api` 
 
 ## Acceptance Criteria
 
-- [ ] A test under `apps/pops-api/src/__integration__/` (or the established cross-pillar integration test home) that:
-  - [ ] Boots `pops-cerebrum-api` (or its in-process router) and the pops-api host registry.
-  - [ ] Configures `POPS_INTERNAL_API_KEY` via fixture.
-  - [ ] Seeds the cerebrum `embeddings` table with a known mix of source types (e.g. 3× `entity`, 5× `transaction`).
-  - [ ] From a core-pillar handler context, calls `pillar('cerebrum').embeddings.getStatus()`, `getStatus({ sourceType: 'entity' })`, and asserts totals match the seeded data.
-  - [ ] Calls `pillar('cerebrum').embeddings.listSourceIdsByType({ sourceType: 'entity' })` and asserts the distinct source ids returned.
-  - [ ] Asserts `getStatus({ sourceType: 'unknown' })` returns `{ total: 0, pending: 0, stale: 0 }`.
-  - [ ] Asserts `listSourceIdsByType({ sourceType: 'unknown' })` returns `{ sourceIds: [] }`.
-  - [ ] Asserts `pillar('cerebrum').embeddings.getStatus()` throws `PillarCallError` with `kind: 'pillar-unavailable'` when the cerebrum-api endpoint is taken down (or its discovery handle invalidated).
-- [ ] The test runs as part of the standard `pnpm --filter @pops/pops-api test` pipeline. CI green required for merge.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] A test under `apps/pops-api/src/__integration__/` (or the established cross-pillar integration test home) that:
+  - [x] Boots `pops-cerebrum-api` (or its in-process router) and the pops-api host registry.
+  - [x] Configures `POPS_INTERNAL_API_KEY` via fixture.
+  - [x] Seeds the cerebrum `embeddings` table with a known mix of source types (e.g. 3× `entity`, 5× `transaction`).
+  - [x] From a core-pillar handler context, calls `pillar('cerebrum').embeddings.getStatus()`, `getStatus({ sourceType: 'entity' })`, and asserts totals match the seeded data.
+  - [x] Calls `pillar('cerebrum').embeddings.listSourceIdsByType({ sourceType: 'entity' })` and asserts the distinct source ids returned.
+  - [x] Asserts `getStatus({ sourceType: 'unknown' })` returns `{ total: 0, pending: 0, stale: 0 }`.
+  - [x] Asserts `listSourceIdsByType({ sourceType: 'unknown' })` returns `{ sourceIds: [] }`.
+  - [x] Asserts `pillar('cerebrum').embeddings.getStatus()` throws `PillarCallError` with `kind: 'pillar-unavailable'` when the cerebrum-api endpoint is taken down (or its discovery handle invalidated).
+- [x] The test runs as part of the standard `pnpm --filter @pops/pops-api test` pipeline. CI green required for merge.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 
