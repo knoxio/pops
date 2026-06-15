@@ -1,0 +1,193 @@
+/**
+ * `cerebrum.debrief.*` write surface for the cerebrum pillar container
+ * (PRD-248 US-02). Mounts `record`, `create`, and `logWatchCompletion`
+ * as protected mutations under `cerebrumRouter.debrief`.
+ *
+ * Input/output zod schemas are imported from `@pops/cerebrum-contract`
+ * (US-01); the table writes target `@pops/cerebrum-db` directly through
+ * the per-request `ctx.cerebrumDb` handle injected by the cerebrum-api
+ * trpc context factory.
+ *
+ * Mixed-tx coordination (Option D, see
+ * `docs/themes/13-pillar-finale/notes/server-pillar-sdk-consumer-pattern.md`
+ * §6): the procedures here MUST NOT span pillar boundaries. They commit
+ * purely within `cerebrum.db`. The media-pillar call sites (PRD-248
+ * US-05) commit their watch_history / mediaWatchlist writes FIRST and
+ * then call this SDK; idempotent retries (and a future reconciler)
+ * absorb partial failure.
+ *
+ * The cerebrum-api container has no media-db handle and therefore can
+ * not enumerate `comparison_dimensions` when `logWatchCompletion` runs.
+ * The status fan-out (`queueDebriefStatus` in the in-monolith
+ * implementation) is intentionally deferred: this surface returns
+ * `dimensionsQueued: 0`. The in-monolith dispatcher binding under
+ * `apps/pops-api/src/modules/cerebrum/debrief/` keeps serving real
+ * traffic with the status fan-out until PRD-248 US-05 reshapes the
+ * call-sites and (if needed) introduces a media→cerebrum dimension
+ * SDK shape. PRD-248 §"Surface inventory" lists the eight methods;
+ * US-02 is the write slice.
+ */
+import { TRPCError } from '@trpc/server';
+import { and, eq, inArray } from 'drizzle-orm';
+import { z } from 'zod';
+
+import {
+  CreateInputSchema,
+  DebriefResultSchema,
+  DebriefSessionSchema,
+  LogWatchCompletionInputSchema,
+  RecordInputSchema,
+} from '@pops/cerebrum-contract/schemas';
+import { debriefResults, debriefSessions } from '@pops/cerebrum-db';
+
+import { protectedProcedure, router } from '../../trpc.js';
+
+import type { CerebrumDb } from '@pops/cerebrum-db';
+
+const DebriefResultResponseSchema = z.object({ data: DebriefResultSchema });
+const DebriefSessionResponseSchema = z.object({ data: DebriefSessionSchema });
+const LogWatchCompletionResponseSchema = z.object({
+  sessionId: z.number().int().positive(),
+  dimensionsQueued: z.number().int().nonnegative(),
+});
+
+type DebriefSession = z.infer<typeof DebriefSessionSchema>;
+type DebriefResult = z.infer<typeof DebriefResultSchema>;
+type DebriefSessionRow = typeof debriefSessions.$inferSelect;
+
+function findSessionById(db: CerebrumDb, sessionId: number): DebriefSessionRow | undefined {
+  return db.select().from(debriefSessions).where(eq(debriefSessions.id, sessionId)).get();
+}
+
+/**
+ * Delete any prior pending/active session for the given media tuple,
+ * then insert a fresh pending session. Matches the legacy
+ * `createDebriefSession` idempotency contract: re-running it for the
+ * same `(mediaType, mediaId)` converges on exactly one pending row.
+ *
+ * Wrapped by both `create` and `logWatchCompletion`.
+ */
+function createOrReplacePendingSession(
+  db: CerebrumDb,
+  input: { watchHistoryId: number; mediaType: 'movie' | 'episode'; mediaId: number }
+): DebriefSession {
+  const row = db.transaction((tx) => {
+    tx.delete(debriefSessions)
+      .where(
+        and(
+          eq(debriefSessions.mediaType, input.mediaType),
+          eq(debriefSessions.mediaId, input.mediaId),
+          inArray(debriefSessions.status, ['pending', 'active'])
+        )
+      )
+      .run();
+
+    const insertResult = tx
+      .insert(debriefSessions)
+      .values({
+        watchHistoryId: input.watchHistoryId,
+        mediaType: input.mediaType,
+        mediaId: input.mediaId,
+        status: 'pending',
+      })
+      .run();
+
+    const insertedId = Number(insertResult.lastInsertRowid);
+    const session = tx
+      .select()
+      .from(debriefSessions)
+      .where(eq(debriefSessions.id, insertedId))
+      .get();
+    if (!session) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Failed to read back debrief session ${insertedId} after insert`,
+      });
+    }
+    return session;
+  });
+  return DebriefSessionSchema.parse(row);
+}
+
+export const debriefRouter = router({
+  /**
+   * Insert a single `debriefResults` row for a (session, dimension)
+   * pair. Returns the inserted row. Throws NOT_FOUND if the session
+   * does not exist (the row would violate the intra-cerebrum FK on
+   * insert; we surface the typed error up-front rather than letting
+   * sqlite raise an opaque integrity error).
+   *
+   * `comparisonId` is allowed to be null (the dimension was dismissed
+   * / skipped) per the contract schema.
+   */
+  record: protectedProcedure
+    .input(RecordInputSchema)
+    .output(DebriefResultResponseSchema)
+    .mutation(({ input, ctx }) => {
+      const session = findSessionById(ctx.cerebrumDb, input.sessionId);
+      if (!session) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Debrief session '${input.sessionId}' not found`,
+        });
+      }
+
+      const insertResult = ctx.cerebrumDb
+        .insert(debriefResults)
+        .values({
+          sessionId: input.sessionId,
+          dimensionId: input.dimensionId,
+          comparisonId: input.comparisonId,
+        })
+        .run();
+
+      const insertedId = Number(insertResult.lastInsertRowid);
+      const row = ctx.cerebrumDb
+        .select()
+        .from(debriefResults)
+        .where(eq(debriefResults.id, insertedId))
+        .get();
+      if (!row) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to read back debrief result ${insertedId} after insert`,
+        });
+      }
+      const parsed: DebriefResult = DebriefResultSchema.parse(row);
+      return { data: parsed };
+    }),
+
+  /**
+   * Create a debrief session pinned to a watch_history row. Deletes any
+   * prior pending/active sessions for the same `(mediaType, mediaId)`
+   * tuple first; idempotent on retry.
+   */
+  create: protectedProcedure
+    .input(CreateInputSchema)
+    .output(DebriefSessionResponseSchema)
+    .mutation(({ input, ctx }) => {
+      const session = createOrReplacePendingSession(ctx.cerebrumDb, input);
+      return { data: session };
+    }),
+
+  /**
+   * Option D entry point. Currently writes the session row only; the
+   * status fan-out (`debriefStatus` per active dimension) is deferred
+   * to the in-monolith dispatcher binding until PRD-248 US-05 reshapes
+   * the cross-pillar dimension lookup (the cerebrum-api container has
+   * no media-db handle and `comparison_dimensions` lives in
+   * `media.db`).
+   *
+   * Wire shape matches the OpenAPI snapshot from US-01:
+   * `{ sessionId, dimensionsQueued }`. `dimensionsQueued` is `0` for
+   * now; the field stays on the shape so US-05's call-site flip is a
+   * pure consumer move (no wire-shape churn).
+   */
+  logWatchCompletion: protectedProcedure
+    .input(LogWatchCompletionInputSchema)
+    .output(LogWatchCompletionResponseSchema)
+    .mutation(({ input, ctx }) => {
+      const session = createOrReplacePendingSession(ctx.cerebrumDb, input);
+      return { sessionId: session.id, dimensionsQueued: 0 };
+    }),
+});
