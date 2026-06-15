@@ -9,8 +9,8 @@ import { protectedProcedure, router } from '../../../trpc.js';
 const SLUG_KIND = z.enum(['ingredient', 'recipe', 'prep_state']);
 type SlugKind = z.infer<typeof SLUG_KIND>;
 
-const FOOD_DB_KINDS: ReadonlySet<SlugKind> = new Set(['prep_state']);
-const LEGACY_DB_KINDS: ReadonlySet<SlugKind> = new Set(['ingredient', 'recipe']);
+const FOOD_DB_KINDS: ReadonlySet<SlugKind> = new Set(['ingredient', 'prep_state']);
+const LEGACY_DB_KINDS: ReadonlySet<SlugKind> = new Set(['recipe']);
 
 const ALL_KINDS: readonly SlugKind[] = ['ingredient', 'recipe', 'prep_state'];
 
@@ -24,12 +24,12 @@ interface SearchInput {
  * Run `searchSlugs` against the two backing handles for the requested
  * kinds and merge.
  *
- * Theme 13 PR 4 split the `slug_registry` table across two pillar DBs:
- * `kind='prep_state'` rows now live in `food.db` (via `getFoodDrizzle()`),
- * while `kind in ('ingredient','recipe')` rows still live in the legacy
- * shared `pops.db` (via `getDrizzle()`). A single-DB query would return
- * stale/incomplete results once writes have diverged, so we partition
- * the requested kinds by storage and merge the two result sets.
+ * Theme 13 Wave 5 split the `slug_registry` table across two pillar DBs:
+ * `kind in ('ingredient','prep_state')` rows now live in `food.db` (via
+ * `getFoodDrizzle()`), while `kind='recipe'` rows still live in the
+ * legacy shared `pops.db` (via `getDrizzle()`). A single-DB query would
+ * return stale/incomplete results once writes have diverged, so we
+ * partition the requested kinds by storage and merge the two result sets.
  *
  * `limit` is applied to each underlying query and again to the merged
  * output — slightly over-fetching in the worst case (limit*2 rows

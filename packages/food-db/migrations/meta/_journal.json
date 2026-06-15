@@ -15,6 +15,13 @@
       "when": 1781500777652,
       "tag": "0059_food_conversions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781500777653,
+      "tag": "0060_food_ingredient_tags",
+      "breakpoints": true
     }
   ]
 }

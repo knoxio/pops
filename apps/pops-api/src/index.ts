@@ -122,11 +122,14 @@ try {
 // Eagerly open the food pillar's SQLite + apply its journal at boot.
 // The earlier prep_states slice finished its PR4 writer cutover so the
 // original ATTACH bridge was retired. Theme-13 Wave-5 reintroduces the
-// bridge for the conversions slice landing in
-// `0059_food_conversions.sql` — `unit_conversions` + `ingredient_weights`.
-// The backfill is idempotent (per-table `WHERE NOT EXISTS (...)` filters
-// keyed on natural business keys) and non-fatal (partial failure logs +
-// continues).
+// bridge for two PR4 slices: the conversions slice
+// (`unit_conversions` + `ingredient_weights`, landed in
+// `0059_food_conversions.sql`) and the ingredients slice (this PR —
+// `ingredients`, `ingredient_variants`, `ingredient_aliases`,
+// `ingredient_tags`, and the food-owned rows of `slug_registry`). The
+// backfill is idempotent (per-table `WHERE NOT EXISTS (...)` filters
+// keyed on natural business keys or surrogate ids) and non-fatal
+// (partial failure logs + continues).
 try {
   getFoodDrizzle();
   backfillFoodFromSharedDb(resolveSqlitePath());

@@ -621,4 +621,24 @@ describe('food.slugs.search', () => {
       name: 'Banana',
     });
   });
+
+  it('finds prep_states by substring with display name (food.db partition)', async () => {
+    await caller.food.prepStates.create({ slug: 'diced', name: 'Diced' });
+    const result = await caller.food.slugs.search({ query: 'dic', kinds: ['prep_state'] });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({ slug: 'diced', kind: 'prep_state', name: 'Diced' });
+  });
+
+  it('merges ingredient + prep_state results across the food.db partition with a single query', async () => {
+    await caller.food.ingredients.create({ slug: 'date', name: 'Date', defaultUnit: 'count' });
+    await caller.food.prepStates.create({ slug: 'date-stuffed', name: 'Date-stuffed' });
+    const result = await caller.food.slugs.search({ query: 'date' });
+    const kinds = result.items.map((row) => row.kind).toSorted();
+    expect(kinds).toEqual(['ingredient', 'prep_state']);
+  });
+
+  it('honours `kinds: ["recipe"]` — recipes still resolve through the legacy pops.db partition', async () => {
+    const result = await caller.food.slugs.search({ query: 'whatever', kinds: ['recipe'] });
+    expect(Array.isArray(result.items)).toBe(true);
+  });
 });
