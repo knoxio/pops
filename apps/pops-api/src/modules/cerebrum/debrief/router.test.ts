@@ -64,6 +64,120 @@ function getDebriefStatus(db: Database): DebriefStatusRow[] {
   return db.prepare('SELECT * FROM debrief_status ORDER BY id').all() as DebriefStatusRow[];
 }
 
+function insertSession(
+  db: Database,
+  input: {
+    watchHistoryId: number;
+    mediaType?: 'movie' | 'episode';
+    mediaId?: number;
+    status?: 'pending' | 'active' | 'complete';
+  }
+): number {
+  const res = db
+    .prepare(
+      'INSERT INTO debrief_sessions (watch_history_id, media_type, media_id, status) VALUES (?, ?, ?, ?)'
+    )
+    .run(
+      input.watchHistoryId,
+      input.mediaType ?? 'movie',
+      input.mediaId ?? 1,
+      input.status ?? 'pending'
+    );
+  return Number(res.lastInsertRowid);
+}
+
+describe('cerebrum.debrief.get (in-monolith)', () => {
+  it('returns the row for an existing session', async () => {
+    seedMovie(db, { title: 'M', tmdb_id: 1 });
+    const watchHistoryId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 1 });
+    const sessionId = insertSession(db, { watchHistoryId, mediaType: 'movie', mediaId: 1 });
+
+    const result = await caller.cerebrum.debrief.get({ sessionId });
+    expect(result.data?.id).toBe(sessionId);
+  });
+
+  it('returns { data: null } for a missing session', async () => {
+    const result = await caller.cerebrum.debrief.get({ sessionId: 999_999 });
+    expect(result.data).toBeNull();
+  });
+});
+
+describe('cerebrum.debrief.getByMedia (in-monolith)', () => {
+  it('returns null for a media with no debrief', async () => {
+    const result = await caller.cerebrum.debrief.getByMedia({
+      mediaType: 'movie',
+      mediaId: 999,
+    });
+    expect(result.data).toBeNull();
+  });
+
+  it('returns the pending session for a media tuple via denormalised columns', async () => {
+    seedMovie(db, { title: 'M', tmdb_id: 1 });
+    const watchHistoryId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 1 });
+    const sessionId = insertSession(db, {
+      watchHistoryId,
+      mediaType: 'movie',
+      mediaId: 1,
+      status: 'pending',
+    });
+
+    const result = await caller.cerebrum.debrief.getByMedia({ mediaType: 'movie', mediaId: 1 });
+    expect(result.data?.id).toBe(sessionId);
+  });
+
+  it('skips complete sessions', async () => {
+    seedMovie(db, { title: 'M', tmdb_id: 1 });
+    const watchHistoryId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 1 });
+    insertSession(db, { watchHistoryId, mediaType: 'movie', mediaId: 1, status: 'complete' });
+
+    const result = await caller.cerebrum.debrief.getByMedia({ mediaType: 'movie', mediaId: 1 });
+    expect(result.data).toBeNull();
+  });
+});
+
+describe('cerebrum.debrief.listPending (in-monolith)', () => {
+  it('returns empty + total 0 when no sessions exist', async () => {
+    const result = await caller.cerebrum.debrief.listPending({});
+    expect(result.data).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+    expect(result.pagination.limit).toBe(50);
+  });
+
+  it('lists only pending sessions and paginates', async () => {
+    seedMovie(db, { title: 'M', tmdb_id: 1 });
+    for (let i = 1; i <= 4; i += 1) {
+      const wh = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: i });
+      insertSession(db, { watchHistoryId: wh, mediaType: 'movie', mediaId: i, status: 'pending' });
+    }
+    const wh2 = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 99 });
+    insertSession(db, { watchHistoryId: wh2, mediaType: 'movie', mediaId: 99, status: 'active' });
+
+    const first = await caller.cerebrum.debrief.listPending({ limit: 2, offset: 0 });
+    expect(first.data).toHaveLength(2);
+    expect(first.pagination.total).toBe(4);
+
+    const second = await caller.cerebrum.debrief.listPending({ limit: 2, offset: 2 });
+    expect(second.data).toHaveLength(2);
+    expect(second.pagination.total).toBe(4);
+  });
+
+  it('filters by mediaType + mediaId', async () => {
+    seedMovie(db, { title: 'M', tmdb_id: 1 });
+    const wh1 = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 10 });
+    insertSession(db, { watchHistoryId: wh1, mediaType: 'movie', mediaId: 10, status: 'pending' });
+    const wh2 = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 20 });
+    insertSession(db, { watchHistoryId: wh2, mediaType: 'movie', mediaId: 20, status: 'pending' });
+
+    const result = await caller.cerebrum.debrief.listPending({
+      mediaType: 'movie',
+      mediaId: 20,
+    });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.mediaId).toBe(20);
+    expect(result.pagination.total).toBe(1);
+  });
+});
+
 describe('cerebrum.debrief.logWatchCompletion', () => {
   it('creates a debrief session with denormalised media columns and queues debrief_status rows', async () => {
     seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });

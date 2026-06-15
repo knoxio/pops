@@ -331,6 +331,202 @@ describe('cerebrum.debrief.logWatchCompletion (tRPC caller)', () => {
   });
 });
 
+describe('cerebrum.debrief.get (tRPC caller)', () => {
+  it('returns the session row for an existing id', async () => {
+    const sessionId = seedSession(cerebrumDb.db, {
+      watchHistoryId: 1,
+      mediaType: 'movie',
+      mediaId: 42,
+    });
+    const result = await userCaller().cerebrum.debrief.get({ sessionId });
+    expect(result.data).not.toBeNull();
+    expect(result.data?.id).toBe(sessionId);
+    expect(result.data?.mediaType).toBe('movie');
+    expect(result.data?.mediaId).toBe(42);
+  });
+
+  it('returns { data: null } for a missing session', async () => {
+    const result = await userCaller().cerebrum.debrief.get({ sessionId: 999_999 });
+    expect(result.data).toBeNull();
+  });
+
+  it('rejects malformed input at the zod boundary (BAD_REQUEST)', async () => {
+    await expect(userCaller().cerebrum.debrief.get({ sessionId: 0 })).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'BAD_REQUEST',
+    });
+  });
+
+  it('rejects an anonymous caller (UNAUTHORIZED)', async () => {
+    await expect(anonCaller().cerebrum.debrief.get({ sessionId: 1 })).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'UNAUTHORIZED',
+    });
+  });
+});
+
+describe('cerebrum.debrief.getByMedia (tRPC caller)', () => {
+  it('returns { data: null } for a media with no debrief', async () => {
+    const result = await userCaller().cerebrum.debrief.getByMedia({
+      mediaType: 'movie',
+      mediaId: 999,
+    });
+    expect(result.data).toBeNull();
+  });
+
+  it('returns the pending session via denormalised media columns', async () => {
+    const sessionId = seedSession(cerebrumDb.db, {
+      watchHistoryId: 1,
+      mediaType: 'episode',
+      mediaId: 77,
+      status: 'pending',
+    });
+    const result = await userCaller().cerebrum.debrief.getByMedia({
+      mediaType: 'episode',
+      mediaId: 77,
+    });
+    expect(result.data?.id).toBe(sessionId);
+    expect(result.data?.mediaType).toBe('episode');
+    expect(result.data?.mediaId).toBe(77);
+  });
+
+  it('ignores complete sessions and returns null when no pending/active row matches', async () => {
+    seedSession(cerebrumDb.db, {
+      watchHistoryId: 5,
+      mediaType: 'movie',
+      mediaId: 88,
+      status: 'complete',
+    });
+    const result = await userCaller().cerebrum.debrief.getByMedia({
+      mediaType: 'movie',
+      mediaId: 88,
+    });
+    expect(result.data).toBeNull();
+  });
+
+  it('returns the most recently created pending session when multiple exist', async () => {
+    const earlier = seedSession(cerebrumDb.db, {
+      watchHistoryId: 10,
+      mediaType: 'movie',
+      mediaId: 55,
+      status: 'pending',
+    });
+    const later = seedSession(cerebrumDb.db, {
+      watchHistoryId: 11,
+      mediaType: 'movie',
+      mediaId: 55,
+      status: 'active',
+    });
+
+    const result = await userCaller().cerebrum.debrief.getByMedia({
+      mediaType: 'movie',
+      mediaId: 55,
+    });
+    expect(result.data?.id).toBe(later);
+    expect(result.data?.id).not.toBe(earlier);
+  });
+});
+
+describe('cerebrum.debrief.listPending (tRPC caller)', () => {
+  it('returns an empty page with zero total when the table is empty', async () => {
+    const result = await userCaller().cerebrum.debrief.listPending({});
+    expect(result.data).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+    expect(result.pagination.offset).toBe(0);
+    expect(result.pagination.limit).toBe(50);
+  });
+
+  it('returns only pending sessions and skips active / complete', async () => {
+    seedSession(cerebrumDb.db, { watchHistoryId: 1, mediaId: 1, status: 'pending' });
+    seedSession(cerebrumDb.db, { watchHistoryId: 2, mediaId: 2, status: 'active' });
+    seedSession(cerebrumDb.db, { watchHistoryId: 3, mediaId: 3, status: 'complete' });
+
+    const result = await userCaller().cerebrum.debrief.listPending({});
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.status).toBe('pending');
+    expect(result.pagination.total).toBe(1);
+  });
+
+  it('filters by mediaType', async () => {
+    seedSession(cerebrumDb.db, {
+      watchHistoryId: 1,
+      mediaType: 'movie',
+      mediaId: 1,
+      status: 'pending',
+    });
+    seedSession(cerebrumDb.db, {
+      watchHistoryId: 2,
+      mediaType: 'episode',
+      mediaId: 2,
+      status: 'pending',
+    });
+
+    const result = await userCaller().cerebrum.debrief.listPending({ mediaType: 'episode' });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.mediaType).toBe('episode');
+    expect(result.pagination.total).toBe(1);
+  });
+
+  it('filters by mediaType + mediaId', async () => {
+    seedSession(cerebrumDb.db, {
+      watchHistoryId: 1,
+      mediaType: 'movie',
+      mediaId: 100,
+      status: 'pending',
+    });
+    seedSession(cerebrumDb.db, {
+      watchHistoryId: 2,
+      mediaType: 'movie',
+      mediaId: 200,
+      status: 'pending',
+    });
+
+    const result = await userCaller().cerebrum.debrief.listPending({
+      mediaType: 'movie',
+      mediaId: 200,
+    });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.mediaId).toBe(200);
+    expect(result.pagination.total).toBe(1);
+  });
+
+  it('paginates with limit + offset; total reflects the full filter', async () => {
+    for (let mediaId = 1; mediaId <= 7; mediaId += 1) {
+      seedSession(cerebrumDb.db, {
+        watchHistoryId: mediaId,
+        mediaType: 'movie',
+        mediaId,
+        status: 'pending',
+      });
+    }
+
+    const first = await userCaller().cerebrum.debrief.listPending({ limit: 3, offset: 0 });
+    expect(first.data).toHaveLength(3);
+    expect(first.pagination.total).toBe(7);
+    expect(first.pagination.limit).toBe(3);
+    expect(first.pagination.offset).toBe(0);
+
+    const second = await userCaller().cerebrum.debrief.listPending({ limit: 3, offset: 3 });
+    expect(second.data).toHaveLength(3);
+    expect(second.pagination.total).toBe(7);
+    expect(second.pagination.offset).toBe(3);
+
+    const third = await userCaller().cerebrum.debrief.listPending({ limit: 3, offset: 6 });
+    expect(third.data).toHaveLength(1);
+    expect(third.pagination.total).toBe(7);
+
+    const ids = new Set([...first.data, ...second.data, ...third.data].map((row) => row.id));
+    expect(ids.size).toBe(7);
+  });
+
+  it('rejects an anonymous caller (UNAUTHORIZED)', async () => {
+    await expect(anonCaller().cerebrum.debrief.listPending({})).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'UNAUTHORIZED',
+    });
+  });
+});
+
 describe('/trpc HTTP surface', () => {
   function makeApp(): ReturnType<typeof createCerebrumApiApp> {
     return createCerebrumApiApp({ cerebrumDb, coreDb, version: '0.0.1-test' });
@@ -366,5 +562,35 @@ describe('/trpc HTTP surface', () => {
       .set('content-type', 'application/json');
     expect(res.status).toBe(404);
     expect(res.body.error.data.code).toBe('NOT_FOUND');
+  });
+
+  it('answers cerebrum.debrief.get with null for a missing session', async () => {
+    const app = makeApp();
+    const res = await request(app).get(
+      '/trpc/cerebrum.debrief.get?input=' + encodeURIComponent(JSON.stringify({ sessionId: 1 }))
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.result.data.data).toBeNull();
+  });
+
+  it('answers cerebrum.debrief.getByMedia with null for a media with no debrief', async () => {
+    const app = makeApp();
+    const res = await request(app).get(
+      '/trpc/cerebrum.debrief.getByMedia?input=' +
+        encodeURIComponent(JSON.stringify({ mediaType: 'movie', mediaId: 999 }))
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.result.data.data).toBeNull();
+  });
+
+  it('answers cerebrum.debrief.listPending with paginated empty page', async () => {
+    const app = makeApp();
+    const res = await request(app).get(
+      '/trpc/cerebrum.debrief.listPending?input=' + encodeURIComponent(JSON.stringify({}))
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.result.data.data).toEqual([]);
+    expect(res.body.result.data.pagination.total).toBe(0);
+    expect(res.body.result.data.pagination.limit).toBe(50);
   });
 });
