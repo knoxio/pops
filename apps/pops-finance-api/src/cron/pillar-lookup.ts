@@ -4,6 +4,11 @@
  * folds the {@link CallResult} discriminants down to the cron's smaller
  * vocabulary (`ok` / `not-found` / `bad-uri` / `unavailable`).
  *
+ * Wire contract: PRD-251 §"Surface" specifies a URI-shaped cross-pillar
+ * contract — input `{ uri }`, output `{ data: { uri } }`. Both the
+ * inventory and finance crons go through the same `core.users.get` and
+ * pass the URI through end-to-end.
+ *
  * Kept separate from the worker so unit tests can wire a stub directly
  * without exercising the HTTP transport.
  */
@@ -11,7 +16,7 @@ import { isOk, pillar, type CallResult } from '@pops/pillar-sdk/client';
 
 import type { ReconcileLookupFn, ReconcileLookupResult } from './reconcile-cross-pillar.js';
 
-type UsersGetResponse = { uri: string; displayName: string; kind: string } | null;
+type UsersGetResponse = { data: { uri: string } };
 
 type CoreUsersHandle = {
   users: {
@@ -24,7 +29,6 @@ export function createPillarOwnerUriLookup(): ReconcileLookupFn {
     const handle = pillar<CoreUsersHandle>('core');
     const result = await handle.users.get({ uri });
     if (isOk(result)) {
-      if (result.value === null) return { kind: 'not-found' };
       return { kind: 'ok' };
     }
     switch (result.kind) {

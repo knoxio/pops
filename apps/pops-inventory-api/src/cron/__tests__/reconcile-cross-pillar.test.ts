@@ -120,7 +120,7 @@ function makeFinanceProxy(byId: Record<string, FakeFinanceCall>): PillarHandle<F
   return fake as unknown as PillarHandle<FinanceRouter>;
 }
 
-function makeCoreProxy(byEmail: Record<string, FakeCoreCall>): PillarHandle<CoreRouter> {
+function makeCoreProxy(byUri: Record<string, FakeCoreCall>): PillarHandle<CoreRouter> {
   const fake = {
     callDynamic: vi.fn(
       async (
@@ -128,14 +128,14 @@ function makeCoreProxy(byEmail: Record<string, FakeCoreCall>): PillarHandle<Core
         _procName: string,
         input?: unknown
       ): Promise<CallResult<unknown>> => {
-        const email = (input as { email: string } | undefined)?.email ?? '';
-        const slot = byEmail[email];
+        const uri = (input as { uri: string } | undefined)?.uri ?? '';
+        const slot = byUri[uri];
         if (!slot) {
           return { kind: 'not-found', pillar: 'core' };
         }
         if (slot.error) throw slot.error;
         if (slot.result) return slot.result;
-        return { kind: 'ok', value: { data: { email } } };
+        return { kind: 'ok', value: { data: { uri } } };
       }
     ),
   };
@@ -186,7 +186,7 @@ describe('runReconciliation — happy-path', () => {
     );
 
     const finance = makeFinanceProxy({ 'tx-1': {} });
-    const core = makeCoreProxy({ 'joao@example.com': {} });
+    const core = makeCoreProxy({ 'pops://core/user/joao@example.com': {} });
     const info = vi.fn();
 
     const counters = await runReconciliation({
