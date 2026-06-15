@@ -15,6 +15,7 @@ import type { BootstrapLogger } from './logger.js';
 export interface RegisterWithRetryArgs {
   transport: RegistryTransport;
   manifest: ManifestPayload;
+  baseUrl: string;
   logger: BootstrapLogger;
   maxAttempts: number;
   initialBackoffMs: number;
@@ -29,7 +30,11 @@ export async function registerWithRetry(args: RegisterWithRetryArgs): Promise<Re
   while (attempt < args.maxAttempts) {
     attempt += 1;
     try {
-      const result = await args.transport.register(args.manifest);
+      const result = await args.transport.register({
+        pillarId: args.manifest.pillar,
+        baseUrl: args.baseUrl,
+        manifest: args.manifest,
+      });
       args.logger.info('[pillar-sdk] registered with registry', {
         pillar: result.pillarId,
         attempt,

@@ -70,7 +70,10 @@ const app = createFoodApiApp({ foodDb, version, selfBaseUrl });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest: buildFoodManifest(version) });
+  pillarHandle = await bootstrapPillar({
+    manifest: buildFoodManifest(version),
+    baseUrl: selfBaseUrl,
+  });
 }
 
 const server = app.listen(port, () => {

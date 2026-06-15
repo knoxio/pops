@@ -10,8 +10,14 @@ export interface HeartbeatResult {
   acknowledgedAt: string;
 }
 
+export interface RegisterRequest {
+  pillarId: string;
+  baseUrl: string;
+  manifest: ManifestPayload;
+}
+
 export interface RegistryTransport {
-  register(payload: ManifestPayload): Promise<RegistrationResult>;
+  register(payload: RegisterRequest): Promise<RegistrationResult>;
   heartbeat(pillarId: string): Promise<HeartbeatResult>;
   unregister(pillarId: string): Promise<void>;
 }

@@ -70,7 +70,10 @@ const stopEvictionTicker = startEvictionTicker(coreDb.db);
 // HTTP server up.
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest: buildCoreManifest(version) });
+  pillarHandle = await bootstrapPillar({
+    manifest: buildCoreManifest(version),
+    baseUrl: selfBaseUrl,
+  });
 }
 
 let shuttingDown = false;
