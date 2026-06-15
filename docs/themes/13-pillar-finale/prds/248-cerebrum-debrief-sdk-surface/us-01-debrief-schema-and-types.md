@@ -8,19 +8,19 @@ As a downstream PRD-248 US (US-02, US-03, US-04), I want the zod schemas and Typ
 
 ## Acceptance Criteria
 
-- [ ] Zod schemas for debrief shapes live in a single module:
-  - [ ] `DebriefSessionSchema` — matches the `debriefSessions` table row, including the denormalised `mediaType` + `mediaId` columns from commit 9df171fe.
-  - [ ] `DebriefResultSchema` — matches `debriefResults` row.
-  - [ ] `DebriefStatusSchema` — matches `debriefStatus` row.
-  - [ ] Input schemas for each of the 8 procedures (`RecordInputSchema`, `DismissInputSchema`, `ListPendingInputSchema`, `CreateInputSchema`, `GetInputSchema`, `GetByMediaInputSchema`, `LogWatchCompletionInputSchema`, `DeleteByWatchHistoryIdInputSchema`).
-- [ ] The schemas live under a location reachable from both `apps/pops-api` (current in-monolith handlers) and `apps/pops-cerebrum-api` (new router). Pick one: a) promote to `@pops/cerebrum-db` types module, b) promote to a `packages/contracts-cerebrum` shared shapes module, c) keep in `apps/pops-cerebrum-api` and import from monolith handlers. US-01 picks at PR time; document the choice in the PR body.
-- [ ] The `debriefSessions` denormalised columns (`mediaType` + `mediaId`) are present in the schema and the underlying drizzle definition (verify the migration shipped in commit 9df171fe).
-- [ ] A type-level test (or compile-only assertion) asserts that:
-  - [ ] `DebriefSessionSchema` parses a row produced by the live drizzle table.
-  - [ ] `GetByMediaInputSchema` rejects a payload missing `mediaType` or `mediaId`.
-- [ ] No router procedure is registered in this US. The schemas are the only deliverable.
-- [ ] `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] Zod schemas for debrief shapes live in a single module:
+  - [x] `DebriefSessionSchema` — matches the `debriefSessions` table row, including the denormalised `mediaType` + `mediaId` columns from commit 9df171fe.
+  - [x] `DebriefResultSchema` — matches `debriefResults` row.
+  - [x] `DebriefStatusSchema` — matches `debriefStatus` row.
+  - [x] Input schemas for each of the 8 procedures (`RecordInputSchema`, `DismissInputSchema`, `ListPendingInputSchema`, `CreateInputSchema`, `GetInputSchema`, `GetByMediaInputSchema`, `LogWatchCompletionInputSchema`, `DeleteByWatchHistoryIdInputSchema`).
+- [x] The schemas live under a location reachable from both `apps/pops-api` (current in-monolith handlers) and `apps/pops-cerebrum-api` (new router). Pick one: a) promote to `@pops/cerebrum-db` types module, b) promote to a `packages/contracts-cerebrum` shared shapes module, c) keep in `apps/pops-cerebrum-api` and import from monolith handlers. US-01 picks at PR time; document the choice in the PR body.
+- [x] The `debriefSessions` denormalised columns (`mediaType` + `mediaId`) are present in the schema and the underlying drizzle definition (verify the migration shipped in commit 9df171fe).
+- [x] A type-level test (or compile-only assertion) asserts that:
+  - [x] `DebriefSessionSchema` parses a row produced by the live drizzle table.
+  - [x] `GetByMediaInputSchema` rejects a payload missing `mediaType` or `mediaId`.
+- [x] No router procedure is registered in this US. The schemas are the only deliverable.
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

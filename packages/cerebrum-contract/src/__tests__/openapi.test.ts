@@ -95,4 +95,47 @@ describe('@pops/cerebrum-contract openapi snapshot', () => {
     expect(openapi.components.schemas).toHaveProperty('EmbeddingsListSourceIdsByTypeInput');
     expect(openapi.components.schemas).toHaveProperty('EmbeddingsListSourceIdsByTypeOutput');
   });
+
+  it('references the DebriefSession entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('DebriefSession');
+  });
+
+  it('references the DebriefResult entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('DebriefResult');
+  });
+
+  it('references the DebriefStatus entity schema under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('DebriefStatus');
+  });
+
+  it('includes the debrief session status enum', () => {
+    const status = openapi.components.schemas['DebriefSessionStatus'] as {
+      enum?: readonly string[];
+    };
+    expect(status).toBeDefined();
+    expect(status.enum).toEqual(expect.arrayContaining(['pending', 'active', 'complete']));
+  });
+
+  it('includes the debrief media-type enum', () => {
+    const mediaType = openapi.components.schemas['DebriefMediaType'] as {
+      enum?: readonly string[];
+    };
+    expect(mediaType).toBeDefined();
+    expect(mediaType.enum).toEqual(expect.arrayContaining(['movie', 'episode']));
+  });
+
+  it.each([
+    ['/cerebrum/debrief/record', 'post', 'cerebrum.debrief.record'],
+    ['/cerebrum/debrief/dismiss', 'post', 'cerebrum.debrief.dismiss'],
+    ['/cerebrum/debrief/listPending', 'get', 'cerebrum.debrief.listPending'],
+    ['/cerebrum/debrief/create', 'post', 'cerebrum.debrief.create'],
+    ['/cerebrum/debrief/get', 'get', 'cerebrum.debrief.get'],
+    ['/cerebrum/debrief/getByMedia', 'get', 'cerebrum.debrief.getByMedia'],
+    ['/cerebrum/debrief/logWatchCompletion', 'post', 'cerebrum.debrief.logWatchCompletion'],
+    ['/cerebrum/debrief/deleteByWatchHistoryId', 'post', 'cerebrum.debrief.deleteByWatchHistoryId'],
+  ])('exposes %s %s as %s', (path, method, operationId) => {
+    const op = openapi.paths[path]?.[method];
+    expect(op).toBeDefined();
+    expect(op?.operationId).toBe(operationId);
+  });
 });
