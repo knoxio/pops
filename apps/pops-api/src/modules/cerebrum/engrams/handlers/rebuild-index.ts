@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import { type CerebrumDb } from '@pops/cerebrum-db';
-import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/db-types';
+import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/cerebrum-db';
 
 import { countWords, deriveTitle, parseEngramFile } from '../file.js';
 import { absolutePath, dedupe, listEngramFiles, sha256, splitCustomFields } from './fs-helpers.js';

@@ -25,7 +25,7 @@ vi.mock('drizzle-orm', () => ({
   })),
 }));
 
-// Mock @pops/db-types — provide minimal column-like objects.
+// Mock @pops/cerebrum-db — provide minimal column-like objects.
 const mockNudgeLog = {
   id: { name: 'id' },
   type: { name: 'type' },
@@ -61,12 +61,16 @@ const mockEngramTags = {
   tag: { name: 'tag' },
 };
 
-vi.mock('@pops/db-types', () => ({
-  nudgeLog: mockNudgeLog,
-  engramIndex: mockEngramIndex,
-  engramScopes: mockEngramScopes,
-  engramTags: mockEngramTags,
-}));
+vi.mock('@pops/cerebrum-db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@pops/cerebrum-db')>();
+  return {
+    ...actual,
+    nudgeLog: mockNudgeLog,
+    engramIndex: mockEngramIndex,
+    engramScopes: mockEngramScopes,
+    engramTags: mockEngramTags,
+  };
+});
 
 const { NudgeService } = await import('../nudge-service.js');
 

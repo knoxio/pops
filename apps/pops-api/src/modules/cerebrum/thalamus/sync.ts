@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 
 import { type CerebrumDb } from '@pops/cerebrum-db';
-import { engramIndex } from '@pops/db-types';
+import { engramIndex } from '@pops/cerebrum-db';
 
 import { countWords, deriveTitle, parseEngramFile } from '../engrams/file.js';
 import { syncEngramLinks, syncEngramScopes, syncEngramTags } from './sync-junctions.js';

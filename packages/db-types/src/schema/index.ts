@@ -6,7 +6,25 @@ export { aiInferenceLog } from './ai-inference-log.js';
 export { aiModelPricing } from './ai-model-pricing.js';
 export { aiProviders } from './ai-providers.js';
 export { aiUsage } from './ai-usage.js';
-export { embeddings } from './core/embeddings.js';
+export {
+  conversationContext,
+  conversations,
+  debriefResults,
+  debriefSessions,
+  debriefStatus,
+  embeddings,
+  engramIndex,
+  engramLinks,
+  engramScopes,
+  engramTags,
+  gliaActions,
+  gliaTrustState,
+  messages,
+  nudgeLog,
+  plexusAdapters,
+  plexusFilters,
+  reflexExecutions,
+} from '@pops/cerebrum-db';
 export { budgets } from './budgets.js';
 export {
   comparisonDimensions,
@@ -30,14 +48,7 @@ export {
   watchHistory,
 } from '@pops/media-db';
 export { transactionCorrections } from './corrections.js';
-export { debriefResults } from './debrief-results.js';
-export { debriefSessions } from './debrief-sessions.js';
-export { debriefStatus } from './debrief-status.js';
-export { conversations, conversationContext, messages } from './ego.js';
-export { engramIndex, engramLinks, engramScopes, engramTags } from './engrams.js';
-export { reflexExecutions } from './reflex-executions.js';
 export { entities } from './entities.js';
-export { gliaActions, gliaTrustState } from './glia.js';
 export { environments } from './environments.js';
 export { fixtures } from './fixtures.js';
 export {
@@ -72,9 +83,7 @@ export { itemDocuments } from './item-documents.js';
 export { itemPhotos } from './item-photos.js';
 export { itemUploadedFiles } from './item-uploaded-files.js';
 export { locations } from './locations.js';
-export { nudgeLog } from './nudge-log.js';
 export { pillarRegistry } from './pillar-registry.js';
-export { plexusAdapters, plexusFilters } from './plexus.js';
 export { serviceAccounts } from './service-accounts.js';
 export { settings } from './settings.js';
 export { userSettings } from './user-settings.js';

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { eq, inArray, like, or, sql } from 'drizzle-orm';
 
 import { type CerebrumDb } from '@pops/cerebrum-db';
-import { engramIndex, engramScopes } from '@pops/db-types';
+import { engramIndex, engramScopes } from '@pops/cerebrum-db';
 
 import { ValidationError } from '../../../shared/errors.js';
 import { parseEngramFile, serializeEngram } from './file.js';

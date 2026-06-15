@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { sql } from 'drizzle-orm';
 
 import { type CerebrumDb } from '@pops/cerebrum-db';
-import { engramLinks } from '@pops/db-types';
+import { engramLinks } from '@pops/cerebrum-db';
 
 import { ValidationError } from '../../../../shared/errors.js';
 import { parseEngramFile, serializeEngram } from '../file.js';

@@ -5,8 +5,9 @@
  * public `Nudge` domain object; `generateNudgeId` is the ID format
  * PRD-084 specifies (`nudge_{YYYYMMDD}_{HHmm}_{type}_{slug}`).
  */
-import type { NudgeLogRow as DrizzleNudgeLogRow } from '@pops/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
 
+import type { nudgeLog } from '../schema/nudge-log.js';
 import type {
   Nudge,
   NudgeActionType,
@@ -16,7 +17,7 @@ import type {
 } from './nudge-log-types.js';
 
 /** Row shape as drizzle returns it from `db.select().from(nudgeLog)`. */
-export type NudgeLogRow = DrizzleNudgeLogRow;
+export type NudgeLogRow = InferSelectModel<typeof nudgeLog>;
 
 /** Map a nudge_log row to a Nudge domain object. */
 export function rowToNudge(row: NudgeLogRow): Nudge {

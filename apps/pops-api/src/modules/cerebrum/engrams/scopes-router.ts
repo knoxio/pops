@@ -9,7 +9,7 @@ import { TRPCError } from '@trpc/server';
 import { count, eq, like, or } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { engramScopes } from '@pops/db-types';
+import { engramScopes } from '@pops/cerebrum-db';
 
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { HttpError, NotFoundError, ValidationError } from '../../../shared/errors.js';

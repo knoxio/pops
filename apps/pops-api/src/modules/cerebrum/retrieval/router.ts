@@ -11,7 +11,7 @@
 import { count, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { embeddings, engramIndex } from '@pops/db-types';
+import { embeddings, engramIndex } from '@pops/cerebrum-db';
 
 import { getDrizzle } from '../../../db.js';
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';

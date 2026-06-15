@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { engramIndex, engramScopes, engramTags } from '@pops/db-types';
+import { engramIndex, engramScopes, engramTags } from '@pops/cerebrum-db';
 
 import { createTestDb } from '../../../shared/test-utils.js';
 import { FrontmatterSyncService } from './sync.js';

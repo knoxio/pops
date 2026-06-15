@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { watch as chokidarWatch, type FSWatcher } from 'chokidar';
 import { eq } from 'drizzle-orm';
 
-import { reflexExecutions } from '@pops/db-types';
+import { reflexExecutions } from '@pops/cerebrum-db';
 
 import { getDrizzle } from '../../../db.js';
 import { updateEnabledInToml } from './reflex-helpers.js';

@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@pops/app-lists-db": "workspace:*",
+    "@pops/cerebrum-db": "workspace:*",
     "@pops/media-db": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",

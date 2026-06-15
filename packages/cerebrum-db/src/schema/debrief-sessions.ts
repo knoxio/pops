@@ -1,8 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { watchHistory } from '@pops/media-db';
-
 /**
  * Debrief sessions — one row per (re-)watch tracked by the cerebrum
  * debrief subsystem for post-watch reflection.
@@ -16,14 +14,17 @@ import { watchHistory } from '@pops/media-db';
  * them on insert in the follow-up PR, and the cerebrum baseline
  * migration will tighten them to NOT NULL once `debrief_sessions`
  * physically moves to `cerebrum.db`.
+ *
+ * `watchHistoryId` is a soft pointer into `media.db.watch_history`
+ * resolved via the URI dispatcher (ADR-026); the schema-level
+ * `.references()` clause is intentionally absent so the cerebrum
+ * SQLite file can stand alone (PRD-245 US-01 / audit H7).
  */
 export const debriefSessions = sqliteTable(
   'debrief_sessions',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    watchHistoryId: integer('watch_history_id')
-      .notNull()
-      .references(() => watchHistory.id),
+    watchHistoryId: integer('watch_history_id').notNull(),
     mediaType: text('media_type'),
     mediaId: integer('media_id'),
     status: text('status', { enum: ['pending', 'active', 'complete'] })

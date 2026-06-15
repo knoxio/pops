@@ -8,7 +8,7 @@ import { join } from 'node:path';
 
 import { eq } from 'drizzle-orm';
 
-import { reflexExecutions } from '@pops/db-types';
+import { reflexExecutions } from '@pops/cerebrum-db';
 
 import { getDrizzle } from '../../../db.js';
 import { toReflexExecution, buildTestTriggerData } from './reflex-helpers.js';

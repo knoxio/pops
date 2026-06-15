@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 
 import { and, eq } from 'drizzle-orm';
 
-import { engramIndex } from '@pops/db-types';
+import { engramIndex } from '@pops/cerebrum-db';
 
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 
