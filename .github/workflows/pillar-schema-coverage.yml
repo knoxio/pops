@@ -52,9 +52,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build finance-db
-        run: |
-          pnpm --filter @pops/db-types build
-          pnpm --filter @pops/finance-db build
+        run: pnpm --filter "@pops/finance-db^..." --filter "@pops/finance-db" build
       - name: Self-test (script catches injected missing table)
         run: |
           set +e
