@@ -162,10 +162,17 @@ const server = app.listen(port, () => {
 });
 
 // Auto-resume Plex sync scheduler if it was previously running
-const resumedScheduler = resumeSchedulerIfEnabled();
-if (resumedScheduler) {
-  console.warn(`[pops-api] Plex scheduler resumed (interval: ${resumedScheduler.intervalMs}ms)`);
-}
+void resumeSchedulerIfEnabled()
+  .then((resumedScheduler) => {
+    if (resumedScheduler) {
+      console.warn(
+        `[pops-api] Plex scheduler resumed (interval: ${resumedScheduler.intervalMs}ms)`
+      );
+    }
+  })
+  .catch((err: unknown) => {
+    console.error('[pops-api] Failed to resume Plex scheduler:', err);
+  });
 
 // Auto-resume rotation scheduler if it was previously running
 const resumedRotation = resumeRotationSchedulerIfEnabled();

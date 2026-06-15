@@ -8,13 +8,12 @@
  *
  * PRD-074 US-05
  */
-import { SettingNotFoundError, settingsService } from '@pops/core-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { getSyncQueue } from '../../../jobs/queues.js';
 import { FeatureNotFoundError } from '../../core/features/errors.js';
 import { isEnabled } from '../../core/features/index.js';
-import { SETTINGS_KEYS } from '../../core/settings/keys.js';
+import { SETTINGS_KEYS, type SettingsKey } from '../../core/settings/keys.js';
 import { getLastSyncAt, getLastSyncCounts, getLastSyncError } from './scheduler-sync-logs.js';
 import { getPlexSectionIds } from './service.js';
 
@@ -64,45 +63,60 @@ const SCHEDULER_KEYS = {
   tvSectionId: SETTINGS_KEYS.PLEX_TV_SECTION_ID,
 } as const;
 
+type CoreSettingsShape = {
+  settings: {
+    set: (input: { key: SettingsKey; value: string }) => {
+      data: { key: string; value: string };
+      message: string;
+    };
+    delete: (input: { key: SettingsKey }) => { message: string };
+    getMany: (input: { keys: string[] }) => { settings: Record<string, string> };
+  };
+};
+
+function core(): ReturnType<typeof pillar<CoreSettingsShape>> {
+  return pillar<CoreSettingsShape>('core');
+}
+
+function isNotFoundError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const data = (err as { data?: { code?: string } }).data;
+  return data?.code === 'NOT_FOUND';
+}
+
 let isRunning = false;
 let intervalMs = DEFAULT_INTERVAL_MS;
 let nextSyncAt: string | null = null;
 let movieSectionId: string | null = null;
 let tvSectionId: string | null = null;
 
-function saveSetting(key: string, value: string): void {
-  settingsService.setRawSetting(getCoreDrizzle(), key, value);
+async function persistSchedulerConfig(): Promise<void> {
+  await core().settings.set.orThrow({ key: SCHEDULER_KEYS.enabled, value: 'true' });
+  await core().settings.set.orThrow({
+    key: SCHEDULER_KEYS.intervalMs,
+    value: String(intervalMs),
+  });
 }
 
-function getSetting(key: string): string | null {
-  const record = settingsService.getSettingOrNull(getCoreDrizzle(), key);
-  return record?.value ?? null;
-}
-
-function deleteSetting(key: string): void {
+async function deleteSettingIfExists(key: SettingsKey): Promise<void> {
   try {
-    settingsService.deleteSetting(getCoreDrizzle(), key);
+    await core().settings.delete.orThrow({ key });
   } catch (err) {
-    if (!(err instanceof SettingNotFoundError)) throw err;
+    if (!isNotFoundError(err)) throw err;
   }
 }
 
-function persistSchedulerConfig(): void {
-  saveSetting(SCHEDULER_KEYS.enabled, 'true');
-  saveSetting(SCHEDULER_KEYS.intervalMs, String(intervalMs));
-}
-
-function clearSchedulerConfig(): void {
-  deleteSetting(SCHEDULER_KEYS.enabled);
-  deleteSetting(SCHEDULER_KEYS.intervalMs);
+async function clearSchedulerConfig(): Promise<void> {
+  await deleteSettingIfExists(SCHEDULER_KEYS.enabled);
+  await deleteSettingIfExists(SCHEDULER_KEYS.intervalMs);
 }
 
 /** Register a BullMQ repeatable job for periodic Plex sync. No-op if already running. */
-export function startScheduler(options: SchedulerOptions = {}): SchedulerStatus {
+export async function startScheduler(options: SchedulerOptions = {}): Promise<SchedulerStatus> {
   if (isRunning) return getSchedulerStatus();
 
   intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
-  const saved = getPlexSectionIds();
+  const saved = await getPlexSectionIds();
   movieSectionId = options.movieSectionId ?? saved.movieSectionId;
   tvSectionId = options.tvSectionId ?? saved.tvSectionId;
   nextSyncAt = new Date(Date.now() + intervalMs).toISOString();
@@ -128,12 +142,12 @@ export function startScheduler(options: SchedulerOptions = {}): SchedulerStatus 
   }
 
   isRunning = true;
-  persistSchedulerConfig();
+  await persistSchedulerConfig();
   return getSchedulerStatus();
 }
 
 /** Remove the BullMQ repeatable job and stop the scheduler. */
-export function stopScheduler(): SchedulerStatus {
+export async function stopScheduler(): Promise<SchedulerStatus> {
   if (isRunning) {
     const syncQ = getSyncQueue();
     if (syncQ) {
@@ -144,7 +158,7 @@ export function stopScheduler(): SchedulerStatus {
   }
   isRunning = false;
   nextSyncAt = null;
-  clearSchedulerConfig();
+  await clearSchedulerConfig();
   return getSchedulerStatus();
 }
 
@@ -171,14 +185,20 @@ export function getSchedulerStatus(): SchedulerStatus {
   };
 }
 
-export function getPersistedSchedulerState(): { enabled: boolean; intervalMs: number } | null {
+export async function getPersistedSchedulerState(): Promise<{
+  enabled: boolean;
+  intervalMs: number;
+} | null> {
   if (!isPlexSchedulerEnabled()) return null;
-  const interval = getSetting(SCHEDULER_KEYS.intervalMs);
+  const { settings } = await core().settings.getMany.orThrow({
+    keys: [SCHEDULER_KEYS.enabled, SCHEDULER_KEYS.intervalMs],
+  });
+  const interval = settings[SCHEDULER_KEYS.intervalMs];
   return { enabled: true, intervalMs: interval ? Number(interval) : DEFAULT_INTERVAL_MS };
 }
 
-export function resumeSchedulerIfEnabled(): SchedulerStatus | null {
-  const persisted = getPersistedSchedulerState();
+export async function resumeSchedulerIfEnabled(): Promise<SchedulerStatus | null> {
+  const persisted = await getPersistedSchedulerState();
   if (!persisted?.enabled) return null;
   console.warn(`[Plex Scheduler] Auto-resuming with interval ${persisted.intervalMs}ms`);
   return startScheduler({ intervalMs: persisted.intervalMs });

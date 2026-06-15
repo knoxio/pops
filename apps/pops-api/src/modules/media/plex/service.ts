@@ -4,11 +4,10 @@
  */
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID, scryptSync } from 'node:crypto';
 
-import { settingsService } from '@pops/core-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
-import { SETTINGS_KEYS } from '../../core/settings/keys.js';
+import { SETTINGS_KEYS, type SettingsKey } from '../../core/settings/keys.js';
 import { PlexClient } from './client.js';
 
 // ---------------------------------------------------------------------------
@@ -22,6 +21,24 @@ export interface PlexSyncStatus {
   connected: boolean;
 }
 
+type CoreSettingsShape = {
+  settings: {
+    get: (input: { key: SettingsKey }) => { data: { key: string; value: string } | null };
+    set: (input: { key: SettingsKey; value: string }) => {
+      data: { key: string; value: string };
+      message: string;
+    };
+    ensure: (input: { key: SettingsKey; value: string }) => {
+      data: { key: string; value: string };
+    };
+    getMany: (input: { keys: string[] }) => { settings: Record<string, string> };
+  };
+};
+
+function core(): ReturnType<typeof pillar<CoreSettingsShape>> {
+  return pillar<CoreSettingsShape>('core');
+}
+
 // ---------------------------------------------------------------------------
 // Token encryption
 // ---------------------------------------------------------------------------
@@ -30,23 +47,27 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 
-function getEncryptionKey(): Buffer {
+async function getEncryptionKey(): Promise<Buffer> {
   const envKey = getEnv('ENCRYPTION_KEY');
   if (envKey) {
     return scryptSync(envKey, 'pops-plex-token', 32);
   }
-  const coreDb = getCoreDrizzle();
-  const existing = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED);
+  const { data: existing } = await core().settings.get.orThrow({
+    key: SETTINGS_KEYS.PLEX_ENCRYPTION_SEED,
+  });
   if (existing) {
     return scryptSync(existing.value, 'pops-plex-token', 32);
   }
   const seed = randomBytes(32).toString('hex');
-  const persisted = settingsService.ensureSetting(coreDb, SETTINGS_KEYS.PLEX_ENCRYPTION_SEED, seed);
+  const { data: persisted } = await core().settings.ensure.orThrow({
+    key: SETTINGS_KEYS.PLEX_ENCRYPTION_SEED,
+    value: seed,
+  });
   return scryptSync(persisted.value, 'pops-plex-token', 32);
 }
 
-export function encryptToken(plaintext: string): string {
-  const key = getEncryptionKey();
+export async function encryptToken(plaintext: string): Promise<string> {
+  const key = await getEncryptionKey();
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
@@ -54,8 +75,8 @@ export function encryptToken(plaintext: string): string {
   return Buffer.concat([iv, tag, encrypted]).toString('base64');
 }
 
-export function decryptToken(ciphertext: string): string {
-  const key = getEncryptionKey();
+export async function decryptToken(ciphertext: string): Promise<string> {
+  const key = await getEncryptionKey();
   const buf = Buffer.from(ciphertext, 'base64');
   const iv = buf.subarray(0, IV_LENGTH);
   const tag = buf.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
@@ -69,44 +90,45 @@ export function decryptToken(ciphertext: string): string {
 // Client factory
 // ---------------------------------------------------------------------------
 
-export function getPlexClientId(): string {
-  const coreDb = getCoreDrizzle();
-  const existing = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER);
+export async function getPlexClientId(): Promise<string> {
+  const { data: existing } = await core().settings.get.orThrow({
+    key: SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER,
+  });
   if (existing) return existing.value;
 
   const newId = randomUUID();
   console.warn(`[Plex] Generating new client identifier: ${newId}`);
-  const persisted = settingsService.ensureSetting(
-    coreDb,
-    SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER,
-    newId
-  );
+  const { data: persisted } = await core().settings.ensure.orThrow({
+    key: SETTINGS_KEYS.PLEX_CLIENT_IDENTIFIER,
+    value: newId,
+  });
   return persisted.value;
 }
 
-export function getPlexUrl(): string | null {
-  const record = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_URL);
-  if (record?.value) return record.value;
+export async function getPlexUrl(): Promise<string | null> {
+  const { data } = await core().settings.get.orThrow({ key: SETTINGS_KEYS.PLEX_URL });
+  if (data?.value) return data.value;
   return getEnv('PLEX_URL') ?? null;
 }
 
-export function getPlexClient(): PlexClient | null {
-  const url = getPlexUrl();
+const PLEX_CLIENT_KEYS = [SETTINGS_KEYS.PLEX_URL, SETTINGS_KEYS.PLEX_TOKEN] as const;
+
+export async function getPlexClient(): Promise<PlexClient | null> {
+  const { settings } = await core().settings.getMany.orThrow({ keys: [...PLEX_CLIENT_KEYS] });
+  const url = settings[SETTINGS_KEYS.PLEX_URL] ?? getEnv('PLEX_URL') ?? null;
   if (!url) {
     console.warn('[Plex] PLEX_URL not set in settings or environment');
     return null;
   }
 
-  const tokenRecord = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
-  const encryptedToken = tokenRecord?.value;
-
+  const encryptedToken = settings[SETTINGS_KEYS.PLEX_TOKEN];
   if (!encryptedToken) {
     console.warn('[Plex] No plex_token found in settings table');
     return null;
   }
 
   try {
-    const token = decryptToken(encryptedToken);
+    const token = await decryptToken(encryptedToken);
     return new PlexClient(url, token);
   } catch {
     console.warn('[Plex] Failed to decrypt token — trying raw value (legacy).');
@@ -115,21 +137,21 @@ export function getPlexClient(): PlexClient | null {
 }
 
 /** Get the decrypted Plex token (for cloud API calls that don't use PlexClient). */
-export function getPlexToken(): string | null {
-  const tokenRecord = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
-  const encryptedToken = tokenRecord?.value;
+export async function getPlexToken(): Promise<string | null> {
+  const { data } = await core().settings.get.orThrow({ key: SETTINGS_KEYS.PLEX_TOKEN });
+  const encryptedToken = data?.value;
   if (!encryptedToken) return null;
 
   try {
-    return decryptToken(encryptedToken);
+    return await decryptToken(encryptedToken);
   } catch {
     return encryptedToken; // Legacy unencrypted fallback
   }
 }
 
-export function getPlexUsername(): string | null {
-  const record = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_USERNAME);
-  return record?.value ?? null;
+export async function getPlexUsername(): Promise<string | null> {
+  const { data } = await core().settings.get.orThrow({ key: SETTINGS_KEYS.PLEX_USERNAME });
+  return data?.value ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,23 +163,34 @@ export interface PlexSectionIds {
   tvSectionId: string | null;
 }
 
-export function getPlexSectionIds(): PlexSectionIds {
-  const coreDb = getCoreDrizzle();
-  const movieRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID);
-  const tvRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_TV_SECTION_ID);
+const PLEX_SECTION_KEYS = [
+  SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID,
+  SETTINGS_KEYS.PLEX_TV_SECTION_ID,
+] as const;
+
+export async function getPlexSectionIds(): Promise<PlexSectionIds> {
+  const { settings } = await core().settings.getMany.orThrow({ keys: [...PLEX_SECTION_KEYS] });
   return {
-    movieSectionId: movieRecord?.value ?? null,
-    tvSectionId: tvRecord?.value ?? null,
+    movieSectionId: settings[SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID] ?? null,
+    tvSectionId: settings[SETTINGS_KEYS.PLEX_TV_SECTION_ID] ?? null,
   };
 }
 
-export function savePlexSectionIds(movieSectionId?: string, tvSectionId?: string): void {
-  const coreDb = getCoreDrizzle();
+export async function savePlexSectionIds(
+  movieSectionId?: string,
+  tvSectionId?: string
+): Promise<void> {
   if (movieSectionId) {
-    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID, movieSectionId);
+    await core().settings.set.orThrow({
+      key: SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID,
+      value: movieSectionId,
+    });
   }
   if (tvSectionId) {
-    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_TV_SECTION_ID, tvSectionId);
+    await core().settings.set.orThrow({
+      key: SETTINGS_KEYS.PLEX_TV_SECTION_ID,
+      value: tvSectionId,
+    });
   }
 }
 
@@ -174,9 +207,10 @@ export async function testConnection(client: PlexClient): Promise<boolean> {
   }
 }
 
-export function getSyncStatus(client: PlexClient | null): PlexSyncStatus {
-  const token = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
-  const url = getPlexUrl();
+export async function getSyncStatus(client: PlexClient | null): Promise<PlexSyncStatus> {
+  const { settings } = await core().settings.getMany.orThrow({ keys: [...PLEX_CLIENT_KEYS] });
+  const url = settings[SETTINGS_KEYS.PLEX_URL] ?? getEnv('PLEX_URL') ?? null;
+  const token = settings[SETTINGS_KEYS.PLEX_TOKEN];
 
   return {
     configured: client !== null,

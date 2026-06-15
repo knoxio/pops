@@ -2,14 +2,69 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Plex auth tests — token encryption, PIN handling, username storage.
+ *
+ * The SDK proxy `pillar('core').settings.*` is mocked against an in-memory
+ * store; seed and read-back helpers use the same store so assertions see the
+ * same persistence layer the production code writes through.
  */
-import { settingsService } from '@pops/core-db';
-
-import { getCoreDrizzle } from '../../../db.js';
 import { setupTestContext } from '../../../shared/test-utils.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 
 import type { createCaller } from '../../../shared/test-utils.js';
+
+const settingsStore = new Map<string, string>();
+
+class NotFoundCallError extends Error {
+  data = { code: 'NOT_FOUND' as const };
+}
+
+vi.mock('@pops/pillar-sdk/server', () => ({
+  pillar: () => ({
+    settings: {
+      get: {
+        orThrow: async ({ key }: { key: string }) => {
+          const v = settingsStore.get(key);
+          return { data: v === undefined ? null : { key, value: v } };
+        },
+      },
+      getMany: {
+        orThrow: async ({ keys }: { keys: string[] }) => {
+          const settings: Record<string, string> = {};
+          for (const k of keys) {
+            const v = settingsStore.get(k);
+            if (v !== undefined) settings[k] = v;
+          }
+          return { settings };
+        },
+      },
+      set: {
+        orThrow: async ({ key, value }: { key: string; value: string }) => {
+          settingsStore.set(key, value);
+          return { data: { key, value }, message: 'Setting saved' };
+        },
+      },
+      ensure: {
+        orThrow: async ({ key, value }: { key: string; value: string }) => {
+          const existing = settingsStore.get(key);
+          if (existing !== undefined) {
+            return { data: { key, value: existing } };
+          }
+          settingsStore.set(key, value);
+          return { data: { key, value } };
+        },
+      },
+      delete: {
+        orThrow: async ({ key }: { key: string }) => {
+          if (!settingsStore.has(key)) {
+            throw new NotFoundCallError(`not found: ${key}`);
+          }
+          settingsStore.delete(key);
+          return { message: 'Setting deleted' };
+        },
+      },
+    },
+  }),
+}));
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -19,6 +74,7 @@ globalThis.fetch = mockFetch;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  settingsStore.clear();
   ({ caller } = ctx.setup());
 });
 
@@ -33,27 +89,27 @@ describe('Token encryption', () => {
   it('encrypts and decrypts a token correctly', async () => {
     const { encryptToken, decryptToken } = await import('./service.js');
     const originalToken = 'my-secret-plex-token-abc123';
-    const encrypted = encryptToken(originalToken);
+    const encrypted = await encryptToken(originalToken);
     expect(encrypted).not.toBe(originalToken);
-    const decrypted = decryptToken(encrypted);
+    const decrypted = await decryptToken(encrypted);
     expect(decrypted).toBe(originalToken);
   });
 
   it('produces different ciphertext each time (random IV)', async () => {
     const { encryptToken, decryptToken } = await import('./service.js');
     const token = 'same-token';
-    const a = encryptToken(token);
-    const b = encryptToken(token);
+    const a = await encryptToken(token);
+    const b = await encryptToken(token);
     expect(a).not.toBe(b);
-    expect(decryptToken(a)).toBe(token);
-    expect(decryptToken(b)).toBe(token);
+    expect(await decryptToken(a)).toBe(token);
+    expect(await decryptToken(b)).toBe(token);
   });
 
   it('throws on tampered ciphertext', async () => {
     const { encryptToken, decryptToken } = await import('./service.js');
-    const encrypted = encryptToken('test-token');
+    const encrypted = await encryptToken('test-token');
     const tampered = encrypted.slice(0, -4) + 'XXXX';
-    expect(() => decryptToken(tampered)).toThrow();
+    await expect(decryptToken(tampered)).rejects.toThrow();
   });
 });
 
@@ -98,14 +154,12 @@ describe('checkAuthPin', () => {
     expect(result.data.username).toBe('plexuser');
 
     // Verify token is stored encrypted (not plaintext)
-    const coreDb = getCoreDrizzle();
-    const tokenRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_TOKEN);
-    expect(tokenRecord).toBeTruthy();
-    expect(tokenRecord!.value).not.toBe('my-plex-token');
+    const storedToken = settingsStore.get(SETTINGS_KEYS.PLEX_TOKEN);
+    expect(storedToken).toBeTruthy();
+    expect(storedToken).not.toBe('my-plex-token');
 
     // Verify username is stored
-    const usernameRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_USERNAME);
-    expect(usernameRecord?.value).toBe('plexuser');
+    expect(settingsStore.get(SETTINGS_KEYS.PLEX_USERNAME)).toBe('plexuser');
   });
 
   it('returns connected:false when PIN not yet claimed', async () => {
@@ -155,19 +209,14 @@ describe('checkAuthPin', () => {
 // ---------------------------------------------------------------------------
 describe('disconnect', () => {
   it('removes token and username from settings', async () => {
-    const coreDb = getCoreDrizzle();
-
-    // Seed token and username
-    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_TOKEN, 'encrypted-token');
-    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_USERNAME, 'plexuser');
+    settingsStore.set(SETTINGS_KEYS.PLEX_TOKEN, 'encrypted-token');
+    settingsStore.set(SETTINGS_KEYS.PLEX_USERNAME, 'plexuser');
 
     const result = await caller.media.plex.disconnect();
     expect(result.message).toBe('Disconnected from Plex');
 
-    const tokenRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_TOKEN);
-    expect(tokenRecord).toBeNull();
-    const usernameRecord = settingsService.getSettingOrNull(coreDb, SETTINGS_KEYS.PLEX_USERNAME);
-    expect(usernameRecord).toBeNull();
+    expect(settingsStore.has(SETTINGS_KEYS.PLEX_TOKEN)).toBe(false);
+    expect(settingsStore.has(SETTINGS_KEYS.PLEX_USERNAME)).toBe(false);
   });
 });
 
@@ -176,7 +225,7 @@ describe('disconnect', () => {
 // ---------------------------------------------------------------------------
 describe('getPlexUsername', () => {
   it('returns stored username', async () => {
-    settingsService.setRawSetting(getCoreDrizzle(), SETTINGS_KEYS.PLEX_USERNAME, 'plexuser');
+    settingsStore.set(SETTINGS_KEYS.PLEX_USERNAME, 'plexuser');
 
     const result = await caller.media.plex.getPlexUsername();
     expect(result.data).toBe('plexuser');

@@ -38,7 +38,7 @@ const mockFetchFriendWatchlist = vi.mocked(fetchFriendWatchlist);
 describe('plexFriendsSource', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetPlexToken.mockReturnValue('test-token');
+    mockGetPlexToken.mockResolvedValue('test-token');
   });
 
   it('has correct type identifier', () => {
@@ -58,7 +58,7 @@ describe('plexFriendsSource', () => {
   });
 
   it('throws if Plex token is not configured', async () => {
-    mockGetPlexToken.mockReturnValue(null);
+    mockGetPlexToken.mockResolvedValue(null);
 
     await expect(plexFriendsSource.fetchCandidates({ friendUuid: 'abc-123' })).rejects.toThrow(
       'Plex token not configured'

@@ -128,7 +128,7 @@ export async function syncDiscoverWatches(
   onProgress?: (processed: number, total: number) => void,
   onPartialResult?: (result: DiscoverWatchSyncResult) => void
 ): Promise<DiscoverWatchSyncResult> {
-  const token = getPlexToken();
+  const token = await getPlexToken();
   if (!token) throw new Error('Plex token not available');
 
   const ctx = buildContext(plexClient);

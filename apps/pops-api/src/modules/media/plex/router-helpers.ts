@@ -35,8 +35,8 @@ export interface SyncJob {
   error: string | null;
 }
 
-export function requirePlexClient(): PlexClient {
-  const client = plexService.getPlexClient();
+export async function requirePlexClient(): Promise<PlexClient> {
+  const client = await plexService.getPlexClient();
   if (!client) {
     throw trpcError('PRECONDITION_FAILED', 'media.plex.notConfigured');
   }

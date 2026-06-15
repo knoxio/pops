@@ -62,7 +62,7 @@ async function communityGraphQL<T>(
   variables: Record<string, unknown>,
   operationName: string
 ): Promise<T> {
-  const clientId = getPlexClientId();
+  const clientId = await getPlexClientId();
   const res = await fetch('https://community.plex.tv/api', {
     method: 'POST',
     headers: {

@@ -8,6 +8,21 @@ import type { Database } from 'better-sqlite3';
 
 import type { TmdbMovieDetail } from '../tmdb/types.js';
 
+// Mock the cross-pillar settings SDK so library.addMovie's best-effort
+// `getPlexClient()` returns null (no token, no plex) without needing a real
+// pops-core-api running.
+vi.mock('@pops/pillar-sdk/server', () => ({
+  pillar: () => ({
+    settings: {
+      get: { orThrow: async () => ({ data: null }) },
+      getMany: { orThrow: async () => ({ settings: {} }) },
+      set: { orThrow: async () => ({ data: { key: '', value: '' }, message: '' }) },
+      ensure: { orThrow: async () => ({ data: { key: '', value: '' } }) },
+      delete: { orThrow: async () => ({ message: '' }) },
+    },
+  }),
+}));
+
 // Mock the TMDB client module
 vi.mock('../tmdb/client.js', () => ({
   TmdbClient: vi.fn(),

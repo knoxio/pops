@@ -63,7 +63,7 @@ export const libraryRouter = router({
 
         // Best-effort: check Plex Discover cloud for watch status
         if (created) {
-          const plexClient = getPlexClient();
+          const plexClient = await getPlexClient();
           if (plexClient) {
             checkAndLogMovieWatch(plexClient, movie.id, movie.title, movie.tmdbId).catch(() => {
               // Ignore — best-effort

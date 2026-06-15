@@ -61,7 +61,7 @@ export const syncProcedures = {
       })
     )
     .mutation(async ({ input }) => {
-      requirePlexClient();
+      await requirePlexClient();
       const jobData = buildSyncJobData(input);
 
       try {

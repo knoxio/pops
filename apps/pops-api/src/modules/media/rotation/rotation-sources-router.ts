@@ -26,7 +26,7 @@ export const rotationSourcesProcedures = {
 
   /** List available Plex friends (for source config UI picker). */
   listPlexFriends: protectedProcedure.query(async () => {
-    const token = getPlexToken();
+    const token = await getPlexToken();
     if (!token) {
       return { friends: [], error: 'Plex token not configured' };
     }
