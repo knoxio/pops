@@ -41,29 +41,7 @@ jobs:
         if: inputs.skip != 'true'
       - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: |
-          pnpm --filter @pops/db-types build
-          pnpm --filter @pops/types build
-          pnpm --filter @pops/module-registry build
-          pnpm --filter @pops/food-contracts build
-          pnpm --filter @pops/core-db build
-          pnpm --filter @pops/finance-db build
-          pnpm --filter @pops/inventory-db build
-          pnpm --filter @pops/media-db build
-          pnpm --filter @pops/cerebrum-db build
-          pnpm --filter @pops/food-db build
-          pnpm --filter @pops/lists-db build
-          pnpm --filter @pops/app-lists-db build
-          pnpm --filter @pops/app-food-db build
-          pnpm --filter @pops/finance-contract build
-          pnpm --filter @pops/pillar-sdk build
-          pnpm --filter @pops/wire-conformance build
-          pnpm --filter @pops/media-contract build
-          pnpm --filter @pops/inventory-contract build
-          pnpm --filter @pops/cerebrum-contract build
-          pnpm --filter @pops/core-contract build
-          pnpm --filter @pops/lists-contract build
-          pnpm --filter @pops/food-contract build
+        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
         if: inputs.skip != 'true'
 
@@ -88,29 +66,7 @@ jobs:
         if: inputs.skip != 'true'
       - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: |
-          pnpm --filter @pops/db-types build
-          pnpm --filter @pops/types build
-          pnpm --filter @pops/module-registry build
-          pnpm --filter @pops/food-contracts build
-          pnpm --filter @pops/core-db build
-          pnpm --filter @pops/finance-db build
-          pnpm --filter @pops/inventory-db build
-          pnpm --filter @pops/media-db build
-          pnpm --filter @pops/cerebrum-db build
-          pnpm --filter @pops/food-db build
-          pnpm --filter @pops/lists-db build
-          pnpm --filter @pops/app-lists-db build
-          pnpm --filter @pops/app-food-db build
-          pnpm --filter @pops/finance-contract build
-          pnpm --filter @pops/pillar-sdk build
-          pnpm --filter @pops/wire-conformance build
-          pnpm --filter @pops/media-contract build
-          pnpm --filter @pops/inventory-contract build
-          pnpm --filter @pops/cerebrum-contract build
-          pnpm --filter @pops/core-contract build
-          pnpm --filter @pops/lists-contract build
-          pnpm --filter @pops/food-contract build
+        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build
       - name: Run tests (with coverage if configured)
         if: inputs.skip != 'true'
         run: |
