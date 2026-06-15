@@ -79,6 +79,25 @@ jobs:
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-mcp/Dockerfile .
 
+      - uses: pnpm/action-setup@v5
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+
+      - uses: actions/setup-node@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      # PRD-252 / audit H-D1: per-pillar Dockerfiles are generated, not
+      # hand-edited. The drift-check regenerates and fails on any diff.
+      # When a pillar gains/loses a transitive @pops/* dep, the regenerated
+      # Dockerfile must be committed alongside the change.
+      - name: Verify pops-core-api Dockerfile is up to date (PRD-252)
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: |
+          node scripts/generate-pillar-dockerfile.mjs core
+          git diff --exit-code apps/pops-core-api/Dockerfile
+
       - name: Build pops-core-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-core-api/Dockerfile .

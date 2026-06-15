@@ -2,7 +2,7 @@
 
 > Epic: [Pillar isolation](../../epics/) (final-mile)
 >
-> Status: **Not started**
+> Status: **In progress**
 
 ## Overview
 
@@ -38,15 +38,15 @@ The Dockerfile comments blame pnpm workspace resolver, but only the package.json
 
 ## User Stories
 
-| #   | Story                                        | Parallelisable       |
-| --- | -------------------------------------------- | -------------------- |
-| 01  | generator + drift-check (land with core-api) | Foundational         |
-| 02  | cerebrum Dockerfile                          | After US-01          |
-| 03  | finance Dockerfile                           | Parallel after US-01 |
-| 04  | inventory Dockerfile                         | Parallel after US-01 |
-| 05  | food Dockerfile                              | Parallel after US-01 |
-| 06  | lists Dockerfile                             | Parallel after US-01 |
-| 07  | media Dockerfile                             | Parallel after US-01 |
+| #   | Story                                        | Status      | Parallelisable       |
+| --- | -------------------------------------------- | ----------- | -------------------- |
+| 01  | generator + drift-check (land with core-api) | Done        | Foundational         |
+| 02  | cerebrum Dockerfile                          | Not started | After US-01          |
+| 03  | finance Dockerfile                           | Not started | Parallel after US-01 |
+| 04  | inventory Dockerfile                         | Not started | Parallel after US-01 |
+| 05  | food Dockerfile                              | Not started | Parallel after US-01 |
+| 06  | lists Dockerfile                             | Not started | Parallel after US-01 |
+| 07  | media Dockerfile                             | Not started | Parallel after US-01 |
 
 ## Acceptance Criteria
 
