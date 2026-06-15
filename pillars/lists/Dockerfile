@@ -60,6 +60,7 @@ COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
 # @pops/types
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json ./packages/types/tsconfig.json
+COPY packages/types/tsconfig.build.json ./packages/types/tsconfig.build.json
 # @pops/lists (the pillar itself)
 COPY pillars/lists/src ./pillars/lists/src
 COPY pillars/lists/scripts ./pillars/lists/scripts
