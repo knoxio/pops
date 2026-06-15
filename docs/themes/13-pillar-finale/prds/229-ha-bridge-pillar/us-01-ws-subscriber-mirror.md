@@ -16,7 +16,7 @@ As `pops-ha-bridge-api`, I want to connect to a Home Assistant instance over Web
 - [ ] `HA_TOKEN` never appears in logs, tRPC responses, or the registered manifest.
 - [ ] If `HA_URL` / `HA_TOKEN` are missing or rejected, the pillar still boots, registers with the central registry, and `connection.status` returns `{ kind: 'offline' }`.
 - [ ] Unit tests cover: snapshot upsert, state-change upsert + history append, debouncing window, reconnect backoff, degraded-mode boot.
-- [ ] A retention worker deletes `ha_state_history` rows older than `HA_HISTORY_RETENTION_DAYS` (default 30) on a daily schedule.
+- [x] A retention worker deletes `ha_state_history` rows older than `HA_HISTORY_RETENTION_DAYS` (default 30) on a daily schedule.
 
 ## Notes
 

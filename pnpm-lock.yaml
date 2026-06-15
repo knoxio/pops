@@ -519,6 +519,9 @@ importers:
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
+      '@pops/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       express:
         specifier: ^5.1.0
         version: 5.2.1
