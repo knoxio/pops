@@ -96,7 +96,7 @@ jobs:
 
       - name: Build shared packages
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: pnpm --filter "@pops/shell^..." build
+        run: pnpm --filter "@pops/shell^..." --filter "!./apps/*" build
 
       - name: Type check
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
