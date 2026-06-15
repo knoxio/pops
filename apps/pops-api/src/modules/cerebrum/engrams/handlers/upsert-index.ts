@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
 import { type CerebrumDb } from '@pops/cerebrum-db';
-import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/db-types';
+import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/cerebrum-db';
 
 import { NotFoundError } from '../../../../shared/errors.js';
 import { countWords, deriveTitle, serializeEngram } from '../file.js';

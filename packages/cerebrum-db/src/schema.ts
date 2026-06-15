@@ -1,13 +1,16 @@
 /**
- * Local re-export of cerebrum-domain tables.
+ * Cerebrum domain table barrel.
  *
- * Canonical definitions live in `@pops/db-types/src/schema/*.ts` so the
- * drizzle-kit config (which globs `packages/db-types/src/schema/*`) picks
- * them up and the rest of the platform sees a single schema barrel.
+ * Canonical definitions for cerebrum-owned tables (debrief sessions /
+ * status / results, engrams + scopes + tags + links, conversations +
+ * messages + conversation_context, glia actions + trust state, plexus
+ * adapters + filters, nudge_log, reflex_executions, embeddings) live
+ * in this package per PRD-245 US-01 (audit H6/H7).
  *
- * Services in this package import from here for ergonomics and so the
- * cerebrum pillar's read surface stays self-describing. Mirrors the
- * `@pops/core-db` / `@pops/inventory-db` schema re-export pattern.
+ * `@pops/db-types` re-exports these tables as a transition shim so
+ * legacy import sites keep compiling until PRD-245 US-08 deletes the
+ * shim. Pillar consumers should import from `@pops/cerebrum-db`
+ * directly.
  *
  * Currently exposes:
  *   - `nudgeLog` — PRD-084 reflex/nudge audit trail.
@@ -29,21 +32,19 @@
  *   - `debriefSessions` / `debriefResults` / `debriefStatus` — Theme-13
  *     Wave 5 debrief slice (post-watch reflection, see
  *     `0055_debrief_baseline.sql`). The cross-pillar `watch_history_id`
- *     reference is a soft pointer into `media.db.watch_history`;
+ *     / `dimension_id` / `comparison_id` references are soft pointers
+ *     into the media pillar resolved via the URI dispatcher (ADR-026);
  *     `media_type` + `media_id` carry the denormalised media tuple per
  *     PR #3119 so the `getDebriefByMedia` read no longer joins media.
+ *   - `reflexExecutions` — PRD-089 reflex execution log.
  */
-export { engramIndex, engramLinks, engramScopes, engramTags, nudgeLog } from '@pops/db-types';
-export {
-  conversationContext,
-  conversations,
-  debriefResults,
-  debriefSessions,
-  debriefStatus,
-  embeddings,
-  gliaActions,
-  gliaTrustState,
-  messages,
-  plexusAdapters,
-  plexusFilters,
-} from '@pops/db-types/schema';
+export { embeddings } from './schema/core/embeddings.js';
+export { debriefResults } from './schema/debrief-results.js';
+export { debriefSessions } from './schema/debrief-sessions.js';
+export { debriefStatus } from './schema/debrief-status.js';
+export { conversationContext, conversations, messages } from './schema/ego.js';
+export { engramIndex, engramLinks, engramScopes, engramTags } from './schema/engrams.js';
+export { gliaActions, gliaTrustState } from './schema/glia.js';
+export { nudgeLog } from './schema/nudge-log.js';
+export { plexusAdapters, plexusFilters } from './schema/plexus.js';
+export { reflexExecutions } from './schema/reflex-executions.js';

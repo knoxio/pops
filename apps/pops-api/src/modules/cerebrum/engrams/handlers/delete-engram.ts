@@ -12,7 +12,7 @@ import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 import { eq } from 'drizzle-orm';
 
 import { type CerebrumDb } from '@pops/cerebrum-db';
-import { engramIndex, engramLinks } from '@pops/db-types';
+import { engramIndex, engramLinks } from '@pops/cerebrum-db';
 
 import { parseEngramFile, serializeEngram } from '../file.js';
 import { absolutePath, parseCustomFields, writeFileAtomic } from './fs-helpers.js';

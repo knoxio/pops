@@ -14,7 +14,7 @@
  */
 import { inArray, sql } from 'drizzle-orm';
 
-import { engramIndex, engramScopes, engramTags } from '@pops/db-types';
+import { engramIndex, engramScopes, engramTags } from '@pops/cerebrum-db';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 

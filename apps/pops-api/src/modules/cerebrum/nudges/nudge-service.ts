@@ -8,7 +8,7 @@
 import { and, count, eq, sql } from 'drizzle-orm';
 
 import { nudgeLogService, rowToNudge, type CerebrumDb } from '@pops/cerebrum-db';
-import { nudgeLog } from '@pops/db-types';
+import { nudgeLog } from '@pops/cerebrum-db';
 
 import { logger } from '../../../lib/logger.js';
 import { ConcatenationSynthesizer, executeConsolidationAct } from './consolidation-act.js';

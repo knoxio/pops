@@ -8,7 +8,7 @@
 import { count, like } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { engramTags } from '@pops/db-types';
+import { engramTags } from '@pops/cerebrum-db';
 
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';

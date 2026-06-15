@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { nudgeLog } from '@pops/db-types';
+import { nudgeLog } from '@pops/cerebrum-db';
 
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { logger } from '../../../lib/logger.js';

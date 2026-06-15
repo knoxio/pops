@@ -1825,18 +1825,21 @@ importers:
 
   packages/cerebrum-db:
     dependencies:
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../db-types
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
+      drizzle-zod:
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
       sqlite-vec:
         specifier: ^0.1.7
         version: 0.1.9
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.12
@@ -1903,6 +1906,9 @@ importers:
       '@pops/app-lists-db':
         specifier: workspace:*
         version: link:../app-lists-db
+      '@pops/cerebrum-db':
+        specifier: workspace:*
+        version: link:../cerebrum-db
       '@pops/media-db':
         specifier: workspace:*
         version: link:../media-db

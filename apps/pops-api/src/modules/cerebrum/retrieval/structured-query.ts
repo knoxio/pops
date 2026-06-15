@@ -28,7 +28,7 @@
  */
 import { and, desc, eq, inArray } from 'drizzle-orm';
 
-import { embeddings, engramIndex, engramScopes, engramTags } from '@pops/db-types';
+import { embeddings, engramIndex, engramScopes, engramTags } from '@pops/cerebrum-db';
 
 import { buildStructuredConditions } from './structured-query-conditions.js';
 

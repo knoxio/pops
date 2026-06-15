@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { type CerebrumDb } from '@pops/cerebrum-db';
-import { engramLinks, engramScopes, engramTags } from '@pops/db-types';
+import { engramLinks, engramScopes, engramTags } from '@pops/cerebrum-db';
 
 type Tx = Parameters<Parameters<CerebrumDb['transaction']>[0]>[0];
 

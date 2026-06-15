@@ -10,7 +10,7 @@ import { existsSync } from 'node:fs';
 
 import { eq } from 'drizzle-orm';
 
-import { engramIndex } from '@pops/db-types';
+import { engramIndex } from '@pops/cerebrum-db';
 
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { DEFAULT_JOB_OPTIONS, getDefaultQueue } from '../../../jobs/queues.js';

@@ -7,6 +7,17 @@
 import type { InferInsertModel } from 'drizzle-orm';
 
 import type {
+  debriefResults,
+  debriefSessions,
+  debriefStatus,
+  engramIndex,
+  engramLinks,
+  engramScopes,
+  engramTags,
+  nudgeLog,
+  reflexExecutions,
+} from '@pops/cerebrum-db';
+import type {
   comparisonDimensions,
   comparisonSkipCooloffs,
   comparisonStaleness,
@@ -31,10 +42,6 @@ import type {
 import type { aiUsage } from './schema/ai-usage.js';
 import type { budgets } from './schema/budgets.js';
 import type { transactionCorrections } from './schema/corrections.js';
-import type { debriefResults } from './schema/debrief-results.js';
-import type { debriefSessions } from './schema/debrief-sessions.js';
-import type { debriefStatus } from './schema/debrief-status.js';
-import type { engramIndex, engramLinks, engramScopes, engramTags } from './schema/engrams.js';
 import type { entities } from './schema/entities.js';
 import type { environments } from './schema/environments.js';
 import type { homeInventory } from './schema/inventory.js';
@@ -43,8 +50,6 @@ import type { itemDocuments } from './schema/item-documents.js';
 import type { itemPhotos } from './schema/item-photos.js';
 import type { itemUploadedFiles } from './schema/item-uploaded-files.js';
 import type { locations } from './schema/locations.js';
-import type { nudgeLog } from './schema/nudge-log.js';
-import type { reflexExecutions } from './schema/reflex-executions.js';
 import type { settings } from './schema/settings.js';
 import type { tierOverrides } from './schema/tier-overrides.js';
 import type { transactions } from './schema/transactions.js';

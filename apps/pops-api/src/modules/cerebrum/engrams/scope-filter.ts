@@ -10,7 +10,7 @@
  */
 import { like, or, sql } from 'drizzle-orm';
 
-import { engramScopes } from '@pops/db-types';
+import { engramScopes } from '@pops/cerebrum-db';
 
 import type { CerebrumDb } from '@pops/cerebrum-db';
 

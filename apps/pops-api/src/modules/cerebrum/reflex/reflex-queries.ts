@@ -5,7 +5,7 @@
  */
 import { desc, eq, sql, and } from 'drizzle-orm';
 
-import { reflexExecutions } from '@pops/db-types';
+import { reflexExecutions } from '@pops/cerebrum-db';
 
 import { getDrizzle } from '../../../db.js';
 import { toReflexExecution } from './reflex-helpers.js';
