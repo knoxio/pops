@@ -259,6 +259,711 @@
           "value"
         ],
         "type": "object"
+      },
+      "SettingsDeleteInput": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "enum": [
+              "plex_url",
+              "plex_token",
+              "plex_username",
+              "plex_encryption_seed",
+              "plex_client_identifier",
+              "plex_movie_section_id",
+              "plex_tv_section_id",
+              "plex_scheduler_enabled",
+              "plex_scheduler_interval_ms",
+              "radarr_url",
+              "radarr_api_key",
+              "sonarr_url",
+              "sonarr_api_key",
+              "ai.model",
+              "ai.monthlyTokenBudget",
+              "ai.budgetExceededFallback",
+              "ai.modelOverrides.query",
+              "ai.modelOverrides.emit",
+              "ai.modelOverrides.classifier",
+              "ai.modelOverrides.entityExtractor",
+              "ai.modelOverrides.scopeInference",
+              "ai.modelOverrides.auditorContradiction",
+              "ai.modelOverrides.patternContradiction",
+              "cerebrum.query.maxSources",
+              "cerebrum.query.relevanceThreshold",
+              "cerebrum.query.tokenBudget",
+              "cerebrum.emit.maxTokens",
+              "cerebrum.emit.relevanceThreshold",
+              "cerebrum.emit.maxSources",
+              "cerebrum.emit.tokenBudget",
+              "cerebrum.semantic.defaultLimit",
+              "cerebrum.semantic.defaultThreshold",
+              "cerebrum.semantic.queryCacheTtl",
+              "cerebrum.hybrid.rrfK",
+              "cerebrum.hybrid.defaultLimit",
+              "cerebrum.hybrid.defaultThreshold",
+              "cerebrum.context.tokenBudget",
+              "cerebrum.classifier.confidenceThreshold",
+              "cerebrum.entityExtractor.confidenceThreshold",
+              "cerebrum.captureHotkey",
+              "cerebrum.nudge.consolidationSimilarity",
+              "cerebrum.nudge.consolidationMinCluster",
+              "cerebrum.nudge.stalenessDays",
+              "cerebrum.nudge.patternMinOccurrences",
+              "cerebrum.nudge.maxPending",
+              "cerebrum.nudge.cooldownHours",
+              "cerebrum.engram.fallbackScope",
+              "cerebrum.citation.excerptMaxLength",
+              "cerebrum.plexus.healthIntervalMs",
+              "cerebrum.plexus.healthTimeoutMs",
+              "cerebrum.plexus.maxConsecutiveFailures",
+              "cerebrum.thalamus.crossSourceIntervalMs",
+              "cerebrum.mcp.queryMaxSources",
+              "cerebrum.mcp.searchSnippetLength",
+              "cerebrum.mcp.searchDefaultLimit",
+              "cerebrum.glia.proposeMinApproved",
+              "cerebrum.glia.proposeMaxRejectionRate",
+              "cerebrum.glia.actReportMinDays",
+              "cerebrum.glia.demotionRevertThreshold",
+              "cerebrum.glia.demotionWindowDays",
+              "ego.defaultModel",
+              "ego.maxHistory",
+              "ego.maxRetrieval",
+              "ego.tokenBudget",
+              "ego.relevanceThreshold",
+              "ego.chat.maxTokens",
+              "ego.chat.temperature",
+              "ego.summary.maxTokens",
+              "ego.summary.temperature",
+              "media.comparisons.eloK",
+              "media.comparisons.defaultScore",
+              "media.comparisons.maxTierListMovies",
+              "media.comparisons.stalenessThreshold",
+              "media.comparisons.defaultLimit",
+              "media.discovery.sessionTargetMin",
+              "media.discovery.sessionTargetMax",
+              "media.discovery.maxSeedShelves",
+              "media.discovery.maxGenreShelves",
+              "media.discovery.maxActiveCollections",
+              "media.discovery.maxBecauseYouWatchedSeeds",
+              "media.discovery.maxCreditsSeeds",
+              "media.discovery.maxBestInGenre",
+              "media.discovery.maxCrossoverPairs",
+              "media.thetvdb.rateLimitCapacity",
+              "media.thetvdb.rateLimitRefillRate",
+              "media.thetvdb.maxRetries",
+              "media.tmdb.genreCacheTtlMs",
+              "media.tmdb.imageMaxRetries",
+              "media.tmdb.imageRetryDelayMs",
+              "media.plex.rateLimitDelayMs",
+              "media.plex.clientPageSize",
+              "media.plex.friendsPageSize",
+              "media.defaultLimit",
+              "media.rotation.tmdbDefaultPages",
+              "media.rotation.tmdbMaxPages",
+              "media.rotation.tmdbMinVoteCount",
+              "media.rotation.letterboxdMaxPages",
+              "finance.aiCategorizer.model",
+              "finance.aiCategorizer.maxTokens",
+              "finance.ruleGen.model",
+              "finance.ruleGen.maxTokens",
+              "finance.defaultLimit",
+              "inventory.defaultLimit",
+              "inventory.searchDefaultLimit",
+              "inventory.maxFileSizeBytes",
+              "core.corrections.highConfidenceThreshold",
+              "core.corrections.minPatternLength",
+              "core.corrections.previewLimit",
+              "core.corrections.previewHardLimit",
+              "core.corrections.previewRulesFetchLimit",
+              "core.search.showMoreLimit",
+              "core.aiRetry.maxRetries",
+              "core.aiRetry.baseDelayMs",
+              "core.defaultLimit",
+              "core.queue.syncConcurrency",
+              "core.queue.embeddingsConcurrency",
+              "core.queue.defaultConcurrency",
+              "core.queue.completedRetention",
+              "theme"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "type": "object"
+      },
+      "SettingsDeleteOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "SettingsEnsureInput": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "enum": [
+              "plex_url",
+              "plex_token",
+              "plex_username",
+              "plex_encryption_seed",
+              "plex_client_identifier",
+              "plex_movie_section_id",
+              "plex_tv_section_id",
+              "plex_scheduler_enabled",
+              "plex_scheduler_interval_ms",
+              "radarr_url",
+              "radarr_api_key",
+              "sonarr_url",
+              "sonarr_api_key",
+              "ai.model",
+              "ai.monthlyTokenBudget",
+              "ai.budgetExceededFallback",
+              "ai.modelOverrides.query",
+              "ai.modelOverrides.emit",
+              "ai.modelOverrides.classifier",
+              "ai.modelOverrides.entityExtractor",
+              "ai.modelOverrides.scopeInference",
+              "ai.modelOverrides.auditorContradiction",
+              "ai.modelOverrides.patternContradiction",
+              "cerebrum.query.maxSources",
+              "cerebrum.query.relevanceThreshold",
+              "cerebrum.query.tokenBudget",
+              "cerebrum.emit.maxTokens",
+              "cerebrum.emit.relevanceThreshold",
+              "cerebrum.emit.maxSources",
+              "cerebrum.emit.tokenBudget",
+              "cerebrum.semantic.defaultLimit",
+              "cerebrum.semantic.defaultThreshold",
+              "cerebrum.semantic.queryCacheTtl",
+              "cerebrum.hybrid.rrfK",
+              "cerebrum.hybrid.defaultLimit",
+              "cerebrum.hybrid.defaultThreshold",
+              "cerebrum.context.tokenBudget",
+              "cerebrum.classifier.confidenceThreshold",
+              "cerebrum.entityExtractor.confidenceThreshold",
+              "cerebrum.captureHotkey",
+              "cerebrum.nudge.consolidationSimilarity",
+              "cerebrum.nudge.consolidationMinCluster",
+              "cerebrum.nudge.stalenessDays",
+              "cerebrum.nudge.patternMinOccurrences",
+              "cerebrum.nudge.maxPending",
+              "cerebrum.nudge.cooldownHours",
+              "cerebrum.engram.fallbackScope",
+              "cerebrum.citation.excerptMaxLength",
+              "cerebrum.plexus.healthIntervalMs",
+              "cerebrum.plexus.healthTimeoutMs",
+              "cerebrum.plexus.maxConsecutiveFailures",
+              "cerebrum.thalamus.crossSourceIntervalMs",
+              "cerebrum.mcp.queryMaxSources",
+              "cerebrum.mcp.searchSnippetLength",
+              "cerebrum.mcp.searchDefaultLimit",
+              "cerebrum.glia.proposeMinApproved",
+              "cerebrum.glia.proposeMaxRejectionRate",
+              "cerebrum.glia.actReportMinDays",
+              "cerebrum.glia.demotionRevertThreshold",
+              "cerebrum.glia.demotionWindowDays",
+              "ego.defaultModel",
+              "ego.maxHistory",
+              "ego.maxRetrieval",
+              "ego.tokenBudget",
+              "ego.relevanceThreshold",
+              "ego.chat.maxTokens",
+              "ego.chat.temperature",
+              "ego.summary.maxTokens",
+              "ego.summary.temperature",
+              "media.comparisons.eloK",
+              "media.comparisons.defaultScore",
+              "media.comparisons.maxTierListMovies",
+              "media.comparisons.stalenessThreshold",
+              "media.comparisons.defaultLimit",
+              "media.discovery.sessionTargetMin",
+              "media.discovery.sessionTargetMax",
+              "media.discovery.maxSeedShelves",
+              "media.discovery.maxGenreShelves",
+              "media.discovery.maxActiveCollections",
+              "media.discovery.maxBecauseYouWatchedSeeds",
+              "media.discovery.maxCreditsSeeds",
+              "media.discovery.maxBestInGenre",
+              "media.discovery.maxCrossoverPairs",
+              "media.thetvdb.rateLimitCapacity",
+              "media.thetvdb.rateLimitRefillRate",
+              "media.thetvdb.maxRetries",
+              "media.tmdb.genreCacheTtlMs",
+              "media.tmdb.imageMaxRetries",
+              "media.tmdb.imageRetryDelayMs",
+              "media.plex.rateLimitDelayMs",
+              "media.plex.clientPageSize",
+              "media.plex.friendsPageSize",
+              "media.defaultLimit",
+              "media.rotation.tmdbDefaultPages",
+              "media.rotation.tmdbMaxPages",
+              "media.rotation.tmdbMinVoteCount",
+              "media.rotation.letterboxdMaxPages",
+              "finance.aiCategorizer.model",
+              "finance.aiCategorizer.maxTokens",
+              "finance.ruleGen.model",
+              "finance.ruleGen.maxTokens",
+              "finance.defaultLimit",
+              "inventory.defaultLimit",
+              "inventory.searchDefaultLimit",
+              "inventory.maxFileSizeBytes",
+              "core.corrections.highConfidenceThreshold",
+              "core.corrections.minPatternLength",
+              "core.corrections.previewLimit",
+              "core.corrections.previewHardLimit",
+              "core.corrections.previewRulesFetchLimit",
+              "core.search.showMoreLimit",
+              "core.aiRetry.maxRetries",
+              "core.aiRetry.baseDelayMs",
+              "core.defaultLimit",
+              "core.queue.syncConcurrency",
+              "core.queue.embeddingsConcurrency",
+              "core.queue.defaultConcurrency",
+              "core.queue.completedRetention",
+              "theme"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "object"
+      },
+      "SettingsEnsureOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "SettingsGetInput": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "enum": [
+              "plex_url",
+              "plex_token",
+              "plex_username",
+              "plex_encryption_seed",
+              "plex_client_identifier",
+              "plex_movie_section_id",
+              "plex_tv_section_id",
+              "plex_scheduler_enabled",
+              "plex_scheduler_interval_ms",
+              "radarr_url",
+              "radarr_api_key",
+              "sonarr_url",
+              "sonarr_api_key",
+              "ai.model",
+              "ai.monthlyTokenBudget",
+              "ai.budgetExceededFallback",
+              "ai.modelOverrides.query",
+              "ai.modelOverrides.emit",
+              "ai.modelOverrides.classifier",
+              "ai.modelOverrides.entityExtractor",
+              "ai.modelOverrides.scopeInference",
+              "ai.modelOverrides.auditorContradiction",
+              "ai.modelOverrides.patternContradiction",
+              "cerebrum.query.maxSources",
+              "cerebrum.query.relevanceThreshold",
+              "cerebrum.query.tokenBudget",
+              "cerebrum.emit.maxTokens",
+              "cerebrum.emit.relevanceThreshold",
+              "cerebrum.emit.maxSources",
+              "cerebrum.emit.tokenBudget",
+              "cerebrum.semantic.defaultLimit",
+              "cerebrum.semantic.defaultThreshold",
+              "cerebrum.semantic.queryCacheTtl",
+              "cerebrum.hybrid.rrfK",
+              "cerebrum.hybrid.defaultLimit",
+              "cerebrum.hybrid.defaultThreshold",
+              "cerebrum.context.tokenBudget",
+              "cerebrum.classifier.confidenceThreshold",
+              "cerebrum.entityExtractor.confidenceThreshold",
+              "cerebrum.captureHotkey",
+              "cerebrum.nudge.consolidationSimilarity",
+              "cerebrum.nudge.consolidationMinCluster",
+              "cerebrum.nudge.stalenessDays",
+              "cerebrum.nudge.patternMinOccurrences",
+              "cerebrum.nudge.maxPending",
+              "cerebrum.nudge.cooldownHours",
+              "cerebrum.engram.fallbackScope",
+              "cerebrum.citation.excerptMaxLength",
+              "cerebrum.plexus.healthIntervalMs",
+              "cerebrum.plexus.healthTimeoutMs",
+              "cerebrum.plexus.maxConsecutiveFailures",
+              "cerebrum.thalamus.crossSourceIntervalMs",
+              "cerebrum.mcp.queryMaxSources",
+              "cerebrum.mcp.searchSnippetLength",
+              "cerebrum.mcp.searchDefaultLimit",
+              "cerebrum.glia.proposeMinApproved",
+              "cerebrum.glia.proposeMaxRejectionRate",
+              "cerebrum.glia.actReportMinDays",
+              "cerebrum.glia.demotionRevertThreshold",
+              "cerebrum.glia.demotionWindowDays",
+              "ego.defaultModel",
+              "ego.maxHistory",
+              "ego.maxRetrieval",
+              "ego.tokenBudget",
+              "ego.relevanceThreshold",
+              "ego.chat.maxTokens",
+              "ego.chat.temperature",
+              "ego.summary.maxTokens",
+              "ego.summary.temperature",
+              "media.comparisons.eloK",
+              "media.comparisons.defaultScore",
+              "media.comparisons.maxTierListMovies",
+              "media.comparisons.stalenessThreshold",
+              "media.comparisons.defaultLimit",
+              "media.discovery.sessionTargetMin",
+              "media.discovery.sessionTargetMax",
+              "media.discovery.maxSeedShelves",
+              "media.discovery.maxGenreShelves",
+              "media.discovery.maxActiveCollections",
+              "media.discovery.maxBecauseYouWatchedSeeds",
+              "media.discovery.maxCreditsSeeds",
+              "media.discovery.maxBestInGenre",
+              "media.discovery.maxCrossoverPairs",
+              "media.thetvdb.rateLimitCapacity",
+              "media.thetvdb.rateLimitRefillRate",
+              "media.thetvdb.maxRetries",
+              "media.tmdb.genreCacheTtlMs",
+              "media.tmdb.imageMaxRetries",
+              "media.tmdb.imageRetryDelayMs",
+              "media.plex.rateLimitDelayMs",
+              "media.plex.clientPageSize",
+              "media.plex.friendsPageSize",
+              "media.defaultLimit",
+              "media.rotation.tmdbDefaultPages",
+              "media.rotation.tmdbMaxPages",
+              "media.rotation.tmdbMinVoteCount",
+              "media.rotation.letterboxdMaxPages",
+              "finance.aiCategorizer.model",
+              "finance.aiCategorizer.maxTokens",
+              "finance.ruleGen.model",
+              "finance.ruleGen.maxTokens",
+              "finance.defaultLimit",
+              "inventory.defaultLimit",
+              "inventory.searchDefaultLimit",
+              "inventory.maxFileSizeBytes",
+              "core.corrections.highConfidenceThreshold",
+              "core.corrections.minPatternLength",
+              "core.corrections.previewLimit",
+              "core.corrections.previewHardLimit",
+              "core.corrections.previewRulesFetchLimit",
+              "core.search.showMoreLimit",
+              "core.aiRetry.maxRetries",
+              "core.aiRetry.baseDelayMs",
+              "core.defaultLimit",
+              "core.queue.syncConcurrency",
+              "core.queue.embeddingsConcurrency",
+              "core.queue.defaultConcurrency",
+              "core.queue.completedRetention",
+              "theme"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "type": "object"
+      },
+      "SettingsGetManyInput": {
+        "additionalProperties": false,
+        "properties": {
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "type": "object"
+      },
+      "SettingsGetManyOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "settings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "SettingsGetOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": false,
+            "nullable": true,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "SettingsSetInput": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "enum": [
+              "plex_url",
+              "plex_token",
+              "plex_username",
+              "plex_encryption_seed",
+              "plex_client_identifier",
+              "plex_movie_section_id",
+              "plex_tv_section_id",
+              "plex_scheduler_enabled",
+              "plex_scheduler_interval_ms",
+              "radarr_url",
+              "radarr_api_key",
+              "sonarr_url",
+              "sonarr_api_key",
+              "ai.model",
+              "ai.monthlyTokenBudget",
+              "ai.budgetExceededFallback",
+              "ai.modelOverrides.query",
+              "ai.modelOverrides.emit",
+              "ai.modelOverrides.classifier",
+              "ai.modelOverrides.entityExtractor",
+              "ai.modelOverrides.scopeInference",
+              "ai.modelOverrides.auditorContradiction",
+              "ai.modelOverrides.patternContradiction",
+              "cerebrum.query.maxSources",
+              "cerebrum.query.relevanceThreshold",
+              "cerebrum.query.tokenBudget",
+              "cerebrum.emit.maxTokens",
+              "cerebrum.emit.relevanceThreshold",
+              "cerebrum.emit.maxSources",
+              "cerebrum.emit.tokenBudget",
+              "cerebrum.semantic.defaultLimit",
+              "cerebrum.semantic.defaultThreshold",
+              "cerebrum.semantic.queryCacheTtl",
+              "cerebrum.hybrid.rrfK",
+              "cerebrum.hybrid.defaultLimit",
+              "cerebrum.hybrid.defaultThreshold",
+              "cerebrum.context.tokenBudget",
+              "cerebrum.classifier.confidenceThreshold",
+              "cerebrum.entityExtractor.confidenceThreshold",
+              "cerebrum.captureHotkey",
+              "cerebrum.nudge.consolidationSimilarity",
+              "cerebrum.nudge.consolidationMinCluster",
+              "cerebrum.nudge.stalenessDays",
+              "cerebrum.nudge.patternMinOccurrences",
+              "cerebrum.nudge.maxPending",
+              "cerebrum.nudge.cooldownHours",
+              "cerebrum.engram.fallbackScope",
+              "cerebrum.citation.excerptMaxLength",
+              "cerebrum.plexus.healthIntervalMs",
+              "cerebrum.plexus.healthTimeoutMs",
+              "cerebrum.plexus.maxConsecutiveFailures",
+              "cerebrum.thalamus.crossSourceIntervalMs",
+              "cerebrum.mcp.queryMaxSources",
+              "cerebrum.mcp.searchSnippetLength",
+              "cerebrum.mcp.searchDefaultLimit",
+              "cerebrum.glia.proposeMinApproved",
+              "cerebrum.glia.proposeMaxRejectionRate",
+              "cerebrum.glia.actReportMinDays",
+              "cerebrum.glia.demotionRevertThreshold",
+              "cerebrum.glia.demotionWindowDays",
+              "ego.defaultModel",
+              "ego.maxHistory",
+              "ego.maxRetrieval",
+              "ego.tokenBudget",
+              "ego.relevanceThreshold",
+              "ego.chat.maxTokens",
+              "ego.chat.temperature",
+              "ego.summary.maxTokens",
+              "ego.summary.temperature",
+              "media.comparisons.eloK",
+              "media.comparisons.defaultScore",
+              "media.comparisons.maxTierListMovies",
+              "media.comparisons.stalenessThreshold",
+              "media.comparisons.defaultLimit",
+              "media.discovery.sessionTargetMin",
+              "media.discovery.sessionTargetMax",
+              "media.discovery.maxSeedShelves",
+              "media.discovery.maxGenreShelves",
+              "media.discovery.maxActiveCollections",
+              "media.discovery.maxBecauseYouWatchedSeeds",
+              "media.discovery.maxCreditsSeeds",
+              "media.discovery.maxBestInGenre",
+              "media.discovery.maxCrossoverPairs",
+              "media.thetvdb.rateLimitCapacity",
+              "media.thetvdb.rateLimitRefillRate",
+              "media.thetvdb.maxRetries",
+              "media.tmdb.genreCacheTtlMs",
+              "media.tmdb.imageMaxRetries",
+              "media.tmdb.imageRetryDelayMs",
+              "media.plex.rateLimitDelayMs",
+              "media.plex.clientPageSize",
+              "media.plex.friendsPageSize",
+              "media.defaultLimit",
+              "media.rotation.tmdbDefaultPages",
+              "media.rotation.tmdbMaxPages",
+              "media.rotation.tmdbMinVoteCount",
+              "media.rotation.letterboxdMaxPages",
+              "finance.aiCategorizer.model",
+              "finance.aiCategorizer.maxTokens",
+              "finance.ruleGen.model",
+              "finance.ruleGen.maxTokens",
+              "finance.defaultLimit",
+              "inventory.defaultLimit",
+              "inventory.searchDefaultLimit",
+              "inventory.maxFileSizeBytes",
+              "core.corrections.highConfidenceThreshold",
+              "core.corrections.minPatternLength",
+              "core.corrections.previewLimit",
+              "core.corrections.previewHardLimit",
+              "core.corrections.previewRulesFetchLimit",
+              "core.search.showMoreLimit",
+              "core.aiRetry.maxRetries",
+              "core.aiRetry.baseDelayMs",
+              "core.defaultLimit",
+              "core.queue.syncConcurrency",
+              "core.queue.embeddingsConcurrency",
+              "core.queue.defaultConcurrency",
+              "core.queue.completedRetention",
+              "theme"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "object"
+      },
+      "SettingsSetManyInput": {
+        "additionalProperties": false,
+        "properties": {
+          "entries": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "value"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "type": "object"
+      },
+      "SettingsSetManyOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "settings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "SettingsSetOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "type": "object"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object"
       }
     }
   },
@@ -448,6 +1153,195 @@
           "registry"
         ]
       }
+    },
+    "/core/settings/delete": {
+      "post": {
+        "operationId": "core.settings.delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsDeleteInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsDeleteOutput"
+                }
+              }
+            },
+            "description": "Acknowledgement"
+          },
+          "404": {
+            "description": "Setting key not found"
+          }
+        },
+        "summary": "Delete a setting by key",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/core/settings/ensure": {
+      "post": {
+        "operationId": "core.settings.ensure",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsEnsureInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsEnsureOutput"
+                }
+              }
+            },
+            "description": "Persisted setting (existing or newly inserted)"
+          }
+        },
+        "summary": "Ensure a setting exists — upsert-and-return",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/core/settings/get": {
+      "post": {
+        "operationId": "core.settings.get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsGetInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsGetOutput"
+                }
+              }
+            },
+            "description": "Setting value or null"
+          }
+        },
+        "summary": "Get a setting by key (returns null if missing)",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/core/settings/getMany": {
+      "post": {
+        "operationId": "core.settings.getMany",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsGetManyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsGetManyOutput"
+                }
+              }
+            },
+            "description": "Map of present key→value"
+          }
+        },
+        "summary": "Bulk read settings by key — missing keys omitted from result",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/core/settings/set": {
+      "post": {
+        "operationId": "core.settings.set",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsSetInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsSetOutput"
+                }
+              }
+            },
+            "description": "Persisted setting"
+          }
+        },
+        "summary": "Upsert a setting value",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/core/settings/setMany": {
+      "post": {
+        "operationId": "core.settings.setMany",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsSetManyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsSetManyOutput"
+                }
+              }
+            },
+            "description": "Map of persisted key→value"
+          }
+        },
+        "summary": "Bulk write settings transactionally — rolls back all on any failure",
+        "tags": [
+          "settings"
+        ]
+      }
     }
   },
   "servers": [
@@ -460,6 +1354,10 @@
     {
       "description": "Core pillar registry",
       "name": "registry"
+    },
+    {
+      "description": "Core pillar settings (key/value)",
+      "name": "settings"
     }
   ]
 }

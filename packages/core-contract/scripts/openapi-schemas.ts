@@ -4,6 +4,20 @@ import { PillarSchema } from '../src/schemas/pillar.js';
 import { RegistryEntrySchema } from '../src/schemas/registry-entry.js';
 import { ServiceAccountSchema } from '../src/schemas/service-account.js';
 import { SettingSchema } from '../src/schemas/setting.js';
+import {
+  SettingsDeleteInputSchema,
+  SettingsDeleteOutputSchema,
+  SettingsEnsureInputSchema,
+  SettingsEnsureOutputSchema,
+  SettingsGetInputSchema,
+  SettingsGetManyInputSchema,
+  SettingsGetManyOutputSchema,
+  SettingsGetOutputSchema,
+  SettingsSetInputSchema,
+  SettingsSetManyInputSchema,
+  SettingsSetManyOutputSchema,
+  SettingsSetOutputSchema,
+} from '../src/schemas/settings-procedures.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
 const PAGINATION_SCHEMA: OpenApiSchema = {
@@ -71,5 +85,17 @@ export function buildComponentSchemas(): Record<string, OpenApiSchema> {
       required: ['message'],
       properties: { message: { type: 'string' } },
     },
+    SettingsGetInput: zodToOpenApiSchema(SettingsGetInputSchema),
+    SettingsGetOutput: zodToOpenApiSchema(SettingsGetOutputSchema),
+    SettingsSetInput: zodToOpenApiSchema(SettingsSetInputSchema),
+    SettingsSetOutput: zodToOpenApiSchema(SettingsSetOutputSchema),
+    SettingsEnsureInput: zodToOpenApiSchema(SettingsEnsureInputSchema),
+    SettingsEnsureOutput: zodToOpenApiSchema(SettingsEnsureOutputSchema),
+    SettingsDeleteInput: zodToOpenApiSchema(SettingsDeleteInputSchema),
+    SettingsDeleteOutput: zodToOpenApiSchema(SettingsDeleteOutputSchema),
+    SettingsGetManyInput: zodToOpenApiSchema(SettingsGetManyInputSchema),
+    SettingsGetManyOutput: zodToOpenApiSchema(SettingsGetManyOutputSchema),
+    SettingsSetManyInput: zodToOpenApiSchema(SettingsSetManyInputSchema),
+    SettingsSetManyOutput: zodToOpenApiSchema(SettingsSetManyOutputSchema),
   };
 }

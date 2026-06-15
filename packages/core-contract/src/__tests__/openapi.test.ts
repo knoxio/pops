@@ -61,4 +61,34 @@ describe('@pops/core-contract openapi snapshot', () => {
     expect(op).toBeDefined();
     expect(op?.operationId).toBe('core.registry.list');
   });
+
+  it.each([
+    ['/core/settings/get', 'core.settings.get'],
+    ['/core/settings/set', 'core.settings.set'],
+    ['/core/settings/ensure', 'core.settings.ensure'],
+    ['/core/settings/delete', 'core.settings.delete'],
+    ['/core/settings/getMany', 'core.settings.getMany'],
+    ['/core/settings/setMany', 'core.settings.setMany'],
+  ])('describes the %s endpoint with operationId %s', (path, operationId) => {
+    const op = openapi.paths[path]?.['post'];
+    expect(op).toBeDefined();
+    expect(op?.operationId).toBe(operationId);
+  });
+
+  it.each([
+    'SettingsGetInput',
+    'SettingsGetOutput',
+    'SettingsSetInput',
+    'SettingsSetOutput',
+    'SettingsEnsureInput',
+    'SettingsEnsureOutput',
+    'SettingsDeleteInput',
+    'SettingsDeleteOutput',
+    'SettingsGetManyInput',
+    'SettingsGetManyOutput',
+    'SettingsSetManyInput',
+    'SettingsSetManyOutput',
+  ])('references the %s schema under components/schemas', (name) => {
+    expect(openapi.components.schemas).toHaveProperty(name);
+  });
 });
