@@ -21,7 +21,7 @@
 - **1 PRD Done pending merge.** PRD-249 (cerebrum.embeddings.\* SDK) — closes when #3292 lands.
 - **6 PRDs In progress.** PRD-245 US-08 (#3283) · PRD-247 US-03 (#3289) · PRD-248 US-02 (#3293) · PRD-251 US-01/02 (#3295) · PRD-252 US-01 (#3290) · Wave 5 cascades (PR4 chain).
 - **PRD-246 US-04 unblocked once SDK trio (247/248/249) merges** — synthetic captureOverlay test (US-05) follows.
-- **Anti-lego audit 2026-06.** HIGH count drops from 4 → 2 once today's merges land (H6/H7 close via PRD-245 US-08 + PRD-251; H8 partially in-flight via SDK trio; H-D1 in-flight via #3290). Refresh after PRD-247/248/249 + #3290 land.
+- **Anti-lego audit 2026-06.** MEDIUM M3 + M4 and LOW L9 + L-D1 closed in PR #3298 (audit MED batch) — open count now 14 (4 HIGH / 6 MEDIUM / 4 LOW). HIGH count drops from 4 → 2 once today's merges land (H6/H7 close via PRD-245 US-08 + PRD-251; H8 partially in-flight via SDK trio; H-D1 in-flight via #3290). M-D1 (food seed → lists), M-D2 (dual `app-food-db` / `food-db` shape), M1, M2, M7, M8 deferred — each needs a PRD or folds into the CI/infra consolidation PRD. Refresh after PRD-247/248/249 + #3290 land.
 - **Production:** capivara healthy. CI green on main.
 
 ## PRD status

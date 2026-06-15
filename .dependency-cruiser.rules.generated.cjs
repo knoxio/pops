@@ -3,6 +3,18 @@
 
 const contractBoundaryRules = [
   {
+    name: 'no-cross-pillar-runtime-import-cerebrum',
+    severity: 'error',
+    comment:
+      'Non-owning code must not import @pops/cerebrum-db. Use @pops/cerebrum-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
+    from: {
+      pathNot: '^(apps/pops-cerebrum-api|packages/cerebrum-db|packages/cerebrum-contract/scripts)/',
+    },
+    to: {
+      path: '^packages/cerebrum-db/',
+    },
+  },
+  {
     name: 'no-cross-pillar-runtime-import-core',
     severity: 'error',
     comment:
@@ -27,15 +39,15 @@ const contractBoundaryRules = [
     },
   },
   {
-    name: 'no-cross-pillar-runtime-import-media',
+    name: 'no-cross-pillar-runtime-import-food',
     severity: 'error',
     comment:
-      'Non-owning code must not import @pops/media-db. Use @pops/media-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
+      'Non-owning code must not import @pops/food-db. Use @pops/food-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-media-api|packages/media-db|packages/media-contract/scripts)/',
+      pathNot: '^(apps/pops-food-api|packages/food-db|packages/food-contract/scripts)/',
     },
     to: {
-      path: '^packages/media-db/',
+      path: '^packages/food-db/',
     },
   },
   {
@@ -52,30 +64,6 @@ const contractBoundaryRules = [
     },
   },
   {
-    name: 'no-cross-pillar-runtime-import-cerebrum',
-    severity: 'error',
-    comment:
-      'Non-owning code must not import @pops/cerebrum-db. Use @pops/cerebrum-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
-    from: {
-      pathNot: '^(apps/pops-cerebrum-api|packages/cerebrum-db|packages/cerebrum-contract/scripts)/',
-    },
-    to: {
-      path: '^packages/cerebrum-db/',
-    },
-  },
-  {
-    name: 'no-cross-pillar-runtime-import-food',
-    severity: 'error',
-    comment:
-      'Non-owning code must not import @pops/food-db. Use @pops/food-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
-    from: {
-      pathNot: '^(apps/pops-food-api|packages/food-db|packages/food-contract/scripts)/',
-    },
-    to: {
-      path: '^packages/food-db/',
-    },
-  },
-  {
     name: 'no-cross-pillar-runtime-import-lists',
     severity: 'error',
     comment:
@@ -85,6 +73,18 @@ const contractBoundaryRules = [
     },
     to: {
       path: '^packages/lists-db/',
+    },
+  },
+  {
+    name: 'no-cross-pillar-runtime-import-media',
+    severity: 'error',
+    comment:
+      'Non-owning code must not import @pops/media-db. Use @pops/media-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
+    from: {
+      pathNot: '^(apps/pops-media-api|packages/media-db|packages/media-contract/scripts)/',
+    },
+    to: {
+      path: '^packages/media-db/',
     },
   },
 ];

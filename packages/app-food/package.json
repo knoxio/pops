@@ -24,7 +24,6 @@
     "@lezer/lr": "^1.4.10",
     "@pops/api": "workspace:*",
     "@pops/app-food-db": "workspace:*",
-    "@pops/app-lists": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/food-contracts": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",

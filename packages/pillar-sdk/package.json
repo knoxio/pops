@@ -46,10 +46,6 @@
       "types": "./dist/react/index.d.ts",
       "default": "./dist/react/index.js"
     },
-    "./contracts": {
-      "types": "./dist/contracts/index.d.ts",
-      "default": "./dist/contracts/index.js"
-    },
     "./ranking": {
       "types": "./dist/ranking/index.d.ts",
       "default": "./dist/ranking/index.js"
