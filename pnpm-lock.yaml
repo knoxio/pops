@@ -1356,9 +1356,6 @@ importers:
       '@pops/app-food-db':
         specifier: workspace:*
         version: link:../app-food-db
-      '@pops/app-lists':
-        specifier: workspace:*
-        version: link:../app-lists
       '@pops/db-types':
         specifier: workspace:*
         version: link:../db-types
