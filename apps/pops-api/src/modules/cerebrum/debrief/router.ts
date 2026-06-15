@@ -29,6 +29,7 @@
  * the cerebrum-side fan-out is therefore guaranteed on the same singleton
  * connection.
  */
+import { TRPCError } from '@trpc/server';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -38,7 +39,7 @@ import {
   GetInputSchema,
   ListPendingInputSchema,
 } from '@pops/cerebrum-contract/schemas';
-import { debriefSessions } from '@pops/cerebrum-db';
+import { debriefResults, debriefSessions } from '@pops/cerebrum-db';
 
 import { getCerebrumDrizzle } from '../../../db/cerebrum-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -65,11 +66,26 @@ const ListPendingResponseSchema = z.object({
   pagination: PaginationMetaSchema,
 });
 
+const DismissSchema = z.object({
+  sessionId: z.number().int().positive(),
+});
+
+const DeleteByWatchHistoryIdSchema = z.object({
+  watchHistoryId: z.number().int().positive(),
+});
+
 export type LogWatchCompletionInput = z.infer<typeof LogWatchCompletionSchema>;
+export type DismissInput = z.infer<typeof DismissSchema>;
+export type DeleteByWatchHistoryIdInput = z.infer<typeof DeleteByWatchHistoryIdSchema>;
 
 export interface LogWatchCompletionResult {
   sessionId: number;
   dimensionsQueued: number;
+}
+
+export interface DeleteByWatchHistoryIdResult {
+  deletedSessions: number;
+  deletedResults: number;
 }
 
 export function logWatchCompletion(input: LogWatchCompletionInput): LogWatchCompletionResult {
@@ -78,6 +94,90 @@ export function logWatchCompletion(input: LogWatchCompletionInput): LogWatchComp
     const sessionId = createDebriefSession(input.watchHistoryId);
     const dimensionsQueued = queueDebriefStatus(input.mediaType, input.mediaId);
     return { sessionId, dimensionsQueued };
+  });
+}
+
+/**
+ * Dismiss a debrief session — transitions it to `status = 'complete'`.
+ * Idempotent on an already-complete session. Throws NOT_FOUND for an
+ * unknown id. See `apps/pops-cerebrum-api/src/modules/debrief/router.ts`
+ * for the canonical contract; this in-monolith binding matches the
+ * cerebrum-api shape one-to-one (PRD-248 US-04).
+ */
+export function dismissDebriefSession(input: DismissInput): typeof debriefSessions.$inferSelect {
+  const db = getCerebrumDrizzle();
+  return db.transaction((tx) => {
+    const existing = tx
+      .select()
+      .from(debriefSessions)
+      .where(eq(debriefSessions.id, input.sessionId))
+      .get();
+    if (!existing) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `Debrief session '${input.sessionId}' not found`,
+      });
+    }
+    if (existing.status === 'complete') {
+      return existing;
+    }
+    tx.update(debriefSessions)
+      .set({ status: 'complete' })
+      .where(eq(debriefSessions.id, input.sessionId))
+      .run();
+    const updated = tx
+      .select()
+      .from(debriefSessions)
+      .where(eq(debriefSessions.id, input.sessionId))
+      .get();
+    if (!updated) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Failed to read back debrief session ${input.sessionId} after dismiss`,
+      });
+    }
+    return updated;
+  });
+}
+
+/**
+ * Cascade-delete debrief rows pinned to a watch_history id. The
+ * cerebrum baseline migration drops `debrief_results.session_id`'s FK
+ * (so the cerebrum SQLite file can stand alone), so cascade is
+ * explicit: delete dependent results first, then sessions. Returns
+ * `{ deletedSessions: 0, deletedResults: 0 }` when the watch row has
+ * no debrief — not an error. PRD-248 US-04 contract.
+ */
+export function deleteDebriefByWatchHistoryId(
+  input: DeleteByWatchHistoryIdInput
+): DeleteByWatchHistoryIdResult {
+  const db = getCerebrumDrizzle();
+  return db.transaction((tx) => {
+    const sessionIds = tx
+      .select({ id: debriefSessions.id })
+      .from(debriefSessions)
+      .where(eq(debriefSessions.watchHistoryId, input.watchHistoryId))
+      .all()
+      .map((row) => row.id);
+
+    if (sessionIds.length === 0) {
+      return { deletedSessions: 0, deletedResults: 0 };
+    }
+
+    const resultsDelete = tx
+      .delete(debriefResults)
+      .where(inArray(debriefResults.sessionId, sessionIds))
+      .run();
+
+    const sessionsDelete = tx
+      .delete(debriefSessions)
+      .where(eq(debriefSessions.watchHistoryId, input.watchHistoryId))
+      .run();
+
+    return {
+      deletedSessions: Number(sessionsDelete.changes),
+      deletedResults: Number(resultsDelete.changes),
+    };
   });
 }
 
@@ -179,4 +279,22 @@ export const debriefRouter = router({
         pagination: { limit, offset, total: totalRow.length },
       };
     }),
+
+  /**
+   * Dismiss a debrief session. Mirrors the cerebrum-api shape so the
+   * in-monolith dispatcher binding (`cerebrum.debrief.dismiss`)
+   * resolves identically — `pillar('cerebrum').debrief.dismiss` PRD-248
+   * US-05 will lift the call sites to the SDK without wire churn.
+   */
+  dismiss: protectedProcedure
+    .input(DismissSchema)
+    .mutation(({ input }) => ({ data: dismissDebriefSession(input) })),
+
+  /**
+   * Cascade-delete debrief rows pinned to a watch_history id. The
+   * lockstep in-monolith binding for the cerebrum-api US-04 surface.
+   */
+  deleteByWatchHistoryId: protectedProcedure
+    .input(DeleteByWatchHistoryIdSchema)
+    .mutation(({ input }) => deleteDebriefByWatchHistoryId(input)),
 });

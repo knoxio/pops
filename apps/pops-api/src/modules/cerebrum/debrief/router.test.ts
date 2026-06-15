@@ -306,6 +306,87 @@ describe('cerebrum.debrief.logWatchCompletion', () => {
   });
 });
 
+describe('cerebrum.debrief.dismiss', () => {
+  it('transitions a pending session to complete and returns the session row', async () => {
+    seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
+    const watchHistoryId = seedWatchHistoryEntry(db, {
+      media_type: 'movie',
+      media_id: 1,
+      completed: 1,
+    });
+    const sessionId = debriefService.createDebriefSession(watchHistoryId);
+
+    const result = await caller.cerebrum.debrief.dismiss({ sessionId });
+    expect(result.data.id).toBe(sessionId);
+    expect(result.data.status).toBe('complete');
+
+    const rows = db
+      .prepare('SELECT status FROM debrief_sessions WHERE id = ?')
+      .all(sessionId) as Array<{ status: string }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.status).toBe('complete');
+  });
+
+  it('is idempotent on an already-dismissed session', async () => {
+    seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
+    const watchHistoryId = seedWatchHistoryEntry(db, {
+      media_type: 'movie',
+      media_id: 1,
+      completed: 1,
+    });
+    const sessionId = debriefService.createDebriefSession(watchHistoryId);
+    await caller.cerebrum.debrief.dismiss({ sessionId });
+    const second = await caller.cerebrum.debrief.dismiss({ sessionId });
+    expect(second.data.id).toBe(sessionId);
+    expect(second.data.status).toBe('complete');
+  });
+
+  it('throws NOT_FOUND for an unknown sessionId', async () => {
+    await expect(caller.cerebrum.debrief.dismiss({ sessionId: 9_999_999 })).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'NOT_FOUND',
+    });
+  });
+});
+
+describe('cerebrum.debrief.deleteByWatchHistoryId', () => {
+  it('cascade-deletes sessions + dependent debrief_results rows for the watch_history id', async () => {
+    seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
+    seedDimension(db, { name: 'Enjoyment', active: 1 });
+    seedDimension(db, { name: 'Cinematography', active: 1 });
+    const watchHistoryId = seedWatchHistoryEntry(db, {
+      media_type: 'movie',
+      media_id: 1,
+      completed: 1,
+    });
+    const sessionId = debriefService.createDebriefSession(watchHistoryId);
+
+    db.prepare(
+      'INSERT INTO debrief_results (session_id, dimension_id, comparison_id) VALUES (?, ?, ?), (?, ?, ?)'
+    ).run(sessionId, 1, null, sessionId, 2, null);
+
+    const result = await caller.cerebrum.debrief.deleteByWatchHistoryId({ watchHistoryId });
+    expect(result.deletedSessions).toBe(1);
+    expect(result.deletedResults).toBe(2);
+
+    const sessions = db
+      .prepare('SELECT id FROM debrief_sessions WHERE watch_history_id = ?')
+      .all(watchHistoryId);
+    expect(sessions).toHaveLength(0);
+    const results = db
+      .prepare('SELECT id FROM debrief_results WHERE session_id = ?')
+      .all(sessionId);
+    expect(results).toHaveLength(0);
+  });
+
+  it('returns zero counts for a watch_history id with no debrief rows', async () => {
+    const result = await caller.cerebrum.debrief.deleteByWatchHistoryId({
+      watchHistoryId: 7_777,
+    });
+    expect(result).toEqual({ deletedSessions: 0, deletedResults: 0 });
+  });
+});
+
 describe('getDebriefByMedia — denormalised read', () => {
   it('returns the debrief response directly from the denormalised columns', () => {
     seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });

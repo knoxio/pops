@@ -527,6 +527,140 @@ describe('cerebrum.debrief.listPending (tRPC caller)', () => {
   });
 });
 
+describe('cerebrum.debrief.dismiss (tRPC caller)', () => {
+  it('transitions a pending session to complete and returns the row', async () => {
+    const sessionId = seedSession(cerebrumDb.db, { watchHistoryId: 1, status: 'pending' });
+    const result = await userCaller().cerebrum.debrief.dismiss({ sessionId });
+    expect(result.data.id).toBe(sessionId);
+    expect(result.data.status).toBe('complete');
+
+    const rows = cerebrumDb.db
+      .select()
+      .from(debriefSessions)
+      .where(eq(debriefSessions.id, sessionId))
+      .all();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.status).toBe('complete');
+  });
+
+  it('is idempotent on an already-dismissed (complete) session', async () => {
+    const sessionId = seedSession(cerebrumDb.db, { watchHistoryId: 2, status: 'complete' });
+    const beforeRow = cerebrumDb.db
+      .select()
+      .from(debriefSessions)
+      .where(eq(debriefSessions.id, sessionId))
+      .get();
+    const result = await userCaller().cerebrum.debrief.dismiss({ sessionId });
+    expect(result.data.id).toBe(sessionId);
+    expect(result.data.status).toBe('complete');
+    expect(result.data.createdAt).toBe(beforeRow?.createdAt);
+  });
+
+  it('throws NOT_FOUND for an unknown sessionId', async () => {
+    await expect(
+      userCaller().cerebrum.debrief.dismiss({ sessionId: 9_999_999 })
+    ).rejects.toMatchObject({ name: 'TRPCError', code: 'NOT_FOUND' });
+  });
+
+  it('rejects malformed input at the zod boundary (BAD_REQUEST)', async () => {
+    await expect(userCaller().cerebrum.debrief.dismiss({ sessionId: 0 })).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'BAD_REQUEST',
+    });
+  });
+
+  it('rejects an anonymous caller (UNAUTHORIZED)', async () => {
+    await expect(anonCaller().cerebrum.debrief.dismiss({ sessionId: 1 })).rejects.toMatchObject({
+      name: 'TRPCError',
+      code: 'UNAUTHORIZED',
+    });
+  });
+});
+
+describe('cerebrum.debrief.deleteByWatchHistoryId (tRPC caller)', () => {
+  it('cascade-deletes sessions + dependent debrief_results rows', async () => {
+    const watchHistoryId = 555;
+    const sessionA = seedSession(cerebrumDb.db, {
+      watchHistoryId,
+      mediaType: 'movie',
+      mediaId: 10,
+    });
+    const sessionB = seedSession(cerebrumDb.db, {
+      watchHistoryId,
+      mediaType: 'episode',
+      mediaId: 11,
+    });
+    cerebrumDb.db
+      .insert(debriefResults)
+      .values([
+        { sessionId: sessionA, dimensionId: 1, comparisonId: null },
+        { sessionId: sessionA, dimensionId: 2, comparisonId: 100 },
+        { sessionId: sessionB, dimensionId: 3, comparisonId: null },
+      ])
+      .run();
+
+    const result = await userCaller().cerebrum.debrief.deleteByWatchHistoryId({ watchHistoryId });
+    expect(result.deletedSessions).toBe(2);
+    expect(result.deletedResults).toBe(3);
+
+    const remainingSessions = cerebrumDb.db
+      .select()
+      .from(debriefSessions)
+      .where(eq(debriefSessions.watchHistoryId, watchHistoryId))
+      .all();
+    expect(remainingSessions).toHaveLength(0);
+
+    const remainingResults = cerebrumDb.db.select().from(debriefResults).all();
+    expect(remainingResults).toHaveLength(0);
+  });
+
+  it('returns zero counts for a watch_history id with no debrief rows', async () => {
+    const result = await userCaller().cerebrum.debrief.deleteByWatchHistoryId({
+      watchHistoryId: 7_777,
+    });
+    expect(result).toEqual({ deletedSessions: 0, deletedResults: 0 });
+  });
+
+  it('leaves debrief rows for other watch_history ids untouched', async () => {
+    const targetWh = 100;
+    const otherWh = 200;
+    const targetSessionId = seedSession(cerebrumDb.db, { watchHistoryId: targetWh });
+    const otherSessionId = seedSession(cerebrumDb.db, { watchHistoryId: otherWh });
+    cerebrumDb.db
+      .insert(debriefResults)
+      .values([
+        { sessionId: targetSessionId, dimensionId: 1, comparisonId: null },
+        { sessionId: otherSessionId, dimensionId: 1, comparisonId: null },
+      ])
+      .run();
+
+    const result = await userCaller().cerebrum.debrief.deleteByWatchHistoryId({
+      watchHistoryId: targetWh,
+    });
+    expect(result.deletedSessions).toBe(1);
+    expect(result.deletedResults).toBe(1);
+
+    const remainingSessions = cerebrumDb.db.select().from(debriefSessions).all();
+    expect(remainingSessions).toHaveLength(1);
+    expect(remainingSessions[0]?.id).toBe(otherSessionId);
+    const remainingResults = cerebrumDb.db.select().from(debriefResults).all();
+    expect(remainingResults).toHaveLength(1);
+    expect(remainingResults[0]?.sessionId).toBe(otherSessionId);
+  });
+
+  it('rejects malformed input at the zod boundary (BAD_REQUEST)', async () => {
+    await expect(
+      userCaller().cerebrum.debrief.deleteByWatchHistoryId({ watchHistoryId: 0 })
+    ).rejects.toMatchObject({ name: 'TRPCError', code: 'BAD_REQUEST' });
+  });
+
+  it('rejects an anonymous caller (UNAUTHORIZED)', async () => {
+    await expect(
+      anonCaller().cerebrum.debrief.deleteByWatchHistoryId({ watchHistoryId: 1 })
+    ).rejects.toMatchObject({ name: 'TRPCError', code: 'UNAUTHORIZED' });
+  });
+});
+
 describe('/trpc HTTP surface', () => {
   function makeApp(): ReturnType<typeof createCerebrumApiApp> {
     return createCerebrumApiApp({ cerebrumDb, coreDb, version: '0.0.1-test' });
@@ -592,5 +726,34 @@ describe('/trpc HTTP surface', () => {
     expect(res.body.result.data.data).toEqual([]);
     expect(res.body.result.data.pagination.total).toBe(0);
     expect(res.body.result.data.pagination.limit).toBe(50);
+  });
+
+  it('answers cerebrum.debrief.dismiss over HTTP', async () => {
+    const app = makeApp();
+    const sessionId = seedSession(cerebrumDb.db, { watchHistoryId: 91, status: 'pending' });
+    const res = await request(app)
+      .post('/trpc/cerebrum.debrief.dismiss')
+      .send({ sessionId })
+      .set('content-type', 'application/json');
+    expect(res.status).toBe(200);
+    expect(res.body.result.data.data.id).toBe(sessionId);
+    expect(res.body.result.data.data.status).toBe('complete');
+  });
+
+  it('answers cerebrum.debrief.deleteByWatchHistoryId over HTTP', async () => {
+    const app = makeApp();
+    const watchHistoryId = 92;
+    const sessionId = seedSession(cerebrumDb.db, { watchHistoryId });
+    cerebrumDb.db
+      .insert(debriefResults)
+      .values({ sessionId, dimensionId: 1, comparisonId: null })
+      .run();
+    const res = await request(app)
+      .post('/trpc/cerebrum.debrief.deleteByWatchHistoryId')
+      .send({ watchHistoryId })
+      .set('content-type', 'application/json');
+    expect(res.status).toBe(200);
+    expect(res.body.result.data.deletedSessions).toBe(1);
+    expect(res.body.result.data.deletedResults).toBe(1);
   });
 });
