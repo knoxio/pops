@@ -13,11 +13,14 @@ import {
   type RegistryTransport,
 } from '../transport.js';
 
+import type { ManifestPayload } from '../../manifest-schema/schema.js';
+
 interface RecordedTransport extends RegistryTransport {
   registerCalls: number;
   heartbeatCalls: number;
   unregisterCalls: number;
   heartbeats: string[];
+  lastRegisterPayload: () => ManifestPayload | undefined;
 }
 
 interface MakeTransportOptions {
@@ -27,13 +30,16 @@ interface MakeTransportOptions {
 }
 
 function makeTransport(options: MakeTransportOptions = {}): RecordedTransport {
+  let lastPayload: ManifestPayload | undefined;
   const state: RecordedTransport = {
     registerCalls: 0,
     heartbeatCalls: 0,
     unregisterCalls: 0,
     heartbeats: [],
+    lastRegisterPayload: () => lastPayload,
     async register(payload) {
       state.registerCalls += 1;
+      lastPayload = payload;
       if (options.registerImpl) return options.registerImpl();
       return { pillarId: payload.pillar };
     },
@@ -82,6 +88,43 @@ describe('bootstrapPillar', () => {
 
     await handle.stop();
     expect(transport.unregisterCalls).toBe(1);
+  });
+
+  it('coerces a non-semver version (e.g. git SHA) into a valid semver prerelease', async () => {
+    const manifest = validManifest();
+    manifest.version = '9c163ed63e147ebe10a9e1711546b5c9c6a72751';
+    manifest.contract.version = '9c163ed63e147ebe10a9e1711546b5c9c6a72751';
+    manifest.contract.tag = 'contract-finance@v9c163ed63e147ebe10a9e1711546b5c9c6a72751';
+
+    const transport = makeTransport();
+    const handle = await bootstrapPillar({
+      manifest,
+      transport,
+      logger: silentLogger(),
+    });
+
+    expect(transport.registerCalls).toBe(1);
+    expect(handle.pillarId).toBe('finance');
+    const sent = transport.lastRegisterPayload();
+    expect(sent?.version).toBe('0.0.0-sha.9c163ed');
+    expect(sent?.contract.version).toBe('0.0.0-sha.9c163ed');
+    expect(sent?.contract.tag).toBe('contract-finance@v0.0.0-sha.9c163ed');
+
+    await handle.stop();
+  });
+
+  it('leaves a valid semver version unchanged', async () => {
+    const manifest = validManifest();
+    manifest.version = '1.2.3';
+    manifest.contract.version = '1.2.3';
+    manifest.contract.tag = 'contract-finance@v1.2.3';
+
+    const transport = makeTransport();
+    await bootstrapPillar({ manifest, transport, logger: silentLogger() });
+
+    const sent = transport.lastRegisterPayload();
+    expect(sent?.version).toBe('1.2.3');
+    expect(sent?.contract.tag).toBe('contract-finance@v1.2.3');
   });
 
   it('throws PillarManifestInvalidError when manifest is malformed', async () => {
