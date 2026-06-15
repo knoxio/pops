@@ -93,8 +93,52 @@ const deleteOp: OpenApiOperation = {
   },
 };
 
+const embeddingsStatusOp: OpenApiOperation = {
+  tags: ['embeddings'],
+  summary: 'Get cerebrum embeddings coverage status',
+  operationId: 'cerebrum.embeddings.getStatus',
+  parameters: [
+    {
+      name: 'sourceType',
+      in: 'query',
+      required: false,
+      schema: { type: 'string', minLength: 1 },
+    },
+  ],
+  responses: {
+    '200': {
+      description: 'Embedding coverage stats',
+      content: { 'application/json': { schema: refTo('EmbeddingsGetStatusOutput') } },
+    },
+  },
+};
+
+const embeddingsListSourceIdsOp: OpenApiOperation = {
+  tags: ['embeddings'],
+  summary: 'List distinct source ids for a cerebrum embedding source type',
+  operationId: 'cerebrum.embeddings.listSourceIdsByType',
+  parameters: [
+    {
+      name: 'sourceType',
+      in: 'query',
+      required: true,
+      schema: { type: 'string', minLength: 1 },
+    },
+  ],
+  responses: {
+    '200': {
+      description: 'Distinct source ids for the given source type',
+      content: {
+        'application/json': { schema: refTo('EmbeddingsListSourceIdsByTypeOutput') },
+      },
+    },
+  },
+};
+
 export function buildPaths(): Record<string, OpenApiPathItem> {
   return {
+    '/cerebrum/embeddings/status': { get: embeddingsStatusOp },
+    '/cerebrum/embeddings/source-ids': { get: embeddingsListSourceIdsOp },
     '/cerebrum/engrams': { get: listOp, post: createOp },
     '/cerebrum/engrams/{id}': { get: getOp, patch: updateOp, delete: deleteOp },
   };

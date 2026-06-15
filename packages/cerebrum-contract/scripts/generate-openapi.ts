@@ -70,7 +70,10 @@ function buildDocument(): OpenApiDocument {
       version: CONTRACT_VERSION,
     },
     servers: [{ url: '/api/v1', description: 'Cerebrum pillar API' }],
-    tags: [{ name: 'engrams', description: 'Cerebrum engrams' }],
+    tags: [
+      { name: 'embeddings', description: 'Cerebrum embeddings (read-only cross-pillar SDK)' },
+      { name: 'engrams', description: 'Cerebrum engrams' },
+    ],
     paths: buildPaths(),
     components: { schemas: buildComponentSchemas() },
   };

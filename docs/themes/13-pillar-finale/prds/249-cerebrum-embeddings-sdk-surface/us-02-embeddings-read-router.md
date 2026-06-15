@@ -1,10 +1,12 @@
-# US-01: Mount the read-only `embeddings.*` router on `cerebrumRouter`
+# US-02: Mount the read-only `embeddings.*` router on `cerebrumRouter`
 
 > PRD: [PRD-249 — cerebrum.embeddings.\* read-only cross-pillar SDK surface](README.md)
+>
+> Blocked by: [US-01 — schema + types](us-01-schema-and-types.md).
 
 ## Description
 
-As a cross-pillar reader (the consumer of US-02), I want `pops-cerebrum-api` to expose `cerebrum.embeddings.{getStatus, listSourceIdsByType}` with zod-validated inputs / outputs so the typed `pillar<CerebrumRouter>('cerebrum').embeddings.*` proxy resolves to a real wire endpoint.
+As a cross-pillar reader (the consumer of US-03), I want `pops-cerebrum-api` to expose `cerebrum.embeddings.{getStatus, listSourceIdsByType}` with zod-validated inputs / outputs (binding the schemas from US-01) so the typed `pillar<CerebrumRouter>('cerebrum').embeddings.*` proxy resolves to a real wire endpoint.
 
 ## Acceptance Criteria
 

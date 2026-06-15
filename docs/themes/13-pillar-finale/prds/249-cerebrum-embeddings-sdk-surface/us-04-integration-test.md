@@ -1,6 +1,8 @@
-# US-03: End-to-end integration test for `pillar('cerebrum').embeddings.*`
+# US-04: End-to-end integration test for `pillar('cerebrum').embeddings.*`
 
 > PRD: [PRD-249 — cerebrum.embeddings.\* read-only cross-pillar SDK surface](README.md)
+>
+> Blocked by: [US-02 — read router](us-02-embeddings-read-router.md).
 
 ## Description
 

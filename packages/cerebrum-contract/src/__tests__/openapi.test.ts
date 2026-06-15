@@ -65,4 +65,34 @@ describe('@pops/cerebrum-contract openapi snapshot', () => {
     expect(op).toBeDefined();
     expect(op?.operationId).toBe('cerebrum.engrams.list');
   });
+
+  it('describes the cerebrum.embeddings.getStatus read endpoint', () => {
+    const op = openapi.paths['/cerebrum/embeddings/status']?.['get'];
+    expect(op).toBeDefined();
+    expect(op?.operationId).toBe('cerebrum.embeddings.getStatus');
+  });
+
+  it('describes the cerebrum.embeddings.listSourceIdsByType read endpoint', () => {
+    const op = openapi.paths['/cerebrum/embeddings/source-ids']?.['get'];
+    expect(op).toBeDefined();
+    expect(op?.operationId).toBe('cerebrum.embeddings.listSourceIdsByType');
+  });
+
+  it('exposes no mutating verb on the embeddings paths (read-only surface)', () => {
+    const status = openapi.paths['/cerebrum/embeddings/status'] ?? {};
+    const sourceIds = openapi.paths['/cerebrum/embeddings/source-ids'] ?? {};
+    for (const method of Object.keys(status)) {
+      expect(method).toBe('get');
+    }
+    for (const method of Object.keys(sourceIds)) {
+      expect(method).toBe('get');
+    }
+  });
+
+  it('references the embeddings input/output schemas under components/schemas', () => {
+    expect(openapi.components.schemas).toHaveProperty('EmbeddingsGetStatusInput');
+    expect(openapi.components.schemas).toHaveProperty('EmbeddingsGetStatusOutput');
+    expect(openapi.components.schemas).toHaveProperty('EmbeddingsListSourceIdsByTypeInput');
+    expect(openapi.components.schemas).toHaveProperty('EmbeddingsListSourceIdsByTypeOutput');
+  });
 });

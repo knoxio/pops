@@ -1,10 +1,12 @@
-# US-02: Flip `core/embeddings/service.ts` from `@pops/cerebrum-db` to `pillar('cerebrum').embeddings.*`
+# US-03: Flip `core/embeddings/service.ts` from `@pops/cerebrum-db` to `pillar('cerebrum').embeddings.*`
 
 > PRD: [PRD-249 — cerebrum.embeddings.\* read-only cross-pillar SDK surface](README.md)
+>
+> Blocked by: [US-02 — read router](us-02-embeddings-read-router.md).
 
 ## Description
 
-As an `apps/pops-api` core-pillar maintainer, I want `core/embeddings/service.ts` flipped from its direct `@pops/cerebrum-db` `embeddings` table reads to the typed `pillar('cerebrum').embeddings.*` SDK calls so the H8 violation entry for this file drops from `.dependency-cruiser-known-violations.json`. Jointly with PRD-249 US-01 (the surface) this US closes [PRD-246](../246-shell-api-pillar-decoupling/README.md) US-04 Site 1.
+As an `apps/pops-api` core-pillar maintainer, I want `core/embeddings/service.ts` flipped from its direct `@pops/cerebrum-db` `embeddings` table reads to the typed `pillar('cerebrum').embeddings.*` SDK calls so the H8 violation entry for this file drops from `.dependency-cruiser-known-violations.json`. Jointly with PRD-249 US-01 + US-02 (the schemas and the router) this US closes [PRD-246](../246-shell-api-pillar-decoupling/README.md) US-04 Site 1.
 
 ## Acceptance Criteria
 
