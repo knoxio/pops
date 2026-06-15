@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { getSettingValue } from '../../core/settings/service.js';
 
-import type { ItemUploadedFileRow } from '@pops/db-types';
+import type { ItemUploadedFileRow } from '@pops/inventory-db';
 
 export type { ItemUploadedFileRow };
 

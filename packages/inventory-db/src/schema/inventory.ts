@@ -1,9 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-import { entities } from './entities.js';
 import { locations } from './locations.js';
-import { transactions } from './transactions.js';
 
 export const homeInventory = sqliteTable(
   'home_inventory',
@@ -26,12 +24,8 @@ export const homeInventory = sqliteTable(
     warrantyExpires: text('warranty_expires'),
     replacementValue: real('replacement_value'),
     resaleValue: real('resale_value'),
-    purchaseTransactionId: text('purchase_transaction_id').references(() => transactions.id, {
-      onDelete: 'set null',
-    }),
-    purchasedFromId: text('purchased_from_id').references(() => entities.id, {
-      onDelete: 'set null',
-    }),
+    purchaseTransactionId: text('purchase_transaction_id'),
+    purchasedFromId: text('purchased_from_id'),
     purchasedFromName: text('purchased_from_name'),
     purchasePrice: real('purchase_price'),
     // Uniqueness is enforced via the explicit `idx_inventory_asset_id`

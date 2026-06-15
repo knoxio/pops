@@ -13,8 +13,7 @@ import { asc, count, eq, inArray } from 'drizzle-orm';
 import { LocationNotFoundError } from '../errors.js';
 import { homeInventory, locations } from '../schema.js';
 
-import type { LocationRow } from '@pops/db-types';
-
+import type { LocationRow } from '../row-types.js';
 import type { InventoryDb } from './internal.js';
 
 /** Stats returned before confirming a delete. */

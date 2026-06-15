@@ -6,7 +6,7 @@
  * HTTP-agnostic and only exposes the service surface, row types, and
  * the canonical row→public-shape mapper needed to call it.
  */
-import type { ItemDocumentRow } from '@pops/db-types';
+import type { ItemDocumentRow } from '../row-types.js';
 
 export type { ItemDocumentRow };
 

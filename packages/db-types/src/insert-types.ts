@@ -18,6 +18,16 @@ import type {
   reflexExecutions,
 } from '@pops/cerebrum-db';
 import type {
+  fixtures,
+  homeInventory,
+  itemConnections,
+  itemDocuments,
+  itemFixtureConnections,
+  itemPhotos,
+  itemUploadedFiles,
+  locations,
+} from '@pops/inventory-db';
+import type {
   comparisonDimensions,
   comparisonSkipCooloffs,
   comparisonStaleness,
@@ -44,12 +54,6 @@ import type { budgets } from './schema/budgets.js';
 import type { transactionCorrections } from './schema/corrections.js';
 import type { entities } from './schema/entities.js';
 import type { environments } from './schema/environments.js';
-import type { homeInventory } from './schema/inventory.js';
-import type { itemConnections } from './schema/item-connections.js';
-import type { itemDocuments } from './schema/item-documents.js';
-import type { itemPhotos } from './schema/item-photos.js';
-import type { itemUploadedFiles } from './schema/item-uploaded-files.js';
-import type { locations } from './schema/locations.js';
 import type { settings } from './schema/settings.js';
 import type { tierOverrides } from './schema/tier-overrides.js';
 import type { transactions } from './schema/transactions.js';
@@ -72,8 +76,10 @@ export type WatchHistoryInsert = InferInsertModel<typeof watchHistory>;
 export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimensions>;
 export type ComparisonInsert = InferInsertModel<typeof comparisons>;
 export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
+export type FixtureInsert = InferInsertModel<typeof fixtures>;
 export type LocationInsert = InferInsertModel<typeof locations>;
 export type ItemConnectionInsert = InferInsertModel<typeof itemConnections>;
+export type ItemFixtureConnectionInsert = InferInsertModel<typeof itemFixtureConnections>;
 export type ItemPhotoInsert = InferInsertModel<typeof itemPhotos>;
 export type ItemUploadedFileInsert = InferInsertModel<typeof itemUploadedFiles>;
 export type ItemDocumentInsert = InferInsertModel<typeof itemDocuments>;

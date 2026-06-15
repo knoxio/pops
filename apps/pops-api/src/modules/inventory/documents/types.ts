@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { ItemDocumentRow } from '@pops/db-types';
+import type { ItemDocumentRow } from '@pops/inventory-db';
 
 export type { ItemDocumentRow };
 
