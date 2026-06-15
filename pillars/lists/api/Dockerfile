@@ -9,63 +9,26 @@ WORKDIR /app
 # Workspace root manifests — needed for pnpm install to resolve.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./
 
-# Phase 1: every workspace package.json. pnpm-workspace.yaml lists every
-# member; if any are missing at install time pnpm fails with
-# ERR_PNPM_WORKSPACE_PKG_NOT_FOUND. src/ + migrations/ for non-transitive
-# packages are intentionally NOT copied (PRD-252 / audit H-D1).
-COPY apps/pops-api/package.json ./apps/pops-api/
-COPY apps/pops-cerebrum-api/package.json ./apps/pops-cerebrum-api/
-COPY apps/pops-cli/package.json ./apps/pops-cli/
-COPY apps/pops-core-api/package.json ./apps/pops-core-api/
-COPY apps/pops-docs/package.json ./apps/pops-docs/
-COPY apps/pops-finance-api/package.json ./apps/pops-finance-api/
-COPY apps/pops-food-api/package.json ./apps/pops-food-api/
-COPY apps/pops-ha-bridge-api/package.json ./apps/pops-ha-bridge-api/
-COPY apps/pops-inventory-api/package.json ./apps/pops-inventory-api/
-COPY apps/pops-mcp/package.json ./apps/pops-mcp/
-COPY apps/pops-media-api/package.json ./apps/pops-media-api/
-COPY apps/pops-shell/package.json ./apps/pops-shell/
-COPY apps/pops-storybook/package.json ./apps/pops-storybook/
-COPY apps/pops-worker-food/package.json ./apps/pops-worker-food/
-COPY packages/api-client/package.json ./packages/api-client/
-COPY packages/app-ai/package.json ./packages/app-ai/
-COPY packages/app-cerebrum/package.json ./packages/app-cerebrum/
-COPY packages/app-finance/package.json ./packages/app-finance/
-COPY packages/app-food/package.json ./packages/app-food/
-COPY packages/app-food-db/package.json ./packages/app-food-db/
-COPY packages/app-inventory/package.json ./packages/app-inventory/
-COPY packages/app-lists/package.json ./packages/app-lists/
-COPY packages/app-media/package.json ./packages/app-media/
+# Phase 1: only the package.json of @pops/lists-api and its transitive
+# @pops/* deps. `pnpm install --filter "@pops/lists-api..."` (below)
+# scopes the lockfile resolution to that subgraph, so unrelated
+# pillars never need to be present in this image's build context
+# (audit follow-up to PRD-253 — kills the "every pillar's package.json
+# in every pillar's image" coupling).
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
-COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY packages/core-contract/package.json ./packages/core-contract/
-COPY packages/core-db/package.json ./packages/core-db/
-COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
-COPY packages/finance-db/package.json ./packages/finance-db/
-COPY packages/food-contract/package.json ./packages/food-contract/
-COPY packages/food-contracts/package.json ./packages/food-contracts/
-COPY packages/food-db/package.json ./packages/food-db/
-COPY packages/ha-bridge-db/package.json ./packages/ha-bridge-db/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
-COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/media-contract/package.json ./packages/media-contract/
-COPY packages/media-db/package.json ./packages/media-db/
-COPY packages/module-registry/package.json ./packages/module-registry/
-COPY packages/navigation/package.json ./packages/navigation/
-COPY packages/overlay-ego/package.json ./packages/overlay-ego/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/wire-conformance/package.json ./packages/wire-conformance/
 COPY pillars/lists/api/package.json ./pillars/lists/api/
 COPY pillars/lists/app-db-legacy/package.json ./pillars/lists/app-db-legacy/
-COPY pillars/lists/contract/package.json ./pillars/lists/contract/
 COPY pillars/lists/db/package.json ./pillars/lists/db/
 
-# Install pnpm + every workspace dependency.
+# Install pnpm + only the deps of the @pops/lists-api subgraph.
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    corepack enable && pnpm install --frozen-lockfile
+    corepack enable && pnpm install --frozen-lockfile --filter "@pops/lists-api..."
 
 # Phase 2: sources for the transitive @pops/* deps of @pops/lists-api
 # (resolved via `pnpm m ls --filter "@pops/lists-api..." --json`).

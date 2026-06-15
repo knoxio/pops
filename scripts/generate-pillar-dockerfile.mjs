@@ -137,8 +137,13 @@ export function copySourcesFor(repoRoot, pkgDir) {
  *
  * @param {object} args
  * @param {string} args.pillar pillar slug (e.g. "core")
- * @param {string[]} args.allWorkspacePaths every workspace package dir
- *   (repo-relative), sorted. Used for Phase 1 package.json COPY lines.
+ * @param {string[]} args.subgraphPackagePaths transitive `@pops/*` deps of
+ *   the target app (INCLUDING the target itself), as repo-relative dirs,
+ *   sorted. Used for Phase 1 package.json COPY lines — unrelated pillars
+ *   do NOT appear here, so `pops-core-api/Dockerfile` no longer mentions
+ *   `lists`, etc. Phase 1 + the `--filter "${appPkgName}..."` install
+ *   together remove the awful "every pillar's package.json on every
+ *   pillar's image" coupling (audit follow-up to PRD-253).
  * @param {{ name: string, path: string, sources: string[] }[]} args.sharedDeps
  *   transitive `@pops/*` deps EXCLUDING the target app, each with the
  *   already-resolved Phase 2 source COPY paths (repo-relative).
@@ -149,7 +154,7 @@ export function copySourcesFor(repoRoot, pkgDir) {
  *   compatibility with pre-colocation layouts.
  * @returns {string}
  */
-export function renderDockerfile({ pillar, allWorkspacePaths, sharedDeps, appSources, appDir }) {
+export function renderDockerfile({ pillar, subgraphPackagePaths, sharedDeps, appSources, appDir }) {
   const resolvedAppDir = appDir ?? `apps/pops-${pillar}-api`;
   const appPkgName = `@pops/${pillar}-api`;
   const lines = [];
@@ -166,17 +171,19 @@ export function renderDockerfile({ pillar, allWorkspacePaths, sharedDeps, appSou
   push(`# Workspace root manifests — needed for pnpm install to resolve.`);
   push(`COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc.json ./`);
   push(``);
-  push(`# Phase 1: every workspace package.json. pnpm-workspace.yaml lists every`);
-  push(`# member; if any are missing at install time pnpm fails with`);
-  push(`# ERR_PNPM_WORKSPACE_PKG_NOT_FOUND. src/ + migrations/ for non-transitive`);
-  push(`# packages are intentionally NOT copied (PRD-252 / audit H-D1).`);
-  for (const p of allWorkspacePaths) {
+  push(`# Phase 1: only the package.json of ${appPkgName} and its transitive`);
+  push(`# @pops/* deps. \`pnpm install --filter "${appPkgName}..."\` (below)`);
+  push(`# scopes the lockfile resolution to that subgraph, so unrelated`);
+  push(`# pillars never need to be present in this image's build context`);
+  push(`# (audit follow-up to PRD-253 — kills the "every pillar's package.json`);
+  push(`# in every pillar's image" coupling).`);
+  for (const p of subgraphPackagePaths) {
     push(`COPY ${p}/package.json ./${p}/`);
   }
   push(``);
-  push(`# Install pnpm + every workspace dependency.`);
+  push(`# Install pnpm + only the deps of the ${appPkgName} subgraph.`);
   push(`RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \\`);
-  push(`    corepack enable && pnpm install --frozen-lockfile`);
+  push(`    corepack enable && pnpm install --frozen-lockfile --filter "${appPkgName}..."`);
   push(``);
   push(`# Phase 2: sources for the transitive @pops/* deps of ${appPkgName}`);
   push(`# (resolved via \`pnpm m ls --filter "${appPkgName}..." --json\`).`);
@@ -231,7 +238,6 @@ export function renderDockerfile({ pillar, allWorkspacePaths, sharedDeps, appSou
  *
  * @param {object} args
  * @param {string} args.pillar
- * @param {string[]} args.allWorkspacePaths
  * @param {{ name: string, path: string }[]} args.transitiveDeps
  *   includes the target itself
  * @param {(pkgDir: string) => string[]} args.sourcesFor
@@ -239,13 +245,7 @@ export function renderDockerfile({ pillar, allWorkspacePaths, sharedDeps, appSou
  *   (repo-relative). Defaults to `apps/pops-<pillar>-api`.
  * @returns {string}
  */
-export function generateDockerfile({
-  pillar,
-  allWorkspacePaths,
-  transitiveDeps,
-  sourcesFor,
-  appDir,
-}) {
+export function generateDockerfile({ pillar, transitiveDeps, sourcesFor, appDir }) {
   const resolvedAppDir = appDir ?? `apps/pops-${pillar}-api`;
   const appPkgName = `@pops/${pillar}-api`;
 
@@ -253,6 +253,8 @@ export function generateDockerfile({
   if (!transitivePaths.has(resolvedAppDir)) {
     throw new Error(`pnpm did not return the target app ${appPkgName} in its dependency graph`);
   }
+
+  const subgraphPackagePaths = transitiveDeps.map((d) => d.path).toSorted();
 
   const sharedDeps = transitiveDeps
     .filter((d) => d.path !== resolvedAppDir)
@@ -263,7 +265,7 @@ export function generateDockerfile({
 
   return renderDockerfile({
     pillar,
-    allWorkspacePaths,
+    subgraphPackagePaths,
     sharedDeps,
     appSources,
     appDir: resolvedAppDir,
@@ -290,13 +292,11 @@ if (isMain) {
     process.exit(1);
   }
 
-  const allWorkspacePaths = listWorkspacePackagePaths(REPO_ROOT);
   const transitiveDeps = listPillarTransitiveDeps(REPO_ROOT, appPkgName);
   const sourcesFor = (pkgDir) => copySourcesFor(REPO_ROOT, pkgDir);
 
   const dockerfile = generateDockerfile({
     pillar,
-    allWorkspacePaths,
     transitiveDeps,
     sourcesFor,
     appDir,
