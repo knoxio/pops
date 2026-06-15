@@ -25,7 +25,7 @@ import { eq } from 'drizzle-orm';
 
 import { type FoodDb, ingestSources, recipesService } from '@pops/app-food-db';
 
-import type { IngestJobResult } from '@pops/food-contracts';
+import type { IngestJobResult } from '@pops/food/queue';
 
 const INGEST_RECIPE_SLUG_PREFIX = 'ingest-source-';
 /** Lightweight match against `@recipe(... title="...")` — the DSL grammar in

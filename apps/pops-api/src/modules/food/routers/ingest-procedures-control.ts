@@ -16,7 +16,7 @@ import { type FoodDb, ingestSources } from '@pops/app-food-db';
 import { getFoodIngestQueue } from '../queue.js';
 import { enqueueIngestJob, type EnqueueResult } from '../services/ingest-enqueue.js';
 
-import type { IngestJobData } from '@pops/food-contracts';
+import type { IngestJobData } from '@pops/food/queue';
 
 /** Mirror of `packages/app-food/src/storage/ingest-paths.ts`. */
 const DEFAULT_FOOD_INGEST_DIR = './data/food/ingest';

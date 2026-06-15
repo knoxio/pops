@@ -39,15 +39,16 @@ const contractBoundaryRules = [
     },
   },
   {
-    name: 'no-cross-pillar-runtime-import-food',
+    name: 'no-cross-pillar-runtime-import-inventory',
     severity: 'error',
     comment:
-      'Non-owning code must not import @pops/food-db. Use @pops/food-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
+      'Non-owning code must not import @pops/inventory-db. Use @pops/inventory-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-food-api|packages/food-db|packages/food-contract/scripts)/',
+      pathNot:
+        '^(apps/pops-inventory-api|packages/inventory-db|packages/inventory-contract/scripts)/',
     },
     to: {
-      path: '^packages/food-db/',
+      path: '^packages/inventory-db/',
     },
   },
   {

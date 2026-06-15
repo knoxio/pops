@@ -1,56 +1,114 @@
-name: Food Quality
+name: Food Pillar Quality
+
+# Comprehensive standalone quality gate for the collapsed food pillar.
+# Mirrors lists-quality.yml + inventory-quality.yml shape.
 
 on:
   push:
     branches: [main]
     paths:
-      - "packages/api-client/**"
-      - "packages/app-food/**"
-      - "packages/db-types/**"
-      - "packages/food-contract/**"
+      - "pillars/food/**"
+      - "packages/core-db/**"
+      - "packages/media-db/**"
       - "packages/pillar-sdk/**"
-      - "packages/ui/**"
+      - "packages/types/**"
+      - "packages/cerebrum-contract/**"
+      - "packages/core-contract/**"
+      - "packages/finance-contract/**"
+      - "packages/media-contract/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
       - ".github/workflows/food-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/api-client/**"
-      - "packages/app-food/**"
-      - "packages/db-types/**"
-      - "packages/food-contract/**"
+      - "pillars/food/**"
+      - "packages/core-db/**"
+      - "packages/media-db/**"
       - "packages/pillar-sdk/**"
-      - "packages/ui/**"
+      - "packages/types/**"
+      - "packages/cerebrum-contract/**"
+      - "packages/core-contract/**"
+      - "packages/finance-contract/**"
+      - "packages/media-contract/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
       - ".github/workflows/food-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
+
+concurrency:
+  group: food-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Detect changes
+  quality:
+    name: Food pillar — typecheck + test + lint + format + build
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    outputs:
-      relevant: ${{ steps.filter.outputs.relevant }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            relevant:
-              - 'packages/api-client/**'
-              - 'packages/app-food/**'
-              - 'packages/db-types/**'
-              - 'packages/food-contract/**'
-              - 'packages/pillar-sdk/**'
-              - 'packages/ui/**'
-              - '.github/workflows/food-quality.yml'
-              - '.github/workflows/_pkg-check.yml'
 
-  quality:
-    needs: [changes]
-    if: always()
-    uses: ./.github/workflows/_pkg-check.yml
-    with:
-      package-path: packages/app-food
-      needs-db-build: true
-      skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install (subgraph only)
+        run: pnpm install --frozen-lockfile --filter "@pops/food..."
+
+      - name: Format check
+        run: pnpm exec oxfmt --check pillars/food/
+
+      - name: Lint
+        run: pnpm exec oxlint pillars/food/src
+
+      - name: Build transitive deps
+        run: pnpm --filter "@pops/food^..." build
+
+      - name: Typecheck
+        run: pnpm --filter @pops/food typecheck
+
+      - name: Build pillar
+        run: pnpm --filter @pops/food build
+
+      - name: Verify OpenAPI snapshot is up to date
+        run: |
+          pnpm --filter @pops/food generate:openapi
+          git diff --exit-code pillars/food/openapi/food.openapi.json
+
+      - name: Verify manifest.generated.ts is up to date
+        run: |
+          pnpm --filter @pops/food generate:manifest
+          git diff --exit-code pillars/food/src/contract/manifest.generated.ts
+
+      - name: Test
+        run: pnpm --filter @pops/food test
+
+  docker:
+    name: Food pillar — Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build pillar image (builder stage only — fast feedback)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/food/Dockerfile
+          target: builder
+          push: false
+
+      - name: Build pillar image (full)
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/food/Dockerfile
+          push: false
+          tags: pops-food:${{ github.sha }}
