@@ -38,15 +38,15 @@ The Dockerfile comments blame pnpm workspace resolver, but only the package.json
 
 ## User Stories
 
-| #   | Story                                        | Status      | Parallelisable       |
-| --- | -------------------------------------------- | ----------- | -------------------- |
-| 01  | generator + drift-check (land with core-api) | Done        | Foundational         |
-| 02  | cerebrum Dockerfile                          | Done        | After US-01          |
-| 03  | finance Dockerfile                           | Done        | Parallel after US-01 |
-| 04  | inventory Dockerfile                         | Done        | Parallel after US-01 |
-| 05  | food Dockerfile                              | Done        | Parallel after US-01 |
-| 06  | lists Dockerfile                             | Done        | Parallel after US-01 |
-| 07  | media Dockerfile                             | Done        | Parallel after US-01 |
+| #   | Story                                        | Status | Parallelisable       |
+| --- | -------------------------------------------- | ------ | -------------------- |
+| 01  | generator + drift-check (land with core-api) | Done   | Foundational         |
+| 02  | cerebrum Dockerfile                          | Done   | After US-01          |
+| 03  | finance Dockerfile                           | Done   | Parallel after US-01 |
+| 04  | inventory Dockerfile                         | Done   | Parallel after US-01 |
+| 05  | food Dockerfile                              | Done   | Parallel after US-01 |
+| 06  | lists Dockerfile                             | Done   | Parallel after US-01 |
+| 07  | media Dockerfile                             | Done   | Parallel after US-01 |
 
 ## Acceptance Criteria
 
