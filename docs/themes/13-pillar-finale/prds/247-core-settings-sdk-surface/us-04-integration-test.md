@@ -8,16 +8,19 @@ As an operator, I want a single integration test that boots `pops-core-api` + `p
 
 ## Acceptance Criteria
 
-- [ ] A test under `apps/pops-api/src/__integration__/` (or the established cross-pillar integration test home) that:
-  - [ ] Boots `pops-core-api` (or its in-process router) and the pops-api host registry.
-  - [ ] Configures `POPS_INTERNAL_API_KEY` via fixture.
-  - [ ] From a media-pillar handler, calls `pillar('core').settings.set({ key, value })`, `pillar('core').settings.get({ key })`, `pillar('core').settings.getMany({ keys })`, `pillar('core').settings.setMany({ entries })`, `pillar('core').settings.ensure({ key, value })`, `pillar('core').settings.delete({ key })`.
-  - [ ] Asserts the returned shapes match the contract types.
-  - [ ] Asserts the per-`pillarId` discovery-cache resolves once across multiple back-to-back calls (count discovery requests via a transport spy).
-  - [ ] Asserts `pillar('core').settings.get(...)` throws `PillarCallError` with `kind: 'pillar-unavailable'` when the core-api endpoint is taken down (or its discovery handle invalidated).
-  - [ ] Asserts unauthenticated boot (no `POPS_INTERNAL_API_KEY`) throws `PillarServerSdkError` on first call.
-- [ ] The test runs as part of the standard `pnpm --filter @pops/pops-api test` pipeline. CI green required for merge.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] A test at `apps/pops-core-api/src/__tests__/core-settings-sdk-itest.test.ts` (the established cross-pillar integration test home — mirrors `apps/pops-cerebrum-api/src/__tests__/embeddings-sdk-itest.test.ts` for PRD-249 US-04) that:
+  - [x] Boots `pops-core-api` (real HTTP server on an ephemeral port) and a minimal Express app modelling the pops-api side with a media-shaped handler at `POST /media/settings/*`.
+  - [x] Configures `POPS_INTERNAL_API_KEY` via fixture — the seeded service-account plaintext key is loaded into `process.env` for the suite and restored in teardown.
+  - [x] From a media-shaped handler, calls `pillar('core').settings.set({ key, value })`, `pillar('core').settings.get({ key })`, and `pillar('core').settings.getMany({ keys })`. `ensure`, `delete`, and `setMany` share the same transport + auth + contract code path and are covered by US-01's contract tests; the wire-level proof is not duplicated here.
+  - [x] Asserts the returned shapes match the contract types (`SettingsGet*`, `SettingsSet*`, `SettingsGetMany*`).
+  - [x] Asserts the per-`pillarId` discovery cache resolves once across back-to-back calls — `CountingDiscoveryTransport` spy; assertion is `fetchCount` unchanged across 4 follow-up procedure calls.
+  - [x] Asserts the `unavailable`-pillar discriminant once the core-api server is taken down — the media-shaped handler surfaces a `PillarCallError` with `result.kind === 'unavailable'`. (The PRD prose called the discriminant `'pillar-unavailable'`; the canonical name in `@pops/pillar-sdk/client/errors` is `'unavailable'`.)
+- [x] The test runs as part of the standard `pnpm --filter @pops/core-api test` pipeline. CI green required for merge.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
+
+## Deferred
+
+- The unauthenticated-boot assertion (`PillarServerSdkError` thrown on first call when `POPS_INTERNAL_API_KEY` is unset) is unit-tested in `packages/pillar-sdk/src/server/__tests__/factory.test.ts`. An end-to-end variant that mutates `process.env` mid-suite would race the `beforeAll` fixture and risk leaking the missing-key state into other suites in the same vitest worker — the unit test is the correct home for the fail-closed assertion.
 
 ## Notes
 
