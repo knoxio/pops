@@ -1,6 +1,6 @@
 import { and, isNotNull, ne } from 'drizzle-orm';
 
-import { transactions as transactionsTable } from '@pops/db-types';
+import { transactions as transactionsTable } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 

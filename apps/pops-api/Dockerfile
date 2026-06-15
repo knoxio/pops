@@ -79,12 +79,11 @@ COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 COPY apps/pops-api/scripts ./apps/pops-api/scripts
 
-# Build shared packages first.
-# media-db / inventory-db / app-lists-db / cerebrum-db / food-db /
-# finance-db / core-db own canonical schemas; db-types re-exports them
-# via a transition shim, so all seven MUST build BEFORE db-types
-# (PRD-245 US-01 cerebrum + US-02 inventory + US-03 finance + US-04
-# media + US-05 food + US-06 lists + US-07 core / audit H6).
+# Build shared packages first. After PRD-245 US-08 the pillar `-db`
+# packages own their schemas and `@pops/db-types` is a leaf constants
+# package — order between db-types and the pillars no longer matters.
+WORKDIR /app/packages/db-types
+RUN pnpm build
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db
@@ -98,8 +97,6 @@ RUN pnpm build
 WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/finance-db
-RUN pnpm build
-WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build

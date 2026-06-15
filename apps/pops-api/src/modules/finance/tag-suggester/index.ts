@@ -18,7 +18,7 @@
  */
 import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 
-import { entities } from '@pops/db-types';
+import { entities } from '@pops/core-db';
 import { transactionTagRules } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';

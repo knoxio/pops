@@ -22,8 +22,7 @@ import { gatherQualityInputsForVersions } from '../inbox/gather-quality-inputs.j
 import { ingestSources, recipes, recipeVersions } from '../schema.js';
 import { type JoinedDraftRow, paginate, scoreAndFilter } from './inbox-queries-drafts-helpers.js';
 
-import type { IngestSourceKind } from '@pops/db-types';
-
+import type { IngestSourceKind } from '../schema.js';
 import type { InboxDraftRow, ListDraftsFilter } from './inbox-queries-drafts-types.js';
 import type { ListPage } from './inbox-queries-shared.js';
 import type { FoodDb } from './internal.js';

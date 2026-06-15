@@ -6,7 +6,7 @@
  * single source of truth — both tabs paginate `(timestamp DESC, id DESC)`
  * with the same monotonicity guarantees.
  */
-import type { IngestSourceKind } from '@pops/db-types';
+import type { IngestSourceKind } from '../schema.js';
 
 export type RejectionReason =
   | 'wrong-recipe'

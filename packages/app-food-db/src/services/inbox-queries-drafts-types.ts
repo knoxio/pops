@@ -1,5 +1,7 @@
 import { type QualityBand, type QualitySignal, type CompileStatus } from '../inbox/quality.js';
 
+import type { PartialReason } from '@pops/food-contracts';
+
 /**
  * PRD-134 — shared types + the cursor codec for the Drafts inbox tab.
  *
@@ -8,8 +10,7 @@ import { type QualityBand, type QualitySignal, type CompileStatus } from '../inb
  * pipeline) both reach for the same shapes — and so each module stays under
  * the per-file lint cap.
  */
-import type { IngestSourceKind } from '@pops/db-types';
-import type { PartialReason } from '@pops/food-contracts';
+import type { IngestSourceKind } from '../schema.js';
 
 export type DraftSort = 'quality-asc' | 'quality-desc' | 'oldest' | 'newest';
 

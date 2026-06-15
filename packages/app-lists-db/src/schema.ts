@@ -2,10 +2,7 @@
  * Lists domain table barrel.
  *
  * Canonical definitions for lists-owned tables (`lists`, `list_items`) live
- * in this package per PRD-245 US-06 (audit H6/H7). `@pops/db-types`
- * re-exports these tables as a transition shim so legacy import sites keep
- * compiling until PRD-245 US-08 deletes the shim. Pillar consumers should
- * import from `@pops/app-lists-db` directly.
+ * in this package per PRD-245 US-06 (audit H6/H7).
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 

@@ -7,10 +7,6 @@
  * adapters + filters, nudge_log, reflex_executions, embeddings) live
  * in this package per PRD-245 US-01 (audit H6/H7).
  *
- * `@pops/db-types` re-exports these tables as a transition shim so
- * legacy import sites keep compiling until PRD-245 US-08 deletes the
- * shim. Pillar consumers should import from `@pops/cerebrum-db`
- * directly.
  *
  * Currently exposes:
  *   - `nudgeLog` — PRD-084 reflex/nudge audit trail.

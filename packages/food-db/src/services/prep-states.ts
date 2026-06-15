@@ -9,7 +9,8 @@
 import { eq } from 'drizzle-orm';
 
 import { PrepStateNotFoundError } from '../errors.js';
-import { prepStates, type PrepStateRow } from '../schema.js';
+import { type PrepStateRow } from '../row-types.js';
+import { prepStates } from '../schema.js';
 
 import type { FoodDb } from './internal.js';
 

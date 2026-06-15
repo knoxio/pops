@@ -5,7 +5,7 @@ import { episodes, seasons, tvShows } from '@pops/media-db';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 
-import type { SeasonRow } from '@pops/db-types';
+import type { SeasonRow } from '@pops/media-db';
 /**
  * Add TV show to library — fetches TheTVDB metadata and inserts
  * show + seasons + episodes in a single transaction on `media.db`.

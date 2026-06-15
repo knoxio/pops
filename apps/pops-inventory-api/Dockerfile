@@ -71,18 +71,11 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # (resolved via `pnpm m ls --filter "@pops/inventory-api..." --json`).
 # A change in a non-listed package does NOT invalidate this image's
 # Phase 2 layer.
-# @pops/app-lists-db
-COPY packages/app-lists-db/src ./packages/app-lists-db/src
-COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/tsconfig.json
 # @pops/cerebrum-contract
 COPY packages/cerebrum-contract/src ./packages/cerebrum-contract/src
 COPY packages/cerebrum-contract/scripts ./packages/cerebrum-contract/scripts
 COPY packages/cerebrum-contract/openapi ./packages/cerebrum-contract/openapi
 COPY packages/cerebrum-contract/tsconfig.json ./packages/cerebrum-contract/tsconfig.json
-# @pops/cerebrum-db
-COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
-COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
-COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/tsconfig.json
 # @pops/core-contract
 COPY packages/core-contract/src ./packages/core-contract/src
 COPY packages/core-contract/scripts ./packages/core-contract/scripts
@@ -92,23 +85,11 @@ COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/core-db/tsconfig.json ./packages/core-db/tsconfig.json
-# @pops/db-types
-COPY packages/db-types/src ./packages/db-types/src
-COPY packages/db-types/scripts ./packages/db-types/scripts
-COPY packages/db-types/tsconfig.json ./packages/db-types/tsconfig.json
 # @pops/finance-contract
 COPY packages/finance-contract/src ./packages/finance-contract/src
 COPY packages/finance-contract/scripts ./packages/finance-contract/scripts
 COPY packages/finance-contract/openapi ./packages/finance-contract/openapi
 COPY packages/finance-contract/tsconfig.json ./packages/finance-contract/tsconfig.json
-# @pops/finance-db
-COPY packages/finance-db/src ./packages/finance-db/src
-COPY packages/finance-db/migrations ./packages/finance-db/migrations
-COPY packages/finance-db/tsconfig.json ./packages/finance-db/tsconfig.json
-# @pops/food-db
-COPY packages/food-db/src ./packages/food-db/src
-COPY packages/food-db/migrations ./packages/food-db/migrations
-COPY packages/food-db/tsconfig.json ./packages/food-db/tsconfig.json
 # @pops/inventory-contract
 COPY packages/inventory-contract/src ./packages/inventory-contract/src
 COPY packages/inventory-contract/scripts ./packages/inventory-contract/scripts

@@ -215,6 +215,10 @@ function buildSymbolToTableMap() {
   /** @type {Map<string, { tableName: string; indexNames: string[]; sourceFile: string }>} */
   const map = new Map();
 
+  if (!existsSync(schemaDir)) {
+    return map;
+  }
+
   for (const file of walkTsFiles(schemaDir)) {
     if (file.endsWith('-row-schemas.ts')) continue;
     const src = readFileSync(file, 'utf8');

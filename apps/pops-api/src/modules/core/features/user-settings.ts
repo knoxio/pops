@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 
-import { userSettings } from '@pops/db-types/schema';
+import { userSettings } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 

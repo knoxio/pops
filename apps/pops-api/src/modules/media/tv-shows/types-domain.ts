@@ -1,5 +1,4 @@
-import type { EpisodeRow, SeasonRow } from '@pops/db-types';
-import type { TvShowRow } from '@pops/media-db';
+import type { EpisodeRow, SeasonRow, TvShowRow } from '@pops/media-db';
 
 export type { EpisodeRow, SeasonRow, TvShowRow };
 

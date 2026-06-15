@@ -5,9 +5,6 @@
  * tag rules, budgets, corrections, tag vocabulary, wishlist, tier overrides)
  * live in this package per PRD-245 US-03 (audit H6/H7).
  *
- * `@pops/db-types` re-exports these tables as a transition shim so legacy
- * import sites keep compiling until PRD-245 US-08 deletes the shim. Pillar
- * consumers should import from `@pops/finance-db` directly.
  *
  * `entities` is re-exported from `@pops/core-db` — the canonical owner per
  * PRD-245 US-07. Previously this barrel pulled from a local schema-shadow

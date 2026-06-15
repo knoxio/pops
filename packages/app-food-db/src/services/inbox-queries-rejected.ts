@@ -27,9 +27,13 @@
  */
 import { and, desc, eq, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 
-import { aiInferenceLog } from '@pops/db-types';
-
-import { ingestSources, recipes, recipeVersionRejections, recipeVersions } from '../schema.js';
+import {
+  aiInferenceLog,
+  ingestSources,
+  recipes,
+  recipeVersionRejections,
+  recipeVersions,
+} from '../schema.js';
 import {
   encodeCursor,
   type ListPage,

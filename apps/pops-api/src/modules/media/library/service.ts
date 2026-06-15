@@ -10,7 +10,7 @@ import { toMovie } from '../movies/types.js';
  * Library service — orchestrates adding media to the local library
  * by fetching metadata from external APIs and inserting records.
  */
-import type { MovieRow } from '@pops/db-types';
+import type { MovieRow } from '@pops/media-db';
 
 import type { Movie, UpdateMovieInput } from '../movies/types.js';
 import type { TmdbClient } from '../tmdb/client.js';

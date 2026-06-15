@@ -1,7 +1,7 @@
 import { and, eq, gt } from 'drizzle-orm';
 
 import { embeddings } from '@pops/cerebrum-db';
-import { aiUsage } from '@pops/db-types';
+import { aiUsage } from '@pops/core-db';
 
 import { getDrizzle } from '../../db.js';
 import { getCerebrumDrizzle, getCerebrumRawDb } from '../../db/cerebrum-handle.js';

@@ -40,26 +40,3 @@ jobs:
       has-test: false
       needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
-
-  row-schemas:
-    name: Row schemas drift
-    needs: [changes]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Skip — no relevant changes"
-        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
-        run: echo "Skipping — no relevant changes"
-      - uses: actions/checkout@v6
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-      - uses: pnpm/action-setup@v5
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-      - uses: actions/setup-node@v6
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-        with:
-          node-version: "22"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
-      - run: pnpm --filter @pops/db-types lint:row-schemas
-        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'

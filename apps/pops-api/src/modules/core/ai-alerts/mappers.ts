@@ -6,7 +6,7 @@ import { ALERT_RULE_TYPES, ALERT_SEVERITIES } from './types.js';
  * Centralises the integer ↔ boolean and enum widening so callers never
  * need to repeat those conversions.
  */
-import type { AiAlertRow, AiAlertRuleRow } from '@pops/db-types';
+import type { AiAlertRow, AiAlertRuleRow } from '@pops/core-db';
 
 import type { AlertRule, AlertRuleType, AlertSeverity, FiredAlert } from './types.js';
 

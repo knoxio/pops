@@ -83,7 +83,6 @@
     "@pops/cerebrum-db": "workspace:*",
     "@pops/core-contract": "workspace:*",
     "@pops/core-db": "workspace:*",
-    "@pops/db-types": "workspace:*",
     "@pops/finance-contract": "workspace:*",
     "@pops/finance-db": "workspace:*",
     "@pops/food-contracts": "workspace:*",

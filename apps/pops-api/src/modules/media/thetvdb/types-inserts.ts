@@ -1,7 +1,7 @@
 import { extractGenreNames, extractNetworkNames, mapArtworks } from './types-mappers.js';
 
 /** Drizzle insert value builders for TheTVDB → POPS DB. */
-import type { EpisodeInsert, SeasonInsert, TvShowInsert } from '@pops/db-types';
+import type { EpisodeInsert, SeasonInsert, TvShowInsert } from '@pops/media-db';
 
 import type { TvdbEpisode, TvdbSeasonSummary, TvdbShowDetail } from './types-domain.js';
 

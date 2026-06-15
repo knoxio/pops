@@ -7,12 +7,7 @@
  * tags, slug registry, recipe-version rejections, prep states) live in
  * this package per PRD-245 US-05 (audit H6/H7).
  *
- * `@pops/db-types` re-exports these tables as a transition shim so
- * legacy import sites keep compiling until PRD-245 US-08 deletes the
- * shim. Pillar consumers should import from `@pops/food-db` directly.
  */
-import type { prepStates as prepStatesTable } from './schema/food-ingredients.js';
-
 export { batchConsumptions, batches, recipeRuns } from './schema/food-batches.js';
 export { recipeLines, recipeSteps, recipeVersionProposedSlugs } from './schema/food-compile.js';
 export { ingredientWeights, unitConversions } from './schema/food-conversions.js';
@@ -29,6 +24,3 @@ export { planEntries, planSlots } from './schema/food-plan.js';
 export { recipes, recipeTags, recipeVersions } from './schema/food-recipes.js';
 export { recipeVersionRejections } from './schema/food-rejections.js';
 export { substitutions } from './schema/food-substitutions.js';
-
-export type PrepStateRow = typeof prepStatesTable.$inferSelect;
-export type PrepStateInsert = typeof prepStatesTable.$inferInsert;

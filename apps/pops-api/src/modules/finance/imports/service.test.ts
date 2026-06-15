@@ -2,7 +2,7 @@ import { count, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { entities as entitiesTable } from '@pops/db-types';
+import { entities as entitiesTable } from '@pops/core-db';
 import { transactionCorrections, transactions as transactionsTable } from '@pops/finance-db';
 
 import { closeDb, setDb } from '../../../db.js';

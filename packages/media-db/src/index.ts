@@ -11,6 +11,7 @@
  * remaining slices (watchlist, watch history, comparisons, rotation,
  * discovery, debrief, movies, tv shows, …) follow in subsequent PRs.
  */
+export * from './row-types.js';
 export * from './schema.js';
 
 export type { MediaDb } from './services/internal.js';

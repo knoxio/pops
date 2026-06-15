@@ -15,6 +15,7 @@
  * service unchanged; this barrel is purely additive.
  */
 export * from './errors.js';
+export * from './row-types.js';
 export * from './schema.js';
 
 export type { FoodDb } from './services/internal.js';

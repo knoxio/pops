@@ -7,7 +7,7 @@
  */
 import { z } from 'zod';
 
-import type { LocationRow } from '@pops/db-types';
+import type { LocationRow } from '@pops/inventory-db';
 
 /** API response shape for a location. */
 export interface Location {

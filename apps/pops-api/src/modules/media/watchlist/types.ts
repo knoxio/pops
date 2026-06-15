@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { MEDIA_TYPES } from '@pops/db-types';
+import { MEDIA_TYPES } from '@pops/media-db';
 
-import type { MediaWatchlistRow } from '@pops/db-types';
+import type { MediaWatchlistRow } from '@pops/media-db';
 
 export type { MediaWatchlistRow };
 

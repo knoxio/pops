@@ -10,30 +10,16 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./schema": {
-      "types": "./dist/schema/index.d.ts",
-      "default": "./dist/schema/index.js"
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "default": "./dist/constants.js"
     }
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
-    "gen:row-schemas": "node scripts/gen-row-schemas.mjs",
-    "lint:row-schemas": "node scripts/gen-row-schemas.mjs --check",
     "test": "echo \"(no tests in @pops/db-types)\""
-  },
-  "dependencies": {
-    "@pops/app-lists-db": "workspace:*",
-    "@pops/cerebrum-db": "workspace:*",
-    "@pops/core-db": "workspace:*",
-    "@pops/finance-db": "workspace:*",
-    "@pops/food-db": "workspace:*",
-    "@pops/inventory-db": "workspace:*",
-    "@pops/media-db": "workspace:*",
-    "drizzle-orm": "^0.45.2",
-    "drizzle-zod": "^0.8.3",
-    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",

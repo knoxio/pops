@@ -6,10 +6,10 @@
  * surface stays stable when the underlying tRPC procedure types are
  * regenerated.
  */
-import { type IngestSourceKind } from '@pops/db-types';
+import { type IngestSourceKind } from '@pops/app-food-db';
 
 export type { FailedRow, RejectedRow, RejectionReason } from '@pops/app-food-db';
-export type { IngestSourceKind } from '@pops/db-types';
+export type { IngestSourceKind } from '@pops/app-food-db';
 
 export type SinceDays = 7 | 30 | 90 | null;
 

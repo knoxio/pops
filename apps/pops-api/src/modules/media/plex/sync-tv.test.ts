@@ -156,7 +156,7 @@ describe('importTvShowsFromPlex', () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
@@ -213,13 +213,13 @@ describe('importTvShowsFromPlex', () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
     mockGetTvShowByTvdbId.mockReturnValue({
       id: 1,
-    } as unknown as import('@pops/db-types').TvShowRow);
+    } as unknown as import('@pops/media-db').TvShowRow);
     makeMockDb({ id: 10 }, { id: 100 });
     mockLogWatch.mockReturnValue({
       entry: { id: 1 },
@@ -248,13 +248,13 @@ describe('importTvShowsFromPlex', () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
     mockGetTvShowByTvdbId.mockReturnValue({
       id: 1,
-    } as unknown as import('@pops/db-types').TvShowRow);
+    } as unknown as import('@pops/media-db').TvShowRow);
 
     const ep = makePlexEpisode({ viewCount: 0, lastViewedAt: null });
     const show = makePlexShow();
@@ -271,13 +271,13 @@ describe('importTvShowsFromPlex', () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
     mockGetTvShowByTvdbId.mockReturnValue({
       id: 1,
-    } as unknown as import('@pops/db-types').TvShowRow);
+    } as unknown as import('@pops/media-db').TvShowRow);
     makeMockDb(); // No season found
 
     const ep = makePlexEpisode({ viewCount: 1 });
@@ -299,7 +299,7 @@ describe('importTvShowsFromPlex', () => {
     const goodShow = makePlexShow({ ratingKey: '2', title: 'Good Show' });
 
     mockAddTvShow.mockRejectedValueOnce(new Error('TVDB timeout')).mockResolvedValueOnce({
-      show: { id: 2, title: 'Good Show' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 2, title: 'Good Show' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
@@ -319,7 +319,7 @@ describe('importTvShowsFromPlex', () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Test' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Test' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
@@ -361,13 +361,13 @@ describe('importTvShowsFromPlex', () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
     mockGetTvShowByTvdbId.mockReturnValue({
       id: 1,
-    } as unknown as import('@pops/db-types').TvShowRow);
+    } as unknown as import('@pops/media-db').TvShowRow);
     makeMockDb({ id: 10 }, { id: 100 });
     mockLogWatch.mockImplementation(() => {
       throw new Error('UNIQUE constraint failed');
@@ -402,7 +402,7 @@ describe('importTvShowsFromPlex', () => {
     });
 
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Test' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Test' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
@@ -427,13 +427,13 @@ describe('importTvShowsFromPlex', () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
     mockAddTvShow.mockResolvedValue({
-      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/db-types').TvShowRow,
+      show: { id: 1, title: 'Breaking Bad' } as unknown as import('@pops/media-db').TvShowRow,
       seasons: [],
       created: true,
     });
     mockGetTvShowByTvdbId.mockReturnValue({
       id: 1,
-    } as unknown as import('@pops/db-types').TvShowRow);
+    } as unknown as import('@pops/media-db').TvShowRow);
     makeMockDb({ id: 10 }, { id: 100 });
 
     const ep = makePlexEpisode({ viewCount: 1, lastViewedAt: 1711400000 });
@@ -456,13 +456,13 @@ describe('importTvShowsFromPlex', () => {
 
     mockAddTvShow
       .mockResolvedValueOnce({
-        show: { id: 1, title: 'Show 1' } as unknown as import('@pops/db-types').TvShowRow,
+        show: { id: 1, title: 'Show 1' } as unknown as import('@pops/media-db').TvShowRow,
         seasons: [],
         created: true,
       })
       .mockRejectedValueOnce(new Error('TVDB fetch failed for show 2'))
       .mockResolvedValueOnce({
-        show: { id: 3, title: 'Show 3' } as unknown as import('@pops/db-types').TvShowRow,
+        show: { id: 3, title: 'Show 3' } as unknown as import('@pops/media-db').TvShowRow,
         seasons: [],
         created: true,
       });

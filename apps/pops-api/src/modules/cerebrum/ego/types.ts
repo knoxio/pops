@@ -1,7 +1,7 @@
 /**
  * Ego conversation types, ID generation, and mapping helpers.
  */
-import type { conversations, messages } from '@pops/db-types/schema';
+import type { conversations, messages } from '@pops/cerebrum-db';
 
 // ---------------------------------------------------------------------------
 // ID generation

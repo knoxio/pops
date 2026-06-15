@@ -8,7 +8,7 @@ import type {
   CanonicalUnit,
   IngredientWeightRow as DbIngredientWeightRow,
   UnitConversionRow as DbUnitConversionRow,
-} from '@pops/db-types';
+} from '@pops/food-db';
 
 export type CanonicalUnitZ = z.ZodType<CanonicalUnit>;
 export const CanonicalUnitSchema: CanonicalUnitZ = z.enum(['g', 'ml', 'count']);

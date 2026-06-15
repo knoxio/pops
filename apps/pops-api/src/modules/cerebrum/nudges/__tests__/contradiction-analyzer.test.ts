@@ -9,7 +9,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/core-db', () => ({
   settings: { key: { name: 'key' }, value: { name: 'value' } },
 }));
 

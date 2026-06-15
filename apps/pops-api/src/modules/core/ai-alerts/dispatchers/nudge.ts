@@ -10,7 +10,7 @@
  * here is enough to make the alert visible alongside other proactive
  * nudges.
  */
-import { nudgeLog } from '@pops/db-types';
+import { nudgeLog } from '@pops/cerebrum-db';
 
 import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
 import { logger } from '../../../../lib/logger.js';

@@ -9,7 +9,10 @@
  */
 import { and, eq, inArray } from 'drizzle-orm';
 
-import { embeddings, homeInventory, movies, transactions, tvShows } from '@pops/db-types';
+import { embeddings } from '@pops/cerebrum-db';
+import { transactions } from '@pops/finance-db';
+import { homeInventory } from '@pops/inventory-db';
+import { movies, tvShows } from '@pops/media-db';
 
 import {
   EMBEDDINGS_JOB_OPTIONS,

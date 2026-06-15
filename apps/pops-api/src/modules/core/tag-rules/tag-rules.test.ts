@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { tagVocabulary, transactionTagRules } from '@pops/db-types';
+import { tagVocabulary, transactionTagRules } from '@pops/finance-db';
 
 import { getDrizzle } from '../../../db.js';
 import { setupTestContext } from '../../../shared/test-utils.js';

@@ -1,6 +1,6 @@
 import { parseJsonStringArray } from '../../../shared/json.js';
 
-import type { TransactionCorrectionRow } from '@pops/db-types';
+import type { TransactionCorrectionRow } from '@pops/finance-db';
 
 export type CorrectionRow = TransactionCorrectionRow;
 

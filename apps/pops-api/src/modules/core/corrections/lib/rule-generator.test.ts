@@ -25,8 +25,11 @@ vi.mock('../../../../db.js', () => {
   };
 });
 
-vi.mock('@pops/db-types', () => ({
+vi.mock('@pops/core-db', () => ({
   aiUsage: {},
+}));
+
+vi.mock('@pops/finance-db', () => ({
   transactions: { tags: 'tags' },
 }));
 
