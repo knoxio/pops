@@ -1,15 +1,15 @@
 /**
  * Local re-export of the food domain tables.
  *
- * Canonical definitions live in `@pops/db-types/src/schema/food.ts` so the
- * drizzle-kit config (which globs `packages/db-types/src/schema/*`) picks
- * them up and the rest of the platform sees a single schema barrel.
+ * Canonical definitions for food-owned tables live in `@pops/food-db`
+ * (PRD-245 US-05). `aiInferenceLog` stays in `@pops/db-types` since the
+ * AI surface is core-owned (core US-07).
  *
  * Services in this package import from here for ergonomics and so that
  * the food module's read surface stays self-describing.
  */
+export { aiInferenceLog } from '@pops/db-types';
 export {
-  aiInferenceLog,
   batchConsumptions,
   batches,
   ingestSources,
@@ -32,7 +32,7 @@ export {
   slugRegistry,
   substitutions,
   unitConversions,
-} from '@pops/db-types';
+} from '@pops/food-db';
 export type {
   BatchConsumptionInsert,
   BatchConsumptionRow,

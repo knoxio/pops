@@ -22,7 +22,7 @@ import { join, resolve } from 'node:path';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 
-import { recipes } from '@pops/db-types';
+import { recipes } from '@pops/food-db';
 
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';

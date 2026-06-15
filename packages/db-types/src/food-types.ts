@@ -1,16 +1,15 @@
 /**
- * Food-domain inferred types.
+ * Drizzle `InferSelectModel<T>` / `InferInsertModel<T>` aliases for
+ * food-owned tables.
  *
- * Re-exported from `./index.ts` for ergonomic consumer imports — this file
- * is the home so `index.ts` stays under the 200-line max-lines cap as the
- * food schema grows.
- *
- * See `packages/db-types/src/schema/food.ts` for the table definitions and
- * `docs/themes/07-food/` for the per-table PRDs.
+ * Split out of `index.ts` (and out of the old `./food.ts`) to keep
+ * that file under the file-size lint cap once `@pops/db-types`
+ * re-exports the food schemas from `@pops/food-db` (PRD-245 US-05).
+ * Public surface stays unchanged: `index.ts` re-exports
+ * `* from './food-types.js'`.
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
-import type { substitutions } from './schema/food-substitutions.js';
 import type {
   batchConsumptions,
   batches,
@@ -32,8 +31,9 @@ import type {
   recipeVersionRejections,
   recipeVersions,
   slugRegistry,
+  substitutions,
   unitConversions,
-} from './schema/food.js';
+} from '@pops/food-db';
 
 // PRD-106
 export type SlugRegistryRow = InferSelectModel<typeof slugRegistry>;
@@ -48,7 +48,6 @@ export type IngredientAliasRow = InferSelectModel<typeof ingredientAliases>;
 export type IngredientAliasInsert = InferInsertModel<typeof ingredientAliases>;
 
 // PRD-151
-export { ingredientTags } from './schema/food.js';
 export type IngredientTagRow = InferSelectModel<typeof ingredientTags>;
 export type IngredientTagInsert = InferInsertModel<typeof ingredientTags>;
 

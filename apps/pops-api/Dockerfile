@@ -80,10 +80,10 @@ COPY apps/pops-api/src ./apps/pops-api/src
 COPY apps/pops-api/scripts ./apps/pops-api/scripts
 
 # Build shared packages first.
-# media-db / inventory-db / app-lists-db / cerebrum-db own canonical schemas;
-# db-types re-exports them via a transition shim, so all four MUST build
-# BEFORE db-types (PRD-245 US-01 cerebrum + US-02 inventory + US-04 media +
-# US-06 lists / audit H6).
+# media-db / inventory-db / app-lists-db / cerebrum-db / food-db own
+# canonical schemas; db-types re-exports them via a transition shim, so
+# all five MUST build BEFORE db-types (PRD-245 US-01 cerebrum +
+# US-02 inventory + US-04 media + US-05 food + US-06 lists / audit H6).
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db
@@ -91,6 +91,8 @@ RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
+RUN pnpm build
+WORKDIR /app/packages/food-db
 RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build
@@ -103,8 +105,6 @@ RUN pnpm build
 WORKDIR /app/packages/core-db
 RUN pnpm build
 WORKDIR /app/packages/finance-db
-RUN pnpm build
-WORKDIR /app/packages/food-db
 RUN pnpm build
 WORKDIR /app/packages/lists-db
 RUN pnpm build

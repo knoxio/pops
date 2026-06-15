@@ -35,7 +35,7 @@ import {
   recipesService,
   variantsService,
 } from '@pops/app-food-db';
-import { ingestSources } from '@pops/db-types';
+import { ingestSources } from '@pops/food-db';
 
 import { closeDb, getDrizzle, setDb } from '../../../db.js';
 import { createCaller } from '../../../shared/test-utils.js';

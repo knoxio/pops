@@ -81,9 +81,9 @@ export {
   recipeVersionRejections,
   recipeVersions,
   slugRegistry,
+  substitutions,
   unitConversions,
-} from './food.js';
-export { substitutions } from './food-substitutions.js';
+} from '@pops/food-db';
 export { listItems, lists } from '@pops/app-lists-db';
 export { pillarRegistry } from './pillar-registry.js';
 export { serviceAccounts } from './service-accounts.js';

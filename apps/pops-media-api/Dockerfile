@@ -11,6 +11,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
+COPY packages/food-db/package.json ./packages/food-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
@@ -41,6 +42,9 @@ COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
+COPY packages/food-db/src ./packages/food-db/src
+COPY packages/food-db/tsconfig.json ./packages/food-db/
+COPY packages/food-db/migrations ./packages/food-db/migrations
 COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
@@ -55,10 +59,10 @@ COPY apps/pops-media-api/tsconfig.json ./apps/pops-media-api/
 COPY apps/pops-media-api/src ./apps/pops-media-api/src
 
 # Build shared packages first.
-# media-db / inventory-db / app-lists-db / cerebrum-db own canonical schemas;
-# db-types re-exports them via a transition shim, so all four MUST build
-# BEFORE db-types (PRD-245 US-01 cerebrum + US-02 inventory + US-04 media +
-# US-06 lists / audit H6).
+# media-db / inventory-db / app-lists-db / cerebrum-db / food-db own
+# canonical schemas; db-types re-exports them via a transition shim, so
+# all five MUST build BEFORE db-types (PRD-245 US-01 cerebrum +
+# US-02 inventory + US-04 media + US-05 food + US-06 lists / audit H6).
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db
@@ -66,6 +70,8 @@ RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
+RUN pnpm build
+WORKDIR /app/packages/food-db
 RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build
