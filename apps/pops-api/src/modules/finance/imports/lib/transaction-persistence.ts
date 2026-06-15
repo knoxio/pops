@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm';
 
-import { entities, type TransactionRow } from '@pops/db-types';
+import { entities } from '@pops/db-types';
 import {
   importsService,
   tagVocabularyService,
   type InsertImportTransactionInput,
+  type TransactionRow,
 } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';

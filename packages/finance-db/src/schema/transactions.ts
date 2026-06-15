@@ -1,7 +1,5 @@
 import { index, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-import { entities } from './entities.js';
-
 export const transactions = sqliteTable(
   'transactions',
   {
@@ -15,9 +13,7 @@ export const transactions = sqliteTable(
     date: text('date').notNull(),
     type: text('type').notNull(),
     tags: text('tags').notNull().default('[]'),
-    entityId: text('entity_id').references(() => entities.id, {
-      onDelete: 'set null',
-    }),
+    entityId: text('entity_id'),
     entityName: text('entity_name'),
     location: text('location'),
     country: text('country'),

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { BudgetRow } from '@pops/db-types';
+import type { BudgetRow } from '@pops/finance-db';
 import type { BudgetWithSpend } from '@pops/finance-db';
 
 export type { BudgetRow };

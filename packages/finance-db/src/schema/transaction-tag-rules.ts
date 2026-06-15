@@ -1,8 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { entities } from './entities.js';
-
 export const transactionTagRules = sqliteTable(
   'transaction_tag_rules',
   {
@@ -14,7 +12,7 @@ export const transactionTagRules = sqliteTable(
       .notNull()
       .default('exact'),
     /** Optional group scoping: apply only for a specific entity. */
-    entityId: text('entity_id').references(() => entities.id, { onDelete: 'set null' }),
+    entityId: text('entity_id'),
     tags: text('tags').notNull().default('[]'),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     // CHECK: confidence >= 0.0 AND confidence <= 1.0

@@ -7,6 +7,16 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
+import type {
+  budgets,
+  tagVocabulary,
+  tierOverrides,
+  transactionCorrections,
+  transactionTagRules,
+  transactions,
+  wishList,
+} from '@pops/finance-db';
+
 import type { aiAlertRules } from './schema/ai-alert-rules.js';
 import type { aiAlerts } from './schema/ai-alerts.js';
 import type { aiBudgets } from './schema/ai-budgets.js';
@@ -14,17 +24,10 @@ import type { aiInferenceLog } from './schema/ai-inference-log.js';
 import type { aiModelPricing } from './schema/ai-model-pricing.js';
 import type { aiProviders } from './schema/ai-providers.js';
 import type { aiUsage } from './schema/ai-usage.js';
-import type { budgets } from './schema/budgets.js';
-import type { transactionCorrections } from './schema/corrections.js';
 import type { entities } from './schema/entities.js';
 import type { environments } from './schema/environments.js';
 // `lists` table types are re-exported via `./lists.js` below.
 import type { settings } from './schema/settings.js';
-import type { tagVocabulary } from './schema/tag-vocabulary.js';
-import type { tierOverrides } from './schema/tier-overrides.js';
-import type { transactionTagRules } from './schema/transaction-tag-rules.js';
-import type { transactions } from './schema/transactions.js';
-import type { wishList } from './schema/wishlist.js';
 
 // Re-export Drizzle table objects for use in queries
 export {

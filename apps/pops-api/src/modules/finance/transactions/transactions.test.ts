@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { transactions as transactionsTable } from '@pops/db-types';
+import { transactions as transactionsTable } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import {

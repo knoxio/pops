@@ -1,8 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { entities } from './entities.js';
-
 export const transactionCorrections = sqliteTable(
   'transaction_corrections',
   {
@@ -13,9 +11,7 @@ export const transactionCorrections = sqliteTable(
     matchType: text('match_type', { enum: ['exact', 'contains', 'regex'] })
       .notNull()
       .default('exact'),
-    entityId: text('entity_id').references(() => entities.id, {
-      onDelete: 'set null',
-    }),
+    entityId: text('entity_id'),
     entityName: text('entity_name'),
     location: text('location'),
     tags: text('tags').notNull().default('[]'),

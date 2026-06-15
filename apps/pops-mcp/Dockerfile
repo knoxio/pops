@@ -87,10 +87,11 @@ COPY apps/pops-mcp/src ./apps/pops-mcp/src
 
 # Build shared packages first (module-registry needs db-types + types;
 # app-food-db is consumed by pops-api routers).
-# media-db / inventory-db / app-lists-db / cerebrum-db / food-db own
-# canonical schemas; db-types re-exports them via a transition shim, so
-# all five MUST build BEFORE db-types (PRD-245 US-01 cerebrum +
-# US-02 inventory + US-04 media + US-05 food + US-06 lists / audit H6).
+# media-db / inventory-db / app-lists-db / cerebrum-db / food-db /
+# finance-db own canonical schemas; db-types re-exports them via a
+# transition shim, so all six MUST build BEFORE db-types (PRD-245
+# US-01 cerebrum + US-02 inventory + US-03 finance + US-04 media +
+# US-05 food + US-06 lists / audit H6).
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db
@@ -101,6 +102,8 @@ WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
 WORKDIR /app/packages/food-db
 RUN pnpm build
+WORKDIR /app/packages/finance-db
+RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
@@ -110,8 +113,6 @@ RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/core-db
-RUN pnpm build
-WORKDIR /app/packages/finance-db
 RUN pnpm build
 WORKDIR /app/packages/lists-db
 RUN pnpm build

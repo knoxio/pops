@@ -1,6 +1,6 @@
 import { and, eq, isNotNull, ne } from 'drizzle-orm';
 
-import { tagVocabulary, transactions } from '@pops/db-types';
+import { tagVocabulary, transactions } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { suggestTags } from '../../tag-suggester/index.js';

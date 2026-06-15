@@ -1,6 +1,6 @@
 import { and, like, sql } from 'drizzle-orm';
 
-import { wishList } from '@pops/db-types';
+import { wishList } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 
