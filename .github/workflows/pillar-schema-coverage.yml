@@ -36,15 +36,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build pillar packages
-        run: |
-          pnpm --filter @pops/db-types build
-          pnpm --filter @pops/core-db build
-          pnpm --filter @pops/finance-db build
-          pnpm --filter @pops/inventory-db build
-          pnpm --filter @pops/media-db build
-          pnpm --filter @pops/cerebrum-db build
-          pnpm --filter @pops/food-db build
-          pnpm --filter @pops/lists-db build
+        run: pnpm --filter "@pops/db-types^..." --filter "@pops/db-types" build
       - name: Run schema-coverage check for ${{ matrix.pillar }}
         run: node scripts/check-pillar-schema-coverage.mjs --pillar ${{ matrix.pillar }}
 
