@@ -26,7 +26,7 @@ function mockFetch(
 }
 
 describe('createHttpRegistryTransport', () => {
-  it('POSTs the manifest to /registry/register', async () => {
+  it('POSTs the manifest to /core.registry.register', async () => {
     const fetchImpl = mockFetch([{ status: 200, body: { pillarId: 'finance' } }]);
     const transport = createHttpRegistryTransport({
       baseUrl: 'http://registry.test',
@@ -37,7 +37,7 @@ describe('createHttpRegistryTransport', () => {
     expect(result.pillarId).toBe('finance');
     expect(fetchImpl).toHaveBeenCalledOnce();
     const [url, init] = (fetchImpl as ReturnType<typeof vi.fn>).mock.calls[0]!;
-    expect(url).toBe('http://registry.test/registry/register');
+    expect(url).toBe('http://registry.test/core.registry.register');
     expect((init as RequestInit).method).toBe('POST');
   });
 

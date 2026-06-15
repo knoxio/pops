@@ -97,13 +97,13 @@ export function createHttpRegistryTransport(
 
   return {
     async register(payload) {
-      return post<RegistrationResult>('/registry/register', payload);
+      return post<RegistrationResult>('/core.registry.register', payload);
     },
     async heartbeat(pillarId) {
-      return post<HeartbeatResult>('/registry/heartbeat', { pillarId });
+      return post<HeartbeatResult>('/core.registry.heartbeat', { pillarId });
     },
     async unregister(pillarId) {
-      await post<void>('/registry/unregister', { pillarId });
+      await post<void>('/core.registry.deregister', { pillarId });
     },
   };
 }
