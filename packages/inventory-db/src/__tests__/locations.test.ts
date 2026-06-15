@@ -68,9 +68,13 @@ CREATE TABLE home_inventory (
   replacement_value real,
   resale_value real,
   purchase_transaction_id text,
+  purchase_transaction_uri text,
+  purchase_transaction_stale_at text,
   purchased_from_id text,
   purchased_from_name text,
   purchase_price real,
+  owner_uri text,
+  owner_stale_at text,
   asset_id text UNIQUE,
   notes text,
   location_id text REFERENCES locations(id) ON DELETE set null,
@@ -80,6 +84,8 @@ CREATE TABLE home_inventory (
 );
 CREATE INDEX idx_inventory_location ON home_inventory (location_id);
 CREATE INDEX idx_inventory_name ON home_inventory (item_name);
+CREATE INDEX idx_inventory_purchase_transaction_uri ON home_inventory (purchase_transaction_uri);
+CREATE INDEX idx_inventory_owner_uri ON home_inventory (owner_uri);
 `;
 
 function freshDb(): InventoryDb {

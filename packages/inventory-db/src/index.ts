@@ -24,6 +24,7 @@ export * as locationsService from './services/locations.js';
 export * as itemsService from './services/items.js';
 export * as connectionsService from './services/connections.js';
 export * as documentsService from './services/documents.js';
+export * as crossPillarUrisService from './services/cross-pillar-uris.js';
 
 // Public types re-exported at the package root so consumers can name
 // them without reaching into the namespaces.

@@ -348,6 +348,9 @@ importers:
       '@trpc/server':
         specifier: ^11.17.0
         version: 11.17.0(typescript@6.0.3)
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
       express:
         specifier: ^5.1.0
         version: 5.2.1
@@ -430,6 +433,9 @@ importers:
       '@trpc/server':
         specifier: ^11.17.0
         version: 11.17.0(typescript@6.0.3)
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
       express:
         specifier: ^5.1.0
         version: 5.2.1
@@ -562,12 +568,18 @@ importers:
 
   apps/pops-inventory-api:
     dependencies:
+      '@pops/core-contract':
+        specifier: workspace:*
+        version: link:../../packages/core-contract
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
       '@pops/db-types':
         specifier: workspace:*
         version: link:../../packages/db-types
+      '@pops/finance-contract':
+        specifier: workspace:*
+        version: link:../../packages/finance-contract
       '@pops/inventory-contract':
         specifier: workspace:*
         version: link:../../packages/inventory-contract

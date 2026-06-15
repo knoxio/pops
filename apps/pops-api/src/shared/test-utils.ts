@@ -73,9 +73,12 @@ export function createTestDb(): Database {
       default_transaction_type TEXT,
       default_tags             TEXT,
       notes                    TEXT,
-      last_edited_time         TEXT NOT NULL
+      last_edited_time         TEXT NOT NULL,
+      owner_uri                TEXT,
+      owner_uri_stale_at       TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name);
+    CREATE INDEX IF NOT EXISTS idx_entities_owner_uri ON entities(owner_uri);
 
     CREATE TABLE IF NOT EXISTS transactions (
       id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -130,9 +133,13 @@ export function createTestDb(): Database {
       replacement_value      REAL,
       resale_value           REAL,
       purchase_transaction_id TEXT,
+      purchase_transaction_uri TEXT,
+      purchase_transaction_stale_at TEXT,
       purchased_from_id      TEXT,
       purchased_from_name    TEXT,
       purchase_price         REAL,
+      owner_uri              TEXT,
+      owner_stale_at         TEXT,
       asset_id               TEXT UNIQUE,
       notes                  TEXT,
       location_id            TEXT,
@@ -148,20 +155,25 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_inventory_location ON home_inventory(location_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_type ON home_inventory(type);
     CREATE INDEX IF NOT EXISTS idx_inventory_warranty ON home_inventory(warranty_expires);
+    CREATE INDEX IF NOT EXISTS idx_inventory_purchase_transaction_uri ON home_inventory(purchase_transaction_uri);
+    CREATE INDEX IF NOT EXISTS idx_inventory_owner_uri ON home_inventory(owner_uri);
 
     CREATE TABLE IF NOT EXISTS budgets (
-      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      notion_id        TEXT UNIQUE,
-      category         TEXT NOT NULL,
-      period           TEXT,
-      amount           REAL,
-      active           INTEGER NOT NULL DEFAULT 0,
-      notes            TEXT,
-      last_edited_time TEXT NOT NULL
+      id                 TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id          TEXT UNIQUE,
+      category           TEXT NOT NULL,
+      period             TEXT,
+      amount             REAL,
+      active             INTEGER NOT NULL DEFAULT 0,
+      notes              TEXT,
+      last_edited_time   TEXT NOT NULL,
+      owner_uri          TEXT,
+      owner_uri_stale_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_category_period
       ON budgets(category, COALESCE(period, '__NULL__'));
+    CREATE INDEX IF NOT EXISTS idx_budgets_owner_uri ON budgets(owner_uri);
 
     CREATE TABLE IF NOT EXISTS wish_list (
       id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

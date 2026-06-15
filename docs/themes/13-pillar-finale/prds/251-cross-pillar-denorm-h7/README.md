@@ -2,7 +2,7 @@
 
 > Epic: [Pillar isolation](../../epics/) (final-mile)
 >
-> Status: **Not started**
+> Status: **In progress**
 
 ## Overview
 
@@ -41,11 +41,11 @@ Cerebrum → media debrief denorm already landed.
 
 ## User Stories
 
-| #   | Story                      | Parallelisable |
-| --- | -------------------------- | -------------- |
-| 01  | inventory → finance denorm | Yes            |
-| 02  | inventory → core denorm    | Yes            |
-| 03  | finance → core denorm      | Yes            |
+| #   | Story                      | Status      | Parallelisable |
+| --- | -------------------------- | ----------- | -------------- |
+| 01  | inventory → finance denorm | In progress | Yes            |
+| 02  | inventory → core denorm    | In progress | Yes            |
+| 03  | finance → core denorm      | Done        | Yes            |
 
 ## Acceptance Criteria
 

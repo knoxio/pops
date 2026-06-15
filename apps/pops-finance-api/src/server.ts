@@ -26,6 +26,8 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 
 import { createFinanceApiApp } from './app.js';
 import { resolveCoreSqlitePath } from './core-sqlite-path.js';
+import { createPillarOwnerUriLookup } from './cron/pillar-lookup.js';
+import { startReconcileCrossPillarWorker } from './cron/reconcile-cross-pillar.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
 import { buildFinanceManifest } from './manifest.js';
 
@@ -53,6 +55,15 @@ if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({ manifest: buildFinanceManifest(version) });
 }
 
+const reconcileHandle = startReconcileCrossPillarWorker({
+  db: financeDb.db,
+  lookupOwnerUri: createPillarOwnerUriLookup(),
+  logger: {
+    info: (msg, meta) => console.warn(`[finance-api] ${msg}`, meta ?? {}),
+    warn: (msg, meta) => console.warn(`[finance-api] ${msg}`, meta ?? {}),
+  },
+});
+
 const server = app.listen(port, () => {
   console.warn(`[finance-api] Listening on port ${port}`);
 });
@@ -62,6 +73,7 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[finance-api] Shutting down (${signal})`);
+  reconcileHandle.stop();
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       financeDb.raw.close();

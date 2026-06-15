@@ -1,0 +1,46 @@
+/**
+ * Read-only `users` surface for PRD-251 H7 cross-pillar reconciliation.
+ *
+ * pops is a single-user system identified by an authenticated email
+ * (Cloudflare Access or in-process dev fallback). There is no `users` table
+ * — identity is the email itself, plus whatever rows happen to exist under
+ * `user_settings.user_email`. That's enough to answer the only question a
+ * sibling pillar's reconciliation cron asks: "does this user URI still
+ * resolve?".
+ *
+ * The cron resolves URIs of the form `pops://core/user/<email>`. If at
+ * least one `user_settings` row exists for the given email we consider the
+ * user known. The cron treats a `null` here as 404 — it stamps the
+ * consumer row's `*_stale_at` rather than deleting it (PRD-251 §"Existence
+ * is best-effort").
+ *
+ * No write surface is exposed: owning-pillar writes are forbidden by the
+ * PRD-251 business rules, and the dev-fallback email in `core-api/trpc.ts`
+ * is mint-on-demand.
+ */
+import { eq } from 'drizzle-orm';
+
+import { userSettings } from '../schema/user-settings.js';
+
+import type { CoreDb } from './internal.js';
+
+/** Public shape returned by `core.users.get`. */
+export interface UserRecord {
+  email: string;
+}
+
+/**
+ * Return a `UserRecord` for `email` if any `user_settings` row exists for
+ * that email, or `null` otherwise. The cron in `pops-inventory-api`
+ * branches on `null` to stamp the consumer row stale.
+ */
+export function getUser(db: CoreDb, email: string): UserRecord | null {
+  const row = db
+    .select({ userEmail: userSettings.userEmail })
+    .from(userSettings)
+    .where(eq(userSettings.userEmail, email))
+    .limit(1)
+    .all();
+  if (row.length === 0) return null;
+  return { email };
+}

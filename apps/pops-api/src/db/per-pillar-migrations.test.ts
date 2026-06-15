@@ -280,6 +280,7 @@ describe('runPerPillarMigrations', () => {
         '0005_fancy_crystal',
         '0006_inventory_pillar_baseline',
         '0007_locations_parent_sort_index',
+        '0008_cross_pillar_uri_denorm',
         '0021_spooky_lockheed',
         '0022_media_movies_baseline',
         '0023_watchlist_baseline',
@@ -313,6 +314,7 @@ describe('runPerPillarMigrations', () => {
         '0063_ai_alerts',
         '0064_ai_providers',
         '0066_user_settings',
+        '0067_entities_owner_uri',
       ]);
       expect([...result.pillarsApplied].toSorted()).toEqual([
         'cerebrum',
