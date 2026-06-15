@@ -104,6 +104,12 @@ jobs:
           node scripts/generate-pillar-dockerfile.mjs cerebrum
           git diff --exit-code apps/pops-cerebrum-api/Dockerfile
 
+      - name: Verify pops-food-api Dockerfile is up to date (PRD-252)
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: |
+          node scripts/generate-pillar-dockerfile.mjs food
+          git diff --exit-code apps/pops-food-api/Dockerfile
+
       - name: Build pops-core-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-core-api/Dockerfile .
