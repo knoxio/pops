@@ -7,6 +7,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # Copy workspace package.json files (for dep resolution)
 COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/media-db/package.json ./packages/media-db/
+COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/types/package.json ./packages/types/
 COPY packages/food-db/package.json ./packages/food-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
@@ -29,6 +30,8 @@ COPY packages/db-types/tsconfig.json ./packages/db-types/
 COPY packages/media-db/src ./packages/media-db/src
 COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
+COPY packages/app-lists-db/src ./packages/app-lists-db/src
+COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
 COPY packages/food-db/src ./packages/food-db/src
@@ -48,10 +51,12 @@ COPY apps/pops-food-api/tsconfig.json ./apps/pops-food-api/
 COPY apps/pops-food-api/src ./apps/pops-food-api/src
 
 # Build shared packages first.
-# media-db owns the canonical media table schemas and is now a leaf
-# package; db-types re-exports them via a transition shim, so media-db
-# must build BEFORE db-types (PRD-245 US-04 / audit H6).
+# media-db / app-lists-db own canonical schemas; db-types re-exports them
+# via a transition shim, so both MUST build BEFORE db-types
+# (PRD-245 US-04 media + US-06 lists / audit H6).
 WORKDIR /app/packages/media-db
+RUN pnpm build
+WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build

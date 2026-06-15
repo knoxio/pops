@@ -1696,12 +1696,15 @@ importers:
 
   packages/app-lists-db:
     dependencies:
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../db-types
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
+      drizzle-zod:
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.12
@@ -1897,6 +1900,9 @@ importers:
 
   packages/db-types:
     dependencies:
+      '@pops/app-lists-db':
+        specifier: workspace:*
+        version: link:../app-lists-db
       '@pops/media-db':
         specifier: workspace:*
         version: link:../media-db

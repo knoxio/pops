@@ -5,12 +5,12 @@
  * sub-module to keep `index.ts` under the 200-line max-lines cap as more
  * domains accrete.
  *
- * See `packages/db-types/src/schema/lists.ts` for the table definitions and
- * `docs/themes/07-food/prds/112-lists-schema/README.md` for the spec.
+ * Tables now live in `@pops/app-lists-db` (PRD-245 US-06 / audit H6).
+ * See `docs/themes/07-food/prds/112-lists-schema/README.md` for the spec.
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
-import type { listItems, lists } from './schema/lists.js';
+import type { listItems, lists } from '@pops/app-lists-db';
 
 export type ListRow = InferSelectModel<typeof lists>;
 export type ListInsert = InferInsertModel<typeof lists>;
