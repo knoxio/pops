@@ -518,28 +518,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/embeddings/service.test.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/embeddings/service.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-dismiss.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",

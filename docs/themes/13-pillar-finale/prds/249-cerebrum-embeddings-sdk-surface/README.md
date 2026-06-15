@@ -2,7 +2,7 @@
 
 > Epic: [Cross-pillar code placement](../../epics/08b-cross-pillar-code-placement.md)
 >
-> Status: **Not started** — scoping PRD. Direct unblock for [PRD-246](../246-shell-api-pillar-decoupling/README.md) US-04 Site 1 (`apps/pops-api/src/modules/core/embeddings/service.ts`).
+> Status: **Done** — closes [PRD-246](../246-shell-api-pillar-decoupling/README.md) US-04 Site 1 (`apps/pops-api/src/modules/core/embeddings/service.ts`).
 
 ## Overview
 
