@@ -20,5 +20,7 @@
   "pillarUnavailableTitle": "Pilar indisponível",
   "pillarUnavailableDescription": "O pilar {{pillar}} não está a responder. As rotas voltarão quando o pilar recuperar.",
   "pillarUnavailableRetry": "Tentar de novo",
-  "pillarUnavailableRetrying": "A verificar…"
+  "pillarUnavailableRetrying": "A verificar…",
+  "captureModal.title": "Capturar",
+  "captureModal.empty": "Nenhuma sobreposição de captura registada."
 }

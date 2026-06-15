@@ -83,6 +83,37 @@ export interface ModuleOverlayConfig {
 }
 
 /**
+ * Capture-overlay manifest contribution (PRD-246 US-03). Mirrors the
+ * wire-format `CaptureOverlayDescriptor` declared on the API-side
+ * manifest payload (PRD-246 US-01 / US-02) but stays generic so this
+ * package does not depend on React or the pillar SDK.
+ *
+ * The shell walks every installed manifest's `frontend.captureOverlay`,
+ * sorts by `order` ascending with a lexicographic tiebreak on the
+ * pillar id, picks the head, and resolves the descriptor's `bundleSlot`
+ * through the workspace bundle map to obtain the component to mount.
+ *
+ * `bundleSlot` is the kebab-case identifier the bundle map resolves to a
+ * component reference. `order` mirrors `NavConfigDescriptor.order`:
+ * ascending, ties broken alphabetically by pillar id at the shell.
+ * `hotkey` is wire-shaped (e.g. `'cmd+shift+k'`); semantic validation of
+ * the key combo is the shell's responsibility at bind time. `label` /
+ * `labelKey` follow the same pairing as `NavConfigDescriptor`.
+ */
+export interface ModuleCaptureOverlayConfig {
+  /** Bundle-slot identifier the workspace bundle map resolves to a component. */
+  bundleSlot: string;
+  /** Ascending sort key; ties broken alphabetically by pillar id. */
+  order: number;
+  /** Optional keyboard shortcut (e.g. `'cmd+shift+k'`). */
+  hotkey?: string;
+  /** Optional static label. Falls back to `labelKey` for i18n. */
+  label?: string;
+  /** Optional i18n catalog key (e.g. `'cerebrum.captureOverlay.label'`). */
+  labelKey?: string;
+}
+
+/**
  * Frontend-side manifest fields. Generic over the route and nav config types
  * so this package does not have to depend on `react-router` or `@pops/navigation`.
  */
@@ -93,6 +124,14 @@ export interface ModuleFrontendManifest<TRoutes = unknown, TNavConfig = unknown>
   navConfig?: TNavConfig;
   /** Set when `surfaces` includes `'overlay'`. */
   overlay?: ModuleOverlayConfig;
+  /**
+   * Capture-overlay contribution (PRD-246 US-03). Modules that own a
+   * capture surface — today only cerebrum's `IngestForm` — declare a
+   * descriptor here. The shell discovers the active overlay by walking
+   * every installed manifest's `frontend.captureOverlay` rather than
+   * hard-importing the contributing pillar.
+   */
+  captureOverlay?: ModuleCaptureOverlayConfig;
 }
 
 /**

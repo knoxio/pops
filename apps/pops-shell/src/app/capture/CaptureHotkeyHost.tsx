@@ -1,44 +1,40 @@
-import { useCallback, useState } from 'react';
+/**
+ * CaptureHotkeyHost — owns the global capture hotkey binding (PRD-081
+ * US-09, rewritten under PRD-246 US-03 to close audit H8/H9).
+ *
+ * Reads the active capture overlay's `hotkey` descriptor from the
+ * registry walk and binds it via `useCaptureHotkey`. The previous
+ * implementation read the hotkey from cerebrum's
+ * `CEREBRUM_CAPTURE_HOTKEY` setting via `usePillarQuery('core', …)` —
+ * that path is gone. Pillars that want a different hotkey publish a
+ * different `captureOverlay.hotkey` value on their manifest.
+ *
+ * When no manifest contributes a `captureOverlay` (e.g. cerebrum is
+ * not in the install set and no successor pillar declared the
+ * dimension), the host renders the modal anyway — the modal handles
+ * the empty surface — but does not bind any hotkey.
+ */
+import { useCallback, useMemo, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-import { SETTINGS_KEYS } from '@pops/types';
-
+import { activeCaptureOverlay, type ActiveCaptureOverlay } from './capture-registry';
 import { CaptureModal } from './CaptureModal';
 import { useCaptureHotkey } from './useCaptureHotkey';
 
-const settingKey = SETTINGS_KEYS.CEREBRUM_CAPTURE_HOTKEY;
-const defaultHotkey = 'c';
-
-type SettingGetResult = {
-  data: { value: string | null } | null;
-};
-
-interface HotkeyQueryShape {
-  isSuccess: boolean;
-  isUnavailable: boolean;
-  isContractMismatch: boolean;
-  data: SettingGetResult | undefined;
+interface CaptureHotkeyHostProps {
+  /** Test-only override; production callers leave this unset. */
+  activeOverlayOverride?: ActiveCaptureOverlay | null;
 }
 
-function resolveHotkey(q: HotkeyQueryShape): string {
-  if (q.isUnavailable || q.isContractMismatch) return defaultHotkey;
-  if (!q.isSuccess) return '';
-  return (q.data?.data?.value ?? defaultHotkey).trim();
-}
-
-export function CaptureHotkeyHost() {
+export function CaptureHotkeyHost({ activeOverlayOverride }: CaptureHotkeyHostProps = {}) {
   const [open, setOpen] = useState(false);
-  const settingQuery = usePillarQuery<SettingGetResult>('core', ['settings', 'get'], {
-    key: settingKey,
-  });
-  // Wait for the setting to resolve before binding — otherwise a user who
-  // configured an empty hotkey would briefly trigger on the default 'c'.
-  // When the SDK reports the core pillar as unavailable or the contract
-  // has drifted, fall back to the default hotkey so capture still works.
-  const hotkey = resolveHotkey(settingQuery);
+  const overlay = useMemo<ActiveCaptureOverlay | null>(
+    () => (activeOverlayOverride !== undefined ? activeOverlayOverride : activeCaptureOverlay()),
+    [activeOverlayOverride]
+  );
+  const hotkey = (overlay?.descriptor.hotkey ?? '').trim();
 
   const onTrigger = useCallback(() => setOpen(true), []);
   useCaptureHotkey({ key: hotkey, enabled: !open && hotkey.length > 0, onTrigger });
 
-  return <CaptureModal open={open} onOpenChange={setOpen} />;
+  return <CaptureModal open={open} onOpenChange={setOpen} activeOverlayOverride={overlay} />;
 }

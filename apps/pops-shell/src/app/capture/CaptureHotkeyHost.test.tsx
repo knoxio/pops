@@ -1,14 +1,16 @@
+/**
+ * PRD-246 US-03: CaptureHotkeyHost no longer reads cerebrum's
+ * CEREBRUM_CAPTURE_HOTKEY setting — it reads the active overlay's
+ * descriptor hotkey from the manifest registry walk.
+ */
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  query: vi.fn(),
-  useCaptureHotkey: vi.fn(),
-}));
+import type { ActiveCaptureOverlay } from './capture-registry';
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) =>
-    mocks.query({ pillarId, path: [...path], input }),
+const mocks = vi.hoisted(() => ({
+  useCaptureHotkey: vi.fn(),
+  activeCaptureOverlay: vi.fn<() => ActiveCaptureOverlay | null>(),
 }));
 
 vi.mock('./useCaptureHotkey', () => ({
@@ -17,74 +19,75 @@ vi.mock('./useCaptureHotkey', () => ({
   },
 }));
 
+vi.mock('./capture-registry', async () => {
+  const actual = await vi.importActual<typeof import('./capture-registry')>('./capture-registry');
+  return {
+    ...actual,
+    activeCaptureOverlay: () => mocks.activeCaptureOverlay(),
+  };
+});
+
 vi.mock('./CaptureModal', () => ({
   CaptureModal: () => null,
 }));
 
 import { CaptureHotkeyHost } from './CaptureHotkeyHost';
 
-function queryResult(extra: Record<string, unknown>) {
+const FakeMount = () => null;
+
+function syntheticOverlay(hotkey: string | undefined): ActiveCaptureOverlay {
   return {
-    isSuccess: false,
-    data: undefined,
-    isUnavailable: false,
-    isContractMismatch: false,
-    ...extra,
+    pillarId: 'cerebrum',
+    descriptor: {
+      bundleSlot: 'ingest-form',
+      order: 10,
+      hotkey,
+      labelKey: 'cerebrum.captureOverlay.label',
+    },
+    bundle: { Mount: FakeMount },
   };
 }
 
-describe('CaptureHotkeyHost', () => {
+describe('CaptureHotkeyHost (PRD-246 US-03)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.activeCaptureOverlay.mockReturnValue(null);
   });
 
-  it('queries core.settings.get for the cerebrum capture hotkey setting', () => {
-    mocks.query.mockReturnValue(queryResult({}));
-    render(<CaptureHotkeyHost />);
-    expect(mocks.query).toHaveBeenCalledWith({
-      pillarId: 'core',
-      path: ['settings', 'get'],
-      input: { key: 'cerebrum.captureHotkey' },
-    });
+  it('binds the descriptor hotkey when an overlay is registered', () => {
+    render(<CaptureHotkeyHost activeOverlayOverride={syntheticOverlay('cmd+shift+k')} />);
+    expect(mocks.useCaptureHotkey).toHaveBeenLastCalledWith(
+      expect.objectContaining({ key: 'cmd+shift+k', enabled: true })
+    );
   });
 
-  it('keeps the hotkey unbound while the query is still loading', () => {
-    mocks.query.mockReturnValue(queryResult({}));
-    render(<CaptureHotkeyHost />);
+  it('keeps the hotkey unbound when no overlay is registered', () => {
+    render(<CaptureHotkeyHost activeOverlayOverride={null} />);
     expect(mocks.useCaptureHotkey).toHaveBeenLastCalledWith(
       expect.objectContaining({ key: '', enabled: false })
     );
   });
 
-  it('binds the configured hotkey once the query resolves', () => {
-    mocks.query.mockReturnValue(queryResult({ isSuccess: true, data: { data: { value: ' g ' } } }));
-    render(<CaptureHotkeyHost />);
+  it('keeps the hotkey unbound when the descriptor declares no hotkey', () => {
+    render(<CaptureHotkeyHost activeOverlayOverride={syntheticOverlay(undefined)} />);
     expect(mocks.useCaptureHotkey).toHaveBeenLastCalledWith(
-      expect.objectContaining({ key: 'g', enabled: true })
+      expect.objectContaining({ key: '', enabled: false })
     );
   });
 
-  it('falls back to the default hotkey when the resolved value is null', () => {
-    mocks.query.mockReturnValue(queryResult({ isSuccess: true, data: { data: null } }));
+  it('falls back to the live registry walk when no override is supplied', () => {
+    mocks.activeCaptureOverlay.mockReturnValue(syntheticOverlay('cmd+shift+k'));
     render(<CaptureHotkeyHost />);
     expect(mocks.useCaptureHotkey).toHaveBeenLastCalledWith(
-      expect.objectContaining({ key: 'c', enabled: true })
+      expect.objectContaining({ key: 'cmd+shift+k', enabled: true })
     );
   });
 
-  it('falls back to the default hotkey when the core pillar is unavailable', () => {
-    mocks.query.mockReturnValue(queryResult({ isUnavailable: true }));
+  it('renders empty when the registry walk reports no overlay', () => {
+    mocks.activeCaptureOverlay.mockReturnValue(null);
     render(<CaptureHotkeyHost />);
     expect(mocks.useCaptureHotkey).toHaveBeenLastCalledWith(
-      expect.objectContaining({ key: 'c', enabled: true })
-    );
-  });
-
-  it('falls back to the default hotkey on contract mismatch', () => {
-    mocks.query.mockReturnValue(queryResult({ isContractMismatch: true }));
-    render(<CaptureHotkeyHost />);
-    expect(mocks.useCaptureHotkey).toHaveBeenLastCalledWith(
-      expect.objectContaining({ key: 'c', enabled: true })
+      expect.objectContaining({ key: '', enabled: false })
     );
   });
 });
