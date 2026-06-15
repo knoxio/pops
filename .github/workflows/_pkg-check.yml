@@ -41,7 +41,7 @@ jobs:
         if: inputs.skip != 'true'
       - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build
+        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build --if-present
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
         if: inputs.skip != 'true'
 
@@ -66,7 +66,7 @@ jobs:
         if: inputs.skip != 'true'
       - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build
+        run: pnpm --filter "./${{ inputs.package-path }}^..." --filter "!./apps/*" build --if-present
       - name: Run tests (with coverage if configured)
         if: inputs.skip != 'true'
         run: |
