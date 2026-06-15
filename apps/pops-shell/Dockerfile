@@ -70,10 +70,12 @@ COPY packages/media-contract/ ./packages/media-contract/
 COPY packages/food-contract/ ./packages/food-contract/
 COPY packages/lists-contract/ ./packages/lists-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
-# media-db owns the canonical media table schemas and is now a leaf
-# package; db-types re-exports them via a transition shim, so media-db
-# must build BEFORE db-types (PRD-245 US-04 / audit H6).
+# media-db / app-lists-db own canonical schemas; db-types re-exports them
+# via a transition shim, so both MUST build BEFORE db-types
+# (PRD-245 US-04 media + US-06 lists / audit H6).
 WORKDIR /app/packages/media-db
+RUN pnpm build
+WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/db-types
 RUN pnpm build
@@ -94,8 +96,6 @@ RUN pnpm build
 WORKDIR /app/packages/food-db
 RUN pnpm build
 WORKDIR /app/packages/lists-db
-RUN pnpm build
-WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build

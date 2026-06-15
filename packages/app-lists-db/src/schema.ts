@@ -1,18 +1,22 @@
 /**
- * Local re-export of the lists domain tables.
+ * Lists domain table barrel.
  *
- * Canonical definitions live in `@pops/db-types/src/schema/lists.ts` so the
- * drizzle-kit config (which globs `packages/db-types/src/schema/*`) picks
- * them up and the rest of the platform sees a single schema barrel.
- *
- * Services in this package import from here for ergonomics.
+ * Canonical definitions for lists-owned tables (`lists`, `list_items`) live
+ * in this package per PRD-245 US-06 (audit H6/H7). `@pops/db-types`
+ * re-exports these tables as a transition shim so legacy import sites keep
+ * compiling until PRD-245 US-08 deletes the shim. Pillar consumers should
+ * import from `@pops/app-lists-db` directly.
  */
-export { listItems, lists } from '@pops/db-types';
-export type {
-  ListInsert,
-  ListItemInsert,
-  ListItemRefKind,
-  ListItemRow,
-  ListKind,
-  ListRow,
-} from '@pops/db-types';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+
+import type { listItems as listItemsTable, lists as listsTable } from './schema/lists.js';
+
+export { listItems, lists } from './schema/lists.js';
+
+export type ListRow = InferSelectModel<typeof listsTable>;
+export type ListInsert = InferInsertModel<typeof listsTable>;
+export type ListItemRow = InferSelectModel<typeof listItemsTable>;
+export type ListItemInsert = InferInsertModel<typeof listItemsTable>;
+
+export type ListKind = ListRow['kind'];
+export type ListItemRefKind = ListItemRow['refKind'];

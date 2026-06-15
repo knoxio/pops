@@ -36,7 +36,6 @@ export * from './item-documents-row-schemas.js';
 export * from './item-fixture-connections-row-schemas.js';
 export * from './item-photos-row-schemas.js';
 export * from './item-uploaded-files-row-schemas.js';
-export * from './lists-row-schemas.js';
 export * from './locations-row-schemas.js';
 export * from './nudge-log-row-schemas.js';
 export * from './pillar-registry-row-schemas.js';
