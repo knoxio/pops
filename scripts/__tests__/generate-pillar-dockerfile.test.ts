@@ -10,6 +10,7 @@ import {
   parsePillarTransitiveDeps,
   parseWorkspacePackagePaths,
   renderDockerfile,
+  resolveAppDir,
 } from '../generate-pillar-dockerfile.mjs';
 
 interface FixtureFile {
@@ -119,23 +120,38 @@ describe('copySourcesFor', () => {
 });
 
 describe('renderDockerfile', () => {
-  it('emits Phase 1 COPY lines for every workspace package.json', () => {
+  it('emits Phase 1 COPY lines only for the pillar subgraph package.jsons', () => {
     const out = renderDockerfile({
       pillar: 'core',
-      allWorkspacePaths: ['apps/pops-core-api', 'packages/core-db', 'packages/finance-db'],
+      subgraphPackagePaths: ['apps/pops-core-api', 'packages/core-db'],
       sharedDeps: [],
       appSources: ['apps/pops-core-api/src', 'apps/pops-core-api/tsconfig.json'],
     });
 
     expect(out).toContain('COPY apps/pops-core-api/package.json ./apps/pops-core-api/');
     expect(out).toContain('COPY packages/core-db/package.json ./packages/core-db/');
-    expect(out).toContain('COPY packages/finance-db/package.json ./packages/finance-db/');
+    expect(out).not.toContain('packages/finance-db/package.json');
+    expect(out).not.toContain('packages/lists-db/package.json');
+    expect(out).not.toContain('pillars/lists/');
+  });
+
+  it('uses --filter "<appPkg>..." on pnpm install so unrelated pillars never need to exist', () => {
+    const out = renderDockerfile({
+      pillar: 'core',
+      subgraphPackagePaths: ['apps/pops-core-api', 'packages/core-db'],
+      sharedDeps: [],
+      appSources: ['apps/pops-core-api/src'],
+    });
+
+    expect(out).toContain(
+      'corepack enable && pnpm install --frozen-lockfile --filter "@pops/core-api..."'
+    );
   });
 
   it('only emits Phase 2 source COPY lines for the transitive deps', () => {
     const out = renderDockerfile({
       pillar: 'core',
-      allWorkspacePaths: ['apps/pops-core-api', 'packages/core-db', 'packages/finance-db'],
+      subgraphPackagePaths: ['apps/pops-core-api', 'packages/core-db'],
       sharedDeps: [
         {
           name: '@pops/core-db',
@@ -156,7 +172,7 @@ describe('renderDockerfile', () => {
   it('skips shared deps with no buildable sources but keeps later deps', () => {
     const out = renderDockerfile({
       pillar: 'core',
-      allWorkspacePaths: ['apps/pops-core-api'],
+      subgraphPackagePaths: ['apps/pops-core-api'],
       sharedDeps: [
         { name: '@pops/types-only', path: 'packages/types-only', sources: [] },
         {
@@ -175,7 +191,7 @@ describe('renderDockerfile', () => {
   it('uses topology-aware pnpm build filters for the pillar package', () => {
     const out = renderDockerfile({
       pillar: 'finance',
-      allWorkspacePaths: ['apps/pops-finance-api'],
+      subgraphPackagePaths: ['apps/pops-finance-api'],
       sharedDeps: [],
       appSources: ['apps/pops-finance-api/src'],
     });
@@ -188,7 +204,7 @@ describe('renderDockerfile', () => {
   it('includes the regeneration banner with the pillar name', () => {
     const out = renderDockerfile({
       pillar: 'inventory',
-      allWorkspacePaths: ['apps/pops-inventory-api'],
+      subgraphPackagePaths: ['apps/pops-inventory-api'],
       sharedDeps: [],
       appSources: ['apps/pops-inventory-api/src'],
     });
@@ -201,7 +217,7 @@ describe('renderDockerfile', () => {
   it('ends with a trailing newline', () => {
     const out = renderDockerfile({
       pillar: 'core',
-      allWorkspacePaths: [],
+      subgraphPackagePaths: [],
       sharedDeps: [],
       appSources: [],
     });
@@ -210,15 +226,9 @@ describe('renderDockerfile', () => {
 });
 
 describe('generateDockerfile', () => {
-  it('walks transitive deps and narrows Phase 2 to the pillar subgraph', () => {
+  it('walks transitive deps and narrows Phase 1 + Phase 2 to the pillar subgraph', () => {
     const out = generateDockerfile({
       pillar: 'core',
-      allWorkspacePaths: [
-        'apps/pops-core-api',
-        'apps/pops-finance-api',
-        'packages/core-db',
-        'packages/finance-db',
-      ],
       transitiveDeps: [
         { name: '@pops/core-api', path: 'apps/pops-core-api' },
         { name: '@pops/core-db', path: 'packages/core-db' },
@@ -232,10 +242,11 @@ describe('generateDockerfile', () => {
       },
     });
 
-    expect(out).toContain('COPY apps/pops-finance-api/package.json ./apps/pops-finance-api/');
-    expect(out).toContain('COPY packages/finance-db/package.json ./packages/finance-db/');
-    expect(out).not.toContain('COPY packages/finance-db/src');
-    expect(out).not.toContain('COPY packages/finance-db/migrations');
+    expect(out).toContain('COPY apps/pops-core-api/package.json ./apps/pops-core-api/');
+    expect(out).toContain('COPY packages/core-db/package.json ./packages/core-db/');
+    expect(out).not.toContain('packages/finance-db');
+    expect(out).not.toContain('packages/lists-db');
+    expect(out).not.toContain('pillars/lists/');
     expect(out).toContain('COPY packages/core-db/src ./packages/core-db/src');
     expect(out).toContain('COPY packages/core-db/migrations ./packages/core-db/migrations');
     expect(out).toContain('COPY apps/pops-core-api/src ./apps/pops-core-api/src');
@@ -244,7 +255,6 @@ describe('generateDockerfile', () => {
   it('sorts shared deps by path for deterministic output', () => {
     const out = generateDockerfile({
       pillar: 'core',
-      allWorkspacePaths: ['apps/pops-core-api'],
       transitiveDeps: [
         { name: '@pops/core-api', path: 'apps/pops-core-api' },
         { name: '@pops/types', path: 'packages/types' },
@@ -266,7 +276,6 @@ describe('generateDockerfile', () => {
     expect(() =>
       generateDockerfile({
         pillar: 'core',
-        allWorkspacePaths: ['apps/pops-core-api'],
         transitiveDeps: [{ name: '@pops/core-db', path: 'packages/core-db' }],
         sourcesFor: () => [],
       })
@@ -276,7 +285,6 @@ describe('generateDockerfile', () => {
   it('produces output stable across calls for the same input', () => {
     const args = {
       pillar: 'core' as const,
-      allWorkspacePaths: ['apps/pops-core-api', 'packages/core-db'],
       transitiveDeps: [
         { name: '@pops/core-api', path: 'apps/pops-core-api' },
         { name: '@pops/core-db', path: 'packages/core-db' },
@@ -285,5 +293,62 @@ describe('generateDockerfile', () => {
     };
 
     expect(generateDockerfile(args)).toBe(generateDockerfile(args));
+  });
+
+  it('honours an explicit appDir override for the colocated pillar layout', () => {
+    const out = generateDockerfile({
+      pillar: 'lists',
+      appDir: 'pillars/lists/api',
+      transitiveDeps: [
+        { name: '@pops/lists-api', path: 'pillars/lists/api' },
+        { name: '@pops/lists-db', path: 'pillars/lists/db' },
+      ],
+      sourcesFor: (pkgDir) => [`${pkgDir}/src`],
+    });
+
+    expect(out).toContain('COPY pillars/lists/api/src ./pillars/lists/api/src');
+    expect(out).toContain('COPY pillars/lists/db/src ./pillars/lists/db/src');
+    expect(out).toContain('COPY --from=builder --chown=node:node /app/pillars/lists/api/dist');
+    expect(out).not.toContain('apps/pops-lists-api');
+  });
+
+  it('throws when the override appDir is not in the transitive graph', () => {
+    expect(() =>
+      generateDockerfile({
+        pillar: 'lists',
+        appDir: 'pillars/lists/api',
+        transitiveDeps: [{ name: '@pops/lists-db', path: 'pillars/lists/db' }],
+        sourcesFor: () => [],
+      })
+    ).toThrow(/did not return the target app @pops\/lists-api/);
+  });
+});
+
+describe('resolveAppDir', () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'gen-dockerfile-resolve-'));
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('prefers the colocated layout when both exist', () => {
+    writeFixture(root, [
+      { path: 'pillars/lists/api/package.json', content: '{}' },
+      { path: 'apps/pops-lists-api/package.json', content: '{}' },
+    ]);
+    expect(resolveAppDir(root, 'lists')).toBe('pillars/lists/api');
+  });
+
+  it('falls back to the legacy layout when only it exists', () => {
+    writeFixture(root, [{ path: 'apps/pops-core-api/package.json', content: '{}' }]);
+    expect(resolveAppDir(root, 'core')).toBe('apps/pops-core-api');
+  });
+
+  it('returns null when neither layout exists', () => {
+    expect(resolveAppDir(root, 'ghost')).toBeNull();
   });
 });

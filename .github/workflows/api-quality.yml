@@ -11,7 +11,7 @@ on:
       - "packages/finance-db/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
-      - "packages/lists-db/**"
+      - "pillars/lists/db/**"
       - "packages/media-db/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
@@ -28,7 +28,7 @@ on:
       - "packages/finance-db/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
-      - "packages/lists-db/**"
+      - "pillars/lists/db/**"
       - "packages/media-db/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
@@ -56,7 +56,7 @@ jobs:
               - 'packages/finance-db/**'
               - 'packages/food-db/**'
               - 'packages/inventory-db/**'
-              - 'packages/lists-db/**'
+              - 'pillars/lists/db/**'
               - 'packages/media-db/**'
               - 'packages/pillar-sdk/**'
               - 'packages/types/**'

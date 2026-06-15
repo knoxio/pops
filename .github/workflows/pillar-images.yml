@@ -1,8 +1,9 @@
 name: Pillar Images
 
 # Validates per-pillar container builds (ADR-026). Discovers pillars by
-# globbing `packages/*-api/package.json` so adding a new pillar requires
-# no workflow edit — drop the package set in place and CI picks it up.
+# globbing both `packages/*-api/package.json` (pre-colocation) and
+# `pillars/*/api/package.json` (post-colocation, PRD-253) so adding or
+# relocating a pillar requires no workflow edit.
 #
 # On PRs: builds the `builder` stage only (fast feedback, no push).
 # On main: full image build (still no push — publishing is gated on
@@ -19,6 +20,7 @@ on:
       - 'packages/types/**'
       - 'packages/module-registry/**'
       - 'packages/food-contracts/**'
+      - 'pillars/*/**'
       - 'infra/docker/pillar.Dockerfile'
       - 'infra/docker-compose*.yml'
       - 'pnpm-lock.yaml'
@@ -37,6 +39,7 @@ on:
       - 'packages/types/**'
       - 'packages/module-registry/**'
       - 'packages/food-contracts/**'
+      - 'pillars/*/**'
       - 'infra/docker/pillar.Dockerfile'
       - 'infra/docker-compose*.yml'
       - 'pnpm-lock.yaml'
@@ -56,13 +59,17 @@ jobs:
       - uses: actions/checkout@v6
       - id: list
         name: Enumerate pillar -api packages
-        # A pillar's api package follows the convention
-        # `packages/<domain>-api/package.json` with name `@pops/<domain>-api`.
+        # A pillar's api package lives at either
+        # `packages/<domain>-api/package.json` (pre-colocation) or
+        # `pillars/<domain>/api/package.json` (post-colocation, PRD-253).
+        # Both layouts can coexist during the pillar-by-pillar move.
         # Anything else is ignored — `app-food-db` etc. is a pre-pillar
         # extraction and not yet a pillar.
         run: |
           set -euo pipefail
-          mapfile -t dirs < <(find packages -maxdepth 2 -type f -name package.json -path 'packages/*-api/package.json' | sort)
+          mapfile -t legacy < <(find packages -maxdepth 2 -type f -name package.json -path 'packages/*-api/package.json' 2>/dev/null | sort)
+          mapfile -t colocated < <(find pillars -maxdepth 3 -type f -name package.json -path 'pillars/*/api/package.json' 2>/dev/null | sort)
+          dirs=("${legacy[@]}" "${colocated[@]}")
           json='[]'
           if [ "${#dirs[@]}" -gt 0 ]; then
             json=$(printf '%s\n' "${dirs[@]}" \
@@ -100,6 +107,7 @@ jobs:
               - 'apps/pops-${{ matrix.pillar.short }}-api/**'
               - 'packages/${{ matrix.pillar.short }}-*/**'
               - 'packages/app-${{ matrix.pillar.short }}-*/**'
+              - 'pillars/${{ matrix.pillar.short }}/**'
               - 'packages/db-types/**'
               - 'packages/types/**'
               - 'packages/module-registry/**'

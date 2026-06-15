@@ -1728,50 +1728,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/db/lists-handle.ts",
-    "to": "packages/lists-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/lists-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-lists"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/lists/routers/error-mapping.ts",
-    "to": "packages/lists-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/lists-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-lists"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/lists/routers/items.ts",
-    "to": "packages/lists-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/lists-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-lists"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/lists/routers/list.ts",
-    "to": "packages/lists-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/lists-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-lists"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/backfill-media-from-shared.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",

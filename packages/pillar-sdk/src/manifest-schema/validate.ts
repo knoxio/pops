@@ -97,12 +97,13 @@ function walkPath(input: unknown, path: ReadonlyArray<string | number>): unknown
 }
 
 export function checkContractPackageMatchesPillar(payload: ManifestPayload): ValidationIssue[] {
-  const expected = `@pops/${payload.pillar}-contract`;
-  if (payload.contract.package === expected) return [];
+  const legacy = `@pops/${payload.pillar}-contract`;
+  const collapsed = `@pops/${payload.pillar}`;
+  if (payload.contract.package === legacy || payload.contract.package === collapsed) return [];
   return [
     {
       field: 'contract.package',
-      reason: `must match pillar id: expected ${expected}, got ${payload.contract.package}`,
+      reason: `must match pillar id: expected ${legacy} or ${collapsed}, got ${payload.contract.package}`,
       got: payload.contract.package,
       schemaPath: ['contract', 'package'],
     },

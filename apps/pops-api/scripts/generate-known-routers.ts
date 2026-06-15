@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
 const PACKAGES_DIR = join(REPO_ROOT, 'packages');
+const PILLARS_DIR = join(REPO_ROOT, 'pillars');
 const OUT_FILE = join(HERE, '../src/generated/known-routers.ts');
 
 interface ContractPackage {
@@ -45,6 +46,23 @@ export function listContractPackageDirs(packagesDir: string): readonly string[] 
     .filter((d) => d.isDirectory() && d.name.endsWith('-contract'))
     .map((d) => join(packagesDir, d.name))
     .toSorted();
+}
+
+/**
+ * Locate contract packages under the colocated pillar layout
+ * (PRD-253): every `pillars/<id>/contract/package.json` is a contract
+ * package. Returns repo-absolute directory paths, sorted. Returns an
+ * empty list if `pillars/` is absent (pre-colocation repos).
+ */
+export function listColocatedContractDirs(pillarsDir: string): readonly string[] {
+  if (!existsSync(pillarsDir)) return [];
+  const dirs: string[] = [];
+  for (const entry of readdirSync(pillarsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const contractDir = join(pillarsDir, entry.name, 'contract');
+    if (existsSync(join(contractDir, 'package.json'))) dirs.push(contractDir);
+  }
+  return dirs.toSorted();
 }
 
 export function loadContractPackage(dir: string): ContractPackage | null {
@@ -132,7 +150,10 @@ export function renderKnownRoutersSource(entries: readonly ModuleEntry[]): strin
 }
 
 function main(): void {
-  const dirs = listContractPackageDirs(PACKAGES_DIR);
+  const dirs = [
+    ...listContractPackageDirs(PACKAGES_DIR),
+    ...listColocatedContractDirs(PILLARS_DIR),
+  ];
   const contracts: ContractPackage[] = [];
   for (const dir of dirs) {
     const c = loadContractPackage(dir);

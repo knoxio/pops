@@ -23,11 +23,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@pops/app-lists-db": "workspace:*",
     "@pops/core-db": "workspace:*",
     "@pops/food-contracts": "workspace:*",
     "@pops/food-db": "workspace:*",
-    "@pops/lists-db": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
