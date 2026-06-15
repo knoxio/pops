@@ -17,9 +17,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import BetterSqlite3, { type Database } from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { closeDb, setDb } from '../../../db.js';
+import { setFoodDb } from '../../../db/food-handle.js';
 import { createCaller } from '../../../shared/test-utils.js';
 
 const MIGRATION_FILES = [
@@ -102,10 +104,16 @@ let caller: ReturnType<typeof createCaller>;
 beforeEach(() => {
   db = createFoodTestDb();
   setDb(db);
+  // Theme-13 Wave-5 PR4: the conversions router now resolves
+  // `getFoodDrizzle()`. Point the food-handle at the same in-memory
+  // fixture so writes land in the test DB instead of lazy-opening
+  // `data/food.db` mid-suite.
+  setFoodDb({ db: drizzle(db), raw: db });
   caller = createCaller(true);
 });
 
 afterEach(() => {
+  setFoodDb(null);
   closeDb();
 });
 
