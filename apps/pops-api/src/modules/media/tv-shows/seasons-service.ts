@@ -1,8 +1,25 @@
+/**
+ * Seasons CRUD — routes through the media pillar handle.
+ *
+ * `seasons` is owned by `@pops/media-db` and the library ingestion path
+ * (`library/tv-show-service.ts`) already writes `seasons` rows via
+ * `getMediaDrizzle()` inside an atomic `tv_shows` + `seasons` + `episodes`
+ * transaction. Pinning these reads/writes to `getDrizzle()` would
+ * split-brain against the ingestion writer (rows visible on `media.db`
+ * but invisible to the season router and vice-versa). Flipping closes
+ * that window — all `seasons` traffic now lands on the same store as
+ * the library writer.
+ *
+ * FK parent (`tv_shows`) already resolves through `getMediaDrizzle()`
+ * via `tv-shows-base.ts`, so the `getTvShow(tvShowId)` existence checks
+ * in `listSeasons` / `createSeason` hit the same store as the season
+ * insert.
+ */
 import { and, asc, eq } from 'drizzle-orm';
 
 import { seasons } from '@pops/media-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { getTvShow } from './tv-shows-base.js';
 
@@ -16,7 +33,7 @@ export interface SeasonListResult {
 }
 
 export function listSeasons(tvShowId: number): SeasonListResult {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   getTvShow(tvShowId);
   const rows = db
     .select()
@@ -28,14 +45,14 @@ export function listSeasons(tvShowId: number): SeasonListResult {
 }
 
 export function getSeason(id: number): SeasonRow {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   const row = db.select().from(seasons).where(eq(seasons.id, id)).get();
   if (!row) throw new NotFoundError('Season', String(id));
   return row;
 }
 
 export function createSeason(input: CreateSeasonInput): SeasonRow {
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   getTvShow(input.tvShowId);
 
   const existing = db
@@ -76,6 +93,6 @@ export function createSeason(input: CreateSeasonInput): SeasonRow {
 
 export function deleteSeason(id: number): void {
   getSeason(id);
-  const db = getDrizzle();
+  const db = getMediaDrizzle();
   db.delete(seasons).where(eq(seasons.id, id)).run();
 }
