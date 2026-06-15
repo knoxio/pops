@@ -9,12 +9,14 @@
 import { registryRouter } from './modules/registry/router.js';
 import { serviceAccountsRouter } from './modules/service-accounts/router.js';
 import { settingsRouter } from './modules/settings/router.js';
+import { usersRouter } from './modules/users/router.js';
 import { router } from './trpc.js';
 
 export const coreRouter = router({
   registry: registryRouter,
   serviceAccounts: serviceAccountsRouter,
   settings: settingsRouter,
+  users: usersRouter,
 });
 
 export const appRouter = router({

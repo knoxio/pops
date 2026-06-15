@@ -133,12 +133,16 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       replacement_value REAL,
       resale_value REAL,
       purchase_transaction_id TEXT,
+      purchase_transaction_uri TEXT,
+      purchase_transaction_stale_at TEXT,
       purchased_from_id TEXT,
       purchased_from_name TEXT,
       last_edited_time TEXT NOT NULL,
       asset_id TEXT UNIQUE,
       notes TEXT,
       purchase_price REAL,
+      owner_uri TEXT,
+      owner_stale_at TEXT,
       location_id TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -152,6 +156,8 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_inventory_location ON home_inventory(location_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_type ON home_inventory(type);
     CREATE INDEX IF NOT EXISTS idx_inventory_warranty ON home_inventory(warranty_expires);
+    CREATE INDEX IF NOT EXISTS idx_inventory_purchase_transaction_uri ON home_inventory(purchase_transaction_uri);
+    CREATE INDEX IF NOT EXISTS idx_inventory_owner_uri ON home_inventory(owner_uri);
 
     CREATE TABLE IF NOT EXISTS item_connections (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,

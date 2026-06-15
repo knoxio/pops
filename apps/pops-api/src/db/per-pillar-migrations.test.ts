@@ -280,6 +280,7 @@ describe('runPerPillarMigrations', () => {
         '0005_fancy_crystal',
         '0006_inventory_pillar_baseline',
         '0007_locations_parent_sort_index',
+        '0008_cross_pillar_uri_denorm',
         '0021_spooky_lockheed',
         '0022_media_movies_baseline',
         '0023_watchlist_baseline',

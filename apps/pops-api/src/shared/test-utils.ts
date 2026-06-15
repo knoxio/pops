@@ -130,9 +130,13 @@ export function createTestDb(): Database {
       replacement_value      REAL,
       resale_value           REAL,
       purchase_transaction_id TEXT,
+      purchase_transaction_uri TEXT,
+      purchase_transaction_stale_at TEXT,
       purchased_from_id      TEXT,
       purchased_from_name    TEXT,
       purchase_price         REAL,
+      owner_uri              TEXT,
+      owner_stale_at         TEXT,
       asset_id               TEXT UNIQUE,
       notes                  TEXT,
       location_id            TEXT,
@@ -148,6 +152,8 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_inventory_location ON home_inventory(location_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_type ON home_inventory(type);
     CREATE INDEX IF NOT EXISTS idx_inventory_warranty ON home_inventory(warranty_expires);
+    CREATE INDEX IF NOT EXISTS idx_inventory_purchase_transaction_uri ON home_inventory(purchase_transaction_uri);
+    CREATE INDEX IF NOT EXISTS idx_inventory_owner_uri ON home_inventory(owner_uri);
 
     CREATE TABLE IF NOT EXISTS budgets (
       id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
