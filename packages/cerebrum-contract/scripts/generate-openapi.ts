@@ -71,6 +71,10 @@ function buildDocument(): OpenApiDocument {
     },
     servers: [{ url: '/api/v1', description: 'Cerebrum pillar API' }],
     tags: [
+      {
+        name: 'debrief',
+        description: 'Cerebrum debrief sessions, results, and status (PRD-248)',
+      },
       { name: 'embeddings', description: 'Cerebrum embeddings (read-only cross-pillar SDK)' },
       { name: 'engrams', description: 'Cerebrum engrams' },
     ],

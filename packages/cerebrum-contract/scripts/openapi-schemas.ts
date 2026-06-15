@@ -9,6 +9,7 @@ import {
 import { EngramSchema } from '../src/schemas/engram.js';
 import { NudgeSchema, NudgeStatusSchema } from '../src/schemas/nudge.js';
 import { ScopeSchema } from '../src/schemas/scope.js';
+import { buildDebriefComponentSchemas } from './openapi-debrief-schemas.js';
 import { refTo, type OpenApiSchema } from './openapi-types.js';
 
 const PAGINATION_SCHEMA: OpenApiSchema = {
@@ -73,5 +74,6 @@ export function buildComponentSchemas(): Record<string, OpenApiSchema> {
       required: ['message'],
       properties: { message: { type: 'string' } },
     },
+    ...buildDebriefComponentSchemas(),
   };
 }

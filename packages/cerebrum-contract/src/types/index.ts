@@ -3,6 +3,22 @@
  * a new entity means adding both a file under `types/` and a matching
  * schema under `schemas/`. The round-trip test enforces that they agree.
  */
+export { DEBRIEF_MEDIA_TYPES, DEBRIEF_SESSION_STATUSES } from './debrief.js';
+export type {
+  CreateInput,
+  DebriefMediaType,
+  DebriefResult,
+  DebriefSession,
+  DebriefSessionStatus,
+  DebriefStatus,
+  DeleteByWatchHistoryIdInput,
+  DismissInput,
+  GetByMediaInput,
+  GetInput,
+  ListPendingInput,
+  LogWatchCompletionInput,
+  RecordInput,
+} from './debrief.js';
 export type {
   EmbeddingsGetStatusInput,
   EmbeddingsGetStatusOutput,

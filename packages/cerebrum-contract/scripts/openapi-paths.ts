@@ -1,3 +1,4 @@
+import { buildDebriefPaths } from './openapi-debrief-paths.js';
 import {
   refTo,
   type OpenApiOperation,
@@ -141,5 +142,6 @@ export function buildPaths(): Record<string, OpenApiPathItem> {
     '/cerebrum/embeddings/source-ids': { get: embeddingsListSourceIdsOp },
     '/cerebrum/engrams': { get: listOp, post: createOp },
     '/cerebrum/engrams/{id}': { get: getOp, patch: updateOp, delete: deleteOp },
+    ...buildDebriefPaths(),
   };
 }

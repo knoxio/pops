@@ -14,6 +14,437 @@
         ],
         "type": "object"
       },
+      "DebriefCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "mediaType": {
+            "enum": [
+              "movie",
+              "episode"
+            ],
+            "type": "string"
+          },
+          "watchHistoryId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "watchHistoryId",
+          "mediaType",
+          "mediaId"
+        ],
+        "type": "object"
+      },
+      "DebriefDeleteByWatchHistoryIdInput": {
+        "additionalProperties": false,
+        "properties": {
+          "watchHistoryId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "watchHistoryId"
+        ],
+        "type": "object"
+      },
+      "DebriefDeleteByWatchHistoryIdResponse": {
+        "properties": {
+          "deletedResults": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "deletedSessions": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deletedSessions",
+          "deletedResults"
+        ],
+        "type": "object"
+      },
+      "DebriefDismissInput": {
+        "additionalProperties": false,
+        "properties": {
+          "sessionId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessionId"
+        ],
+        "type": "object"
+      },
+      "DebriefGetByMediaInput": {
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "mediaType": {
+            "enum": [
+              "movie",
+              "episode"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "mediaType",
+          "mediaId"
+        ],
+        "type": "object"
+      },
+      "DebriefGetInput": {
+        "additionalProperties": false,
+        "properties": {
+          "sessionId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessionId"
+        ],
+        "type": "object"
+      },
+      "DebriefListPendingInput": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "mediaId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "mediaType": {
+            "enum": [
+              "movie",
+              "episode"
+            ],
+            "type": "string"
+          },
+          "offset": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "DebriefLogWatchCompletionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "mediaType": {
+            "enum": [
+              "movie",
+              "episode"
+            ],
+            "type": "string"
+          },
+          "watchHistoryId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "watchHistoryId",
+          "mediaType",
+          "mediaId"
+        ],
+        "type": "object"
+      },
+      "DebriefLogWatchCompletionResponse": {
+        "properties": {
+          "dimensionsQueued": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sessionId": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessionId",
+          "dimensionsQueued"
+        ],
+        "type": "object"
+      },
+      "DebriefMediaType": {
+        "enum": [
+          "movie",
+          "episode"
+        ],
+        "type": "string"
+      },
+      "DebriefRecordInput": {
+        "additionalProperties": false,
+        "properties": {
+          "comparisonId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer"
+          },
+          "dimensionId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sessionId": {
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sessionId",
+          "dimensionId",
+          "comparisonId"
+        ],
+        "type": "object"
+      },
+      "DebriefResult": {
+        "additionalProperties": false,
+        "properties": {
+          "comparisonId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "dimensionId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "sessionId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "dimensionId",
+          "comparisonId",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "DebriefResultResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DebriefResult"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "DebriefSession": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "mediaId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "nullable": true,
+            "type": "integer"
+          },
+          "mediaType": {
+            "enum": [
+              "movie",
+              "episode"
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "active",
+              "complete"
+            ],
+            "type": "string"
+          },
+          "watchHistoryId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "watchHistoryId",
+          "mediaType",
+          "mediaId",
+          "status",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "DebriefSessionListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DebriefSession"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "DebriefSessionNullableResponse": {
+        "properties": {
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DebriefSession"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "DebriefSessionResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DebriefSession"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "DebriefSessionStatus": {
+        "enum": [
+          "pending",
+          "active",
+          "complete"
+        ],
+        "type": "string"
+      },
+      "DebriefStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "debriefed": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "dimensionId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "dismissed": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "id": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "mediaId": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "mediaType": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "mediaType",
+          "mediaId",
+          "dimensionId",
+          "debriefed",
+          "dismissed",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "DeleteResponse": {
         "properties": {
           "message": {
@@ -296,6 +727,291 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/cerebrum/debrief/create": {
+      "post": {
+        "operationId": "cerebrum.debrief.create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebriefCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefSessionResponse"
+                }
+              }
+            },
+            "description": "Created debrief session"
+          }
+        },
+        "summary": "Create a debrief session pinned to a watch_history row",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
+    "/cerebrum/debrief/deleteByWatchHistoryId": {
+      "post": {
+        "operationId": "cerebrum.debrief.deleteByWatchHistoryId",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebriefDeleteByWatchHistoryIdInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefDeleteByWatchHistoryIdResponse"
+                }
+              }
+            },
+            "description": "Cascade deletion counts"
+          }
+        },
+        "summary": "Cascade-delete debrief rows pinned to a watch_history id",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
+    "/cerebrum/debrief/dismiss": {
+      "post": {
+        "operationId": "cerebrum.debrief.dismiss",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebriefDismissInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefSessionResponse"
+                }
+              }
+            },
+            "description": "Dismissed debrief session"
+          }
+        },
+        "summary": "Dismiss a debrief session (idempotent)",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
+    "/cerebrum/debrief/get": {
+      "get": {
+        "operationId": "cerebrum.debrief.get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefSessionNullableResponse"
+                }
+              }
+            },
+            "description": "Debrief session or null"
+          }
+        },
+        "summary": "Get a debrief session by id",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
+    "/cerebrum/debrief/getByMedia": {
+      "get": {
+        "operationId": "cerebrum.debrief.getByMedia",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DebriefMediaType"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefSessionNullableResponse"
+                }
+              }
+            },
+            "description": "Latest debrief session for the media tuple, or null"
+          }
+        },
+        "summary": "Get the latest debrief session for a media tuple (denormalised)",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
+    "/cerebrum/debrief/listPending": {
+      "get": {
+        "operationId": "cerebrum.debrief.listPending",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mediaType",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/DebriefMediaType"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mediaId",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefSessionListResponse"
+                }
+              }
+            },
+            "description": "Pending debrief sessions"
+          }
+        },
+        "summary": "List pending debrief sessions",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
+    "/cerebrum/debrief/logWatchCompletion": {
+      "post": {
+        "operationId": "cerebrum.debrief.logWatchCompletion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebriefLogWatchCompletionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefLogWatchCompletionResponse"
+                }
+              }
+            },
+            "description": "Debrief fan-out result"
+          }
+        },
+        "summary": "Log a watch completion (Option D entry point)",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
+    "/cerebrum/debrief/record": {
+      "post": {
+        "operationId": "cerebrum.debrief.record",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebriefRecordInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebriefResultResponse"
+                }
+              }
+            },
+            "description": "Recorded debrief result"
+          }
+        },
+        "summary": "Record a debrief result for a session/dimension",
+        "tags": [
+          "debrief"
+        ]
+      }
+    },
     "/cerebrum/embeddings/source-ids": {
       "get": {
         "operationId": "cerebrum.embeddings.listSourceIdsByType",
@@ -554,6 +1270,10 @@
     }
   ],
   "tags": [
+    {
+      "description": "Cerebrum debrief sessions, results, and status (PRD-248)",
+      "name": "debrief"
+    },
     {
       "description": "Cerebrum embeddings (read-only cross-pillar SDK)",
       "name": "embeddings"

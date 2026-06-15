@@ -1,4 +1,19 @@
 export {
+  CreateInputSchema,
+  DebriefMediaTypeSchema,
+  DebriefResultSchema,
+  DebriefSessionSchema,
+  DebriefSessionStatusSchema,
+  DebriefStatusSchema,
+  DeleteByWatchHistoryIdInputSchema,
+  DismissInputSchema,
+  GetByMediaInputSchema,
+  GetInputSchema,
+  ListPendingInputSchema,
+  LogWatchCompletionInputSchema,
+  RecordInputSchema,
+} from './debrief.js';
+export {
   EmbeddingsGetStatusInputSchema,
   EmbeddingsGetStatusOutputSchema,
   EmbeddingsListSourceIdsByTypeInputSchema,
