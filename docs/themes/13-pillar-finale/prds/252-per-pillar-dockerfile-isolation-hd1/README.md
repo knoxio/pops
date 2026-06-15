@@ -46,7 +46,7 @@ The Dockerfile comments blame pnpm workspace resolver, but only the package.json
 | 04  | inventory Dockerfile                         | Not started | Parallel after US-01 |
 | 05  | food Dockerfile                              | Done        | Parallel after US-01 |
 | 06  | lists Dockerfile                             | Done        | Parallel after US-01 |
-| 07  | media Dockerfile                             | Not started | Parallel after US-01 |
+| 07  | media Dockerfile                             | Done        | Parallel after US-01 |
 
 ## Acceptance Criteria
 
