@@ -29,7 +29,7 @@
     "@pops/finance-contract": "workspace:*",
     "@pops/food-contract": "workspace:*",
     "@pops/inventory-contract": "workspace:*",
-    "@pops/lists-contract": "workspace:*",
+    "@pops/lists": "workspace:*",
     "@pops/media-contract": "workspace:*",
     "@types/node": "^25.9.3",
     "@vitest/coverage-v8": "^4.1.8",

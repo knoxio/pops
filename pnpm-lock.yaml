@@ -60,9 +60,6 @@ importers:
       '@pops/app-food-db':
         specifier: workspace:*
         version: link:../../packages/app-food-db
-      '@pops/app-lists-db':
-        specifier: workspace:*
-        version: link:../../pillars/lists/app-db-legacy
       '@pops/cerebrum-contract':
         specifier: workspace:*
         version: link:../../packages/cerebrum-contract
@@ -93,9 +90,6 @@ importers:
       '@pops/inventory-db':
         specifier: workspace:*
         version: link:../../packages/inventory-db
-      '@pops/lists-db':
-        specifier: workspace:*
-        version: link:../../pillars/lists/db
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../../packages/media-contract
@@ -1422,9 +1416,6 @@ importers:
 
   packages/app-food-db:
     dependencies:
-      '@pops/app-lists-db':
-        specifier: workspace:*
-        version: link:../../pillars/lists/app-db-legacy
       '@pops/core-db':
         specifier: workspace:*
         version: link:../core-db
@@ -1434,9 +1425,6 @@ importers:
       '@pops/food-db':
         specifier: workspace:*
         version: link:../food-db
-      '@pops/lists-db':
-        specifier: workspace:*
-        version: link:../../pillars/lists/db
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
@@ -1577,9 +1565,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.7)
-      '@pops/app-lists-db':
-        specifier: workspace:*
-        version: link:../../pillars/lists/app-db-legacy
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../pillar-sdk
@@ -2091,9 +2076,9 @@ importers:
       '@pops/inventory-contract':
         specifier: workspace:*
         version: link:../inventory-contract
-      '@pops/lists-contract':
+      '@pops/lists':
         specifier: workspace:*
-        version: link:../../pillars/lists/contract
+        version: link:../../pillars/lists
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../media-contract
@@ -2463,21 +2448,33 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
-  pillars/lists/api:
+  pillars/lists:
     dependencies:
-      '@pops/lists-db':
-        specifier: workspace:*
-        version: link:../db
       '@pops/pillar-sdk':
         specifier: workspace:*
-        version: link:../../../packages/pillar-sdk
+        version: link:../../packages/pillar-sdk
       '@pops/types':
         specifier: workspace:*
-        version: link:../../../packages/types
+        version: link:../../packages/types
+      better-sqlite3:
+        specifier: ^12.10.0
+        version: 12.10.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
+      drizzle-zod:
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
       express:
         specifier: ^5.1.0
         version: 5.2.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.12
+        version: 7.6.13
       '@types/express':
         specifier: ^5.0.4
         version: 5.0.6
@@ -2496,78 +2493,6 @@ importers:
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  pillars/lists/app-db-legacy:
-    dependencies:
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-      drizzle-zod:
-        specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/better-sqlite3':
-        specifier: ^7.6.12
-        version: 7.6.13
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      better-sqlite3:
-        specifier: ^12.10.0
-        version: 12.10.0
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  pillars/lists/contract:
-    dependencies:
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../../../packages/types
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  pillars/lists/db:
-    dependencies:
-      '@pops/app-lists-db':
-        specifier: workspace:*
-        version: link:../app-db-legacy
-      better-sqlite3:
-        specifier: ^12.10.0
-        version: 12.10.0
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-    devDependencies:
-      '@types/better-sqlite3':
-        specifier: ^7.6.12
-        version: 7.6.13
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3

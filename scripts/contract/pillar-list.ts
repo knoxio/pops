@@ -7,6 +7,15 @@ const repoRoot = resolve(here, '..', '..');
 const packagesDir = resolve(repoRoot, 'packages');
 const pillarsDir = resolve(repoRoot, 'pillars');
 
+/**
+ * A pillar is "discovered" for boundary-rule generation only when it
+ * still has a separate `-db` workspace package (legacy or colocated).
+ * Collapsed pillars (`pillars/<id>/package.json` at the root, single
+ * `@pops/<id>` workspace member with a strict exports map) don't need
+ * a dep-cruiser rule — Node's resolver rejects imports of unexported
+ * subpaths at runtime, which is a stronger guarantee than dep-cruiser
+ * provides anyway.
+ */
 function discoverPillars(): readonly string[] {
   const contractSuffix = '-contract';
   const ids = new Set<string>();
@@ -38,16 +47,15 @@ export type Pillar = string;
  * rule generator uses this to build the per-pillar allow-list — the
  * three directories that ARE allowed to import `@pops/<pillar>-db`.
  *
- * Two layouts coexist during the pillar-by-pillar colocation move
- * (PRD-253):
- *
+ * Two layouts coexist (PRD-253):
  *  - **legacy** — `apps/pops-<id>-api`, `packages/<id>-db`,
  *    `packages/<id>-contract`.
  *  - **colocated** — `pillars/<id>/api`, `pillars/<id>/db`,
  *    `pillars/<id>/contract`.
  *
- * Layout is detected per-pillar from disk: if `pillars/<id>/contract`
- * exists, the pillar uses the colocated layout; otherwise legacy.
+ * Collapsed pillars (single `pillars/<id>/package.json`) are deliberately
+ * NOT covered by this rule type — their boundary is enforced by the
+ * package's `exports` map at resolve time.
  */
 export interface PillarLayout {
   readonly id: string;

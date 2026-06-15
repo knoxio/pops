@@ -46,7 +46,10 @@ const SETTINGS_KEY = z
 
 const CONTRACT_PACKAGE = z
   .string()
-  .regex(/^@pops\/[a-z-]+-contract$/, 'must be @pops/<pillar>-contract');
+  .regex(
+    /^@pops\/(?:[a-z-]+-contract|[a-z-]+)$/,
+    'must be @pops/<pillar>-contract (legacy split) or @pops/<pillar> (collapsed pillar package)'
+  );
 
 const CONTRACT_TAG = z
   .string()

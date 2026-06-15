@@ -64,18 +64,6 @@ const contractBoundaryRules = [
     },
   },
   {
-    name: 'no-cross-pillar-runtime-import-lists',
-    severity: 'error',
-    comment:
-      'Non-owning code must not import @pops/lists-db. Use @pops/lists-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
-    from: {
-      pathNot: '^(pillars/lists/api|pillars/lists/db|pillars/lists/contract/scripts)/',
-    },
-    to: {
-      path: '^pillars/lists/db/',
-    },
-  },
-  {
     name: 'no-cross-pillar-runtime-import-media',
     severity: 'error',
     comment:
