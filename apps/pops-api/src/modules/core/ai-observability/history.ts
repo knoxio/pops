@@ -8,7 +8,7 @@
  */
 import { and, gte, lte, sql } from 'drizzle-orm';
 
-import { aiInferenceDaily, aiInferenceLog } from '@pops/db-types';
+import { aiInferenceDaily, aiInferenceLog } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 
