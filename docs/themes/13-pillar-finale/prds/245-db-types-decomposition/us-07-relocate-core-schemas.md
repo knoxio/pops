@@ -8,16 +8,16 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the core-owned tabl
 
 ## Acceptance Criteria
 
-- [ ] The following files move from `packages/db-types/src/schema/` to `packages/core-db/src/schema/`, alongside their matching `*-row-schemas.ts`:
-      `entities.ts`, `environments.ts`, `pillar-registry.ts`, `service-accounts.ts`, `settings.ts`, `user-settings.ts`, `corrections.ts` (per audit attribution `core → core`), `ai-alert-rules.ts`, `ai-alerts.ts`, `ai-budgets.ts`, `ai-inference-daily.ts`, `ai-inference-log.ts`, `ai-model-pricing.ts`, `ai-providers.ts`, `ai-usage.ts`, plus the contents of the existing `core/` subdirectory (`core/embeddings.ts` moves with cerebrum US-01 per audit attribution — verify).
-- [ ] All intra-core FKs are preserved (e.g. `corrections.ts:16` → `entities.id`).
-- [ ] `packages/core-db/src/schema.ts` exports each relocated table from the new local path. The existing `from '@pops/db-types'` re-export for these tables is removed.
-- [ ] `packages/db-types/src/schema/index.ts` re-exports each relocated table from `@pops/core-db` (transition shim) so existing import sites keep compiling until US-08.
-- [ ] Smoke-import test in `core-db` asserts each relocated table resolves with the expected drizzle `name`.
-- [ ] Consumers under `apps/pops-api/src/modules/core/` that import these tables from `@pops/db-types` are repointed at `@pops/core-db`.
-- [ ] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
-- [ ] `pnpm --filter @pops/core-db typecheck/test/build`, `pnpm --filter @pops/db-types typecheck/test/build`, and `pnpm --filter @pops/api typecheck/test` all pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] The following files move from `packages/db-types/src/schema/` to `packages/core-db/src/schema/`, alongside their matching `*-row-schemas.ts`:
+      `entities.ts`, `environments.ts`, `pillar-registry.ts`, `service-accounts.ts`, `settings.ts`, `user-settings.ts`, `ai-alert-rules.ts`, `ai-alerts.ts`, `ai-budgets.ts`, `ai-inference-daily.ts`, `ai-inference-log.ts`, `ai-model-pricing.ts`, `ai-providers.ts`, `ai-usage.ts`. `corrections.ts` was relocated to `@pops/finance-db` by US-03 per the final audit attribution; `core/embeddings.ts` moved with cerebrum US-01.
+- [x] All intra-core FKs are preserved (the only intra-package reference is `ai-alerts.ts` → `aiAlertRules`, intact).
+- [x] `packages/core-db/src/schema.ts` exports each relocated table from the new local path. The existing `from '@pops/db-types'` re-export for these tables is removed.
+- [x] `packages/db-types/src/schema/index.ts` re-exports each relocated table from `@pops/core-db` (transition shim) so existing import sites keep compiling until US-08.
+- [x] Smoke-import test in `core-db` asserts each relocated table resolves with the expected drizzle `name`.
+- [x] Consumers under `apps/pops-api/src/modules/core/` that import these tables from `@pops/db-types` are repointed at `@pops/core-db`.
+- [x] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
+- [x] `pnpm --filter @pops/core-db typecheck/test/build`, `pnpm --filter @pops/db-types typecheck/test/build`, and `pnpm --filter @pops/api typecheck/test` all pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

@@ -7,7 +7,7 @@
  */
 import { and, eq, gte, sql } from 'drizzle-orm';
 
-import { aiInferenceLog } from '@pops/db-types';
+import { aiInferenceLog } from '@pops/core-db';
 
 import { rollingWindowStart } from './shared.js';
 

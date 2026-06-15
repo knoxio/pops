@@ -14,8 +14,7 @@
  */
 import { and, asc, desc, eq } from 'drizzle-orm';
 
-import { aiUsageService, type AiBudgetRow } from '@pops/core-db';
-import { aiModelPricing, aiProviders } from '@pops/db-types';
+import { aiModelPricing, aiProviders, aiUsageService, type AiBudgetRow } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';

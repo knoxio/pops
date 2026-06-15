@@ -17,6 +17,7 @@ import type {
   nudgeLog,
   reflexExecutions,
 } from '@pops/cerebrum-db';
+import type { aiUsage, entities, environments, settings } from '@pops/core-db';
 import type {
   budgets,
   tierOverrides,
@@ -55,11 +56,6 @@ import type {
   tvShows,
   watchHistory,
 } from '@pops/media-db';
-
-import type { aiUsage } from './schema/ai-usage.js';
-import type { entities } from './schema/entities.js';
-import type { environments } from './schema/environments.js';
-import type { settings } from './schema/settings.js';
 
 export type TransactionInsert = InferInsertModel<typeof transactions>;
 export type EntityInsert = InferInsertModel<typeof entities>;

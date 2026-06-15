@@ -1,6 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm';
 
-import { aiInferenceLog } from '@pops/db-types';
+import { aiInferenceLog } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 

@@ -178,12 +178,16 @@ if (checkOnly) {
   for (const entry of generated) {
     checkSibling(entry, problems);
   }
-  checkBarrel(indexPath, generated, problems);
+  if (generated.length > 0) {
+    checkBarrel(indexPath, generated, problems);
+  }
 } else {
   for (const entry of generated) {
     writeFileSync(entry.siblingPath, renderSibling(entry.basename, entry.tables));
   }
-  writeFileSync(indexPath, renderIndex(generated));
+  if (generated.length > 0) {
+    writeFileSync(indexPath, renderIndex(generated));
+  }
 }
 
 if (checkOnly && problems.length > 0) {

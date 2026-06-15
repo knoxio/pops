@@ -9,13 +9,11 @@
  * import sites keep compiling until PRD-245 US-08 deletes the shim. Pillar
  * consumers should import from `@pops/finance-db` directly.
  *
- * `entities` is exported via a local schema-equivalent shadow because the
- * canonical core relocation (PRD-245 US-07) has not landed yet — pulling
- * the canonical definition would require a workspace dep on `@pops/db-types`
- * which collides with the transition-shim direction. See
- * `./schema/entities-shadow.ts` for the duplication rationale.
+ * `entities` is re-exported from `@pops/core-db` — the canonical owner per
+ * PRD-245 US-07. Previously this barrel pulled from a local schema-shadow
+ * because db-types still owned `entities`; that shadow is now deleted.
  */
-export { entities } from './schema/entities-shadow.js';
+export { entities } from '@pops/core-db';
 
 export { budgets } from './schema/budgets.js';
 export { transactionCorrections } from './schema/corrections.js';

@@ -8,7 +8,7 @@
  */
 import { eq } from 'drizzle-orm';
 
-import { aiAlertRules } from '@pops/db-types';
+import { aiAlertRules } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { ruleRowToRule } from './mappers.js';

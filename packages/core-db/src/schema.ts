@@ -1,27 +1,31 @@
 /**
- * Local re-export of the core domain tables.
+ * Core domain table barrel.
  *
- * Canonical definitions live in `@pops/db-types/src/schema/*.ts` so the
- * drizzle-kit config (which globs `packages/db-types/src/schema/*`) picks
- * them up and the rest of the platform sees a single schema barrel.
+ * Canonical definitions for core-owned tables (entities, environments,
+ * pillar registry, service accounts, settings, user settings, plus the
+ * `ai_*` observability slice) live in this package per PRD-245 US-07
+ * (audit H6/H7).
  *
- * Services in this package import from here for ergonomics and so that
- * the core module's read surface stays self-describing.
- *
- * Mirrors the `@pops/app-food-db` schema re-export pattern.
+ * `@pops/db-types` re-exports these tables as a transition shim so legacy
+ * import sites keep compiling until PRD-245 US-08 deletes the shim. Pillar
+ * consumers should import from `@pops/core-db` directly.
  */
-export {
-  aiAlertRules,
-  aiAlerts,
-  aiBudgets,
-  aiInferenceDaily,
-  aiInferenceLog,
-  aiModelPricing,
-  aiProviders,
-  aiUsage,
-  pillarRegistry,
-  serviceAccounts,
-  settings,
-  syncJobResults,
-  userSettings,
-} from '@pops/db-types';
+export { aiAlertRules } from './schema/ai-alert-rules.js';
+export { aiAlerts } from './schema/ai-alerts.js';
+export { aiBudgets } from './schema/ai-budgets.js';
+export { aiInferenceDaily } from './schema/ai-inference-daily.js';
+export { aiInferenceLog } from './schema/ai-inference-log.js';
+export { aiModelPricing } from './schema/ai-model-pricing.js';
+export { aiProviders } from './schema/ai-providers.js';
+export { aiUsage } from './schema/ai-usage.js';
+export { entities } from './schema/entities.js';
+export { environments } from './schema/environments.js';
+export { pillarRegistry } from './schema/pillar-registry.js';
+export { serviceAccounts } from './schema/service-accounts.js';
+export { settings } from './schema/settings.js';
+export { userSettings } from './schema/user-settings.js';
+
+// `syncJobResults` is owned by `@pops/media-db` (PRD-245 US-04) but the
+// historical sync-results service in this package writes to it. Re-exported
+// here so existing imports keep resolving.
+export { syncJobResults } from '@pops/media-db';
