@@ -33,7 +33,7 @@ export interface ReconcileBatch {
   expectedPillar: string;
   expectedType: string;
   parse: (uri: string) => ParsedUri | null;
-  probe: (parsed: ParsedUri) => Promise<ReconcileOutcome>;
+  probe: (parsed: ParsedUri, uri: string) => Promise<ReconcileOutcome>;
   onOk: (uri: string) => void;
   onNotFound: (uri: string) => void;
 }
@@ -84,7 +84,7 @@ export async function reconcileUriBatch(batch: ReconcileBatch): Promise<void> {
       );
       continue;
     }
-    const outcome = await batch.probe(parsed as ParsedUri);
+    const outcome = await batch.probe(parsed as ParsedUri, uri);
     applyOutcomeToBatch(batch, uri, outcome);
   }
 }

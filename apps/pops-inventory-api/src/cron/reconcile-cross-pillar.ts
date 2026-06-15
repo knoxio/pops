@@ -137,7 +137,7 @@ export async function runReconciliation(options: {
     expectedPillar: 'finance',
     expectedType: 'transaction',
     parse: parseSoftUri,
-    probe: (parsed) =>
+    probe: (parsed, _uri) =>
       safeCall(() => finance.callDynamic('transactions', 'get', { id: parsed.id }, 'query')),
     onOk: (uri) => crossPillarUrisService.clearPurchaseTransactionUriStale(db, uri),
     onNotFound: (uri) => crossPillarUrisService.markPurchaseTransactionUriStale(db, uri, stampIso),
@@ -151,8 +151,7 @@ export async function runReconciliation(options: {
     expectedPillar: 'core',
     expectedType: 'user',
     parse: parseSoftUri,
-    probe: (parsed) =>
-      safeCall(() => core.callDynamic('users', 'get', { email: parsed.id }, 'query')),
+    probe: (_parsed, uri) => safeCall(() => core.callDynamic('users', 'get', { uri }, 'query')),
     onOk: (uri) => crossPillarUrisService.clearOwnerUriStale(db, uri),
     onNotFound: (uri) => crossPillarUrisService.markOwnerUriStale(db, uri, stampIso),
   });

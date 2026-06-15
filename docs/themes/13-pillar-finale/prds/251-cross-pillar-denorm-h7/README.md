@@ -49,10 +49,11 @@ Cerebrum → media debrief denorm already landed.
 
 ## Acceptance Criteria
 
-- Zero `.references()` calls in `packages/{inventory,finance}-db/src/` cross a pillar boundary
-- Each cron has unit tests for ok / 404 / unavailable / bad-URI
-- Integration test boots core + inventory + finance, runs cron, asserts denorm cache
-- `pnpm typecheck/test/build` clean
+- [x] Zero `.references()` calls in `packages/{inventory,finance}-db/src/` cross a pillar boundary
+- [x] Cross-pillar wire contract is URI-shaped on every boundary call: input `{ uri: 'pops://<pillar>/<type>/<id>' }`, output `{ data: { uri } }`. Consumers pass the stored URI through end-to-end; the owning pillar parses internally.
+- [ ] Each cron has unit tests for ok / 404 / unavailable / bad-URI
+- [ ] Integration test boots core + inventory + finance, runs cron, asserts denorm cache
+- [ ] `pnpm typecheck/test/build` clean
 
 ## Out of Scope
 

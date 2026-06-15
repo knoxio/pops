@@ -8,11 +8,12 @@
  * sibling pillar's reconciliation cron asks: "does this user URI still
  * resolve?".
  *
- * The cron resolves URIs of the form `pops://core/user/<email>`. If at
- * least one `user_settings` row exists for the given email we consider the
- * user known. The cron treats a `null` here as 404 — it stamps the
- * consumer row's `*_stale_at` rather than deleting it (PRD-251 §"Existence
- * is best-effort").
+ * The router accepts a URI (`pops://core/user/<email>`) per the PRD-251
+ * cross-pillar wire contract; this service is the email-shaped layer
+ * underneath. The router parses the URI and forwards the extracted email
+ * here. A `null` here is treated as 404 by the consumer — it stamps the
+ * consumer row's `*_stale_at` rather than deleting it (PRD-251
+ * §"Existence is best-effort").
  *
  * No write surface is exposed: owning-pillar writes are forbidden by the
  * PRD-251 business rules, and the dev-fallback email in `core-api/trpc.ts`
