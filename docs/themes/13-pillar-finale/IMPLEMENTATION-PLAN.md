@@ -27,27 +27,27 @@
 
 ### Done
 
-| PRD | Title                                                                     |
-| --- | ------------------------------------------------------------------------- |
-| 227 | SDK affordances (callDynamic, fetchQuery, cache-write, infinite, queries) |
-| 228 | Dynamic pillar registration                                               |
-| 229 | HA bridge pillar (incl. retention cron)                                   |
-| 231 | Cross-language wire-format spec                                           |
-| 232 | Nginx generator dynamic-source                                            |
-| 233 | Rust reference pillar                                                     |
-| 236 | Sinks manifest dimension                                                  |
-| 237 | pops → HA event publisher                                                 |
-| 238 | Settings imports migration                                                |
-| 239 | Settings physical relocation                                              |
-| 240 | Settings as manifest dimension                                            |
-| 241 | Registry-driven known-modules                                             |
-| 242 | Dynamic AppRouter composition                                             |
-| 243 | Registry-driven shell UI                                                  |
-| 244 | Cross-pillar SDK surface (typed proxy pattern)                            |
-| 245 | db-types decomposition US-01..07 (US-08 in progress via #3283)            |
-| 246 | Shell + API pillar decoupling US-01/02/03 (US-04/05 unblocks on SDK trio) |
+| PRD | Title                                                                          |
+| --- | ------------------------------------------------------------------------------ |
+| 227 | SDK affordances (callDynamic, fetchQuery, cache-write, infinite, queries)      |
+| 228 | Dynamic pillar registration                                                    |
+| 229 | HA bridge pillar (incl. retention cron)                                        |
+| 231 | Cross-language wire-format spec                                                |
+| 232 | Nginx generator dynamic-source                                                 |
+| 233 | Rust reference pillar                                                          |
+| 236 | Sinks manifest dimension                                                       |
+| 237 | pops → HA event publisher                                                      |
+| 238 | Settings imports migration                                                     |
+| 239 | Settings physical relocation                                                   |
+| 240 | Settings as manifest dimension                                                 |
+| 241 | Registry-driven known-modules                                                  |
+| 242 | Dynamic AppRouter composition                                                  |
+| 243 | Registry-driven shell UI                                                       |
+| 244 | Cross-pillar SDK surface (typed proxy pattern)                                 |
+| 245 | db-types decomposition US-01..07 (US-08 in progress via #3283)                 |
+| 246 | Shell + API pillar decoupling US-01/02/03 (US-04/05 unblocks on SDK trio)      |
 | 249 | `cerebrum.embeddings.*` read-only SDK surface (#3275 US-01, #3292 US-02/03/04) |
-| 250 | pillar-sdk BUILD_VERSION coercion + scoped self-register (#3287)          |
+| 250 | pillar-sdk BUILD_VERSION coercion + scoped self-register (#3287)               |
 
 ### Done pending merge
 
@@ -55,14 +55,14 @@ _(empty — PRD-249 closed via #3275 + #3292)_
 
 ### In progress
 
-| PRD   | US                                                           | PR    | Notes                                       |
-| ----- | ------------------------------------------------------------ | ----- | ------------------------------------------- |
-| 245   | US-08 — delete `db-types/schema/` dir                        | #3283 | Final cleanup; agent rebasing               |
-| 247   | US-03 — `core.settings.*` handlers                           | #3289 | Mount on pops-core-api                      |
-| 248   | US-02 — `cerebrum.debrief.*` write surface                   | #3293 | Mounted on cerebrum-api                     |
-| 251   | US-01/02 — inventory cross-pillar denorm (H7)                | #3295 | First H7 pair                               |
-| 252   | US-01 — per-pillar Dockerfile generator + drift-check (H-D1) | #3290 | Core pillar first                           |
-| Wave5 | Slice PR4 cascades                                           | #3294 | food-conversions: 10 sites + migration 0059 |
+| PRD   | US                                                           | PR    | Notes                                                                                               |
+| ----- | ------------------------------------------------------------ | ----- | --------------------------------------------------------------------------------------------------- |
+| 245   | US-08 — delete `db-types/schema/` dir                        | #3283 | Final cleanup; agent rebasing                                                                       |
+| 247   | US-03 — `core.settings.*` handlers                           | #3289 | Mount on pops-core-api                                                                              |
+| 248   | **Partial** — US-01..US-04 done; US-05/06 deferred           | —     | Consumers removed in `chore/remove-debrief-feature`; see `notes/debrief-feature-removal-2026-06.md` |
+| 251   | US-01/02 — inventory cross-pillar denorm (H7)                | #3295 | First H7 pair                                                                                       |
+| 252   | US-01 — per-pillar Dockerfile generator + drift-check (H-D1) | #3290 | Core pillar first                                                                                   |
+| Wave5 | Slice PR4 cascades                                           | #3294 | food-conversions: 10 sites + migration 0059                                                         |
 
 ### Blocked
 

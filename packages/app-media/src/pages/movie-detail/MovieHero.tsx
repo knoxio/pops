@@ -21,7 +21,6 @@ interface MovieHeroProps {
   year: number | null;
   daysSinceWatch: number | null;
   staleness: number;
-  pendingDebrief: { movieId: number; status: string } | undefined;
 }
 
 function HeroPoster({ posterUrl, title }: { posterUrl: string | null; title: string }) {
@@ -55,13 +54,7 @@ function HeroTitle({ title, logoUrl }: { title: string; logoUrl: string | null }
   );
 }
 
-export function MovieHero({
-  movie,
-  year,
-  daysSinceWatch,
-  staleness,
-  pendingDebrief,
-}: MovieHeroProps) {
+export function MovieHero({ movie, year, daysSinceWatch, staleness }: MovieHeroProps) {
   return (
     <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 relative h-64 md:h-96 overflow-hidden bg-muted">
       {movie.backdropUrl && (
@@ -92,7 +85,6 @@ export function MovieHero({
             year={year}
             daysSinceWatch={daysSinceWatch}
             staleness={staleness}
-            pendingDebrief={pendingDebrief}
           />
         </div>
       </div>

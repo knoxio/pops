@@ -1,8 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  seedDebriefResult,
-  seedDebriefSession,
   seedEpisode,
   seedMovie,
   seedSeason,
@@ -11,25 +9,8 @@ import {
   seedWatchlistEntry,
   setupTestContext,
 } from '../../../shared/test-utils.js';
-import {
-  logWatchCompletion,
-  type LogWatchCompletionInput,
-  type LogWatchCompletionResult,
-} from '../../cerebrum/debrief/router.js';
 import * as watchlistService from '../watchlist/service.js';
 import * as service from './service.js';
-
-vi.mock('../../cerebrum/debrief/router.js', async () => {
-  const actual = await vi.importActual<typeof import('../../cerebrum/debrief/router.js')>(
-    '../../cerebrum/debrief/router.js'
-  );
-  return {
-    ...actual,
-    logWatchCompletion: vi.fn(actual.logWatchCompletion),
-  };
-});
-
-const mockedLogWatchCompletion = vi.mocked(logWatchCompletion);
 
 import type { Database } from 'better-sqlite3';
 
@@ -372,108 +353,6 @@ describe('logWatch', () => {
 
     expect(watchlistRemoved).toBe(false);
   });
-
-  describe('cerebrum debrief fan-out (Option D step 3)', () => {
-    beforeEach(() => {
-      mockedLogWatchCompletion.mockReset();
-    });
-
-    function stubResolved(result: LogWatchCompletionResult): void {
-      mockedLogWatchCompletion.mockImplementation((_input: LogWatchCompletionInput) => result);
-    }
-
-    it('commits the media tx and logs the error when the cerebrum SDK call fails', () => {
-      seedMovie(db, { title: 'Mulholland Drive', tmdb_id: 1018 });
-      mockedLogWatchCompletion.mockImplementation(() => {
-        throw new Error('cerebrum unavailable');
-      });
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      try {
-        const { entry, created } = service.logWatch({
-          mediaType: 'movie',
-          mediaId: 1018,
-          completed: 1,
-        });
-
-        expect(created).toBe(true);
-        expect(entry.mediaType).toBe('movie');
-        expect(entry.mediaId).toBe(1018);
-
-        const persisted = service.getWatchHistoryEntry(entry.id);
-        expect(persisted.id).toBe(entry.id);
-
-        expect(mockedLogWatchCompletion).toHaveBeenCalledTimes(1);
-        expect(mockedLogWatchCompletion).toHaveBeenCalledWith({
-          mediaType: 'movie',
-          mediaId: 1018,
-          watchHistoryId: entry.id,
-        });
-        expect(errorSpy).toHaveBeenCalled();
-        const loggedArgs = errorSpy.mock.calls[0] ?? [];
-        expect(String(loggedArgs[0])).toContain('cerebrum debrief fan-out failed');
-      } finally {
-        errorSpy.mockRestore();
-      }
-    });
-
-    it('invokes the cerebrum SDK once with the freshly inserted watch history id', () => {
-      seedMovie(db, { title: 'Inland Empire', tmdb_id: 1019 });
-      stubResolved({ sessionId: 99, dimensionsQueued: 3 });
-
-      const { entry } = service.logWatch({
-        mediaType: 'movie',
-        mediaId: 1019,
-        completed: 1,
-      });
-
-      expect(mockedLogWatchCompletion).toHaveBeenCalledTimes(1);
-      expect(mockedLogWatchCompletion).toHaveBeenCalledWith({
-        mediaType: 'movie',
-        mediaId: 1019,
-        watchHistoryId: entry.id,
-      });
-    });
-
-    it('skips the cerebrum SDK call when the watch row already existed (no completion to debrief)', () => {
-      seedMovie(db, { title: 'Twin Peaks: Fire Walk with Me', tmdb_id: 1020 });
-      const watchedAt = '2026-06-01T10:00:00.000Z';
-      stubResolved({ sessionId: 0, dimensionsQueued: 0 });
-
-      const first = service.logWatch({
-        mediaType: 'movie',
-        mediaId: 1020,
-        watchedAt,
-        completed: 1,
-      });
-      expect(first.created).toBe(true);
-      expect(mockedLogWatchCompletion).toHaveBeenCalledTimes(1);
-
-      mockedLogWatchCompletion.mockClear();
-
-      const second = service.logWatch({
-        mediaType: 'movie',
-        mediaId: 1020,
-        watchedAt,
-        completed: 1,
-      });
-      expect(second.created).toBe(false);
-      expect(mockedLogWatchCompletion).not.toHaveBeenCalled();
-    });
-
-    it('skips the cerebrum SDK call for an incomplete watch (completed=0)', () => {
-      seedMovie(db, { title: 'Lost Highway', tmdb_id: 1021 });
-      stubResolved({ sessionId: 0, dimensionsQueued: 0 });
-
-      const { created } = service.logWatch({
-        mediaType: 'movie',
-        mediaId: 1021,
-        completed: 0,
-      });
-      expect(created).toBe(true);
-      expect(mockedLogWatchCompletion).not.toHaveBeenCalled();
-    });
-  });
 });
 
 describe('deleteWatchHistoryEntry', () => {
@@ -488,52 +367,6 @@ describe('deleteWatchHistoryEntry', () => {
     expect(() => {
       service.deleteWatchHistoryEntry(999);
     }).toThrow('WatchHistoryEntry');
-  });
-
-  it('cascade-deletes debrief_sessions before deleting watch_history (bug #2373 — Undo FK fix)', () => {
-    // Simulate the Mark-as-Watched flow: watch history entry + debrief session created.
-    const watchId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 1 });
-    seedDebriefSession(db, { watch_history_id: watchId, status: 'pending' });
-
-    // Undo (delete) must not throw a FK constraint error.
-    expect(() => service.deleteWatchHistoryEntry(watchId)).not.toThrow();
-
-    // The watch history entry should be gone.
-    expect(() => service.getWatchHistoryEntry(watchId)).toThrow('WatchHistoryEntry');
-
-    // The debrief session should also have been removed.
-    const remaining = db
-      .prepare('SELECT id FROM debrief_sessions WHERE watch_history_id = ?')
-      .all(watchId);
-    expect(remaining).toHaveLength(0);
-  });
-
-  it('cascade-deletes debrief_results when debrief session has results', () => {
-    const watchId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 2 });
-    const sessionId = seedDebriefSession(db, { watch_history_id: watchId, status: 'active' });
-    // Seed a dimension so the FK for debrief_results is valid.
-    const dimId = Number(
-      db
-        .prepare(
-          "INSERT INTO comparison_dimensions (name, active, sort_order) VALUES ('Overall', 1, 0)"
-        )
-        .run().lastInsertRowid
-    );
-    seedDebriefResult(db, { session_id: sessionId, dimension_id: dimId });
-
-    // Undo must cascade through debrief_results → debrief_sessions → watch_history.
-    expect(() => service.deleteWatchHistoryEntry(watchId)).not.toThrow();
-    expect(() => service.getWatchHistoryEntry(watchId)).toThrow('WatchHistoryEntry');
-
-    const sessions = db
-      .prepare('SELECT id FROM debrief_sessions WHERE watch_history_id = ?')
-      .all(watchId);
-    expect(sessions).toHaveLength(0);
-
-    const results = db
-      .prepare('SELECT id FROM debrief_results WHERE session_id = ?')
-      .all(sessionId);
-    expect(results).toHaveLength(0);
   });
 });
 

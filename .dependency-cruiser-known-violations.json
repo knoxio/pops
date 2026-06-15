@@ -1,65 +1,10 @@
 [
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/modules/cerebrum/debrief/router.test.ts",
-    "to": "apps/pops-api/src/modules/media/debrief/service.ts",
-    "unresolvedTo": "../../media/debrief/service.js",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-api-module-import"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
-    "to": "apps/pops-api/src/modules/media/debrief/service.ts",
-    "unresolvedTo": "../../media/debrief/service.js",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-api-module-import"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/watch-history/handlers/cerebrum-fan-out.ts",
-    "to": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
-    "unresolvedTo": "../../../cerebrum/debrief/router.js",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-api-module-import"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/watch-history/service.test.ts",
-    "to": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
-    "unresolvedTo": "../../cerebrum/debrief/router.js",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-api-module-import"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/backfill-cerebrum-from-shared.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
     "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -574,61 +519,6 @@
   {
     "type": "dependency",
     "from": "apps/pops-api/src/modules/core/ai-alerts/dispatchers/nudge.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-dismiss.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-pending.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-record.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/debrief/queue-status.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/debrief/service.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
     "dependencyTypes": ["undetermined", "import"],
@@ -1981,50 +1871,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-dismiss.ts",
-    "to": "packages/media-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-media"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-opponent.ts",
-    "to": "packages/media-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-media"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-pending.ts",
-    "to": "packages/media-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-media"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/comparisons/lib/debrief-record.ts",
-    "to": "packages/media-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-media"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/modules/media/comparisons/lib/dimension-exclusion.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
@@ -2150,28 +1996,6 @@
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
     "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-media"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/debrief/queue-status.ts",
-    "to": "packages/media-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-media"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/debrief/service.ts",
-    "to": "packages/media-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"

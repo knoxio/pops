@@ -1,12 +1,8 @@
 /**
- * `logWatch` — Option D step 3 (MEDIA FULL EXIT). The media-only writes
- * (watch_history insert, watchlist removal, episodes/seasons resolution,
- * comparison_staleness reset, watchlist priority resequence) run inside a
- * single `getMediaDrizzle().transaction(...)`. After commit we fan out to
- * `cerebrum.debrief.logWatchCompletion` via the in-process SDK; failures
- * are logged and swallowed because the writer is idempotent on
- * `(watchHistoryId, mediaType, mediaId)`. No fan-out for already-existing
- * rows (no fresh completion) or incomplete watches.
+ * `logWatch` — media-only writes (watch_history insert, watchlist removal,
+ * episodes/seasons resolution, comparison_staleness reset, watchlist
+ * priority resequence) run inside a single
+ * `getMediaDrizzle().transaction(...)`.
  */
 import { and, eq } from 'drizzle-orm';
 
@@ -16,7 +12,6 @@ import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { resetStaleness } from '../../comparisons/staleness.js';
 import { resequencePriorities } from '../../watchlist/service.js';
 import { autoRemoveTvShowIfFullyWatched } from './auto-remove-show.js';
-import { fanOutDebriefCompletion } from './cerebrum-fan-out.js';
 
 import type { MediaDb } from '@pops/media-db';
 
@@ -32,10 +27,7 @@ export interface LogWatchResult {
   watchlistRemoved: boolean;
 }
 
-interface MediaTxOutcome extends LogWatchResult {
-  fanOutCompletion: boolean;
-  completionMediaType: 'movie' | 'episode';
-}
+type MediaTxOutcome = LogWatchResult;
 
 function findBlacklistedEntry(
   tx: Tx,
@@ -110,13 +102,11 @@ function removeFromWatchlist(tx: Tx, input: LogWatchInput): boolean {
   return false;
 }
 
-function noFanOut(entry: WatchHistoryRow, mediaType: 'movie' | 'episode'): MediaTxOutcome {
+function unchanged(entry: WatchHistoryRow): MediaTxOutcome {
   return {
     entry,
     created: false,
     watchlistRemoved: false,
-    fanOutCompletion: false,
-    completionMediaType: mediaType,
   };
 }
 
@@ -127,7 +117,7 @@ function runMediaTx(
 ): (tx: Tx) => MediaTxOutcome {
   return (tx) => {
     const blacklisted = findBlacklistedEntry(tx, input, watchedAt);
-    if (blacklisted) return noFanOut(blacklisted, input.mediaType);
+    if (blacklisted) return unchanged(blacklisted);
 
     const result = tx
       .insert(watchHistory)
@@ -138,7 +128,7 @@ function runMediaTx(
     if (result.changes === 0) {
       const existing = findExistingEntry(tx, input, watchedAt);
       if (!existing) throw new Error('Watch history entry not found after conflict');
-      return noFanOut(existing, input.mediaType);
+      return unchanged(existing);
     }
 
     const entry = tx
@@ -160,8 +150,6 @@ function runMediaTx(
       entry,
       created: true,
       watchlistRemoved,
-      fanOutCompletion: completed === 1,
-      completionMediaType: input.mediaType,
     };
   };
 }
@@ -170,20 +158,5 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
   const db = getMediaDrizzle();
   const completed = input.completed ?? 1;
   const watchedAt = input.watchedAt ?? new Date().toISOString();
-
-  const outcome = db.transaction(runMediaTx(input, completed, watchedAt));
-
-  if (outcome.fanOutCompletion) {
-    fanOutDebriefCompletion({
-      mediaType: outcome.completionMediaType,
-      mediaId: outcome.entry.mediaId,
-      watchHistoryId: outcome.entry.id,
-    });
-  }
-
-  return {
-    entry: outcome.entry,
-    created: outcome.created,
-    watchlistRemoved: outcome.watchlistRemoved,
-  };
+  return db.transaction(runMediaTx(input, completed, watchedAt));
 }

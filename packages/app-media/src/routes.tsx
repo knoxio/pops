@@ -87,17 +87,6 @@ const TierListPage = lazy(() =>
     default: m.TierListPage,
   }))
 );
-const DebriefPage = lazy(() =>
-  import('./pages/DebriefPage').then((m) => ({
-    default: m.DebriefPage,
-  }))
-);
-const DebriefResultsPage = lazy(() =>
-  import('./pages/DebriefResultsPage').then((m) => ({
-    default: m.DebriefResultsPage,
-  }))
-);
-
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
   id: string;
@@ -149,6 +138,4 @@ export const routes: RouteObject[] = [
   { path: 'arr/calendar', element: <CalendarPage /> },
   { path: 'calendar', element: <Navigate to="/media/discover" replace /> },
   { path: 'tier-list', element: <TierListPage /> },
-  { path: 'debrief/:movieId', element: <DebriefPage /> },
-  { path: 'debrief/:movieId/results', element: <DebriefResultsPage /> },
 ];

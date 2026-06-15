@@ -110,7 +110,6 @@ export function useMarkWatched({ mutations, utils, pending }: AddDeps) {
         if (watchResult.watchlistRemoved) {
           void utils.invalidate(['watchlist', 'list']);
         }
-        void utils.invalidate(['comparisons', 'getPendingDebriefs']);
         return {
           ok: true,
           inLibrary: true,
@@ -139,7 +138,6 @@ export function useMarkRewatched({ mutations, utils, pending }: AddDeps) {
           mediaId: libResult.data.id,
         });
         toast.success(`Logged rewatch of "${libResult.data.title}"`);
-        void utils.invalidate(['comparisons', 'getPendingDebriefs']);
         return { ok: true, inLibrary: true, isWatched: true };
       } catch {
         toast.error('Failed to log rewatch');

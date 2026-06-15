@@ -1,4 +1,4 @@
-import { ClipboardCheck, Film, Trash2 } from 'lucide-react';
+import { Film, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
@@ -11,7 +11,6 @@ interface HistoryCardProps {
   entry: HistoryEntry;
   onDelete: (id: number) => void;
   isDeleting: boolean;
-  debriefSessionId: number | null;
 }
 
 function PosterImage({
@@ -48,13 +47,11 @@ function CardOverlays({
   isEpisode,
   isDeleting,
   onDelete,
-  debriefSessionId,
 }: {
   entry: HistoryEntry;
   isEpisode: boolean;
   isDeleting: boolean;
   onDelete: (id: number) => void;
-  debriefSessionId: number | null;
 }) {
   return (
     <>
@@ -64,16 +61,6 @@ function CardOverlays({
       <span className="absolute top-2 right-2 z-10 bg-black/60 text-white text-2xs font-medium px-1.5 py-0.5 rounded">
         {formatShortDate(entry.watchedAt)}
       </span>
-      {debriefSessionId != null && (
-        <Link
-          to={`/media/debrief/${debriefSessionId}`}
-          aria-label="Debrief"
-          onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-2 left-2 z-10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1.5 h-auto w-auto rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center"
-        >
-          <ClipboardCheck className="h-3.5 w-3.5" />
-        </Link>
-      )}
       <Button
         variant="ghost"
         size="icon"
@@ -110,7 +97,7 @@ function CardEpisodeMeta({ entry }: { entry: HistoryEntry }) {
   );
 }
 
-export function HistoryCard({ entry, onDelete, isDeleting, debriefSessionId }: HistoryCardProps) {
+export function HistoryCard({ entry, onDelete, isDeleting }: HistoryCardProps) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const href = getHistoryHref(entry);
@@ -141,7 +128,6 @@ export function HistoryCard({ entry, onDelete, isDeleting, debriefSessionId }: H
           isEpisode={isEpisode}
           isDeleting={isDeleting}
           onDelete={onDelete}
-          debriefSessionId={debriefSessionId}
         />
         <PosterImage
           posterSrc={entry.posterUrl}

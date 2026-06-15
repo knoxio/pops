@@ -1,4 +1,4 @@
-import { ClipboardCheck, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { Badge, Button } from '@pops/ui';
@@ -10,7 +10,6 @@ interface HistoryItemProps {
   entry: HistoryEntry;
   onDelete: (id: number) => void;
   isDeleting: boolean;
-  debriefSessionId: number | null;
 }
 
 function EpisodeMeta({ entry }: { entry: HistoryEntry }) {
@@ -36,27 +35,15 @@ function ItemActions({
   entryId,
   isDeleting,
   onDelete,
-  debriefSessionId,
   isEpisode,
 }: {
   entryId: number;
   isDeleting: boolean;
   onDelete: (id: number) => void;
-  debriefSessionId: number | null;
   isEpisode: boolean;
 }) {
   return (
     <div className="flex items-center gap-1.5 shrink-0">
-      {debriefSessionId != null && (
-        <Link
-          to={`/media/debrief/${debriefSessionId}`}
-          aria-label="Debrief"
-          className="p-1 h-auto w-auto rounded-sm text-primary hover:bg-primary/10 inline-flex items-center"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <ClipboardCheck className="h-3.5 w-3.5" />
-        </Link>
-      )}
       <Button
         variant="ghost"
         size="icon"
@@ -74,7 +61,7 @@ function ItemActions({
   );
 }
 
-export function HistoryItem({ entry, onDelete, isDeleting, debriefSessionId }: HistoryItemProps) {
+export function HistoryItem({ entry, onDelete, isDeleting }: HistoryItemProps) {
   const href = getHistoryHref(entry);
   const isEpisode = entry.mediaType === 'episode';
   const title = entry.title ?? 'Unknown';
@@ -110,7 +97,6 @@ export function HistoryItem({ entry, onDelete, isDeleting, debriefSessionId }: H
             entryId={entry.id}
             isDeleting={isDeleting}
             onDelete={onDelete}
-            debriefSessionId={debriefSessionId}
             isEpisode={isEpisode}
           />
         </div>

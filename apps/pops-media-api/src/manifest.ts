@@ -72,8 +72,6 @@ const MEDIA_PAGES: readonly PageDescriptor[] = [
   { path: 'arr/calendar', bundleSlot: 'media-calendar' },
   { path: 'calendar', bundleSlot: 'media-calendar-redirect' },
   { path: 'tier-list', bundleSlot: 'media-tier-list' },
-  { path: 'debrief/:movieId', bundleSlot: 'media-debrief' },
-  { path: 'debrief/:movieId/results', bundleSlot: 'media-debrief-results' },
 ];
 
 /**

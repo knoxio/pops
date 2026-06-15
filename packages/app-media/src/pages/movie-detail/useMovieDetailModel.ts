@@ -44,15 +44,6 @@ interface StalenessResponse {
   data: { staleness: number };
 }
 
-interface PendingDebriefRow {
-  movieId: number;
-  status: string;
-}
-
-interface PendingDebriefsResponse {
-  data: PendingDebriefRow[];
-}
-
 function useMovieQueries(movieId: number) {
   const enabled = !Number.isNaN(movieId);
   const { data, isLoading, error } = usePillarQuery<MovieGetResponse>(
@@ -73,13 +64,7 @@ function useMovieQueries(movieId: number) {
     { mediaType: 'movie', mediaId: movieId },
     { enabled }
   );
-  const { data: pendingDebriefData } = usePillarQuery<PendingDebriefsResponse>(
-    'media',
-    ['comparisons', 'getPendingDebriefs'],
-    undefined,
-    { enabled }
-  );
-  return { data, isLoading, error, watchHistoryData, stalenessData, pendingDebriefData };
+  return { data, isLoading, error, watchHistoryData, stalenessData };
 }
 
 function computeDaysSinceWatch(watchEntries: { watchedAt: string }[]): number | null {
@@ -108,12 +93,6 @@ export function useMovieDetailModel(movieId: number) {
   const movie = queries.data?.data;
   const watchEntries = queries.watchHistoryData?.data ?? [];
 
-  const pendingDebrief = movie
-    ? (queries.pendingDebriefData?.data ?? []).find(
-        (d) => d.movieId === movie.id && (d.status === 'pending' || d.status === 'active')
-      )
-    : undefined;
-
   return {
     isLoading: queries.isLoading,
     error: queries.error,
@@ -121,6 +100,5 @@ export function useMovieDetailModel(movieId: number) {
     watchHistoryData: queries.watchHistoryData,
     daysSinceWatch: computeDaysSinceWatch(watchEntries),
     staleness: queries.stalenessData?.data?.staleness ?? 1.0,
-    pendingDebrief,
   };
 }

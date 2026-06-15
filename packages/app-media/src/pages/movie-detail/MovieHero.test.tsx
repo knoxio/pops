@@ -31,13 +31,7 @@ function makeMovie(overrides: Partial<Parameters<typeof MovieHero>[0]['movie']> 
 
 function renderHero(movieOverrides: Partial<Parameters<typeof MovieHero>[0]['movie']> = {}) {
   return render(
-    <MovieHero
-      movie={makeMovie(movieOverrides)}
-      year={1994}
-      daysSinceWatch={null}
-      staleness={0}
-      pendingDebrief={undefined}
-    />
+    <MovieHero movie={makeMovie(movieOverrides)} year={1994} daysSinceWatch={null} staleness={0} />
   );
 }
 
@@ -68,7 +62,6 @@ describe('MovieHero — HeroPoster', () => {
         year={1994}
         daysSinceWatch={null}
         staleness={0}
-        pendingDebrief={undefined}
       />
     );
 
@@ -85,7 +78,6 @@ describe('MovieHero — HeroPoster', () => {
         year={1972}
         daysSinceWatch={null}
         staleness={0}
-        pendingDebrief={undefined}
       />
     );
 

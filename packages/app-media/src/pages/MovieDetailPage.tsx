@@ -59,7 +59,6 @@ export function MovieDetailPage() {
         year={year}
         daysSinceWatch={model.daysSinceWatch}
         staleness={model.staleness}
-        pendingDebrief={model.pendingDebrief}
       />
       <MovieDetailContent movie={movie} watchHistory={model.watchHistoryData?.data} />
     </div>

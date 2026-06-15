@@ -6,7 +6,6 @@ import { Link } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
 import { Button } from '@pops/ui';
 
-import { DebriefBanner } from '../components/DebriefBanner';
 import { DownloadQueue } from '../components/DownloadQueue';
 import { LeavingSoonShelf } from '../components/LeavingSoonShelf';
 import { useMediaLibrary } from '../hooks/useMediaLibrary';
@@ -72,7 +71,6 @@ export function LibraryPage() {
   return (
     <div className="space-y-6">
       <LibraryHeader />
-      <DebriefBanner />
       <DownloadQueue />
       <LeavingSoonShelf />
       <LibraryFilters
