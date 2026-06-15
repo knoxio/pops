@@ -38,7 +38,8 @@ export async function bootstrapPillar(
 ): Promise<PillarBootstrapHandle> {
   const logger = options.logger ?? consoleLogger();
 
-  const validation = validateManifestPayload(options.manifest);
+  const normalized = coerceManifestVersion(options.manifest);
+  const validation = validateManifestPayload(normalized);
   if (!validation.ok) {
     throw new PillarManifestInvalidError(validation.issues);
   }
@@ -123,4 +124,30 @@ function startRuntime(args: StartRuntimeArgs): PillarBootstrapHandle {
 function defaultTransport(explicitUrl: string | undefined): RegistryTransport {
   const url = explicitUrl ?? process.env[DEFAULT_REGISTRY_URL_ENV] ?? DEFAULT_REGISTRY_URL_FALLBACK;
   return createHttpRegistryTransport({ baseUrl: url });
+}
+
+const SEMVER_RE = /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/;
+
+/**
+ * Normalise a raw `BUILD_VERSION` into a valid manifest version.
+ *
+ * Watchtower-driven deploys inject the git SHA as `BUILD_VERSION`, but the
+ * manifest schema requires semver. Rather than crash boot, coerce a
+ * non-semver value into `0.0.0-sha.<7chars>` (a valid semver prerelease).
+ * Already-semver values pass through unchanged.
+ */
+function coerceManifestVersion(manifest: ManifestPayload): ManifestPayload {
+  const raw = manifest.version;
+  if (SEMVER_RE.test(raw)) return manifest;
+  const short = raw.slice(0, 7);
+  const coerced = `0.0.0-sha.${short}`;
+  return {
+    ...manifest,
+    version: coerced,
+    contract: {
+      ...manifest.contract,
+      version: coerced,
+      tag: `contract-${manifest.pillar}@v${coerced}`,
+    },
+  };
 }

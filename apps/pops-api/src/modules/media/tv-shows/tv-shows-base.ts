@@ -2,43 +2,23 @@
  * TV shows wrapper — resolves the media-pillar drizzle handle and forwards
  * to `@pops/media-db`'s `tvShowsService` (PRD-166 cutover).
  *
- * Mirrors the movies PR 3 pattern: in-tree callers (router.ts,
- * library/tv-show-service.ts, plex sync helpers, watchlist push,
- * thetvdb service + refresh-episodes, …) keep importing from
- * `./tv-shows/service.js` unchanged. The handle now points at the media
- * pillar's per-pillar SQLite via `getMediaDrizzle()` instead of the
- * shared `pops.db` singleton, so every tv-shows write through this
- * wrapper lands in `media.db.tv_shows`.
- *
- * Cross-store consistency during the migration window:
- *  - `backfillMediaFromShared()` runs at boot and is one-way only
- *    (pops.db → media.db, idempotent via NOT IN id filter). It does NOT
- *    keep the two stores in sync at runtime; it only catches media.db
- *    up to pops.db on each restart.
- *  - In-tree code paths that still write tv_shows to the shared
- *    `pops.db` (notably `library/tv-show-service.ts` for plex/library
- *    ingestion, and `seasons-service.ts` / `episodes-service.ts` whose
- *    FK parents live on the legacy mount) remain the source of truth
- *    for `seasons.tv_show_id` and `episodes.season_id` joins. Until
- *    those slices ship to `@pops/media-db`, the seasons/episodes
- *    services intentionally read+write the shared DB so their FK joins
- *    resolve in one store, and the boot-time backfill carries rows
- *    written there into media.db on the next deploy.
- *  - This means a tv_show created via `createTvShow` (media.db only)
- *    will not satisfy an FK insert in `createSeason` (pops.db) until
- *    the seasons/episodes cutover ships. Callers that need both must
- *    keep going through the library ingestion path which writes to the
- *    shared DB; this wrapper is currently used by reads + the
- *    metadata-refresh writes that don't need new season FKs.
+ * In-tree callers (router.ts, library/tv-show-service.ts, plex sync
+ * helpers, watchlist push, thetvdb service + refresh-episodes, …) keep
+ * importing from `./tv-shows/service.js` unchanged. The handle points
+ * at the media pillar's per-pillar SQLite via `getMediaDrizzle()`
+ * instead of the shared `pops.db` singleton, so every tv-shows write
+ * through this wrapper lands in `media.db.tv_shows`. As of the Wave 5
+ * media batch 1 cutover, `seasons-service.ts` and `episodes-service.ts`
+ * do the same — every tv-shows / seasons / episodes read+write
+ * resolves through the media pillar handle, so the FK joins
+ * `seasons.tv_show_id` → `tv_shows.id` and `episodes.season_id` →
+ * `seasons.id` resolve inside one store with no cross-handle
+ * split-brain.
  *
  * Error translation: the package surface throws `TvShowNotFoundError` /
  * `TvShowConflictError`. We re-throw them as the in-tree `NotFoundError`
  * / `ConflictError` so the router's `instanceof` checks (and library /
  * plex callers that catch the same shapes) keep working without churn.
- *
- * Out of scope (per PRD-166): `seasons-service.ts` and
- * `episodes-service.ts` still route through `getDrizzle()`; they migrate
- * once their slices land in `@pops/media-db`.
  */
 import {
   tvShowsService,
