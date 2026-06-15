@@ -27,7 +27,7 @@
     "@pops/cerebrum-contract": "workspace:*",
     "@pops/core-contract": "workspace:*",
     "@pops/finance-contract": "workspace:*",
-    "@pops/food-contract": "workspace:*",
+    "@pops/food": "workspace:*",
     "@pops/inventory": "workspace:*",
     "@pops/lists": "workspace:*",
     "@pops/media-contract": "workspace:*",

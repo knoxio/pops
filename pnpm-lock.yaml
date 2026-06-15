@@ -57,9 +57,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.4.3)
-      '@pops/app-food-db':
-        specifier: workspace:*
-        version: link:../../packages/app-food-db
       '@pops/cerebrum-contract':
         specifier: workspace:*
         version: link:../../packages/cerebrum-contract
@@ -78,12 +75,9 @@ importers:
       '@pops/finance-db':
         specifier: workspace:*
         version: link:../../packages/finance-db
-      '@pops/food-contracts':
+      '@pops/food':
         specifier: workspace:*
-        version: link:../../packages/food-contracts
-      '@pops/food-db':
-        specifier: workspace:*
-        version: link:../../packages/food-db
+        version: link:../../pillars/food
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../../packages/media-contract
@@ -459,46 +453,6 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
-  apps/pops-food-api:
-    dependencies:
-      '@pops/food-db':
-        specifier: workspace:*
-        version: link:../../packages/food-db
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../../packages/pillar-sdk
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      express:
-        specifier: ^5.1.0
-        version: 5.2.1
-    devDependencies:
-      '@types/express':
-        specifier: ^5.0.4
-        version: 5.0.6
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      '@types/supertest':
-        specifier: ^6.0.3
-        version: 6.0.3
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      supertest:
-        specifier: ^7.1.4
-        version: 7.2.2
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
   apps/pops-ha-bridge-api:
     dependencies:
       '@pops/ha-bridge-db':
@@ -532,73 +486,6 @@ importers:
       '@types/ws':
         specifier: ^8.5.13
         version: 8.18.1
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      supertest:
-        specifier: ^7.1.4
-        version: 7.2.2
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  apps/pops-inventory-api:
-    dependencies:
-      '@pops/core-contract':
-        specifier: workspace:*
-        version: link:../../packages/core-contract
-      '@pops/core-db':
-        specifier: workspace:*
-        version: link:../../packages/core-db
-      '@pops/finance-contract':
-        specifier: workspace:*
-        version: link:../../packages/finance-contract
-      '@pops/inventory-contract':
-        specifier: workspace:*
-        version: link:../../packages/inventory-contract
-      '@pops/inventory-db':
-        specifier: workspace:*
-        version: link:../../packages/inventory-db
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../../packages/pillar-sdk
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@trpc/server':
-        specifier: ^11.17.0
-        version: 11.17.0(typescript@6.0.3)
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-      express:
-        specifier: ^5.1.0
-        version: 5.2.1
-      jsonwebtoken:
-        specifier: ^9.0.3
-        version: 9.0.3
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/express':
-        specifier: ^5.0.4
-        version: 5.0.6
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      '@types/supertest':
-        specifier: ^6.0.3
-        version: 6.0.3
       '@vitest/coverage-v8':
         specifier: ^4.1.8
         version: 4.1.8(vitest@4.1.8)
@@ -915,58 +802,6 @@ importers:
       vite:
         specifier: ^8.0.16
         version: 8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0)
-
-  apps/pops-worker-food:
-    dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.104.1
-        version: 0.104.1(zod@4.4.3)
-      '@mozilla/readability':
-        specifier: ^0.6.0
-        version: 0.6.0
-      '@pops/food-contracts':
-        specifier: workspace:*
-        version: link:../../packages/food-contracts
-      '@trpc/client':
-        specifier: 11.17.0
-        version: 11.17.0(@trpc/server@11.17.0(typescript@6.0.3))(typescript@6.0.3)
-      bullmq:
-        specifier: ^5.78.0
-        version: 5.78.0
-      ioredis:
-        specifier: 5.11.0
-        version: 5.11.0
-      jsdom:
-        specifier: ^25.0.1
-        version: 25.0.1
-      pino:
-        specifier: ^10.3.1
-        version: 10.3.1
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@pops/api':
-        specifier: workspace:*
-        version: link:../pops-api
-      '@pops/app-food-db':
-        specifier: workspace:*
-        version: link:../../packages/app-food-db
-      '@types/jsdom':
-        specifier: ^21.1.7
-        version: 21.1.7
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
   packages/api-client:
     dependencies:
@@ -1304,12 +1139,6 @@ importers:
       '@pops/api':
         specifier: workspace:*
         version: link:../../apps/pops-api
-      '@pops/app-food-db':
-        specifier: workspace:*
-        version: link:../app-food-db
-      '@pops/food-contracts':
-        specifier: workspace:*
-        version: link:../food-contracts
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../pillar-sdk
@@ -1401,37 +1230,6 @@ importers:
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  packages/app-food-db:
-    dependencies:
-      '@pops/core-db':
-        specifier: workspace:*
-        version: link:../core-db
-      '@pops/food-contracts':
-        specifier: workspace:*
-        version: link:../food-contracts
-      '@pops/food-db':
-        specifier: workspace:*
-        version: link:../food-db
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-    devDependencies:
-      '@types/better-sqlite3':
-        specifier: ^7.6.12
-        version: 7.6.13
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      better-sqlite3:
-        specifier: ^12.10.0
-        version: 12.10.0
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1874,59 +1672,6 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
-  packages/food-contract:
-    dependencies:
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../types
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  packages/food-contracts:
-    devDependencies:
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-
-  packages/food-db:
-    dependencies:
-      better-sqlite3:
-        specifier: ^12.10.0
-        version: 12.10.0
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-      drizzle-zod:
-        specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/better-sqlite3':
-        specifier: ^7.6.12
-        version: 7.6.13
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
   packages/ha-bridge-db:
     dependencies:
       better-sqlite3:
@@ -1935,56 +1680,6 @@ importers:
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-    devDependencies:
-      '@types/better-sqlite3':
-        specifier: ^7.6.12
-        version: 7.6.13
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  packages/inventory-contract:
-    dependencies:
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../types
-      '@trpc/server':
-        specifier: ^11.17.0
-        version: 11.17.0(typescript@6.0.3)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  packages/inventory-db:
-    dependencies:
-      better-sqlite3:
-        specifier: ^12.10.0
-        version: 12.10.0
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-      drizzle-zod:
-        specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.12
@@ -2064,9 +1759,9 @@ importers:
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../finance-contract
-      '@pops/food-contract':
+      '@pops/food':
         specifier: workspace:*
-        version: link:../food-contract
+        version: link:../../pillars/food
       '@pops/inventory':
         specifier: workspace:*
         version: link:../../pillars/inventory
@@ -2438,6 +2133,82 @@ importers:
       vitest:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
+
+  pillars/food:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.104.1
+        version: 0.104.1(zod@4.4.3)
+      '@mozilla/readability':
+        specifier: ^0.6.0
+        version: 0.6.0
+      '@pops/core-db':
+        specifier: workspace:*
+        version: link:../../packages/core-db
+      '@pops/pillar-sdk':
+        specifier: workspace:*
+        version: link:../../packages/pillar-sdk
+      '@pops/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      better-sqlite3:
+        specifier: ^12.10.0
+        version: 12.10.0
+      bullmq:
+        specifier: ^5.78.0
+        version: 5.78.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
+      drizzle-zod:
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
+      express:
+        specifier: ^5.1.0
+        version: 5.2.1
+      ioredis:
+        specifier: 5.11.0
+        version: 5.11.0
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.12
+        version: 7.6.13
+      '@types/express':
+        specifier: ^5.0.4
+        version: 5.0.6
+      '@types/jsdom':
+        specifier: ^21.1.7
+        version: 21.1.7
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
+      '@types/supertest':
+        specifier: ^6.0.3
+        version: 6.0.3
+      '@vitest/coverage-v8':
+        specifier: ^4.1.8
+        version: 4.1.8(vitest@4.1.8)
+      supertest:
+        specifier: ^7.1.4
+        version: 7.2.2
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
   pillars/inventory:
     dependencies:
@@ -6921,10 +6692,6 @@ packages:
 
   has-tostringtag@1.0.2:
     resolution: {integrity: sha512-NqADB8VjPFLM2V0VvHUewwwsw0ZWBaIdgo+ieHtK3hasLz4qeCRjYcqfB6AQrBggRKppKF8L52/VqdVsO47Dlw==}
-    engines: {node: '>= 0.4'}
-
-  hasown@2.0.2:
-    resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
   hasown@2.0.4:
@@ -12706,7 +12473,7 @@ snapshots:
       asynckit: 0.4.0
       combined-stream: 1.0.8
       es-set-tostringtag: 2.1.0
-      hasown: 2.0.2
+      hasown: 2.0.4
       mime-types: 2.1.35
 
   formdata-polyfill@4.0.10:
@@ -12830,10 +12597,6 @@ snapshots:
   has-tostringtag@1.0.2:
     dependencies:
       has-symbols: 1.1.0
-
-  hasown@2.0.2:
-    dependencies:
-      function-bind: 1.1.2
 
   hasown@2.0.4:
     dependencies:

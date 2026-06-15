@@ -18,7 +18,7 @@
 import { Queue } from 'bullmq';
 import pino from 'pino';
 
-import { FOOD_INGEST_QUEUE_NAME, type IngestJobData } from '@pops/food-contracts';
+import { FOOD_INGEST_QUEUE_NAME, type IngestJobData } from '@pops/food/queue';
 
 import { createRedisConnection } from '../../jobs/redis.js';
 

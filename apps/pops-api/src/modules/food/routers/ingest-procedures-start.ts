@@ -16,7 +16,7 @@ import { type FoodDb, ingestSources, ingestSourcesService } from '@pops/app-food
 import { enqueueIngestJob, type EnqueueResult } from '../services/ingest-enqueue.js';
 import { writeScreenshotPayload } from '../services/ingest-storage.js';
 
-import type { IngestJobData } from '@pops/food-contracts';
+import type { IngestJobData } from '@pops/food/queue';
 
 import type { IngestStartInput } from './ingest-schemas.js';
 

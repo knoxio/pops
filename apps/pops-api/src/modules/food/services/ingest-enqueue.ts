@@ -6,7 +6,7 @@
  * `writeScreenshotPayload` before this helper runs; this helper only takes
  * the resulting `contentPath`.
  */
-import { type IngestJobData, FOOD_INGEST_QUEUE_NAME } from '@pops/food-contracts';
+import { type IngestJobData, FOOD_INGEST_QUEUE_NAME } from '@pops/food/queue';
 
 import { getFoodIngestQueue } from '../queue.js';
 

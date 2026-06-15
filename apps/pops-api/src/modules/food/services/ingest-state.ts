@@ -9,7 +9,7 @@ import type { JobType } from 'bullmq';
  * the worker writes back via `workerComplete`.
  */
 import type { IngestSourceRow } from '@pops/app-food-db';
-import type { PartialReason } from '@pops/food-contracts';
+import type { PartialReason } from '@pops/food/queue';
 
 function isPartialReason(value: string): value is PartialReason {
   switch (value) {

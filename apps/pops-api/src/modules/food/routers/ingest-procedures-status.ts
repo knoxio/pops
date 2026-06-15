@@ -17,7 +17,7 @@ import {
   type IngestState,
 } from '../services/ingest-state.js';
 
-import type { PartialReason } from '@pops/food-contracts';
+import type { PartialReason } from '@pops/food/queue';
 
 export interface IngestStatusView {
   sourceId: number;

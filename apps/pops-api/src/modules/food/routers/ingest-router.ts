@@ -47,7 +47,7 @@ import {
 } from './ingest-schemas.js';
 
 import type { FoodDb } from '@pops/app-food-db';
-import type { PartialReason } from '@pops/food-contracts';
+import type { PartialReason } from '@pops/food/queue';
 
 // `getDrizzle` returns a `BetterSQLite3Database<Record<string, unknown>>`;
 // `FoodDb` from `@pops/app-food-db` is the same structural type, so the

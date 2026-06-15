@@ -23,8 +23,6 @@
     "@lezer/highlight": "^1.2.3",
     "@lezer/lr": "^1.4.10",
     "@pops/api": "workspace:*",
-    "@pops/app-food-db": "workspace:*",
-    "@pops/food-contracts": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
