@@ -91,20 +91,7 @@ jobs:
 
       - name: Build shared packages
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: |
-          cd packages/db-types && pnpm build
-          cd ../types && pnpm build
-          cd ../module-registry && pnpm build
-          cd ../food-contracts && pnpm build
-          cd ../core-db && pnpm build
-          cd ../finance-db && pnpm build
-          cd ../inventory-db && pnpm build
-          cd ../media-db && pnpm build
-          cd ../cerebrum-db && pnpm build
-          cd ../food-db && pnpm build
-          cd ../lists-db && pnpm build
-          cd ../app-lists-db && pnpm build
-          cd ../app-food-db && pnpm build
+        run: pnpm --filter "@pops/api^..." --filter "@pops/shell^..." --filter "!./apps/*" build
 
       - name: Cache Playwright browsers
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
