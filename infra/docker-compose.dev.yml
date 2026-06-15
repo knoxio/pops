@@ -239,7 +239,7 @@ services:
   lists-api:
     build:
       context: ..
-      dockerfile: apps/pops-lists-api/Dockerfile
+      dockerfile: pillars/lists/api/Dockerfile
       args:
         BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-lists-api

@@ -24,6 +24,8 @@ import type { ModuleManifest } from '@pops/types';
 const here = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(here, '..');
 const PACKAGES_ROOT = join(PACKAGE_ROOT, '..');
+const REPO_ROOT = join(PACKAGES_ROOT, '..');
+const PILLARS_ROOT = join(REPO_ROOT, 'pillars');
 
 const EXPECTED_IDS = [
   'ai',
@@ -106,13 +108,32 @@ describe('discoverManifestSources', () => {
     const parsed = JSON.parse(pkgJsonRaw) as { devDependencies?: Record<string, string> };
     const devDeps = new Set(Object.keys(parsed.devDependencies ?? {}));
 
-    const entries = await readdir(PACKAGES_ROOT, { withFileTypes: true });
-    const contractDirs = entries
-      .filter((e) => e.isDirectory() && e.name.endsWith('-contract'))
-      .map((e) => e.name);
+    const contractPkgPaths: string[] = [];
 
-    for (const dirName of contractDirs) {
-      const raw = await readFile(join(PACKAGES_ROOT, dirName, 'package.json'), 'utf8');
+    const packageEntries = await readdir(PACKAGES_ROOT, { withFileTypes: true });
+    for (const entry of packageEntries) {
+      if (!entry.isDirectory() || !entry.name.endsWith('-contract')) continue;
+      contractPkgPaths.push(join(PACKAGES_ROOT, entry.name, 'package.json'));
+    }
+
+    try {
+      const pillarEntries = await readdir(PILLARS_ROOT, { withFileTypes: true });
+      for (const entry of pillarEntries) {
+        if (!entry.isDirectory()) continue;
+        contractPkgPaths.push(join(PILLARS_ROOT, entry.name, 'contract', 'package.json'));
+      }
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+    }
+
+    for (const pkgPath of contractPkgPaths) {
+      let raw: string;
+      try {
+        raw = await readFile(pkgPath, 'utf8');
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue;
+        throw err;
+      }
       const pkg = JSON.parse(raw) as { name?: string; exports?: Record<string, unknown> };
       if (pkg.name === undefined || pkg.exports?.['./manifest'] === undefined) continue;
       expect(devDeps.has(pkg.name), `missing devDep pin: ${pkg.name}`).toBe(true);

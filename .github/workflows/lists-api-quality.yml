@@ -4,19 +4,19 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/pops-lists-api/**"
+      - "pillars/lists/api/**"
+      - "pillars/lists/contract/**"
+      - "pillars/lists/db/**"
       - "packages/db-types/**"
-      - "packages/lists-contract/**"
-      - "packages/lists-db/**"
       - "packages/pillar-sdk/**"
       - ".github/workflows/lists-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "apps/pops-lists-api/**"
+      - "pillars/lists/api/**"
+      - "pillars/lists/contract/**"
+      - "pillars/lists/db/**"
       - "packages/db-types/**"
-      - "packages/lists-contract/**"
-      - "packages/lists-db/**"
       - "packages/pillar-sdk/**"
       - ".github/workflows/lists-api-quality.yml"
       - ".github/workflows/_pkg-check.yml"
@@ -35,10 +35,10 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'apps/pops-lists-api/**'
+              - 'pillars/lists/api/**'
+              - 'pillars/lists/contract/**'
+              - 'pillars/lists/db/**'
               - 'packages/db-types/**'
-              - 'packages/lists-contract/**'
-              - 'packages/lists-db/**'
               - 'packages/pillar-sdk/**'
               - '.github/workflows/lists-api-quality.yml'
               - '.github/workflows/_pkg-check.yml'
@@ -48,6 +48,6 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: apps/pops-lists-api
+      package-path: pillars/lists/api
       needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

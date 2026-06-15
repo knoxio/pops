@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - "packages/lists-db/**"
+      - "pillars/lists/db/**"
       - "packages/db-types/**"
       - "apps/pops-api/src/db/drizzle-migrations/0062_chemical_donald_blake.sql"
       - ".github/workflows/lists-db-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/lists-db/**"
+      - "pillars/lists/db/**"
       - "packages/db-types/**"
       - "apps/pops-api/src/db/drizzle-migrations/0062_chemical_donald_blake.sql"
       - ".github/workflows/lists-db-quality.yml"
@@ -31,7 +31,7 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/lists-db/**'
+              - 'pillars/lists/db/**'
               - 'packages/db-types/**'
               - 'apps/pops-api/src/db/drizzle-migrations/0062_chemical_donald_blake.sql'
               - '.github/workflows/lists-db-quality.yml'
@@ -54,7 +54,7 @@ jobs:
           set -euo pipefail
           for tag in 0062_chemical_donald_blake; do
             shared="apps/pops-api/src/db/drizzle-migrations/${tag}.sql"
-            pillar="packages/lists-db/migrations/${tag}.sql"
+            pillar="pillars/lists/db/migrations/${tag}.sql"
             if ! diff -q "$shared" "$pillar"; then
               echo "::error::Migration drift detected: $shared and $pillar must be byte-identical during the transitional release cycle (lists pillar phase 1)."
               diff "$shared" "$pillar" || true
@@ -68,6 +68,6 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/lists-db
+      package-path: pillars/lists/db
       needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

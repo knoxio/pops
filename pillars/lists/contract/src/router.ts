@@ -1,6 +1,6 @@
 /**
  * The lists pillar's tRPC router *type*. Type-only re-export from
- * `apps/pops-lists-api` — no runtime tRPC code crosses the contract
+ * `pillars/lists/api` — no runtime tRPC code crosses the contract
  * boundary. Consumers use this to type the `pillar('lists').foo.bar(…)`
  * SDK calls (Epic 05 / PRD-191).
  *

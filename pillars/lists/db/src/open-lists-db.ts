@@ -6,7 +6,7 @@
  * touching pops-api's existing singleton. The opener is intentionally
  * minimal — it relies on drizzle-orm's built-in `migrate` helper to
  * apply the in-package migrations journal at
- * `packages/lists-db/migrations/meta/_journal.json`.
+ * `pillars/lists/db/migrations/meta/_journal.json`.
  *
  * No production consumer wires this up yet. Subsequent PRs add the
  * `LISTS_SQLITE_PATH` env-var read in pops-api (PR 2), the boot-time
@@ -58,7 +58,7 @@ export interface OpenedListsDb {
  *     are enabled to match the shared singleton in
  *     `apps/pops-api/src/db.ts`.
  *   - Every migration in
- *     `packages/lists-db/migrations/meta/_journal.json` is applied via
+ *     `pillars/lists/db/migrations/meta/_journal.json` is applied via
  *     drizzle's built-in migrator (idempotent — re-running against the
  *     same DB short-circuits on the `__drizzle_migrations` hash check).
  *

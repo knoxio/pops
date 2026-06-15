@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - "packages/*-db/**"
+      - "pillars/*/db/**"
       - "packages/db-types/**"
       - "scripts/check-pillar-schema-coverage.mjs"
       - ".github/workflows/pillar-schema-coverage.yml"
   pull_request:
     paths:
       - "packages/*-db/**"
+      - "pillars/*/db/**"
       - "packages/db-types/**"
       - "scripts/check-pillar-schema-coverage.mjs"
       - ".github/workflows/pillar-schema-coverage.yml"

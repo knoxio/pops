@@ -22,7 +22,6 @@ COPY apps/pops-finance-api/package.json ./apps/pops-finance-api/
 COPY apps/pops-food-api/package.json ./apps/pops-food-api/
 COPY apps/pops-ha-bridge-api/package.json ./apps/pops-ha-bridge-api/
 COPY apps/pops-inventory-api/package.json ./apps/pops-inventory-api/
-COPY apps/pops-lists-api/package.json ./apps/pops-lists-api/
 COPY apps/pops-mcp/package.json ./apps/pops-mcp/
 COPY apps/pops-media-api/package.json ./apps/pops-media-api/
 COPY apps/pops-shell/package.json ./apps/pops-shell/
@@ -36,7 +35,6 @@ COPY packages/app-food/package.json ./packages/app-food/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-lists/package.json ./packages/app-lists/
-COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
@@ -51,8 +49,6 @@ COPY packages/food-db/package.json ./packages/food-db/
 COPY packages/ha-bridge-db/package.json ./packages/ha-bridge-db/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
-COPY packages/lists-contract/package.json ./packages/lists-contract/
-COPY packages/lists-db/package.json ./packages/lists-db/
 COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/module-registry/package.json ./packages/module-registry/
@@ -62,6 +58,10 @@ COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/wire-conformance/package.json ./packages/wire-conformance/
+COPY pillars/lists/api/package.json ./pillars/lists/api/
+COPY pillars/lists/app-db-legacy/package.json ./pillars/lists/app-db-legacy/
+COPY pillars/lists/contract/package.json ./pillars/lists/contract/
+COPY pillars/lists/db/package.json ./pillars/lists/db/
 
 # Install pnpm + every workspace dependency.
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -71,9 +71,6 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # (resolved via `pnpm m ls --filter "@pops/lists-api..." --json`).
 # A change in a non-listed package does NOT invalidate this image's
 # Phase 2 layer.
-# @pops/app-lists-db
-COPY packages/app-lists-db/src ./packages/app-lists-db/src
-COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/tsconfig.json
 # @pops/cerebrum-contract
 COPY packages/cerebrum-contract/src ./packages/cerebrum-contract/src
 COPY packages/cerebrum-contract/scripts ./packages/cerebrum-contract/scripts
@@ -94,10 +91,6 @@ COPY packages/inventory-contract/src ./packages/inventory-contract/src
 COPY packages/inventory-contract/scripts ./packages/inventory-contract/scripts
 COPY packages/inventory-contract/openapi ./packages/inventory-contract/openapi
 COPY packages/inventory-contract/tsconfig.json ./packages/inventory-contract/tsconfig.json
-# @pops/lists-db
-COPY packages/lists-db/src ./packages/lists-db/src
-COPY packages/lists-db/migrations ./packages/lists-db/migrations
-COPY packages/lists-db/tsconfig.json ./packages/lists-db/tsconfig.json
 # @pops/media-contract
 COPY packages/media-contract/src ./packages/media-contract/src
 COPY packages/media-contract/scripts ./packages/media-contract/scripts
@@ -110,10 +103,17 @@ COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json ./packages/types/tsconfig.json
 COPY packages/types/tsconfig.build.json ./packages/types/tsconfig.build.json
+# @pops/app-lists-db
+COPY pillars/lists/app-db-legacy/src ./pillars/lists/app-db-legacy/src
+COPY pillars/lists/app-db-legacy/tsconfig.json ./pillars/lists/app-db-legacy/tsconfig.json
+# @pops/lists-db
+COPY pillars/lists/db/src ./pillars/lists/db/src
+COPY pillars/lists/db/migrations ./pillars/lists/db/migrations
+COPY pillars/lists/db/tsconfig.json ./pillars/lists/db/tsconfig.json
 
 # Pillar app sources.
-COPY apps/pops-lists-api/src ./apps/pops-lists-api/src
-COPY apps/pops-lists-api/tsconfig.json ./apps/pops-lists-api/tsconfig.json
+COPY pillars/lists/api/src ./pillars/lists/api/src
+COPY pillars/lists/api/tsconfig.json ./pillars/lists/api/tsconfig.json
 
 # Phase 3: build shared deps in pnpm topology order, then the app.
 # `^...` expands to every dependency of the target excluding the target,
@@ -129,7 +129,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder --chown=node:node /app/deploy ./
-COPY --from=builder --chown=node:node /app/apps/pops-lists-api/dist ./dist
+COPY --from=builder --chown=node:node /app/pillars/lists/api/dist ./dist
 
 ARG BUILD_VERSION=dev
 ENV BUILD_VERSION=$BUILD_VERSION

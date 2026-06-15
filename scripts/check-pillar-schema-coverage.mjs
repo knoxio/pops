@@ -38,13 +38,23 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..');
 
 const PILLARS = /** @type {const} */ ([
-  { name: 'finance', pkg: 'finance-db', opener: 'openFinanceDb' },
-  { name: 'core', pkg: 'core-db', opener: 'openCoreDb' },
-  { name: 'media', pkg: 'media-db', opener: 'openMediaDb' },
-  { name: 'inventory', pkg: 'inventory-db', opener: 'openInventoryDb' },
-  { name: 'cerebrum', pkg: 'cerebrum-db', opener: 'openCerebrumDb' },
-  { name: 'food', pkg: 'food-db', opener: 'openFoodDb' },
-  { name: 'lists', pkg: 'lists-db', opener: 'openListsDb' },
+  { name: 'finance', pkg: 'finance-db', opener: 'openFinanceDb', pkgDir: 'packages/finance-db' },
+  { name: 'core', pkg: 'core-db', opener: 'openCoreDb', pkgDir: 'packages/core-db' },
+  { name: 'media', pkg: 'media-db', opener: 'openMediaDb', pkgDir: 'packages/media-db' },
+  {
+    name: 'inventory',
+    pkg: 'inventory-db',
+    opener: 'openInventoryDb',
+    pkgDir: 'packages/inventory-db',
+  },
+  {
+    name: 'cerebrum',
+    pkg: 'cerebrum-db',
+    opener: 'openCerebrumDb',
+    pkgDir: 'packages/cerebrum-db',
+  },
+  { name: 'food', pkg: 'food-db', opener: 'openFoodDb', pkgDir: 'packages/food-db' },
+  { name: 'lists', pkg: 'lists-db', opener: 'openListsDb', pkgDir: 'pillars/lists/db' },
 ]);
 
 /**
@@ -369,11 +379,11 @@ function collectUsedTableSymbols(pkgRoot, symbolToTable) {
  * `sqlite_master`. The caller is responsible for `close()` which also
  * unlinks the temp file (including the WAL/SHM sidecars).
  *
- * @param {{ pkg: string; opener: string }} pillar
+ * @param {{ pkg: string; opener: string; pkgDir: string }} pillar
  * @returns {Promise<{ raw: import('better-sqlite3').Database; close: () => void }>}
  */
 async function openPillarInMemory(pillar) {
-  const distEntry = join(repoRoot, 'packages', pillar.pkg, 'dist', 'index.js');
+  const distEntry = join(repoRoot, pillar.pkgDir, 'dist', 'index.js');
   if (!existsSync(distEntry)) {
     throw new Error(
       `[${pillar.pkg}] dist/index.js not found at ${distEntry}. ` +
@@ -460,7 +470,7 @@ function diff(raw, usedSymbols, symbolToTable) {
 async function checkPillar(pillar, symbolToTable, options = {}) {
   const ignoreAllowlist = options.ignoreAllowlist === true;
   const injectFakeTables = options.injectFakeTables ?? [];
-  const pkgRoot = join(repoRoot, 'packages', pillar.pkg);
+  const pkgRoot = join(repoRoot, pillar.pkgDir);
   if (!existsSync(pkgRoot)) {
     console.error(`[${pillar.name}] package not found at ${pkgRoot}`);
     return false;
@@ -511,7 +521,7 @@ async function checkPillar(pillar, symbolToTable, options = {}) {
     if (allowedIndexes.length > 0) {
       console.warn(
         `[${pillar.name}] WARN — ${allowedIndexes.length} allowlisted missing index(es) ` +
-          `(pre-existing drift; close out by adding to packages/${pillar.pkg}/migrations/):`
+          `(pre-existing drift; close out by adding to ${pillar.pkgDir}/migrations/):`
       );
       for (const m of allowedIndexes) console.warn(`    - ${m.index} on ${m.table}`);
     }
@@ -541,7 +551,7 @@ async function checkPillar(pillar, symbolToTable, options = {}) {
       for (const m of missingIndexes) console.error(`    - ${m.index} on ${m.table}`);
     }
     console.error(
-      `  Fix: extend packages/${pillar.pkg}/migrations/ with the missing CREATE TABLE / CREATE INDEX statements.`
+      `  Fix: extend ${pillar.pkgDir}/migrations/ with the missing CREATE TABLE / CREATE INDEX statements.`
     );
     return false;
   } finally {

@@ -1,9 +1,10 @@
 name: Publish Images
 
+# Triggers gated to workflow_dispatch only during the pillar-colocation work
+# so Watchtower on capivara doesn't roll forward to a half-migrated image.
+# Restore `push: branches: [main]` + `tags: ["v*"]` once the colocation
+# series stabilises.
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -251,7 +252,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: apps/pops-lists-api/Dockerfile
+          file: pillars/lists/api/Dockerfile
           push: true
           tags: ${{ steps.meta-lists-api.outputs.tags }}
           labels: ${{ steps.meta-lists-api.outputs.labels }}

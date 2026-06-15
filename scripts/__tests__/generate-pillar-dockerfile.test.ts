@@ -10,6 +10,7 @@ import {
   parsePillarTransitiveDeps,
   parseWorkspacePackagePaths,
   renderDockerfile,
+  resolveAppDir,
 } from '../generate-pillar-dockerfile.mjs';
 
 interface FixtureFile {
@@ -285,5 +286,64 @@ describe('generateDockerfile', () => {
     };
 
     expect(generateDockerfile(args)).toBe(generateDockerfile(args));
+  });
+
+  it('honours an explicit appDir override for the colocated pillar layout', () => {
+    const out = generateDockerfile({
+      pillar: 'lists',
+      appDir: 'pillars/lists/api',
+      allWorkspacePaths: ['pillars/lists/api', 'pillars/lists/db'],
+      transitiveDeps: [
+        { name: '@pops/lists-api', path: 'pillars/lists/api' },
+        { name: '@pops/lists-db', path: 'pillars/lists/db' },
+      ],
+      sourcesFor: (pkgDir) => [`${pkgDir}/src`],
+    });
+
+    expect(out).toContain('COPY pillars/lists/api/src ./pillars/lists/api/src');
+    expect(out).toContain('COPY pillars/lists/db/src ./pillars/lists/db/src');
+    expect(out).toContain('COPY --from=builder --chown=node:node /app/pillars/lists/api/dist');
+    expect(out).not.toContain('apps/pops-lists-api');
+  });
+
+  it('throws when the override appDir is not in the transitive graph', () => {
+    expect(() =>
+      generateDockerfile({
+        pillar: 'lists',
+        appDir: 'pillars/lists/api',
+        allWorkspacePaths: ['pillars/lists/db'],
+        transitiveDeps: [{ name: '@pops/lists-db', path: 'pillars/lists/db' }],
+        sourcesFor: () => [],
+      })
+    ).toThrow(/did not return the target app @pops\/lists-api/);
+  });
+});
+
+describe('resolveAppDir', () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'gen-dockerfile-resolve-'));
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('prefers the colocated layout when both exist', () => {
+    writeFixture(root, [
+      { path: 'pillars/lists/api/package.json', content: '{}' },
+      { path: 'apps/pops-lists-api/package.json', content: '{}' },
+    ]);
+    expect(resolveAppDir(root, 'lists')).toBe('pillars/lists/api');
+  });
+
+  it('falls back to the legacy layout when only it exists', () => {
+    writeFixture(root, [{ path: 'apps/pops-core-api/package.json', content: '{}' }]);
+    expect(resolveAppDir(root, 'core')).toBe('apps/pops-core-api');
+  });
+
+  it('returns null when neither layout exists', () => {
+    expect(resolveAppDir(root, 'ghost')).toBeNull();
   });
 });

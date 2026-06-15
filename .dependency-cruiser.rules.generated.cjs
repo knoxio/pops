@@ -69,10 +69,10 @@ const contractBoundaryRules = [
     comment:
       'Non-owning code must not import @pops/lists-db. Use @pops/lists-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
     from: {
-      pathNot: '^(apps/pops-lists-api|packages/lists-db|packages/lists-contract/scripts)/',
+      pathNot: '^(pillars/lists/api|pillars/lists/db|pillars/lists/contract/scripts)/',
     },
     to: {
-      path: '^packages/lists-db/',
+      path: '^pillars/lists/db/',
     },
   },
   {

@@ -9,10 +9,11 @@ on:
       - "packages/app-*/**"
       - "packages/cerebrum-db/**"
       - "packages/*-contract/**"
+      - "pillars/lists/contract/**"
       - "packages/db-types/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
-      - "packages/lists-db/**"
+      - "pillars/lists/db/**"
       - "packages/navigation/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
@@ -26,10 +27,11 @@ on:
       - "packages/app-*/**"
       - "packages/cerebrum-db/**"
       - "packages/*-contract/**"
+      - "pillars/lists/contract/**"
       - "packages/db-types/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
-      - "packages/lists-db/**"
+      - "pillars/lists/db/**"
       - "packages/navigation/**"
       - "packages/pillar-sdk/**"
       - "packages/types/**"
@@ -59,7 +61,8 @@ jobs:
               - 'packages/db-types/**'
               - 'packages/food-db/**'
               - 'packages/inventory-db/**'
-              - 'packages/lists-db/**'
+              - 'pillars/lists/db/**'
+              - 'pillars/lists/contract/**'
               - 'packages/navigation/**'
               - 'packages/pillar-sdk/**'
               - 'packages/types/**'

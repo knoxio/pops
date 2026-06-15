@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildAllBoundaryRules, buildBoundaryRule, renderRulesFile } from './boundary-rules.js';
-import { PILLARS } from './pillar-list.js';
+import { getPillarLayout, PILLARS } from './pillar-list.js';
 
 describe('buildAllBoundaryRules', () => {
   it('produces exactly one rule per pillar', () => {
@@ -22,39 +22,39 @@ describe('buildAllBoundaryRules', () => {
 describe('buildBoundaryRule', () => {
   describe.each(PILLARS)('for pillar %s', (pillar) => {
     const rule = buildBoundaryRule(pillar);
+    const layout = getPillarLayout(pillar);
     const toRegex = new RegExp(rule.to.path);
     const fromNotRegex = new RegExp(rule.from.pathNot);
 
-    it('to.path matches the resolved workspace package path', () => {
-      expect(toRegex.test(`packages/${pillar}-db/dist/index.js`)).toBe(true);
-      expect(toRegex.test(`packages/${pillar}-db/dist/index.d.ts`)).toBe(true);
-      expect(toRegex.test(`packages/${pillar}-db/dist/services/foo.js`)).toBe(true);
-      expect(toRegex.test(`packages/${pillar}-db/src/index.ts`)).toBe(true);
+    it('to.path matches the resolved runtime package path', () => {
+      expect(toRegex.test(`${layout.runtimeDir}/dist/index.js`)).toBe(true);
+      expect(toRegex.test(`${layout.runtimeDir}/dist/index.d.ts`)).toBe(true);
+      expect(toRegex.test(`${layout.runtimeDir}/dist/services/foo.js`)).toBe(true);
+      expect(toRegex.test(`${layout.runtimeDir}/src/index.ts`)).toBe(true);
     });
 
     it('to.path does not match the contract package or unrelated packages', () => {
       expect(toRegex.test(`packages/${pillar}-contract/dist/index.js`)).toBe(false);
       expect(toRegex.test('packages/types/dist/index.js')).toBe(false);
-      expect(toRegex.test(`packages/${pillar}-db-something-else/dist/index.js`)).toBe(false);
+      expect(toRegex.test(`${layout.runtimeDir}-something-else/dist/index.js`)).toBe(false);
     });
 
     it('from.pathNot excludes the owning api directory', () => {
-      expect(fromNotRegex.test(`apps/pops-${pillar}-api/src/server.ts`)).toBe(true);
+      expect(fromNotRegex.test(`${layout.apiDir}/src/server.ts`)).toBe(true);
     });
 
     it('from.pathNot excludes the owning runtime package directory', () => {
-      expect(fromNotRegex.test(`packages/${pillar}-db/src/index.ts`)).toBe(true);
-      expect(fromNotRegex.test(`packages/${pillar}-db/__tests__/foo.test.ts`)).toBe(true);
+      expect(fromNotRegex.test(`${layout.runtimeDir}/src/index.ts`)).toBe(true);
+      expect(fromNotRegex.test(`${layout.runtimeDir}/__tests__/foo.test.ts`)).toBe(true);
     });
 
     it('from.pathNot excludes the contract package scripts directory', () => {
-      expect(fromNotRegex.test(`packages/${pillar}-contract/scripts/generate-openapi.ts`)).toBe(
-        true
-      );
+      expect(fromNotRegex.test(`${layout.contractScriptsDir}/generate-openapi.ts`)).toBe(true);
     });
 
     it('from.pathNot does NOT exclude the contract package src directory', () => {
-      expect(fromNotRegex.test(`packages/${pillar}-contract/src/index.ts`)).toBe(false);
+      const contractSrc = layout.contractScriptsDir.replace(/\/scripts$/, '/src');
+      expect(fromNotRegex.test(`${contractSrc}/index.ts`)).toBe(false);
     });
 
     it('from.pathNot does not exclude non-owning callers', () => {
@@ -66,8 +66,9 @@ describe('buildBoundaryRule', () => {
     it('from.pathNot does not exclude sibling pillars', () => {
       const others = PILLARS.filter((p) => p !== pillar);
       for (const other of others) {
-        expect(fromNotRegex.test(`apps/pops-${other}-api/src/server.ts`)).toBe(false);
-        expect(fromNotRegex.test(`packages/${other}-db/src/index.ts`)).toBe(false);
+        const otherLayout = getPillarLayout(other);
+        expect(fromNotRegex.test(`${otherLayout.apiDir}/src/server.ts`)).toBe(false);
+        expect(fromNotRegex.test(`${otherLayout.runtimeDir}/src/index.ts`)).toBe(false);
       }
     });
 
