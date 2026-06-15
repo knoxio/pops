@@ -85,13 +85,26 @@ PRDs 213/214 (drop `pops.db` + retire legacy code) are conceptually done. The re
 - Test-side mocks are NOT a Wave 5 gate. They follow SUT migrations mechanically.
 - Stale `vi.mock('@pops/db-types', ...)` silent-failure pattern: detect via `grep -r "vi.mock.*getDrizzle"` then diff against SUT actual imports.
 
+## MCP registry seeding (open)
+
+Discovered 2026-06-15 via a live `pops-mcp` tool-call probe. MCP boot succeeds, the HTTP transport at `/mcp` is reachable, and `tools/list` returns 30 tools, but every `tools/call` fails with "Pillar 'X' is unavailable".
+
+Three bugs in series — two fixed in homelab-infra PR #12, one open:
+
+1. **Secret-mount perms (fixed).** `pops_api_key` was written by Ansible as `root:root 0600`, but `pops-mcp` runs as uid 1000 (node), and `docker compose secrets:`'s long-form `uid:/gid:/mode:` overrides are a Swarm-only feature ignored by plain compose. Fix: secrets role now supports per-item ownership; `pops_api_key` is `1000:1000 0440`.
+2. **POPS_PILLARS on the dispatcher (fixed).** `pops-api` and `pops-worker` had no `POPS_PILLARS` env, so their in-process registry only knew the synthetic `core` entry. Added the env to both, plus `POPS_API_KEY_FILE` for outgoing-call auth.
+3. **Dynamic registry empty (OPEN).** The pillar-sdk discovery path used by MCP calls tRPC `core.registry.list` on `pops-core-api`'s heartbeat-driven registry. That registry is fed by pillars POST-ing to `/core.registry.register` at boot — but the 7 per-pillar APIs have no self-register code. Net: discovery returns `pillars: []` → every call → unavailable. **This needs a new PRD** to either (a) add boot-time self-register to each pillar API (proper PRD-228 fulfillment for non-shell pillars), or (b) seed core-api's registry from `POPS_PILLARS` at boot with synthetic minimal manifests fetched from each pillar's `/manifest` endpoint (which PRD-241 US-01 added in code but not yet over HTTP). Recommend (a) — matches the ADR-035 / PRD-228 contract.
+
+Until (3) closes, MCP is **healthy as a process** but functionally inert for tool calls.
+
 ## Theme 13 exit criteria
 
-1. All 22 PRDs at 100% (the 17 in "Done" above + PRD-245 US-08 + PRD-246 US-04/05 + PRD-247/248/249).
+1. All 22 PRDs at 100% (the 17 in "Done" above + PRD-245 US-08 + PRD-246 US-04/05 + PRD-247/248/249) + the new MCP-registry-seeding PRD.
 2. Anti-lego audit reports 0 HIGH findings, ≤ a handful of justifiable MEDs (each annotated with next-PRD reference if the close can't ship now).
 3. Wave 5 at the revised threshold above.
 4. CI green on main. Publish Images succeeds on a freshly-cut main without a manual hot-fix chain.
 5. Capivara healthy on the post-merge image for 24 hours minimum.
+6. MCP `tools/call` succeeds end-to-end for at least one tool per pillar (gates the "MCP healthy" goal).
 
 ## Operational notes (for future agents)
 
