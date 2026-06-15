@@ -30,6 +30,7 @@
  *
  * iOS Swift codegen (different theme) consumes this committed file.
  */
+import { execFileSync } from 'node:child_process';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -83,6 +84,16 @@ function main(): void {
   const outFile = resolve(HERE, '..', 'openapi', 'lists.openapi.json');
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, serialized, 'utf8');
+
+  // Run oxfmt over the output so the committed file and the regenerated
+  // file stay byte-identical (drift check is `generate && git diff`).
+  // The repo formats JSON inline-arrays-when-short; without this pass,
+  // CI's format check fails on every commit.
+  execFileSync('pnpm', ['exec', 'oxfmt', '--write', outFile], {
+    cwd: resolve(HERE, '..'),
+    stdio: 'inherit',
+  });
+
   process.stdout.write(`[lists-contract] wrote OpenAPI snapshot to ${outFile}\n`);
 }
 

@@ -22,25 +22,14 @@
             "type": "string"
           },
           "status": {
-            "enum": [
-              "scheduled",
-              "completed",
-              "cancelled"
-            ],
+            "enum": ["scheduled", "completed", "cancelled"],
             "type": "string"
           },
           "title": {
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title",
-          "scheduledDate",
-          "status",
-          "notes",
-          "lastEditedTime"
-        ],
+        "required": ["id", "title", "scheduledDate", "status", "notes", "lastEditedTime"],
         "type": "object"
       },
       "CreateListItemInput": {
@@ -54,9 +43,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object"
       },
       "DeleteResponse": {
@@ -65,9 +52,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ],
+        "required": ["message"],
         "type": "object"
       },
       "ListItem": {
@@ -88,12 +73,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "completed",
-          "lastEditedTime"
-        ],
+        "required": ["id", "name", "completed", "lastEditedTime"],
         "type": "object"
       },
       "ListItemListResponse": {
@@ -108,10 +88,7 @@
             "$ref": "#/components/schemas/Pagination"
           }
         },
-        "required": [
-          "data",
-          "pagination"
-        ],
+        "required": ["data", "pagination"],
         "type": "object"
       },
       "ListItemResponse": {
@@ -123,9 +100,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "type": "object"
       },
       "Pagination": {
@@ -146,11 +121,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "total",
-          "limit",
-          "offset"
-        ],
+        "required": ["total", "limit", "offset"],
         "type": "object"
       },
       "Project": {
@@ -176,22 +147,11 @@
             "type": "string"
           },
           "status": {
-            "enum": [
-              "planned",
-              "active",
-              "archived"
-            ],
+            "enum": ["planned", "active", "archived"],
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "status",
-          "description",
-          "parentId",
-          "lastEditedTime"
-        ],
+        "required": ["id", "name", "status", "description", "parentId", "lastEditedTime"],
         "type": "object"
       },
       "Tag": {
@@ -213,12 +173,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "color",
-          "lastEditedTime"
-        ],
+        "required": ["id", "name", "color", "lastEditedTime"],
         "type": "object"
       },
       "UpdateListItemInput": {
@@ -287,9 +242,7 @@
           }
         },
         "summary": "List lists items",
-        "tags": [
-          "items"
-        ]
+        "tags": ["items"]
       },
       "post": {
         "operationId": "lists.items.create",
@@ -316,9 +269,7 @@
           }
         },
         "summary": "Create a lists item",
-        "tags": [
-          "items"
-        ]
+        "tags": ["items"]
       }
     },
     "/lists/items/{id}": {
@@ -350,9 +301,7 @@
           }
         },
         "summary": "Delete a lists item",
-        "tags": [
-          "items"
-        ]
+        "tags": ["items"]
       },
       "get": {
         "operationId": "lists.items.get",
@@ -382,9 +331,7 @@
           }
         },
         "summary": "Get a lists item by id",
-        "tags": [
-          "items"
-        ]
+        "tags": ["items"]
       },
       "patch": {
         "operationId": "lists.items.update",
@@ -424,9 +371,7 @@
           }
         },
         "summary": "Update a lists item",
-        "tags": [
-          "items"
-        ]
+        "tags": ["items"]
       }
     }
   },
