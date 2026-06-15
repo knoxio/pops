@@ -38,6 +38,7 @@ jobs:
     with:
       package-path: packages/db-types
       has-test: false
+      needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
 
   row-schemas:
