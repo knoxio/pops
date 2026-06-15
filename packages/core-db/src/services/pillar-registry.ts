@@ -51,8 +51,12 @@ export interface UpsertPillarRegistrationInput {
   readonly now?: string;
   /** Defaults to `'internal'` (bootstrap path); HTTP endpoint passes `'external'`. */
   readonly origin?: PillarOrigin;
-  /** SHA-256 hex of the API key. Required when `origin === 'external'`. */
-  readonly apiKeyHash?: string;
+  /**
+   * SHA-256 hex of the API key. Historical column; new external
+   * registrations pass `null` since the trust model is the docker
+   * network (ADR-027) rather than per-request key auth.
+   */
+  readonly apiKeyHash?: string | null;
 }
 
 export interface PillarRegistration {

@@ -1,23 +1,17 @@
 /**
  * Integration tests for `POST /core.registry.register` (Theme 13 PRD-228 US-01).
  *
- * Boots the full Express factory against a temp-dir core.db with an
- * injected `resolveApiKey` callback, then drives the wire surface end
- * to end via `supertest`. Asserts the contract from the user-story
- * acceptance criteria:
+ * Boots the full Express factory against a temp-dir core.db and drives
+ * the wire surface end to end via `supertest`. Asserts the contract from
+ * the user-story acceptance criteria:
  *   - happy path: 200 + persisted row + emitted `registered` event.
- *   - bad key: 401, no persistence, no event.
  *   - malformed manifest: 400 with per-field issues.
- *   - reserved pillar id: 409 with `pillar-id-reserved`.
+ *   - reserved pillar id (PRD-250): 200 — in-tree pillar IDs are no
+ *     longer rejected at the registry surface.
  *   - bad pillar slug: 400 with the regex reason.
  *   - cross-field mismatch (`manifest.pillar !== pillarId`): 400.
- *   - duplicate registration: `registeredAt` preserved, `apiKeyHash`
- *     refreshed on key rotation.
  *   - missing fields: 400 with structured issues.
- *   - missing env key: 500 (mis-deployed core-api refuses to register
- *     anyone rather than silently accepting every request).
  */
-import { createHash } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -31,8 +25,6 @@ import { createCoreApiApp } from '../app.js';
 import { registryEventBus, type RegistryEventPayload } from '../modules/registry/event-bus.js';
 
 import type { ManifestPayload } from '@pops/pillar-sdk';
-
-const VALID_API_KEY = 'super-secret-shared-key';
 
 function recipesManifest(overrides?: Partial<ManifestPayload>): ManifestPayload {
   return {
@@ -60,14 +52,12 @@ function recipesManifest(overrides?: Partial<ManifestPayload>): ManifestPayload 
 let tmpDir: string;
 let coreDb: OpenedCoreDb;
 let app: ReturnType<typeof createCoreApiApp>;
-let resolvedKey: string | undefined;
 let capturedEvents: RegistryEventPayload[];
 let eventListener: (payload: RegistryEventPayload) => void;
 
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), 'core-api-extreg-'));
   coreDb = openCoreDb(join(tmpDir, 'core.db'));
-  resolvedKey = VALID_API_KEY;
   capturedEvents = [];
   eventListener = (payload) => capturedEvents.push(payload);
   registryEventBus.on('registry:event', eventListener);
@@ -75,7 +65,6 @@ beforeEach(() => {
     coreDb,
     version: '0.0.1-test',
     selfBaseUrl: 'http://localhost:3001',
-    resolveApiKey: () => resolvedKey,
   });
 });
 
@@ -86,13 +75,12 @@ afterEach(() => {
 });
 
 describe('POST /core.registry.register — happy path', () => {
-  it('persists the row with origin=external + sha256 key hash + healthy status and emits a registered event', async () => {
+  it('persists the row with origin=external + healthy status and emits a registered event', async () => {
     const manifest = recipesManifest();
     const res = await request(app).post('/core.registry.register').send({
       pillarId: 'recipes',
       baseUrl: 'http://recipes-api:4010',
       manifest,
-      apiKey: VALID_API_KEY,
     });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
@@ -108,9 +96,7 @@ describe('POST /core.registry.register — happy path', () => {
     expect(persisted?.origin).toBe('external');
     expect(persisted?.status).toBe('healthy');
     expect(persisted?.evictedAt).toBeNull();
-    expect(persisted?.apiKeyHash).toBe(
-      createHash('sha256').update(VALID_API_KEY, 'utf8').digest('hex')
-    );
+    expect(persisted?.apiKeyHash).toBeNull();
 
     const registered = capturedEvents.filter((e) => e.event === 'registered');
     expect(registered).toHaveLength(1);
@@ -136,83 +122,37 @@ describe('POST /core.registry.register — happy path', () => {
       pillarId: 'home-brew',
       baseUrl: 'http://home-brew-api:4010',
       manifest,
-      apiKey: VALID_API_KEY,
     });
     expect(res.status).toBe(200);
     expect(res.body.pillarId).toBe('home-brew');
   });
-});
 
-describe('POST /core.registry.register — authentication', () => {
-  it('returns 401 with no persistence when the apiKey does not match', async () => {
-    const res = await request(app).post('/core.registry.register').send({
-      pillarId: 'recipes',
-      baseUrl: 'http://recipes-api:4010',
-      manifest: recipesManifest(),
-      apiKey: 'wrong-key',
+  it('accepts an in-tree pillar id (PRD-250: pillars self-register at boot)', async () => {
+    const manifest = recipesManifest({
+      pillar: 'finance',
+      contract: {
+        package: '@pops/finance-contract',
+        version: '0.1.0',
+        tag: 'contract-finance@v0.1.0',
+      },
+      routes: {
+        queries: ['finance.library.list'],
+        mutations: ['finance.library.create'],
+        subscriptions: [],
+      },
+      uri: { types: ['finance/recipe'] },
     });
-    expect(res.status).toBe(401);
-    expect(res.body).toMatchObject({ ok: false, reason: 'invalid-api-key' });
-    expect(pillarRegistryService.getPillarRegistration(coreDb.db, 'recipes')).toBeNull();
-    expect(capturedEvents).toEqual([]);
-  });
-
-  it('returns 401 when the apiKey has a different length (no length oracle)', async () => {
     const res = await request(app).post('/core.registry.register').send({
-      pillarId: 'recipes',
-      baseUrl: 'http://recipes-api:4010',
-      manifest: recipesManifest(),
-      apiKey: 'x',
+      pillarId: 'finance',
+      baseUrl: 'http://finance-api:3004',
+      manifest,
     });
-    expect(res.status).toBe(401);
-    expect(res.body).toMatchObject({ ok: false, reason: 'invalid-api-key' });
-  });
-
-  it('returns 500 when POPS_INTERNAL_API_KEY is not configured on core-api', async () => {
-    resolvedKey = undefined;
-    const res = await request(app).post('/core.registry.register').send({
-      pillarId: 'recipes',
-      baseUrl: 'http://recipes-api:4010',
-      manifest: recipesManifest(),
-      apiKey: VALID_API_KEY,
-    });
-    expect(res.status).toBe(500);
-    expect(res.body).toMatchObject({ ok: false, reason: 'api-key-not-configured' });
+    expect(res.status).toBe(200);
+    expect(res.body.pillarId).toBe('finance');
   });
 });
 
 describe('POST /core.registry.register — pillar id validation', () => {
-  for (const reserved of ['core', 'finance', 'media', 'inventory', 'cerebrum', 'food', 'lists']) {
-    it(`returns 409 pillar-id-reserved for the in-tree id '${reserved}'`, async () => {
-      const manifest = recipesManifest({
-        pillar: reserved,
-        contract: {
-          package: `@pops/${reserved}-contract`,
-          version: '0.1.0',
-          tag: `contract-${reserved}@v0.1.0`,
-        },
-        routes: {
-          queries: [`${reserved}.library.list`],
-          mutations: [`${reserved}.library.create`],
-          subscriptions: [],
-        },
-        uri: { types: [`${reserved}/recipe`] },
-      });
-      const res = await request(app).post('/core.registry.register').send({
-        pillarId: reserved,
-        baseUrl: 'http://x:4010',
-        manifest,
-        apiKey: VALID_API_KEY,
-      });
-      expect(res.status).toBe(409);
-      expect(res.body).toMatchObject({
-        ok: false,
-        reason: 'pillar-id-reserved',
-        pillarId: reserved,
-      });
-    });
-  }
-
   it('rejects a pillarId that starts with a digit', async () => {
     const res = await request(app)
       .post('/core.registry.register')
@@ -220,7 +160,6 @@ describe('POST /core.registry.register — pillar id validation', () => {
         pillarId: '1recipes',
         baseUrl: 'http://x:4010',
         manifest: recipesManifest({ pillar: '1recipes' }),
-        apiKey: VALID_API_KEY,
       });
     expect(res.status).toBe(400);
     expect(res.body.ok).toBe(false);
@@ -234,7 +173,6 @@ describe('POST /core.registry.register — pillar id validation', () => {
         pillarId: 'Recipes',
         baseUrl: 'http://x:4010',
         manifest: recipesManifest({ pillar: 'Recipes' }),
-        apiKey: VALID_API_KEY,
       });
     expect(res.status).toBe(400);
     expect(res.body.issues[0].field).toBe('pillarId');
@@ -259,7 +197,6 @@ describe('POST /core.registry.register — manifest validation', () => {
           consumedSettings: { keys: [] },
           healthcheck: { path: '/' },
         },
-        apiKey: VALID_API_KEY,
       });
     expect(res.status).toBe(400);
     expect(res.body.ok).toBe(false);
@@ -282,7 +219,6 @@ describe('POST /core.registry.register — manifest validation', () => {
             tag: 'contract-something-else@v0.1.0',
           },
         }),
-        apiKey: VALID_API_KEY,
       });
     expect(res.status).toBe(400);
     const fields = res.body.issues.map((i: { field: string }) => i.field);
@@ -293,7 +229,6 @@ describe('POST /core.registry.register — manifest validation', () => {
     const res = await request(app).post('/core.registry.register').send({
       pillarId: 'recipes',
       baseUrl: 'http://recipes-api:4010',
-      apiKey: VALID_API_KEY,
     });
     expect(res.status).toBe(400);
     const fields = res.body.issues.map((i: { field: string }) => i.field);
@@ -305,7 +240,6 @@ describe('POST /core.registry.register — manifest validation', () => {
       pillarId: 'recipes',
       baseUrl: 'not-a-url',
       manifest: recipesManifest(),
-      apiKey: VALID_API_KEY,
     });
     expect(res.status).toBe(400);
     const fields = res.body.issues.map((i: { field: string }) => i.field);
@@ -314,20 +248,17 @@ describe('POST /core.registry.register — manifest validation', () => {
 });
 
 describe('POST /core.registry.register — duplicate registration', () => {
-  it('preserves registeredAt on re-registration and refreshes apiKeyHash on key rotation', async () => {
+  it('preserves registeredAt on re-registration and overwrites the row contents', async () => {
     const first = await request(app).post('/core.registry.register').send({
       pillarId: 'recipes',
       baseUrl: 'http://recipes-api:4010',
       manifest: recipesManifest(),
-      apiKey: VALID_API_KEY,
     });
     expect(first.status).toBe(200);
     const firstRegisteredAt = first.body.registeredAt;
 
     await new Promise((r) => setTimeout(r, 5));
 
-    const rotatedKey = 'rotated-shared-key';
-    resolvedKey = rotatedKey;
     const second = await request(app)
       .post('/core.registry.register')
       .send({
@@ -341,7 +272,6 @@ describe('POST /core.registry.register — duplicate registration', () => {
             tag: 'contract-recipes@v0.2.0',
           },
         }),
-        apiKey: rotatedKey,
       });
     expect(second.status).toBe(200);
     expect(second.body.registeredAt).toBe(firstRegisteredAt);
@@ -349,9 +279,6 @@ describe('POST /core.registry.register — duplicate registration', () => {
     const persisted = pillarRegistryService.getPillarRegistration(coreDb.db, 'recipes');
     expect(persisted?.baseUrl).toBe('http://recipes-api:9999');
     expect(persisted?.contractVersion).toBe('0.2.0');
-    expect(persisted?.apiKeyHash).toBe(
-      createHash('sha256').update(rotatedKey, 'utf8').digest('hex')
-    );
     expect(persisted?.origin).toBe('external');
 
     const registered = capturedEvents.filter((e) => e.event === 'registered');

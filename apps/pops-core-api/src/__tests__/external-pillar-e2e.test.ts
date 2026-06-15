@@ -66,7 +66,6 @@ import type { AddressInfo } from 'node:net';
 
 import type { ManifestPayload } from '@pops/pillar-sdk';
 
-const VALID_API_KEY = 'pops-internal-key-e2e';
 const PILLAR_ID = 'echotest';
 
 function echoManifest(): ManifestPayload {
@@ -250,7 +249,6 @@ beforeEach(async () => {
     coreDb,
     version: '0.0.1-test',
     selfBaseUrl: 'http://localhost:0',
-    resolveApiKey: () => VALID_API_KEY,
   });
   const coreApiServer = createServer(app);
   await new Promise<void>((resolve) => coreApiServer.listen(0, '127.0.0.1', resolve));
@@ -306,7 +304,6 @@ describe('PRD-242 US-04 — external pillar register + callDynamic + deregister'
       pillarId: PILLAR_ID,
       baseUrl: env.throwaway.baseUrl,
       manifest: echoManifest(),
-      apiKey: VALID_API_KEY,
     });
     expect(registration.status, JSON.stringify(registration.body)).toBe(200);
     expect(registration.body).toMatchObject({
@@ -357,7 +354,6 @@ describe('PRD-242 US-04 — external pillar register + callDynamic + deregister'
 
     const dereg = await request(env.coreApiBaseUrl).post('/core.registry.deregister').send({
       pillarId: PILLAR_ID,
-      apiKey: VALID_API_KEY,
     });
     expect(dereg.status).toBe(200);
     expect(dereg.body).toMatchObject({ ok: true, removed: true });

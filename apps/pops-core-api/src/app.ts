@@ -22,13 +22,6 @@ import { createRegistrySubscribeHandler } from './modules/registry/subscribe.js'
 import { appRouter } from './router.js';
 import { createCoreTrpcContextFactory } from './trpc.js';
 
-const SERVER_API_KEY_ENV = 'POPS_INTERNAL_API_KEY';
-
-function defaultResolveApiKey(): string | undefined {
-  const raw = process.env[SERVER_API_KEY_ENV];
-  return typeof raw === 'string' && raw.length > 0 ? raw : undefined;
-}
-
 export function createCoreApiApp(deps: CoreApiDeps): Express {
   const app = express();
   app.disable('x-powered-by');
@@ -46,30 +39,13 @@ export function createCoreApiApp(deps: CoreApiDeps): Express {
 
   app.get('/registry/subscribe', createRegistrySubscribeHandler(deps.coreDb.db));
 
-  const resolveApiKey = deps.resolveApiKey ?? defaultResolveApiKey;
+  app.post('/core.registry.register', createExternalRegisterHandler({ coreDb: deps.coreDb.db }));
 
-  app.post(
-    '/core.registry.register',
-    createExternalRegisterHandler({
-      coreDb: deps.coreDb.db,
-      resolveApiKey,
-    })
-  );
-
-  app.post(
-    '/core.registry.heartbeat',
-    createExternalHeartbeatHandler({
-      coreDb: deps.coreDb.db,
-      resolveApiKey,
-    })
-  );
+  app.post('/core.registry.heartbeat', createExternalHeartbeatHandler({ coreDb: deps.coreDb.db }));
 
   app.post(
     '/core.registry.deregister',
-    createExternalDeregisterHandler({
-      coreDb: deps.coreDb.db,
-      resolveApiKey,
-    })
+    createExternalDeregisterHandler({ coreDb: deps.coreDb.db })
   );
 
   app.use(

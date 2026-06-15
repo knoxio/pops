@@ -23,12 +23,13 @@ import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
  *   missed-heartbeat logic in PRD-162; transitions to `'unknown'` only
  *   after core-api restart reconciliation (PRD-164).
  * - `origin` distinguishes `'internal'` (in-tree bootstrap path, PRD-158)
- *   from `'external'` (registered via the shared-key HTTP endpoint,
- *   PRD-228). `apiKeyHash` carries the SHA-256 of the key used at
- *   registration time so a rotated key invalidates stale external
- *   registrations without affecting internal ones. `evictedAt` is set
- *   by the hard-eviction ticker for external pillars that never
- *   heartbeated; internal pillars are never hard-evicted.
+ *   from `'external'` (registered via the plain HTTP-JSON endpoint,
+ *   PRD-228). `apiKeyHash` is a historical column — registrations used
+ *   to carry a SHA-256 of a shared key, but the trust boundary is now
+ *   the docker network (ADR-027). New rows write `null`; existing rows
+ *   are left as-is for backward compat. `evictedAt` is set by the
+ *   hard-eviction ticker for external pillars that never heartbeated;
+ *   internal pillars are never hard-evicted.
  */
 export const pillarRegistry = sqliteTable(
   'pillar_registry',
