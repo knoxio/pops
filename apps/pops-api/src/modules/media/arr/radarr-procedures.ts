@@ -7,7 +7,7 @@ import * as arrService from './service.js';
 export const radarrProceduresCore = {
   /** Get Radarr quality profiles. */
   getQualityProfiles: protectedProcedure.query(async () => {
-    const client = requireRadarrClient();
+    const client = await requireRadarrClient();
     return withArrErrorHandling('Radarr', async () => ({
       data: await client.getQualityProfiles(),
     }));
@@ -15,7 +15,7 @@ export const radarrProceduresCore = {
 
   /** Get Radarr root folders. */
   getRootFolders: protectedProcedure.query(async () => {
-    const client = requireRadarrClient();
+    const client = await requireRadarrClient();
     return withArrErrorHandling('Radarr', async () => ({ data: await client.getRootFolders() }));
   }),
 
@@ -23,7 +23,7 @@ export const radarrProceduresCore = {
   checkMovie: protectedProcedure
     .input(z.object({ tmdbId: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const client = requireRadarrClient();
+      const client = await requireRadarrClient();
       return withArrErrorHandling('Radarr', async () => ({
         data: await client.checkMovie(input.tmdbId),
       }));
@@ -41,7 +41,7 @@ export const radarrProceduresCore = {
       })
     )
     .mutation(async ({ input }) => {
-      const client = requireRadarrClient();
+      const client = await requireRadarrClient();
       return withArrErrorHandling('Radarr', async () => {
         const movie = await client.addMovie(input);
         arrService.clearMovieStatusCache(input.tmdbId);
@@ -58,7 +58,7 @@ export const radarrProceduresCore = {
       })
     )
     .mutation(async ({ input }) => {
-      const client = requireRadarrClient();
+      const client = await requireRadarrClient();
       return withArrErrorHandling('Radarr', async () => ({
         data: await client.updateMonitoring(input.radarrId, input.monitored),
       }));
@@ -68,7 +68,7 @@ export const radarrProceduresCore = {
   triggerSearch: protectedProcedure
     .input(z.object({ radarrId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const client = requireRadarrClient();
+      const client = await requireRadarrClient();
       return withArrErrorHandling('Radarr', async () => ({
         data: await client.triggerSearch(input.radarrId),
       }));

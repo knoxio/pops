@@ -12,9 +12,12 @@ export { MASKED_KEY };
 /**
  * Resolve the API key from a form value, falling back to saved settings if masked.
  */
-export function resolveArrApiKey(formKey: string, service: 'radarr' | 'sonarr'): string | null {
+export async function resolveArrApiKey(
+  formKey: string,
+  service: 'radarr' | 'sonarr'
+): Promise<string | null> {
   if (formKey !== MASKED_KEY) return formKey;
-  const s = arrService.getArrSettings();
+  const s = await arrService.getArrSettings();
   return (service === 'radarr' ? s.radarrApiKey : s.sonarrApiKey) ?? null;
 }
 
@@ -52,8 +55,8 @@ export async function withArrErrorHandling<T>(service: string, fn: () => Promise
 }
 
 /** Require a configured Radarr client, throwing PRECONDITION_FAILED otherwise. */
-export function requireRadarrClient(): RadarrClient {
-  const client = arrService.getRadarrClient();
+export async function requireRadarrClient(): Promise<RadarrClient> {
+  const client = await arrService.getRadarrClient();
   if (!client) {
     throw trpcError('PRECONDITION_FAILED', 'media.arr.radarrNotConfigured');
   }
@@ -61,8 +64,8 @@ export function requireRadarrClient(): RadarrClient {
 }
 
 /** Require a configured Sonarr client, throwing PRECONDITION_FAILED otherwise. */
-export function requireSonarrClient(): SonarrClient {
-  const client = arrService.getSonarrClient();
+export async function requireSonarrClient(): Promise<SonarrClient> {
+  const client = await arrService.getSonarrClient();
   if (!client) {
     throw trpcError('PRECONDITION_FAILED', 'media.arr.sonarrNotConfigured');
   }

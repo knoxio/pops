@@ -23,7 +23,7 @@ export type MovieSizeMap = Map<number, number>;
 
 /** Fetch free space in GB for the root folder's disk from Radarr /diskspace. */
 export async function getRadarrDiskSpace(): Promise<number> {
-  const client = getRadarrClient();
+  const client = await getRadarrClient();
   if (!client) throw new Error('Radarr not configured');
   const disks = await client.getDiskSpace();
   const disk = disks[0];
@@ -34,7 +34,7 @@ export async function getRadarrDiskSpace(): Promise<number> {
 
 /** Fetch sizeOnDisk for all movies from Radarr, returning a map of TMDB ID → size in GB. */
 export async function getRadarrMovieSizes(): Promise<MovieSizeMap> {
-  const client = getRadarrClient();
+  const client = await getRadarrClient();
   if (!client) throw new Error('Radarr not configured');
   const radarrMovies = await client.getMovies();
   const map = new Map<number, number>();
@@ -140,7 +140,7 @@ export function getEligibleForRemoval(
  * Get the set of TMDB IDs that are currently downloading in Radarr.
  */
 export async function getDownloadingTmdbIds(): Promise<Set<number>> {
-  const client = getRadarrClient();
+  const client = await getRadarrClient();
   if (!client) return new Set();
   const queue = await client.getQueue();
   // Build a map of Radarr movie ID → TMDB ID from the movie list
@@ -210,7 +210,7 @@ export interface ExpiredMovieResult {
  */
 export async function processExpiredMovies(): Promise<ExpiredMovieResult[]> {
   const db = getMediaDrizzle();
-  const client = getRadarrClient();
+  const client = await getRadarrClient();
   if (!client) throw new Error('Radarr not configured');
 
   const now = new Date().toISOString();

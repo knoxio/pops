@@ -69,13 +69,13 @@ async function testRadarrClient(
 
 export const radarrSettingsProcedures = {
   /** Get configuration state for both services. */
-  getConfig: protectedProcedure.query(() => {
-    return { data: arrService.getArrConfig() };
+  getConfig: protectedProcedure.query(async () => {
+    return { data: await arrService.getArrConfig() };
   }),
 
   /** Get current Arr settings (URLs and whether API keys are set). */
-  getSettings: protectedProcedure.query(() => {
-    const s = arrService.getArrSettings();
+  getSettings: protectedProcedure.query(async () => {
+    const s = await arrService.getArrSettings();
     return {
       data: {
         radarrUrl: s.radarrUrl ?? '',
@@ -89,16 +89,16 @@ export const radarrSettingsProcedures = {
   }),
 
   /** Save Arr settings (URLs and API keys). */
-  saveSettings: protectedProcedure.input(SaveSettingsInput).mutation(({ input }) => {
+  saveSettings: protectedProcedure.input(SaveSettingsInput).mutation(async ({ input }) => {
     const config = buildSaveConfig(input);
-    arrService.saveArrSettings(config);
+    await arrService.saveArrSettings(config);
     arrService.clearStatusCache();
     return { message: 'Arr settings saved' };
   }),
 
   /** Test Radarr connection using provided form values. */
   testRadarr: protectedProcedure.input(TestConnectionInput).mutation(async ({ input }) => {
-    const apiKey = resolveArrApiKey(input.apiKey, 'radarr');
+    const apiKey = await resolveArrApiKey(input.apiKey, 'radarr');
     if (!apiKey) {
       return { data: { configured: false, connected: false, error: 'No API key provided' } };
     }
@@ -107,7 +107,7 @@ export const radarrSettingsProcedures = {
 
   /** Test Radarr connection using saved settings (no input required). */
   testRadarrSaved: protectedProcedure.mutation(async () => {
-    const s = arrService.getArrSettings();
+    const s = await arrService.getArrSettings();
     if (!s.radarrUrl || !s.radarrApiKey) {
       return {
         data: {

@@ -49,8 +49,7 @@ export async function getDownloadQueue(): Promise<DownloadQueueItem[]> {
     return queueCache.items;
   }
 
-  const radarrClient = getRadarrClient();
-  const sonarrClient = getSonarrClient();
+  const [radarrClient, sonarrClient] = await Promise.all([getRadarrClient(), getSonarrClient()]);
 
   const [radarrQueue, sonarrQueue] = await Promise.all([
     radarrClient ? radarrClient.getQueue().catch(() => null) : null,

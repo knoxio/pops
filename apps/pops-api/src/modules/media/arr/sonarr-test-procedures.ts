@@ -48,7 +48,7 @@ async function testSonarrClient(
 export const sonarrTestProcedures = {
   /** Test Sonarr connection using provided form values. */
   testSonarr: protectedProcedure.input(TestConnectionInput).mutation(async ({ input }) => {
-    const apiKey = resolveArrApiKey(input.apiKey, 'sonarr');
+    const apiKey = await resolveArrApiKey(input.apiKey, 'sonarr');
     if (!apiKey) {
       return { data: { configured: false, connected: false, error: 'No API key provided' } };
     }
@@ -57,7 +57,7 @@ export const sonarrTestProcedures = {
 
   /** Test Sonarr connection using saved settings (no input required). */
   testSonarrSaved: protectedProcedure.mutation(async () => {
-    const s = arrService.getArrSettings();
+    const s = await arrService.getArrSettings();
     if (!s.sonarrUrl || !s.sonarrApiKey) {
       return {
         data: {

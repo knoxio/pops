@@ -1,14 +1,36 @@
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
-import { settingsService } from '@pops/core-db';
 import { rotationCandidates, rotationSources } from '@pops/media-db';
 
-import { getCoreDrizzle, getDrizzle } from '../../../db.js';
+import { getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
 
-// Mock external services used by downloadCandidate
+const getStub =
+  vi.fn<(input: { key: string }) => Promise<{ data: { key: string; value: string } | null }>>();
+const getManyStub =
+  vi.fn<(input: { keys: string[] }) => Promise<{ settings: Record<string, string> }>>();
+const setStub = vi.fn<
+  (input: { key: string; value: string }) => Promise<{
+    data: { key: string; value: string };
+    message: string;
+  }>
+>();
+const deleteStub = vi.fn<(input: { key: string }) => Promise<{ message: string }>>();
+
+const settingsStore = new Map<string, string>();
+
+vi.mock('@pops/pillar-sdk/server', () => ({
+  pillar: () => ({
+    settings: {
+      get: { orThrow: getStub },
+      getMany: { orThrow: getManyStub },
+      set: { orThrow: setStub },
+      delete: { orThrow: deleteStub },
+    },
+  }),
+}));
+
 vi.mock('../arr/service.js', () => ({
   getRadarrClient: vi.fn(),
 }));
@@ -53,7 +75,30 @@ function insertCandidate(
 }
 
 function insertSetting(key: string, value: string) {
-  settingsService.setRawSetting(getCoreDrizzle(), key, value);
+  settingsStore.set(key, value);
+}
+
+function wireSettingsStubs() {
+  getStub.mockImplementation(async ({ key }) => {
+    const value = settingsStore.get(key);
+    return { data: value === undefined ? null : { key, value } };
+  });
+  getManyStub.mockImplementation(async ({ keys }) => {
+    const settings: Record<string, string> = {};
+    for (const key of keys) {
+      const value = settingsStore.get(key);
+      if (value !== undefined) settings[key] = value;
+    }
+    return { settings };
+  });
+  setStub.mockImplementation(async ({ key, value }) => {
+    settingsStore.set(key, value);
+    return { data: { key, value }, message: 'Setting saved' };
+  });
+  deleteStub.mockImplementation(async ({ key }) => {
+    settingsStore.delete(key);
+    return { message: 'Setting deleted' };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -61,7 +106,11 @@ function insertSetting(key: string, value: string) {
 // ---------------------------------------------------------------------------
 
 describe('rotation.listCandidates', () => {
-  beforeEach(() => ctx.setup());
+  beforeEach(() => {
+    settingsStore.clear();
+    wireSettingsStubs();
+    ctx.setup();
+  });
   afterEach(() => {
     ctx.teardown();
   });
@@ -100,7 +149,6 @@ describe('rotation.listCandidates', () => {
       search: 'Matrix',
     });
 
-    // Should only return pending candidates matching search — not the added one
     expect(result.items).toHaveLength(1);
     expect(result.items[0]!.title).toBe('The Matrix');
     expect(result.total).toBe(1);
@@ -155,8 +203,26 @@ describe('rotation.listCandidates', () => {
 // downloadCandidate
 // ---------------------------------------------------------------------------
 
+interface FakeRadarrClient {
+  checkMovie: ReturnType<typeof vi.fn>;
+  addMovie: ReturnType<typeof vi.fn>;
+}
+
+function mockRadarrClient(client: FakeRadarrClient | null): void {
+  const mocked = vi.mocked(getRadarrClient);
+  if (client === null) {
+    mocked.mockResolvedValue(null);
+  } else {
+    mocked.mockResolvedValue(client as unknown as Awaited<ReturnType<typeof getRadarrClient>>);
+  }
+}
+
 describe('rotation.downloadCandidate', () => {
-  beforeEach(() => ctx.setup());
+  beforeEach(() => {
+    settingsStore.clear();
+    wireSettingsStubs();
+    ctx.setup();
+  });
   afterEach(() => {
     ctx.teardown();
     vi.mocked(getRadarrClient).mockReset();
@@ -180,7 +246,7 @@ describe('rotation.downloadCandidate', () => {
   });
 
   it('throws PRECONDITION_FAILED when Radarr not configured', async () => {
-    vi.mocked(getRadarrClient).mockReturnValue(null as any);
+    mockRadarrClient(null);
     const src = insertSource();
     const c = insertCandidate(src.id, 100);
 
@@ -191,10 +257,10 @@ describe('rotation.downloadCandidate', () => {
   });
 
   it('throws PRECONDITION_FAILED when settings missing', async () => {
-    vi.mocked(getRadarrClient).mockReturnValue({
+    mockRadarrClient({
       checkMovie: vi.fn(),
       addMovie: vi.fn(),
-    } as any);
+    });
     const src = insertSource();
     const c = insertCandidate(src.id, 100);
 
@@ -205,10 +271,10 @@ describe('rotation.downloadCandidate', () => {
   });
 
   it('marks as added when already in Radarr', async () => {
-    vi.mocked(getRadarrClient).mockReturnValue({
+    mockRadarrClient({
       checkMovie: vi.fn().mockResolvedValue({ exists: true }),
       addMovie: vi.fn(),
-    } as any);
+    });
     const src = insertSource();
     const c = insertCandidate(src.id, 100);
     insertSetting('rotation_quality_profile_id', '1');
@@ -218,7 +284,6 @@ describe('rotation.downloadCandidate', () => {
     const result = await caller.media.rotation.downloadCandidate({ candidateId: c.id });
 
     expect(result.alreadyInRadarr).toBe(true);
-    // Candidate should be marked as added
     const db = getDrizzle();
     const updated = db
       .select()
@@ -230,10 +295,10 @@ describe('rotation.downloadCandidate', () => {
 
   it('adds to Radarr and marks as added', async () => {
     const mockAddMovie = vi.fn().mockResolvedValue({});
-    vi.mocked(getRadarrClient).mockReturnValue({
+    mockRadarrClient({
       checkMovie: vi.fn().mockResolvedValue({ exists: false }),
       addMovie: mockAddMovie,
-    } as any);
+    });
     const src = insertSource();
     const c = insertCandidate(src.id, 100, { title: 'Test Movie', year: 2024 });
     insertSetting('rotation_quality_profile_id', '4');
