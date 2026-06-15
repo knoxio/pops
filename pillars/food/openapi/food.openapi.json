@@ -230,7 +230,7 @@
   },
   "info": {
     "description": "OpenAPI snapshot of the food pillar's public wire surface. Derived from the contract's Zod schemas. Consumed by iOS Swift codegen.",
-    "title": "@pops/food-contract",
+    "title": "@pops/food",
     "version": "0.1.0"
   },
   "openapi": "3.0.3",
