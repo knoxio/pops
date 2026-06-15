@@ -8,17 +8,17 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the food-owned tabl
 
 ## Acceptance Criteria
 
-- [ ] The following files move from `packages/db-types/src/schema/` to `packages/food-db/src/schema/` (or `packages/app-food-db/src/schema/` for tables the existing food split attributes there — `app-food-db` already imports from `@pops/db-types` for `IngestSourceKind`, `aiInferenceLog`, etc.; the per-file split mirrors the existing layout):
+- [x] The following files move from `packages/db-types/src/schema/` to `packages/food-db/src/schema/` (or `packages/app-food-db/src/schema/` for tables the existing food split attributes there — `app-food-db` already imports from `@pops/db-types` for `IngestSourceKind`, `aiInferenceLog`, etc.; the per-file split mirrors the existing layout):
       `food.ts`, `food-batches.ts`, `food-compile.ts`, `food-conversions.ts`, `food-ingest-sources.ts`, `food-ingredients.ts`, `food-plan.ts`, `food-recipes.ts`, `food-rejections.ts`, `food-substitutions.ts`, alongside their matching `*-row-schemas.ts`.
-- [ ] If a file genuinely splits across both food packages (e.g. some recipe tables live in `app-food-db`'s queries surface today), document the per-file home on the US PR before moving.
-- [ ] All intra-food FKs are preserved.
-- [ ] `packages/food-db/src/schema.ts` (and `packages/app-food-db/src/schema.ts` where applicable) export each relocated table from the new local path. The existing `from '@pops/db-types'` re-exports for these tables are removed.
-- [ ] `packages/db-types/src/schema/index.ts` re-exports each relocated table from the food `-db` package (transition shim) so existing import sites keep compiling until US-08.
-- [ ] Smoke-import test in the receiving package asserts each relocated table resolves with the expected drizzle `name`.
-- [ ] Consumers under `apps/pops-api/src/modules/food/` that import these tables from `@pops/db-types` are repointed at the food `-db` package.
-- [ ] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
-- [ ] `pnpm --filter @pops/food-db typecheck/test/build`, `pnpm --filter @pops/app-food-db typecheck/test/build`, `pnpm --filter @pops/db-types typecheck/test/build`, and `pnpm --filter @pops/api typecheck/test` all pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] If a file genuinely splits across both food packages (e.g. some recipe tables live in `app-food-db`'s queries surface today), document the per-file home on the US PR before moving.
+- [x] All intra-food FKs are preserved.
+- [x] `packages/food-db/src/schema.ts` (and `packages/app-food-db/src/schema.ts` where applicable) export each relocated table from the new local path. The existing `from '@pops/db-types'` re-exports for these tables are removed.
+- [x] `packages/db-types/src/schema/index.ts` re-exports each relocated table from the food `-db` package (transition shim) so existing import sites keep compiling until US-08.
+- [x] Smoke-import test in the receiving package asserts each relocated table resolves with the expected drizzle `name`.
+- [x] Consumers under `apps/pops-api/src/modules/food/` that import these tables from `@pops/db-types` are repointed at the food `-db` package.
+- [x] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
+- [x] `pnpm --filter @pops/food-db typecheck/test/build`, `pnpm --filter @pops/app-food-db typecheck/test/build`, `pnpm --filter @pops/db-types typecheck/test/build`, and `pnpm --filter @pops/api typecheck/test` all pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

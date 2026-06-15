@@ -63,6 +63,7 @@ export {
   lists,
   ingredientAliases,
   ingredients,
+  ingredientTags,
   ingredientVariants,
   ingredientWeights,
   planEntries,
@@ -133,7 +134,7 @@ export type AiAlertRuleInsert = InferInsertModel<typeof aiAlertRules>;
 export type AiAlertRow = InferSelectModel<typeof aiAlerts>;
 export type AiAlertInsert = InferInsertModel<typeof aiAlerts>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
-export * from './food.js';
+export * from './food-types.js';
 export * from './inventory-types.js';
 export * from './lists.js';
 export type SettingRow = InferSelectModel<typeof settings>;

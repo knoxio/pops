@@ -1,17 +1,34 @@
 /**
- * Local re-export of food-domain tables surfaced by `@pops/food-db`.
+ * Food domain table barrel.
  *
- * Canonical definitions live in `@pops/db-types/src/schema/*.ts` so the
- * drizzle-kit config (which globs `packages/db-types/src/schema/*`) picks
- * them up and the rest of the platform sees a single schema barrel.
+ * Canonical definitions for food-owned tables (ingredients, variants,
+ * recipes, recipe versions/runs/steps/lines, batches, plan slots/entries,
+ * ingest sources, substitutions, unit conversions, ingredient/recipe
+ * tags, slug registry, recipe-version rejections, prep states) live in
+ * this package per PRD-245 US-05 (audit H6/H7).
  *
- * Services in this package import from here for ergonomics and so the
- * food pillar's read surface stays self-describing. Mirrors the
- * `@pops/core-db` / `@pops/inventory-db` / `@pops/media-db` / `@pops/finance-db`
- * schema re-export pattern.
- *
- * Phase 1 PR 1 ships only the `prepStates` row — additional tables get
- * surfaced here as subsequent slices land.
+ * `@pops/db-types` re-exports these tables as a transition shim so
+ * legacy import sites keep compiling until PRD-245 US-08 deletes the
+ * shim. Pillar consumers should import from `@pops/food-db` directly.
  */
-export { prepStates } from '@pops/db-types';
-export type { PrepStateInsert, PrepStateRow } from '@pops/db-types';
+import type { prepStates as prepStatesTable } from './schema/food-ingredients.js';
+
+export { batchConsumptions, batches, recipeRuns } from './schema/food-batches.js';
+export { recipeLines, recipeSteps, recipeVersionProposedSlugs } from './schema/food-compile.js';
+export { ingredientWeights, unitConversions } from './schema/food-conversions.js';
+export { ingestSources } from './schema/food-ingest-sources.js';
+export {
+  ingredientAliases,
+  ingredients,
+  ingredientTags,
+  ingredientVariants,
+  prepStates,
+  slugRegistry,
+} from './schema/food-ingredients.js';
+export { planEntries, planSlots } from './schema/food-plan.js';
+export { recipes, recipeTags, recipeVersions } from './schema/food-recipes.js';
+export { recipeVersionRejections } from './schema/food-rejections.js';
+export { substitutions } from './schema/food-substitutions.js';
+
+export type PrepStateRow = typeof prepStatesTable.$inferSelect;
+export type PrepStateInsert = typeof prepStatesTable.$inferInsert;
