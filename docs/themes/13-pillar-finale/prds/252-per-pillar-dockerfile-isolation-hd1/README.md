@@ -41,7 +41,7 @@ The Dockerfile comments blame pnpm workspace resolver, but only the package.json
 | #   | Story                                        | Status      | Parallelisable       |
 | --- | -------------------------------------------- | ----------- | -------------------- |
 | 01  | generator + drift-check (land with core-api) | Done        | Foundational         |
-| 02  | cerebrum Dockerfile                          | Not started | After US-01          |
+| 02  | cerebrum Dockerfile                          | Done        | After US-01          |
 | 03  | finance Dockerfile                           | Not started | Parallel after US-01 |
 | 04  | inventory Dockerfile                         | Not started | Parallel after US-01 |
 | 05  | food Dockerfile                              | Not started | Parallel after US-01 |
