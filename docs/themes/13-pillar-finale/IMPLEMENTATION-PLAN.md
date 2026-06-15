@@ -9,8 +9,9 @@
 ## Headline status
 
 - **20 PRDs Done.** Foundation, registry/SDK, settings dimension, dynamic AppRouter, shell decoupling, db-types decomposition (7/8 USs).
-- **2 PRDs In progress.** PRD-245 US-08 (final db-types cleanup); anti-lego audit refresh.
+- **1 PRD In progress.** PRD-245 US-08 (final db-types cleanup).
 - **3 PRDs Queued.** PRD-247/248/249 (cross-pillar SDK surfaces) at US-01 (schema). US-02+ unblocks PRD-246 US-04.
+- **Anti-lego audit 2026-06.** 18 findings (4 HIGH / 8 MEDIUM / 6 LOW), down from 28. HIGH = H6 (53 `@pops/db-types` consumers), H7 (4 cross-pillar denorm pairs), H8 (33 cross-pillar imports in pops-api), H-D1 (per-pillar Dockerfiles copy every other pillar's src). See [notes/pillar-isolation-audit-2026-06.md](notes/pillar-isolation-audit-2026-06.md).
 - **Production:** capivara healthy. CI green on main.
 
 ## PRD status
@@ -108,5 +109,3 @@ These were tracked in scattered docs; folded here so those docs can be deleted.
 2. **Walk `.dependency-cruiser-known-violations.json`** after PRD-247/248/249 US-04 land; expect significant shrinkage.
 3. **`/pillars/<name>/` flat code-topology reorg — parked indefinitely.** User said park it; do not resume without an explicit ask.
 4. **Audit duplicate folder.** `docs/themes/13-pillar-finale/prds/244-db-types-decomposition/` is an empty stub from a number collision. The real PRD-245 is at `245-db-types-decomposition/`. Delete it.
-   </content>
-   </invoke>

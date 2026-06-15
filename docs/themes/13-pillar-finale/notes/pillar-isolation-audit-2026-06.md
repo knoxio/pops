@@ -1,6 +1,6 @@
 # Pillar Isolation Audit — 2026-06 Refresh
 
-Companion to [`pillar-isolation-audit.md`](pillar-isolation-audit.md) (the original 28-finding audit, #3215) and [`pillar-isolation-audit-status.md`](pillar-isolation-audit-status.md) (the post-PRD-240/241/242/243 status snapshot). This refresh re-walks the codebase after PRD-245 (db-types decomposition, 7/8 done), PRD-246 US-03 (shell capture registry walk), and the PRD-247/248/249 scoping work.
+Companion to [`pillar-isolation-audit.md`](pillar-isolation-audit.md) — the original 28-finding audit (#3215). The interim status snapshot has been folded into [`../IMPLEMENTATION-PLAN.md`](../IMPLEMENTATION-PLAN.md). This refresh re-walks the codebase after PRD-245 (db-types decomposition, 7/8 done), PRD-246 US-03 (shell capture registry walk), and the PRD-247/248/249 scoping work.
 
 The north-star rule for every finding below: **a pillar must be deployable, testable, and reasoned about without the source of any other pillar except published contracts (`<pillar>-contract`) and shared infra (`pillar-sdk`, `types`, `module-registry`).** Anywhere that breaks is an anti-lego smell.
 
