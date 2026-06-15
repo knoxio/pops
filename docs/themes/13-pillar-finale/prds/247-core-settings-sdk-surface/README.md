@@ -128,7 +128,7 @@ Tracked per-US — summary here for orientation:
 - `pops-core-api`'s `coreRouter` exposes `settings.{get, set, ensure, delete, getMany, setMany}` with zod-validated inputs / outputs matching the in-monolith shape.
 - The contract package emits typed procedure handles for `pillar<CoreRouter>('core').settings.*`.
 - The in-monolith router's `getBulk` / `setBulk` are renamed to `getMany` / `setMany` (and `ensure` is newly exposed) so both bindings present the same map.
-- A pattern doc under `docs/themes/13-pillar-finale/notes/server-pillar-sdk-consumer-pattern.md` documents async signatures, `PillarCallError` handling, service-account auth, and discovery-cache. PRD-248 and PRD-249 reference it.
+- A pattern doc under [`docs/themes/13-pillar-finale/notes/server-pillar-sdk-consumer-pattern.md`](../../notes/server-pillar-sdk-consumer-pattern.md) documents async signatures, `PillarCallError` handling, service-account auth, and discovery-cache. PRD-248 and PRD-249 reference it.
 - The 15 media files under `arr/`, `plex/`, `rotation/` contain no runtime `@pops/core-db` import (type-only is fine for `SETTINGS_KEYS`). Their hot read paths (Plex sync) use `getMany`. Matching `.dependency-cruiser-known-violations.json` entries removed.
 - Integration test boots both APIs and asserts wire-level cross-pillar settings reads + writes succeed.
 - `pnpm --filter @pops/pops-core-api typecheck/test/build`, `pnpm --filter @pops/pops-api typecheck/test/build`, and the full monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
@@ -145,6 +145,7 @@ Tracked per-US — summary here for orientation:
 
 ## References
 
+- [Server pillar SDK consumer pattern](../../notes/server-pillar-sdk-consumer-pattern.md) — async / error / auth conventions (US-02 deliverable)
 - [PRD-246](../246-shell-api-pillar-decoupling/README.md) US-04 Site 8 — the consumer the surface unblocks
 - [PRD-242](../242-dynamic-approuter/README.md) — the typed `pillar()` proxy this PRD consumes
 - [PRD-244](../244-cross-pillar-sdk-surface/README.md) — sibling cross-pillar SDK PRD (client-side analogue)
