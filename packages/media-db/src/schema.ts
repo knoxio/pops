@@ -6,9 +6,6 @@
  * seasons, shelf impressions, sync logs / job results, TV shows, watch
  * history) live in this package per PRD-245 US-04 (audit H6/H7).
  *
- * `@pops/db-types` re-exports these tables as a transition shim so
- * legacy import sites keep compiling until PRD-245 US-08 deletes the
- * shim. Pillar consumers should import from `@pops/media-db` directly.
  */
 export { comparisonDimensions } from './schema/comparison-dimensions.js';
 export { comparisonSkipCooloffs } from './schema/comparison-skip-cooloffs.js';

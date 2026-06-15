@@ -6,10 +6,6 @@
  * item_documents, item_photos, item_uploaded_files) live in this
  * package per PRD-245 US-02 (audit H6/H7).
  *
- * `@pops/db-types` re-exports these tables as a transition shim so
- * legacy import sites keep compiling until PRD-245 US-08 deletes the
- * shim. Pillar consumers should import from `@pops/inventory-db`
- * directly.
  */
 export { fixtures } from './schema/fixtures.js';
 export { homeInventory } from './schema/inventory.js';

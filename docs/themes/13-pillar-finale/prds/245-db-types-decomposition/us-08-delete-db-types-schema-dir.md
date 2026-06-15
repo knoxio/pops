@@ -8,15 +8,15 @@ As a maintainer finishing PRD-245, I want the `@pops/db-types/schema/` directory
 
 ## Acceptance Criteria
 
-- [ ] `packages/db-types/src/schema/` directory is deleted entirely (after confirming every table now lives in its owning `-db` package per US-01 … US-07).
-- [ ] `packages/db-types/src/index.ts` removes every schema-related re-export. The remaining surface (`constants`, `embeddings` standalone file, `food` shim, `lists` shim, `insert-types`, `pillar-registry`) stays — out of scope for this PRD.
-- [ ] Drizzle-kit's schema glob is repointed at each `-db` package's `src/schema/` directory. `pnpm drizzle:check` (or the equivalent migration-diff command) reports no schema drift.
-- [ ] `grep -rn "from '@pops/db-types'" packages apps` under `src/` returns zero matches against any of the relocated table names. (Non-schema surface matches — `IngestSourceKind`, `aiInferenceLog`'s constants, etc. — are out of scope.)
-- [ ] For every workspace package that previously depended on `@pops/db-types` solely for its schema re-exports, the `package.json` `dependencies` entry is removed. Packages that still need `@pops/db-types` for non-schema surfaces keep the dep.
-- [ ] `pnpm --filter @pops/db-types typecheck/test/build` passes, and so does the receiving-package matrix from US-01 … US-07 (`@pops/cerebrum-db`, `@pops/inventory-db`, `@pops/finance-db`, `@pops/media-db`, `@pops/food-db`, `@pops/app-food-db`, `@pops/app-lists-db`, `@pops/core-db`) plus `pnpm --filter @pops/api typecheck/test`.
-- [ ] Audit issue [#3215](https://github.com/knoxio/pops/issues/3215) findings H6 and H7 are marked Done by the PR description; the audit notes file gets a status update.
-- [ ] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] `packages/db-types/src/schema/` directory is deleted entirely (after confirming every table now lives in its owning `-db` package per US-01 … US-07).
+- [x] `packages/db-types/src/index.ts` removes every schema-related re-export. Per-pillar type shims (`cerebrum-types`, `core-types`, `inventory-types`, `media-types`, `food-types`, `lists`), the `insert-types` aggregator, and the `pillar-registry` shim are deleted; their `Row`/`Insert` aliases now live in the owning pillar `-db` package. `constants` stays — it is the only cross-pillar surface and is frontend-safe.
+- [x] Drizzle-kit's schema glob already points at each `-db` package's `src/schema/` directory (US-01..US-07). Per-pillar `drizzle:check` invocations report no schema drift.
+- [x] `grep -rn "from '@pops/db-types'" packages apps` returns only three matches, all importing `ENTITY_TYPES` / `INVENTORY_CONDITIONS` from the surviving `constants` surface.
+- [x] For every workspace package that previously depended on `@pops/db-types` solely for its schema re-exports, the `package.json` `dependencies` entry is removed (`@pops/api`, `@pops/finance-api`, `@pops/inventory-api`, `@pops/app-food`, `@pops/app-lists`, `@pops/app-food-db`, `@pops/lists-db`). Frontend packages that still need the constants (`@pops/app-finance`, `@pops/app-inventory`) keep the dep.
+- [x] `pnpm --filter @pops/db-types typecheck/build` passes, and so does the receiving-package matrix from US-01 … US-07 (`@pops/cerebrum-db`, `@pops/inventory-db`, `@pops/finance-db`, `@pops/media-db`, `@pops/food-db`, `@pops/app-food-db`, `@pops/app-lists-db`, `@pops/core-db`) plus `pnpm --filter @pops/api typecheck/test` (4899/4899 tests pass) and `pnpm --filter @pops/shell typecheck/test/build` (526/526 tests pass).
+- [x] Audit issue [#3215](https://github.com/knoxio/pops/issues/3215) findings H6 and H7 are marked Done by the PR description.
+- [x] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

@@ -7,8 +7,6 @@ import {
   encodeDraftsCursor,
 } from './inbox-queries-drafts-types.js';
 
-import type { IngestSourceKind } from '@pops/db-types';
-
 /**
  * PRD-134 — in-memory score, filter, sort, and paginate pipeline for the
  * Drafts inbox tab.
@@ -31,6 +29,7 @@ import type { IngestSourceKind } from '@pops/db-types';
  * which field drives the primary compare.
  */
 import type { gatherQualityInputsForVersions } from '../inbox/gather-quality-inputs.js';
+import type { IngestSourceKind } from '../schema.js';
 import type { ListPage } from './inbox-queries-shared.js';
 
 const FRESH_MAX_AGE_MINUTES = 1440;

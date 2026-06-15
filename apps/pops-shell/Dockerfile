@@ -70,11 +70,11 @@ COPY packages/media-contract/ ./packages/media-contract/
 COPY packages/food-contract/ ./packages/food-contract/
 COPY packages/lists-contract/ ./packages/lists-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
-# media-db / inventory-db / app-lists-db / cerebrum-db / food-db /
-# finance-db / core-db own canonical schemas; db-types re-exports them
-# via a transition shim, so all seven MUST build BEFORE db-types
-# (PRD-245 US-01 cerebrum + US-02 inventory + US-03 finance + US-04
-# media + US-05 food + US-06 lists + US-07 core / audit H6).
+# Build shared packages.
+
+# After PRD-245 US-08 db-types is a leaf constants package — its build
+# order vs the pillars no longer matters; kept here for stable layer cache.
+
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db

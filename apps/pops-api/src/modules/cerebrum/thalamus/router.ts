@@ -62,7 +62,7 @@ export const indexRouter = router({
         const trigger = new EmbeddingTrigger();
 
         // Get all .md files relative paths and sync + trigger each.
-        const { engramIndex } = await import('@pops/db-types');
+        const { engramIndex } = await import('@pops/cerebrum-db');
         const rows = db.select({ filePath: engramIndex.filePath }).from(engramIndex).all();
         const syncResults = rows.map((row) => syncService.syncFile(row.filePath));
         await trigger.trigger(syncResults, true);
@@ -98,7 +98,7 @@ export const indexRouter = router({
     .mutation(async ({ input }) => {
       const { existsSync, readdirSync } = await import('node:fs');
       const { join, relative } = await import('node:path');
-      const { engramIndex } = await import('@pops/db-types');
+      const { engramIndex } = await import('@pops/cerebrum-db');
 
       const root = getEngramRoot();
       const db = getCerebrumDrizzle();

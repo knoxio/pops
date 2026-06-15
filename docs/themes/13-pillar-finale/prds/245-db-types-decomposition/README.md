@@ -2,7 +2,7 @@
 
 > Epic: [Remaining data migrations](../../epics/03-remaining-data-migrations.md)
 >
-> Status: **Not started** — scoping doc, no implementation has begun.
+> Status: **Done** — all eight user stories merged. `packages/db-types/src/schema/` deleted; `@pops/db-types` slimmed to a constants-only frontend-safe surface. Audit H6/H7 closed.
 
 ## Overview
 

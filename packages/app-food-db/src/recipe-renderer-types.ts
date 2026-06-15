@@ -13,7 +13,7 @@ import type {
   RecipeRow,
   RecipeStepRow,
   RecipeVersionRow,
-} from '@pops/db-types';
+} from '@pops/food-db';
 
 /**
  * Joined display row for `recipe_lines` (PRD-116) — the raw column set plus

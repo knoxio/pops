@@ -15,13 +15,13 @@
  */
 import { desc } from 'drizzle-orm';
 
-import { transactions } from '@pops/db-types';
+import { transactions } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { parseJsonStringArray } from '../../../../shared/json.js';
 import { patternMatchesDescription } from '../lib/pattern-match.js';
 
-import type { TransactionRow } from '@pops/db-types';
+import type { TransactionRow } from '@pops/finance-db';
 
 export type RuleMatchType = 'exact' | 'contains' | 'regex';
 

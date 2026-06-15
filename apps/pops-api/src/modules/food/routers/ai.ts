@@ -18,7 +18,7 @@ import { z } from 'zod';
  * `domain = 'food'`. The cost is computed worker-side per PRD-133's
  * shape.
  */
-import { aiInferenceLog } from '@pops/db-types';
+import { aiInferenceLog } from '@pops/core-db';
 
 import { getCoreDrizzle } from '../../../db.js';
 import { logger } from '../../../lib/logger.js';

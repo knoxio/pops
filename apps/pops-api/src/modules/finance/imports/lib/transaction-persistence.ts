@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import { entities } from '@pops/db-types';
+import { entities } from '@pops/core-db';
 import {
   importsService,
   tagVocabularyService,

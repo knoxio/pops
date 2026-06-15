@@ -7,7 +7,7 @@ import { and, count, eq, like, ne, sql } from 'drizzle-orm';
  * SQLite is the source of truth. All operations are local.
  */
 import { entities } from '@pops/core-db';
-import { transactions } from '@pops/db-types';
+import { transactions } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';

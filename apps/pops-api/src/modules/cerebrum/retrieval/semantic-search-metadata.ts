@@ -21,14 +21,10 @@
  */
 import { eq } from 'drizzle-orm';
 
-import {
-  engramIndex,
-  engramScopes,
-  homeInventory,
-  movies,
-  transactions,
-  tvShows,
-} from '@pops/db-types';
+import { engramIndex, engramScopes } from '@pops/cerebrum-db';
+import { transactions } from '@pops/finance-db';
+import { homeInventory } from '@pops/inventory-db';
+import { movies, tvShows } from '@pops/media-db';
 
 import {
   crossSourceTitle,

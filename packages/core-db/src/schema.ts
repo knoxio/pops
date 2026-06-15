@@ -6,9 +6,6 @@
  * `ai_*` observability slice) live in this package per PRD-245 US-07
  * (audit H6/H7).
  *
- * `@pops/db-types` re-exports these tables as a transition shim so legacy
- * import sites keep compiling until PRD-245 US-08 deletes the shim. Pillar
- * consumers should import from `@pops/core-db` directly.
  */
 export { aiAlertRules } from './schema/ai-alert-rules.js';
 export { aiAlerts } from './schema/ai-alerts.js';

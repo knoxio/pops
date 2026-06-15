@@ -2,7 +2,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as dbTypes from '@pops/db-types';
+import { embeddings } from '@pops/cerebrum-db';
 
 // ---------------------------------------------------------------------------
 // Mocks — all must appear before the subject import
@@ -98,7 +98,7 @@ function createEmbeddingsTestDb(): BetterSqlite3.Database {
 
 beforeEach(() => {
   testDb = createEmbeddingsTestDb();
-  testDrizzle = drizzle(testDb, { schema: dbTypes });
+  testDrizzle = drizzle(testDb, { schema: { embeddings } });
   vecAvailable = true;
 });
 

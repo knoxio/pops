@@ -18,8 +18,7 @@ import {
   type DraftsFiltersState,
 } from './drafts-filters.js';
 
-import type { DraftSort, QualityBand } from '@pops/app-food-db';
-import type { IngestSourceKind } from '@pops/db-types';
+import type { DraftSort, IngestSourceKind, QualityBand } from '@pops/app-food-db';
 import type { PartialReason } from '@pops/food-contracts';
 
 interface Props {

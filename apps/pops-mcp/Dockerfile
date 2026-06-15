@@ -87,11 +87,11 @@ COPY apps/pops-mcp/src ./apps/pops-mcp/src
 
 # Build shared packages first (module-registry needs db-types + types;
 # app-food-db is consumed by pops-api routers).
-# media-db / inventory-db / app-lists-db / cerebrum-db / food-db /
-# finance-db / core-db own canonical schemas; db-types re-exports them
-# via a transition shim, so all seven MUST build BEFORE db-types
-# (PRD-245 US-01 cerebrum + US-02 inventory + US-03 finance + US-04
-# media + US-05 food + US-06 lists + US-07 core / audit H6).
+# Build shared packages.
+
+# After PRD-245 US-08 db-types is a leaf constants package — its build
+# order vs the pillars no longer matters; kept here for stable layer cache.
+
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db

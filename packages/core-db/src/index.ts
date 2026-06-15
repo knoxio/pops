@@ -11,6 +11,7 @@
  * in subsequent PRs.
  */
 export * from './errors.js';
+export * from './row-types.js';
 export * from './schema.js';
 
 export type { CoreDb } from './services/internal.js';

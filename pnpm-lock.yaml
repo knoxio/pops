@@ -75,9 +75,6 @@ importers:
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../../packages/db-types
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../../packages/finance-contract
@@ -415,9 +412,6 @@ importers:
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../../packages/db-types
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../../packages/finance-contract
@@ -574,9 +568,6 @@ importers:
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../../packages/db-types
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../../packages/finance-contract
@@ -1368,9 +1359,6 @@ importers:
       '@pops/app-food-db':
         specifier: workspace:*
         version: link:../app-food-db
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../db-types
       '@pops/food-contracts':
         specifier: workspace:*
         version: link:../food-contracts
@@ -1477,9 +1465,9 @@ importers:
       '@pops/app-lists-db':
         specifier: workspace:*
         version: link:../app-lists-db
-      '@pops/db-types':
+      '@pops/core-db':
         specifier: workspace:*
-        version: link:../db-types
+        version: link:../core-db
       '@pops/food-contracts':
         specifier: workspace:*
         version: link:../food-contracts
@@ -1632,9 +1620,6 @@ importers:
       '@pops/app-lists-db':
         specifier: workspace:*
         version: link:../app-lists-db
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../db-types
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../pillar-sdk
@@ -1917,37 +1902,6 @@ importers:
         version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
 
   packages/db-types:
-    dependencies:
-      '@pops/app-lists-db':
-        specifier: workspace:*
-        version: link:../app-lists-db
-      '@pops/cerebrum-db':
-        specifier: workspace:*
-        version: link:../cerebrum-db
-      '@pops/core-db':
-        specifier: workspace:*
-        version: link:../core-db
-      '@pops/finance-db':
-        specifier: workspace:*
-        version: link:../finance-db
-      '@pops/food-db':
-        specifier: workspace:*
-        version: link:../food-db
-      '@pops/inventory-db':
-        specifier: workspace:*
-        version: link:../inventory-db
-      '@pops/media-db':
-        specifier: workspace:*
-        version: link:../media-db
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-      drizzle-zod:
-        specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
       '@types/node':
         specifier: ^25.9.3
@@ -2155,9 +2109,9 @@ importers:
 
   packages/lists-db:
     dependencies:
-      '@pops/db-types':
+      '@pops/app-lists-db':
         specifier: workspace:*
-        version: link:../db-types
+        version: link:../app-lists-db
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0

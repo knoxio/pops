@@ -19,7 +19,6 @@
   "dependencies": {
     "@pops/core-contract": "workspace:*",
     "@pops/core-db": "workspace:*",
-    "@pops/db-types": "workspace:*",
     "@pops/finance-contract": "workspace:*",
     "@pops/inventory-contract": "workspace:*",
     "@pops/inventory-db": "workspace:*",

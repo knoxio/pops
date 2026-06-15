@@ -48,6 +48,7 @@
  * `cerebrum-api`, `cerebrum-ui` — which are deferred until their first
  * content lands rather than scaffolded empty.
  */
+export * from './row-types.js';
 export * from './schema.js';
 
 export type { CerebrumDb } from './services/internal.js';

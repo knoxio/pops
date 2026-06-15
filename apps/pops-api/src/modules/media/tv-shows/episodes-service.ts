@@ -23,7 +23,7 @@ import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { getSeason } from './seasons-service.js';
 
-import type { EpisodeRow } from '@pops/db-types';
+import type { EpisodeRow } from '@pops/media-db';
 
 import type { CreateEpisodeInput } from './types.js';
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ENTITY_TYPES } from '@pops/db-types';
+import { ENTITY_TYPES } from '@pops/core-db';
 
 import { ChangeSetSchema } from '../../core/corrections/types.js';
 import { TagRuleChangeSetSchema } from '../../core/tag-rules/types.js';

@@ -1,4 +1,4 @@
-import type { DraftSort, QualityBand } from '@pops/app-food-db';
+import type { DraftSort, IngestSourceKind, QualityBand } from '@pops/app-food-db';
 /**
  * PRD-134 — Drafts-tab filter types + URL-hash codec.
  *
@@ -7,7 +7,6 @@ import type { DraftSort, QualityBand } from '@pops/app-food-db';
  * stuff the JSON in raw so the hash stays free of `%`-escaped characters
  * and so it survives the React Router pass-through unchanged.
  */
-import type { IngestSourceKind } from '@pops/db-types';
 import type { PartialReason } from '@pops/food-contracts';
 
 export interface DraftsFiltersState {

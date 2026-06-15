@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@pops/core-db": "workspace:*",
-    "@pops/db-types": "workspace:*",
     "@pops/finance-contract": "workspace:*",
     "@pops/finance-db": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",

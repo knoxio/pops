@@ -1,6 +1,6 @@
 import { desc, eq } from 'drizzle-orm';
 
-import { transactionCorrections } from '@pops/db-types';
+import { transactionCorrections } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../../db/finance-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
