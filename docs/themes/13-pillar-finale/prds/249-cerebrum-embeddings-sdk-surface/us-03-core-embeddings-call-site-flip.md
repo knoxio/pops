@@ -10,19 +10,19 @@ As an `apps/pops-api` core-pillar maintainer, I want `core/embeddings/service.ts
 
 ## Acceptance Criteria
 
-- [ ] `apps/pops-api/src/modules/core/embeddings/service.ts`:
-  - [ ] `getEmbeddingStatus(sourceType?)` becomes `async`. Its body calls `await pillar('cerebrum').embeddings.getStatus({ sourceType })` and returns the unwrapped `data`.
-  - [ ] `reindexEmbeddings(sourceType, sourceIds?)`'s `else` branch (the `selectDistinct` path) becomes `const { sourceIds: ids } = (await pillar('cerebrum').embeddings.listSourceIdsByType({ sourceType })).data`.
-  - [ ] The runtime `import { embeddings } from '@pops/cerebrum-db'` is removed.
-  - [ ] Type-only imports of any shared enum (e.g. embedding source type names) remain allowed.
-- [ ] All callers of `getEmbeddingStatus` are updated to `await` the now-async function. `grep -rn "getEmbeddingStatus(" apps/pops-api/src/` before merging.
-- [ ] The matching `.dependency-cruiser-known-violations.json` entry (the `core/embeddings/service.ts` → `@pops/cerebrum-db` allow) is removed.
-- [ ] Existing unit tests under `apps/pops-api/src/modules/core/embeddings/` are updated:
-  - [ ] Mocks flip from mocking `@pops/cerebrum-db`'s drizzle to mocking the SDK module (per [server-pillar-sdk-consumer-pattern](../../notes/server-pillar-sdk-consumer-pattern.md)).
-  - [ ] `getEmbeddingStatus` test surface remains: total returned for each sourceType filter; placeholder pending/stale at 0.
-- [ ] `pnpm --filter @pops/pops-api typecheck/test/build` passes clean.
-- [ ] Monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] `apps/pops-api/src/modules/core/embeddings/service.ts`:
+  - [x] `getEmbeddingStatus(sourceType?)` becomes `async`. Its body calls `await pillar('cerebrum').embeddings.getStatus({ sourceType })` and returns the unwrapped `data`.
+  - [x] `reindexEmbeddings(sourceType, sourceIds?)`'s `else` branch (the `selectDistinct` path) becomes `const { sourceIds: ids } = (await pillar('cerebrum').embeddings.listSourceIdsByType({ sourceType })).data`.
+  - [x] The runtime `import { embeddings } from '@pops/cerebrum-db'` is removed.
+  - [x] Type-only imports of any shared enum (e.g. embedding source type names) remain allowed.
+- [x] All callers of `getEmbeddingStatus` are updated to `await` the now-async function. `grep -rn "getEmbeddingStatus(" apps/pops-api/src/` before merging.
+- [x] The matching `.dependency-cruiser-known-violations.json` entry (the `core/embeddings/service.ts` → `@pops/cerebrum-db` allow) is removed.
+- [x] Existing unit tests under `apps/pops-api/src/modules/core/embeddings/` are updated:
+  - [x] Mocks flip from mocking `@pops/cerebrum-db`'s drizzle to mocking the SDK module (per [server-pillar-sdk-consumer-pattern](../../notes/server-pillar-sdk-consumer-pattern.md)).
+  - [x] `getEmbeddingStatus` test surface remains: total returned for each sourceType filter; placeholder pending/stale at 0.
+- [x] `pnpm --filter @pops/pops-api typecheck/test/build` passes clean.
+- [x] Monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

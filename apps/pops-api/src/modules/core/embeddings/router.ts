@@ -24,7 +24,7 @@ export const embeddingsRouter = router({
 
   status: protectedProcedure
     .input(z.object({ sourceType: z.string().optional() }))
-    .query(({ input }) => {
+    .query(async ({ input }) => {
       return getEmbeddingStatus(input.sourceType);
     }),
 
