@@ -25,6 +25,71 @@
         ],
         "type": "object"
       },
+      "EmbeddingsGetStatusInput": {
+        "additionalProperties": false,
+        "properties": {
+          "sourceType": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "EmbeddingsGetStatusOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "pending": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "stale": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "total": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "pending",
+          "stale"
+        ],
+        "type": "object"
+      },
+      "EmbeddingsListSourceIdsByTypeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "sourceType": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceType"
+        ],
+        "type": "object"
+      },
+      "EmbeddingsListSourceIdsByTypeOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "sourceIds": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "required": [
+          "sourceIds"
+        ],
+        "type": "object"
+      },
       "Engram": {
         "additionalProperties": false,
         "properties": {
@@ -231,6 +296,70 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/cerebrum/embeddings/source-ids": {
+      "get": {
+        "operationId": "cerebrum.embeddings.listSourceIdsByType",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceType",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingsListSourceIdsByTypeOutput"
+                }
+              }
+            },
+            "description": "Distinct source ids for the given source type"
+          }
+        },
+        "summary": "List distinct source ids for a cerebrum embedding source type",
+        "tags": [
+          "embeddings"
+        ]
+      }
+    },
+    "/cerebrum/embeddings/status": {
+      "get": {
+        "operationId": "cerebrum.embeddings.getStatus",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceType",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingsGetStatusOutput"
+                }
+              }
+            },
+            "description": "Embedding coverage stats"
+          }
+        },
+        "summary": "Get cerebrum embeddings coverage status",
+        "tags": [
+          "embeddings"
+        ]
+      }
+    },
     "/cerebrum/engrams": {
       "get": {
         "operationId": "cerebrum.engrams.list",
@@ -425,6 +554,10 @@
     }
   ],
   "tags": [
+    {
+      "description": "Cerebrum embeddings (read-only cross-pillar SDK)",
+      "name": "embeddings"
+    },
     {
       "description": "Cerebrum engrams",
       "name": "engrams"

@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+import {
+  EmbeddingsGetStatusInputSchema,
+  EmbeddingsGetStatusOutputSchema,
+  EmbeddingsListSourceIdsByTypeInputSchema,
+  EmbeddingsListSourceIdsByTypeOutputSchema,
+} from '../src/schemas/embeddings.js';
 import { EngramSchema } from '../src/schemas/engram.js';
 import { NudgeSchema, NudgeStatusSchema } from '../src/schemas/nudge.js';
 import { ScopeSchema } from '../src/schemas/scope.js';
@@ -32,6 +38,14 @@ function zodToOpenApiSchema(schema: z.ZodType): OpenApiSchema {
 export function buildComponentSchemas(): Record<string, OpenApiSchema> {
   return {
     Pagination: PAGINATION_SCHEMA,
+    EmbeddingsGetStatusInput: zodToOpenApiSchema(EmbeddingsGetStatusInputSchema),
+    EmbeddingsGetStatusOutput: zodToOpenApiSchema(EmbeddingsGetStatusOutputSchema),
+    EmbeddingsListSourceIdsByTypeInput: zodToOpenApiSchema(
+      EmbeddingsListSourceIdsByTypeInputSchema
+    ),
+    EmbeddingsListSourceIdsByTypeOutput: zodToOpenApiSchema(
+      EmbeddingsListSourceIdsByTypeOutputSchema
+    ),
     Engram: zodToOpenApiSchema(EngramSchema),
     Nudge: zodToOpenApiSchema(NudgeSchema),
     NudgeStatus: zodToOpenApiSchema(NudgeStatusSchema),

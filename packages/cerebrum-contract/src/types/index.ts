@@ -3,6 +3,12 @@
  * a new entity means adding both a file under `types/` and a matching
  * schema under `schemas/`. The round-trip test enforces that they agree.
  */
+export type {
+  EmbeddingsGetStatusInput,
+  EmbeddingsGetStatusOutput,
+  EmbeddingsListSourceIdsByTypeInput,
+  EmbeddingsListSourceIdsByTypeOutput,
+} from './embeddings.js';
 export type { Engram } from './engram.js';
 export type { Nudge, NudgeStatus } from './nudge.js';
 export type { Scope } from './scope.js';
