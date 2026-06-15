@@ -34,6 +34,7 @@ export type { IngestSourceDescriptor } from './ingest-source.js';
 export { assertModuleManifest } from './module-manifest.js';
 export type {
   ModuleBackendManifest,
+  ModuleCaptureOverlayConfig,
   ModuleFrontendManifest,
   ModuleManifest,
   ModuleOverlayConfig,

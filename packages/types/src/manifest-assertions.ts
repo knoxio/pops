@@ -3,22 +3,19 @@
  * out from `module-manifest.ts` to keep that file's exported surface and the
  * runtime checks in tractable file sizes. Not re-exported from
  * `@pops/types`; consumers call `assertModuleManifest` instead.
+ *
+ * The frontend-side checks (overlay + `frontend.captureOverlay`,
+ * PRD-246 US-03) live in `./manifest-frontend-assertions.ts` to keep
+ * each file under the lint `max-lines` cap. `assertFrontend` is
+ * re-exported from this module so callers continue to import every
+ * assertion from a single path.
  */
+import { fail, isObject, assertNonEmptyString } from './manifest-assertions-core.js';
+
+export { assertFrontend } from './manifest-frontend-assertions.js';
+export { fail, isObject, assertNonEmptyString } from './manifest-assertions-core.js';
+
 import type { ModuleSurface } from './module-manifest.js';
-
-export function fail(context: string, message: string): never {
-  throw new TypeError(`${context}: ${message}`);
-}
-
-export function isObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-export function assertNonEmptyString(value: unknown, context: string, field: string): void {
-  if (typeof value !== 'string' || value.length === 0) {
-    fail(context, `'${field}' must be a non-empty string`);
-  }
-}
 
 export function assertSurfaces(value: unknown, context: string): readonly ModuleSurface[] {
   if (!Array.isArray(value) || value.length === 0) {
@@ -195,23 +192,4 @@ export function assertBackend(value: unknown, context: string): void {
   assertAiTools(value.aiTools, context);
   assertMigrations(value.migrations, context);
   assertIngestSources(value.ingestSources, context);
-}
-
-export function assertFrontend(
-  value: unknown,
-  surfaces: readonly ModuleSurface[],
-  context: string
-): void {
-  if (value === undefined) return;
-  if (!isObject(value)) fail(context, `'frontend' must be an object when set`);
-  if (!surfaces.includes('overlay')) return;
-  if (!isObject(value.overlay))
-    fail(context, `'frontend.overlay' is required when surfaces includes 'overlay'`);
-  const o = value.overlay;
-  if (typeof o.chromeSlot !== 'string')
-    fail(context, `'frontend.overlay.chromeSlot' must be a string`);
-  if (o.shortcut !== undefined && typeof o.shortcut !== 'string')
-    fail(context, `'frontend.overlay.shortcut' must be a string when set`);
-  if (o.component !== undefined && typeof o.component !== 'function')
-    fail(context, `'frontend.overlay.component' must be a function when set`);
 }

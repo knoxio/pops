@@ -20,5 +20,7 @@
   "pillarUnavailableTitle": "Pillar unavailable",
   "pillarUnavailableDescription": "The {{pillar}} pillar isn't responding. Its routes will come back online when the pillar recovers.",
   "pillarUnavailableRetry": "Retry",
-  "pillarUnavailableRetrying": "Checking…"
+  "pillarUnavailableRetrying": "Checking…",
+  "captureModal.title": "Capture",
+  "captureModal.empty": "No capture overlay registered."
 }
