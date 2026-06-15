@@ -1,6 +1,6 @@
 import { and, asc, count, eq } from 'drizzle-orm';
 
-import { fixtures, homeInventory, itemFixtureConnections } from '@pops/db-types';
+import { fixtures, homeInventory, itemFixtureConnections } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';

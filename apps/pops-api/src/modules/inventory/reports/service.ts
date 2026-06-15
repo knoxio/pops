@@ -3,7 +3,7 @@ import { and, count, desc, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
 /**
  * Inventory reports service — warranty tracking and insurance report queries.
  */
-import { homeInventory, itemDocuments, locations } from '@pops/db-types';
+import { homeInventory, itemDocuments, locations } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 

@@ -50,7 +50,16 @@ export {
 export { transactionCorrections } from './corrections.js';
 export { entities } from './entities.js';
 export { environments } from './environments.js';
-export { fixtures } from './fixtures.js';
+export {
+  fixtures,
+  homeInventory,
+  itemConnections,
+  itemDocuments,
+  itemFixtureConnections,
+  itemPhotos,
+  itemUploadedFiles,
+  locations,
+} from '@pops/inventory-db';
 export {
   batchConsumptions,
   batches,
@@ -75,14 +84,7 @@ export {
   unitConversions,
 } from './food.js';
 export { substitutions } from './food-substitutions.js';
-export { homeInventory } from './inventory.js';
 export { listItems, lists } from '@pops/app-lists-db';
-export { itemConnections } from './item-connections.js';
-export { itemFixtureConnections } from './item-fixture-connections.js';
-export { itemDocuments } from './item-documents.js';
-export { itemPhotos } from './item-photos.js';
-export { itemUploadedFiles } from './item-uploaded-files.js';
-export { locations } from './locations.js';
 export { pillarRegistry } from './pillar-registry.js';
 export { serviceAccounts } from './service-accounts.js';
 export { settings } from './settings.js';

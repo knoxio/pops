@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 
-import type { InventoryRow } from '@pops/db-types';
+import type { InventoryRow } from '@pops/inventory-db';
 
 export type { InventoryRow };
 

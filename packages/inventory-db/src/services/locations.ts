@@ -32,9 +32,10 @@ import {
   type LocationItemsResult,
 } from './locations-queries.js';
 
-import type { LocationRow } from '@pops/db-types';
-
+import type { LocationRow } from '../row-types.js';
 import type { InventoryDb } from './internal.js';
+
+export type { LocationRow };
 
 export {
   getDeleteStats,

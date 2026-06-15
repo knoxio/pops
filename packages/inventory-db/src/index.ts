@@ -13,6 +13,7 @@
  * `documents` are now scaffolded; the live writers still own production.
  */
 export * from './errors.js';
+export * from './row-types.js';
 export * from './schema.js';
 
 export type { InventoryDb } from './services/internal.js';

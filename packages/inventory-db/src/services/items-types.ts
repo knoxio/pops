@@ -5,7 +5,7 @@
  * layers — this package stays HTTP-agnostic and only exposes the
  * service surface and row types needed to call it.
  */
-import type { InventoryRow } from '@pops/db-types';
+import type { InventoryRow } from '../row-types.js';
 
 export type { InventoryRow };
 

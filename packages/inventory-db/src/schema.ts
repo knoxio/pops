@@ -1,17 +1,21 @@
 /**
- * Local re-export of inventory-domain tables.
+ * Inventory domain table barrel.
  *
- * Canonical definitions live in `@pops/db-types/src/schema/*.ts` so the
- * drizzle-kit config (which globs `packages/db-types/src/schema/*`) picks
- * them up and the rest of the platform sees a single schema barrel.
+ * Canonical definitions for inventory-owned tables (home_inventory,
+ * locations, fixtures, item_connections, item_fixture_connections,
+ * item_documents, item_photos, item_uploaded_files) live in this
+ * package per PRD-245 US-02 (audit H6/H7).
  *
- * Services in this package import from here for ergonomics and so the
- * inventory pillar's read surface stays self-describing. Mirrors the
- * `@pops/core-db` / `@pops/app-food-db` schema re-export pattern.
- *
- * `homeInventory` is included here even though the items service is not
- * yet extracted — the locations service reads from it for
- * `getLocationItems` / `getDeleteStats`, and downstream slice PRs (items,
- * connections, documents, photos, fixtures) will need it too.
+ * `@pops/db-types` re-exports these tables as a transition shim so
+ * legacy import sites keep compiling until PRD-245 US-08 deletes the
+ * shim. Pillar consumers should import from `@pops/inventory-db`
+ * directly.
  */
-export { homeInventory, itemConnections, itemDocuments, locations } from '@pops/db-types';
+export { fixtures } from './schema/fixtures.js';
+export { homeInventory } from './schema/inventory.js';
+export { itemConnections } from './schema/item-connections.js';
+export { itemDocuments } from './schema/item-documents.js';
+export { itemFixtureConnections } from './schema/item-fixture-connections.js';
+export { itemPhotos } from './schema/item-photos.js';
+export { itemUploadedFiles } from './schema/item-uploaded-files.js';
+export { locations } from './schema/locations.js';

@@ -6,6 +6,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 
 # Copy workspace package.json files (for dep resolution)
 COPY packages/db-types/package.json ./packages/db-types/
+COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/types/package.json ./packages/types/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/app-lists-db/package.json ./packages/app-lists-db/
@@ -27,6 +28,9 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # Copy shared package sources
 COPY packages/db-types/src ./packages/db-types/src
 COPY packages/db-types/tsconfig.json ./packages/db-types/
+COPY packages/inventory-db/src ./packages/inventory-db/src
+COPY packages/inventory-db/tsconfig.json ./packages/inventory-db/
+COPY packages/inventory-db/migrations ./packages/inventory-db/migrations
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
 COPY packages/media-db/src ./packages/media-db/src
@@ -51,11 +55,13 @@ COPY apps/pops-media-api/tsconfig.json ./apps/pops-media-api/
 COPY apps/pops-media-api/src ./apps/pops-media-api/src
 
 # Build shared packages first.
-# media-db / app-lists-db / cerebrum-db own canonical schemas; db-types
-# re-exports them via a transition shim, so all MUST build BEFORE
-# db-types (PRD-245 US-04 media + US-06 lists + US-01 cerebrum /
-# audit H6).
+# media-db / inventory-db / app-lists-db / cerebrum-db own canonical schemas;
+# db-types re-exports them via a transition shim, so all four MUST build
+# BEFORE db-types (PRD-245 US-01 cerebrum + US-02 inventory + US-04 media +
+# US-06 lists / audit H6).
 WORKDIR /app/packages/media-db
+RUN pnpm build
+WORKDIR /app/packages/inventory-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
 RUN pnpm build

@@ -8,7 +8,7 @@ import { extname, join, resolve } from 'node:path';
 
 import { desc, count, eq } from 'drizzle-orm';
 
-import { homeInventory, itemUploadedFiles } from '@pops/db-types';
+import { homeInventory, itemUploadedFiles } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';

@@ -8,19 +8,19 @@ As a maintainer dismantling `@pops/db-types/schema/`, I want the inventory-owned
 
 ## Acceptance Criteria
 
-- [ ] The following files move from `packages/db-types/src/schema/` to `packages/inventory-db/src/schema/`, alongside their matching `*-row-schemas.ts`:
+- [x] The following files move from `packages/db-types/src/schema/` to `packages/inventory-db/src/schema/`, alongside their matching `*-row-schemas.ts`:
       `inventory.ts`, `item-connections.ts`, `item-fixture-connections.ts`, `item-documents.ts`, `item-photos.ts`, `item-uploaded-files.ts`, `locations.ts`, `fixtures.ts`.
-- [ ] The two cross-pillar `.references()` calls in `inventory.ts` are deleted:
+- [x] The two cross-pillar `.references()` calls in `inventory.ts` are deleted:
   - `inventory.ts:29` (`purchase_transaction_id` → `transactions.id`) — column stays, `.references(() => transactions.id, { onDelete: 'set null' })` clause is removed; the `import { transactions } from './transactions.js'` is dropped.
   - `inventory.ts:32` (`purchased_from_id` → `entities.id`) — column stays, clause removed, `import { entities } from './entities.js'` dropped.
-- [ ] The intra-inventory FK at `inventory.ts:43-45` (`location_id` → `locations.id`) is preserved — both tables move together and stay in the same `-db` package.
-- [ ] `packages/inventory-db/src/schema.ts` exports each relocated table from the new local path. The existing `from '@pops/db-types'` re-export for these tables is removed.
-- [ ] `packages/db-types/src/schema/index.ts` re-exports each relocated table from `@pops/inventory-db` (transition shim) so existing import sites keep compiling until US-08.
-- [ ] Smoke-import test in `inventory-db` asserts each relocated table resolves with the expected drizzle `name`.
-- [ ] Consumers under `apps/pops-api/src/modules/inventory/` that import these tables from `@pops/db-types` are repointed at `@pops/inventory-db`.
-- [ ] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
-- [ ] `pnpm --filter @pops/inventory-db typecheck/test/build`, `pnpm --filter @pops/db-types typecheck/test/build`, and `pnpm --filter @pops/api typecheck/test` all pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] The intra-inventory FK at `inventory.ts:43-45` (`location_id` → `locations.id`) is preserved — both tables move together and stay in the same `-db` package.
+- [x] `packages/inventory-db/src/schema.ts` exports each relocated table from the new local path. The existing `from '@pops/db-types'` re-export for these tables is removed.
+- [x] `packages/db-types/src/schema/index.ts` re-exports each relocated table from `@pops/inventory-db` (transition shim) so existing import sites keep compiling until US-08.
+- [x] Smoke-import test in `inventory-db` asserts each relocated table resolves with the expected drizzle `name`.
+- [x] Consumers under `apps/pops-api/src/modules/inventory/` that import these tables from `@pops/db-types` are repointed at `@pops/inventory-db`.
+- [x] No new `as any` / `as unknown as Type` casts; no `eslint-disable` / `ts-ignore` added.
+- [x] `pnpm --filter @pops/inventory-db typecheck/test/build`, `pnpm --filter @pops/db-types typecheck/test/build`, and `pnpm --filter @pops/api typecheck/test` all pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 

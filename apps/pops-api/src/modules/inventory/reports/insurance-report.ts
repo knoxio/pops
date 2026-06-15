@@ -1,6 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
 
-import { homeInventory, itemDocuments, itemPhotos, locations } from '@pops/db-types';
+import { homeInventory, itemDocuments, itemPhotos, locations } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 

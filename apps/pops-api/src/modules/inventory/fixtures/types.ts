@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { FixtureRow, ItemFixtureConnectionRow } from '@pops/db-types';
+import type { FixtureRow, ItemFixtureConnectionRow } from '@pops/inventory-db';
 
 export type { FixtureRow, ItemFixtureConnectionRow };
 

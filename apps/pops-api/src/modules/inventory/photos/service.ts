@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { asc, count, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 
-import { homeInventory, itemPhotos } from '@pops/db-types';
+import { homeInventory, itemPhotos } from '@pops/inventory-db';
 
 import { getInventoryDrizzle, getInventoryRawDb } from '../../../db/inventory-handle.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';

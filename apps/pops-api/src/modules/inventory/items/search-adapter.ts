@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 
-import { homeInventory } from '@pops/db-types';
+import { homeInventory } from '@pops/inventory-db';
 
 import { getInventoryDrizzle } from '../../../db/inventory-handle.js';
 
