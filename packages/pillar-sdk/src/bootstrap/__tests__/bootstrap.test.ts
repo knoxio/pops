@@ -10,17 +10,21 @@ import {
 import {
   RegistryNetworkError,
   RegistryTransportError,
+  type RegisterRequest,
   type RegistryTransport,
 } from '../transport.js';
 
 import type { ManifestPayload } from '../../manifest-schema/schema.js';
+
+const TEST_BASE_URL = 'http://finance-api:3004';
 
 interface RecordedTransport extends RegistryTransport {
   registerCalls: number;
   heartbeatCalls: number;
   unregisterCalls: number;
   heartbeats: string[];
-  lastRegisterPayload: () => ManifestPayload | undefined;
+  lastRegisterPayload: () => RegisterRequest | undefined;
+  lastRegisterManifest: () => ManifestPayload | undefined;
 }
 
 interface MakeTransportOptions {
@@ -30,18 +34,19 @@ interface MakeTransportOptions {
 }
 
 function makeTransport(options: MakeTransportOptions = {}): RecordedTransport {
-  let lastPayload: ManifestPayload | undefined;
+  let lastPayload: RegisterRequest | undefined;
   const state: RecordedTransport = {
     registerCalls: 0,
     heartbeatCalls: 0,
     unregisterCalls: 0,
     heartbeats: [],
     lastRegisterPayload: () => lastPayload,
+    lastRegisterManifest: () => lastPayload?.manifest,
     async register(payload) {
       state.registerCalls += 1;
       lastPayload = payload;
       if (options.registerImpl) return options.registerImpl();
-      return { pillarId: payload.pillar };
+      return { pillarId: payload.manifest.pillar };
     },
     async heartbeat(pillarId) {
       state.heartbeatCalls += 1;
@@ -78,6 +83,7 @@ describe('bootstrapPillar', () => {
     const transport = makeTransport();
     const handle = await bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       heartbeatMs: 1_000,
@@ -99,16 +105,20 @@ describe('bootstrapPillar', () => {
     const transport = makeTransport();
     const handle = await bootstrapPillar({
       manifest,
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
     });
 
     expect(transport.registerCalls).toBe(1);
     expect(handle.pillarId).toBe('finance');
-    const sent = transport.lastRegisterPayload();
+    const sent = transport.lastRegisterManifest();
     expect(sent?.version).toBe('0.0.0-sha.9c163ed');
     expect(sent?.contract.version).toBe('0.0.0-sha.9c163ed');
     expect(sent?.contract.tag).toBe('contract-finance@v0.0.0-sha.9c163ed');
+    const envelope = transport.lastRegisterPayload();
+    expect(envelope?.pillarId).toBe('finance');
+    expect(envelope?.baseUrl).toBe(TEST_BASE_URL);
 
     await handle.stop();
   });
@@ -120,9 +130,9 @@ describe('bootstrapPillar', () => {
     manifest.contract.tag = 'contract-finance@v1.2.3';
 
     const transport = makeTransport();
-    await bootstrapPillar({ manifest, transport, logger: silentLogger() });
+    await bootstrapPillar({ manifest, baseUrl: TEST_BASE_URL, transport, logger: silentLogger() });
 
-    const sent = transport.lastRegisterPayload();
+    const sent = transport.lastRegisterManifest();
     expect(sent?.version).toBe('1.2.3');
     expect(sent?.contract.tag).toBe('contract-finance@v1.2.3');
   });
@@ -135,6 +145,7 @@ describe('bootstrapPillar', () => {
     await expect(
       bootstrapPillar({
         manifest: bad,
+        baseUrl: TEST_BASE_URL,
         transport,
         logger: silentLogger(),
       })
@@ -151,6 +162,7 @@ describe('bootstrapPillar', () => {
     try {
       await bootstrapPillar({
         manifest: bad,
+        baseUrl: TEST_BASE_URL,
         transport: makeTransport(),
         logger: silentLogger(),
       });
@@ -184,6 +196,7 @@ describe('bootstrapPillar', () => {
     await expect(
       bootstrapPillar({
         manifest: validManifest(),
+        baseUrl: TEST_BASE_URL,
         transport,
         logger: silentLogger(),
       })
@@ -201,6 +214,7 @@ describe('bootstrapPillar', () => {
 
     const promise = bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       maxRegisterAttempts: 3,
@@ -236,6 +250,7 @@ describe('bootstrapPillar', () => {
 
     const promise = bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       heartbeatMs: 1_000_000,
@@ -268,6 +283,7 @@ describe('bootstrapPillar', () => {
 
     const promise = bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       heartbeatMs: 1_000_000,
@@ -286,6 +302,7 @@ describe('bootstrapPillar', () => {
     const transport = makeTransport();
     const handle = await bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       heartbeatMs: 1_000,
@@ -307,6 +324,7 @@ describe('bootstrapPillar', () => {
     const transport = makeTransport();
     const handle = await bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       heartbeatMs: 500,
@@ -326,6 +344,7 @@ describe('bootstrapPillar', () => {
     const transport = makeTransport();
     const handle = await bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       heartbeatMs: 1_000,
@@ -351,6 +370,7 @@ describe('bootstrapPillar', () => {
 
     const handle = await bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger,
       heartbeatMs: 100,
@@ -387,6 +407,7 @@ describe('bootstrapPillar', () => {
     const transport = makeTransport();
     const handle = await bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       app,
       transport,
       logger: silentLogger(),
@@ -426,6 +447,7 @@ describe('bootstrapPillar', () => {
 
     const handle = await bootstrapPillar({
       manifest: validManifest(),
+      baseUrl: TEST_BASE_URL,
       transport,
       logger: silentLogger(),
       heartbeatMs: 1_000,

@@ -25,20 +25,45 @@ function mockFetch(
   return vi.fn(fn);
 }
 
+function envelope(): {
+  pillarId: string;
+  baseUrl: string;
+  manifest: ReturnType<typeof validManifest>;
+} {
+  const manifest = validManifest();
+  return {
+    pillarId: manifest.pillar,
+    baseUrl: 'http://finance-api:3004',
+    manifest,
+  };
+}
+
 describe('createHttpRegistryTransport', () => {
-  it('POSTs the manifest to /core.registry.register', async () => {
+  it('POSTs the envelope to /core.registry.register', async () => {
     const fetchImpl = mockFetch([{ status: 200, body: { pillarId: 'finance' } }]);
     const transport = createHttpRegistryTransport({
       baseUrl: 'http://registry.test',
       fetchImpl,
     });
 
-    const result = await transport.register(validManifest());
+    const payload = envelope();
+    const result = await transport.register(payload);
     expect(result.pillarId).toBe('finance');
     expect(fetchImpl).toHaveBeenCalledOnce();
     const [url, init] = (fetchImpl as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(url).toBe('http://registry.test/core.registry.register');
     expect((init as RequestInit).method).toBe('POST');
+    const bodyText = (init as RequestInit).body;
+    expect(typeof bodyText).toBe('string');
+    const sent = JSON.parse(bodyText as string) as {
+      pillarId: string;
+      baseUrl: string;
+      manifest: { pillar: string };
+    };
+    expect(sent.pillarId).toBe('finance');
+    expect(sent.baseUrl).toBe('http://finance-api:3004');
+    expect(sent.manifest.pillar).toBe('finance');
+    expect(Object.prototype.hasOwnProperty.call(sent, 'apiKey')).toBe(false);
   });
 
   it('throws RegistryNetworkError when fetch rejects', async () => {
@@ -48,7 +73,7 @@ describe('createHttpRegistryTransport', () => {
       fetchImpl,
     });
 
-    await expect(transport.register(validManifest())).rejects.toBeInstanceOf(RegistryNetworkError);
+    await expect(transport.register(envelope())).rejects.toBeInstanceOf(RegistryNetworkError);
   });
 
   it('throws non-retriable RegistryTransportError on 400 with parsed issues', async () => {
@@ -66,7 +91,7 @@ describe('createHttpRegistryTransport', () => {
     });
 
     try {
-      await transport.register(validManifest());
+      await transport.register(envelope());
       expect.fail('should have thrown');
     } catch (err) {
       expect(err).toBeInstanceOf(RegistryTransportError);

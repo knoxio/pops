@@ -39,8 +39,22 @@ function resolvePort(): number {
   return parsed;
 }
 
+function resolveSelfBaseUrl(port: number): string {
+  const raw = process.env['CEREBRUM_SELF_BASE_URL'] ?? `http://cerebrum-api:${String(port)}`;
+  try {
+    new URL(raw);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`[cerebrum-api] CEREBRUM_SELF_BASE_URL ${raw} is invalid — ${message}`, {
+      cause: err,
+    });
+  }
+  return raw;
+}
+
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
+const selfBaseUrl = resolveSelfBaseUrl(port);
 
 const cerebrumDb = openCerebrumDb(resolveCerebrumSqlitePath());
 const coreDb = openCoreDb(resolveCoreSqlitePath());
@@ -48,7 +62,10 @@ const app = createCerebrumApiApp({ cerebrumDb, coreDb, version });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest: buildCerebrumManifest(version) });
+  pillarHandle = await bootstrapPillar({
+    manifest: buildCerebrumManifest(version),
+    baseUrl: selfBaseUrl,
+  });
 }
 
 const server = app.listen(port, () => {

@@ -43,6 +43,19 @@ function resolvePort(): number {
   return parsed;
 }
 
+function resolveSelfBaseUrl(port: number): string {
+  const raw = process.env['HA_BRIDGE_SELF_BASE_URL'] ?? `http://ha-bridge-api:${String(port)}`;
+  try {
+    new URL(raw);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`[ha-bridge] HA_BRIDGE_SELF_BASE_URL ${raw} is invalid — ${message}`, {
+      cause: err,
+    });
+  }
+  return raw;
+}
+
 function defaultWebSocketFactory(url: string): HaWebSocketLike {
   const ws = new WsWebSocket(url);
   return {
@@ -67,6 +80,7 @@ function defaultWebSocketFactory(url: string): HaWebSocketLike {
 }
 
 const port = resolvePort();
+const selfBaseUrl = resolveSelfBaseUrl(port);
 const version = process.env['BUILD_VERSION'] ?? '0.1.0';
 const haUrl = process.env['HA_URL'];
 const haToken = process.env['HA_TOKEN'];
@@ -99,7 +113,7 @@ const app = createHaBridgeApiApp({ manifest, version, subscriber });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest });
+  pillarHandle = await bootstrapPillar({ manifest, baseUrl: selfBaseUrl });
 }
 
 subscriber.start();

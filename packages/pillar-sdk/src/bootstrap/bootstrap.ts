@@ -8,6 +8,15 @@ import { createHttpRegistryTransport, type RegistryTransport } from './transport
 
 export interface BootstrapPillarOptions {
   manifest: ManifestPayload;
+  /**
+   * Base URL the registry should record for this pillar — the address
+   * other pillars dial to reach its `/health`, `/manifest.json`, and
+   * `/uri/resolve` routes. Must be a valid absolute URL (e.g.
+   * `http://finance-api:3004`). Persisted server-side as the
+   * `PillarRegistryEntry.baseUrl` column; required by
+   * `POST /core.registry.register`.
+   */
+  baseUrl: string;
   app?: HealthApp;
   transport?: RegistryTransport;
   heartbeatMs?: number;
@@ -56,6 +65,7 @@ export async function bootstrapPillar(
   const registration = await registerWithRetry({
     transport,
     manifest,
+    baseUrl: options.baseUrl,
     logger,
     maxAttempts: options.maxRegisterAttempts ?? DEFAULT_MAX_REGISTER_ATTEMPTS,
     initialBackoffMs: options.registerInitialBackoffMs ?? DEFAULT_REGISTER_INITIAL_BACKOFF_MS,

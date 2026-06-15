@@ -16,6 +16,7 @@ export {
   RegistryTransportError,
   type HeartbeatResult,
   type HttpRegistryTransportOptions,
+  type RegisterRequest,
   type RegistrationResult,
   type RegistryTransport,
 } from './transport.js';

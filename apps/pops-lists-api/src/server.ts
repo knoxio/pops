@@ -71,7 +71,10 @@ const app = createListsApiApp({ listsDb, version, selfBaseUrl });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest: buildListsManifest(version) });
+  pillarHandle = await bootstrapPillar({
+    manifest: buildListsManifest(version),
+    baseUrl: selfBaseUrl,
+  });
 }
 
 const server = app.listen(port, () => {

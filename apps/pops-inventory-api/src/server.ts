@@ -67,7 +67,10 @@ const app = createInventoryApiApp({ inventoryDb, coreDb, version, selfBaseUrl })
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest: buildInventoryManifest(version) });
+  pillarHandle = await bootstrapPillar({
+    manifest: buildInventoryManifest(version),
+    baseUrl: selfBaseUrl,
+  });
 }
 
 const server = app.listen(port, () => {

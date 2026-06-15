@@ -35,8 +35,22 @@ function resolvePort(): number {
   return parsed;
 }
 
+function resolveSelfBaseUrl(port: number): string {
+  const raw = process.env['MEDIA_SELF_BASE_URL'] ?? `http://media-api:${String(port)}`;
+  try {
+    new URL(raw);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`[media-api] MEDIA_SELF_BASE_URL ${raw} is invalid — ${message}`, {
+      cause: err,
+    });
+  }
+  return raw;
+}
+
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? 'dev';
+const selfBaseUrl = resolveSelfBaseUrl(port);
 
 const mediaDb = openMediaDb(resolveMediaSqlitePath());
 // PRD-065 retention cleanup: the shelf-impressions service runs once at
@@ -47,7 +61,10 @@ const app = createMediaApiApp({ mediaDb, version });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest: buildMediaManifest(version) });
+  pillarHandle = await bootstrapPillar({
+    manifest: buildMediaManifest(version),
+    baseUrl: selfBaseUrl,
+  });
 }
 
 const server = app.listen(port, () => {

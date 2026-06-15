@@ -43,8 +43,22 @@ function resolvePort(): number {
   return parsed;
 }
 
+function resolveSelfBaseUrl(port: number): string {
+  const raw = process.env['FINANCE_SELF_BASE_URL'] ?? `http://finance-api:${String(port)}`;
+  try {
+    new URL(raw);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`[finance-api] FINANCE_SELF_BASE_URL ${raw} is invalid — ${message}`, {
+      cause: err,
+    });
+  }
+  return raw;
+}
+
 const port = resolvePort();
 const version = process.env['BUILD_VERSION'] ?? '0.1.0';
+const selfBaseUrl = resolveSelfBaseUrl(port);
 
 const financeDb = openFinanceDb(resolveFinanceSqlitePath());
 const coreDb = openCoreDb(resolveCoreSqlitePath());
@@ -52,7 +66,10 @@ const app = createFinanceApiApp({ financeDb, coreDb, version });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
-  pillarHandle = await bootstrapPillar({ manifest: buildFinanceManifest(version) });
+  pillarHandle = await bootstrapPillar({
+    manifest: buildFinanceManifest(version),
+    baseUrl: selfBaseUrl,
+  });
 }
 
 const reconcileHandle = startReconcileCrossPillarWorker({
