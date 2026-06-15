@@ -11,14 +11,21 @@
  */
 import { and, asc, count, eq, like } from 'drizzle-orm';
 
-import { WISH_LIST_PRIORITIES, type WishListPriority } from '@pops/db-types';
-
 import { WishListItemNotFoundError } from '../errors.js';
 import { wishList } from '../schema.js';
 
 import type { FinanceDb } from './internal.js';
 
-export { WISH_LIST_PRIORITIES, type WishListPriority };
+/**
+ * Wish list priority levels. Defined locally so the finance pillar package
+ * does not need a workspace dependency on `@pops/db-types`, which would
+ * create a literal cycle once db-types adds `@pops/finance-db` to its
+ * re-export shim (PRD-245 US-03). The canonical contract-level constant
+ * lives in `@pops/finance-contract`; `@pops/db-types/constants` re-exports
+ * the same tuple for legacy callers.
+ */
+export const WISH_LIST_PRIORITIES = ['Needing', 'Soon', 'One Day', 'Dreaming'] as const;
+export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];
 
 /** Raw drizzle row shape. */
 export type WishListRow = typeof wishList.$inferSelect;

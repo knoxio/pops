@@ -1,6 +1,6 @@
 import { asc, eq, notInArray } from 'drizzle-orm';
 
-import { transactionCorrections, transactions } from '@pops/db-types';
+import { transactionCorrections, transactions } from '@pops/finance-db';
 
 import { findMatchingCorrectionFromRules } from '../../../core/corrections/service.js';
 

@@ -18,6 +18,13 @@ import type {
   reflexExecutions,
 } from '@pops/cerebrum-db';
 import type {
+  budgets,
+  tierOverrides,
+  transactionCorrections,
+  transactions,
+  wishList,
+} from '@pops/finance-db';
+import type {
   fixtures,
   homeInventory,
   itemConnections,
@@ -50,14 +57,9 @@ import type {
 } from '@pops/media-db';
 
 import type { aiUsage } from './schema/ai-usage.js';
-import type { budgets } from './schema/budgets.js';
-import type { transactionCorrections } from './schema/corrections.js';
 import type { entities } from './schema/entities.js';
 import type { environments } from './schema/environments.js';
 import type { settings } from './schema/settings.js';
-import type { tierOverrides } from './schema/tier-overrides.js';
-import type { transactions } from './schema/transactions.js';
-import type { wishList } from './schema/wishlist.js';
 
 export type TransactionInsert = InferInsertModel<typeof transactions>;
 export type EntityInsert = InferInsertModel<typeof entities>;

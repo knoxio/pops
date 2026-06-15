@@ -1909,6 +1909,9 @@ importers:
       '@pops/cerebrum-db':
         specifier: workspace:*
         version: link:../cerebrum-db
+      '@pops/finance-db':
+        specifier: workspace:*
+        version: link:../finance-db
       '@pops/food-db':
         specifier: workspace:*
         version: link:../food-db
@@ -1959,15 +1962,18 @@ importers:
 
   packages/finance-db:
     dependencies:
-      '@pops/db-types':
-        specifier: workspace:*
-        version: link:../db-types
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
+      drizzle-zod:
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0))(zod@4.4.3)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.12

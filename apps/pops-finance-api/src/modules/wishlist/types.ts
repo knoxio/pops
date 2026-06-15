@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { WISH_LIST_PRIORITIES, type WishListPriority, type WishListRow } from '@pops/db-types';
+import { WISH_LIST_PRIORITIES, type WishListPriority, type WishListRow } from '@pops/finance-db';
 
 export { WISH_LIST_PRIORITIES, type WishListPriority, type WishListRow };
 

@@ -25,7 +25,15 @@ export {
   plexusFilters,
   reflexExecutions,
 } from '@pops/cerebrum-db';
-export { budgets } from './budgets.js';
+export {
+  budgets,
+  tagVocabulary,
+  tierOverrides,
+  transactionCorrections,
+  transactionTagRules,
+  transactions,
+  wishList,
+} from '@pops/finance-db';
 export {
   comparisonDimensions,
   comparisons,
@@ -47,7 +55,6 @@ export {
   tvShows,
   watchHistory,
 } from '@pops/media-db';
-export { transactionCorrections } from './corrections.js';
 export { entities } from './entities.js';
 export { environments } from './environments.js';
 export {
@@ -89,8 +96,3 @@ export { pillarRegistry } from './pillar-registry.js';
 export { serviceAccounts } from './service-accounts.js';
 export { settings } from './settings.js';
 export { userSettings } from './user-settings.js';
-export { tagVocabulary } from './tag-vocabulary.js';
-export { tierOverrides } from './tier-overrides.js';
-export { transactionTagRules } from './transaction-tag-rules.js';
-export { transactions } from './transactions.js';
-export { wishList } from './wishlist.js';

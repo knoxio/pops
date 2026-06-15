@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { wishList as wishListTable } from '@pops/db-types';
+import { wishList as wishListTable } from '@pops/finance-db';
 
 import { getFinanceDrizzle } from '../../../db/finance-handle.js';
 import { createCaller, seedWishListItem, setupTestContext } from '../../../shared/test-utils.js';

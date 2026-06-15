@@ -1,21 +1,26 @@
 /**
- * Local re-export of the finance domain tables.
+ * Finance domain table barrel.
  *
- * Canonical definitions live in `@pops/db-types/src/schema/*.ts` so the
- * drizzle-kit config (which globs `packages/db-types/src/schema/*`) picks
- * them up and the rest of the platform sees a single schema barrel.
+ * Canonical definitions for finance-owned tables (transactions, transaction
+ * tag rules, budgets, corrections, tag vocabulary, wishlist, tier overrides)
+ * live in this package per PRD-245 US-03 (audit H6/H7).
  *
- * Services in this package import from here for ergonomics and so that
- * the finance module's read surface stays self-describing.
+ * `@pops/db-types` re-exports these tables as a transition shim so legacy
+ * import sites keep compiling until PRD-245 US-08 deletes the shim. Pillar
+ * consumers should import from `@pops/finance-db` directly.
  *
- * Mirrors the `@pops/core-db` schema re-export pattern.
+ * `entities` is exported via a local schema-equivalent shadow because the
+ * canonical core relocation (PRD-245 US-07) has not landed yet — pulling
+ * the canonical definition would require a workspace dep on `@pops/db-types`
+ * which collides with the transition-shim direction. See
+ * `./schema/entities-shadow.ts` for the duplication rationale.
  */
-export {
-  budgets,
-  entities,
-  tagVocabulary,
-  transactions,
-  transactionCorrections,
-  transactionTagRules,
-  wishList,
-} from '@pops/db-types';
+export { entities } from './schema/entities-shadow.js';
+
+export { budgets } from './schema/budgets.js';
+export { transactionCorrections } from './schema/corrections.js';
+export { tagVocabulary } from './schema/tag-vocabulary.js';
+export { tierOverrides } from './schema/tier-overrides.js';
+export { transactionTagRules } from './schema/transaction-tag-rules.js';
+export { transactions } from './schema/transactions.js';
+export { wishList } from './schema/wishlist.js';

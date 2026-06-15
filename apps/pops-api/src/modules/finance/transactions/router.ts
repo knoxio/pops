@@ -1,7 +1,7 @@
 /** Transaction tRPC router — CRUD via `@pops/finance-db`'s `transactionsService`. */
 import { z } from 'zod';
 
-import { transactions as transactionsTable } from '@pops/db-types';
+import { transactions as transactionsTable } from '@pops/finance-db';
 import {
   TransactionAlreadyExistsError,
   TransactionNotFoundError,

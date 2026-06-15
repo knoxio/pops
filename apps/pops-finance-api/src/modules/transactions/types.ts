@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { TransactionRow } from '@pops/db-types';
+import type { TransactionRow } from '@pops/finance-db';
 
 export type { TransactionRow };
 

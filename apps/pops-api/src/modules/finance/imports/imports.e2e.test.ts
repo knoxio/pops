@@ -6,7 +6,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Papa from 'papaparse';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { transactions as transactionsTable } from '@pops/db-types';
+import { transactions as transactionsTable } from '@pops/finance-db';
 
 import {
   createCaller,
