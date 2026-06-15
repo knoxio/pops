@@ -6,6 +6,19 @@
 
 As a pillar maintainer, I want each of the 8 cross-pillar runtime import sites inside `apps/pops-api/src/modules/<src>` (audit finding H8) to be either rewritten against the typed `pillar('<other>').*` SDK or explicitly handed off to a tracked successor PRD. Each closed site shrinks `.dependency-cruiser-known-violations.json`; the rule generator from [PRD-156](../156-consumer-import-discipline/README.md) stays untouched.
 
+## Blocked on (SDK surface PRDs)
+
+A scoping audit confirmed that all 8 sites are blocked on either a cross-pillar SDK surface that does not yet exist, or on Epic 08a's directory relocation. PRD-246's "Out of Scope" forbids adding the SDK machinery here, so US-04 cannot land until the following PRDs ship their surface USs:
+
+| Sites blocked    | Unblock PRD                                                                 | What it ships                                                                                              |
+| ---------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Site 1           | [PRD-249](../249-cerebrum-embeddings-sdk-surface/README.md)                 | Read-only `pillar('cerebrum').embeddings.{getStatus, listSourceIdsByType}`                                  |
+| Sites 4, 5, 6, 7 | [PRD-248](../248-cerebrum-debrief-sdk-surface/README.md)                    | `pillar('cerebrum').debrief.{record, dismiss, listPending, create, get, getByMedia, logWatchCompletion, deleteByWatchHistoryId}` + Option D mixed-tx pattern from [`media-watch-history-mixed-tx-design.md`](../../notes/media-watch-history-mixed-tx-design.md) |
+| Site 8           | [PRD-247](../247-core-settings-sdk-surface/README.md)                       | `pillar('core').settings.{get, set, ensure, delete, getMany, setMany}` (with `getMany` non-negotiable for hot Plex paths) |
+| Sites 2, 3       | **Punted to Epic 08a** ([PRD-203](../203-directory-move-namespace-rename/README.md)) | Directory relocation of `core/corrections` + `core/tag-rules` into finance. Per [`corrections-finance-coupling.md`](../../notes/corrections-finance-coupling.md), the relocation is the right unblock vector — not an SDK surface. PRD-246 does not author an SDK PRD for these sites. |
+
+Each blocked site closes by **(a)** the consumer side of the corresponding unblock PRD landing (the call-site flip lives there, not here), and **(b)** US-04 ticking the site off as `Done`. US-04's role is to track the burn-down at the cross-cutting level; the per-site call-site flips ship under each unblock PRD.
+
 ## Acceptance Criteria
 
 For each of the 8 sites listed below, exactly one of:
@@ -19,57 +32,57 @@ The 8 sites (verified against [`pillar-isolation-audit.md`](../../notes/pillar-i
 
 - **File**: `apps/pops-api/src/modules/core/embeddings/service.ts`
 - **Target**: `@pops/cerebrum-db` (`embeddings` table)
-- **Proposed SDK shape**: `pillar('cerebrum').embeddings.*` — both reads and writes routed through cerebrum-api. If cerebrum-api does not yet expose the matching endpoints, that gap is handed off to [PRD-244](../244-cross-pillar-sdk-surface/README.md).
-- **Acceptance**: `apps/pops-api/src/modules/core/embeddings/service.ts` contains no `@pops/cerebrum-db` import; the matching allow-list entry is gone; the embeddings service unit + integration tests pass.
+- **Unblock PRD**: [PRD-249](../249-cerebrum-embeddings-sdk-surface/README.md) ships the read-only `pillar('cerebrum').embeddings.{getStatus, listSourceIdsByType}` surface + the consumer-side flip. The call-site rewrite lives in PRD-249 US-02.
+- **Acceptance** (tracked here for the burn-down summary): `apps/pops-api/src/modules/core/embeddings/service.ts` contains no `@pops/cerebrum-db` runtime import; the matching allow-list entry is gone; the embeddings service unit + integration tests pass.
 
 ### Site 2 — core → finance tag vocabulary
 
 - **Files**: `apps/pops-api/src/modules/core/tag-rules/router.ts`, `service.ts`, `preview.ts`
 - **Target**: `@pops/finance-db` (`tagVocabularyService`)
-- **Proposed SDK shape**: `pillar('finance').tagVocabulary.*`. Epic 08a will eventually relocate `tag-rules` into finance-api; PRD-246's scope is the import-decoupling only. The relocation closes the cross-pillar shape entirely.
-- **Acceptance**: the three files contain no `@pops/finance-db` import; the matching allow-list entry is gone; the tag-rules router + preview tests pass.
+- **Unblock vector**: **Punted to Epic 08a** ([PRD-203](../203-directory-move-namespace-rename/README.md)). The audit + [`corrections-finance-coupling.md`](../../notes/corrections-finance-coupling.md) reject an SDK surface as the unblock vector — `tag-rules` is finance-owned-misnamed-as-core, and the right fix is the directory relocation, not a `pillar('finance').tagVocabulary.*` proxy. No PRD-247/248/249 sibling is authored for this site.
+- **Acceptance** (closed by PRD-203 cutover, tracked here for completeness): the three files contain no `@pops/finance-db` import (because the files have moved into finance-api); the matching allow-list entries are gone; the tag-rules router + preview tests pass under finance-api.
 
 ### Site 3 — core → finance corrections
 
 - **Files**: `apps/pops-api/src/modules/core/corrections/handlers/pattern-match.ts`, `query-helpers.ts`
 - **Target**: `@pops/finance-db`
-- **Proposed SDK shape**: `pillar('finance').corrections.*`. See [`corrections-finance-coupling.md`](../../notes/corrections-finance-coupling.md) for the design context. Epic 08a eventually moves the file entirely.
-- **Acceptance**: the two files contain no `@pops/finance-db` import; the matching allow-list entry is gone; the corrections handlers tests pass.
+- **Unblock vector**: **Punted to Epic 08a** ([PRD-203](../203-directory-move-namespace-rename/README.md)). Same argument as Site 2 per [`corrections-finance-coupling.md`](../../notes/corrections-finance-coupling.md): corrections is finance-owned-misnamed-as-core, and the right fix is the directory relocation. No PRD-247/248/249 sibling is authored for this site.
+- **Acceptance** (closed by PRD-203 cutover, tracked here for completeness): the two files contain no `@pops/finance-db` import (because the files have moved into finance-api); the matching allow-list entry is gone; the corrections handlers tests pass under finance-api.
 
 ### Site 4 — media → cerebrum debrief writes (record)
 
 - **File**: `apps/pops-api/src/modules/media/comparisons/lib/debrief-record.ts`
 - **Target**: `@pops/cerebrum-db` (`debriefResults`, `debriefSessions`, `debriefStatus`)
-- **Proposed SDK shape**: `pillar('cerebrum').debrief.record(...)`. The mixed-transaction concern is captured in [`media-watch-history-mixed-tx-design.md`](../../notes/media-watch-history-mixed-tx-design.md) — read it before designing the cutover.
-- **Acceptance**: the file contains no `@pops/cerebrum-db` import; the allow-list entry is gone; the debrief-record integration tests pass with the new mixed-tx coordination strategy.
+- **Unblock PRD**: [PRD-248](../248-cerebrum-debrief-sdk-surface/README.md) ships `pillar('cerebrum').debrief.record(...)` + the consumer-side flip. Call-site rewrite lives in PRD-248 US-05.
+- **Acceptance** (tracked here for completeness): the file contains no `@pops/cerebrum-db` runtime import; the allow-list entry is gone; the debrief-record integration tests pass.
 
 ### Site 5 — media → cerebrum debrief writes (dismiss + pending)
 
 - **Files**: `apps/pops-api/src/modules/media/comparisons/lib/debrief-dismiss.ts`, `debrief-pending.ts`
 - **Target**: `@pops/cerebrum-db`
-- **Proposed SDK shape**: `pillar('cerebrum').debrief.{dismiss,listPending}(...)`. Same mixed-tx design as Site 4; the dismiss / pending operations are the lighter-weight cases.
-- **Acceptance**: the two files contain no `@pops/cerebrum-db` import; the allow-list entry is gone; debrief-dismiss + debrief-pending tests pass.
+- **Unblock PRD**: [PRD-248](../248-cerebrum-debrief-sdk-surface/README.md) ships `pillar('cerebrum').debrief.{dismiss, listPending}` + the consumer-side flip. Call-site rewrite lives in PRD-248 US-05.
+- **Acceptance** (tracked here for completeness): the two files contain no `@pops/cerebrum-db` runtime import; the allow-list entry is gone; debrief-dismiss + debrief-pending tests pass.
 
 ### Site 6 — media debrief namespace → cerebrum
 
 - **Files**: `apps/pops-api/src/modules/media/debrief/service.ts`, `queue-status.ts`
 - **Target**: `@pops/cerebrum-db`
-- **Proposed SDK shape**: either (a) fold the media-side `debrief` namespace into cerebrum-api and have media call back via `pillar('cerebrum').debrief.*`, or (b) keep the namespace under media and have it call cerebrum through the SDK. Pick at PR time based on which side owns the orchestration. The mixed-tx design doc weighs in.
-- **Acceptance**: the two files contain no `@pops/cerebrum-db` import; the allow-list entry is gone; the debrief service tests pass.
+- **Unblock PRD**: [PRD-248](../248-cerebrum-debrief-sdk-surface/README.md) ships the full `pillar('cerebrum').debrief.*` surface (`create`, `get`, `getByMedia`, etc.) and the media-side rewrite picks option (b) — the namespace stays under media and calls cerebrum through the SDK. `getDebriefByMedia`'s SQL inner-join is replaced by `getByMedia` (denormalised, no join). Call-site rewrite lives in PRD-248 US-05.
+- **Acceptance** (tracked here for completeness): the two files contain no `@pops/cerebrum-db` runtime import; the allow-list entry is gone; the debrief service tests pass.
 
 ### Site 7 — media → cerebrum watch-history reads
 
-- **File**: `apps/pops-api/src/modules/media/watch-history/handlers/query-helpers.ts`
+- **File**: `apps/pops-api/src/modules/media/watch-history/handlers/query-helpers.ts`, `log-watch-event.ts` (Option D mixed-tx)
 - **Target**: `@pops/cerebrum-db`
-- **Proposed SDK shape**: `pillar('cerebrum').watchHistory.*`. The denormalisation that landed in commit 9df171fe (`media_type` + `media_id` columns on `debrief_sessions`) reduces but does not eliminate the cross-pillar read.
-- **Acceptance**: the file contains no `@pops/cerebrum-db` import; the allow-list entry is gone; the watch-history query-helpers tests pass.
+- **Unblock PRD**: [PRD-248](../248-cerebrum-debrief-sdk-surface/README.md) — denormalisation already landed (commit 9df171fe), and the `logWatchCompletion` SDK shape encapsulates the mixed-tx pattern. The `log-watch-event.ts` rewrite is the Option D split (media tx commits first, SDK call is best-effort post-commit). Call-site rewrite lives in PRD-248 US-05.
+- **Acceptance** (tracked here for completeness): the file contains no `@pops/cerebrum-db` runtime import; the allow-list entry is gone; the watch-history query-helpers tests pass; the Option D partial-failure path is covered by PRD-248 US-06's integration test.
 
-### Site 8 — media → core settings reads (`arr`, `plex`, `rotation`, ~10 files)
+### Site 8 — media → core settings reads (`arr`, `plex`, `rotation`, ~15 files)
 
-- **Files**: `apps/pops-api/src/modules/media/arr/...`, `apps/pops-api/src/modules/media/plex/...`, `apps/pops-api/src/modules/media/rotation/...` — verify the exact list at PR time by grepping the `apps/pops-api/src/modules/media` tree for `@pops/core-db`. The audit estimates ~10 files.
-- **Target**: `@pops/core-db` (settings reads)
-- **Proposed SDK shape**: `pillar('core').settings.get(...)`. This is half the H8 list by file count and the cleanest opportunity for a single "settings reads go through the SDK" PR.
-- **Acceptance**: every media file under `arr`, `plex`, `rotation` (or wherever the grep finds matches) contains no `@pops/core-db` import; all matching allow-list entries are gone; the affected media-module tests pass.
+- **Files**: `apps/pops-api/src/modules/media/arr/...`, `apps/pops-api/src/modules/media/plex/...`, `apps/pops-api/src/modules/media/rotation/...` — verify the exact list at PR time by grepping the `apps/pops-api/src/modules/media` tree for `@pops/core-db`. Current count is 15 files (the audit estimate of ~10 was low).
+- **Target**: `@pops/core-db` (settings reads + writes)
+- **Unblock PRD**: [PRD-247](../247-core-settings-sdk-surface/README.md) ships `pillar('core').settings.{get, set, ensure, delete, getMany, setMany}` with the `getMany` shape designed-in (non-negotiable for hot Plex paths). Call-site rewrite lives in PRD-247 US-03. The pattern doc (PRD-247 US-02) is also the reference for PRD-248 and PRD-249.
+- **Acceptance** (tracked here for completeness): every media file under `arr`, `plex`, `rotation` contains no `@pops/core-db` runtime import (type-only for `SETTINGS_KEYS` is allowed); all matching allow-list entries are gone; hot Plex paths use `getMany`; the affected media-module tests pass.
 
 ### Cross-cutting acceptance
 
