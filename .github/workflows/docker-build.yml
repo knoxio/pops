@@ -128,6 +128,12 @@ jobs:
           node scripts/generate-pillar-dockerfile.mjs inventory
           git diff --exit-code apps/pops-inventory-api/Dockerfile
 
+      - name: Verify pops-finance-api Dockerfile is up to date (PRD-252)
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: |
+          node scripts/generate-pillar-dockerfile.mjs finance
+          git diff --exit-code apps/pops-finance-api/Dockerfile
+
       - name: Build pops-core-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-core-api/Dockerfile .
