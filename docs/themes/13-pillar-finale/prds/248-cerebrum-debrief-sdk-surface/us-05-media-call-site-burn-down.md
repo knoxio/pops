@@ -15,22 +15,22 @@ As an `apps/pops-api` media-pillar maintainer, I want every `@pops/cerebrum-db` 
 - [ ] `media/comparisons/lib/debrief-pending.ts` — flip to `pillar('cerebrum').debrief.listPending(...)`.
 - [ ] `media/debrief/service.ts` — flip `createDebriefSession` calls to `pillar('cerebrum').debrief.create(...)` (or `logWatchCompletion(...)` where the queue upsert is wanted). Rewrite `getDebriefByMedia` to call `pillar('cerebrum').debrief.getByMedia(...)` — drop the SQL inner-join on `watch_history`. Translate "null returned" to the in-pillar `NotFoundError` shape if the existing UI handler depends on it.
 - [ ] `media/debrief/queue-status.ts` — flip its reads to `pillar('cerebrum').debrief.get(...)` / `getByMedia(...)`.
-- [ ] `media/watch-history/handlers/query-helpers.ts` — flip reads to SDK.
-- [ ] `media/watch-history/handlers/log-watch-event.ts` — **Option D restructure**:
-  - [ ] Keep media-side writes (`watch_history` insert, `mediaWatchlist` removal, staleness reset, episode/season resolution, priority resequence) inside `db.transaction(...)`.
-  - [ ] After the media tx commits successfully, call `await pillar('cerebrum').debrief.logWatchCompletion({ watchHistoryId, mediaType, mediaId })`.
-  - [ ] Wrap the SDK call in `try/catch`: on `PillarCallError` with `kind: 'pillar-unavailable'` or any cerebrum-side failure, log a structured warning with `watchHistoryId` and return success. **Do not throw** — the watch row is committed; the debrief is recoverable on next watch or via reconciler.
-  - [ ] Document the swallow-and-log behaviour inline with a comment that links to [`media-watch-history-mixed-tx-design.md`](../../notes/media-watch-history-mixed-tx-design.md) §5.
+- [x] `media/watch-history/handlers/query-helpers.ts` — flip to `pillar('cerebrum').debrief.deleteByWatchHistoryId(...)` on the cleanup path. Awaited; aborts the media-side delete on cerebrum failure so the user can retry.
+- [x] `media/watch-history/handlers/log-watch-event.ts` — **Option D restructure**:
+  - [x] Keep media-side writes (`watch_history` insert, `mediaWatchlist` removal, staleness reset, episode/season resolution, priority resequence) inside `db.transaction(...)`.
+  - [x] After the media tx commits successfully, fan out to `pillar('cerebrum').debrief.logWatchCompletion({ watchHistoryId, mediaType, mediaId })` via `cerebrum-fan-out.ts`. The helper is fire-and-forget so `logWatch` keeps its sync signature — required to avoid cascading async into the out-of-scope plex/arr/rotation callers (PRD-248 US-05c scope guard).
+  - [x] The fan-out swallows `PillarCallError` (and any failure) with a structured `logger.warn` carrying `watchHistoryId`. **Does not throw** — the watch row is committed; the debrief is recoverable on next watch or via reconciler.
+  - [x] Swallow-and-log behaviour documented in `cerebrum-fan-out.ts` with a link to [`media-watch-history-mixed-tx-design.md`](../../notes/media-watch-history-mixed-tx-design.md) §5.
 
 ### Cross-cutting
 
 - [ ] `.dependency-cruiser-known-violations.json` shrinks by the entries this US closes (Sites 4, 5, 6, 7 from PRD-246 US-04).
 - [ ] Each affected file has no runtime `@pops/cerebrum-db` import. Type-only imports of `MediaType` / `DebriefDimension` enums are allowed.
 - [ ] The `getDebriefByMedia` rewrite confirmed not to use a SQL join — only one SDK call.
-- [ ] Tests for `log-watch-event` updated to assert:
-  - [ ] Happy path: media tx commits, SDK call succeeds, debrief session + status rows exist.
-  - [ ] Partial failure: media tx commits, SDK call throws `PillarCallError`. The watch row is still present; no debrief; no exception bubbles to the caller; a structured warning is logged.
-  - [ ] Retry: re-running `logWatch` for the same media yields the same end-state (idempotency assertion).
+- [x] Tests for `log-watch-event` updated to assert:
+  - [x] Happy path: media tx commits, SDK call succeeds, debrief session + status rows exist (see `media/debrief/debrief.test.ts > logWatch integration`).
+  - [x] Partial failure: media tx commits, SDK call throws. The watch row is still present; no debrief; no exception bubbles to the caller; a structured warning is logged (see `media/watch-history/service.test.ts > cerebrum debrief fan-out (Option D — PRD-248 US-05c)`).
+  - [x] Retry: re-running `logWatch` for the same media yields the same end-state (idempotency assertion).
 - [ ] `pnpm --filter @pops/pops-api typecheck/test/build` passes clean.
 - [ ] Monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
 - [ ] Husky pre-commit + pre-push pass without `--no-verify`.

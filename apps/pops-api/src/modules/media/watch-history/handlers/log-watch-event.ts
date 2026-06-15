@@ -1,12 +1,19 @@
 /**
- * `logWatch` — Option D step 3 (MEDIA FULL EXIT). The media-only writes
+ * `logWatch` — Option D (PRD-248 US-05c). The media-only writes
  * (watch_history insert, watchlist removal, episodes/seasons resolution,
  * comparison_staleness reset, watchlist priority resequence) run inside a
  * single `getMediaDrizzle().transaction(...)`. After commit we fan out to
- * `cerebrum.debrief.logWatchCompletion` via the in-process SDK; failures
- * are logged and swallowed because the writer is idempotent on
- * `(watchHistoryId, mediaType, mediaId)`. No fan-out for already-existing
- * rows (no fresh completion) or incomplete watches.
+ * `pillar('cerebrum').debrief.logWatchCompletion` via the cross-pillar
+ * SDK (see `cerebrum-fan-out.ts`); failures are logged and swallowed
+ * because the writer is idempotent on `(watchHistoryId, mediaType,
+ * mediaId)`. No fan-out for already-existing rows (no fresh completion)
+ * or incomplete watches.
+ *
+ * The fan-out helper is fire-and-forget so `logWatch` keeps its sync
+ * signature — flipping it to `async` would cascade through the
+ * out-of-scope `plex/`, `arr/`, and `rotation/` callers. The watch row
+ * is the source of truth; the cerebrum side-effect self-heals on the
+ * next completion (idempotent re-create) or the deferred reconciler.
  */
 import { and, eq } from 'drizzle-orm';
 

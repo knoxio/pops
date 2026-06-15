@@ -123,9 +123,9 @@ export const watchHistoryRouter = router({
   }),
 
   /** Delete a watch history entry. */
-  delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => {
+  delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
     try {
-      service.deleteWatchHistoryEntry(input.id);
+      await service.deleteWatchHistoryEntry(input.id);
       return { message: 'Watch history entry deleted' };
     } catch (err) {
       if (err instanceof NotFoundError) {

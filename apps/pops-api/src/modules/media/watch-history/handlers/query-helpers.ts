@@ -2,27 +2,27 @@
  * Watch-history read/write surface.
  *
  * `listWatchHistory` and `getWatchHistoryEntry` route through
- * `getMediaDrizzle()`; `deleteWatchHistoryEntry` runs the media-side delete
- * inside a media transaction and then fans out the dependent
- * `debrief_sessions` / `debrief_results` cleanup against the cerebrum
- * handle. The cross-pillar atomicity is bounded per-pillar (same trade-off
- * as `logWatch` / `cerebrum.debrief.logWatchCompletion`): a transient
- * failure leaves orphaned debrief rows for a deleted watch_history entry,
- * which are tolerable because the read surface filters by the
- * denormalised `(media_type, media_id)` tuple anyway. Idempotent on
- * `watch_history_id`.
+ * `getMediaDrizzle()`; `deleteWatchHistoryEntry` (PRD-248 US-05c)
+ * cascade-deletes the dependent `debrief_sessions` / `debrief_results`
+ * rows via the cross-pillar SDK
+ * (`pillar('cerebrum').debrief.deleteByWatchHistoryId`) BEFORE the
+ * media-side delete commits — matching the same cross-pillar contract
+ * `log-watch-event.ts` uses for the write path. The SDK call runs first
+ * so a transient cerebrum failure aborts the whole delete and the user
+ * can retry; once the SDK acknowledges the cascade, the media-side
+ * `watch_history` row is removed. Idempotent on `watch_history_id` —
+ * re-running converges on "no debrief, no watch row".
  */
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
-import { debriefResults, debriefSessions } from '@pops/cerebrum-db';
 import {
   type WatchHistoryMediaType,
   watchHistoryService,
   WatchHistoryNotFoundError,
 } from '@pops/media-db';
 import { watchHistory } from '@pops/media-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCerebrumDrizzle } from '../../../../db/cerebrum-handle.js';
 import { getMediaDrizzle } from '../../../../db/media-db-handle.js';
 import { NotFoundError } from '../../../../shared/errors.js';
 
@@ -35,6 +35,19 @@ export interface WatchHistoryListResult {
   rows: WatchHistoryRow[];
   total: number;
 }
+
+interface DeleteByWatchHistoryIdResultShape {
+  deletedSessions: number;
+  deletedResults: number;
+}
+
+type CerebrumDebriefShape = {
+  debrief: {
+    deleteByWatchHistoryId: (input: {
+      watchHistoryId: number;
+    }) => DeleteByWatchHistoryIdResultShape;
+  };
+};
 
 function narrowMediaType(value: string | undefined): WatchHistoryMediaType | undefined {
   if (value === 'movie' || value === 'episode') return value;
@@ -72,8 +85,7 @@ export function getWatchHistoryEntry(id: number): WatchHistoryRow {
   return translate(() => watchHistoryService.getById(getMediaDrizzle(), id));
 }
 
-export function deleteWatchHistoryEntry(id: number): void {
-  const cerebrumDb = getCerebrumDrizzle();
+export async function deleteWatchHistoryEntry(id: number): Promise<void> {
   const mediaDb = getMediaDrizzle();
 
   const existing = mediaDb
@@ -83,17 +95,9 @@ export function deleteWatchHistoryEntry(id: number): void {
     .get();
   if (!existing) throw new NotFoundError('WatchHistoryEntry', String(id));
 
-  const sessionIds = cerebrumDb
-    .select({ id: debriefSessions.id })
-    .from(debriefSessions)
-    .where(eq(debriefSessions.watchHistoryId, id))
-    .all()
-    .map((r) => r.id);
-
-  if (sessionIds.length > 0) {
-    cerebrumDb.delete(debriefResults).where(inArray(debriefResults.sessionId, sessionIds)).run();
-  }
-  cerebrumDb.delete(debriefSessions).where(eq(debriefSessions.watchHistoryId, id)).run();
+  await pillar<CerebrumDebriefShape>('cerebrum').debrief.deleteByWatchHistoryId.orThrow({
+    watchHistoryId: id,
+  });
 
   const result = mediaDb.delete(watchHistory).where(eq(watchHistory.id, id)).run();
   if (result.changes === 0) throw new NotFoundError('WatchHistoryEntry', String(id));

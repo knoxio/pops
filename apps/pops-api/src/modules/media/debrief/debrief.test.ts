@@ -1,4 +1,31 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@pops/pillar-sdk/server', async () => {
+  const actual =
+    await vi.importActual<typeof import('@pops/pillar-sdk/server')>('@pops/pillar-sdk/server');
+  const { createDebriefSession, queueDebriefStatus } =
+    await vi.importActual<typeof import('./service.js')>('./service.js');
+  const logWatchCompletionStub = vi.fn(
+    async (input: { mediaType: 'movie' | 'episode'; mediaId: number; watchHistoryId: number }) => {
+      const sessionId = createDebriefSession(input.watchHistoryId);
+      const dimensionsQueued = queueDebriefStatus(input.mediaType, input.mediaId);
+      return { sessionId, dimensionsQueued };
+    }
+  );
+  const deleteByWatchHistoryIdStub = vi.fn(async (_input: { watchHistoryId: number }) => ({
+    deletedSessions: 0,
+    deletedResults: 0,
+  }));
+  return {
+    ...actual,
+    pillar: () => ({
+      debrief: {
+        logWatchCompletion: { orThrow: logWatchCompletionStub },
+        deleteByWatchHistoryId: { orThrow: deleteByWatchHistoryIdStub },
+      },
+    }),
+  };
+});
 
 import {
   seedDimension,
@@ -10,6 +37,11 @@ import * as watchHistoryService from '../watch-history/service.js';
 import { createDebriefSession, getDebrief, queueDebriefStatus } from './service.js';
 
 import type { Database } from 'better-sqlite3';
+
+async function flushFanOut(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 const ctx = setupTestContext();
 let db: Database;
@@ -264,7 +296,7 @@ describe('debrief auto-queue', () => {
   });
 
   describe('logWatch integration', () => {
-    it('creates a debrief session when logging a completed watch', () => {
+    it('creates a debrief session when logging a completed watch', async () => {
       seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
 
       watchHistoryService.logWatch({
@@ -272,13 +304,14 @@ describe('debrief auto-queue', () => {
         mediaId: 1,
         completed: 1,
       });
+      await flushFanOut();
 
       const sessions = getDebriefSessions(db);
       expect(sessions).toHaveLength(1);
       expect(sessions[0]!.status).toBe('pending');
     });
 
-    it('does not create a debrief session for incomplete watches', () => {
+    it('does not create a debrief session for incomplete watches', async () => {
       seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
 
       watchHistoryService.logWatch({
@@ -286,12 +319,13 @@ describe('debrief auto-queue', () => {
         mediaId: 1,
         completed: 0,
       });
+      await flushFanOut();
 
       const sessions = getDebriefSessions(db);
       expect(sessions).toHaveLength(0);
     });
 
-    it('queues debrief status rows when logging a completed watch', () => {
+    it('queues debrief status rows when logging a completed watch', async () => {
       seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
       seedDimension(db, { name: 'Enjoyment', active: 1 });
       seedDimension(db, { name: 'Cinematography', active: 1 });
@@ -301,6 +335,7 @@ describe('debrief auto-queue', () => {
         mediaId: 1,
         completed: 1,
       });
+      await flushFanOut();
 
       const rows = db
         .prepare("SELECT * FROM debrief_status WHERE media_type = 'movie' AND media_id = 1")
@@ -308,7 +343,7 @@ describe('debrief auto-queue', () => {
       expect(rows).toHaveLength(2);
     });
 
-    it('does not queue debrief status for incomplete watches', () => {
+    it('does not queue debrief status for incomplete watches', async () => {
       seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
       seedDimension(db, { name: 'Enjoyment', active: 1 });
 
@@ -317,14 +352,14 @@ describe('debrief auto-queue', () => {
         mediaId: 1,
         completed: 0,
       });
+      await flushFanOut();
 
       const rows = db.prepare('SELECT * FROM debrief_status').all();
       expect(rows).toHaveLength(0);
     });
 
-    it('does not create a debrief session for blacklisted watch events', () => {
+    it('does not create a debrief session for blacklisted watch events', async () => {
       seedMovie(db, { title: 'The Matrix', tmdb_id: 100 });
-      // Seed a blacklisted entry at the same timestamp
       seedWatchHistoryEntry(db, {
         media_type: 'movie',
         media_id: 1,
@@ -333,13 +368,13 @@ describe('debrief auto-queue', () => {
         watched_at: '2026-03-01T00:00:00.000Z',
       });
 
-      // Try to log at the same timestamp — should be blocked by blacklist check
       watchHistoryService.logWatch({
         mediaType: 'movie',
         mediaId: 1,
         completed: 1,
         watchedAt: '2026-03-01T00:00:00.000Z',
       });
+      await flushFanOut();
 
       const sessions = getDebriefSessions(db);
       expect(sessions).toHaveLength(0);

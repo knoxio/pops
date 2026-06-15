@@ -1,5 +1,41 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+interface LogWatchCompletionInput {
+  watchHistoryId: number;
+  mediaType: 'movie' | 'episode';
+  mediaId: number;
+}
+interface LogWatchCompletionResult {
+  sessionId: number;
+  dimensionsQueued: number;
+}
+interface DeleteByWatchHistoryIdInput {
+  watchHistoryId: number;
+}
+interface DeleteByWatchHistoryIdResult {
+  deletedSessions: number;
+  deletedResults: number;
+}
+
+const logWatchCompletionStub =
+  vi.fn<(input: LogWatchCompletionInput) => Promise<LogWatchCompletionResult>>();
+const deleteByWatchHistoryIdStub =
+  vi.fn<(input: DeleteByWatchHistoryIdInput) => Promise<DeleteByWatchHistoryIdResult>>();
+
+vi.mock('@pops/pillar-sdk/server', async () => {
+  const actual =
+    await vi.importActual<typeof import('@pops/pillar-sdk/server')>('@pops/pillar-sdk/server');
+  return {
+    ...actual,
+    pillar: () => ({
+      debrief: {
+        logWatchCompletion: { orThrow: logWatchCompletionStub },
+        deleteByWatchHistoryId: { orThrow: deleteByWatchHistoryIdStub },
+      },
+    }),
+  };
+});
+
 import {
   seedDebriefResult,
   seedDebriefSession,
@@ -11,27 +47,15 @@ import {
   seedWatchlistEntry,
   setupTestContext,
 } from '../../../shared/test-utils.js';
-import {
-  logWatchCompletion,
-  type LogWatchCompletionInput,
-  type LogWatchCompletionResult,
-} from '../../cerebrum/debrief/router.js';
 import * as watchlistService from '../watchlist/service.js';
 import * as service from './service.js';
 
-vi.mock('../../cerebrum/debrief/router.js', async () => {
-  const actual = await vi.importActual<typeof import('../../cerebrum/debrief/router.js')>(
-    '../../cerebrum/debrief/router.js'
-  );
-  return {
-    ...actual,
-    logWatchCompletion: vi.fn(actual.logWatchCompletion),
-  };
-});
-
-const mockedLogWatchCompletion = vi.mocked(logWatchCompletion);
-
 import type { Database } from 'better-sqlite3';
+
+async function flushFanOut(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 const ctx = setupTestContext();
 let db: Database;
@@ -373,51 +397,43 @@ describe('logWatch', () => {
     expect(watchlistRemoved).toBe(false);
   });
 
-  describe('cerebrum debrief fan-out (Option D step 3)', () => {
+  describe('cerebrum debrief fan-out (Option D — PRD-248 US-05c)', () => {
     beforeEach(() => {
-      mockedLogWatchCompletion.mockReset();
+      logWatchCompletionStub.mockReset();
     });
 
     function stubResolved(result: LogWatchCompletionResult): void {
-      mockedLogWatchCompletion.mockImplementation((_input: LogWatchCompletionInput) => result);
+      logWatchCompletionStub.mockResolvedValue(result);
     }
 
-    it('commits the media tx and logs the error when the cerebrum SDK call fails', () => {
+    it('commits the media tx and absorbs the SDK failure non-fatally', async () => {
       seedMovie(db, { title: 'Mulholland Drive', tmdb_id: 1018 });
-      mockedLogWatchCompletion.mockImplementation(() => {
-        throw new Error('cerebrum unavailable');
+      logWatchCompletionStub.mockRejectedValue(new Error('cerebrum unavailable'));
+
+      const { entry, created } = service.logWatch({
+        mediaType: 'movie',
+        mediaId: 1018,
+        completed: 1,
       });
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      try {
-        const { entry, created } = service.logWatch({
-          mediaType: 'movie',
-          mediaId: 1018,
-          completed: 1,
-        });
+      expect(created).toBe(true);
+      expect(entry.mediaType).toBe('movie');
+      expect(entry.mediaId).toBe(1018);
 
-        expect(created).toBe(true);
-        expect(entry.mediaType).toBe('movie');
-        expect(entry.mediaId).toBe(1018);
+      const persisted = service.getWatchHistoryEntry(entry.id);
+      expect(persisted.id).toBe(entry.id);
 
-        const persisted = service.getWatchHistoryEntry(entry.id);
-        expect(persisted.id).toBe(entry.id);
+      await flushFanOut();
 
-        expect(mockedLogWatchCompletion).toHaveBeenCalledTimes(1);
-        expect(mockedLogWatchCompletion).toHaveBeenCalledWith({
-          mediaType: 'movie',
-          mediaId: 1018,
-          watchHistoryId: entry.id,
-        });
-        expect(errorSpy).toHaveBeenCalled();
-        const loggedArgs = errorSpy.mock.calls[0] ?? [];
-        expect(String(loggedArgs[0])).toContain('cerebrum debrief fan-out failed');
-      } finally {
-        errorSpy.mockRestore();
-      }
+      expect(logWatchCompletionStub).toHaveBeenCalledTimes(1);
+      expect(logWatchCompletionStub).toHaveBeenCalledWith({
+        mediaType: 'movie',
+        mediaId: 1018,
+        watchHistoryId: entry.id,
+      });
     });
 
-    it('invokes the cerebrum SDK once with the freshly inserted watch history id', () => {
+    it('invokes the cerebrum SDK once with the freshly inserted watch history id', async () => {
       seedMovie(db, { title: 'Inland Empire', tmdb_id: 1019 });
       stubResolved({ sessionId: 99, dimensionsQueued: 3 });
 
@@ -427,15 +443,17 @@ describe('logWatch', () => {
         completed: 1,
       });
 
-      expect(mockedLogWatchCompletion).toHaveBeenCalledTimes(1);
-      expect(mockedLogWatchCompletion).toHaveBeenCalledWith({
+      await flushFanOut();
+
+      expect(logWatchCompletionStub).toHaveBeenCalledTimes(1);
+      expect(logWatchCompletionStub).toHaveBeenCalledWith({
         mediaType: 'movie',
         mediaId: 1019,
         watchHistoryId: entry.id,
       });
     });
 
-    it('skips the cerebrum SDK call when the watch row already existed (no completion to debrief)', () => {
+    it('skips the cerebrum SDK call when the watch row already existed (no completion to debrief)', async () => {
       seedMovie(db, { title: 'Twin Peaks: Fire Walk with Me', tmdb_id: 1020 });
       const watchedAt = '2026-06-01T10:00:00.000Z';
       stubResolved({ sessionId: 0, dimensionsQueued: 0 });
@@ -447,9 +465,10 @@ describe('logWatch', () => {
         completed: 1,
       });
       expect(first.created).toBe(true);
-      expect(mockedLogWatchCompletion).toHaveBeenCalledTimes(1);
+      await flushFanOut();
+      expect(logWatchCompletionStub).toHaveBeenCalledTimes(1);
 
-      mockedLogWatchCompletion.mockClear();
+      logWatchCompletionStub.mockClear();
 
       const second = service.logWatch({
         mediaType: 'movie',
@@ -458,10 +477,11 @@ describe('logWatch', () => {
         completed: 1,
       });
       expect(second.created).toBe(false);
-      expect(mockedLogWatchCompletion).not.toHaveBeenCalled();
+      await flushFanOut();
+      expect(logWatchCompletionStub).not.toHaveBeenCalled();
     });
 
-    it('skips the cerebrum SDK call for an incomplete watch (completed=0)', () => {
+    it('skips the cerebrum SDK call for an incomplete watch (completed=0)', async () => {
       seedMovie(db, { title: 'Lost Highway', tmdb_id: 1021 });
       stubResolved({ sessionId: 0, dimensionsQueued: 0 });
 
@@ -471,47 +491,78 @@ describe('logWatch', () => {
         completed: 0,
       });
       expect(created).toBe(true);
-      expect(mockedLogWatchCompletion).not.toHaveBeenCalled();
+      await flushFanOut();
+      expect(logWatchCompletionStub).not.toHaveBeenCalled();
+    });
+
+    it('reruns idempotently — second call after a successful retry still drives the SDK once per fresh completion', async () => {
+      seedMovie(db, { title: 'Eraserhead', tmdb_id: 1022 });
+      stubResolved({ sessionId: 7, dimensionsQueued: 2 });
+
+      const first = service.logWatch({
+        mediaType: 'movie',
+        mediaId: 1022,
+        completed: 1,
+        watchedAt: '2026-04-01T10:00:00.000Z',
+      });
+      await flushFanOut();
+      expect(first.created).toBe(true);
+      expect(logWatchCompletionStub).toHaveBeenCalledTimes(1);
+
+      const second = service.logWatch({
+        mediaType: 'movie',
+        mediaId: 1022,
+        completed: 1,
+        watchedAt: '2026-04-02T10:00:00.000Z',
+      });
+      await flushFanOut();
+      expect(second.created).toBe(true);
+      expect(logWatchCompletionStub).toHaveBeenCalledTimes(2);
     });
   });
 });
 
 describe('deleteWatchHistoryEntry', () => {
-  it('deletes an existing entry', () => {
+  beforeEach(() => {
+    deleteByWatchHistoryIdStub.mockReset();
+    deleteByWatchHistoryIdStub.mockResolvedValue({ deletedSessions: 0, deletedResults: 0 });
+  });
+
+  it('deletes an existing entry', async () => {
     const id = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 550 });
 
-    service.deleteWatchHistoryEntry(id);
+    await service.deleteWatchHistoryEntry(id);
     expect(() => service.getWatchHistoryEntry(id)).toThrow('WatchHistoryEntry');
+    expect(deleteByWatchHistoryIdStub).toHaveBeenCalledWith({ watchHistoryId: id });
   });
 
-  it('throws NotFoundError for missing entry', () => {
-    expect(() => {
-      service.deleteWatchHistoryEntry(999);
-    }).toThrow('WatchHistoryEntry');
+  it('throws NotFoundError for missing entry', async () => {
+    await expect(service.deleteWatchHistoryEntry(999)).rejects.toThrow('WatchHistoryEntry');
+    expect(deleteByWatchHistoryIdStub).not.toHaveBeenCalled();
   });
 
-  it('cascade-deletes debrief_sessions before deleting watch_history (bug #2373 — Undo FK fix)', () => {
-    // Simulate the Mark-as-Watched flow: watch history entry + debrief session created.
+  it('fires the cerebrum cascade-delete SDK before removing the watch row (bug #2373 — Undo FK fix)', async () => {
     const watchId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 1 });
     seedDebriefSession(db, { watch_history_id: watchId, status: 'pending' });
+    deleteByWatchHistoryIdStub.mockImplementation(async ({ watchHistoryId }) => {
+      db.prepare('DELETE FROM debrief_sessions WHERE watch_history_id = ?').run(watchHistoryId);
+      return { deletedSessions: 1, deletedResults: 0 };
+    });
 
-    // Undo (delete) must not throw a FK constraint error.
-    expect(() => service.deleteWatchHistoryEntry(watchId)).not.toThrow();
+    await expect(service.deleteWatchHistoryEntry(watchId)).resolves.toBeUndefined();
 
-    // The watch history entry should be gone.
     expect(() => service.getWatchHistoryEntry(watchId)).toThrow('WatchHistoryEntry');
+    expect(deleteByWatchHistoryIdStub).toHaveBeenCalledWith({ watchHistoryId: watchId });
 
-    // The debrief session should also have been removed.
     const remaining = db
       .prepare('SELECT id FROM debrief_sessions WHERE watch_history_id = ?')
       .all(watchId);
     expect(remaining).toHaveLength(0);
   });
 
-  it('cascade-deletes debrief_results when debrief session has results', () => {
+  it('relies on the SDK to cascade-delete debrief_results when the session has results', async () => {
     const watchId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 2 });
     const sessionId = seedDebriefSession(db, { watch_history_id: watchId, status: 'active' });
-    // Seed a dimension so the FK for debrief_results is valid.
     const dimId = Number(
       db
         .prepare(
@@ -520,9 +571,15 @@ describe('deleteWatchHistoryEntry', () => {
         .run().lastInsertRowid
     );
     seedDebriefResult(db, { session_id: sessionId, dimension_id: dimId });
+    deleteByWatchHistoryIdStub.mockImplementation(async ({ watchHistoryId }) => {
+      db.prepare(
+        'DELETE FROM debrief_results WHERE session_id IN (SELECT id FROM debrief_sessions WHERE watch_history_id = ?)'
+      ).run(watchHistoryId);
+      db.prepare('DELETE FROM debrief_sessions WHERE watch_history_id = ?').run(watchHistoryId);
+      return { deletedSessions: 1, deletedResults: 1 };
+    });
 
-    // Undo must cascade through debrief_results → debrief_sessions → watch_history.
-    expect(() => service.deleteWatchHistoryEntry(watchId)).not.toThrow();
+    await expect(service.deleteWatchHistoryEntry(watchId)).resolves.toBeUndefined();
     expect(() => service.getWatchHistoryEntry(watchId)).toThrow('WatchHistoryEntry');
 
     const sessions = db
@@ -534,6 +591,16 @@ describe('deleteWatchHistoryEntry', () => {
       .prepare('SELECT id FROM debrief_results WHERE session_id = ?')
       .all(sessionId);
     expect(results).toHaveLength(0);
+  });
+
+  it('aborts the delete if the cerebrum SDK call fails', async () => {
+    const watchId = seedWatchHistoryEntry(db, { media_type: 'movie', media_id: 3 });
+    deleteByWatchHistoryIdStub.mockRejectedValue(new Error('cerebrum unavailable'));
+
+    await expect(service.deleteWatchHistoryEntry(watchId)).rejects.toThrow('cerebrum unavailable');
+
+    const persisted = service.getWatchHistoryEntry(watchId);
+    expect(persisted.id).toBe(watchId);
   });
 });
 

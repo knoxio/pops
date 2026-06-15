@@ -23,28 +23,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/watch-history/handlers/cerebrum-fan-out.ts",
-    "to": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
-    "unresolvedTo": "../../../cerebrum/debrief/router.js",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-api-module-import"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/watch-history/service.test.ts",
-    "to": "apps/pops-api/src/modules/cerebrum/debrief/router.ts",
-    "unresolvedTo": "../../cerebrum/debrief/router.js",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-api-module-import"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/backfill-cerebrum-from-shared.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
@@ -629,17 +607,6 @@
   {
     "type": "dependency",
     "from": "apps/pops-api/src/modules/media/debrief/service.ts",
-    "to": "packages/cerebrum-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-cerebrum"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/watch-history/handlers/query-helpers.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
     "dependencyTypes": ["undetermined", "import"],
