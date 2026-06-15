@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
@@ -8,15 +8,6 @@ import { PAGE_SIZE, type HistoryEntry, type MediaTypeFilter } from './types';
 interface WatchHistoryListResult {
   data: HistoryEntry[];
   pagination?: { total: number };
-}
-
-interface PendingDebriefEntry {
-  movieId: number;
-  sessionId: number;
-}
-
-interface PendingDebriefsResult {
-  data: PendingDebriefEntry[];
 }
 
 function useDeleteFlow({
@@ -74,19 +65,6 @@ export function useHistoryPageModel() {
     ['watchHistory', 'listRecent'],
     queryInput
   );
-  const { data: pendingDebriefs } = usePillarQuery<PendingDebriefsResult>(
-    'media',
-    ['comparisons', 'getPendingDebriefs'],
-    undefined
-  );
-
-  const debriefByMovieId = useMemo(() => {
-    const map = new Map<number, number>();
-    for (const d of pendingDebriefs?.data ?? []) {
-      map.set(d.movieId, d.sessionId);
-    }
-    return map;
-  }, [pendingDebriefs]);
 
   const entries = data?.data ?? [];
   const total = data?.pagination?.total ?? 0;
@@ -105,7 +83,6 @@ export function useHistoryPageModel() {
     entries,
     total,
     hasMore,
-    debriefByMovieId,
     ...deleteFlow,
   };
 }

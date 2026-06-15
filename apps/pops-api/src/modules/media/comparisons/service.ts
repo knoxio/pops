@@ -12,15 +12,9 @@ import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getDimension } from './dimensions.service.js';
 import { sourceRank } from './lib/batch-record.js';
 import { findExistingComparison } from './lib/comparison-queries.js';
-import { recordDebriefComparison as recordDebriefComparisonImpl } from './lib/debrief.js';
 import { recalcDimensionElo, updateEloScores } from './lib/score-management.js';
 
-import type {
-  BlacklistMovieResult,
-  ComparisonRow,
-  RecordComparisonInput,
-  RecordDebriefComparisonInput,
-} from './types.js';
+import type { BlacklistMovieResult, ComparisonRow, RecordComparisonInput } from './types.js';
 
 // ── Re-exports from extracted modules ──
 
@@ -36,7 +30,6 @@ export {
   listAllComparisons,
   listComparisonsForMedia,
 } from './lib/comparison-queries.js';
-export { dismissDebriefDimension, getDebriefOpponent, getPendingDebriefs } from './lib/debrief.js';
 export { excludeFromDimension, includeInDimension } from './lib/dimension-exclusion.js';
 export { drawTierOutcome, ELO_K, expectedScore, getEloK } from './lib/elo-calculator.js';
 export {
@@ -225,15 +218,4 @@ export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMov
       dimensionsRecalculated: affectedDimensionIds.length,
     };
   });
-}
-
-/**
- * Record a debrief comparison — delegates to lib/debrief.ts with recordComparison
- * passed as a callback to avoid circular dependencies.
- */
-export function recordDebriefComparison(input: RecordDebriefComparisonInput): {
-  comparisonId: number | null;
-  sessionComplete: boolean;
-} {
-  return recordDebriefComparisonImpl(input, recordComparison);
 }

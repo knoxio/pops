@@ -7,7 +7,6 @@ import { PillarCallError } from '@pops/pillar-sdk/client';
 const mockMovieQuery = vi.fn();
 const mockWatchHistoryQuery = vi.fn();
 const mockGetStalenessQuery = vi.fn();
-const mockGetPendingDebriefsQuery = vi.fn();
 
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
@@ -15,7 +14,6 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     if (key === 'movies.get') return mockMovieQuery(input);
     if (key === 'watchHistory.list') return mockWatchHistoryQuery(input);
     if (key === 'comparisons.getStaleness') return mockGetStalenessQuery(input);
-    if (key === 'comparisons.getPendingDebriefs') return mockGetPendingDebriefsQuery();
     return { data: undefined, isLoading: false };
   },
 }));
@@ -99,9 +97,6 @@ beforeEach(() => {
   });
   mockGetStalenessQuery.mockReturnValue({
     data: { data: { staleness: 1.0 } },
-  });
-  mockGetPendingDebriefsQuery.mockReturnValue({
-    data: { data: [] },
   });
 });
 
@@ -393,38 +388,6 @@ describe('MovieDetailPage', () => {
     it('does not render LeavingBadge when rotationStatus is absent', () => {
       renderAtRoute('/media/movies/1');
       expect(screen.queryByTestId('leaving-badge')).not.toBeInTheDocument();
-    });
-  });
-
-  describe('debrief button', () => {
-    it('shows debrief button when movie has a pending debrief', () => {
-      mockGetPendingDebriefsQuery.mockReturnValue({
-        data: {
-          data: [
-            {
-              sessionId: 42,
-              movieId: 1,
-              title: 'The Shawshank Redemption',
-              posterUrl: null,
-              status: 'pending',
-              createdAt: '2026-04-01T00:00:00Z',
-              pendingDimensionCount: 3,
-            },
-          ],
-        },
-      });
-      renderAtRoute('/media/movies/1');
-      const button = screen.getByText('Debrief this movie');
-      expect(button).toBeInTheDocument();
-      expect(button.closest('a')).toHaveAttribute('href', '/media/debrief/1');
-    });
-
-    it('hides debrief button when no pending debrief for this movie', () => {
-      mockGetPendingDebriefsQuery.mockReturnValue({
-        data: { data: [] },
-      });
-      renderAtRoute('/media/movies/1');
-      expect(screen.queryByText('Debrief this movie')).not.toBeInTheDocument();
     });
   });
 });

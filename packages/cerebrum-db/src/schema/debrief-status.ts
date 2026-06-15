@@ -1,3 +1,10 @@
+/**
+ * NOTE: in-monolith consumers of this schema were removed in
+ * `chore/remove-debrief-feature` (see
+ * `docs/themes/13-pillar-finale/notes/debrief-feature-removal-2026-06.md`).
+ * The table is retained for data preservation and future restoration of
+ * the debrief feature.
+ */
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 

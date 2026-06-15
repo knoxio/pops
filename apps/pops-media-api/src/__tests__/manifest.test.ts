@@ -101,7 +101,6 @@ describe('buildMediaManifest', () => {
       expect(paths).toContain('');
       expect(paths).toContain('movies/:id');
       expect(paths).toContain('tv/:id/season/:num');
-      expect(paths).toContain('debrief/:movieId/results');
       expect(paths).toContain('plex');
       expect(paths).toContain('rotation/candidates');
     });

@@ -8,7 +8,6 @@ import { discoverSettings, findSettingsManifest } from '@pops/pillar-sdk/setting
 import { mergeRouters, router } from '../../trpc.js';
 import { getLocalSettingsDiscoverySnapshot } from '../settings-discovery-snapshot.js';
 import { cerebrumAiTools } from './ai-tools/index.js';
-import { debriefRouter } from './debrief/router.js';
 import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';
 import { scopesRouter } from './engrams/scopes-router.js';
@@ -41,7 +40,6 @@ export const cerebrumRouter = router({
   nudges: nudgesRouter,
   plexus: plexusRouter,
   reflex: reflexRouter,
-  debrief: debriefRouter,
 });
 
 const discoveredSettings = await discoverSettings({

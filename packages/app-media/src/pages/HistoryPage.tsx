@@ -104,7 +104,6 @@ export function HistoryPage() {
         entries={m.entries}
         isDeleting={m.deleteMutation.isPending}
         onDelete={m.handleDeleteClick}
-        debriefByMovieId={m.debriefByMovieId}
         offset={m.offset}
         total={m.total}
         hasMore={m.hasMore}

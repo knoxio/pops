@@ -114,25 +114,6 @@ export const RecordSkipSchema = z.object({
 });
 export type RecordSkipInput = z.infer<typeof RecordSkipSchema>;
 
-export const GetDebriefOpponentSchema = z.object({
-  mediaType: z.enum(MEDIA_TYPES),
-  mediaId: z.number().int().positive(),
-  dimensionId: z.number().int().positive(),
-});
-export type GetDebriefOpponentInput = z.infer<typeof GetDebriefOpponentSchema>;
-
-export const DismissDebriefDimensionSchema = z.object({
-  sessionId: z.number().int().positive(),
-  dimensionId: z.number().int().positive(),
-});
-export type DismissDebriefDimensionInput = z.infer<typeof DismissDebriefDimensionSchema>;
-
-export const GetDebriefSchema = z.object({
-  mediaType: z.enum(['movie', 'episode']),
-  mediaId: z.number().int().positive(),
-});
-export type GetDebriefInput = z.infer<typeof GetDebriefSchema>;
-
 export const GetTierListMoviesSchema = z.object({
   dimensionId: z.number().int().positive(),
 });
@@ -143,16 +124,6 @@ export const SubmitTierListSchema = z.object({
   placements: z.array(TierPlacementSchema).min(2, 'At least 2 placements are required'),
 });
 export type SubmitTierListInput = z.infer<typeof SubmitTierListSchema>;
-
-export const RecordDebriefComparisonSchema = z.object({
-  sessionId: z.number().int().positive(),
-  dimensionId: z.number().int().positive(),
-  opponentType: z.enum(MEDIA_TYPES),
-  opponentId: z.number().int().positive(),
-  winnerId: z.number().int().nonnegative(),
-  drawTier: z.enum(DRAW_TIERS).nullable().optional(),
-});
-export type RecordDebriefComparisonInput = z.infer<typeof RecordDebriefComparisonSchema>;
 
 export const BatchComparisonItemSchema = z.object({
   mediaAType: z.enum(MEDIA_TYPES),

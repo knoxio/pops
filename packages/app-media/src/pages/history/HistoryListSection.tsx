@@ -8,16 +8,10 @@ interface HistoryListSectionProps {
   entries: HistoryEntry[];
   isDeleting: boolean;
   onDelete: (id: number) => void;
-  debriefByMovieId: Map<number, number>;
   offset: number;
   total: number;
   hasMore: boolean;
   onPageChange: (offset: number) => void;
-}
-
-function getDebriefId(entry: HistoryEntry, debriefByMovieId: Map<number, number>): number | null {
-  if (entry.mediaType !== 'movie') return null;
-  return debriefByMovieId.get(entry.mediaId) ?? null;
 }
 
 function PaginationBar({
@@ -60,7 +54,6 @@ export function HistoryListSection({
   entries,
   isDeleting,
   onDelete,
-  debriefByMovieId,
   offset,
   total,
   hasMore,
@@ -70,24 +63,12 @@ export function HistoryListSection({
     <>
       <div className="space-y-2 md:hidden">
         {entries.map((entry) => (
-          <HistoryItem
-            key={entry.id}
-            entry={entry}
-            onDelete={onDelete}
-            isDeleting={isDeleting}
-            debriefSessionId={getDebriefId(entry, debriefByMovieId)}
-          />
+          <HistoryItem key={entry.id} entry={entry} onDelete={onDelete} isDeleting={isDeleting} />
         ))}
       </div>
       <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {entries.map((entry) => (
-          <HistoryCard
-            key={entry.id}
-            entry={entry}
-            onDelete={onDelete}
-            isDeleting={isDeleting}
-            debriefSessionId={getDebriefId(entry, debriefByMovieId)}
-          />
+          <HistoryCard key={entry.id} entry={entry} onDelete={onDelete} isDeleting={isDeleting} />
         ))}
       </div>
       <PaginationBar offset={offset} total={total} hasMore={hasMore} onPageChange={onPageChange} />

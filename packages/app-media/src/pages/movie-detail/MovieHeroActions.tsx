@@ -1,7 +1,3 @@
-import { Link } from 'react-router';
-
-import { Button } from '@pops/ui';
-
 import { ArrStatusBadge } from '../../components/ArrStatusBadge';
 import { FreshnessBadge } from '../../components/FreshnessBadge';
 import { LeavingBadge } from '../../components/LeavingBadge';
@@ -22,7 +18,6 @@ interface MovieHeroActionsProps {
   year: number | null;
   daysSinceWatch: number | null;
   staleness: number;
-  pendingDebrief: { movieId: number; status: string } | undefined;
 }
 
 export function MovieHeroActions({
@@ -30,7 +25,6 @@ export function MovieHeroActions({
   year,
   daysSinceWatch,
   staleness,
-  pendingDebrief,
 }: MovieHeroActionsProps) {
   return (
     <div className="flex items-center gap-3 mt-3">
@@ -47,13 +41,6 @@ export function MovieHeroActions({
       <FreshnessBadge daysSinceWatch={daysSinceWatch} staleness={staleness} />
       {movie.rotationStatus === 'leaving' && movie.rotationExpiresAt && (
         <LeavingBadge rotationExpiresAt={movie.rotationExpiresAt} />
-      )}
-      {pendingDebrief && (
-        <Link to={`/media/debrief/${movie.id}`}>
-          <Button variant="outline" size="sm">
-            Debrief this movie
-          </Button>
-        </Link>
       )}
     </div>
   );
