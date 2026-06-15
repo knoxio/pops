@@ -5,9 +5,9 @@ import * as scheduler from './scheduler.js';
 import * as plexService from './service.js';
 
 export const schedulerProcedures = {
-  getSyncStatus: protectedProcedure.query(() => {
-    const client = plexService.getPlexClient();
-    return { data: plexService.getSyncStatus(client) };
+  getSyncStatus: protectedProcedure.query(async () => {
+    const client = await plexService.getPlexClient();
+    return { data: await plexService.getSyncStatus(client) };
   }),
 
   startScheduler: protectedProcedure
@@ -20,12 +20,12 @@ export const schedulerProcedures = {
         })
         .optional()
     )
-    .mutation(({ input }) => {
-      return { data: scheduler.startScheduler(input ?? {}) };
+    .mutation(async ({ input }) => {
+      return { data: await scheduler.startScheduler(input ?? {}) };
     }),
 
-  stopScheduler: protectedProcedure.mutation(() => {
-    return { data: scheduler.stopScheduler() };
+  stopScheduler: protectedProcedure.mutation(async () => {
+    return { data: await scheduler.stopScheduler() };
   }),
 
   getSchedulerStatus: protectedProcedure.query(() => {
@@ -38,8 +38,8 @@ export const schedulerProcedures = {
       return { data: scheduler.getSyncLogs(input?.limit ?? 20) };
     }),
 
-  getSectionIds: protectedProcedure.query(() => {
-    return { data: plexService.getPlexSectionIds() };
+  getSectionIds: protectedProcedure.query(async () => {
+    return { data: await plexService.getPlexSectionIds() };
   }),
 
   saveSectionIds: protectedProcedure
@@ -49,8 +49,8 @@ export const schedulerProcedures = {
         tvSectionId: z.string().min(1).optional(),
       })
     )
-    .mutation(({ input }) => {
-      plexService.savePlexSectionIds(input.movieSectionId, input.tvSectionId);
+    .mutation(async ({ input }) => {
+      await plexService.savePlexSectionIds(input.movieSectionId, input.tvSectionId);
       return { message: 'Section IDs saved' };
     }),
 };

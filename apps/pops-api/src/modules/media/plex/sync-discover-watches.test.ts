@@ -217,8 +217,8 @@ const PLEX_USER_RESPONSE = { url: 'plex.tv/api/v2/user', body: { uuid: 'user-uui
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mockGetPlexToken.mockReturnValue('test-token');
-  mockGetPlexClientId.mockReturnValue('test-client-id');
+  mockGetPlexToken.mockResolvedValue('test-token');
+  mockGetPlexClientId.mockResolvedValue('test-client-id');
 });
 
 describe('syncDiscoverWatches (GraphQL)', () => {

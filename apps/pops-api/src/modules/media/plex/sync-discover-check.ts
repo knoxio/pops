@@ -69,7 +69,7 @@ export async function checkAndLogMovieWatch(
   tmdbId: number
 ): Promise<boolean> {
   try {
-    const token = getPlexToken();
+    const token = await getPlexToken();
     if (!token) return false;
 
     const ratingKey = await findRatingKey({ plexClient, title, tmdbId });

@@ -35,14 +35,16 @@ function makeTupleProgressCallback(
   };
 }
 
-function requirePlexClient(): NonNullable<ReturnType<typeof getPlexClient>> {
-  const client = getPlexClient();
+type ResolvedPlexClient = NonNullable<Awaited<ReturnType<typeof getPlexClient>>>;
+
+async function requirePlexClient(): Promise<ResolvedPlexClient> {
+  const client = await getPlexClient();
   if (!client) throw new Error('Plex is not configured');
   return client;
 }
 
 async function runScheduledMoviesSync(
-  client: NonNullable<ReturnType<typeof getPlexClient>>,
+  client: ResolvedPlexClient,
   movieSectionId: string | null | undefined,
   errors: string[]
 ): Promise<number> {
@@ -56,7 +58,7 @@ async function runScheduledMoviesSync(
 }
 
 async function runScheduledTvSync(
-  client: NonNullable<ReturnType<typeof getPlexClient>>,
+  client: ResolvedPlexClient,
   tvSectionId: string | null | undefined,
   errors: string[]
 ): Promise<number> {
@@ -70,7 +72,7 @@ async function runScheduledTvSync(
 }
 
 async function runScheduledWatchlistSync(errors: string[]): Promise<void> {
-  const token = getPlexToken();
+  const token = await getPlexToken();
   if (!token) return;
   try {
     const result = await syncWatchlistFromPlex(token);
@@ -83,8 +85,8 @@ async function runScheduledWatchlistSync(errors: string[]): Promise<void> {
 async function runScheduledSync(
   data: Extract<SyncQueueJobData, { type: 'plexScheduledSync' }>
 ): Promise<{ movieCount: number; tvCount: number; errors: string[] }> {
-  const client = requirePlexClient();
-  const sectionIds = getPlexSectionIds();
+  const client = await requirePlexClient();
+  const sectionIds = await getPlexSectionIds();
   const movieSectionId = data.movieSectionId ?? sectionIds.movieSectionId;
   const tvSectionId = data.tvSectionId ?? sectionIds.tvSectionId;
 
@@ -102,24 +104,24 @@ export async function process(job: Job<SyncQueueJobData>): Promise<unknown> {
 
   switch (data.type) {
     case 'plexSyncMovies': {
-      const client = requirePlexClient();
+      const client = await requirePlexClient();
       return importMoviesFromPlex(client, data.sectionId, {
         onProgress: makeProgressCallback(job),
       });
     }
     case 'plexSyncTvShows': {
-      const client = requirePlexClient();
+      const client = await requirePlexClient();
       return importTvShowsFromPlex(client, data.sectionId, {
         onProgress: makeProgressCallback(job),
       });
     }
     case 'plexSyncWatchlist': {
-      const token = getPlexToken();
+      const token = await getPlexToken();
       if (!token) throw new Error('Plex token not available');
       return syncWatchlistFromPlex(token, { onProgress: makeProgressCallback(job) });
     }
     case 'plexSyncWatchHistory': {
-      const client = requirePlexClient();
+      const client = await requirePlexClient();
       return syncWatchHistoryFromPlex(
         client,
         data.movieSectionId ?? undefined,
@@ -128,7 +130,7 @@ export async function process(job: Job<SyncQueueJobData>): Promise<unknown> {
       );
     }
     case 'plexSyncDiscoverWatches': {
-      const client = requirePlexClient();
+      const client = await requirePlexClient();
       return syncDiscoverWatches(client, makeTupleProgressCallback(job), () => {
         // Partial result callback not needed — BullMQ job result returned on completion
       });

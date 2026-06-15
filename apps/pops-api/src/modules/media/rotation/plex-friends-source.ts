@@ -25,12 +25,12 @@ export const plexFriendsSource: RotationSourceAdapter = {
       throw new Error('plex_friends source requires "friendUuid" in config');
     }
 
-    const token = getPlexToken();
+    const token = await getPlexToken();
     if (!token) {
       throw new Error('Plex token not configured — cannot fetch friend watchlist');
     }
 
-    const clientId = getPlexClientId();
+    const clientId = await getPlexClientId();
     const friendLabel = (config.friendUsername as string | undefined) ?? friendUuid;
 
     let watchlistItems: Awaited<ReturnType<typeof fetchFriendWatchlist>>;

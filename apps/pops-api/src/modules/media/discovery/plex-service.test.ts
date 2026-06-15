@@ -85,7 +85,7 @@ describe('getTrendingFromPlex', () => {
   });
 
   it('returns null when Plex is not connected', async () => {
-    mockGetPlexClient.mockReturnValue(null);
+    mockGetPlexClient.mockResolvedValue(null);
 
     const result = await getTrendingFromPlex();
     expect(result).toBeNull();
@@ -106,8 +106,8 @@ describe('getTrendingFromPlex', () => {
         }),
       ]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
@@ -129,8 +129,8 @@ describe('getTrendingFromPlex', () => {
           makePlexItem({ title: 'No IDs', externalIds: [] }),
         ]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
@@ -148,8 +148,8 @@ describe('getTrendingFromPlex', () => {
           makePlexItem({ title: 'Not In Library', externalIds: [{ source: 'tmdb', id: '200' }] }),
         ]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb([100]));
 
@@ -175,8 +175,8 @@ describe('getTrendingFromPlex', () => {
         }),
       ]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
@@ -194,8 +194,8 @@ describe('getTrendingFromPlex', () => {
           makePlexItem({ title: 'Dismissed', externalIds: [{ source: 'tmdb', id: '200' }] }),
         ]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
 
     mockGetDrizzle.mockReturnValue(createMockDb());
@@ -217,8 +217,8 @@ describe('getTrendingFromPlex', () => {
     const mockClient = {
       getTrending: vi.fn().mockResolvedValue(items),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
@@ -238,8 +238,8 @@ describe('getTrendingFromPlex — isWatched + onWatchlist flags', () => {
         .fn()
         .mockResolvedValue([makePlexItem({ externalIds: [{ source: 'tmdb', id: '100' }] })]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb());
     mockGetWatchedTmdbIds.mockReturnValue(new Set());
@@ -259,8 +259,8 @@ describe('getTrendingFromPlex — isWatched + onWatchlist flags', () => {
           makePlexItem({ title: 'Unwatched', externalIds: [{ source: 'tmdb', id: '200' }] }),
         ]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb());
     mockGetWatchedTmdbIds.mockReturnValue(new Set([100]));
@@ -282,8 +282,8 @@ describe('getTrendingFromPlex — isWatched + onWatchlist flags', () => {
           makePlexItem({ title: 'Not on WL', externalIds: [{ source: 'tmdb', id: '400' }] }),
         ]),
     };
-    mockGetPlexClient.mockReturnValue(
-      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    mockGetPlexClient.mockResolvedValue(
+      mockClient as unknown as Awaited<ReturnType<typeof getPlexClient>> & object
     );
     mockGetDrizzle.mockReturnValue(createMockDb());
     mockGetWatchedTmdbIds.mockReturnValue(new Set());

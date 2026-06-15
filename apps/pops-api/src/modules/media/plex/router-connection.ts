@@ -1,15 +1,28 @@
 import { z } from 'zod';
 
-import { settingsService } from '@pops/core-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure } from '../../../trpc.js';
-import { SETTINGS_KEYS } from '../../core/settings/keys.js';
+import { SETTINGS_KEYS, type SettingsKey } from '../../core/settings/keys.js';
 import { PlexClient } from './client.js';
 import { requirePlexClient } from './router-helpers.js';
 import * as plexService from './service.js';
 import { PlexApiError } from './types.js';
+
+type CoreSettingsShape = {
+  settings: {
+    get: (input: { key: SettingsKey }) => { data: { key: string; value: string } | null };
+    set: (input: { key: SettingsKey; value: string }) => {
+      data: { key: string; value: string };
+      message: string;
+    };
+  };
+};
+
+function core(): ReturnType<typeof pillar<CoreSettingsShape>> {
+  return pillar<CoreSettingsShape>('core');
+}
 
 function normalizeUrl(input: string): string {
   let final = input.trim();
@@ -56,14 +69,14 @@ async function validateConnection(url: string, token: string | undefined): Promi
   }
 }
 
-function lookupToken(): string | undefined {
-  const tokenRecord = settingsService.getSettingOrNull(getCoreDrizzle(), SETTINGS_KEYS.PLEX_TOKEN);
-  return tokenRecord?.value;
+async function lookupToken(): Promise<string | undefined> {
+  const { data } = await core().settings.get.orThrow({ key: SETTINGS_KEYS.PLEX_TOKEN });
+  return data?.value;
 }
 
 export const connectionProcedures = {
   testConnection: protectedProcedure.query(async () => {
-    const client = requirePlexClient();
+    const client = await requirePlexClient();
     try {
       const connected = await plexService.testConnection(client);
       return { data: { connected } };
@@ -76,7 +89,7 @@ export const connectionProcedures = {
   }),
 
   getLibraries: protectedProcedure.query(async () => {
-    const client = requirePlexClient();
+    const client = await requirePlexClient();
     try {
       return { data: await client.getLibraries() };
     } catch (err) {
@@ -96,19 +109,19 @@ export const connectionProcedures = {
     .input(z.object({ url: z.string().min(1) }))
     .mutation(async ({ input }) => {
       const finalUrl = normalizeUrl(input.url);
-      const token = lookupToken();
+      const token = await lookupToken();
       await validateConnection(finalUrl, token);
 
       console.warn(`[Plex] Updating server URL to: ${finalUrl}`);
-      settingsService.setRawSetting(getCoreDrizzle(), SETTINGS_KEYS.PLEX_URL, finalUrl);
+      await core().settings.set.orThrow({ key: SETTINGS_KEYS.PLEX_URL, value: finalUrl });
       return { message: 'Plex URL updated and validated' };
     }),
 
-  getPlexUrl: protectedProcedure.query(() => {
-    return { data: plexService.getPlexUrl() };
+  getPlexUrl: protectedProcedure.query(async () => {
+    return { data: await plexService.getPlexUrl() };
   }),
 
-  getPlexUsername: protectedProcedure.query(() => {
-    return { data: plexService.getPlexUsername() };
+  getPlexUsername: protectedProcedure.query(async () => {
+    return { data: await plexService.getPlexUsername() };
   }),
 };

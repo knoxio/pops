@@ -14,12 +14,12 @@ export const plexWatchlistSource: RotationSourceAdapter = {
   type: 'plex_watchlist',
 
   async fetchCandidates(_config: Record<string, unknown>): Promise<CandidateMovie[]> {
-    const token = getPlexToken();
+    const token = await getPlexToken();
     if (!token) {
       throw new Error('Plex token not configured — cannot fetch watchlist');
     }
 
-    const clientId = getPlexClientId();
+    const clientId = await getPlexClientId();
     const watchlistItems = await fetchPlexWatchlist(token, clientId);
 
     const candidates: CandidateMovie[] = [];

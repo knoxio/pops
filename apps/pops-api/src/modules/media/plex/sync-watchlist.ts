@@ -160,7 +160,7 @@ export async function syncWatchlistFromPlex(
   token: string,
   options: WatchlistSyncOptions = {}
 ): Promise<WatchlistSyncProgress> {
-  const clientId = getPlexClientId();
+  const clientId = await getPlexClientId();
   const plexItems = await fetchPlexWatchlist(token, clientId);
 
   const progress: WatchlistSyncProgress = {

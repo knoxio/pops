@@ -70,7 +70,7 @@ function toDiscoverResult(
  * Returns null if Plex is not connected (no client available).
  */
 export async function getTrendingFromPlex(limit: number = 20): Promise<DiscoverResult[] | null> {
-  const client = getPlexClient();
+  const client = await getPlexClient();
   if (!client) return null;
 
   const [plexItems, libraryIds, watchedIds, watchlistIds, dismissedIds] = await Promise.all([

@@ -33,8 +33,8 @@ vi.mock('../../../jobs/queues.js', () => ({
 
 vi.mock('./service.js', () => ({
   getPlexClient: vi.fn(),
-  getPlexSectionIds: vi.fn().mockReturnValue({ movieSectionId: null, tvSectionId: null }),
-  getPlexToken: vi.fn().mockReturnValue('test-plex-token'),
+  getPlexSectionIds: vi.fn().mockResolvedValue({ movieSectionId: null, tvSectionId: null }),
+  getPlexToken: vi.fn().mockResolvedValue('test-plex-token'),
 }));
 
 vi.mock('../../../db.js', () => ({
@@ -58,25 +58,38 @@ vi.mock('../../../db.js', () => ({
   })),
 }));
 
-vi.mock('@pops/core-db', () => ({
-  SettingNotFoundError: class SettingNotFoundError extends Error {
-    constructor(public readonly key: string) {
-      super(`Setting not found: ${key}`);
-    }
-  },
-  settingsService: {
-    getSettingOrNull: vi.fn((_db: unknown, key: string) => {
-      const val = settingsStore.get(key);
-      return val !== undefined ? { key, value: val } : null;
-    }),
-    setRawSetting: vi.fn((_db: unknown, key: string, value: string) => {
-      settingsStore.set(key, value);
-      return { key, value };
-    }),
-    deleteSetting: vi.fn((_db: unknown, key: string) => {
-      settingsStore.delete(key);
-    }),
-  },
+class NotFoundCallError extends Error {
+  data = { code: 'NOT_FOUND' as const };
+}
+
+const setStub = vi.fn(async ({ key, value }: { key: string; value: string }) => {
+  settingsStore.set(key, value);
+  return { data: { key, value }, message: 'Setting saved' };
+});
+
+const deleteStub = vi.fn(async ({ key }: { key: string }) => {
+  if (!settingsStore.has(key)) throw new NotFoundCallError(`not found: ${key}`);
+  settingsStore.delete(key);
+  return { message: 'Setting deleted' };
+});
+
+const getManyStub = vi.fn(async ({ keys }: { keys: string[] }) => {
+  const settings: Record<string, string> = {};
+  for (const k of keys) {
+    const v = settingsStore.get(k);
+    if (v !== undefined) settings[k] = v;
+  }
+  return { settings };
+});
+
+vi.mock('@pops/pillar-sdk/server', () => ({
+  pillar: () => ({
+    settings: {
+      set: { orThrow: setStub },
+      delete: { orThrow: deleteStub },
+      getMany: { orThrow: getManyStub },
+    },
+  }),
 }));
 
 vi.mock('../../../db/media-db-handle.js', () => ({
@@ -151,39 +164,38 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('startScheduler', () => {
-  it('returns running status', () => {
-    const status = startScheduler({ intervalMs: 5000 });
+  it('returns running status', async () => {
+    const status = await startScheduler({ intervalMs: 5000 });
 
     expect(status.isRunning).toBe(true);
     expect(status.intervalMs).toBe(5000);
     expect(status.nextSyncAt).not.toBeNull();
   });
 
-  it('uses default interval when not specified', () => {
-    const status = startScheduler();
+  it('uses default interval when not specified', async () => {
+    const status = await startScheduler();
 
     expect(status.intervalMs).toBe(60 * 60 * 1000);
     expect(status.isRunning).toBe(true);
   });
 
-  it('is a no-op when already running', () => {
-    startScheduler({ intervalMs: 5000 });
-    const status = startScheduler({ intervalMs: 10000 });
+  it('is a no-op when already running', async () => {
+    await startScheduler({ intervalMs: 5000 });
+    const status = await startScheduler({ intervalMs: 10000 });
 
     expect(status.intervalMs).toBe(5000);
   });
 
-  it('persists scheduler config to settings', () => {
-    startScheduler({ intervalMs: 30000 });
+  it('persists scheduler config to settings', async () => {
+    await startScheduler({ intervalMs: 30000 });
 
     expect(settingsStore.get(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED)).toBe('true');
     expect(settingsStore.get(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS)).toBe('30000');
   });
 
   it('registers a BullMQ job scheduler', async () => {
-    startScheduler({ intervalMs: 5000 });
+    await startScheduler({ intervalMs: 5000 });
 
-    // upsertJobScheduler is called async (fire-and-forget)
     await vi.waitFor(() => expect(mockUpsertJobScheduler).toHaveBeenCalledOnce());
     expect(mockUpsertJobScheduler).toHaveBeenCalledWith(
       expect.any(String),
@@ -198,34 +210,34 @@ describe('startScheduler', () => {
 // ---------------------------------------------------------------------------
 
 describe('stopScheduler', () => {
-  it('stops a running scheduler', () => {
-    startScheduler({ intervalMs: 5000 });
-    const status = stopScheduler();
+  it('stops a running scheduler', async () => {
+    await startScheduler({ intervalMs: 5000 });
+    const status = await stopScheduler();
 
     expect(status.isRunning).toBe(false);
     expect(status.nextSyncAt).toBeNull();
   });
 
-  it('is a no-op when not running', () => {
-    const status = stopScheduler();
+  it('is a no-op when not running', async () => {
+    const status = await stopScheduler();
     expect(status.isRunning).toBe(false);
   });
 
-  it('clears persisted scheduler config', () => {
-    startScheduler({ intervalMs: 5000 });
+  it('clears persisted scheduler config', async () => {
+    await startScheduler({ intervalMs: 5000 });
     expect(settingsStore.get(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED)).toBe('true');
 
-    stopScheduler();
+    await stopScheduler();
 
     expect(settingsStore.has(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED)).toBe(false);
     expect(settingsStore.has(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS)).toBe(false);
   });
 
   it('removes the BullMQ job scheduler', async () => {
-    startScheduler({ intervalMs: 5000 });
+    await startScheduler({ intervalMs: 5000 });
     await vi.waitFor(() => expect(mockUpsertJobScheduler).toHaveBeenCalled());
 
-    stopScheduler();
+    await stopScheduler();
 
     await vi.waitFor(() => expect(mockRemoveJobScheduler).toHaveBeenCalledOnce());
   });
@@ -245,8 +257,8 @@ describe('getSchedulerStatus', () => {
     expect(status.nextSyncAt).toBeNull();
   });
 
-  it('reflects running state after start', () => {
-    startScheduler({ intervalMs: 5000 });
+  it('reflects running state after start', async () => {
+    await startScheduler({ intervalMs: 5000 });
     const status = getSchedulerStatus();
 
     expect(status.isRunning).toBe(true);
@@ -259,31 +271,31 @@ describe('getSchedulerStatus', () => {
 // ---------------------------------------------------------------------------
 
 describe('persistence', () => {
-  it('getPersistedSchedulerState returns null when not enabled', () => {
-    const state = getPersistedSchedulerState();
+  it('getPersistedSchedulerState returns null when not enabled', async () => {
+    const state = await getPersistedSchedulerState();
     expect(state).toBeNull();
   });
 
-  it('getPersistedSchedulerState returns config when enabled', () => {
+  it('getPersistedSchedulerState returns config when enabled', async () => {
     settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED, 'true');
     settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS, '45000');
 
-    const state = getPersistedSchedulerState();
+    const state = await getPersistedSchedulerState();
     expect(state).toEqual({ enabled: true, intervalMs: 45000 });
   });
 
-  it('resumeSchedulerIfEnabled starts scheduler with persisted config', () => {
+  it('resumeSchedulerIfEnabled starts scheduler with persisted config', async () => {
     settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED, 'true');
     settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS, '60000');
 
-    const status = resumeSchedulerIfEnabled();
+    const status = await resumeSchedulerIfEnabled();
     expect(status).not.toBeNull();
     expect(status!.isRunning).toBe(true);
     expect(status!.intervalMs).toBe(60000);
   });
 
-  it('resumeSchedulerIfEnabled returns null when not enabled', () => {
-    const status = resumeSchedulerIfEnabled();
+  it('resumeSchedulerIfEnabled returns null when not enabled', async () => {
+    const status = await resumeSchedulerIfEnabled();
     expect(status).toBeNull();
   });
 });

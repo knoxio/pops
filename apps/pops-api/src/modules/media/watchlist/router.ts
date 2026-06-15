@@ -35,7 +35,7 @@ const DEFAULT_OFFSET = 0;
 
 async function tryPushPlexAdd(plexRatingKey: string): Promise<void> {
   try {
-    const client = getPlexClient();
+    const client = await getPlexClient();
     if (!client) return;
     await client.addToWatchlist(plexRatingKey);
     console.warn(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
@@ -208,7 +208,7 @@ export const watchlistRouter = router({
     // Best-effort push removal to Plex
     if (plexRatingKey) {
       try {
-        const client = getPlexClient();
+        const client = await getPlexClient();
         if (client) {
           await client.removeFromWatchlist(plexRatingKey);
           console.warn(`[Plex] Pushed watchlist removal for ratingKey=${plexRatingKey}`);

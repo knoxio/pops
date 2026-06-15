@@ -24,7 +24,7 @@ export async function lookupPlexRatingKey(
   mediaType: 'movie' | 'tv_show',
   mediaId: number
 ): Promise<string | null> {
-  const client = getPlexClient();
+  const client = await getPlexClient();
   if (!client) return null;
 
   if (mediaType === 'movie') {
@@ -76,7 +76,7 @@ export async function pushToPlexWatchlist(
       return;
     }
 
-    const client = getPlexClient();
+    const client = await getPlexClient();
     if (!client) return;
 
     await client.addToWatchlist(ratingKey);

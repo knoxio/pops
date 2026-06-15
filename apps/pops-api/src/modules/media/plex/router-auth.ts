@@ -1,12 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { SettingNotFoundError, settingsService } from '@pops/core-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure } from '../../../trpc.js';
-import { SETTINGS_KEYS } from '../../core/settings/keys.js';
+import { SETTINGS_KEYS, type SettingsKey } from '../../core/settings/keys.js';
 import * as plexService from './service.js';
 
 interface PlexPinResponse {
@@ -15,27 +14,46 @@ interface PlexPinResponse {
   username?: string | null;
 }
 
-function persistAuthSettings(authToken: string, username: string | null): void {
-  const coreDb = getCoreDrizzle();
+type CoreSettingsShape = {
+  settings: {
+    set: (input: { key: SettingsKey; value: string }) => {
+      data: { key: string; value: string };
+      message: string;
+    };
+    delete: (input: { key: SettingsKey }) => { message: string };
+  };
+};
+
+function core(): ReturnType<typeof pillar<CoreSettingsShape>> {
+  return pillar<CoreSettingsShape>('core');
+}
+
+function isNotFoundError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const data = (err as { data?: { code?: string } }).data;
+  return data?.code === 'NOT_FOUND';
+}
+
+async function persistAuthSettings(authToken: string, username: string | null): Promise<void> {
   console.warn(`[Plex] Encrypting and saving token to database...`);
-  const encryptedToken = plexService.encryptToken(authToken);
-  settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_TOKEN, encryptedToken);
+  const encryptedToken = await plexService.encryptToken(authToken);
+  await core().settings.set.orThrow({ key: SETTINGS_KEYS.PLEX_TOKEN, value: encryptedToken });
   if (username) {
-    settingsService.setRawSetting(coreDb, SETTINGS_KEYS.PLEX_USERNAME, username);
+    await core().settings.set.orThrow({ key: SETTINGS_KEYS.PLEX_USERNAME, value: username });
   }
 }
 
-function deleteSettingIfExists(key: string): void {
+async function deleteSettingIfExists(key: SettingsKey): Promise<void> {
   try {
-    settingsService.deleteSetting(getCoreDrizzle(), key);
+    await core().settings.delete.orThrow({ key });
   } catch (err) {
-    if (!(err instanceof SettingNotFoundError)) throw err;
+    if (!isNotFoundError(err)) throw err;
   }
 }
 
 export const authProcedures = {
   getAuthPin: protectedProcedure.mutation(async () => {
-    const clientId = plexService.getPlexClientId();
+    const clientId = await plexService.getPlexClientId();
     const res = await fetch('https://plex.tv/api/v2/pins?strong=false', {
       method: 'POST',
       headers: {
@@ -58,7 +76,7 @@ export const authProcedures = {
   checkAuthPin: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const clientId = plexService.getPlexClientId();
+      const clientId = await plexService.getPlexClientId();
       const res = await fetch(`https://plex.tv/api/v2/pins/${input.id}`, {
         headers: { Accept: 'application/json', 'X-Plex-Client-Identifier': clientId },
       });
@@ -82,15 +100,15 @@ export const authProcedures = {
       );
 
       if (data.authToken) {
-        persistAuthSettings(data.authToken, data.username ?? null);
+        await persistAuthSettings(data.authToken, data.username ?? null);
         return { data: { connected: true, username: data.username ?? null } };
       }
       return { data: { connected: false, expired: false } };
     }),
 
-  disconnect: protectedProcedure.mutation(() => {
-    deleteSettingIfExists(SETTINGS_KEYS.PLEX_TOKEN);
-    deleteSettingIfExists(SETTINGS_KEYS.PLEX_USERNAME);
+  disconnect: protectedProcedure.mutation(async () => {
+    await deleteSettingIfExists(SETTINGS_KEYS.PLEX_TOKEN);
+    await deleteSettingIfExists(SETTINGS_KEYS.PLEX_USERNAME);
     return { message: 'Disconnected from Plex' };
   }),
 };

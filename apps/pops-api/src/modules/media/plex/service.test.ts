@@ -12,15 +12,32 @@ vi.mock('../../../env.js', () => ({
   getEnv: vi.fn(),
 }));
 
-vi.mock('../../../db.js', () => ({
-  getCoreDrizzle: vi.fn(),
-}));
+const getStub =
+  vi.fn<(input: { key: string }) => Promise<{ data: { key: string; value: string } | null }>>();
+const getManyStub =
+  vi.fn<(input: { keys: string[] }) => Promise<{ settings: Record<string, string> }>>();
+const setStub = vi.fn<
+  (input: { key: string; value: string }) => Promise<{
+    data: { key: string; value: string };
+    message: string;
+  }>
+>();
+const ensureStub =
+  vi.fn<
+    (input: { key: string; value: string }) => Promise<{ data: { key: string; value: string } }>
+  >();
+const deleteStub = vi.fn<(input: { key: string }) => Promise<{ message: string }>>();
 
-vi.mock('@pops/core-db', () => ({
-  settingsService: {
-    getSettingOrNull: vi.fn(),
-    setRawSetting: vi.fn(),
-  },
+vi.mock('@pops/pillar-sdk/server', () => ({
+  pillar: () => ({
+    settings: {
+      get: { orThrow: getStub },
+      getMany: { orThrow: getManyStub },
+      set: { orThrow: setStub },
+      ensure: { orThrow: ensureStub },
+      delete: { orThrow: deleteStub },
+    },
+  }),
 }));
 
 vi.mock('../library/service.js', () => ({
@@ -57,21 +74,19 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
 }));
 
-import { settingsService, type CoreDb } from '@pops/core-db';
-
-import { getCoreDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
 import { PlexClient } from './client.js';
 import { getPlexClient, getSyncStatus, testConnection } from './service.js';
 
 const mockGetEnv = vi.mocked(getEnv);
-const mockGetCoreDrizzle = vi.mocked(getCoreDrizzle);
-const mockGetSettingOrNull = vi.mocked(settingsService.getSettingOrNull);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockGetCoreDrizzle.mockReturnValue({} as CoreDb);
-  mockGetSettingOrNull.mockReturnValue(null);
+  getStub.mockReset().mockResolvedValue({ data: null });
+  getManyStub.mockReset().mockResolvedValue({ settings: {} });
+  setStub.mockReset();
+  ensureStub.mockReset();
+  deleteStub.mockReset();
 });
 
 afterEach(() => {
@@ -79,27 +94,30 @@ afterEach(() => {
 });
 
 describe('getPlexClient', () => {
-  it('returns null when PLEX_URL is not set', () => {
+  it('returns null when PLEX_URL is not set', async () => {
     mockGetEnv.mockReturnValue(undefined);
-    expect(getPlexClient()).toBeNull();
+    expect(await getPlexClient()).toBeNull();
   });
 
-  it('returns null when PLEX_TOKEN is not in db', () => {
+  it('returns null when PLEX_TOKEN is not in db', async () => {
     mockGetEnv.mockImplementation((name) =>
       name === 'PLEX_URL' ? 'http://plex:32400' : undefined
     );
-    expect(getPlexClient()).toBeNull();
+    expect(await getPlexClient()).toBeNull();
   });
 
-  it('returns PlexClient when both url and token are set', () => {
+  it('returns PlexClient when both url and token are set', async () => {
     mockGetEnv.mockImplementation((name) => {
       if (name === 'PLEX_URL') return 'http://plex:32400';
+      if (name === 'ENCRYPTION_KEY') return 'test-key';
       return undefined;
     });
 
-    mockGetSettingOrNull.mockReturnValue({ key: 'plex_token', value: 'abc123' });
+    getManyStub.mockResolvedValue({
+      settings: { plex_url: 'http://plex:32400', plex_token: 'abc123' },
+    });
 
-    const client = getPlexClient();
+    const client = await getPlexClient();
     expect(client).toBeInstanceOf(PlexClient);
   });
 });
@@ -126,14 +144,14 @@ describe('testConnection', () => {
 });
 
 describe('getSyncStatus', () => {
-  it('reports not configured when client is null', () => {
-    const status = getSyncStatus(null);
+  it('reports not configured when client is null', async () => {
+    const status = await getSyncStatus(null);
     expect(status.configured).toBe(false);
   });
 
-  it('reports configured when client is provided', () => {
+  it('reports configured when client is provided', async () => {
     const mockClient = {} as PlexClient;
-    const status = getSyncStatus(mockClient);
+    const status = await getSyncStatus(mockClient);
     expect(status.configured).toBe(true);
   });
 });
