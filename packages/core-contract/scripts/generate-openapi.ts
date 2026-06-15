@@ -70,7 +70,10 @@ function buildDocument(): OpenApiDocument {
       version: CONTRACT_VERSION,
     },
     servers: [{ url: '/api/v1', description: 'Core pillar API' }],
-    tags: [{ name: 'registry', description: 'Core pillar registry' }],
+    tags: [
+      { name: 'registry', description: 'Core pillar registry' },
+      { name: 'settings', description: 'Core pillar settings (key/value)' },
+    ],
     paths: buildPaths(),
     components: { schemas: buildComponentSchemas() },
   };

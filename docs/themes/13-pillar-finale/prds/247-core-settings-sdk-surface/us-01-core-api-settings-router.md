@@ -9,12 +9,12 @@ As a cross-pillar caller, I want `pops-core-api` to expose `core.settings.{get, 
 ## Acceptance Criteria
 
 - [ ] `apps/pops-core-api/src/modules/settings/router.ts` exists and mounts the six procedures:
-  - [ ] `get({ key })` → `{ data: Setting | null }`
-  - [ ] `set({ key, value })` → `{ data: Setting, message: string }`
-  - [ ] `ensure({ key, value })` → `{ data: Setting }` (upsert-return)
-  - [ ] `delete({ key })` → `{ message: string }`
-  - [ ] `getMany({ keys: string[] })` → `{ settings: Record<string, string> }` (missing keys omitted)
-  - [ ] `setMany({ entries: { key, value }[] })` → `{ settings: Record<string, string> }` (transactional)
+  - [x] `get({ key })` → `{ data: Setting | null }` _(contract schema pinned in `@pops/core-contract`)_
+  - [x] `set({ key, value })` → `{ data: Setting, message: string }` _(contract schema pinned)_
+  - [x] `ensure({ key, value })` → `{ data: Setting }` (upsert-return) _(contract schema pinned)_
+  - [x] `delete({ key })` → `{ message: string }` _(contract schema pinned)_
+  - [x] `getMany({ keys: string[] })` → `{ settings: Record<string, string> }` (missing keys omitted) _(contract schema pinned)_
+  - [x] `setMany({ entries: { key, value }[] })` → `{ settings: Record<string, string> }` (transactional) _(contract schema pinned)_
 - [ ] `apps/pops-core-api/src/router.ts` mounts `settings: settingsRouter` under `coreRouter`. Procedure paths are `core.settings.*`.
 - [ ] The router reuses `@pops/core-db`'s `settingsService` against `getCoreDrizzle()` resolved from the app context. No table-shape duplication.
 - [ ] `apps/pops-api/src/modules/core/settings/router.ts` is updated in the same PR:
