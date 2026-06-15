@@ -8,16 +8,16 @@ As an engineer flipping a cross-pillar call site (PRD-247, PRD-248, PRD-249, and
 
 ## Acceptance Criteria
 
-- [ ] `docs/themes/13-pillar-finale/notes/server-pillar-sdk-consumer-pattern.md` exists and covers:
-  - [ ] **Async signature contract.** Every cross-pillar call is `await`-ed. Wrapping functions become `async`. Show a before/after diff for `settingsService.getSettingOrNull(...)` → `await pillar('core').settings.get(...)`.
-  - [ ] **`PillarCallError` handling.** When to `try/catch` vs let it bubble. Hot paths (Plex sync) bubble; user-facing handlers translate to `TRPCError`.
-  - [ ] **Service-account auth.** `POPS_INTERNAL_API_KEY` env var, where it loads, fail-closed behaviour. Local-dev `.env.local`, CI fixture, container deploy.
-  - [ ] **Discovery-cache.** Per-`pillarId` handle cache in-process, TTL inherits from registry config. Hot loops do not refetch discovery.
-  - [ ] **`getMany` / batch-read pattern.** When to use it. The Plex sync code path is the worked example.
-  - [ ] **Mixed-tx coordination.** Reference PRD-248's "Option D" — commit pillar-local first, then fire cross-pillar SDK; idempotent retries absorb partial failure.
-  - [ ] **When NOT to use the typed proxy.** External-pillar callers use `callDynamic` per [internal-vs-external-pillar-call-sites](internal-vs-external-pillar-call-sites.md). The doc cross-links.
-- [ ] The doc reads as a how-to for the burn-down PRs, not as a SDK architecture explainer. It is concrete: snippets, error-handling examples, anti-patterns.
-- [ ] PRD-247 README, PRD-248 README, PRD-249 README all link to the doc.
+- [x] `docs/themes/13-pillar-finale/notes/server-pillar-sdk-consumer-pattern.md` exists and covers:
+  - [x] **Async signature contract.** Every cross-pillar call is `await`-ed. Wrapping functions become `async`. Show a before/after diff for `settingsService.getSettingOrNull(...)` → `await pillar('core').settings.get(...)`.
+  - [x] **`PillarCallError` handling.** When to `try/catch` vs let it bubble. Hot paths (Plex sync) bubble; user-facing handlers translate to `TRPCError`.
+  - [x] **Service-account auth.** `POPS_INTERNAL_API_KEY` env var, where it loads, fail-closed behaviour. Local-dev `.env.local`, CI fixture, container deploy.
+  - [x] **Discovery-cache.** Per-`pillarId` handle cache in-process, TTL inherits from registry config. Hot loops do not refetch discovery.
+  - [x] **`getMany` / batch-read pattern.** When to use it. The Plex sync code path is the worked example.
+  - [x] **Mixed-tx coordination.** Reference PRD-248's "Option D" — commit pillar-local first, then fire cross-pillar SDK; idempotent retries absorb partial failure.
+  - [x] **When NOT to use the typed proxy.** External-pillar callers use `callDynamic` per [internal-vs-external-pillar-call-sites](internal-vs-external-pillar-call-sites.md). The doc cross-links.
+- [x] The doc reads as a how-to for the burn-down PRs, not as a SDK architecture explainer. It is concrete: snippets, error-handling examples, anti-patterns.
+- [x] PRD-247 README, PRD-248 README, PRD-249 README all link to the doc.
 
 ## Notes
 
