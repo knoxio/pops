@@ -28,13 +28,16 @@
  * US-02 is the write slice.
  */
 import { TRPCError } from '@trpc/server';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 
 import {
   CreateInputSchema,
   DebriefResultSchema,
   DebriefSessionSchema,
+  GetByMediaInputSchema,
+  GetInputSchema,
+  ListPendingInputSchema,
   LogWatchCompletionInputSchema,
   RecordInputSchema,
 } from '@pops/cerebrum-contract/schemas';
@@ -44,8 +47,22 @@ import { protectedProcedure, router } from '../../trpc.js';
 
 import type { CerebrumDb } from '@pops/cerebrum-db';
 
+const DEFAULT_LIST_PENDING_LIMIT = 50;
+
 const DebriefResultResponseSchema = z.object({ data: DebriefResultSchema });
 const DebriefSessionResponseSchema = z.object({ data: DebriefSessionSchema });
+const DebriefSessionNullableResponseSchema = z.object({
+  data: DebriefSessionSchema.nullable(),
+});
+const PaginationMetaSchema = z.object({
+  limit: z.number().int().positive(),
+  offset: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+});
+const ListPendingResponseSchema = z.object({
+  data: z.array(DebriefSessionSchema),
+  pagination: PaginationMetaSchema,
+});
 const LogWatchCompletionResponseSchema = z.object({
   sessionId: z.number().int().positive(),
   dimensionsQueued: z.number().int().nonnegative(),
@@ -189,5 +206,89 @@ export const debriefRouter = router({
     .mutation(({ input, ctx }) => {
       const session = createOrReplacePendingSession(ctx.cerebrumDb, input);
       return { sessionId: session.id, dimensionsQueued: 0 };
+    }),
+
+  /**
+   * Fetch a single debrief session by id. Returns `{ data: null }` when
+   * the session does not exist (PRD-248 US-03: clean null shape over
+   * the wire instead of NOT_FOUND for benign no-session reads).
+   */
+  get: protectedProcedure
+    .input(GetInputSchema)
+    .output(DebriefSessionNullableResponseSchema)
+    .query(({ input, ctx }) => {
+      const row = findSessionById(ctx.cerebrumDb, input.sessionId);
+      if (!row) return { data: null };
+      return { data: DebriefSessionSchema.parse(row) };
+    }),
+
+  /**
+   * Return the most recent pending/active session for a media tuple,
+   * read directly off the denormalised `(media_type, media_id)` columns
+   * on `debrief_sessions` (commit 9df171fe). No cross-pillar join.
+   * Ordered by `createdAt desc` then `id desc` to break ties on the
+   * second-resolution sqlite timestamp.
+   */
+  getByMedia: protectedProcedure
+    .input(GetByMediaInputSchema)
+    .output(DebriefSessionNullableResponseSchema)
+    .query(({ input, ctx }) => {
+      const row = ctx.cerebrumDb
+        .select()
+        .from(debriefSessions)
+        .where(
+          and(
+            eq(debriefSessions.mediaType, input.mediaType),
+            eq(debriefSessions.mediaId, input.mediaId),
+            inArray(debriefSessions.status, ['pending', 'active'])
+          )
+        )
+        .orderBy(desc(debriefSessions.createdAt), desc(debriefSessions.id))
+        .get();
+      if (!row) return { data: null };
+      return { data: DebriefSessionSchema.parse(row) };
+    }),
+
+  /**
+   * Paginated list of pending sessions, optionally narrowed by media
+   * tuple. Default limit matches the in-monolith `media/debrief`
+   * pagination shape. `total` reports the count across the full filter
+   * (not the page) so callers can build pagers without a second call.
+   */
+  listPending: protectedProcedure
+    .input(ListPendingInputSchema)
+    .output(ListPendingResponseSchema)
+    .query(({ input, ctx }) => {
+      const filters = [eq(debriefSessions.status, 'pending')];
+      if (input.mediaType !== undefined) {
+        filters.push(eq(debriefSessions.mediaType, input.mediaType));
+      }
+      if (input.mediaId !== undefined) {
+        filters.push(eq(debriefSessions.mediaId, input.mediaId));
+      }
+      const whereClause = and(...filters);
+
+      const limit = input.limit ?? DEFAULT_LIST_PENDING_LIMIT;
+      const offset = input.offset ?? 0;
+
+      const rows = ctx.cerebrumDb
+        .select()
+        .from(debriefSessions)
+        .where(whereClause)
+        .orderBy(desc(debriefSessions.createdAt), desc(debriefSessions.id))
+        .limit(limit)
+        .offset(offset)
+        .all();
+
+      const totalRow = ctx.cerebrumDb
+        .select({ id: debriefSessions.id })
+        .from(debriefSessions)
+        .where(whereClause)
+        .all();
+
+      return {
+        data: rows.map((row) => DebriefSessionSchema.parse(row)),
+        pagination: { limit, offset, total: totalRow.length },
+      };
     }),
 });

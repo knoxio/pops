@@ -8,20 +8,20 @@ As a media-pillar reader (the consumer of US-05), I want `pillar('cerebrum').deb
 
 ## Acceptance Criteria
 
-- [ ] `apps/pops-cerebrum-api/src/modules/debrief/router.ts` exposes the three read procedures:
-  - [ ] `get({ sessionId })` → `{ data: Session | null }`. Single-row read by primary key.
-  - [ ] `getByMedia({ mediaType, mediaId })` → `{ data: Session | null }`. Returns the latest pending/active session for the media. **Denormalised** — uses `debriefSessions.mediaType` + `debriefSessions.mediaId` directly, no SQL inner-join with `watch_history`.
-  - [ ] `listPending({ mediaType?, mediaId?, limit?, offset? })` → `{ data: Session[], pagination: PaginationMeta }`. Paginated list filtered by optional `(mediaType, mediaId)`.
-- [ ] `getByMedia` returns `null` for "no debrief found" (not a NotFoundError). The cleaner null shape is documented in PRD-248 README's edge-cases table.
-- [ ] Unit tests against the caller assert:
-  - [ ] `getByMedia({ mediaType: 'movie', mediaId: 999 })` returns `null` for a media with no debrief.
-  - [ ] `getByMedia` returns the most recent (by `createdAt desc`) pending/active session when multiple exist (should not happen in steady state, but the read does not assume singleton).
-  - [ ] `listPending` paginates correctly. Default limit matches the existing `media/debrief` pagination (verify at PR time).
-  - [ ] `get({ sessionId: <unknown> })` returns `{ data: null }`.
-- [ ] Contract package picks up the new procedures.
-- [ ] `pnpm --filter @pops/pops-cerebrum-api typecheck/test/build` passes clean.
-- [ ] Monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
-- [ ] Husky pre-commit + pre-push pass without `--no-verify`.
+- [x] `apps/pops-cerebrum-api/src/modules/debrief/router.ts` exposes the three read procedures:
+  - [x] `get({ sessionId })` → `{ data: Session | null }`. Single-row read by primary key.
+  - [x] `getByMedia({ mediaType, mediaId })` → `{ data: Session | null }`. Returns the latest pending/active session for the media. **Denormalised** — uses `debriefSessions.mediaType` + `debriefSessions.mediaId` directly, no SQL inner-join with `watch_history`.
+  - [x] `listPending({ mediaType?, mediaId?, limit?, offset? })` → `{ data: Session[], pagination: PaginationMeta }`. Paginated list filtered by optional `(mediaType, mediaId)`.
+- [x] `getByMedia` returns `null` for "no debrief found" (not a NotFoundError). The cleaner null shape is documented in PRD-248 README's edge-cases table.
+- [x] Unit tests against the caller assert:
+  - [x] `getByMedia({ mediaType: 'movie', mediaId: 999 })` returns `null` for a media with no debrief.
+  - [x] `getByMedia` returns the most recent (by `createdAt desc`) pending/active session when multiple exist (should not happen in steady state, but the read does not assume singleton).
+  - [x] `listPending` paginates correctly. Default limit matches the existing `media/debrief` pagination (50; verify at PR time).
+  - [x] `get({ sessionId: <unknown> })` returns `{ data: null }`.
+- [x] Contract package picks up the new procedures (zod schemas exported from US-01 are mounted directly; no contract regen needed).
+- [x] `pnpm --filter @pops/pops-cerebrum-api typecheck/test/build` passes clean.
+- [x] Monorepo `pnpm typecheck`, `pnpm lint`, `pnpm build` pass clean.
+- [x] Husky pre-commit + pre-push pass without `--no-verify`.
 
 ## Notes
 
