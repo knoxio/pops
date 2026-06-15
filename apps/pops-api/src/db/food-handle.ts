@@ -4,9 +4,10 @@
  * Phase 2 PR 2 opened the connection (and applied the in-package
  * migrations journal) at boot. PR 3 routed the prep_states slice
  * reads/writes through `getFoodDrizzle()` and ran a one-shot
- * ATTACH-based backfill from the legacy shared pops.db. PR 4 (Theme 13)
- * retired the backfill — every food-owned table now writes directly to
- * food.db, so the boot bridge has nothing left to carry forward.
+ * ATTACH-based backfill from the legacy shared pops.db. Theme-13 Wave-5
+ * reintroduces the backfill for the conversions slice landing in
+ * `0059_food_conversions.sql` — `unit_conversions` and
+ * `ingredient_weights` — ahead of the conversions writer cutover.
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
  * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts` /
@@ -17,6 +18,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { openFoodDb, type FoodDb, type OpenedFoodDb } from '@pops/food-db';
 
 import { getDb, isNamedEnvContext } from '../db.js';
+import { backfillFoodFromShared } from './backfill-food-from-shared.js';
 import { resolveFoodSqlitePath } from './food-sqlite-path.js';
 
 let foodDb: OpenedFoodDb | null = null;
@@ -82,4 +84,17 @@ export function setFoodDb(next: OpenedFoodDb | null): OpenedFoodDb | null {
   const prev = foodDb;
   foodDb = next;
   return prev;
+}
+
+/**
+ * Run the one-shot ATTACH backfill from the legacy shared pops.db into
+ * the food pillar's food.db for the Theme-13 Wave-5 conversions slice
+ * (`unit_conversions`, `ingredient_weights`). No-op if the food handle
+ * isn't open. Idempotent against repeated boots via per-table
+ * `WHERE NOT EXISTS (...)` filters. See `backfill-food-from-shared.ts`
+ * for the table-by-table behaviour.
+ */
+export function backfillFoodFromSharedDb(sharedPath: string): void {
+  if (!foodDb) return;
+  backfillFoodFromShared(foodDb, sharedPath);
 }

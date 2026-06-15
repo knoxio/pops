@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openFoodDb } from '../open-food-db.js';
-import { prepStates } from '../schema.js';
+import { ingredientWeights, prepStates, unitConversions } from '../schema.js';
 import { listPrepStates } from '../services/prep-states.js';
 
 let tmpDir: string;
@@ -86,5 +86,59 @@ describe('openFoodDb', () => {
 
   it('throws when the path points at a directory that cannot be opened as a DB file', () => {
     expect(() => openFoodDb(tmpDir)).toThrow();
+  });
+
+  it('applies the 0059 conversions migration — unit_conversions + ingredient_weights round-trip', () => {
+    const path = join(tmpDir, 'food.db');
+    const { db, raw } = openFoodDb(path);
+    try {
+      const conv = db
+        .insert(unitConversions)
+        .values({ fromUnit: 'cup', toUnit: 'ml', ratio: 240 })
+        .returning()
+        .get();
+      expect(conv?.fromUnit).toBe('cup');
+      expect(conv?.toUnit).toBe('ml');
+
+      // The cross-pillar FK to ingredients is intentionally omitted from
+      // the migration (the ingredients cluster still lives in pops.db),
+      // so this insert succeeds even though ingredient_id=999 has no
+      // matching row in food.db.
+      const weight = db
+        .insert(ingredientWeights)
+        .values({ ingredientId: 999, unit: 'medium', grams: 50 })
+        .returning()
+        .get();
+      expect(weight?.ingredientId).toBe(999);
+      expect(weight?.grams).toBe(50);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('enforces the ingredient_weights null-variant partial UNIQUE on re-insert', () => {
+    const path = join(tmpDir, 'food.db');
+    const { db, raw } = openFoodDb(path);
+    try {
+      db.insert(ingredientWeights).values({ ingredientId: 1, unit: 'medium', grams: 50 }).run();
+      expect(() =>
+        db.insert(ingredientWeights).values({ ingredientId: 1, unit: 'medium', grams: 60 }).run()
+      ).toThrow();
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('enforces the unit_conversions (from_unit, to_unit) UNIQUE', () => {
+    const path = join(tmpDir, 'food.db');
+    const { db, raw } = openFoodDb(path);
+    try {
+      db.insert(unitConversions).values({ fromUnit: 'cup', toUnit: 'ml', ratio: 240 }).run();
+      expect(() =>
+        db.insert(unitConversions).values({ fromUnit: 'cup', toUnit: 'ml', ratio: 250 }).run()
+      ).toThrow();
+    } finally {
+      raw.close();
+    }
   });
 });

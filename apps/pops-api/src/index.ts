@@ -9,7 +9,7 @@ import { createApp } from './app.js';
 import { backfillCoreFromSharedDb, closeDb, getCoreDrizzle } from './db.js';
 import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
 import { getFinanceDrizzle } from './db/finance-handle.js';
-import { getFoodDrizzle } from './db/food-handle.js';
+import { backfillFoodFromSharedDb, getFoodDrizzle } from './db/food-handle.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { getListsDrizzle } from './db/lists-handle.js';
 import { backfillMediaFromSharedDb, getMediaDrizzle } from './db/media-db-handle.js';
@@ -120,12 +120,16 @@ try {
 }
 
 // Eagerly open the food pillar's SQLite + apply its journal at boot.
-// Every food-owned table (prep_states + the kind='prep_state' slice of
-// slug_registry) now writes directly to food.db via getFoodDrizzle(),
-// so the boot-time ATTACH bridge from the shared pops.db has been
-// retired — there is nothing left to carry forward.
+// The earlier prep_states slice finished its PR4 writer cutover so the
+// original ATTACH bridge was retired. Theme-13 Wave-5 reintroduces the
+// bridge for the conversions slice landing in
+// `0059_food_conversions.sql` — `unit_conversions` + `ingredient_weights`.
+// The backfill is idempotent (per-table `WHERE NOT EXISTS (...)` filters
+// keyed on natural business keys) and non-fatal (partial failure logs +
+// continues).
 try {
   getFoodDrizzle();
+  backfillFoodFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the food pillar SQLite:', err);
   throw err;

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { conversionsQueries, conversionsService } from '@pops/app-food-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getFoodDrizzle } from '../../../db/food-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { runCreate, runDelete, runUpdate } from './error-mapping.js';
 import {
@@ -63,7 +63,7 @@ export const conversionsRouter = router({
     .output(z.object({ items: z.array(UnitConversionSchema) }))
     .query(({ input }) => ({
       items: conversionsQueries
-        .listUnitConversions(getDrizzle(), input ?? {})
+        .listUnitConversions(getFoodDrizzle(), input ?? {})
         .map(toUnitConversion),
     })),
 
@@ -73,7 +73,7 @@ export const conversionsRouter = router({
     .mutation(({ input }) => ({
       data: toUnitConversion(
         runCreate('unit_conversion', () =>
-          conversionsService.createUnitConversion(getDrizzle(), input)
+          conversionsService.createUnitConversion(getFoodDrizzle(), input)
         )
       ),
     })),
@@ -86,7 +86,7 @@ export const conversionsRouter = router({
       return {
         data: toUnitConversion(
           runUpdate('unit_conversion', id, () =>
-            conversionsService.updateUnitConversion(getDrizzle(), id, patch)
+            conversionsService.updateUnitConversion(getFoodDrizzle(), id, patch)
           )
         ),
       };
@@ -96,7 +96,7 @@ export const conversionsRouter = router({
     .input(z.object({ id: z.number().int().positive() }))
     .output(DeleteResultSchema)
     .mutation(({ input }) =>
-      runDelete(() => conversionsService.deleteUnitConversion(getDrizzle(), input.id))
+      runDelete(() => conversionsService.deleteUnitConversion(getFoodDrizzle(), input.id))
     ),
 
   /** ----- ingredient_weights ----- */
@@ -113,7 +113,7 @@ export const conversionsRouter = router({
     .output(z.object({ items: z.array(IngredientWeightSchema) }))
     .query(({ input }) => ({
       items: conversionsQueries
-        .listIngredientWeights(getDrizzle(), input ?? {})
+        .listIngredientWeights(getFoodDrizzle(), input ?? {})
         .map(toIngredientWeight),
     })),
 
@@ -123,7 +123,7 @@ export const conversionsRouter = router({
     .mutation(({ input }) => ({
       data: toIngredientWeight(
         runCreate('ingredient_weight', () =>
-          conversionsService.createIngredientWeight(getDrizzle(), input)
+          conversionsService.createIngredientWeight(getFoodDrizzle(), input)
         )
       ),
     })),
@@ -136,7 +136,7 @@ export const conversionsRouter = router({
       return {
         data: toIngredientWeight(
           runUpdate('ingredient_weight', id, () =>
-            conversionsService.updateIngredientWeight(getDrizzle(), id, patch)
+            conversionsService.updateIngredientWeight(getFoodDrizzle(), id, patch)
           )
         ),
       };
@@ -146,14 +146,14 @@ export const conversionsRouter = router({
     .input(z.object({ id: z.number().int().positive() }))
     .output(DeleteResultSchema)
     .mutation(({ input }) =>
-      runDelete(() => conversionsService.deleteIngredientWeight(getDrizzle(), input.id))
+      runDelete(() => conversionsService.deleteIngredientWeight(getFoodDrizzle(), input.id))
     ),
 
   resolve: protectedProcedure
     .input(ResolveInputSchema)
     .output(ResolveResultSchema)
     .query(({ input }) =>
-      conversionsService.resolveCanonicalQty(getDrizzle(), {
+      conversionsService.resolveCanonicalQty(getFoodDrizzle(), {
         ingredientId: input.ingredientId,
         variantId: input.variantId ?? null,
         unit: input.unit,
