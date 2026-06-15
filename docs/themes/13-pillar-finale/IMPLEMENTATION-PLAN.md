@@ -8,12 +8,12 @@
 
 ## Today's progress (2026-06-15)
 
-| Bucket    | Count | PRs / commits                                                                                                                          |
-| --------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Bucket    | Count | PRs / commits                                                                                                                                                                                                                |
+| --------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Merged    | 8     | #3279 plan-consolidation · #3281 cleanup · #3282 MCP tracking · #3285 CI build-order · #3286 PRD-251/252 stubs · #3287 PRD-250 close + final CI fixes · #3288 PRD-247 US-02 consumer doc · #3291 Wave 5 media tv-shows slice |
-| Infra     | 1     | homelab-infra#12 — MCP secret-mount perms + dispatcher `POPS_PILLARS`                                                                  |
-| In-flight | 7     | #3283 PRD-245 US-08 · #3289 PRD-247 US-03 · #3290 PRD-252 US-01 · #3292 PRD-249 close · #3293 PRD-248 US-02 · #3294 food-conv PR4 · #3295 PRD-251 US-01+02 |
-| Draft     | 1     | homelab-infra#13 — `POPS_REGISTRY_ENABLED` flip queued                                                                                 |
+| Infra     | 1     | homelab-infra#12 — MCP secret-mount perms + dispatcher `POPS_PILLARS`                                                                                                                                                        |
+| In-flight | 7     | #3283 PRD-245 US-08 · #3289 PRD-247 US-03 · #3290 PRD-252 US-01 · #3292 PRD-249 close · #3293 PRD-248 US-02 · #3294 food-conv PR4 · #3295 PRD-251 US-01+02                                                                   |
+| Draft     | 1     | homelab-infra#13 — `POPS_REGISTRY_ENABLED` flip queued                                                                                                                                                                       |
 
 ## Headline status
 
@@ -51,27 +51,27 @@
 
 ### Done pending merge
 
-| PRD | PR    | Notes                                                                          |
-| --- | ----- | ------------------------------------------------------------------------------ |
+| PRD | PR    | Notes                                                                         |
+| --- | ----- | ----------------------------------------------------------------------------- |
 | 249 | #3292 | `cerebrum.embeddings.*` SDK + flip + integ — closes US-02/03/04. Awaiting CI. |
 
 ### In progress
 
-| PRD   | US                                                            | PR    | Notes                                       |
-| ----- | ------------------------------------------------------------- | ----- | ------------------------------------------- |
-| 245   | US-08 — delete `db-types/schema/` dir                         | #3283 | Final cleanup; agent rebasing               |
-| 247   | US-03 — `core.settings.*` handlers                            | #3289 | Mount on pops-core-api                      |
-| 248   | US-02 — `cerebrum.debrief.*` write surface                    | #3293 | Mounted on cerebrum-api                     |
-| 251   | US-01/02 — inventory cross-pillar denorm (H7)                 | #3295 | First H7 pair                               |
-| 252   | US-01 — per-pillar Dockerfile generator + drift-check (H-D1)  | #3290 | Core pillar first                           |
-| Wave5 | Slice PR4 cascades                                            | #3294 | food-conversions: 10 sites + migration 0059 |
+| PRD   | US                                                           | PR    | Notes                                       |
+| ----- | ------------------------------------------------------------ | ----- | ------------------------------------------- |
+| 245   | US-08 — delete `db-types/schema/` dir                        | #3283 | Final cleanup; agent rebasing               |
+| 247   | US-03 — `core.settings.*` handlers                           | #3289 | Mount on pops-core-api                      |
+| 248   | US-02 — `cerebrum.debrief.*` write surface                   | #3293 | Mounted on cerebrum-api                     |
+| 251   | US-01/02 — inventory cross-pillar denorm (H7)                | #3295 | First H7 pair                               |
+| 252   | US-01 — per-pillar Dockerfile generator + drift-check (H-D1) | #3290 | Core pillar first                           |
+| Wave5 | Slice PR4 cascades                                           | #3294 | food-conversions: 10 sites + migration 0059 |
 
 ### Blocked
 
-| PRD | US                                                                     | Blocker                                                                                  |
-| --- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 246 | US-04 — burn down 8 H8 cross-pillar imports in pops-api                | Unblocks once #3289 / #3292 / #3293 (PRD-247/248/249) merge — SDK surfaces then exist.   |
-| 246 | US-05 — integration test (synthetic pillar contributes captureOverlay) | Cosmetic gate on US-04                                                                   |
+| PRD | US                                                                     | Blocker                                                                                |
+| --- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 246 | US-04 — burn down 8 H8 cross-pillar imports in pops-api                | Unblocks once #3289 / #3292 / #3293 (PRD-247/248/249) merge — SDK surfaces then exist. |
+| 246 | US-05 — integration test (synthetic pillar contributes captureOverlay) | Cosmetic gate on US-04                                                                 |
 
 ### Punted (deliberately out of Theme 13)
 
@@ -93,17 +93,17 @@ PRDs 213/214 (drop `pops.db` + retire legacy code) are conceptually done. The re
 
 **Per-pillar slice plan:**
 
-| Pillar   | Slice                       | Status       | Tracking                                                                                                                                                |
-| -------- | --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| food     | conversions                 | in PR #3294  | 10 sites, migration 0059                                                                                                                                |
-| food     | ingredients                 | not started  | next                                                                                                                                                    |
-| food     | recipes                     | not started  | next                                                                                                                                                    |
-| food     | substitutions               | not started  | next                                                                                                                                                    |
-| food     | batches                     | not started  | next                                                                                                                                                    |
-| food     | plan                        | not started  | next                                                                                                                                                    |
-| media    | tv-shows (seasons/episodes) | merged #3291 | flipped to `getMediaDrizzle`                                                                                                                            |
-| media    | discovery/shelf             | not started  | next                                                                                                                                                    |
-| media    | plex                        | not started  | next                                                                                                                                                    |
+| Pillar   | Slice                       | Status       | Tracking                                                                                                                                                 |
+| -------- | --------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| food     | conversions                 | in PR #3294  | 10 sites, migration 0059                                                                                                                                 |
+| food     | ingredients                 | not started  | next                                                                                                                                                     |
+| food     | recipes                     | not started  | next                                                                                                                                                     |
+| food     | substitutions               | not started  | next                                                                                                                                                     |
+| food     | batches                     | not started  | next                                                                                                                                                     |
+| food     | plan                        | not started  | next                                                                                                                                                     |
+| media    | tv-shows (seasons/episodes) | merged #3291 | flipped to `getMediaDrizzle`                                                                                                                             |
+| media    | discovery/shelf             | not started  | next                                                                                                                                                     |
+| media    | plex                        | not started  | next                                                                                                                                                     |
 | cerebrum | (16 sites)                  | pinned       | every site intentionally pinned pending PRD-179 PR 4 engram metadata split + `reflex_executions` relocation + `ai_usage` pillar decision. JSDoc on each. |
 
 **Wave 5 exit criteria (revised, replaces "<30 sites"):**
