@@ -19,7 +19,7 @@ export async function getMovieStatus(tmdbId: number): Promise<ArrStatusResult> {
     return cached.result;
   }
 
-  const client = getRadarrClient();
+  const client = await getRadarrClient();
   if (!client) {
     return { status: 'not_found', label: 'Radarr not configured' };
   }
@@ -45,7 +45,7 @@ export async function getShowStatus(tvdbId: number): Promise<ArrStatusResult> {
     return cached.result;
   }
 
-  const client = getSonarrClient();
+  const client = await getSonarrClient();
   if (!client) {
     return { status: 'not_found', label: 'Sonarr not configured' };
   }

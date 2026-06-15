@@ -1,16 +1,23 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 
-import { settingsService } from '@pops/core-db';
 import { movies } from '@pops/media-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
 import { getImageCache, getTmdbClient } from '../tmdb/index.js';
 import * as arrService from './service.js';
 
 import type { RadarrClient } from './radarr-client.js';
+
+type CoreSettingsShape = {
+  settings: {
+    getMany: (input: { keys: string[] }) => { settings: Record<string, string> };
+  };
+};
+
+const ROTATION_DEFAULT_KEYS = ['rotation_quality_profile_id', 'rotation_root_folder_path'] as const;
 
 export interface DownloadAndProtectInput {
   tmdbId: number;
@@ -27,16 +34,12 @@ interface RotationDefaults {
   rootFolderPath: string;
 }
 
-function loadRotationDefaults(): RotationDefaults {
-  const coreDb = getCoreDrizzle();
-  const qualityProfileId = settingsService.getSettingOrNull(
-    coreDb,
-    'rotation_quality_profile_id'
-  )?.value;
-  const rootFolderPath = settingsService.getSettingOrNull(
-    coreDb,
-    'rotation_root_folder_path'
-  )?.value;
+async function loadRotationDefaults(): Promise<RotationDefaults> {
+  const { settings } = await pillar<CoreSettingsShape>('core').settings.getMany.orThrow({
+    keys: [...ROTATION_DEFAULT_KEYS],
+  });
+  const qualityProfileId = settings['rotation_quality_profile_id'];
+  const rootFolderPath = settings['rotation_root_folder_path'];
 
   if (!qualityProfileId || !rootFolderPath) {
     throw new TRPCError({
@@ -101,11 +104,11 @@ function markMovieProtected(tmdbId: number): void {
 export async function downloadAndProtectMovie(
   input: DownloadAndProtectInput
 ): Promise<DownloadAndProtectResult> {
-  const client = arrService.getRadarrClient();
+  const client = await arrService.getRadarrClient();
   if (!client) {
     throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Radarr not configured' });
   }
-  const defaults = loadRotationDefaults();
+  const defaults = await loadRotationDefaults();
   const alreadyInRadarr = await ensureMovieInRadarr(client, input, defaults);
   await ensureLibraryEntry(input.tmdbId);
   markMovieProtected(input.tmdbId);

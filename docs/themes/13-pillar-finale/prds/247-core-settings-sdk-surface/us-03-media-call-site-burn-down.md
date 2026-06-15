@@ -12,9 +12,9 @@ Per-file (verify the exact list at PR time with `grep -rln "@pops/core-db" apps/
 
 ### `arr/`
 
-- [ ] `arr/service-settings.ts` — `getSettingOrNull` / `setRawSetting` / `deleteSetting` → SDK. Drop runtime `@pops/core-db` import.
-- [ ] `arr/download-and-protect.ts` — 2× `getSettingOrNull` → SDK (consider batching as `getMany([quality_profile_id_key, root_folder_path_key])` per Hot Sites note).
-- [ ] `arr/service.test.ts` — mocks updated to mock the SDK module, not `@pops/core-db`.
+- [x] `arr/service-settings.ts` — `getSettingOrNull` / `setRawSetting` / `deleteSetting` → SDK. Drop runtime `@pops/core-db` import.
+- [x] `arr/download-and-protect.ts` — 2× `getSettingOrNull` → SDK (consider batching as `getMany([quality_profile_id_key, root_folder_path_key])` per Hot Sites note).
+- [x] `arr/service.test.ts` — mocks updated to mock the SDK module, not `@pops/core-db`.
 
 ### `plex/`
 
@@ -27,10 +27,10 @@ Per-file (verify the exact list at PR time with `grep -rln "@pops/core-db" apps/
 ### `rotation/`
 
 - [ ] `rotation/scheduler.ts` — `getSettingOrNull` / `setRawSetting` / `deleteSetting` → SDK.
-- [ ] `rotation/addition-gating.ts` — `getSettingOrNull` → SDK.
-- [ ] `rotation/download-candidate.ts` — 2× `getSettingOrNull` → SDK (candidate for `getMany`).
+- [x] `rotation/addition-gating.ts` — `getSettingOrNull` → SDK.
+- [x] `rotation/download-candidate.ts` — 2× `getSettingOrNull` → SDK (candidate for `getMany`).
 - [ ] `rotation/rotation-config-router.ts` — `getSettingOrNull` per-def loop + `setBulkSettings` (transactional write) → `getMany` (one call replaces the loop) + `setMany`.
-- [ ] `rotation/candidate-queue.test.ts` — mocks updated.
+- [x] `rotation/candidate-queue.test.ts` — mocks updated.
 
 ### Cross-cutting
 
@@ -45,6 +45,7 @@ Per-file (verify the exact list at PR time with `grep -rln "@pops/core-db" apps/
 
 - US-03 is the consumer side; US-01 is the surface side. US-03 blocks on US-01 landing first.
 - Per-dir PRs are encouraged: one PR for `arr/`, one for `plex/`, one for `rotation/`. Each shrinks the allow-list by its slice; intermediate states are valid as long as CI stays green.
+- arr+rotation slice landed: `arr/` + the four rotation files (`addition-gating.ts`, `download-candidate.ts`, `removal-selection.ts`, `rotation-scheduler-router.ts`) plus `candidate-queue.test.ts`. The async flip cascaded through `arr/service-status.ts`, `arr/service-queue.ts`, `arr/service-sonarr-ops.ts`, `arr/router-helpers.ts`, the `arr/{radarr,sonarr}-procedures.ts` + `arr/*-settings-procedures.ts` + `arr/sonarr-test-procedures.ts` consumers, and `rotation/rotation-cycle.ts`. `plex/` is intentionally a separate PR (large encryption cascade). `rotation/scheduler.ts` and `rotation/rotation-config-router.ts` stay in the plex slice or a follow-up.
 - The `getMany` batching on Plex paths is the leverage point. Naive 1:1 ports cost 3–4× p99 on `loadSavedSelections`. Reviewer must reject PRs that port a 3-setting read as 3 sequential `await pillar('core').settings.get(...)` calls.
 - Test mocks flip from mocking `@pops/core-db` to mocking the SDK module per the [server-pillar-sdk-consumer-pattern](../../notes/server-pillar-sdk-consumer-pattern.md) doc (PRD-247 US-02).
 - After this US lands, [PRD-246](../246-shell-api-pillar-decoupling/README.md) US-04 Site 8 closes. Update PRD-246's tracking table in the same PR (or referenced commit).

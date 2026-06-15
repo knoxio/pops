@@ -881,28 +881,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/arr/download-and-protect.ts",
-    "to": "packages/core-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-core"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/arr/service-settings.ts",
-    "to": "packages/core-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-core"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/modules/media/plex/plex-auth.test.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
@@ -959,39 +937,6 @@
   {
     "type": "dependency",
     "from": "apps/pops-api/src/modules/media/plex/service.ts",
-    "to": "packages/core-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-core"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/rotation/addition-gating.ts",
-    "to": "packages/core-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-core"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/rotation/candidate-queue.test.ts",
-    "to": "packages/core-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-core"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/media/rotation/download-candidate.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
     "dependencyTypes": ["undetermined", "import"],

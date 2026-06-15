@@ -1,6 +1,5 @@
-import { SettingNotFoundError, settingsService } from '@pops/core-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
 import { SETTINGS_KEYS, type SettingsKey } from '../../core/settings/keys.js';
 import { RadarrClient } from './radarr-client.js';
@@ -22,70 +21,98 @@ export interface ArrSettingsUpdate {
   sonarrApiKey?: string;
 }
 
-function getSetting(key: SettingsKey): string | null {
-  const row = settingsService.getSettingOrNull(getCoreDrizzle(), key);
-  return row?.value ?? null;
+type CoreSettingsShape = {
+  settings: {
+    get: (input: { key: SettingsKey }) => { data: { key: string; value: string } | null };
+    set: (input: { key: SettingsKey; value: string }) => {
+      data: { key: string; value: string };
+      message: string;
+    };
+    delete: (input: { key: SettingsKey }) => { message: string };
+    getMany: (input: { keys: string[] }) => { settings: Record<string, string> };
+  };
+};
+
+function core(): ReturnType<typeof pillar<CoreSettingsShape>> {
+  return pillar<CoreSettingsShape>('core');
 }
 
-export function getArrSetting(key: SettingsKey, envName: string): string | null {
-  return getSetting(key) ?? getEnv(envName) ?? null;
+function isNotFoundError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const data = (err as { data?: { code?: string } }).data;
+  return data?.code === 'NOT_FOUND';
 }
 
-function saveSetting(key: SettingsKey, value: string): void {
-  settingsService.setRawSetting(getCoreDrizzle(), key, value);
+async function saveSetting(key: SettingsKey, value: string): Promise<void> {
+  await core().settings.set.orThrow({ key, value });
 }
 
-function deleteSetting(key: SettingsKey): void {
+async function deleteSetting(key: SettingsKey): Promise<void> {
   try {
-    settingsService.deleteSetting(getCoreDrizzle(), key);
+    await core().settings.delete.orThrow({ key });
   } catch (err) {
-    if (!(err instanceof SettingNotFoundError)) throw err;
+    if (!isNotFoundError(err)) throw err;
   }
 }
 
-function applySetting(key: SettingsKey, value: string | undefined): void {
+async function applySetting(key: SettingsKey, value: string | undefined): Promise<void> {
   if (value === undefined) return;
-  if (value) saveSetting(key, value);
-  else deleteSetting(key);
+  if (value) await saveSetting(key, value);
+  else await deleteSetting(key);
+}
+
+const ARR_KEYS = [
+  SETTINGS_KEYS.RADARR_URL,
+  SETTINGS_KEYS.RADARR_API_KEY,
+  SETTINGS_KEYS.SONARR_URL,
+  SETTINGS_KEYS.SONARR_API_KEY,
+] as const;
+
+function resolve(stored: Record<string, string>, key: SettingsKey, envName: string): string | null {
+  return stored[key] ?? getEnv(envName) ?? null;
+}
+
+export async function getArrSetting(key: SettingsKey, envName: string): Promise<string | null> {
+  const { data } = await core().settings.get.orThrow({ key });
+  return data?.value ?? getEnv(envName) ?? null;
 }
 
 /** Get current Arr settings (from settings table or env vars). */
-export function getArrSettings(): ArrSettings {
+export async function getArrSettings(): Promise<ArrSettings> {
+  const { settings } = await core().settings.getMany.orThrow({ keys: [...ARR_KEYS] });
   return {
-    radarrUrl: getArrSetting(SETTINGS_KEYS.RADARR_URL, 'RADARR_URL'),
-    radarrApiKey: getArrSetting(SETTINGS_KEYS.RADARR_API_KEY, 'RADARR_API_KEY'),
-    sonarrUrl: getArrSetting(SETTINGS_KEYS.SONARR_URL, 'SONARR_URL'),
-    sonarrApiKey: getArrSetting(SETTINGS_KEYS.SONARR_API_KEY, 'SONARR_API_KEY'),
+    radarrUrl: resolve(settings, SETTINGS_KEYS.RADARR_URL, 'RADARR_URL'),
+    radarrApiKey: resolve(settings, SETTINGS_KEYS.RADARR_API_KEY, 'RADARR_API_KEY'),
+    sonarrUrl: resolve(settings, SETTINGS_KEYS.SONARR_URL, 'SONARR_URL'),
+    sonarrApiKey: resolve(settings, SETTINGS_KEYS.SONARR_API_KEY, 'SONARR_API_KEY'),
   };
 }
 
 /** Save Arr settings to the settings table. */
-export function saveArrSettings(config: ArrSettingsUpdate): void {
-  applySetting(SETTINGS_KEYS.RADARR_URL, config.radarrUrl);
-  applySetting(SETTINGS_KEYS.RADARR_API_KEY, config.radarrApiKey);
-  applySetting(SETTINGS_KEYS.SONARR_URL, config.sonarrUrl);
-  applySetting(SETTINGS_KEYS.SONARR_API_KEY, config.sonarrApiKey);
+export async function saveArrSettings(config: ArrSettingsUpdate): Promise<void> {
+  await applySetting(SETTINGS_KEYS.RADARR_URL, config.radarrUrl);
+  await applySetting(SETTINGS_KEYS.RADARR_API_KEY, config.radarrApiKey);
+  await applySetting(SETTINGS_KEYS.SONARR_URL, config.sonarrUrl);
+  await applySetting(SETTINGS_KEYS.SONARR_API_KEY, config.sonarrApiKey);
 }
 
 /** Create a Radarr client if configured (settings table or env vars). */
-export function getRadarrClient(): RadarrClient | null {
-  const url = getArrSetting(SETTINGS_KEYS.RADARR_URL, 'RADARR_URL');
-  const key = getArrSetting(SETTINGS_KEYS.RADARR_API_KEY, 'RADARR_API_KEY');
-  if (!url || !key) return null;
-  return new RadarrClient(url, key);
+export async function getRadarrClient(): Promise<RadarrClient | null> {
+  const s = await getArrSettings();
+  if (!s.radarrUrl || !s.radarrApiKey) return null;
+  return new RadarrClient(s.radarrUrl, s.radarrApiKey);
 }
 
 /** Create a Sonarr client if configured (settings table or env vars). */
-export function getSonarrClient(): SonarrClient | null {
-  const url = getArrSetting(SETTINGS_KEYS.SONARR_URL, 'SONARR_URL');
-  const key = getArrSetting(SETTINGS_KEYS.SONARR_API_KEY, 'SONARR_API_KEY');
-  if (!url || !key) return null;
-  return new SonarrClient(url, key);
+export async function getSonarrClient(): Promise<SonarrClient | null> {
+  const s = await getArrSettings();
+  if (!s.sonarrUrl || !s.sonarrApiKey) return null;
+  return new SonarrClient(s.sonarrUrl, s.sonarrApiKey);
 }
 
 /** Get configuration state for both services. */
-export function getArrConfig(): ArrConfig {
-  const s = getArrSettings();
+export async function getArrConfig(): Promise<ArrConfig> {
+  const s = await getArrSettings();
   return {
     radarrConfigured: !!(s.radarrUrl && s.radarrApiKey),
     sonarrConfigured: !!(s.sonarrUrl && s.sonarrApiKey),

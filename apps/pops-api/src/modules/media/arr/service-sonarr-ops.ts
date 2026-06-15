@@ -1,6 +1,7 @@
 import { getSonarrClient } from './service-settings.js';
 import { clearAllStatusCaches } from './service-status.js';
 
+import type { SonarrClient } from './sonarr-client.js';
 import type {
   CalendarEpisode,
   SonarrAddSeriesInput,
@@ -38,8 +39,8 @@ function mapCalendarEpisode(ep: SonarrCalendarEpisode): CalendarEpisode {
   };
 }
 
-function requireSonarr(): ReturnType<typeof getSonarrClient> & object {
-  const client = getSonarrClient();
+async function requireSonarr(): Promise<SonarrClient> {
+  const client = await getSonarrClient();
   if (!client) throw new Error('Sonarr not configured');
   return client;
 }
@@ -52,7 +53,7 @@ export async function getSonarrCalendar(start: string, end: string): Promise<Cal
     return cached.episodes;
   }
 
-  const client = getSonarrClient();
+  const client = await getSonarrClient();
   if (!client) return [];
 
   try {
@@ -74,7 +75,7 @@ export async function checkSeries(tvdbId: number): Promise<{
   monitored?: boolean;
   seasons?: Array<{ seasonNumber: number; monitored: boolean }>;
 }> {
-  const client = getSonarrClient();
+  const client = await getSonarrClient();
   if (!client) return { exists: false };
   return client.checkSeries(tvdbId);
 }
@@ -85,7 +86,7 @@ export async function updateSeasonMonitoring(
   seasonNumber: number,
   monitored: boolean
 ): Promise<SonarrSeriesFull> {
-  const client = requireSonarr();
+  const client = await requireSonarr();
   const result = await client.updateSeasonMonitoring(sonarrId, seasonNumber, monitored);
   clearAllStatusCaches();
   client.clearCache();
@@ -97,7 +98,7 @@ export async function updateEpisodeMonitoring(
   episodeIds: number[],
   monitored: boolean
 ): Promise<void> {
-  const client = requireSonarr();
+  const client = await requireSonarr();
   await client.updateEpisodeMonitoring(episodeIds, monitored);
   clearAllStatusCaches();
   client.clearCache();
@@ -108,28 +109,28 @@ export async function getSeriesEpisodes(
   sonarrId: number,
   seasonNumber?: number
 ): Promise<SonarrEpisode[]> {
-  const client = requireSonarr();
+  const client = await requireSonarr();
   return client.getEpisodes(sonarrId, seasonNumber);
 }
 
 /** Get Sonarr quality profiles. */
 export async function getSonarrQualityProfiles(): Promise<SonarrQualityProfile[]> {
-  return requireSonarr().getQualityProfiles();
+  return (await requireSonarr()).getQualityProfiles();
 }
 
 /** Get Sonarr root folders. */
 export async function getSonarrRootFolders(): Promise<SonarrRootFolder[]> {
-  return requireSonarr().getRootFolders();
+  return (await requireSonarr()).getRootFolders();
 }
 
 /** Get Sonarr language profiles. */
 export async function getSonarrLanguageProfiles(): Promise<SonarrLanguageProfile[]> {
-  return requireSonarr().getLanguageProfiles();
+  return (await requireSonarr()).getLanguageProfiles();
 }
 
 /** Add a series to Sonarr. */
 export async function addSeries(input: SonarrAddSeriesInput): Promise<SonarrSeriesFull> {
-  const client = requireSonarr();
+  const client = await requireSonarr();
   const result = await client.addSeries(input);
   clearAllStatusCaches();
   client.clearCache();
@@ -141,7 +142,7 @@ export async function updateSeriesMonitoring(
   sonarrId: number,
   monitored: boolean
 ): Promise<SonarrSeriesFull> {
-  const client = requireSonarr();
+  const client = await requireSonarr();
   const result = await client.updateMonitoring(sonarrId, monitored);
   clearAllStatusCaches();
   client.clearCache();
@@ -153,7 +154,7 @@ export async function triggerSeriesSearch(
   sonarrId: number,
   seasonNumber?: number
 ): Promise<SonarrCommandResponse> {
-  return requireSonarr().triggerSearch(sonarrId, seasonNumber);
+  return (await requireSonarr()).triggerSearch(sonarrId, seasonNumber);
 }
 
 /** Reset the calendar cache. */

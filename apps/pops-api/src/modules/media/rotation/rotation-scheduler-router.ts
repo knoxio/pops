@@ -82,7 +82,7 @@ export const rotationSchedulerProcedures = {
   /** Get Radarr disk space for display. */
   getDiskSpace: protectedProcedure.query(async () => {
     try {
-      const client = getRadarrClient();
+      const client = await getRadarrClient();
       if (!client)
         return {
           available: false,

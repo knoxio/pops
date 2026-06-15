@@ -8,15 +8,23 @@ import { eq } from 'drizzle-orm';
  *
  * PRD-070 US-05
  */
-import { settingsService } from '@pops/core-db';
 import { rotationCandidates } from '@pops/media-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { getRadarrClient } from '../arr/service.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
 import { getImageCache, getTmdbClient } from '../tmdb/index.js';
 import { aggregateCandidates } from './selection-policy.js';
+
+import type { RadarrClient } from '../arr/radarr-client.js';
+
+type CoreSettingsShape = {
+  settings: {
+    get: (input: { key: string }) => { data: { key: string; value: string } | null };
+    getMany: (input: { keys: string[] }) => { settings: Record<string, string> };
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -32,18 +40,18 @@ const SETTINGS_KEYS = {
 const DEFAULT_DAILY_ADDITIONS = 2;
 const DEFAULT_AVG_MOVIE_GB = 15;
 
-function getSetting(key: string): string | null {
-  const record = settingsService.getSettingOrNull(getCoreDrizzle(), key);
-  return record?.value ?? null;
+async function getSetting(key: string): Promise<string | null> {
+  const { data } = await pillar<CoreSettingsShape>('core').settings.get.orThrow({ key });
+  return data?.value ?? null;
 }
 
-export function getDailyAdditions(): number {
-  const val = getSetting(SETTINGS_KEYS.dailyAdditions);
+export async function getDailyAdditions(): Promise<number> {
+  const val = await getSetting(SETTINGS_KEYS.dailyAdditions);
   return val ? Number(val) : DEFAULT_DAILY_ADDITIONS;
 }
 
-export function getAvgMovieGb(): number {
-  const val = getSetting(SETTINGS_KEYS.avgMovieGb);
+export async function getAvgMovieGb(): Promise<number> {
+  const val = await getSetting(SETTINGS_KEYS.avgMovieGb);
   return val ? Number(val) : DEFAULT_AVG_MOVIE_GB;
 }
 
@@ -91,9 +99,12 @@ interface RadarrConfig {
   rootFolderPath: string;
 }
 
-function loadRadarrConfig(): RadarrConfig | null {
-  const qualityProfileId = getSetting(SETTINGS_KEYS.qualityProfileId);
-  const rootFolderPath = getSetting(SETTINGS_KEYS.rootFolderPath);
+async function loadRadarrConfig(): Promise<RadarrConfig | null> {
+  const { settings } = await pillar<CoreSettingsShape>('core').settings.getMany.orThrow({
+    keys: [SETTINGS_KEYS.qualityProfileId, SETTINGS_KEYS.rootFolderPath],
+  });
+  const qualityProfileId = settings[SETTINGS_KEYS.qualityProfileId];
+  const rootFolderPath = settings[SETTINGS_KEYS.rootFolderPath];
   if (!qualityProfileId || !rootFolderPath) return null;
   return { qualityProfileId: Number(qualityProfileId), rootFolderPath };
 }
@@ -121,7 +132,7 @@ interface AddCandidateResult {
 
 async function addCandidate(
   candidate: ReturnType<typeof aggregateCandidates>[number],
-  client: NonNullable<ReturnType<typeof getRadarrClient>>,
+  client: RadarrClient,
   config: RadarrConfig
 ): Promise<AddCandidateResult> {
   try {
@@ -169,7 +180,7 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
     };
   }
 
-  const client = getRadarrClient();
+  const client = await getRadarrClient();
   if (!client) {
     return {
       added: 0,
@@ -178,7 +189,7 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
     };
   }
 
-  const config = loadRadarrConfig();
+  const config = await loadRadarrConfig();
   if (!config) {
     return {
       added: 0,

@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import { settingsService } from '@pops/core-db';
 import { movies, rotationCandidates } from '@pops/media-db';
+import { pillar } from '@pops/pillar-sdk/server';
 
-import { getCoreDrizzle } from '../../../db.js';
 import { getMediaDrizzle } from '../../../db/media-db-handle.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { getRadarrClient } from '../arr/service.js';
@@ -14,6 +13,14 @@ interface RadarrConfig {
   qualityProfileId: number;
   rootFolderPath: string;
 }
+
+type CoreSettingsShape = {
+  settings: {
+    getMany: (input: { keys: string[] }) => { settings: Record<string, string> };
+  };
+};
+
+const RADARR_CONFIG_KEYS = ['rotation_quality_profile_id', 'rotation_root_folder_path'] as const;
 
 function loadCandidate(candidateId: number): typeof rotationCandidates.$inferSelect {
   const db = getMediaDrizzle();
@@ -33,16 +40,12 @@ function loadCandidate(candidateId: number): typeof rotationCandidates.$inferSel
   return candidate;
 }
 
-function loadRadarrConfig(): RadarrConfig {
-  const coreDb = getCoreDrizzle();
-  const qualityProfileId = settingsService.getSettingOrNull(
-    coreDb,
-    'rotation_quality_profile_id'
-  )?.value;
-  const rootFolderPath = settingsService.getSettingOrNull(
-    coreDb,
-    'rotation_root_folder_path'
-  )?.value;
+async function loadRadarrConfig(): Promise<RadarrConfig> {
+  const { settings } = await pillar<CoreSettingsShape>('core').settings.getMany.orThrow({
+    keys: [...RADARR_CONFIG_KEYS],
+  });
+  const qualityProfileId = settings['rotation_quality_profile_id'];
+  const rootFolderPath = settings['rotation_root_folder_path'];
   if (!qualityProfileId || !rootFolderPath) {
     throw trpcError('PRECONDITION_FAILED', 'media.rotation.radarrConfigMissing');
   }
@@ -55,12 +58,12 @@ export async function downloadCandidateImpl(
   const db = getMediaDrizzle();
   const candidate = loadCandidate(candidateId);
 
-  const client = getRadarrClient();
+  const client = await getRadarrClient();
   if (!client) {
     throw trpcError('PRECONDITION_FAILED', 'media.rotation.radarrNotConfigured');
   }
 
-  const config = loadRadarrConfig();
+  const config = await loadRadarrConfig();
   const check = await client.checkMovie(candidate.tmdbId);
   if (check.exists) {
     db.update(rotationCandidates)

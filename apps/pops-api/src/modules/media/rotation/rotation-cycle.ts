@@ -95,7 +95,8 @@ async function performAdditions(
   freeSpaceGb: number,
   targetFreeGb: number
 ): Promise<{ moviesAdded: number; added: RotationMovieRef[] }> {
-  const budget = getAdditionBudget(freeSpaceGb, targetFreeGb, getAvgMovieGb(), getDailyAdditions());
+  const [avgMovieGb, dailyAdditions] = await Promise.all([getAvgMovieGb(), getDailyAdditions()]);
+  const budget = getAdditionBudget(freeSpaceGb, targetFreeGb, avgMovieGb, dailyAdditions);
   const additionResult = await addMoviesFromQueue(budget);
   if (budget === 0) {
     console.warn('[Rotation] Additions skipped — below target free space');

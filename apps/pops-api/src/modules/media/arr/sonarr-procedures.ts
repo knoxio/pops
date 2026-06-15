@@ -7,7 +7,7 @@ import * as arrService from './service.js';
 export const sonarrProceduresCore = {
   /** Get Sonarr quality profiles. */
   getSonarrQualityProfiles: protectedProcedure.query(async () => {
-    const client = requireSonarrClient();
+    const client = await requireSonarrClient();
     return withArrErrorHandling('Sonarr', async () => ({
       data: await client.getQualityProfiles(),
     }));
@@ -15,13 +15,13 @@ export const sonarrProceduresCore = {
 
   /** Get Sonarr root folders. */
   getSonarrRootFolders: protectedProcedure.query(async () => {
-    const client = requireSonarrClient();
+    const client = await requireSonarrClient();
     return withArrErrorHandling('Sonarr', async () => ({ data: await client.getRootFolders() }));
   }),
 
   /** Get Sonarr language profiles. */
   getSonarrLanguageProfiles: protectedProcedure.query(async () => {
-    const client = requireSonarrClient();
+    const client = await requireSonarrClient();
     return withArrErrorHandling('Sonarr', async () => ({
       data: await client.getLanguageProfiles(),
     }));
@@ -45,7 +45,7 @@ export const sonarrProceduresCore = {
       })
     )
     .mutation(async ({ input }) => {
-      const client = requireSonarrClient();
+      const client = await requireSonarrClient();
       return withArrErrorHandling('Sonarr', async () => ({
         data: await client.addSeries(input),
       }));
