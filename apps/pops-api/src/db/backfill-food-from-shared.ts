@@ -1,15 +1,31 @@
 /**
  * Boot-time backfill from the legacy shared `pops.db` into the food
- * pillar's `food.db` for the Theme-13 Wave-5 PR4 conversions slice:
- * `unit_conversions` and `ingredient_weights`.
+ * pillar's `food.db` for the Theme-13 Wave-5 PR4 slices:
  *
- * Phase context: the earlier food slice (prep_states + the
- * `kind='prep_state'` rows of slug_registry) finished its PR4 writer
- * cutover in earlier rounds, so the original food backfill bridge was
- * retired. This module brings the bridge back for the new tables landing
- * in `0059_food_conversions.sql`. Each TABLE_COPIES entry retires after
- * its writer cutover is verified in prod and the shared `pops.db` stops
- * receiving new rows.
+ *   - conversions slice: `unit_conversions`, `ingredient_weights`
+ *     (landed in `0059_food_conversions.sql`).
+ *   - ingredients slice: `ingredients`, `ingredient_variants`,
+ *     `ingredient_aliases`, `ingredient_tags`, and the food-owned
+ *     `kind IN ('ingredient','prep_state')` rows of `slug_registry`
+ *     (landed in `0060_food_ingredient_tags.sql`).
+ *
+ * Phase context: the earlier prep_states slice finished its PR4 writer
+ * cutover so the original food backfill bridge was retired. This module
+ * brings the bridge back for the conversions + ingredients clusters —
+ * the writer flips land in the same PRs, and the boot bridge carries
+ * any rows still on the shared pops.db across so reads through
+ * `getFoodDrizzle()` see the full vocabulary on first deploy. Each
+ * TABLE_COPIES entry retires after its writer cutover is verified in
+ * prod and the shared `pops.db` stops receiving new rows.
+ *
+ * The slug_registry copy is split-aware: only `kind='ingredient'` and
+ * `kind='prep_state'` rows land on food.db. `kind='recipe'` rows still
+ * belong on the legacy shared pops.db (recipes router has not cut over
+ * yet); `kind='prep_state'` rows are already on food.db from the earlier
+ * PR4 round, so a `WHERE kind = 'prep_state'` copy is a no-op in steady
+ * state but is included here for completeness and to keep the bridge
+ * idempotent even when a stale pops.db still holds prep_state rows from
+ * before its own retirement.
  *
  * Subsequent boots find the food copy already populated and become a
  * no-op via the `WHERE NOT EXISTS (...)` existence filter.
@@ -40,7 +56,16 @@ interface TableCopy {
    * entries express a composite business-key tuple.
    */
   readonly idColumns: readonly [string, ...string[]];
+  /**
+   * Optional WHERE filter applied to the source rows. Used by the
+   * `slug_registry` entry to scope the copy to the food-owned kinds
+   * (`ingredient`, `prep_state`) — `kind='recipe'` rows still belong on
+   * the legacy pops.db until the recipes writer cuts over.
+   */
+  readonly sourceFilter?: string;
 }
+
+const FOOD_OWNED_SLUG_KINDS = ['ingredient', 'prep_state'];
 
 const TABLE_COPIES: readonly TableCopy[] = [
   {
@@ -76,6 +101,83 @@ const TABLE_COPIES: readonly TableCopy[] = [
     idColumns: ['ingredient_id', 'variant_id', 'unit'],
     columns: ['ingredient_id', 'variant_id', 'unit', 'grams', 'notes', 'is_seeded', 'created_at'],
   },
+  {
+    /**
+     * `id` is preserved so the dependent `ingredient_variants`,
+     * `ingredient_aliases`, `ingredient_tags`, and slug_registry rows
+     * carry the same FK target across without remapping. The food.db is
+     * freshly empty at first backfill; the SQLite autoincrement sequence
+     * picks up from `MAX(id)+1` after the copy. Dedupe on `id` keeps
+     * subsequent boots idempotent.
+     */
+    table: 'ingredients',
+    idColumns: ['id'],
+    columns: [
+      'id',
+      'parent_id',
+      'name',
+      'slug',
+      'default_unit',
+      'density_g_per_ml',
+      'notes',
+      'created_at',
+    ],
+  },
+  {
+    table: 'ingredient_variants',
+    idColumns: ['id'],
+    columns: [
+      'id',
+      'ingredient_id',
+      'name',
+      'slug',
+      'default_unit',
+      'package_size_g',
+      'notes',
+      'default_shelf_life_days_fridge',
+      'default_shelf_life_days_freezer',
+      'created_at',
+    ],
+  },
+  {
+    /**
+     * `ingredient_aliases` rows reference either an ingredient or a
+     * variant (XOR enforced by `ck_aliases_xor_target`). Dedupe on `id`
+     * — the partial UNIQUEs on `(alias, ingredient_id)` /
+     * `(alias, variant_id)` keep business-key uniqueness intact across
+     * the join even though we don't match on it here.
+     */
+    table: 'ingredient_aliases',
+    idColumns: ['id'],
+    columns: ['id', 'ingredient_id', 'variant_id', 'alias', 'source', 'created_at'],
+  },
+  {
+    /**
+     * `ingredient_tags` is a composite-PK junction table — no surrogate
+     * `id`. Dedupe on the natural key `(ingredient_id, tag)`.
+     */
+    table: 'ingredient_tags',
+    idColumns: ['ingredient_id', 'tag'],
+    columns: ['ingredient_id', 'tag', 'created_at'],
+  },
+  {
+    /**
+     * `slug_registry` is partitioned across pillars by `kind`:
+     *   - `kind='ingredient'` rows now belong on food.db (this PR cutover)
+     *   - `kind='prep_state'` rows already belong on food.db (earlier PR4)
+     *   - `kind='recipe'` rows still belong on the legacy pops.db.
+     * Scope the copy to the food-owned kinds so the bridge never drags
+     * recipe rows over and creates a phantom duplicate when the recipes
+     * writer eventually cuts over.
+     *
+     * Dedupe on `slug` (the PK on both sides) — natural identity, no
+     * surrogate to collide on.
+     */
+    table: 'slug_registry',
+    idColumns: ['slug'],
+    columns: ['slug', 'kind', 'target_id', 'created_at'],
+    sourceFilter: `kind IN ('${FOOD_OWNED_SLUG_KINDS.join("','")}')`,
+  },
 ];
 
 function buildKeyMatch(table: string, idColumns: readonly string[]): string {
@@ -90,11 +192,13 @@ function tryCopyTable(raw: Database.Database, copy: TableCopy): void {
     if (!hasTable) return;
     const cols = copy.columns.join(', ');
     const keyMatch = buildKeyMatch(copy.table, copy.idColumns);
+    const sourceWhere = copy.sourceFilter !== undefined ? `WHERE ${copy.sourceFilter}` : '';
     raw.exec(`
       INSERT INTO ${copy.table} (${cols})
       SELECT ${cols}
       FROM pops.${copy.table}
-      WHERE NOT EXISTS (
+      ${sourceWhere}
+      ${copy.sourceFilter !== undefined ? 'AND' : 'WHERE'} NOT EXISTS (
         SELECT 1 FROM ${copy.table} AS target WHERE ${keyMatch}
       )
     `);

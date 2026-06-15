@@ -5,9 +5,12 @@
  * migrations journal) at boot. PR 3 routed the prep_states slice
  * reads/writes through `getFoodDrizzle()` and ran a one-shot
  * ATTACH-based backfill from the legacy shared pops.db. Theme-13 Wave-5
- * reintroduces the backfill for the conversions slice landing in
- * `0059_food_conversions.sql` — `unit_conversions` and
- * `ingredient_weights` — ahead of the conversions writer cutover.
+ * reintroduces the backfill for two PR4 slices: the conversions slice
+ * (`unit_conversions`, `ingredient_weights`, landed in
+ * `0059_food_conversions.sql`) and the ingredients slice landing in this
+ * PR (`ingredients`, `ingredient_variants`, `ingredient_aliases`,
+ * `ingredient_tags`, and the food-owned rows of `slug_registry`) — each
+ * ahead of (and atomic with) the matching writer cutover.
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
  * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts` /
@@ -88,11 +91,13 @@ export function setFoodDb(next: OpenedFoodDb | null): OpenedFoodDb | null {
 
 /**
  * Run the one-shot ATTACH backfill from the legacy shared pops.db into
- * the food pillar's food.db for the Theme-13 Wave-5 conversions slice
- * (`unit_conversions`, `ingredient_weights`). No-op if the food handle
- * isn't open. Idempotent against repeated boots via per-table
- * `WHERE NOT EXISTS (...)` filters. See `backfill-food-from-shared.ts`
- * for the table-by-table behaviour.
+ * the food pillar's food.db for the Theme-13 Wave-5 PR4 slices —
+ * the conversions slice (`unit_conversions`, `ingredient_weights`) and
+ * the ingredients slice (`ingredients`, `ingredient_variants`,
+ * `ingredient_aliases`, `ingredient_tags`, and the food-owned rows of
+ * `slug_registry`). No-op if the food handle isn't open. Idempotent
+ * against repeated boots via per-table `WHERE NOT EXISTS (...)` filters.
+ * See `backfill-food-from-shared.ts` for the table-by-table behaviour.
  */
 export function backfillFoodFromSharedDb(sharedPath: string): void {
   if (!foodDb) return;

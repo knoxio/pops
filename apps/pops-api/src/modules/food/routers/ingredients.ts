@@ -10,7 +10,7 @@ import {
   SlugAlreadyRegisteredError,
 } from '@pops/app-food-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getFoodDrizzle } from '../../../db/food-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { ingredientTagsRouter } from './ingredient-tags.js';
 
@@ -69,7 +69,7 @@ export const ingredientsRouter = router({
   list: protectedProcedure
     .input(z.object({ search: z.string().optional(), parentId: z.number().nullable().optional() }))
     .query(({ input }) => {
-      const items = ingredientsQueries.listIngredients(getDrizzle(), input);
+      const items = ingredientsQueries.listIngredients(getFoodDrizzle(), input);
       // Stable order so the UI doesn't re-paint on every refetch and tests
       // can assert against a deterministic sequence. Sorting in JS is fine
       // at this scale (the canonical ingredient set is hundreds, not
@@ -82,7 +82,7 @@ export const ingredientsRouter = router({
   get: protectedProcedure
     .input(z.object({ idOrSlug: z.union([z.number(), z.string()]) }))
     .query(({ input }) => {
-      const db = getDrizzle();
+      const db = getFoodDrizzle();
       const ing =
         typeof input.idOrSlug === 'number'
           ? ingredientsQueries.getIngredient(db, input.idOrSlug)
@@ -109,7 +109,7 @@ export const ingredientsRouter = router({
     )
     .mutation(({ input }) => {
       try {
-        return ingredientsService.createIngredient(getDrizzle(), input);
+        return ingredientsService.createIngredient(getFoodDrizzle(), input);
       } catch (err) {
         mapServiceError(err);
       }
@@ -117,14 +117,18 @@ export const ingredientsRouter = router({
 
   update: protectedProcedure.input(UPDATE_INPUT).mutation(({ input }) => {
     const { id, ...patch } = input;
-    return ingredientsService.updateIngredient(getDrizzle(), id, patch);
+    return ingredientsService.updateIngredient(getFoodDrizzle(), id, patch);
   }),
 
   rename: protectedProcedure
     .input(z.object({ oldSlug: z.string(), newSlug: z.string() }))
     .mutation(({ input }) => {
       try {
-        return ingredientsService.renameIngredientSlug(getDrizzle(), input.oldSlug, input.newSlug);
+        return ingredientsService.renameIngredientSlug(
+          getFoodDrizzle(),
+          input.oldSlug,
+          input.newSlug
+        );
       } catch (err) {
         mapServiceError(err);
       }
@@ -134,7 +138,11 @@ export const ingredientsRouter = router({
     .input(z.object({ id: z.number(), newParentId: z.number().nullable() }))
     .mutation(({ input }) => {
       try {
-        return ingredientsService.changeIngredientParent(getDrizzle(), input.id, input.newParentId);
+        return ingredientsService.changeIngredientParent(
+          getFoodDrizzle(),
+          input.id,
+          input.newParentId
+        );
       } catch (err) {
         mapServiceError(err);
       }
@@ -142,14 +150,18 @@ export const ingredientsRouter = router({
 
   blockers: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(({ input }) => ingredientsQueries.getIngredientDeleteBlockers(getDrizzle(), input.id)),
+    .query(({ input }) =>
+      ingredientsQueries.getIngredientDeleteBlockers(getFoodDrizzle(), input.id)
+    ),
 
   recipeRefs: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(({ input }) => ingredientsQueries.getRecipeRefsForIngredient(getDrizzle(), input.id)),
+    .query(({ input }) =>
+      ingredientsQueries.getRecipeRefsForIngredient(getFoodDrizzle(), input.id)
+    ),
 
   delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => {
-    const db = getDrizzle();
+    const db = getFoodDrizzle();
     const blockers = ingredientsQueries.getIngredientDeleteBlockers(db, input.id);
     if (blockers.variants > 0 || blockers.aliases > 0) {
       return { ok: false as const, blockers };

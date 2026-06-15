@@ -18,7 +18,13 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openFoodDb } from '../open-food-db.js';
-import { ingredientWeights, prepStates, unitConversions } from '../schema.js';
+import {
+  ingredients,
+  ingredientTags,
+  ingredientWeights,
+  prepStates,
+  unitConversions,
+} from '../schema.js';
 import { listPrepStates } from '../services/prep-states.js';
 
 let tmpDir: string;
@@ -136,6 +142,58 @@ describe('openFoodDb', () => {
       db.insert(unitConversions).values({ fromUnit: 'cup', toUnit: 'ml', ratio: 240 }).run();
       expect(() =>
         db.insert(unitConversions).values({ fromUnit: 'cup', toUnit: 'ml', ratio: 250 }).run()
+      ).toThrow();
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('applies the 0060 ingredient_tags migration — composite-PK round-trip + FK cascade', () => {
+    const path = join(tmpDir, 'food.db');
+    const { db, raw } = openFoodDb(path);
+    try {
+      const ing = db
+        .insert(ingredients)
+        .values({ name: 'Banana', slug: 'banana', defaultUnit: 'count' })
+        .returning()
+        .get();
+      expect(ing?.id).toBeGreaterThan(0);
+
+      db.insert(ingredientTags)
+        .values({ ingredientId: ing!.id, tag: 'store-section:produce' })
+        .run();
+      db.insert(ingredientTags).values({ ingredientId: ing!.id, tag: 'allergen:none' }).run();
+
+      const rows = raw
+        .prepare('SELECT ingredient_id, tag FROM ingredient_tags ORDER BY tag')
+        .all() as { ingredient_id: number; tag: string }[];
+      expect(rows).toEqual([
+        { ingredient_id: ing!.id, tag: 'allergen:none' },
+        { ingredient_id: ing!.id, tag: 'store-section:produce' },
+      ]);
+
+      raw.prepare('DELETE FROM ingredients WHERE id = ?').run(ing!.id);
+      const { n } = raw.prepare('SELECT count(*) AS n FROM ingredient_tags').get() as {
+        n: number;
+      };
+      expect(n).toBe(0);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('enforces the ingredient_tags composite primary key', () => {
+    const path = join(tmpDir, 'food.db');
+    const { db, raw } = openFoodDb(path);
+    try {
+      const ing = db
+        .insert(ingredients)
+        .values({ name: 'Apple', slug: 'apple', defaultUnit: 'count' })
+        .returning()
+        .get();
+      db.insert(ingredientTags).values({ ingredientId: ing!.id, tag: 'vegan' }).run();
+      expect(() =>
+        db.insert(ingredientTags).values({ ingredientId: ing!.id, tag: 'vegan' }).run()
       ).toThrow();
     } finally {
       raw.close();

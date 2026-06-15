@@ -17,7 +17,7 @@ import { z } from 'zod';
 
 import { ingredientTagsService } from '@pops/app-food-db';
 
-import { getDrizzle } from '../../../db.js';
+import { getFoodDrizzle } from '../../../db/food-handle.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 
 const TagOpOutput = z.union([
@@ -32,7 +32,7 @@ export const ingredientTagsRouter = router({
   list: protectedProcedure
     .input(z.object({ ingredientId: z.number().int().positive() }))
     .query(({ input }) =>
-      ingredientTagsService.listTagsForIngredient(getDrizzle(), input.ingredientId)
+      ingredientTagsService.listTagsForIngredient(getFoodDrizzle(), input.ingredientId)
     ),
 
   set: protectedProcedure
@@ -44,7 +44,7 @@ export const ingredientTagsRouter = router({
     )
     .output(TagOpOutput)
     .mutation(({ input }) =>
-      ingredientTagsService.setTagsForIngredient(getDrizzle(), input.ingredientId, input.tags)
+      ingredientTagsService.setTagsForIngredient(getFoodDrizzle(), input.ingredientId, input.tags)
     ),
 
   distinct: protectedProcedure
@@ -55,7 +55,7 @@ export const ingredientTagsRouter = router({
       })
     )
     .query(({ input }) =>
-      ingredientTagsService.listDistinctTags(getDrizzle(), {
+      ingredientTagsService.listDistinctTags(getFoodDrizzle(), {
         namespacePrefix: input.namespacePrefix ?? null,
         limit: input.limit,
       })
@@ -63,5 +63,5 @@ export const ingredientTagsRouter = router({
 
   findByTag: protectedProcedure
     .input(z.object({ tag: z.string().min(1) }))
-    .query(({ input }) => ingredientTagsService.listIngredientsByTag(getDrizzle(), input.tag)),
+    .query(({ input }) => ingredientTagsService.listIngredientsByTag(getFoodDrizzle(), input.tag)),
 });
