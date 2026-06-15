@@ -56,6 +56,8 @@ function fetchEntitiesPage(
       defaultTags: entities.defaultTags,
       notes: entities.notes,
       lastEditedTime: entities.lastEditedTime,
+      ownerUri: entities.ownerUri,
+      ownerUriStaleAt: entities.ownerUriStaleAt,
       transactionCount: sql<number>`CAST(COUNT(${transactions.id}) AS INTEGER)`,
     })
     .from(entities)

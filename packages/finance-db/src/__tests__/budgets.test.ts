@@ -46,10 +46,13 @@ CREATE TABLE budgets (
   amount real,
   active integer DEFAULT 0 NOT NULL,
   notes text,
-  last_edited_time text NOT NULL
+  last_edited_time text NOT NULL,
+  owner_uri text,
+  owner_uri_stale_at text
 );
 CREATE UNIQUE INDEX budgets_notion_id_unique ON budgets (notion_id);
 CREATE UNIQUE INDEX idx_budgets_category_period ON budgets (category, COALESCE(period, char(0)));
+CREATE INDEX idx_budgets_owner_uri ON budgets (owner_uri);
 
 CREATE TABLE transactions (
   id text PRIMARY KEY NOT NULL,

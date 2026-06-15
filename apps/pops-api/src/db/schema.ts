@@ -87,8 +87,11 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       default_transaction_type TEXT,
       default_tags TEXT,
       notes TEXT,
-      last_edited_time TEXT NOT NULL
+      last_edited_time TEXT NOT NULL,
+      owner_uri TEXT,
+      owner_uri_stale_at TEXT
     );
+    CREATE INDEX IF NOT EXISTS idx_entities_owner_uri ON entities(owner_uri);
 
     CREATE TABLE IF NOT EXISTS budgets (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -98,10 +101,13 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       amount REAL,
       active INTEGER NOT NULL DEFAULT 1,
       notes TEXT,
-      last_edited_time TEXT NOT NULL
+      last_edited_time TEXT NOT NULL,
+      owner_uri TEXT,
+      owner_uri_stale_at TEXT
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_category_period
       ON budgets(category, COALESCE(period, char(0)));
+    CREATE INDEX IF NOT EXISTS idx_budgets_owner_uri ON budgets(owner_uri);
 
     CREATE TABLE IF NOT EXISTS locations (
       id         TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

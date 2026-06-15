@@ -53,9 +53,12 @@ CREATE TABLE entities (
   default_transaction_type text,
   default_tags text,
   notes text,
-  last_edited_time text NOT NULL
+  last_edited_time text NOT NULL,
+  owner_uri text,
+  owner_uri_stale_at text
 );
 CREATE UNIQUE INDEX entities_notion_id_unique ON entities (notion_id);
+CREATE INDEX idx_entities_owner_uri ON entities (owner_uri);
 `;
 
 const TAG_VOCABULARY_DDL = `

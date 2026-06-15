@@ -270,11 +270,17 @@ describe('0054_finance_pillar_baseline_extension', () => {
     const beforeRows = (
       raw.prepare('SELECT COUNT(*) AS n FROM __drizzle_migrations').get() as { n: number }
     ).n;
+    // Wipe every drizzle migration row whose `created_at` is at or below
+    // 0054's `when` (1778500000001 — see `migrations/meta/_journal.json`).
+    // That makes drizzle re-replay 0054 (idempotent thanks to `IF NOT
+    // EXISTS`) on reopen, while leaving newer ALTER-TABLE migrations
+    // (0055+) recorded so they are NOT replayed against columns that
+    // already exist. Targeting "the latest row" would instead force a
+    // re-replay of whichever migration happens to sit at the head of the
+    // journal — not the production-upgrade scenario this suite covers.
     const deleteInfo = raw
-      .prepare(
-        'DELETE FROM __drizzle_migrations WHERE created_at = (SELECT MAX(created_at) FROM __drizzle_migrations)'
-      )
-      .run();
+      .prepare('DELETE FROM __drizzle_migrations WHERE created_at <= ?')
+      .run(1778500000001);
     expect(deleteInfo.changes).toBeGreaterThan(0);
     const afterRows = (
       raw.prepare('SELECT COUNT(*) AS n FROM __drizzle_migrations').get() as { n: number }

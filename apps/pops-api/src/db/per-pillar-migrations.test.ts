@@ -314,6 +314,7 @@ describe('runPerPillarMigrations', () => {
         '0063_ai_alerts',
         '0064_ai_providers',
         '0066_user_settings',
+        '0067_entities_owner_uri',
       ]);
       expect([...result.pillarsApplied].toSorted()).toEqual([
         'cerebrum',

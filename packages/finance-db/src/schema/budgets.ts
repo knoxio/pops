@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const budgets = sqliteTable(
   'budgets',
@@ -17,6 +17,8 @@ export const budgets = sqliteTable(
     active: integer('active').notNull().default(0),
     notes: text('notes'),
     lastEditedTime: text('last_edited_time').notNull(),
+    ownerUri: text('owner_uri'),
+    ownerUriStaleAt: text('owner_uri_stale_at'),
   },
   (table) => [
     // SQLite NULL != NULL in standard UNIQUE constraints, so two rows with the same
@@ -28,5 +30,6 @@ export const budgets = sqliteTable(
       table.category,
       sql`COALESCE(${table.period}, char(0))`
     ),
+    index('idx_budgets_owner_uri').on(table.ownerUri),
   ]
 );

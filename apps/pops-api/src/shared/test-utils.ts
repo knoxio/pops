@@ -73,9 +73,12 @@ export function createTestDb(): Database {
       default_transaction_type TEXT,
       default_tags             TEXT,
       notes                    TEXT,
-      last_edited_time         TEXT NOT NULL
+      last_edited_time         TEXT NOT NULL,
+      owner_uri                TEXT,
+      owner_uri_stale_at       TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name);
+    CREATE INDEX IF NOT EXISTS idx_entities_owner_uri ON entities(owner_uri);
 
     CREATE TABLE IF NOT EXISTS transactions (
       id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -156,18 +159,21 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_inventory_owner_uri ON home_inventory(owner_uri);
 
     CREATE TABLE IF NOT EXISTS budgets (
-      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      notion_id        TEXT UNIQUE,
-      category         TEXT NOT NULL,
-      period           TEXT,
-      amount           REAL,
-      active           INTEGER NOT NULL DEFAULT 0,
-      notes            TEXT,
-      last_edited_time TEXT NOT NULL
+      id                 TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id          TEXT UNIQUE,
+      category           TEXT NOT NULL,
+      period             TEXT,
+      amount             REAL,
+      active             INTEGER NOT NULL DEFAULT 0,
+      notes              TEXT,
+      last_edited_time   TEXT NOT NULL,
+      owner_uri          TEXT,
+      owner_uri_stale_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_category_period
       ON budgets(category, COALESCE(period, '__NULL__'));
+    CREATE INDEX IF NOT EXISTS idx_budgets_owner_uri ON budgets(owner_uri);
 
     CREATE TABLE IF NOT EXISTS wish_list (
       id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

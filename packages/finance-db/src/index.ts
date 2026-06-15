@@ -86,3 +86,5 @@ export {
   type TransactionCorrectionListResult,
   type TransactionCorrectionListQuery,
 } from './services/transaction-corrections.js';
+
+export * as crossPillarService from './services/cross-pillar.js';

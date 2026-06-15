@@ -45,7 +45,7 @@ Cerebrum → media debrief denorm already landed.
 | --- | -------------------------- | ----------- | -------------- |
 | 01  | inventory → finance denorm | In progress | Yes            |
 | 02  | inventory → core denorm    | In progress | Yes            |
-| 03  | finance → core denorm      | Not started | Yes            |
+| 03  | finance → core denorm      | Done        | Yes            |
 
 ## Acceptance Criteria
 
