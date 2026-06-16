@@ -1,45 +1,114 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock tRPC hooks
-const mockItemsListQuery = vi.fn();
-const mockConnectMutate = vi.fn();
-const mockConnectMutation = vi.fn();
+import type { ReactElement } from 'react';
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) =>
-    mockItemsListQuery({ pillarId, path: [...path], input }),
-  usePillarMutation: (
-    pillarId: string,
-    path: readonly string[],
-    opts?: { onSuccess?: () => void; onError?: (e: { message: string }) => void }
-  ) => mockConnectMutation({ pillarId, path: [...path], ...opts }),
+import type { ConnectionsConnectResponses, ItemsListResponses } from '../inventory-api/types.gen';
+
+const itemsListMock = vi.hoisted(() => vi.fn());
+const connectionsConnectMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../inventory-api/index.js', () => ({
+  itemsList: (...args: unknown[]) => itemsListMock(...args),
+  connectionsConnect: (...args: unknown[]) => connectionsConnectMock(...args),
+}));
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
 }));
 
 import { ConnectDialog } from './ConnectDialog';
+
+type ListPayload = NonNullable<ItemsListResponses[200]>;
+type ListItem = ListPayload['data'][number];
+type ConnectPayload = NonNullable<ConnectionsConnectResponses[201]>;
 
 const defaultProps = {
   currentItemId: 'item-1',
   onConnected: vi.fn(),
 };
 
+function renderWithProviders(ui: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 function renderDialog() {
-  return render(<ConnectDialog {...defaultProps} />);
+  return renderWithProviders(<ConnectDialog {...defaultProps} />);
 }
 
 function openDialog() {
   fireEvent.click(screen.getByRole('button', { name: /connect item/i }));
 }
 
+function buildItem(overrides: Partial<ListItem> = {}): ListItem {
+  return {
+    id: 'item-2',
+    itemName: 'USB-C Hub',
+    brand: 'CalDigit',
+    model: 'TS4',
+    assetId: 'HUB-022',
+    type: 'Electronics',
+    condition: null,
+    deductible: false,
+    inUse: false,
+    itemId: null,
+    lastEditedTime: '2026-06-09T00:00:00Z',
+    location: null,
+    locationId: null,
+    notes: null,
+    purchaseDate: null,
+    purchasePrice: null,
+    purchaseTransactionId: null,
+    purchasedFromId: null,
+    purchasedFromName: null,
+    replacementValue: null,
+    resaleValue: null,
+    room: null,
+    warrantyExpires: null,
+    ...overrides,
+  };
+}
+
+function mockListSuccess(items: ListItem[]): void {
+  itemsListMock.mockImplementation(async () => ({
+    data: {
+      data: items,
+      pagination: { hasMore: false, limit: 10, offset: 0, total: items.length },
+      totals: { totalReplacementValue: 0, totalResaleValue: 0 },
+    } satisfies ListPayload,
+    error: undefined,
+  }));
+}
+
+function mockListPending(): void {
+  itemsListMock.mockImplementation(
+    () => new Promise(() => undefined) as Promise<{ data: ListPayload; error: undefined }>
+  );
+}
+
+function mockConnectSuccess(): void {
+  connectionsConnectMock.mockImplementation(
+    async () =>
+      ({
+        data: {
+          createdAt: '2026-06-09T00:00:00Z',
+          id: 1,
+          itemAId: 'item-1',
+          itemBId: 'item-2',
+        },
+        message: 'connected',
+      }) satisfies { data: ConnectPayload['data']; message: string }
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-
-  mockItemsListQuery.mockReturnValue({ data: undefined, isLoading: false });
-
-  mockConnectMutation.mockReturnValue({
-    mutate: mockConnectMutate,
-    isPending: false,
-  });
+  mockListSuccess([]);
+  mockConnectSuccess();
 });
 
 describe('ConnectDialog', () => {
@@ -69,148 +138,141 @@ describe('ConnectDialog', () => {
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), { target: { value: 'a' } });
       expect(screen.getByText('Type at least 2 characters to search')).toBeInTheDocument();
+      expect(itemsListMock).not.toHaveBeenCalled();
     });
   });
 
   describe('loading state', () => {
-    it('shows skeleton rows while loading', () => {
-      mockItemsListQuery.mockReturnValue({ data: undefined, isLoading: true });
+    it('shows skeleton rows while loading', async () => {
+      mockListPending();
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'mac' },
       });
-      // Three skeleton divs should appear — detect via aria or count animated elements
-      // Skeletons don't have accessible roles, but the "No items found" and prompt should be absent
+      await waitFor(() => expect(itemsListMock).toHaveBeenCalled());
       expect(screen.queryByText('No items found')).not.toBeInTheDocument();
       expect(screen.queryByText('Type at least 2 characters to search')).not.toBeInTheDocument();
     });
   });
 
   describe('empty results', () => {
-    it('shows "No items found" when search returns empty list', () => {
-      mockItemsListQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
+    it('shows "No items found" when search returns empty list', async () => {
+      mockListSuccess([]);
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'xyz' },
       });
-      expect(screen.getByText('No items found')).toBeInTheDocument();
+      expect(await screen.findByText('No items found')).toBeInTheDocument();
     });
   });
 
   describe('search results', () => {
-    const searchResults = [
-      {
+    const searchResults: ListItem[] = [
+      buildItem({
         id: 'item-2',
         itemName: 'USB-C Hub',
         brand: 'CalDigit',
         model: 'TS4',
         assetId: 'HUB-022',
         type: 'Electronics',
-      },
-      {
+      }),
+      buildItem({
         id: 'item-3',
         itemName: 'Monitor',
         brand: 'Dell',
         model: null,
         assetId: null,
         type: null,
-      },
+      }),
     ];
 
     function setupResults() {
-      mockItemsListQuery.mockReturnValue({
-        data: { data: searchResults },
-        isLoading: false,
-      });
+      mockListSuccess(searchResults);
     }
 
-    it('renders item names', () => {
+    it('renders item names', async () => {
       setupResults();
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'us' },
       });
-      expect(screen.getByText('USB-C Hub')).toBeInTheDocument();
+      expect(await screen.findByText('USB-C Hub')).toBeInTheDocument();
       expect(screen.getByText('Monitor')).toBeInTheDocument();
     });
 
-    it('renders brand and model as plain text', () => {
+    it('renders brand and model as plain text', async () => {
       setupResults();
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'us' },
       });
-      expect(screen.getByText('CalDigit · TS4')).toBeInTheDocument();
+      expect(await screen.findByText('CalDigit · TS4')).toBeInTheDocument();
     });
 
-    it('renders AssetIdBadge when assetId is present', () => {
+    it('renders AssetIdBadge when assetId is present', async () => {
       setupResults();
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'us' },
       });
-      expect(screen.getByText('HUB-022')).toBeInTheDocument();
+      expect(await screen.findByText('HUB-022')).toBeInTheDocument();
     });
 
-    it('omits AssetIdBadge when assetId is null', () => {
+    it('omits AssetIdBadge when assetId is null', async () => {
       setupResults();
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'us' },
       });
-      // Only one assetId badge — the Monitor has no assetId
+      await screen.findByText('USB-C Hub');
       expect(screen.queryAllByText(/MON-/)).toHaveLength(0);
     });
 
-    it('renders TypeBadge when type is present', () => {
+    it('renders TypeBadge when type is present', async () => {
       setupResults();
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'us' },
       });
-      expect(screen.getByText('Electronics')).toBeInTheDocument();
+      expect(await screen.findByText('Electronics')).toBeInTheDocument();
     });
 
-    it('omits TypeBadge when type is null', () => {
+    it('omits TypeBadge when type is null', async () => {
       setupResults();
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'us' },
       });
-      // Monitor has null type — only 1 TypeBadge (Electronics for USB-C Hub)
+      await screen.findByText('USB-C Hub');
       expect(screen.getAllByText('Electronics')).toHaveLength(1);
     });
 
-    it('filters out the current item from results', () => {
-      mockItemsListQuery.mockReturnValue({
-        data: {
-          data: [
-            ...searchResults,
-            {
-              id: 'item-1',
-              itemName: 'Current Item',
-              brand: null,
-              model: null,
-              assetId: null,
-              type: null,
-            },
-          ],
-        },
-        isLoading: false,
-      });
+    it('filters out the current item from results', async () => {
+      mockListSuccess([
+        ...searchResults,
+        buildItem({
+          id: 'item-1',
+          itemName: 'Current Item',
+          brand: null,
+          model: null,
+          assetId: null,
+          type: null,
+        }),
+      ]);
       renderDialog();
       openDialog();
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'cu' },
       });
+      await screen.findByText('USB-C Hub');
       expect(screen.queryByText('Current Item')).not.toBeInTheDocument();
     });
 
@@ -221,37 +283,28 @@ describe('ConnectDialog', () => {
       fireEvent.change(screen.getByPlaceholderText('Search items...'), {
         target: { value: 'us' },
       });
-      fireEvent.click(screen.getByText('USB-C Hub'));
-      expect(mockConnectMutate).toHaveBeenCalledWith({
-        itemAId: 'item-1',
-        itemBId: 'item-2',
-      });
+      fireEvent.click(await screen.findByText('USB-C Hub'));
+      await waitFor(() =>
+        expect(connectionsConnectMock).toHaveBeenCalledWith({
+          body: { itemAId: 'item-1', itemBId: 'item-2' },
+        })
+      );
     });
   });
 
   describe('post-connect', () => {
     it('resets search and closes on success', async () => {
-      let onSuccessCallback: (() => void) | undefined;
-      mockConnectMutation.mockImplementation((opts: { onSuccess?: () => void }) => {
-        onSuccessCallback = opts?.onSuccess;
-        return { mutate: mockConnectMutate, isPending: false };
-      });
-
-      mockItemsListQuery.mockReturnValue({
-        data: {
-          data: [
-            {
-              id: 'item-2',
-              itemName: 'USB-C Hub',
-              brand: null,
-              model: null,
-              assetId: null,
-              type: null,
-            },
-          ],
-        },
-        isLoading: false,
-      });
+      mockListSuccess([
+        buildItem({
+          id: 'item-2',
+          itemName: 'USB-C Hub',
+          brand: null,
+          model: null,
+          assetId: null,
+          type: null,
+        }),
+      ]);
+      mockConnectSuccess();
 
       renderDialog();
       openDialog();
@@ -259,14 +312,12 @@ describe('ConnectDialog', () => {
         target: { value: 'us' },
       });
 
-      expect(screen.getByText('USB-C Hub')).toBeInTheDocument();
-
-      // Simulate success
-      onSuccessCallback?.();
+      fireEvent.click(await screen.findByText('USB-C Hub'));
 
       await waitFor(() => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       });
+      expect(defaultProps.onConnected).toHaveBeenCalled();
     });
   });
 });

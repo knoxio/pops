@@ -1,20 +1,12 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, Link2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, SearchPickerDialog, Select } from '@pops/ui';
 
-interface PaperlessSearchResult {
-  data: PaperlessDocResult[];
-}
-
-type LinkDocumentInput = {
-  itemId: string;
-  paperlessDocumentId: number;
-  documentType: string;
-  title: string;
-};
+import { unwrap } from '../inventory-api-helpers.js';
+import { documentsLink, paperlessSearch } from '../inventory-api/index.js';
 
 interface PaperlessDocResult {
   id: number;
@@ -97,13 +89,28 @@ function DocTypeSelect({
   );
 }
 
+type LinkDocumentInput = {
+  itemId: string;
+  paperlessDocumentId: number;
+  documentType: DocType;
+  title: string;
+};
+
 function useLinkDocumentMutation(
   onLinked: () => void,
   setOpen: (v: boolean) => void,
   setSearch: (v: string) => void,
   setLinkingId: (v: number | null) => void
 ) {
-  return usePillarMutation<LinkDocumentInput, unknown>('inventory', ['documents', 'link'], {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ itemId, paperlessDocumentId, documentType, title }: LinkDocumentInput) =>
+      unwrap(
+        await documentsLink({
+          path: { itemId },
+          body: { paperlessDocumentId, documentType, title },
+        })
+      ),
     onSuccess: () => {
       toast.success('Document linked');
       onLinked();
@@ -111,7 +118,7 @@ function useLinkDocumentMutation(
       setOpen(false);
       setSearch('');
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       setLinkingId(null);
       if (err.message.toLowerCase().includes('conflict')) {
         toast.error('This document is already linked to this item');
@@ -119,6 +126,7 @@ function useLinkDocumentMutation(
         toast.error(`Failed to link: ${err.message}`);
       }
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'documents'] }),
   });
 }
 
@@ -128,12 +136,12 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
   const [docType, setDocType] = useState<DocType>('receipt');
   const [linkingId, setLinkingId] = useState<number | null>(null);
 
-  const { data, isLoading } = usePillarQuery<PaperlessSearchResult>(
-    'inventory',
-    ['paperless', 'search'],
-    { query: search },
-    { enabled: open && search.length >= 2 }
-  );
+  const searchInput = { query: search };
+  const { data, isLoading } = useQuery({
+    queryKey: ['inventory', 'paperless', 'search', searchInput],
+    queryFn: async () => unwrap(await paperlessSearch({ query: searchInput })),
+    enabled: open && search.length >= 2,
+  });
   const linkMutation = useLinkDocumentMutation(onLinked, setOpen, setSearch, setLinkingId);
   const results: PaperlessDocResult[] = data?.data ?? [];
 

@@ -48,7 +48,6 @@ const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {
   core: '/trpc-core',
   finance: '/trpc-finance',
   media: '/trpc-media',
-  inventory: '/trpc-inventory',
   cerebrum: '/trpc-cerebrum',
   food: '/trpc-food',
 };

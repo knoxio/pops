@@ -1,15 +1,16 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../inventory-api-helpers.js';
+import {
+  documentFilesListForItem,
+  documentFilesRemoveUpload,
+  documentFilesUpload,
+} from '../../inventory-api/index.js';
 import { processAndUploadDocuments, type DocumentUploadMutation } from './document-upload-helpers';
 
 import type { DocumentItem } from '../../components/DocumentList';
 import type { PendingDocumentFile } from '../../components/DocumentUpload';
-
-interface DocumentsListResult {
-  data: DocumentItem[];
-}
 
 interface DocumentUploadInput {
   itemId: string;
@@ -27,26 +28,31 @@ function useDocumentMutations(
   isEditMode: boolean,
   setDeleteConfirmId: (v: number | null) => void
 ) {
-  const { data: documentsData } = usePillarQuery<DocumentsListResult>(
-    'inventory',
-    ['documentFiles', 'listForItem'],
-    { itemId: id ?? '' },
-    { enabled: isEditMode }
-  );
+  const queryClient = useQueryClient();
+  const invalidateDocumentFiles = () =>
+    queryClient.invalidateQueries({ queryKey: ['inventory', 'documentFiles'] });
+
+  const { data: documentsData } = useQuery({
+    queryKey: ['inventory', 'documentFiles', 'listForItem', { itemId: id ?? '' }],
+    queryFn: async () => unwrap(await documentFilesListForItem({ path: { itemId: id ?? '' } })),
+    enabled: isEditMode,
+  });
   const existingDocuments: DocumentItem[] = documentsData?.data ?? [];
-  const uploadMutation = usePillarMutation<DocumentUploadInput, unknown>('inventory', [
-    'documentFiles',
-    'upload',
-  ]);
-  const removeMutation = usePillarMutation<DocumentRemoveInput, unknown>(
-    'inventory',
-    ['documentFiles', 'removeUpload'],
-    {
-      onSuccess: () => {
-        setDeleteConfirmId(null);
-      },
-    }
-  );
+  const uploadMutation = useMutation({
+    mutationFn: async ({ itemId, fileName, mimeType, fileBase64 }: DocumentUploadInput) =>
+      unwrap(
+        await documentFilesUpload({ path: { itemId }, body: { fileName, mimeType, fileBase64 } })
+      ),
+    onSettled: invalidateDocumentFiles,
+  });
+  const removeMutation = useMutation({
+    mutationFn: async ({ id: uploadId }: DocumentRemoveInput) =>
+      unwrap(await documentFilesRemoveUpload({ path: { id: uploadId } })),
+    onSuccess: () => {
+      setDeleteConfirmId(null);
+    },
+    onSettled: invalidateDocumentFiles,
+  });
   return { existingDocuments, uploadMutation, removeMutation };
 }
 

@@ -1,15 +1,16 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { AssetIdBadge, Button, SearchPickerDialog, TypeBadge } from '@pops/ui';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+import { unwrap } from '../inventory-api-helpers.js';
+import { connectionsConnect, itemsList } from '../inventory-api/index.js';
 
-interface ItemsListResult {
-  data: InventoryItem[];
-}
+import type { ItemsListResponse } from '../inventory-api/index.js';
+
+type InventoryItem = ItemsListResponse['data'][number];
 
 type ConnectInput = { itemAId: string; itemBId: string };
 
@@ -55,15 +56,21 @@ function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) 
 }
 
 function useConnectMutation(onSuccess: () => void) {
-  return usePillarMutation<ConnectInput, unknown>('inventory', ['connections', 'connect'], {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ConnectInput) =>
+      unwrap(
+        await connectionsConnect({ body: { itemAId: input.itemAId, itemBId: input.itemBId } })
+      ),
     onSuccess,
-    onError: (err) => {
+    onError: (err: Error) => {
       if (err.message.toLowerCase().includes('conflict')) {
         toast.error('These items are already connected');
       } else {
         toast.error(`Failed to connect: ${err.message}`);
       }
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'connections'] }),
   });
 }
 
@@ -71,12 +78,12 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  const { data, isLoading } = usePillarQuery<ItemsListResult>(
-    'inventory',
-    ['items', 'list'],
-    { search, limit: 10 },
-    { enabled: open && search.length >= 2 }
-  );
+  const listInput = { search, limit: 10 };
+  const { data, isLoading } = useQuery({
+    queryKey: ['inventory', 'items', 'list', listInput],
+    queryFn: async () => unwrap(await itemsList({ query: listInput })),
+    enabled: open && search.length >= 2,
+  });
 
   const connectMutation = useConnectMutation(() => {
     toast.success('Items connected');

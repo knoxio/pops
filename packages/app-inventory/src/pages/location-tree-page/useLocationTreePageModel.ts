@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { isUnavailableError, unwrap } from '../../inventory-api-helpers.js';
+import { locationsTree } from '../../inventory-api/index.js';
 import { useDragHandlers } from './useDragHandlers';
 import { useLocationMutations, type DeleteConfirmState } from './useLocationMutations';
 import { buildNodeMap, type LocationTreeNode } from './utils';
@@ -13,18 +14,24 @@ interface LocationsTreeResult {
 }
 
 function useLocationTree() {
-  const { data, isLoading, error } = usePillarQuery<LocationsTreeResult>(
-    'inventory',
-    ['locations', 'tree'],
-    undefined
-  );
+  const query = useQuery<LocationsTreeResult>({
+    queryKey: ['inventory', 'locations', 'tree'],
+    queryFn: async () => unwrap(await locationsTree()),
+  });
+  const data = query.data;
   const treeNodes = useMemo(() => data?.data ?? [], [data]);
   const nodeMap = useMemo(() => {
     const map = new Map<string, LocationTreeNode>();
     if (data?.data) buildNodeMap(data.data, map);
     return map;
   }, [data?.data]);
-  return { treeNodes, nodeMap, isLoading, error };
+  return {
+    treeNodes,
+    nodeMap,
+    isLoading: query.isLoading,
+    error: query.error,
+    isUnavailable: isUnavailableError(query.error),
+  };
 }
 
 function useTreeUiState() {
@@ -90,7 +97,7 @@ function useCrudHandlers({ ui, mutations }: CrudHandlersArgs) {
 }
 
 export function useLocationTreePageModel() {
-  const { treeNodes, nodeMap, isLoading, error } = useLocationTree();
+  const { treeNodes, nodeMap, isLoading, error, isUnavailable } = useLocationTree();
   const ui = useTreeUiState();
   const mutations = useLocationMutations({
     selectedId: ui.selectedId,
@@ -108,6 +115,7 @@ export function useLocationTreePageModel() {
     nodeMap,
     isLoading,
     error,
+    isUnavailable,
     ...ui,
     deleteConfirm: mutations.deleteConfirm,
     setDeleteConfirm: mutations.setDeleteConfirm,

@@ -1,8 +1,8 @@
 import { Link } from 'react-router';
 
-import { isNotFound as isPillarNotFound } from '@pops/pillar-sdk/client';
 import { Alert, AlertDescription, AlertTitle, PageHeader, Skeleton } from '@pops/ui';
 
+import { isNotFoundError } from '../inventory-api-helpers.js';
 import { ConnectionsSection } from './item-detail-page/sections/ConnectionsSection';
 import { DetailHeaderSection } from './item-detail-page/sections/DetailHeaderSection';
 import { DocumentsSection } from './item-detail-page/sections/DocumentsSection';
@@ -24,21 +24,8 @@ function ItemDetailSkeleton() {
   );
 }
 
-function hasNotFoundCode(error: Error): boolean {
-  if (!('data' in error)) return false;
-  const data = error.data;
-  if (!data || typeof data !== 'object') return false;
-  if (!('code' in data)) return false;
-  return data.code === 'NOT_FOUND';
-}
-
-function errorIsNotFound(error: Error): boolean {
-  if (isPillarNotFound(error)) return true;
-  return hasNotFoundCode(error);
-}
-
 function ErrorState({ error }: { error: Error }) {
-  const is404 = errorIsNotFound(error);
+  const is404 = isNotFoundError(error);
   return (
     <div>
       <Alert variant="destructive">

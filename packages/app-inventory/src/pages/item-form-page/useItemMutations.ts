@@ -1,8 +1,10 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../inventory-api-helpers.js';
+import { connectionsConnect, itemsCreate, itemsUpdate } from '../../inventory-api/index.js';
 
 import type { ItemFormValues, PendingConnection } from './types';
 
@@ -96,10 +98,6 @@ interface UseItemMutationsArgs {
   pendingConnections: PendingConnection[];
 }
 
-interface CreateResult {
-  data: { id: string };
-}
-
 interface UpdateInput {
   id: string;
   data: ItemPayload;
@@ -107,40 +105,42 @@ interface UpdateInput {
 
 export function useItemMutations({ id, isEditMode, pendingConnections }: UseItemMutationsArgs) {
   const navigate = useNavigate();
-  const connectMutation = usePillarMutation<ConnectInput, unknown>('inventory', [
-    'connections',
-    'connect',
-  ]);
+  const queryClient = useQueryClient();
 
-  const createMutation = usePillarMutation<ItemPayload, CreateResult>(
-    'inventory',
-    ['items', 'create'],
-    {
-      onSuccess: async (result) => {
-        const newItemId = result.data.id;
-        const connected = await applyConnections(newItemId, pendingConnections, connectMutation);
-        reportCreateSuccess(connected, pendingConnections.length > 0);
-        // Navigate BEFORE invalidations to avoid a race where the cache invalidation
-        // triggers a refetch + re-render of the current page that drops the
-        // navigate call (observed in React 19; see issue #2157). The pillar SDK
-        // already invalidates the `inventory.items` router prefix on success.
-        void navigate(`/inventory/items/${newItemId}`);
-      },
-      onError: (err) => toast.error(`Failed to create: ${err.message}`),
-    }
-  );
+  const connectMutation = useMutation({
+    mutationFn: async (input: ConnectInput) => unwrap(await connectionsConnect({ body: input })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'connections'] }),
+  });
 
-  const updateMutation = usePillarMutation<UpdateInput, unknown>('inventory', ['items', 'update'], {
+  const createMutation = useMutation({
+    mutationFn: async (payload: ItemPayload) => unwrap(await itemsCreate({ body: payload })),
+    onSuccess: async (result) => {
+      const newItemId = result.data.id;
+      const connected = await applyConnections(newItemId, pendingConnections, connectMutation);
+      reportCreateSuccess(connected, pendingConnections.length > 0);
+      // Navigate BEFORE invalidations to avoid a race where the cache invalidation
+      // triggers a refetch + re-render of the current page that drops the
+      // navigate call (observed in React 19; see issue #2157). The detail page
+      // fetches fresh data on mount, and onSettled invalidates the items prefix.
+      void navigate(`/inventory/items/${newItemId}`);
+    },
+    onError: (err: Error) => toast.error(`Failed to create: ${err.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'items'] }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateInput) =>
+      unwrap(await itemsUpdate({ path: { id: input.id }, body: input.data })),
     onSuccess: () => {
       toast.success('Item updated');
       // Navigate BEFORE invalidations to avoid a race where the cache invalidation
       // triggers a refetch + re-render of the edit page that silently drops the
       // navigate call (observed in React 19; see issue #2157). The destination
-      // detail page fetches fresh data on mount via its own queries. The pillar
-      // SDK already invalidates the `inventory.items` router prefix on success.
+      // detail page fetches fresh data on mount via its own queries.
       void navigate(`/inventory/items/${id}`);
     },
-    onError: (err) => toast.error(`Failed to update: ${err.message}`),
+    onError: (err: Error) => toast.error(`Failed to update: ${err.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'items'] }),
   });
 
   const onSubmit = useCallback(

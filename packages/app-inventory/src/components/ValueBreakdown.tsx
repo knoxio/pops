@@ -1,18 +1,16 @@
+import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, MapPin, RefreshCw, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * Value breakdown cards — horizontal bar charts showing replacement value
  * grouped by item type or location.
  */
 import { Alert, AlertDescription, Button, Card, CardContent, Skeleton } from '@pops/ui';
 
-interface BreakdownResult {
-  data: BreakdownEntry[];
-}
-
+import { isUnavailableError, unwrap } from '../inventory-api-helpers.js';
+import { reportsValueByLocation, reportsValueByType } from '../inventory-api/index.js';
 import { formatCurrency } from '../lib/utils';
 
 const BAR_COLORS = [
@@ -118,12 +116,14 @@ export function ValueByTypeCard({ className }: { className?: string }) {
     data: typeData,
     isLoading: typeLoading,
     isError: typeError,
+    error: typeErr,
     refetch: refetchType,
-    isUnavailable: typeUnavailable,
-    isContractMismatch: typeContractMismatch,
-  } = usePillarQuery<BreakdownResult>('inventory', ['reports', 'valueByType'], undefined);
+  } = useQuery({
+    queryKey: ['inventory', 'reports', 'valueByType'],
+    queryFn: async () => unwrap(await reportsValueByType()),
+  });
 
-  if (typeUnavailable || typeContractMismatch) return null;
+  if (isUnavailableError(typeErr)) return null;
   if (typeLoading) {
     return (
       <Card className={className}>
@@ -173,12 +173,14 @@ export function ValueByLocationCard({ className }: { className?: string }) {
     data: locationData,
     isLoading: locationLoading,
     isError: locationError,
+    error: locationErr,
     refetch: refetchLocation,
-    isUnavailable: locationUnavailable,
-    isContractMismatch: locationContractMismatch,
-  } = usePillarQuery<BreakdownResult>('inventory', ['reports', 'valueByLocation'], undefined);
+  } = useQuery({
+    queryKey: ['inventory', 'reports', 'valueByLocation'],
+    queryFn: async () => unwrap(await reportsValueByLocation()),
+  });
 
-  if (locationUnavailable || locationContractMismatch) return null;
+  if (isUnavailableError(locationErr)) return null;
   if (locationLoading) {
     return (
       <Card className={className}>
