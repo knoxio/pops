@@ -39,19 +39,6 @@ const contractBoundaryRules = [
     },
   },
   {
-    name: 'no-cross-pillar-runtime-import-inventory',
-    severity: 'error',
-    comment:
-      'Non-owning code must not import @pops/inventory-db. Use @pops/inventory-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
-    from: {
-      pathNot:
-        '^(apps/pops-inventory-api|packages/inventory-db|packages/inventory-contract/scripts)/',
-    },
-    to: {
-      path: '^packages/inventory-db/',
-    },
-  },
-  {
     name: 'no-cross-pillar-runtime-import-media',
     severity: 'error',
     comment:
