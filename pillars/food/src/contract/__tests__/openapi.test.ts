@@ -8,27 +8,25 @@ interface OpenApiDocument {
   openapi: string;
   info: { title: string; version: string };
   paths: Record<string, Record<string, { summary?: string; operationId?: string }>>;
-  components: { schemas: Record<string, unknown> };
+  components?: { schemas?: Record<string, unknown> };
 }
 
 const here = dirname(fileURLToPath(import.meta.url));
 const openapiPath = resolve(here, '..', '..', '..', 'openapi', 'food.openapi.json');
 const openapi = JSON.parse(readFileSync(openapiPath, 'utf8')) as OpenApiDocument;
 
-describe('@pops/food-contract openapi snapshot', () => {
+describe('@pops/food openapi projection', () => {
   it('declares an OpenAPI 3.x version', () => {
     expect(openapi.openapi).toMatch(/^3\./);
   });
 
-  it('has an info block identifying the contract', () => {
+  it('has an info block identifying the food pillar', () => {
     expect(openapi.info.title).toContain('food');
     expect(openapi.info.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 
-  it('exposes at least one food procedure path', () => {
-    const paths = Object.keys(openapi.paths);
-    expect(paths.length).toBeGreaterThan(0);
-    expect(paths.some((p) => p.startsWith('/food/'))).toBe(true);
+  it('exposes at least one REST path', () => {
+    expect(Object.keys(openapi.paths).length).toBeGreaterThan(0);
   });
 
   it('every documented operation has a summary and operationId', () => {
@@ -40,13 +38,8 @@ describe('@pops/food-contract openapi snapshot', () => {
     }
   });
 
-  it('references the Recipe entity schema under components/schemas', () => {
-    expect(openapi.components.schemas).toHaveProperty('Recipe');
-  });
-
-  it('describes the recipes list endpoint', () => {
-    const op = openapi.paths['/food/recipes']?.['get'];
-    expect(op).toBeDefined();
-    expect(op?.operationId).toBe('food.recipes.list');
+  it('describes the conversions surface migrated off the pops-api router', () => {
+    expect(openapi.paths['/conversions/units']?.['get']).toBeDefined();
+    expect(openapi.paths['/conversions/resolve']?.['get']).toBeDefined();
   });
 });
