@@ -57,3 +57,13 @@ export const ERR_RESPONSES = {
   404: ErrorBodySchema,
   409: ErrorBodySchema,
 } as const;
+
+/**
+ * Error responses for routes that can additionally fail with 412 Precondition
+ * Failed (the import session-targeted endpoints). Spread alongside or instead
+ * of {@link ERR_RESPONSES} where a `PreconditionError` is reachable.
+ */
+export const ERR_RESPONSES_WITH_412 = {
+  ...ERR_RESPONSES,
+  412: ErrorBodySchema,
+} as const;

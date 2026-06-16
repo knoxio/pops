@@ -44,3 +44,16 @@ export class ConflictError extends HttpError {
     this.name = 'ConflictError';
   }
 }
+
+/**
+ * 412 Precondition Failed — the targeted import session exists but is not in a
+ * state the requested operation can act on (still processing, no result, or
+ * the wrong result type). Carries an optional `messageKey` so the FE keeps the
+ * i18n behaviour the tRPC layer had.
+ */
+export class PreconditionError extends HttpError {
+  constructor(message: string, messageKey?: string) {
+    super(412, message, undefined, messageKey);
+    this.name = 'PreconditionError';
+  }
+}

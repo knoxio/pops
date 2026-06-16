@@ -19,7 +19,7 @@ export interface ErrorBody {
   messageKey?: string;
 }
 
-export type ErrorStatus = 400 | 404 | 409;
+export type ErrorStatus = 400 | 404 | 409 | 412;
 
 export interface MappedHttpError {
   status: ErrorStatus;
@@ -27,7 +27,7 @@ export interface MappedHttpError {
 }
 
 function isMappedStatus(status: number): status is ErrorStatus {
-  return status === 400 || status === 404 || status === 409;
+  return status === 400 || status === 404 || status === 409 || status === 412;
 }
 
 export function mapHttpError(err: unknown): MappedHttpError | null {

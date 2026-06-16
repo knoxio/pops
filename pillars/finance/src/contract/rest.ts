@@ -13,6 +13,7 @@
 import { initContract } from '@ts-rest/core';
 
 import { financeBudgetsContract } from './rest-budgets.js';
+import { financeImportsContract } from './rest-imports.js';
 import { financeTagRulesContract } from './rest-tag-rules.js';
 import { financeTransactionsContract } from './rest-transactions.js';
 import { financeWishlistContract } from './rest-wishlist.js';
@@ -25,6 +26,7 @@ export const financeContract = c.router(
     budgets: financeBudgetsContract,
     transactions: financeTransactionsContract,
     tagRules: financeTagRulesContract,
+    imports: financeImportsContract,
   },
   {
     pathPrefix: '',

@@ -10,6 +10,7 @@ import { initServer } from '@ts-rest/express';
 import { financeContract } from '../../contract/rest.js';
 import { type OpenedFinanceDb } from '../../db/index.js';
 import { makeBudgetsHandlers } from './budgets-handlers.js';
+import { makeImportsHandlers } from './imports-handlers.js';
 import { makeTagRulesHandlers } from './tag-rules-handlers.js';
 import { makeTransactionsHandlers } from './transactions-handlers.js';
 import { makeWishlistHandlers } from './wishlist-handlers.js';
@@ -25,5 +26,6 @@ export function makeFinanceRestHandlers(deps: {
     budgets: makeBudgetsHandlers(db),
     transactions: makeTransactionsHandlers(db),
     tagRules: makeTagRulesHandlers(db),
+    imports: makeImportsHandlers(db),
   });
 }
