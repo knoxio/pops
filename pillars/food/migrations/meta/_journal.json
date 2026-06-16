@@ -29,6 +29,13 @@
       "when": 1781500777654,
       "tag": "0061_food_remainder",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781500777655,
+      "tag": "0062_food_ai_inference_log",
+      "breakpoints": true
     }
   ]
 }

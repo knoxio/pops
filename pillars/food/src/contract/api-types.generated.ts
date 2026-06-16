@@ -300,6 +300,159 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/inbox/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve (promote) an ingest draft version */
+    post: operations['inbox.approve'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/failed': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** List failed ingest sources */
+    post: operations['inbox.listFailed'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/failed/error-codes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Distinct error codes across failed ingests */
+    get: operations['inbox.failedErrorCodes'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** List ingest drafts (scored + paginated) */
+    post: operations['inbox.list'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/pending-count': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Unfiltered pending-draft queue depth */
+    get: operations['inbox.pendingCount'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject an ingest draft version */
+    post: operations['inbox.reject'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/rejected': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** List rejected draft versions */
+    post: operations['inbox.listRejected'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Per-draft inspector view (source + draft aggregate) */
+    get: operations['inbox.getForReview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/inbox/unreject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore a rejected draft back to draft */
+    post: operations['inbox.unreject'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/ingredient-tags': {
     parameters: {
       query?: never;
@@ -2168,6 +2321,462 @@ export interface operations {
               location: 'pantry' | 'fridge' | 'freezer' | 'other';
             }[];
           };
+        };
+      };
+    };
+  };
+  'inbox.approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          versionId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+                promotedVersionNo: number;
+                recipeSlug: string;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'NotIngestOriginated'
+                  | 'VersionNotFound'
+                  | 'NotADraft'
+                  | 'NotArchived'
+                  | 'NoRejectionRecord'
+                  | 'NotCompiled'
+                  | 'AlreadyReviewed'
+                  | 'RecipeArchived'
+                  | 'ConcurrentPromotion'
+                  | 'NoteRequired'
+                  | 'NoteTooLong';
+              };
+        };
+      };
+    };
+  };
+  'inbox.listFailed': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          cursor?: string;
+          errorCodes?: string[];
+          kinds?: ('url-web' | 'url-instagram' | 'text' | 'screenshot')[];
+          limit?: number;
+          sinceDays?: (7 | 30 | 90) | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              attempts: number;
+              errorCode: string;
+              errorMessage: string;
+              /** @enum {string} */
+              ingestKind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+              ingestedAt: string;
+              sourceId: number;
+              sourceUrl: string | null;
+            }[];
+            nextCursor: string | null;
+          };
+        };
+      };
+    };
+  };
+  'inbox.failedErrorCodes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: string[];
+          };
+        };
+      };
+    };
+  };
+  'inbox.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          bands?: ('clean' | 'minor' | 'attention' | 'blocked')[];
+          cursor?: string;
+          freshOnly?: boolean;
+          kinds?: ('url-web' | 'url-instagram' | 'text' | 'screenshot')[];
+          limit?: number;
+          partialReasons?: (
+            | 'auth-dead'
+            | 'rate-limited'
+            | 'stt-failed'
+            | 'vision-failed'
+            | 'caption-only-fallback'
+            | 'empty-extraction'
+          )[];
+          /** @enum {string} */
+          sort?: 'quality-asc' | 'quality-desc' | 'oldest' | 'newest';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              /** @enum {string} */
+              compileStatus: 'uncompiled' | 'compiled' | 'failed';
+              creationCount: number;
+              /** @enum {string} */
+              ingestKind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+              ingestedAt: string;
+              /** @enum {string} */
+              partialReason?:
+                | 'auth-dead'
+                | 'rate-limited'
+                | 'stt-failed'
+                | 'vision-failed'
+                | 'caption-only-fallback'
+                | 'empty-extraction';
+              proposedSlugCount: number;
+              /** @enum {string} */
+              qualityBand: 'clean' | 'minor' | 'attention' | 'blocked';
+              qualityScore: number;
+              recipeSlug: string;
+              /** @enum {string|null} */
+              recipeType:
+                | 'plate'
+                | 'component'
+                | 'technique'
+                | 'sauce'
+                | 'dressing'
+                | 'drink'
+                | 'condiment'
+                | null;
+              sourceId: number;
+              sourceUrl: string | null;
+              title: string | null;
+              topSignals: {
+                code: string;
+                detail?: string;
+                weight: number;
+              }[];
+              versionId: number;
+            }[];
+            nextCursor: string | null;
+          };
+        };
+      };
+    };
+  };
+  'inbox.pendingCount': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            count: number;
+          };
+        };
+      };
+    };
+  };
+  'inbox.reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          note?: string | null;
+          /** @enum {string} */
+          reason:
+            | 'wrong-recipe'
+            | 'low-quality-extraction'
+            | 'duplicate'
+            | 'not-a-recipe'
+            | 'other';
+          versionId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'NotIngestOriginated'
+                  | 'VersionNotFound'
+                  | 'NotADraft'
+                  | 'NotArchived'
+                  | 'NoRejectionRecord'
+                  | 'NotCompiled'
+                  | 'AlreadyReviewed'
+                  | 'RecipeArchived'
+                  | 'ConcurrentPromotion'
+                  | 'NoteRequired'
+                  | 'NoteTooLong';
+              };
+        };
+      };
+    };
+  };
+  'inbox.listRejected': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          cursor?: string;
+          kinds?: ('url-web' | 'url-instagram' | 'text' | 'screenshot')[];
+          limit?: number;
+          reasons?: (
+            | 'wrong-recipe'
+            | 'low-quality-extraction'
+            | 'duplicate'
+            | 'not-a-recipe'
+            | 'other'
+          )[];
+          sinceDays?: (7 | 30 | 90) | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              ingestCostUsd: number | null;
+              /** @enum {string} */
+              ingestKind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+              note: string | null;
+              /** @enum {string} */
+              reason:
+                | 'wrong-recipe'
+                | 'low-quality-extraction'
+                | 'duplicate'
+                | 'not-a-recipe'
+                | 'other';
+              recipeSlug: string;
+              rejectedAt: string;
+              sourceId: number;
+              sourceUrl: string | null;
+              title: string | null;
+              versionId: number;
+            }[];
+            nextCursor: string | null;
+          };
+        };
+      };
+    };
+  };
+  'inbox.getForReview': {
+    parameters: {
+      query: {
+        sourceId: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+                review: unknown;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'SourceNotFound';
+              };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'inbox.unreject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          versionId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+                /** @enum {string} */
+                restoredAs: 'draft';
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'NotIngestOriginated'
+                  | 'VersionNotFound'
+                  | 'NotADraft'
+                  | 'NotArchived'
+                  | 'NoRejectionRecord'
+                  | 'NotCompiled'
+                  | 'AlreadyReviewed'
+                  | 'RecipeArchived'
+                  | 'ConcurrentPromotion'
+                  | 'NoteRequired'
+                  | 'NoteTooLong';
+              };
         };
       };
     };
