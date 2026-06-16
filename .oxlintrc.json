@@ -366,6 +366,8 @@
         "no-underscore-dangle": "off",
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
+        "typescript/no-misused-spread": "off",
+        "typescript/no-floating-promises": "off",
         "typescript/explicit-module-boundary-types": "off",
         "typescript/explicit-function-return-type": "off"
       }
