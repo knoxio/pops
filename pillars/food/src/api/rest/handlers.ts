@@ -15,6 +15,8 @@ import { makeIngredientTagsHandlers } from './ingredient-tags-handlers.js';
 import { makeIngredientsHandlers } from './ingredients-handlers.js';
 import { makePrepStatesHandlers } from './prep-states-handlers.js';
 import { makeSlugsHandlers } from './slugs-handlers.js';
+import { makeSolverHandlers } from './solver-handlers.js';
+import { makeSubstitutionsHandlers } from './substitutions-handlers.js';
 import { makeVariantsHandlers } from './variants-handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
@@ -30,6 +32,8 @@ export function makeFoodRestHandlers(deps: {
     ingredientTags: makeIngredientTagsHandlers(db),
     prepStates: makePrepStatesHandlers(db),
     slugs: makeSlugsHandlers(db),
+    solver: makeSolverHandlers(db),
+    substitutions: makeSubstitutionsHandlers(db),
     variants: makeVariantsHandlers(db),
   });
 }

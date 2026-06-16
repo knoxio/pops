@@ -91,6 +91,31 @@ interface CreateIngredientBody {
   notes?: string | null;
 }
 
+type SubEndpoint = { ingredientId?: number; variantId?: number };
+
+interface SubstitutionView {
+  id: number;
+  fromIngredientId: number | null;
+  toIngredientId: number | null;
+  ratio: number;
+  contextTags: readonly string[];
+  scope: 'global' | 'recipe';
+  recipeId: number | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+interface GraphView {
+  nodes: { id: string; kind: 'ingredient' | 'variant' }[];
+  edges: { id: number; fromNodeId: string; toNodeId: string }[];
+}
+
+interface SolveResult {
+  totalCandidates: number;
+  cookableCount: number;
+  recipes: unknown[];
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -224,6 +249,36 @@ export function makeClient(app: Express) {
       recipeRefs: (id: number) =>
         send<{ count: number; recipes: unknown[] }>(r.get(`/ingredients/${id}/recipe-refs`)),
       delete: (id: number) => send<IngredientDeleteResult>(r.delete(`/ingredients/${id}`)),
+    },
+    substitutions: {
+      list: (query: { scope?: 'global' | 'recipe'; recipeId?: number } = {}) =>
+        send<{ items: SubstitutionView[] }>(r.get('/substitutions').query(query)),
+      graphView: (query: { scope?: 'global' | 'recipe'; recipeId?: number } = {}) =>
+        send<GraphView>(r.get('/substitutions/graph-view').query(query)),
+      resolveForLine: (recipeVersionId: number, lineIndex: number) =>
+        send<unknown>(r.get('/substitutions/resolve-line').query({ recipeVersionId, lineIndex })),
+      create: (body: {
+        from: SubEndpoint;
+        to: SubEndpoint;
+        ratio?: number;
+        contextTags?: string[];
+        scope?: 'global' | 'recipe';
+        recipeId?: number | null;
+        notes?: string | null;
+      }) => send<{ data: SubstitutionView }>(r.post('/substitutions').send(body)),
+      update: (id: number, body: { ratio?: number; notes?: string | null }) =>
+        send<{ data: SubstitutionView }>(r.patch(`/substitutions/${id}`).send(body)),
+      delete: (id: number) => send<{ ok: true }>(r.delete(`/substitutions/${id}`)),
+    },
+    solver: {
+      canICook: (
+        body: {
+          excludeSubs?: boolean;
+          recipeTypes?: string[];
+          tags?: string[];
+          maxMinutes?: number;
+        } = {}
+      ) => send<SolveResult>(r.post('/solver/can-i-cook').send(body)),
     },
   };
 }

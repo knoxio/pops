@@ -3949,6 +3949,1698 @@
         "tags": ["slugs"]
       }
     },
+    "/solver/can-i-cook": {
+      "post": {
+        "operationId": "solver.canICook",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "excludeSubs": {
+                    "type": "boolean"
+                  },
+                  "maxMinutes": {
+                    "exclusiveMinimum": true,
+                    "maximum": 1440,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "recipeTypes": {
+                    "items": {
+                      "enum": [
+                        "plate",
+                        "component",
+                        "technique",
+                        "sauce",
+                        "dressing",
+                        "drink",
+                        "condiment"
+                      ],
+                      "type": "string"
+                    },
+                    "maxItems": 7,
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 32,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cookableCount": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "recipes": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "cookMinutes": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "heroImagePath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastCookedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "prepMinutes": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "recipeId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "recipeSlug": {
+                            "type": "string"
+                          },
+                          "recipeType": {
+                            "enum": [
+                              "plate",
+                              "component",
+                              "technique",
+                              "sauce",
+                              "dressing",
+                              "drink",
+                              "condiment"
+                            ],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "subs": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "candidateSubName": {
+                                  "type": "string"
+                                },
+                                "fromIngredientName": {
+                                  "type": "string"
+                                },
+                                "fromVariantName": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "lineIndex": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                },
+                                "substitutionId": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "lineIndex",
+                                "fromIngredientName",
+                                "fromVariantName",
+                                "candidateSubName",
+                                "substitutionId"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "subsNeeded": {
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "recipeId",
+                          "recipeSlug",
+                          "title",
+                          "recipeType",
+                          "heroImagePath",
+                          "prepMinutes",
+                          "cookMinutes",
+                          "lastCookedAt",
+                          "subsNeeded",
+                          "subs"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "totalCandidates": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["totalCandidates", "cookableCount", "recipes"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Rank cookable recipes by substitution count given current inventory",
+        "tags": ["solver"]
+      }
+    },
+    "/substitutions": {
+      "get": {
+        "operationId": "substitutions.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fromIngredientId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fromVariantId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "toIngredientId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "toVariantId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "enum": ["global", "recipe"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recipeId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "contextTag",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contextTags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "readOnly": true,
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "fromIngredientId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "fromVariantId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "id": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "ratio": {
+                            "type": "number"
+                          },
+                          "recipeId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "scope": {
+                            "enum": ["global", "recipe"],
+                            "type": "string"
+                          },
+                          "toIngredientId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "toVariantId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "fromIngredientId",
+                          "fromVariantId",
+                          "toIngredientId",
+                          "toVariantId",
+                          "ratio",
+                          "contextTags",
+                          "scope",
+                          "recipeId",
+                          "notes",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List substitutions (raw FK ids)",
+        "tags": ["substitutions"]
+      },
+      "post": {
+        "operationId": "substitutions.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "contextTags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "from": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ingredientId": {
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "variantId": {
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "notes": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "ratio": {
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "recipeId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "scope": {
+                    "enum": ["global", "recipe"],
+                    "type": "string"
+                  },
+                  "to": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ingredientId": {
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "variantId": {
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": ["from", "to"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "contextTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "readOnly": true,
+                          "type": "array"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "fromIngredientId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "fromVariantId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ratio": {
+                          "type": "number"
+                        },
+                        "recipeId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "scope": {
+                          "enum": ["global", "recipe"],
+                          "type": "string"
+                        },
+                        "toIngredientId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "toVariantId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "fromIngredientId",
+                        "fromVariantId",
+                        "toIngredientId",
+                        "toVariantId",
+                        "ratio",
+                        "contextTags",
+                        "scope",
+                        "recipeId",
+                        "notes",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "201"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create a substitution edge",
+        "tags": ["substitutions"]
+      }
+    },
+    "/substitutions/graph-view": {
+      "get": {
+        "operationId": "substitutions.graphView",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "enum": ["global", "recipe"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recipeId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "contextTag",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "edges": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contextTags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "readOnly": true,
+                            "type": "array"
+                          },
+                          "fromNodeId": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "ratio": {
+                            "type": "number"
+                          },
+                          "recipeId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "recipeSlug": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "scope": {
+                            "enum": ["global", "recipe"],
+                            "type": "string"
+                          },
+                          "toNodeId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "fromNodeId",
+                          "toNodeId",
+                          "ratio",
+                          "contextTags",
+                          "scope",
+                          "recipeId",
+                          "recipeSlug",
+                          "notes"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "nodes": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "ingredientId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "ingredientName": {
+                            "type": "string"
+                          },
+                          "ingredientSlug": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "enum": ["ingredient", "variant"],
+                            "type": "string"
+                          },
+                          "variantId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "variantName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "variantSlug": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind",
+                          "ingredientId",
+                          "variantId",
+                          "ingredientSlug",
+                          "ingredientName",
+                          "variantSlug",
+                          "variantName"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["nodes", "edges"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Node/edge projection of the substitution graph",
+        "tags": ["substitutions"]
+      }
+    },
+    "/substitutions/hydrated": {
+      "get": {
+        "operationId": "substitutions.listHydrated",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fromIngredientId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fromVariantId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "toIngredientId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "toVariantId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "schema": {
+              "enum": ["global", "recipe"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recipeId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "contextTag",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contextTags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "readOnly": true,
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "from": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "kind": {
+                                "enum": ["ingredient", "variant"],
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "parentSlug": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["kind", "id", "slug", "name", "parentSlug"],
+                            "type": "object"
+                          },
+                          "fromIngredientId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "fromVariantId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "id": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "ratio": {
+                            "type": "number"
+                          },
+                          "recipeId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "recipeSlug": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "scope": {
+                            "enum": ["global", "recipe"],
+                            "type": "string"
+                          },
+                          "to": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "kind": {
+                                "enum": ["ingredient", "variant"],
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "parentSlug": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["kind", "id", "slug", "name", "parentSlug"],
+                            "type": "object"
+                          },
+                          "toIngredientId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "toVariantId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "fromIngredientId",
+                          "fromVariantId",
+                          "toIngredientId",
+                          "toVariantId",
+                          "ratio",
+                          "contextTags",
+                          "scope",
+                          "recipeId",
+                          "notes",
+                          "createdAt",
+                          "from",
+                          "to",
+                          "recipeSlug"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List substitutions widened with slug + display name per endpoint",
+        "tags": ["substitutions"]
+      }
+    },
+    "/substitutions/resolve-line": {
+      "get": {
+        "operationId": "substitutions.resolveForLine",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "recipeVersionId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lineIndex",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "candidates": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "batches": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "batchId": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                },
+                                "expiresAt": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "location": {
+                                  "enum": ["pantry", "fridge", "freezer", "other"],
+                                  "type": "string"
+                                },
+                                "prepStateId": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "nullable": true,
+                                  "type": "integer"
+                                },
+                                "prepStateLabel": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "qtyRemaining": {
+                                  "type": "number"
+                                },
+                                "unit": {
+                                  "enum": ["g", "ml", "count"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "batchId",
+                                "qtyRemaining",
+                                "unit",
+                                "location",
+                                "expiresAt",
+                                "prepStateId",
+                                "prepStateLabel"
+                              ],
+                              "type": "object"
+                            },
+                            "readOnly": true,
+                            "type": "array"
+                          },
+                          "contextTags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "readOnly": true,
+                            "type": "array"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "ratio": {
+                            "type": "number"
+                          },
+                          "recipeId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "scope": {
+                            "enum": ["global", "recipe"],
+                            "type": "string"
+                          },
+                          "substituteIngredientId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "substituteIngredientName": {
+                            "type": "string"
+                          },
+                          "substituteVariantId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "substituteVariantName": {
+                            "type": "string"
+                          },
+                          "substitutionId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "substitutionId",
+                          "ratio",
+                          "contextTags",
+                          "scope",
+                          "recipeId",
+                          "substituteVariantId",
+                          "substituteVariantName",
+                          "substituteIngredientId",
+                          "substituteIngredientName",
+                          "notes",
+                          "batches"
+                        ],
+                        "type": "object"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    },
+                    "lineIndex": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "linePrepStateId": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "nullable": true,
+                      "type": "integer"
+                    },
+                    "linePrepStateLabel": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lineQty": {
+                      "type": "number"
+                    },
+                    "lineUnit": {
+                      "enum": ["g", "ml", "count"],
+                      "type": "string"
+                    },
+                    "lineVariantId": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "lineVariantName": {
+                      "type": "string"
+                    },
+                    "recipeContextTags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "lineIndex",
+                    "lineVariantId",
+                    "lineVariantName",
+                    "linePrepStateId",
+                    "linePrepStateLabel",
+                    "lineQty",
+                    "lineUnit",
+                    "recipeContextTags",
+                    "candidates"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Per-line substitution candidates with batch coverage",
+        "tags": ["substitutions"]
+      }
+    },
+    "/substitutions/{id}": {
+      "delete": {
+        "operationId": "substitutions.delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "ok": {
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Delete a substitution edge",
+        "tags": ["substitutions"]
+      },
+      "patch": {
+        "operationId": "substitutions.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "contextTags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "notes": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "ratio": {
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "contextTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "readOnly": true,
+                          "type": "array"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "fromIngredientId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "fromVariantId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ratio": {
+                          "type": "number"
+                        },
+                        "recipeId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "scope": {
+                          "enum": ["global", "recipe"],
+                          "type": "string"
+                        },
+                        "toIngredientId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "toVariantId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "fromIngredientId",
+                        "fromVariantId",
+                        "toIngredientId",
+                        "toVariantId",
+                        "ratio",
+                        "contextTags",
+                        "scope",
+                        "recipeId",
+                        "notes",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Update a substitution edge",
+        "tags": ["substitutions"]
+      }
+    },
     "/variants": {
       "post": {
         "operationId": "variants.create",
