@@ -42,6 +42,14 @@ module.exports = {
         pathNot: '^apps/pops-api/src/modules/($1|core)/',
       },
     },
+    {
+      name: 'no-dead-lists-pkgs',
+      severity: 'error',
+      comment:
+        'The `@pops/app-lists-db`, `@pops/lists-db`, `@pops/lists-contract`, and `@pops/lists-api` packages no longer exist — lists collapsed into `pillars/lists/`. Consumers go through `@pops/lists` (contract types + api-types + openapi) and the lists REST API for cross-pillar calls.',
+      from: { path: '.*' },
+      to: { path: '^@pops/(app-lists-db|lists-db|lists-contract|lists-api)(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {

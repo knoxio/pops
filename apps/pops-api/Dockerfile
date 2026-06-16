@@ -10,7 +10,6 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
-COPY packages/app-lists-db/package.json ./packages/app-lists-db/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
@@ -19,14 +18,12 @@ COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
 COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/food-contract/package.json ./packages/food-contract/
-COPY packages/lists-contract/package.json ./packages/lists-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY packages/food-db/package.json ./packages/food-db/
-COPY packages/lists-db/package.json ./packages/lists-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -40,8 +37,6 @@ COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
 COPY packages/module-registry/src ./packages/module-registry/src
 COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
-COPY packages/app-lists-db/src ./packages/app-lists-db/src
-COPY packages/app-lists-db/tsconfig.json ./packages/app-lists-db/
 COPY packages/app-food-db/src ./packages/app-food-db/src
 COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
 COPY packages/core-db/src ./packages/core-db/src
@@ -64,16 +59,12 @@ COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
 COPY packages/food-db/src ./packages/food-db/src
 COPY packages/food-db/tsconfig.json ./packages/food-db/
 COPY packages/food-db/migrations ./packages/food-db/migrations
-COPY packages/lists-db/src ./packages/lists-db/src
-COPY packages/lists-db/tsconfig.json ./packages/lists-db/
-COPY packages/lists-db/migrations ./packages/lists-db/migrations
 COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/inventory-contract/ ./packages/inventory-contract/
 COPY packages/media-contract/ ./packages/media-contract/
 COPY packages/food-contract/ ./packages/food-contract/
-COPY packages/lists-contract/ ./packages/lists-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
@@ -87,8 +78,6 @@ RUN pnpm build
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/inventory-db
-RUN pnpm build
-WORKDIR /app/packages/app-lists-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
@@ -104,8 +93,6 @@ WORKDIR /app/packages/module-registry
 RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
-WORKDIR /app/packages/lists-db
-RUN pnpm build
 WORKDIR /app/packages/app-food-db
 RUN pnpm build
 WORKDIR /app/packages/finance-contract
@@ -119,8 +106,6 @@ RUN pnpm build
 WORKDIR /app/packages/media-contract
 RUN pnpm build
 WORKDIR /app/packages/food-contract
-RUN pnpm build
-WORKDIR /app/packages/lists-contract
 RUN pnpm build
 WORKDIR /app/packages/pillar-sdk
 RUN pnpm build
@@ -155,8 +140,6 @@ COPY --from=builder /app/packages/module-registry/dist ./node_modules/@pops/modu
 COPY --from=builder /app/packages/module-registry/package.json ./node_modules/@pops/module-registry/
 COPY --from=builder /app/packages/app-food-db/dist ./node_modules/@pops/app-food-db/dist
 COPY --from=builder /app/packages/app-food-db/package.json ./node_modules/@pops/app-food-db/
-COPY --from=builder /app/packages/app-lists-db/dist ./node_modules/@pops/app-lists-db/dist
-COPY --from=builder /app/packages/app-lists-db/package.json ./node_modules/@pops/app-lists-db/
 COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
 COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
 COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations
@@ -175,9 +158,6 @@ COPY --from=builder /app/packages/cerebrum-db/migrations ./node_modules/@pops/ce
 COPY --from=builder /app/packages/food-db/dist ./node_modules/@pops/food-db/dist
 COPY --from=builder /app/packages/food-db/package.json ./node_modules/@pops/food-db/
 COPY --from=builder /app/packages/food-db/migrations ./node_modules/@pops/food-db/migrations
-COPY --from=builder /app/packages/lists-db/dist ./node_modules/@pops/lists-db/dist
-COPY --from=builder /app/packages/lists-db/package.json ./node_modules/@pops/lists-db/
-COPY --from=builder /app/packages/lists-db/migrations ./node_modules/@pops/lists-db/migrations
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src

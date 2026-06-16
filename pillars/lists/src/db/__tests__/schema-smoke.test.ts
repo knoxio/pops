@@ -1,11 +1,10 @@
 /**
- * Smoke test that the relocated lists schemas (PRD-245 US-06 / audit H6)
- * resolve from `@pops/app-lists-db` with the expected drizzle SQL `name`.
+ * Smoke test that the lists schemas resolve from the pillar's `schema`
+ * barrel with the expected drizzle SQL `name`.
  *
  * Catches "table moved but the export forgot to flip" mistakes during
- * follow-up shuffles. The set MUST cover every table named in
- * `us-06-relocate-lists-schemas.md` so a regression on either side
- * trips this file.
+ * follow-up shuffles. The set covers every table the pillar owns so
+ * a regression on either side trips this file.
  */
 import { getTableName } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
