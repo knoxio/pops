@@ -18,7 +18,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 COPY pillars/inventory/package.json ./pillars/inventory/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
-COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/media-db/package.json ./packages/media-db/
@@ -40,10 +39,6 @@ COPY packages/core-contract/src ./packages/core-contract/src
 COPY packages/core-contract/scripts ./packages/core-contract/scripts
 COPY packages/core-contract/openapi ./packages/core-contract/openapi
 COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
-# @pops/core-db
-COPY packages/core-db/src ./packages/core-db/src
-COPY packages/core-db/migrations ./packages/core-db/migrations
-COPY packages/core-db/tsconfig.json ./packages/core-db/tsconfig.json
 # @pops/finance-contract
 COPY packages/finance-contract/src ./packages/finance-contract/src
 COPY packages/finance-contract/scripts ./packages/finance-contract/scripts
