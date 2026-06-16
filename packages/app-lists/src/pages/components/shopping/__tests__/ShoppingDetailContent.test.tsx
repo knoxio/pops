@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
 import { useMemo, type ReactElement } from 'react';
@@ -10,95 +11,37 @@ import enAULists from '../../../../../../../apps/pops-shell/src/i18n/locales/en-
 
 import type { ListItemRow, ListRow } from '../../../detail/types.js';
 
-interface BulkCalls {
-  uncheckAll: ReturnType<typeof vi.fn>;
-  removeChecked: ReturnType<typeof vi.fn>;
-  update: ReturnType<typeof vi.fn>;
-}
-const bulk: BulkCalls = {
-  uncheckAll: vi.fn(),
-  removeChecked: vi.fn(),
-  update: vi.fn(),
+const sdkMocks = {
+  listGet: vi.fn(),
+  listUpdate: vi.fn(),
+  listArchive: vi.fn(),
+  listUnarchive: vi.fn(),
+  listDelete: vi.fn(),
+  itemsAdd: vi.fn(),
+  itemsCheck: vi.fn(),
+  itemsUncheck: vi.fn(),
+  itemsUpdate: vi.fn(),
+  itemsRemove: vi.fn(),
+  itemsReorder: vi.fn(),
+  itemsUncheckAll: vi.fn(),
+  itemsRemoveChecked: vi.fn(),
 };
-const mockGet = vi.fn();
 
-let cachedData: { list: ListRow; items: ListItemRow[] } | null = null;
-
-vi.mock('@pops/pillar-sdk/react', () => {
-  const procImpls: Record<string, (args: unknown) => unknown> = {
-    'lists.list.update': (args) => {
-      bulk.update(args);
-      return { ok: true };
-    },
-    'lists.list.archive': () => ({ ok: true }),
-    'lists.list.unarchive': () => ({ ok: true }),
-    'lists.list.delete': () => ({ ok: true }),
-    'lists.items.add': () => ({ id: 99, position: 5 }),
-    'lists.items.check': () => ({ ok: true, checkedAt: '2026-06-10T00:00:00Z' }),
-    'lists.items.uncheck': () => ({ ok: true }),
-    'lists.items.update': () => ({ ok: true }),
-    'lists.items.remove': () => ({ ok: true }),
-    'lists.items.reorder': () => ({ ok: true }),
-    'lists.items.uncheckAll': (args) => {
-      bulk.uncheckAll(args);
-      return { ok: true, count: 2 };
-    },
-    'lists.items.removeChecked': (args) => {
-      bulk.removeChecked(args);
-      return { ok: true, removedCount: 2 };
-    },
-  };
-  interface MutationOpts {
-    onMutate?: (vars: unknown) => unknown;
-    onError?: (err: Error, vars: unknown, ctx: unknown) => void;
-    onSettled?: () => void;
-  }
-  return {
-    usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
-      const key = `${pillarId}.${path.join('.')}`;
-      if (key === 'lists.list.get') return mockGet(input);
-      throw new Error(`Unexpected pillar query: ${key}`);
-    },
-    usePillarMutation: (pillarId: string, path: readonly string[], opts: MutationOpts = {}) => {
-      const key = `${pillarId}.${path.join('.')}`;
-      const impl = procImpls[key];
-      if (!impl) throw new Error(`Unexpected pillar mutation: ${key}`);
-      const run = async (args: unknown) => {
-        const ctx = opts.onMutate?.(args);
-        try {
-          const result = impl(args);
-          return result;
-        } catch (err) {
-          opts.onError?.(err instanceof Error ? err : new Error(String(err)), args, ctx);
-          throw err;
-        } finally {
-          opts.onSettled?.();
-        }
-      };
-      return {
-        mutate: (args: unknown) => {
-          void run(args);
-        },
-        mutateAsync: async (args: unknown) => run(args),
-        isPending: false,
-        error: null,
-      };
-    },
-    usePillarUtils: () => ({
-      setData: (
-        _routerPath: readonly string[],
-        _input: unknown,
-        updater: (prev: typeof cachedData | undefined) => typeof cachedData | undefined
-      ) => {
-        const previous = cachedData ?? undefined;
-        const next = updater(previous);
-        cachedData = next ?? null;
-        return previous;
-      },
-      invalidate: async () => undefined,
-    }),
-  };
-});
+vi.mock('../../../../lists-api/index.js', () => ({
+  listGet: (...args: unknown[]) => sdkMocks.listGet(...args),
+  listUpdate: (...args: unknown[]) => sdkMocks.listUpdate(...args),
+  listArchive: (...args: unknown[]) => sdkMocks.listArchive(...args),
+  listUnarchive: (...args: unknown[]) => sdkMocks.listUnarchive(...args),
+  listDelete: (...args: unknown[]) => sdkMocks.listDelete(...args),
+  itemsAdd: (...args: unknown[]) => sdkMocks.itemsAdd(...args),
+  itemsCheck: (...args: unknown[]) => sdkMocks.itemsCheck(...args),
+  itemsUncheck: (...args: unknown[]) => sdkMocks.itemsUncheck(...args),
+  itemsUpdate: (...args: unknown[]) => sdkMocks.itemsUpdate(...args),
+  itemsRemove: (...args: unknown[]) => sdkMocks.itemsRemove(...args),
+  itemsReorder: (...args: unknown[]) => sdkMocks.itemsReorder(...args),
+  itemsUncheckAll: (...args: unknown[]) => sdkMocks.itemsUncheckAll(...args),
+  itemsRemoveChecked: (...args: unknown[]) => sdkMocks.itemsRemoveChecked(...args),
+}));
 
 vi.mock('react-router', async (orig) => {
   const actual = await orig<typeof import('react-router')>();
@@ -106,6 +49,10 @@ vi.mock('react-router', async (orig) => {
 });
 
 import { ListDetailPage } from '../../../ListDetailPage.js';
+
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
 
 function makeList(overrides: Partial<ListRow> = {}): ListRow {
   return {
@@ -138,6 +85,10 @@ function makeItem(overrides: Partial<ListItemRow> = {}): ListItemRow {
   };
 }
 
+function setListGet(payload: { list: ListRow; items: ListItemRow[] } | null) {
+  sdkMocks.listGet.mockImplementation(async () => ok(payload));
+}
+
 function mountAt(listId: number, children: ReactElement) {
   return (
     <MemoryRouter initialEntries={[`/lists/${listId}`]}>
@@ -161,85 +112,112 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
-  return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
+  const qc = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      }),
+    []
+  );
+  return (
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+    </I18nextProvider>
+  );
 }
 
 beforeEach(() => {
-  bulk.uncheckAll.mockReset();
-  bulk.removeChecked.mockReset();
-  bulk.update.mockReset();
-  mockGet.mockReset();
-  cachedData = null;
+  Object.values(sdkMocks).forEach((fn) => fn.mockReset());
+  sdkMocks.listUpdate.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.listArchive.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.listUnarchive.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.listDelete.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsAdd.mockImplementation(async () => ok({ id: 99, position: 5 }));
+  sdkMocks.itemsCheck.mockImplementation(async () =>
+    ok({ ok: true as const, checkedAt: '2026-06-10T00:00:00Z' })
+  );
+  sdkMocks.itemsUncheck.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsUpdate.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsRemove.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsReorder.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsUncheckAll.mockImplementation(async () => ok({ ok: true as const, count: 2 }));
+  sdkMocks.itemsRemoveChecked.mockImplementation(async () =>
+    ok({ ok: true as const, removedCount: 2 })
+  );
 });
 
 describe('PRD-141 — ShoppingDetailContent', () => {
-  it('renders the sort dropdown + caption + bulk buttons for kind=shopping', () => {
-    const data = {
+  it('renders the sort dropdown + caption + bulk buttons for kind=shopping', async () => {
+    setListGet({
       list: makeList(),
       items: [
         makeItem(),
         makeItem({ id: 2, label: 'Bread', checked: 1, checkedAt: '2026-06-09T00:00:00Z' }),
       ],
-    };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+    });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(screen.getAllByTestId('shopping-sort-dropdown').length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(screen.getAllByTestId('shopping-sort-dropdown').length).toBeGreaterThan(0)
+    );
     expect(screen.getByTestId('shopping-caption')).toHaveTextContent(/2 items.*1 checked/i);
     expect(screen.getByRole('button', { name: 'Uncheck all' })).not.toBeDisabled();
     expect(screen.getByRole('button', { name: 'Clear checked' })).not.toBeDisabled();
   });
 
-  it('disables Uncheck all + Clear checked when nothing is checked', () => {
-    const data = { list: makeList(), items: [makeItem()] };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+  it('disables Uncheck all + Clear checked when nothing is checked', async () => {
+    setListGet({ list: makeList(), items: [makeItem()] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
+    await screen.findByRole('button', { name: 'Uncheck all' });
     expect(screen.getByRole('button', { name: 'Uncheck all' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Clear checked' })).toBeDisabled();
   });
 
   it('confirms uncheck-all and fires the mutation', async () => {
-    const data = {
+    setListGet({
       list: makeList(),
       items: [makeItem({ checked: 1, checkedAt: '2026-06-09T00:00:00Z' })],
-    };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+    });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: 'Uncheck all' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Uncheck all' }));
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole('button', { name: /^uncheck all$/i }));
-    expect(bulk.uncheckAll).toHaveBeenCalledWith({ listId: 7 });
+    await waitFor(() =>
+      expect(sdkMocks.itemsUncheckAll).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { listId: 7 } })
+      )
+    );
   });
 
   it('confirms clear-checked and fires the mutation', async () => {
-    const data = {
+    setListGet({
       list: makeList(),
       items: [makeItem({ checked: 1, checkedAt: '2026-06-09T00:00:00Z' })],
-    };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+    });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: 'Clear checked' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Clear checked' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /remove checked/i }));
-    expect(bulk.removeChecked).toHaveBeenCalledWith({ listId: 7 });
+    await waitFor(() =>
+      expect(sdkMocks.itemsRemoveChecked).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { listId: 7 } })
+      )
+    );
   });
 
   it('changing sort to "unchecked-first" puts checked items at the bottom', async () => {
-    const data = {
+    setListGet({
       list: makeList(),
       items: [
         makeItem({ id: 1, label: 'Apples', position: 0, checked: 1 }),
         makeItem({ id: 2, label: 'Bread', position: 1, checked: 0 }),
       ],
-    };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+    });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    const select = screen.getAllByTestId('shopping-sort-dropdown')[0];
+    const select = (await screen.findAllByTestId('shopping-sort-dropdown'))[0];
     if (!select) throw new Error('sort dropdown missing');
     await userEvent.selectOptions(select, 'unchecked-first');
     const ids = screen
@@ -249,38 +227,32 @@ describe('PRD-141 — ShoppingDetailContent', () => {
     expect(ids[1]).toBe('shopping-item-1');
   });
 
-  it('renders qty/unit always — dash for null', () => {
-    const data = {
+  it('renders qty/unit always — dash for null', async () => {
+    setListGet({
       list: makeList(),
       items: [makeItem({ qty: null, unit: null, label: 'Eggs' })],
-    };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+    });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(screen.getByTestId('qty-unit')).toHaveTextContent('—');
+    expect(await screen.findByTestId('qty-unit')).toHaveTextContent('—');
   });
 
-  it('renders notes as the sub-line content', () => {
-    const data = {
+  it('renders notes as the sub-line content', async () => {
+    setListGet({
       list: makeList(),
       items: [makeItem({ notes: 'From Brownies, Pancakes' })],
-    };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+    });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(screen.getByText('From Brownies, Pancakes')).toBeInTheDocument();
+    expect(await screen.findByText('From Brownies, Pancakes')).toBeInTheDocument();
   });
 
   it('submits via ShoppingAddForm with [qty][unit][label] order', async () => {
-    const data = { list: makeList(), items: [] };
-    cachedData = data;
-    mockGet.mockReturnValue({ isLoading: false, data, error: null });
+    setListGet({ list: makeList(), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.type(screen.getByLabelText('Qty'), '3');
+    await userEvent.type(await screen.findByLabelText('Qty'), '3');
     await userEvent.type(screen.getByLabelText('Unit'), 'kg');
     await userEvent.type(screen.getByLabelText('Item'), 'Onions');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    // The add form clears its inputs on success; qty regains focus.
+    await waitFor(() => expect(sdkMocks.itemsAdd).toHaveBeenCalled());
     expect((screen.getByLabelText('Qty') as HTMLInputElement).value).toBe('');
   });
 });

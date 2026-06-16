@@ -354,6 +354,27 @@
         "typescript/explicit-module-boundary-types": "off",
         "typescript/explicit-function-return-type": "off"
       }
+    },
+    {
+      "files": ["packages/app-*/src/**/*.gen.ts"],
+      "rules": {
+        "max-lines": "off",
+        "max-lines-per-function": "off",
+        "max-statements": "off",
+        "complexity": "off",
+        "max-depth": "off",
+        "no-underscore-dangle": "off",
+        "typescript/no-explicit-any": "off",
+        "typescript/no-non-null-assertion": "off",
+        "typescript/explicit-module-boundary-types": "off",
+        "typescript/explicit-function-return-type": "off"
+      }
+    },
+    {
+      "files": ["packages/module-registry/scripts/known-modules.ts"],
+      "rules": {
+        "max-lines": "off"
+      }
     }
   ],
   "settings": {

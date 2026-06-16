@@ -1,9 +1,9 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import {
   Button,
   Dialog,
@@ -15,6 +15,8 @@ import {
   Input,
 } from '@pops/ui';
 
+import { unwrap } from '../../lists-api-helpers.js';
+import { listCreate } from '../../lists-api/index.js';
 import { KindRadioGroup } from './KindRadioGroup.js';
 import { DEFAULT_NEW_LIST_KIND, type ListKind } from './list-index-types.js';
 
@@ -42,15 +44,15 @@ export function ListNewModal(): ReactElement {
   const [params, setParams] = useSearchParams();
   const open = params.get('new') === '1';
 
-  const createMutation = usePillarMutation<FormState, { id: number }>('lists', ['list', 'create'], {
+  const qc = useQueryClient();
+  const createMutation = useMutation({
+    mutationFn: async (input: FormState) => unwrap(await listCreate({ body: input })),
     onSuccess: ({ id }) => {
+      void qc.invalidateQueries({ queryKey: ['lists', 'list'] });
       toast.success(t('new.toast.created'));
-      // The SDK's router-prefix invalidation (['lists', 'list']) covers
-      // the index query (`list.list`) so no manual invalidate is needed.
-      // Navigate per PRD-140 §Create.
       void navigate(`/lists/${id}`);
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       toast.error(t('new.toast.error', { message: err.message }));
     },
   });

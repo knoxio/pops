@@ -1,7 +1,7 @@
 import { httpBatchLink, splitLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 
-import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk/capabilities';
+import { TRPC_PILLARS, type TrpcPillarId } from '@pops/pillar-sdk/capabilities';
 
 import type { Operation, TRPCLink } from '@trpc/client';
 
@@ -44,14 +44,13 @@ function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise
  * the client batcher never assembles a batch URL targeting more than one
  * pillar at a time.
  */
-const PILLAR_TRPC_URLS: Readonly<Record<KnownPillarId, string>> = {
+const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {
   core: '/trpc-core',
   finance: '/trpc-finance',
   media: '/trpc-media',
   inventory: '/trpc-inventory',
   cerebrum: '/trpc-cerebrum',
   food: '/trpc-food',
-  lists: '/trpc-lists',
 };
 
 /** Legacy pops-api URL — catches every procedure that isn't pillar-prefixed. */
@@ -59,16 +58,16 @@ const LEGACY_TRPC_URL = '/trpc';
 
 const MAX_URL_LENGTH = 2083;
 
-const PILLAR_SET: ReadonlySet<string> = new Set(PILLARS);
+const PILLAR_SET: ReadonlySet<string> = new Set(TRPC_PILLARS);
 
-function isKnownPillarId(value: string): value is KnownPillarId {
+function isTrpcPillarId(value: string): value is TrpcPillarId {
   return PILLAR_SET.has(value);
 }
 
-function pillarOfPath(path: string): KnownPillarId | null {
+function pillarOfPath(path: string): TrpcPillarId | null {
   const namespace = path.split('.')[0];
   if (!namespace) return null;
-  return isKnownPillarId(namespace) ? namespace : null;
+  return isTrpcPillarId(namespace) ? namespace : null;
 }
 
 function terminalLinkFor(url: string): TRPCLink<AppRouter> {
@@ -89,7 +88,7 @@ function terminalLinkFor(url: string): TRPCLink<AppRouter> {
  */
 function createPillarSplitLink(): TRPCLink<AppRouter> {
   const legacyLink = terminalLinkFor(LEGACY_TRPC_URL);
-  return PILLARS.reduce<TRPCLink<AppRouter>>((falseBranch, pillar) => {
+  return TRPC_PILLARS.reduce<TRPCLink<AppRouter>>((falseBranch, pillar) => {
     const pillarLink = terminalLinkFor(PILLAR_TRPC_URLS[pillar]);
     return splitLink<AppRouter>({
       condition: (op: Operation) => pillarOfPath(op.path) === pillar,

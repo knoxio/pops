@@ -23,3 +23,22 @@ export const PILLARS = [
 ] as const;
 
 export type KnownPillarId = (typeof PILLARS)[number];
+
+/**
+ * Pillars that still speak tRPC over `/trpc-<id>`. Lists migrated to a
+ * REST contract (`@pops/lists/openapi`) on the Y refactor and no longer
+ * serves /trpc — consumers reach it via a generated REST client.
+ *
+ * Used by the shell's split-link + the shared api-client split-link to
+ * skip tRPC dispatch for migrated pillars. As more pillars migrate off
+ * tRPC, prune them from this list (and adjust the `_assert` below so
+ * any new pillar id added to {@link PILLARS} forces a deliberate choice
+ * about its transport).
+ */
+export const TRPC_PILLARS = ['core', 'finance', 'media', 'inventory', 'cerebrum', 'food'] as const;
+
+export type TrpcPillarId = (typeof TRPC_PILLARS)[number];
+
+type _AssertTrpcSubsetOfKnown = TrpcPillarId extends KnownPillarId ? true : never;
+const _assertTrpcSubset: _AssertTrpcSubsetOfKnown = true;
+void _assertTrpcSubset;

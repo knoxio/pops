@@ -12,49 +12,7 @@ export interface paths {
       cookie?: never;
     };
     /** Search items across lists (filters: kind, listId, includeArchived, labelContains, notesContains) */
-    get: {
-      parameters: {
-        query?: {
-          kind?: 'shopping' | 'packing' | 'todo' | 'generic';
-          listId?: number;
-          includeArchived?: boolean;
-          labelContains?: string;
-          notesContains?: string;
-        };
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              items: {
-                checked: number;
-                checkedAt: string | null;
-                createdAt: string;
-                dueAt: string | null;
-                id: number;
-                label: string;
-                listId: number;
-                notes: string | null;
-                position: number;
-                qty: number | null;
-                refId: number | null;
-                /** @enum {string} */
-                refKind: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
-                unit: string | null;
-              }[];
-            };
-          };
-        };
-      };
-    };
+    get: operations['items.search'];
     put?: never;
     post?: never;
     delete?: never;
@@ -74,98 +32,11 @@ export interface paths {
     put?: never;
     post?: never;
     /** Remove an item (idempotent) */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-      };
-    };
+    delete: operations['items.remove'];
     options?: never;
     head?: never;
     /** Patch a list item */
-    patch: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': {
-            label?: string;
-            notes?: string | null;
-            qty?: number | null;
-            unit?: string | null;
-          };
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-        /** @description 400 */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    patch: operations['items.update'];
     trace?: never;
   };
   '/items/{id}/check': {
@@ -178,49 +49,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Mark an item as checked */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              checkedAt: string;
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['items.check'];
     delete?: never;
     options?: never;
     head?: never;
@@ -237,48 +66,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Mark an item as unchecked */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['items.uncheck'];
     delete?: never;
     options?: never;
     head?: never;
@@ -293,88 +81,10 @@ export interface paths {
       cookie?: never;
     };
     /** Aggregate list view for the lists index page */
-    get: {
-      parameters: {
-        query?: {
-          kinds?: ('shopping' | 'packing' | 'todo' | 'generic')[];
-          includeArchived?: boolean;
-          sort?: 'updated' | 'name' | 'created';
-        };
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              items: {
-                archivedAt: string | null;
-                id: number;
-                itemCount: number;
-                /** @enum {string} */
-                kind: 'shopping' | 'packing' | 'todo' | 'generic';
-                lastUpdatedAt: string;
-                name: string;
-                ownerApp: string;
-                uncheckedCount: number;
-              }[];
-            };
-          };
-        };
-      };
-    };
+    get: operations['list.listAggregate'];
     put?: never;
     /** Create a list */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': {
-            /** @enum {string} */
-            kind: 'shopping' | 'packing' | 'todo' | 'generic';
-            name: string;
-            ownerApp?: string;
-          };
-        };
-      };
-      responses: {
-        /** @description 201 */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              id: number;
-            };
-          };
-        };
-        /** @description 400 */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['list.create'];
     delete?: never;
     options?: never;
     head?: never;
@@ -389,155 +99,15 @@ export interface paths {
       cookie?: never;
     };
     /** Get a single list header plus its items in one round-trip */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              items: {
-                checked: number;
-                checkedAt: string | null;
-                createdAt: string;
-                dueAt: string | null;
-                id: number;
-                label: string;
-                listId: number;
-                notes: string | null;
-                position: number;
-                qty: number | null;
-                refId: number | null;
-                /** @enum {string} */
-                refKind: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
-                unit: string | null;
-              }[];
-              list: {
-                archivedAt: string | null;
-                createdAt: string;
-                id: number;
-                /** @enum {string} */
-                kind: 'shopping' | 'packing' | 'todo' | 'generic';
-                name: string;
-                ownerApp: string;
-              };
-            } | null;
-          };
-        };
-      };
-    };
+    get: operations['list.get'];
     put?: never;
     post?: never;
     /** Hard-delete a list (cascades items) */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    delete: operations['list.delete'];
     options?: never;
     head?: never;
     /** Patch a list header (name and/or kind) */
-    patch: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': {
-            /** @enum {string} */
-            kind?: 'shopping' | 'packing' | 'todo' | 'generic';
-            name?: string;
-          };
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json':
-              | {
-                  /** @enum {boolean} */
-                  ok: true;
-                }
-              | {
-                  /** @enum {boolean} */
-                  ok: false;
-                  /** @enum {string} */
-                  reason: 'NotFound';
-                };
-          };
-        };
-        /** @description 400 */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    patch: operations['list.update'];
     trace?: never;
   };
   '/lists/{id}/archive': {
@@ -550,48 +120,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Archive a list */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['list.archive'];
     delete?: never;
     options?: never;
     head?: never;
@@ -608,48 +137,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Unarchive a list */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['list.unarchive'];
     delete?: never;
     options?: never;
     head?: never;
@@ -666,69 +154,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Add an item to a list */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          listId: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': {
-            label: string;
-            notes?: string | null;
-            position?: number;
-            qty?: number | null;
-            refId?: number | null;
-            /** @enum {string} */
-            refKind?: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
-            unit?: string | null;
-          };
-        };
-      };
-      responses: {
-        /** @description 201 */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              id: number;
-              position: number;
-            };
-          };
-        };
-        /** @description 400 */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['items.add'];
     delete?: never;
     options?: never;
     head?: never;
@@ -745,70 +171,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Add many items in one transaction */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          listId: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': {
-            items: {
-              label: string;
-              notes?: string | null;
-              position?: number;
-              qty?: number | null;
-              refId?: number | null;
-              /** @enum {string} */
-              refKind?: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
-              unit?: string | null;
-            }[];
-          };
-        };
-      };
-      responses: {
-        /** @description 201 */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              addedIds: number[];
-            };
-          };
-        };
-        /** @description 400 */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['items.bulkAdd'];
     delete?: never;
     options?: never;
     head?: never;
@@ -826,37 +189,7 @@ export interface paths {
     put?: never;
     post?: never;
     /** Hard-delete every checked item in a list */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          listId: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** @enum {boolean} */
-              ok: true;
-              removedCount: number;
-            };
-          };
-        };
-      };
-    };
+    delete: operations['items.removeChecked'];
     options?: never;
     head?: never;
     patch?: never;
@@ -872,45 +205,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Reorder items within a list */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          listId: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': {
-            orderedIds: number[];
-          };
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json':
-              | {
-                  /** @enum {boolean} */
-                  ok: true;
-                }
-              | {
-                  /** @enum {boolean} */
-                  ok: false;
-                  /** @enum {string} */
-                  reason: 'BadIds';
-                };
-          };
-        };
-      };
-    };
+    post: operations['items.reorder'];
     delete?: never;
     options?: never;
     head?: never;
@@ -927,37 +222,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Uncheck every checked item in a list */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          listId: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': Record<string, never>;
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              count: number;
-              /** @enum {boolean} */
-              ok: true;
-            };
-          };
-        };
-      };
-    };
+    post: operations['items.uncheckAll'];
     delete?: never;
     options?: never;
     head?: never;
@@ -974,108 +239,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Atomic merge-or-insert by (refKind, refId). onConflict picks merge-additive / replace / skip */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          listId: number;
-        };
-        cookie?: never;
-      };
-      /** @description Body */
-      requestBody?: {
-        content: {
-          'application/json': {
-            label: string;
-            notes?: string | null;
-            /** @enum {string} */
-            onConflict?: 'merge-additive' | 'replace' | 'skip';
-            qty?: number | null;
-            refId: number;
-            /** @enum {string} */
-            refKind: 'ingredient' | 'variant' | 'recipe' | 'custom';
-            unit?: string | null;
-          };
-        };
-      };
-      responses: {
-        /** @description 200 */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json':
-              | {
-                  itemId: number;
-                  /** @enum {string} */
-                  outcome: 'inserted';
-                  position: number;
-                }
-              | {
-                  itemId: number;
-                  /** @enum {string} */
-                  outcome: 'merged';
-                }
-              | {
-                  itemId: number;
-                  /** @enum {string} */
-                  outcome: 'skipped';
-                };
-          };
-        };
-        /** @description 201 */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json':
-              | {
-                  itemId: number;
-                  /** @enum {string} */
-                  outcome: 'inserted';
-                  position: number;
-                }
-              | {
-                  itemId: number;
-                  /** @enum {string} */
-                  outcome: 'merged';
-                }
-              | {
-                  itemId: number;
-                  /** @enum {string} */
-                  outcome: 'skipped';
-                };
-          };
-        };
-        /** @description 400 */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-        /** @description 404 */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              code?: string;
-              message: string;
-            };
-          };
-        };
-      };
-    };
+    post: operations['items.upsertByRef'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1093,4 +257,859 @@ export interface components {
   pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+  'items.search': {
+    parameters: {
+      query?: {
+        kind?: 'shopping' | 'packing' | 'todo' | 'generic';
+        listId?: number;
+        includeArchived?: boolean;
+        labelContains?: string;
+        notesContains?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              checked: number;
+              checkedAt: string | null;
+              createdAt: string;
+              dueAt: string | null;
+              id: number;
+              label: string;
+              listId: number;
+              notes: string | null;
+              position: number;
+              qty: number | null;
+              refId: number | null;
+              /** @enum {string} */
+              refKind: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
+              unit: string | null;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'items.remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+    };
+  };
+  'items.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          label?: string;
+          notes?: string | null;
+          qty?: number | null;
+          unit?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'items.check': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            checkedAt: string;
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'items.uncheck': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'list.listAggregate': {
+    parameters: {
+      query?: {
+        kinds?: ('shopping' | 'packing' | 'todo' | 'generic')[];
+        includeArchived?: boolean;
+        sort?: 'updated' | 'name' | 'created';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              archivedAt: string | null;
+              id: number;
+              itemCount: number;
+              /** @enum {string} */
+              kind: 'shopping' | 'packing' | 'todo' | 'generic';
+              lastUpdatedAt: string;
+              name: string;
+              ownerApp: string;
+              uncheckedCount: number;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'list.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          kind: 'shopping' | 'packing' | 'todo' | 'generic';
+          name: string;
+          ownerApp?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            id: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'list.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              checked: number;
+              checkedAt: string | null;
+              createdAt: string;
+              dueAt: string | null;
+              id: number;
+              label: string;
+              listId: number;
+              notes: string | null;
+              position: number;
+              qty: number | null;
+              refId: number | null;
+              /** @enum {string} */
+              refKind: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
+              unit: string | null;
+            }[];
+            list: {
+              archivedAt: string | null;
+              createdAt: string;
+              id: number;
+              /** @enum {string} */
+              kind: 'shopping' | 'packing' | 'todo' | 'generic';
+              name: string;
+              ownerApp: string;
+            };
+          } | null;
+        };
+      };
+    };
+  };
+  'list.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'list.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          kind?: 'shopping' | 'packing' | 'todo' | 'generic';
+          name?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'NotFound';
+              };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'list.archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'list.unarchive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'items.add': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        listId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          label: string;
+          notes?: string | null;
+          position?: number;
+          qty?: number | null;
+          refId?: number | null;
+          /** @enum {string} */
+          refKind?: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
+          unit?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            id: number;
+            position: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'items.bulkAdd': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        listId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          items: {
+            label: string;
+            notes?: string | null;
+            position?: number;
+            qty?: number | null;
+            refId?: number | null;
+            /** @enum {string} */
+            refKind?: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
+            unit?: string | null;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            addedIds: number[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'items.removeChecked': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        listId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+            removedCount: number;
+          };
+        };
+      };
+    };
+  };
+  'items.reorder': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        listId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          orderedIds: number[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'BadIds';
+              };
+        };
+      };
+    };
+  };
+  'items.uncheckAll': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        listId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            count: number;
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+    };
+  };
+  'items.upsertByRef': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        listId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          label: string;
+          notes?: string | null;
+          /** @enum {string} */
+          onConflict?: 'merge-additive' | 'replace' | 'skip';
+          qty?: number | null;
+          refId: number;
+          /** @enum {string} */
+          refKind: 'ingredient' | 'variant' | 'recipe' | 'custom';
+          unit?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                itemId: number;
+                /** @enum {string} */
+                outcome: 'inserted';
+                position: number;
+              }
+            | {
+                itemId: number;
+                /** @enum {string} */
+                outcome: 'merged';
+              }
+            | {
+                itemId: number;
+                /** @enum {string} */
+                outcome: 'skipped';
+              };
+        };
+      };
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                itemId: number;
+                /** @enum {string} */
+                outcome: 'inserted';
+                position: number;
+              }
+            | {
+                itemId: number;
+                /** @enum {string} */
+                outcome: 'merged';
+              }
+            | {
+                itemId: number;
+                /** @enum {string} */
+                outcome: 'skipped';
+              };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+    };
+  };
+}

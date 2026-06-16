@@ -1,17 +1,18 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../lists-api-helpers.js';
+import { listArchive, listDelete, listUnarchive, listUpdate } from '../../lists-api/index.js';
 
 import type { ListKind } from './types.js';
 
 /**
  * List-header mutations consumed by the detail page: update (rename + change
- * kind), archive/unarchive, hard-delete. The SDK's `usePillarMutation`
- * invalidates the `['lists', 'list']` router prefix on success, which
- * covers the `list.get` cache automatically; delete additionally bounces
- * back to `/lists`.
+ * kind), archive/unarchive, hard-delete. Each mutation invalidates the
+ * `['lists', 'list']` query-key prefix on success so the index page +
+ * detail-`get` slot rehydrate; delete additionally bounces back to `/lists`.
  */
 export interface DetailMutations {
   update: (
@@ -29,16 +30,33 @@ export interface DetailMutations {
 
 type UpdateInput = { id: number; name?: string; kind?: ListKind };
 type UpdateResult = { ok: true } | { ok: false; reason: 'NotFound' };
-type OkResult = { ok: true };
-type IdInput = { id: number };
 
 function useDetailMutationHooks(onError: (message: string) => void) {
-  const handler = { onError: (err: { message: string }) => onError(err.message) };
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['lists', 'list'] });
+  const handleError = (err: Error) => onError(err.message);
   return {
-    update: usePillarMutation<UpdateInput, UpdateResult>('lists', ['list', 'update'], handler),
-    archive: usePillarMutation<IdInput, OkResult>('lists', ['list', 'archive'], handler),
-    unarchive: usePillarMutation<IdInput, OkResult>('lists', ['list', 'unarchive'], handler),
-    del: usePillarMutation<IdInput, OkResult>('lists', ['list', 'delete'], handler),
+    update: useMutation({
+      mutationFn: async ({ id, ...body }: UpdateInput): Promise<UpdateResult> =>
+        unwrap(await listUpdate({ path: { id }, body })),
+      onSuccess: () => void invalidate(),
+      onError: handleError,
+    }),
+    archive: useMutation({
+      mutationFn: async ({ id }: { id: number }) => unwrap(await listArchive({ path: { id } })),
+      onSuccess: () => void invalidate(),
+      onError: handleError,
+    }),
+    unarchive: useMutation({
+      mutationFn: async ({ id }: { id: number }) => unwrap(await listUnarchive({ path: { id } })),
+      onSuccess: () => void invalidate(),
+      onError: handleError,
+    }),
+    del: useMutation({
+      mutationFn: async ({ id }: { id: number }) => unwrap(await listDelete({ path: { id } })),
+      onSuccess: () => void invalidate(),
+      onError: handleError,
+    }),
   };
 }
 

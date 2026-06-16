@@ -8,6 +8,7 @@
   "paths": {
     "/items": {
       "get": {
+        "operationId": "items.search",
         "parameters": [
           {
             "in": "query",
@@ -156,6 +157,7 @@
     },
     "/items/{id}": {
       "delete": {
+        "operationId": "items.remove",
         "parameters": [
           {
             "in": "path",
@@ -205,6 +207,7 @@
         "tags": ["items"]
       },
       "patch": {
+        "operationId": "items.update",
         "parameters": [
           {
             "in": "path",
@@ -313,6 +316,7 @@
     },
     "/items/{id}/check": {
       "post": {
+        "operationId": "items.check",
         "parameters": [
           {
             "in": "path",
@@ -387,6 +391,7 @@
     },
     "/items/{id}/uncheck": {
       "post": {
+        "operationId": "items.uncheck",
         "parameters": [
           {
             "in": "path",
@@ -458,6 +463,7 @@
     },
     "/lists": {
       "get": {
+        "operationId": "list.listAggregate",
         "parameters": [
           {
             "in": "query",
@@ -558,6 +564,7 @@
         "tags": ["list"]
       },
       "post": {
+        "operationId": "list.create",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -633,6 +640,7 @@
     },
     "/lists/{id}": {
       "delete": {
+        "operationId": "list.delete",
         "parameters": [
           {
             "in": "path",
@@ -702,6 +710,7 @@
         "tags": ["list"]
       },
       "get": {
+        "operationId": "list.get",
         "parameters": [
           {
             "in": "path",
@@ -849,6 +858,7 @@
         "tags": ["list"]
       },
       "patch": {
+        "operationId": "list.update",
         "parameters": [
           {
             "in": "path",
@@ -948,6 +958,7 @@
     },
     "/lists/{id}/archive": {
       "post": {
+        "operationId": "list.archive",
         "parameters": [
           {
             "in": "path",
@@ -1019,6 +1030,7 @@
     },
     "/lists/{id}/unarchive": {
       "post": {
+        "operationId": "list.unarchive",
         "parameters": [
           {
             "in": "path",
@@ -1090,6 +1102,7 @@
     },
     "/lists/{listId}/items": {
       "post": {
+        "operationId": "items.add",
         "parameters": [
           {
             "in": "path",
@@ -1222,6 +1235,7 @@
     },
     "/lists/{listId}/items/bulk": {
       "post": {
+        "operationId": "items.bulkAdd",
         "parameters": [
           {
             "in": "path",
@@ -1363,6 +1377,7 @@
     },
     "/lists/{listId}/items/checked": {
       "delete": {
+        "operationId": "items.removeChecked",
         "parameters": [
           {
             "in": "path",
@@ -1419,6 +1434,7 @@
     },
     "/lists/{listId}/items/reorder": {
       "post": {
+        "operationId": "items.reorder",
         "parameters": [
           {
             "in": "path",
@@ -1500,6 +1516,7 @@
     },
     "/lists/{listId}/items/uncheck-all": {
       "post": {
+        "operationId": "items.uncheckAll",
         "parameters": [
           {
             "in": "path",
@@ -1556,6 +1573,7 @@
     },
     "/lists/{listId}/items/upsert-by-ref": {
       "post": {
+        "operationId": "items.upsertByRef",
         "parameters": [
           {
             "in": "path",

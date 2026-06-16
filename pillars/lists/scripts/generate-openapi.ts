@@ -76,7 +76,10 @@ function main(): void {
         version: CONTRACT_VERSION,
       },
     },
-    { schemaTransformer: listsSchemaTransformer }
+    {
+      schemaTransformer: listsSchemaTransformer,
+      setOperationId: 'concatenated-path',
+    }
   );
   const sorted = sortJson(document);
   const serialized = `${JSON.stringify(sorted, null, 2)}\n`;

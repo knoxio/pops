@@ -120,9 +120,16 @@ async function listContractPackages(packagesRoot: string): Promise<ContractPacka
 }
 
 /**
- * Walk `pillars/<id>/contract/` directories (PRD-253 colocated layout)
- * and return contract package records the same shape `listContractPackages`
- * produces. Returns `[]` if `pillars/` is absent (pre-colocation repos).
+ * Walk `pillars/<id>/` directories and return contract package records
+ * shaped like `listContractPackages` produces. Returns `[]` if `pillars/`
+ * is absent.
+ *
+ * Two pillar layouts are supported:
+ *   - **Colocated (PRD-253):** `pillars/<id>/contract/package.json` for a
+ *     `@pops/<id>-contract` package alongside `db/`, `api/`, etc.
+ *   - **Collapsed:** `pillars/<id>/package.json` for a single `@pops/<id>`
+ *     workspace member whose `./manifest` export points at the pillar's
+ *     manifest file (no `-contract` suffix).
  */
 async function listColocatedContractPackages(pillarsRoot: string): Promise<ContractPackage[]> {
   let entries: { name: string; isDirectory: () => boolean }[];
@@ -139,10 +146,40 @@ async function listColocatedContractPackages(pillarsRoot: string): Promise<Contr
 
   const out: ContractPackage[] = [];
   for (const dirName of candidates) {
-    const pkg = await readContractPackage(join(pillarsRoot, dirName, 'contract'), CONTRACT_SUFFIX);
-    if (pkg !== null) out.push(pkg);
+    const colocated = await readContractPackage(
+      join(pillarsRoot, dirName, 'contract'),
+      CONTRACT_SUFFIX
+    );
+    if (colocated !== null) {
+      out.push(colocated);
+      continue;
+    }
+    const collapsed = await readCollapsedPillarPackage(join(pillarsRoot, dirName));
+    if (collapsed !== null) out.push(collapsed);
   }
   return out;
+}
+
+async function readCollapsedPillarPackage(pkgDir: string): Promise<ContractPackage | null> {
+  const pkgPath = join(pkgDir, 'package.json');
+  let raw: string;
+  try {
+    raw = await readFile(pkgPath, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
+  const parsed: unknown = JSON.parse(raw);
+  if (!isContractPackageJson(parsed)) {
+    throw new Error(`malformed package.json at ${pkgPath}`);
+  }
+  const name = parsed.name;
+  if (name === undefined || !name.startsWith('@pops/') || name.endsWith(CONTRACT_SUFFIX)) {
+    return null;
+  }
+  const manifestEntry = pickManifestEntry(parsed.exports);
+  if (manifestEntry === undefined) return null;
+  return { name, dir: pkgDir, manifestEntry };
 }
 
 function looksLikeModuleManifest(value: unknown): value is ModuleManifest {
