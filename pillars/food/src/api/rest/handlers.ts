@@ -13,6 +13,7 @@ import { makeAliasesHandlers } from './aliases-handlers.js';
 import { makeBatchesHandlers } from './batches-handlers.js';
 import { makeConversionsHandlers } from './conversions-handlers.js';
 import { makeFridgeHandlers } from './fridge-handlers.js';
+import { makeHeroImageHandlers } from './hero-image-handlers.js';
 import { makeInboxHandlers } from './inbox-handlers.js';
 import { makeIngredientTagsHandlers } from './ingredient-tags-handlers.js';
 import { makeIngredientsHandlers } from './ingredients-handlers.js';
@@ -34,6 +35,7 @@ export function makeFoodRestHandlers(deps: {
     batches: makeBatchesHandlers(db),
     conversions: makeConversionsHandlers(db),
     fridge: makeFridgeHandlers(db),
+    heroImage: makeHeroImageHandlers(db),
     inbox: makeInboxHandlers(db),
     ingredients: makeIngredientsHandlers(db),
     ingredientTags: makeIngredientTagsHandlers(db),

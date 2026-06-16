@@ -172,6 +172,13 @@ interface CreateRecipeResult {
   compile: unknown;
 }
 
+interface UploadHeroResult {
+  heroImagePath: string;
+  sizeBytes: number;
+  width: number;
+  height: number;
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -413,6 +420,14 @@ export function makeClient(app: Express) {
         ),
       listProposedSlugs: (versionId: number) =>
         send<{ items: unknown[] }>(r.get(`/recipes/versions/${versionId}/proposed-slugs`)),
+    },
+    heroImage: {
+      upload: (recipeId: number, mimeType: string, contentBase64: string) =>
+        send<{ data: UploadHeroResult; message: string }>(
+          r.post(`/recipes/${recipeId}/hero-image`).send({ mimeType, contentBase64 })
+        ),
+      remove: (recipeId: number) =>
+        send<{ ok: true; message: string }>(r.delete(`/recipes/${recipeId}/hero-image`)),
     },
   };
 }

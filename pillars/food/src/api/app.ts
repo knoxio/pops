@@ -15,6 +15,7 @@ import express, { type Express, type Request, type Response } from 'express';
 
 import { foodContract } from '../contract/rest.js';
 import { type FoodApiDeps, makeRequestHandler } from './handlers.js';
+import { serveHeroImage } from './modules/hero-image/serve.js';
 import { makeFoodRestHandlers } from './rest/handlers.js';
 
 /**
@@ -40,6 +41,10 @@ export function createFoodApiApp(deps: FoodApiDeps): Express {
   app.get('/pillars', (_req: Request, res: Response) => {
     res.json(handlers.pillars());
   });
+
+  // Binary hero-image serving — registered before the ts-rest endpoints so
+  // `…/hero.jpg` resolves to a file; falls through to ts-rest otherwise.
+  app.get('/recipes/:recipeId/:filename', serveHeroImage);
 
   createExpressEndpoints(foodContract, makeFoodRestHandlers(deps), app);
 
