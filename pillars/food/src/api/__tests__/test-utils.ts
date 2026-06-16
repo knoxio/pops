@@ -179,6 +179,18 @@ interface UploadHeroResult {
   height: number;
 }
 
+interface SendPreview {
+  recipeTitle: string;
+  scaleFactor: number;
+  canonicalItems: unknown[];
+  unconvertedItems: unknown[];
+  alreadySentToListIds: number[];
+}
+type SendTarget = { kind: 'existing'; listId: number } | { kind: 'new'; name: string };
+type SendToListResult =
+  | { ok: true; listId: number; addedCount: number; mergedCount: number }
+  | { ok: false; reason: string };
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -428,6 +440,18 @@ export function makeClient(app: Express) {
         ),
       remove: (recipeId: number) =>
         send<{ ok: true; message: string }>(r.delete(`/recipes/${recipeId}/hero-image`)),
+    },
+    sendToList: {
+      prepare: (versionId: number, scaleFactor?: number) =>
+        send<SendPreview>(
+          r
+            .get(`/recipes/versions/${versionId}/send-to-list/preview`)
+            .query(scaleFactor === undefined ? {} : { scaleFactor })
+        ),
+      send: (versionId: number, target: SendTarget, scaleFactor?: number) =>
+        send<SendToListResult>(
+          r.post(`/recipes/versions/${versionId}/send-to-list`).send({ target, scaleFactor })
+        ),
     },
   };
 }
