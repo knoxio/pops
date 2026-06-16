@@ -17,25 +17,11 @@
  */
 import { TRPCError } from '@trpc/server';
 
-import {
-  ListItemNotFoundError as LegacyListItemNotFoundError,
-  ListNotFoundError,
-} from '@pops/app-lists-db';
-import { ListItemNotFoundError } from '@pops/lists-db';
+import { ListItemNotFoundError, ListNotFoundError } from '../../db/index.js';
+import { isForeignKeyConstraintError, isUniqueConstraintError } from '../shared/sqlite-errors.js';
 
-import {
-  isForeignKeyConstraintError,
-  isUniqueConstraintError,
-} from '../../../shared/sqlite-errors.js';
-
-function isTypedNotFound(
-  err: unknown
-): err is ListNotFoundError | ListItemNotFoundError | LegacyListItemNotFoundError {
-  return (
-    err instanceof ListNotFoundError ||
-    err instanceof ListItemNotFoundError ||
-    err instanceof LegacyListItemNotFoundError
-  );
+function isTypedNotFound(err: unknown): err is ListNotFoundError | ListItemNotFoundError {
+  return err instanceof ListNotFoundError || err instanceof ListItemNotFoundError;
 }
 
 export function mapServiceError(err: unknown): never {

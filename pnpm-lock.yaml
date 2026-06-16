@@ -2288,6 +2288,9 @@ importers:
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@trpc/server':
+        specifier: 11.17.0
+        version: 11.17.0(typescript@6.0.3)
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0

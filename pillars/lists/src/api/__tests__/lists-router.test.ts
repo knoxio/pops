@@ -27,14 +27,13 @@ import BetterSqlite3, { type Database } from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { closeDb, setDb } from '../../../db.js';
-import { setListsDb } from '../../../db/lists-handle.js';
-import { createCaller } from '../../../shared/test-utils.js';
+import { listsRouter } from '../router.js';
+import { createCallerFactory } from '../trpc.js';
 
 const MIGRATION_FILES = ['0062_chemical_donald_blake.sql'];
 
 function applyMigration(db: Database, filename: string): void {
-  const sql = readFileSync(join(__dirname, '../../../db/drizzle-migrations', filename), 'utf8');
+  const sql = readFileSync(join(__dirname, '../../../migrations', filename), 'utf8');
   for (const stmt of sql.split('--> statement-breakpoint')) {
     const trimmed = stmt.trim();
     if (trimmed.length > 0) db.exec(trimmed);
@@ -49,29 +48,25 @@ function createListsTestDb(): Database {
   return db;
 }
 
+const createCaller = createCallerFactory(listsRouter);
+
 describe('PRD-140 lists router', () => {
   let raw: Database;
+  let db: ReturnType<typeof drizzle>;
 
   beforeEach(() => {
     raw = createListsTestDb();
-    setDb(raw);
-    // Track K phase 2 PR 3 cutover: every lists router call site now
-    // resolves through `getListsDrizzle()` instead of `getDrizzle()`,
-    // so the test fixture has to inject the same in-memory DB into the
-    // lists handle. Without this the singleton would lazy-open
-    // `data/lists.db` mid-suite.
-    setListsDb({ db: drizzle(raw), raw });
+    db = drizzle(raw);
   });
 
   afterEach(() => {
-    setListsDb(null);
-    closeDb();
+    raw.close();
   });
 
   describe('list.create', () => {
     it('creates a list with ownerApp defaulting to "user"', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'Groceries', kind: 'shopping' });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'Groceries', kind: 'shopping' });
       expect(id).toBeGreaterThan(0);
       const row = raw.prepare(`SELECT * FROM lists WHERE id = ?`).get(id) as {
         name: string;
@@ -82,8 +77,8 @@ describe('PRD-140 lists router', () => {
     });
 
     it('lets caller override ownerApp', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({
         name: 'From recipe',
         kind: 'shopping',
         ownerApp: 'food',
@@ -95,26 +90,26 @@ describe('PRD-140 lists router', () => {
     });
 
     it('rejects whitespace-only name at the Zod boundary', async () => {
-      const caller = createCaller();
-      await expect(caller.lists.list.create({ name: '   ', kind: 'shopping' })).rejects.toThrow();
+      const caller = createCaller({ db, internalCaller: true });
+      await expect(caller.list.create({ name: '   ', kind: 'shopping' })).rejects.toThrow();
     });
   });
 
   describe('list.update', () => {
     it('updates name', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'Old', kind: 'shopping' });
-      const result = await caller.lists.list.update({ id, name: 'New' });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'Old', kind: 'shopping' });
+      const result = await caller.list.update({ id, name: 'New' });
       expect(result).toEqual({ ok: true });
       const row = raw.prepare(`SELECT name FROM lists WHERE id = ?`).get(id) as { name: string };
       expect(row.name).toBe('New');
     });
 
     it('updates kind without modifying items', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'List', kind: 'shopping' });
-      await caller.lists.items.add({ listId: id, label: 'milk' });
-      await caller.lists.list.update({ id, kind: 'todo' });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'List', kind: 'shopping' });
+      await caller.items.add({ listId: id, label: 'milk' });
+      await caller.list.update({ id, kind: 'todo' });
       const row = raw.prepare(`SELECT kind FROM lists WHERE id = ?`).get(id) as { kind: string };
       expect(row.kind).toBe('todo');
       const itemCount = raw
@@ -124,29 +119,29 @@ describe('PRD-140 lists router', () => {
     });
 
     it('reports NotFound for unknown id (no throw)', async () => {
-      const caller = createCaller();
-      const result = await caller.lists.list.update({ id: 99999, name: 'x' });
+      const caller = createCaller({ db, internalCaller: true });
+      const result = await caller.list.update({ id: 99999, name: 'x' });
       expect(result).toEqual({ ok: false, reason: 'NotFound' });
     });
 
     it('rejects an empty patch at the Zod boundary', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'Empty', kind: 'shopping' });
-      await expect(caller.lists.list.update({ id })).rejects.toThrow();
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'Empty', kind: 'shopping' });
+      await expect(caller.list.update({ id })).rejects.toThrow();
     });
   });
 
   describe('list.archive / list.unarchive', () => {
     it('archive sets archivedAt and is idempotent', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      await caller.lists.list.archive({ id });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      await caller.list.archive({ id });
       const first = raw.prepare(`SELECT archived_at FROM lists WHERE id = ?`).get(id) as {
         archived_at: string;
       };
       expect(first.archived_at).not.toBeNull();
       // Idempotent — calling again does NOT throw and keeps the row archived.
-      await caller.lists.list.archive({ id });
+      await caller.list.archive({ id });
       const second = raw.prepare(`SELECT archived_at FROM lists WHERE id = ?`).get(id) as {
         archived_at: string;
       };
@@ -154,10 +149,10 @@ describe('PRD-140 lists router', () => {
     });
 
     it('unarchive clears archivedAt', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      await caller.lists.list.archive({ id });
-      await caller.lists.list.unarchive({ id });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      await caller.list.archive({ id });
+      await caller.list.unarchive({ id });
       const row = raw.prepare(`SELECT archived_at FROM lists WHERE id = ?`).get(id) as {
         archived_at: string | null;
       };
@@ -167,11 +162,11 @@ describe('PRD-140 lists router', () => {
 
   describe('list.delete', () => {
     it('cascades items in one transaction', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      await caller.lists.items.add({ listId: id, label: 'a' });
-      await caller.lists.items.add({ listId: id, label: 'b' });
-      await caller.lists.list.delete({ id });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      await caller.items.add({ listId: id, label: 'a' });
+      await caller.items.add({ listId: id, label: 'b' });
+      await caller.list.delete({ id });
       const headerCount = raw.prepare(`SELECT COUNT(*) AS c FROM lists WHERE id = ?`).get(id) as {
         c: number;
       };
@@ -183,24 +178,24 @@ describe('PRD-140 lists router', () => {
     });
 
     it('throws NOT_FOUND on an unknown id', async () => {
-      const caller = createCaller();
-      await expect(caller.lists.list.delete({ id: 99999 })).rejects.toThrow(/not found/i);
+      const caller = createCaller({ db, internalCaller: true });
+      await expect(caller.list.delete({ id: 99999 })).rejects.toThrow(/not found/i);
     });
   });
 
   describe('list.get', () => {
     it('returns null for unknown id (detail page renders empty state)', async () => {
-      const caller = createCaller();
-      const result = await caller.lists.list.get({ id: 99999 });
+      const caller = createCaller({ db, internalCaller: true });
+      const result = await caller.list.get({ id: 99999 });
       expect(result).toBeNull();
     });
 
     it('returns the list + items sorted by position', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      await caller.lists.items.add({ listId: id, label: 'a' });
-      await caller.lists.items.add({ listId: id, label: 'b' });
-      const result = await caller.lists.list.get({ id });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      await caller.items.add({ listId: id, label: 'a' });
+      await caller.items.add({ listId: id, label: 'b' });
+      const result = await caller.list.get({ id });
       expect(result?.list).toMatchObject({ id, name: 'L', kind: 'shopping' });
       expect(result?.items.map((it) => it.label)).toEqual(['a', 'b']);
       expect(result?.items.map((it) => it.position)).toEqual([0, 1]);
@@ -209,16 +204,16 @@ describe('PRD-140 lists router', () => {
 
   describe('list.list (index aggregate)', () => {
     it('computes itemCount, uncheckedCount, lastUpdatedAt per list', async () => {
-      const caller = createCaller();
-      const { id: a } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });
-      await caller.lists.items.add({ listId: a, label: '1' });
-      const { id: item2 } = await caller.lists.items.add({ listId: a, label: '2' });
-      await caller.lists.items.check({ id: item2 });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: a } = await caller.list.create({ name: 'A', kind: 'shopping' });
+      await caller.items.add({ listId: a, label: '1' });
+      const { id: item2 } = await caller.items.add({ listId: a, label: '2' });
+      await caller.items.check({ id: item2 });
 
-      const { id: b } = await caller.lists.list.create({ name: 'B', kind: 'todo' });
-      await caller.lists.items.add({ listId: b, label: 'x' });
+      const { id: b } = await caller.list.create({ name: 'B', kind: 'todo' });
+      await caller.items.add({ listId: b, label: 'x' });
 
-      const { items } = await caller.lists.list.list();
+      const { items } = await caller.list.list();
       const byId = new Map(items.map((r) => [r.id, r]));
       expect(byId.get(a)).toMatchObject({ itemCount: 2, uncheckedCount: 1 });
       expect(byId.get(b)).toMatchObject({ itemCount: 1, uncheckedCount: 1 });
@@ -226,38 +221,38 @@ describe('PRD-140 lists router', () => {
     });
 
     it('filters by kind', async () => {
-      const caller = createCaller();
-      await caller.lists.list.create({ name: 'A', kind: 'shopping' });
-      await caller.lists.list.create({ name: 'B', kind: 'todo' });
-      const { items } = await caller.lists.list.list({ kinds: ['shopping'] });
+      const caller = createCaller({ db, internalCaller: true });
+      await caller.list.create({ name: 'A', kind: 'shopping' });
+      await caller.list.create({ name: 'B', kind: 'todo' });
+      const { items } = await caller.list.list({ kinds: ['shopping'] });
       expect(items).toHaveLength(1);
       expect(items[0]?.kind).toBe('shopping');
     });
 
     it('hides archived lists by default and surfaces them when includeArchived=true', async () => {
-      const caller = createCaller();
-      const { id } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });
-      await caller.lists.list.archive({ id });
-      const hidden = await caller.lists.list.list();
+      const caller = createCaller({ db, internalCaller: true });
+      const { id } = await caller.list.create({ name: 'A', kind: 'shopping' });
+      await caller.list.archive({ id });
+      const hidden = await caller.list.list();
       expect(hidden.items).toHaveLength(0);
-      const visible = await caller.lists.list.list({ includeArchived: true });
+      const visible = await caller.list.list({ includeArchived: true });
       expect(visible.items).toHaveLength(1);
       expect(visible.items[0]?.archivedAt).not.toBeNull();
     });
 
     it('sorts by name', async () => {
-      const caller = createCaller();
-      await caller.lists.list.create({ name: 'Zoo', kind: 'shopping' });
-      await caller.lists.list.create({ name: 'apple', kind: 'shopping' });
-      const { items } = await caller.lists.list.list({ sort: 'name' });
+      const caller = createCaller({ db, internalCaller: true });
+      await caller.list.create({ name: 'Zoo', kind: 'shopping' });
+      await caller.list.create({ name: 'apple', kind: 'shopping' });
+      const { items } = await caller.list.list({ sort: 'name' });
       // NOCASE collation puts 'apple' before 'Zoo'.
       expect(items.map((r) => r.name)).toEqual(['apple', 'Zoo']);
     });
 
     it('returns uncheckedCount=0 when items are absent (LEFT JOIN preserves header)', async () => {
-      const caller = createCaller();
-      await caller.lists.list.create({ name: 'Empty', kind: 'shopping' });
-      const { items } = await caller.lists.list.list();
+      const caller = createCaller({ db, internalCaller: true });
+      await caller.list.create({ name: 'Empty', kind: 'shopping' });
+      const { items } = await caller.list.list();
       expect(items).toHaveLength(1);
       expect(items[0]).toMatchObject({ itemCount: 0, uncheckedCount: 0 });
     });
@@ -265,18 +260,18 @@ describe('PRD-140 lists router', () => {
 
   describe('items.add', () => {
     it('returns id + position; position is monotonic per list', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const first = await caller.lists.items.add({ listId, label: 'a' });
-      const second = await caller.lists.items.add({ listId, label: 'b' });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const first = await caller.items.add({ listId, label: 'a' });
+      const second = await caller.items.add({ listId, label: 'b' });
       expect(first.position).toBe(0);
       expect(second.position).toBe(1);
       expect(second.id).toBeGreaterThan(first.id);
     });
 
     it('returns CONFLICT when listId references a missing list', async () => {
-      const caller = createCaller();
-      await expect(caller.lists.items.add({ listId: 99999, label: 'x' })).rejects.toMatchObject({
+      const caller = createCaller({ db, internalCaller: true });
+      await expect(caller.items.add({ listId: 99999, label: 'x' })).rejects.toMatchObject({
         message: expect.stringMatching(/foreign key/i),
       });
     });
@@ -284,9 +279,9 @@ describe('PRD-140 lists router', () => {
 
   describe('items.bulkAdd', () => {
     it('inserts in order and returns ids in input order', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { addedIds } = await caller.lists.items.bulkAdd({
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { addedIds } = await caller.items.bulkAdd({
         listId,
         items: [{ label: 'first' }, { label: 'second' }, { label: 'third' }],
       });
@@ -301,10 +296,10 @@ describe('PRD-140 lists router', () => {
 
   describe('items.update', () => {
     it('updates label only', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id } = await caller.lists.items.add({ listId, label: 'old' });
-      await caller.lists.items.update({ id, label: 'new' });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id } = await caller.items.add({ listId, label: 'old' });
+      await caller.items.update({ id, label: 'new' });
       const row = raw.prepare(`SELECT label FROM list_items WHERE id = ?`).get(id) as {
         label: string;
       };
@@ -312,19 +307,19 @@ describe('PRD-140 lists router', () => {
     });
 
     it('rejects empty patch at Zod boundary', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id } = await caller.lists.items.add({ listId, label: 'x' });
-      await expect(caller.lists.items.update({ id })).rejects.toThrow();
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id } = await caller.items.add({ listId, label: 'x' });
+      await expect(caller.items.update({ id })).rejects.toThrow();
     });
   });
 
   describe('items.check / items.uncheck', () => {
     it('check returns checkedAt and stores it', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id } = await caller.lists.items.add({ listId, label: 'x' });
-      const result = await caller.lists.items.check({ id });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id } = await caller.items.add({ listId, label: 'x' });
+      const result = await caller.items.check({ id });
       expect(result.ok).toBe(true);
       expect(typeof result.checkedAt).toBe('string');
       const row = raw
@@ -335,11 +330,11 @@ describe('PRD-140 lists router', () => {
     });
 
     it('uncheck clears the timestamp', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id } = await caller.lists.items.add({ listId, label: 'x' });
-      await caller.lists.items.check({ id });
-      await caller.lists.items.uncheck({ id });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id } = await caller.items.add({ listId, label: 'x' });
+      await caller.items.check({ id });
+      await caller.items.uncheck({ id });
       const row = raw
         .prepare(`SELECT checked, checked_at FROM list_items WHERE id = ?`)
         .get(id) as { checked: number; checked_at: string | null };
@@ -350,11 +345,11 @@ describe('PRD-140 lists router', () => {
 
   describe('items.remove', () => {
     it('removes a row and is idempotent', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id } = await caller.lists.items.add({ listId, label: 'x' });
-      await caller.lists.items.remove({ id });
-      await caller.lists.items.remove({ id }); // idempotent
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id } = await caller.items.add({ listId, label: 'x' });
+      await caller.items.remove({ id });
+      await caller.items.remove({ id }); // idempotent
       const row = raw.prepare(`SELECT COUNT(*) AS c FROM list_items WHERE id = ?`).get(id) as {
         c: number;
       };
@@ -364,12 +359,12 @@ describe('PRD-140 lists router', () => {
 
   describe('items.reorder', () => {
     it('rewrites positions in input order', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
-      const { id: b } = await caller.lists.items.add({ listId, label: 'b' });
-      const { id: c } = await caller.lists.items.add({ listId, label: 'c' });
-      const result = await caller.lists.items.reorder({ listId, orderedIds: [c, a, b] });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId, label: 'a' });
+      const { id: b } = await caller.items.add({ listId, label: 'b' });
+      const { id: c } = await caller.items.add({ listId, label: 'c' });
+      const result = await caller.items.reorder({ listId, orderedIds: [c, a, b] });
       expect(result).toEqual({ ok: true });
       const rows = raw
         .prepare(`SELECT id, position FROM list_items WHERE list_id = ? ORDER BY position`)
@@ -379,22 +374,22 @@ describe('PRD-140 lists router', () => {
     });
 
     it('rejects when count differs from the live item set', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
-      await caller.lists.items.add({ listId, label: 'b' });
-      const result = await caller.lists.items.reorder({ listId, orderedIds: [a] });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId, label: 'a' });
+      await caller.items.add({ listId, label: 'b' });
+      const result = await caller.items.reorder({ listId, orderedIds: [a] });
       expect(result).toEqual({ ok: false, reason: 'BadIds' });
     });
 
     it('rejects when orderedIds contains a duplicate', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'L', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
-      const { id: b } = await caller.lists.items.add({ listId, label: 'b' });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'L', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId, label: 'a' });
+      const { id: b } = await caller.items.add({ listId, label: 'b' });
       // Duplicate id — `[a, a, b]` is the wrong length here (length 3 vs
       // current 2), so use a same-length duplicate `[a, a]`.
-      const result = await caller.lists.items.reorder({
+      const result = await caller.items.reorder({
         listId,
         orderedIds: [a, a],
       });
@@ -411,12 +406,12 @@ describe('PRD-140 lists router', () => {
     });
 
     it('rejects when an id belongs to a different list', async () => {
-      const caller = createCaller();
-      const { id: listA } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });
-      const { id: listB } = await caller.lists.list.create({ name: 'B', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId: listA, label: 'a' });
-      const { id: foreign } = await caller.lists.items.add({ listId: listB, label: 'b' });
-      const result = await caller.lists.items.reorder({
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listA } = await caller.list.create({ name: 'A', kind: 'shopping' });
+      const { id: listB } = await caller.list.create({ name: 'B', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId: listA, label: 'a' });
+      const { id: foreign } = await caller.items.add({ listId: listB, label: 'b' });
+      const result = await caller.items.reorder({
         listId: listA,
         orderedIds: [a, foreign],
       });
@@ -426,75 +421,75 @@ describe('PRD-140 lists router', () => {
 
   describe('items.uncheckAll (PRD-141)', () => {
     it('unchecks every checked item and returns the count', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
-      const { id: b } = await caller.lists.items.add({ listId, label: 'b' });
-      await caller.lists.items.add({ listId, label: 'c' });
-      await caller.lists.items.check({ id: a });
-      await caller.lists.items.check({ id: b });
-      const result = await caller.lists.items.uncheckAll({ listId });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'Shop', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId, label: 'a' });
+      const { id: b } = await caller.items.add({ listId, label: 'b' });
+      await caller.items.add({ listId, label: 'c' });
+      await caller.items.check({ id: a });
+      await caller.items.check({ id: b });
+      const result = await caller.items.uncheckAll({ listId });
       expect(result).toEqual({ ok: true, count: 2 });
-      const detail = await caller.lists.list.get({ id: listId });
+      const detail = await caller.list.get({ id: listId });
       expect(detail?.items.every((row) => row.checked === 0)).toBe(true);
     });
 
     it('returns count=0 when nothing is checked', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
-      await caller.lists.items.add({ listId, label: 'a' });
-      expect(await caller.lists.items.uncheckAll({ listId })).toEqual({ ok: true, count: 0 });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'Shop', kind: 'shopping' });
+      await caller.items.add({ listId, label: 'a' });
+      expect(await caller.items.uncheckAll({ listId })).toEqual({ ok: true, count: 0 });
     });
 
     it('is scoped to the target list', async () => {
-      const caller = createCaller();
-      const { id: listA } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });
-      const { id: listB } = await caller.lists.list.create({ name: 'B', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId: listA, label: 'a' });
-      const { id: b } = await caller.lists.items.add({ listId: listB, label: 'b' });
-      await caller.lists.items.check({ id: a });
-      await caller.lists.items.check({ id: b });
-      await caller.lists.items.uncheckAll({ listId: listA });
-      const detailB = await caller.lists.list.get({ id: listB });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listA } = await caller.list.create({ name: 'A', kind: 'shopping' });
+      const { id: listB } = await caller.list.create({ name: 'B', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId: listA, label: 'a' });
+      const { id: b } = await caller.items.add({ listId: listB, label: 'b' });
+      await caller.items.check({ id: a });
+      await caller.items.check({ id: b });
+      await caller.items.uncheckAll({ listId: listA });
+      const detailB = await caller.list.get({ id: listB });
       expect(detailB?.items[0]?.checked).toBe(1);
     });
   });
 
   describe('items.removeChecked (PRD-141)', () => {
     it('removes every checked item and returns the count', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId, label: 'a' });
-      await caller.lists.items.add({ listId, label: 'b' });
-      const { id: c } = await caller.lists.items.add({ listId, label: 'c' });
-      await caller.lists.items.check({ id: a });
-      await caller.lists.items.check({ id: c });
-      const result = await caller.lists.items.removeChecked({ listId });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'Shop', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId, label: 'a' });
+      await caller.items.add({ listId, label: 'b' });
+      const { id: c } = await caller.items.add({ listId, label: 'c' });
+      await caller.items.check({ id: a });
+      await caller.items.check({ id: c });
+      const result = await caller.items.removeChecked({ listId });
       expect(result).toEqual({ ok: true, removedCount: 2 });
-      const detail = await caller.lists.list.get({ id: listId });
+      const detail = await caller.list.get({ id: listId });
       expect(detail?.items.map((row) => row.label)).toEqual(['b']);
     });
 
     it('returns removedCount=0 when nothing is checked', async () => {
-      const caller = createCaller();
-      const { id: listId } = await caller.lists.list.create({ name: 'Shop', kind: 'shopping' });
-      await caller.lists.items.add({ listId, label: 'a' });
-      expect(await caller.lists.items.removeChecked({ listId })).toEqual({
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listId } = await caller.list.create({ name: 'Shop', kind: 'shopping' });
+      await caller.items.add({ listId, label: 'a' });
+      expect(await caller.items.removeChecked({ listId })).toEqual({
         ok: true,
         removedCount: 0,
       });
     });
 
     it('is scoped to the target list', async () => {
-      const caller = createCaller();
-      const { id: listA } = await caller.lists.list.create({ name: 'A', kind: 'shopping' });
-      const { id: listB } = await caller.lists.list.create({ name: 'B', kind: 'shopping' });
-      const { id: a } = await caller.lists.items.add({ listId: listA, label: 'a' });
-      const { id: b } = await caller.lists.items.add({ listId: listB, label: 'b' });
-      await caller.lists.items.check({ id: a });
-      await caller.lists.items.check({ id: b });
-      await caller.lists.items.removeChecked({ listId: listA });
-      const detailB = await caller.lists.list.get({ id: listB });
+      const caller = createCaller({ db, internalCaller: true });
+      const { id: listA } = await caller.list.create({ name: 'A', kind: 'shopping' });
+      const { id: listB } = await caller.list.create({ name: 'B', kind: 'shopping' });
+      const { id: a } = await caller.items.add({ listId: listA, label: 'a' });
+      const { id: b } = await caller.items.add({ listId: listB, label: 'b' });
+      await caller.items.check({ id: a });
+      await caller.items.check({ id: b });
+      await caller.items.removeChecked({ listId: listA });
+      const detailB = await caller.list.get({ id: listB });
       expect(detailB?.items.length).toBe(1);
     });
   });

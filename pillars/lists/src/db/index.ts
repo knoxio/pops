@@ -16,4 +16,25 @@ export * as listItemsService from './services/list-items.js';
 export type { CreateListInput, ListListsFilter, UpdateListInput } from './services/lists.js';
 export type { AddItemInput, UpdateItemInput } from './services/list-items.js';
 
+// Flat re-exports of the lists CRUD + list-items mutations so the api/
+// routers stay self-documenting (`createList(db, …)` rather than
+// `listsService.createList(db, …)`).
+export {
+  archiveList,
+  createList,
+  deleteList,
+  getList,
+  listLists,
+  unarchiveList,
+  updateList,
+} from './services/lists.js';
+export {
+  addItem,
+  bulkAdd,
+  removeCheckedItems,
+  removeItem,
+  reorderItems,
+  updateItem,
+} from './services/list-items.js';
+
 export { openListsDb, type OpenedListsDb } from './open-lists-db.js';

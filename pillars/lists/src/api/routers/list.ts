@@ -13,7 +13,7 @@
  * next slice migrates the `lists` CRUD services across.
  *
  * Track K phase 2 PR 3 cutover: the DB handle now comes from
- * `getListsDrizzle()` (the lists pillar's `lists.db`) instead of the
+ * `ctx.db` (the lists pillar's `lists.db`) instead of the
  * shared `getDrizzle()` core handle. Theme 13 PR 4 retired the
  * boot-time ATTACH bridge from the shared `pops.db` — every `lists` +
  * `list_items` write now lands directly in `lists.db`.
@@ -29,12 +29,10 @@ import {
   ListNotFoundError,
   unarchiveList,
   updateList,
-} from '@pops/app-lists-db';
-import { listItemsService } from '@pops/lists-db';
-
-import { getListsDrizzle } from '../../../db/lists-handle.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+} from '../../db/index.js';
+import { listItemsService } from '../../db/index.js';
 import { selectListAggregate } from '../services/aggregate.js';
+import { protectedProcedure, router } from '../trpc.js';
 import { runOrMap } from './error-mapping.js';
 
 const KIND_ENUM = z.enum(['shopping', 'packing', 'todo', 'generic']);
@@ -70,8 +68,8 @@ const IdInputSchema = z.object({ id: z.number().int().positive() });
 
 export const listRouter = router({
   /** Aggregate list query for the /lists index page. */
-  list: protectedProcedure.input(ListInputSchema).query(({ input }) => {
-    const items = selectListAggregate(getListsDrizzle(), input ?? {});
+  list: protectedProcedure.input(ListInputSchema).query(({ input, ctx }) => {
+    const items = selectListAggregate(ctx.db, input ?? {});
     return { items };
   }),
 
@@ -82,17 +80,17 @@ export const listRouter = router({
    * was just deleted in another tab; throwing `NOT_FOUND` would surface as
    * a generic error toast instead.
    */
-  get: protectedProcedure.input(GetInputSchema).query(({ input }) => {
-    const db = getListsDrizzle();
+  get: protectedProcedure.input(GetInputSchema).query(({ input, ctx }) => {
+    const db = ctx.db;
     const list = getList(db, input.id);
     if (list === null) return null;
     const items = listItemsService.listItemsForList(db, input.id);
     return { list, items };
   }),
 
-  create: protectedProcedure.input(CreateInputSchema).mutation(({ input }) => {
+  create: protectedProcedure.input(CreateInputSchema).mutation(({ input, ctx }) => {
     const row = runOrMap(() =>
-      createList(getListsDrizzle(), {
+      createList(ctx.db, {
         name: input.name,
         kind: input.kind,
         ownerApp: input.ownerApp ?? 'user',
@@ -106,9 +104,9 @@ export const listRouter = router({
    * distinguish `NameRequired` (handled by Zod input refinement) from
    * `NotFound` without a thrown TRPCError that would surface as a toast.
    */
-  update: protectedProcedure.input(UpdateInputSchema).mutation(({ input }) => {
+  update: protectedProcedure.input(UpdateInputSchema).mutation(({ input, ctx }) => {
     try {
-      updateList(getListsDrizzle(), input.id, { name: input.name, kind: input.kind });
+      updateList(ctx.db, input.id, { name: input.name, kind: input.kind });
       return { ok: true as const };
     } catch (err) {
       if (err instanceof ListNotFoundError) {
@@ -118,18 +116,18 @@ export const listRouter = router({
     }
   }),
 
-  archive: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    runOrMap(() => archiveList(getListsDrizzle(), input.id));
+  archive: protectedProcedure.input(IdInputSchema).mutation(({ input, ctx }) => {
+    runOrMap(() => archiveList(ctx.db, input.id));
     return { ok: true as const };
   }),
 
-  unarchive: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    runOrMap(() => unarchiveList(getListsDrizzle(), input.id));
+  unarchive: protectedProcedure.input(IdInputSchema).mutation(({ input, ctx }) => {
+    runOrMap(() => unarchiveList(ctx.db, input.id));
     return { ok: true as const };
   }),
 
-  delete: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    const db = getListsDrizzle();
+  delete: protectedProcedure.input(IdInputSchema).mutation(({ input, ctx }) => {
+    const db = ctx.db;
     // PRD-140 line 213: cascade items via PRD-112's `deleteList` (one
     // transaction). The service is intentionally idempotent on unknown id,
     // but we throw NOT_FOUND if the row was never there so the UI can show

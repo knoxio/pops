@@ -16,7 +16,7 @@
  * allocation + ref-kind helpers across.
  *
  * Track K phase 2 PR 3 cutover: the DB handle every call site receives
- * now comes from `getListsDrizzle()` (the lists pillar's `lists.db`)
+ * now comes from `ctx.db` (the lists pillar's `lists.db`)
  * instead of the shared `getDrizzle()` core handle. Theme 13 PR 4
  * retired the boot-time ATTACH bridge from the shared `pops.db` — every
  * `lists` + `list_items` write now lands directly in `lists.db`. The
@@ -36,11 +36,9 @@ import {
   removeItem,
   reorderItems,
   updateItem,
-} from '@pops/app-lists-db';
-import { listItemsService } from '@pops/lists-db';
-
-import { getListsDrizzle } from '../../../db/lists-handle.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+} from '../../db/index.js';
+import { listItemsService } from '../../db/index.js';
+import { protectedProcedure, router } from '../trpc.js';
 import { runOrMap } from './error-mapping.js';
 
 const REF_KIND_ENUM = z.enum(['free', 'ingredient', 'variant', 'recipe', 'custom']);
@@ -93,23 +91,23 @@ function currentItemIds(db: ListsDb, listId: number): readonly number[] {
 }
 
 export const itemsRouter = router({
-  add: protectedProcedure.input(AddInputSchema).mutation(({ input }) => {
-    const row = runOrMap(() => addItem(getListsDrizzle(), input));
+  add: protectedProcedure.input(AddInputSchema).mutation(({ input, ctx }) => {
+    const row = runOrMap(() => addItem(ctx.db, input));
     return { id: row.id, position: row.position };
   }),
 
-  bulkAdd: protectedProcedure.input(BulkAddInputSchema).mutation(({ input }) => {
-    const rows = runOrMap(() => bulkAdd(getListsDrizzle(), input.listId, input.items));
+  bulkAdd: protectedProcedure.input(BulkAddInputSchema).mutation(({ input, ctx }) => {
+    const rows = runOrMap(() => bulkAdd(ctx.db, input.listId, input.items));
     return { addedIds: rows.map((r) => r.id) };
   }),
 
-  update: protectedProcedure.input(UpdateInputSchema).mutation(({ input }) => {
-    runOrMap(() => updateItem(getListsDrizzle(), input.id, input));
+  update: protectedProcedure.input(UpdateInputSchema).mutation(({ input, ctx }) => {
+    runOrMap(() => updateItem(ctx.db, input.id, input));
     return { ok: true as const };
   }),
 
-  check: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    const row = runOrMap(() => listItemsService.checkListItem(getListsDrizzle(), input.id));
+  check: protectedProcedure.input(IdInputSchema).mutation(({ input, ctx }) => {
+    const row = runOrMap(() => listItemsService.checkListItem(ctx.db, input.id));
     if (row.checkedAt === null) {
       // PRD-112 enforces `checked_at` is set when `checked=1` — this branch
       // is defensive against a future schema change.
@@ -121,14 +119,14 @@ export const itemsRouter = router({
     return { ok: true as const, checkedAt: row.checkedAt };
   }),
 
-  uncheck: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
-    runOrMap(() => listItemsService.uncheckListItem(getListsDrizzle(), input.id));
+  uncheck: protectedProcedure.input(IdInputSchema).mutation(({ input, ctx }) => {
+    runOrMap(() => listItemsService.uncheckListItem(ctx.db, input.id));
     return { ok: true as const };
   }),
 
-  remove: protectedProcedure.input(IdInputSchema).mutation(({ input }) => {
+  remove: protectedProcedure.input(IdInputSchema).mutation(({ input, ctx }) => {
     // PRD-112's removeItem is idempotent (no NotFound). Always returns ok.
-    runOrMap(() => removeItem(getListsDrizzle(), input.id));
+    runOrMap(() => removeItem(ctx.db, input.id));
     return { ok: true as const };
   }),
 
@@ -141,8 +139,8 @@ export const itemsRouter = router({
    * PRD-140 §AC calls out the count check; the id-set + uniqueness checks
    * are tighter versions of the same defence.
    */
-  reorder: protectedProcedure.input(ReorderInputSchema).mutation(({ input }) => {
-    const db = getListsDrizzle();
+  reorder: protectedProcedure.input(ReorderInputSchema).mutation(({ input, ctx }) => {
+    const db = ctx.db;
     const current = currentItemIds(db, input.listId);
     if (current.length !== input.orderedIds.length) {
       return { ok: false as const, reason: 'BadIds' as const };
@@ -164,10 +162,8 @@ export const itemsRouter = router({
    * the affected row count so the UI can surface "Unchecked N items"
    * without a follow-up read.
    */
-  uncheckAll: protectedProcedure.input(ListIdInputSchema).mutation(({ input }) => {
-    const count = runOrMap(() =>
-      listItemsService.uncheckAllListItems(getListsDrizzle(), input.listId)
-    );
+  uncheckAll: protectedProcedure.input(ListIdInputSchema).mutation(({ input, ctx }) => {
+    const count = runOrMap(() => listItemsService.uncheckAllListItems(ctx.db, input.listId));
     return { ok: true as const, count };
   }),
 
@@ -175,8 +171,8 @@ export const itemsRouter = router({
    * Hard-delete every checked item in a list (PRD-141 amendment). Returns
    * the row count removed; unchecked items are untouched.
    */
-  removeChecked: protectedProcedure.input(ListIdInputSchema).mutation(({ input }) => {
-    const removedCount = runOrMap(() => removeCheckedItems(getListsDrizzle(), input.listId));
+  removeChecked: protectedProcedure.input(ListIdInputSchema).mutation(({ input, ctx }) => {
+    const removedCount = runOrMap(() => removeCheckedItems(ctx.db, input.listId));
     return { ok: true as const, removedCount };
   }),
 });
