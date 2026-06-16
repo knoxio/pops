@@ -14,11 +14,11 @@
  * `ref_kind != 'free'` but `ref_id IS NULL`, `normalise()` falls back to
  * `'free'` per PRD-112 Edge Cases.
  */
-import { and, asc, eq, max as sqlMax } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { ListItemNotFoundError } from '../errors.js';
 import { listItems, type ListItemRefKind, type ListItemRow } from '../schema.js';
-import { expectRow, type ListsDb, nowIso } from './internal.js';
+import { expectRow, type ListsDb, nextPosition, nowIso } from './internal.js';
 
 /* ---------- reads ---------- */
 
@@ -141,16 +141,6 @@ function normalise(input: AddItemInput, fallbackPosition: number): NormalisedIte
     dueAt: input.dueAt ?? null,
     notes: input.notes ?? null,
   };
-}
-
-function nextPosition(db: ListsDb, listId: number): number {
-  const rows = db
-    .select({ max: sqlMax(listItems.position) })
-    .from(listItems)
-    .where(eq(listItems.listId, listId))
-    .all();
-  const max = rows[0]?.max ?? null;
-  return max === null ? 0 : max + 1;
 }
 
 export function addItem(db: ListsDb, input: AddItemInput): ListItemRow {

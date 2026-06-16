@@ -4,6 +4,65 @@
  * Drift check in lists-quality.yml fails on hand-edits.
  */
 export interface paths {
+  '/items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Search items across lists (filters: kind, listId, includeArchived, labelContains, notesContains) */
+    get: {
+      parameters: {
+        query?: {
+          kind?: 'shopping' | 'packing' | 'todo' | 'generic';
+          listId?: number;
+          includeArchived?: boolean;
+          labelContains?: string;
+          notesContains?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 200 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              items: {
+                checked: number;
+                checkedAt: string | null;
+                createdAt: string;
+                dueAt: string | null;
+                id: number;
+                label: string;
+                listId: number;
+                notes: string | null;
+                position: number;
+                qty: number | null;
+                refId: number | null;
+                /** @enum {string} */
+                refKind: 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
+                unit: string | null;
+              }[];
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/items/{id}': {
     parameters: {
       query?: never;
@@ -894,6 +953,124 @@ export interface paths {
               count: number;
               /** @enum {boolean} */
               ok: true;
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/lists/{listId}/items/upsert-by-ref': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Atomic merge-or-insert by (refKind, refId). onConflict picks merge-additive / replace / skip */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          listId: number;
+        };
+        cookie?: never;
+      };
+      /** @description Body */
+      requestBody?: {
+        content: {
+          'application/json': {
+            label: string;
+            notes?: string | null;
+            /** @enum {string} */
+            onConflict?: 'merge-additive' | 'replace' | 'skip';
+            qty?: number | null;
+            refId: number;
+            /** @enum {string} */
+            refKind: 'ingredient' | 'variant' | 'recipe' | 'custom';
+            unit?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description 200 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json':
+              | {
+                  itemId: number;
+                  /** @enum {string} */
+                  outcome: 'inserted';
+                  position: number;
+                }
+              | {
+                  itemId: number;
+                  /** @enum {string} */
+                  outcome: 'merged';
+                }
+              | {
+                  itemId: number;
+                  /** @enum {string} */
+                  outcome: 'skipped';
+                };
+          };
+        };
+        /** @description 201 */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json':
+              | {
+                  itemId: number;
+                  /** @enum {string} */
+                  outcome: 'inserted';
+                  position: number;
+                }
+              | {
+                  itemId: number;
+                  /** @enum {string} */
+                  outcome: 'merged';
+                }
+              | {
+                  itemId: number;
+                  /** @enum {string} */
+                  outcome: 'skipped';
+                };
+          };
+        };
+        /** @description 400 */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              code?: string;
+              message: string;
+            };
+          };
+        };
+        /** @description 404 */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': {
+              code?: string;
+              message: string;
             };
           };
         };
