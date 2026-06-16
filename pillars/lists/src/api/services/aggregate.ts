@@ -13,7 +13,7 @@
  */
 import { sql, type SQL } from 'drizzle-orm';
 
-import { type ListKind, type ListsDb } from '@pops/app-lists-db';
+import { type ListKind, type ListsDb } from '../../db/index.js';
 
 export interface ListAggregateRow {
   id: number;
