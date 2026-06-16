@@ -1,21 +1,22 @@
 /**
  * Express app factory for the lists pillar container.
  *
- * Hosts the minimal `/health` + `/pillars` probes, plus the pillar's
- * tRPC surface at `/trpc/*`. Kept as a factory so the test suite can
- * spin up an in-process `supertest` instance without binding a real
- * port.
+ * Hosts the minimal `/health` + `/pillars` probes plus the pillar's REST
+ * surface generated from `src/contract/rest.ts` via ts-rest. Kept as a
+ * factory so the test suite can spin up an in-process `supertest`
+ * instance without binding a real port.
  */
-import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { createExpressEndpoints } from '@ts-rest/express';
 import express, { type Express, type Request, type Response } from 'express';
 
+import { listsContract } from '../contract/rest.js';
 import { type ListsApiDeps, makeRequestHandler } from './handlers.js';
-import { listsRouter } from './router.js';
-import { createContextFactory } from './trpc.js';
+import { makeListsRestHandlers } from './rest/handlers.js';
 
 export function createListsApiApp(deps: ListsApiDeps): Express {
   const app = express();
   app.disable('x-powered-by');
+  app.use(express.json());
 
   const handlers = makeRequestHandler(deps);
 
@@ -27,13 +28,7 @@ export function createListsApiApp(deps: ListsApiDeps): Express {
     res.json(handlers.pillars());
   });
 
-  app.use(
-    '/trpc',
-    createExpressMiddleware({
-      router: listsRouter,
-      createContext: createContextFactory(deps.listsDb.db),
-    })
-  );
+  createExpressEndpoints(listsContract, makeListsRestHandlers(deps), app);
 
   return app;
 }
