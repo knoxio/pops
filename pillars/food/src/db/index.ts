@@ -57,6 +57,30 @@ export type {
   BulkApproveAliasesResult,
   MergeAliasesResult,
 } from './services/aliases.js';
+// Batch + fridge domain view types — re-exported so the api-layer
+// resolvers (batches/fridge) can name them via the db barrel.
+export type {
+  BatchAdjustReason,
+  BatchAdjustResult,
+  BatchDetail,
+  BatchEditPatch,
+  BatchError,
+  BatchForConsumeRow,
+  BatchLocation,
+  BatchMutationResult,
+  BatchSourceType,
+  BatchUnit,
+  ManualBatchInput,
+  ManualBatchSourceType,
+} from '../domain/types/batches.js';
+export type {
+  FridgeBatchRow,
+  FridgeIngredientGroup,
+  FridgeLocationSection,
+  FridgeView,
+  FridgeViewCounts,
+  RecipeForCookRow,
+} from '../domain/types/fridge.js';
 export type {
   ApproveRejectError,
   ApproveRejectFailure,

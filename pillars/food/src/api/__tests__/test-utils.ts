@@ -116,6 +116,39 @@ interface SolveResult {
   recipes: unknown[];
 }
 
+type BatchLoc = 'pantry' | 'fridge' | 'freezer' | 'other';
+type BatchMutationResult = { ok: true } | { ok: false; reason: string };
+type BatchAdjustResult = { ok: true; newQty: number } | { ok: false; reason: string };
+
+interface BatchDetail {
+  id: number;
+  variantId: number;
+  qtyRemaining: number;
+  unit: 'g' | 'ml' | 'count';
+  location: BatchLoc;
+  sourceType: string;
+  expiresAt: string | null;
+  notes: string | null;
+  deletedAt: string | null;
+}
+
+interface CreateBatchBody {
+  variantId: number;
+  prepStateId: number | null;
+  qty: number;
+  unit: 'g' | 'ml' | 'count';
+  location: BatchLoc;
+  sourceType: 'purchase' | 'gift' | 'other';
+  producedAt?: string;
+  expiresAt?: string;
+  notes?: string;
+}
+
+interface FridgeView {
+  sections: { location: BatchLoc; count: number; ingredients: unknown[] }[];
+  counts: { visible: number; empty: number; deleted: number };
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -279,6 +312,37 @@ export function makeClient(app: Express) {
           maxMinutes?: number;
         } = {}
       ) => send<SolveResult>(r.post('/solver/can-i-cook').send(body)),
+    },
+    batches: {
+      create: (body: CreateBatchBody) => send<{ batchId: number }>(r.post('/batches').send(body)),
+      get: (id: number) => send<{ data: BatchDetail }>(r.get(`/batches/${id}`)),
+      relocate: (id: number, location: BatchLoc) =>
+        send<BatchMutationResult>(r.post(`/batches/${id}/relocate`).send({ location })),
+      edit: (
+        id: number,
+        body: { expiresAt?: string | null; notes?: string | null; prepStateId?: number | null }
+      ) => send<BatchMutationResult>(r.patch(`/batches/${id}`).send(body)),
+      adjustQty: (id: number, delta: number, reason: 'spoiled' | 'wasted' | 'correction') =>
+        send<BatchAdjustResult>(r.post(`/batches/${id}/adjust`).send({ delta, reason })),
+      delete: (id: number) => send<BatchMutationResult>(r.delete(`/batches/${id}`)),
+      searchForConsume: (
+        body: { variantId?: number; ingredientId?: number; location?: BatchLoc } = {}
+      ) =>
+        send<{ items: { id: number; variantId: number }[] }>(
+          r.post('/batches/search-for-consume').send(body)
+        ),
+    },
+    fridge: {
+      view: (
+        body: {
+          search?: string;
+          locations?: BatchLoc[];
+          includeEmpty?: boolean;
+          includeDeleted?: boolean;
+        } = {}
+      ) => send<FridgeView>(r.post('/fridge/view').send(body)),
+      recipesUsingBatch: (batchId: number, limit?: number) =>
+        send<{ items: unknown[] }>(r.get('/fridge/recipes-using-batch').query({ batchId, limit })),
     },
   };
 }

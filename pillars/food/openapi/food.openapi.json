@@ -920,6 +920,867 @@
         "tags": ["aliases"]
       }
     },
+    "/batches": {
+      "post": {
+        "operationId": "batches.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expiresAt": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "enum": ["pantry", "fridge", "freezer", "other"],
+                    "type": "string"
+                  },
+                  "notes": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "prepStateId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "producedAt": {
+                    "type": "string"
+                  },
+                  "qty": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "sourceType": {
+                    "enum": ["purchase", "gift", "other"],
+                    "type": "string"
+                  },
+                  "unit": {
+                    "enum": ["g", "ml", "count"],
+                    "type": "string"
+                  },
+                  "variantId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["variantId", "prepStateId", "qty", "unit", "location", "sourceType"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "batchId": {
+                      "exclusiveMinimum": true,
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["batchId"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "201"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create a manual batch",
+        "tags": ["batches"]
+      }
+    },
+    "/batches/search-for-consume": {
+      "post": {
+        "operationId": "batches.searchForConsume",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "ingredientId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "location": {
+                    "enum": ["pantry", "fridge", "freezer", "other"],
+                    "type": "string"
+                  },
+                  "qtyGreaterThan": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "variantId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "expiresAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "ingredientId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "ingredientName": {
+                            "type": "string"
+                          },
+                          "location": {
+                            "enum": ["pantry", "fridge", "freezer", "other"],
+                            "type": "string"
+                          },
+                          "prepStateId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "prepStateLabel": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "producedAt": {
+                            "type": "string"
+                          },
+                          "qtyRemaining": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "enum": ["g", "ml", "count"],
+                            "type": "string"
+                          },
+                          "variantId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "variantName": {
+                            "type": "string"
+                          },
+                          "variantSlug": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "variantId",
+                          "variantName",
+                          "variantSlug",
+                          "ingredientId",
+                          "ingredientName",
+                          "prepStateId",
+                          "prepStateLabel",
+                          "qtyRemaining",
+                          "unit",
+                          "location",
+                          "expiresAt",
+                          "producedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "FIFO-ordered batches for the consume/override picker",
+        "tags": ["batches"]
+      }
+    },
+    "/batches/{id}": {
+      "delete": {
+        "operationId": "batches.delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "BatchNotFound",
+                            "BatchDeleted",
+                            "NegativeQty",
+                            "CannotEditFromRun",
+                            "BadExpiry",
+                            "BadAdjustment"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Soft-delete a batch",
+        "tags": ["batches"]
+      },
+      "get": {
+        "operationId": "batches.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "deletedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "ingredientId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "ingredientName": {
+                          "type": "string"
+                        },
+                        "ingredientSlug": {
+                          "type": "string"
+                        },
+                        "location": {
+                          "enum": ["pantry", "fridge", "freezer", "other"],
+                          "type": "string"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "prepStateId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "prepStateLabel": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "producedAt": {
+                          "type": "string"
+                        },
+                        "qtyRemaining": {
+                          "type": "number"
+                        },
+                        "sourceId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "sourceRecipeRunId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "sourceRecipeSlug": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "sourceType": {
+                          "enum": ["purchase", "recipe_run", "gift", "other"],
+                          "type": "string"
+                        },
+                        "unit": {
+                          "enum": ["g", "ml", "count"],
+                          "type": "string"
+                        },
+                        "variantId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "variantName": {
+                          "type": "string"
+                        },
+                        "variantSlug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "variantId",
+                        "variantName",
+                        "variantSlug",
+                        "ingredientId",
+                        "ingredientName",
+                        "ingredientSlug",
+                        "prepStateId",
+                        "prepStateLabel",
+                        "qtyRemaining",
+                        "unit",
+                        "sourceType",
+                        "sourceId",
+                        "sourceRecipeRunId",
+                        "sourceRecipeSlug",
+                        "location",
+                        "producedAt",
+                        "expiresAt",
+                        "notes",
+                        "deletedAt",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Get a batch with resolved variant / ingredient / source",
+        "tags": ["batches"]
+      },
+      "patch": {
+        "operationId": "batches.edit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expiresAt": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "notes": {
+                    "maxLength": 1000,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "prepStateId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "BatchNotFound",
+                            "BatchDeleted",
+                            "NegativeQty",
+                            "CannotEditFromRun",
+                            "BadExpiry",
+                            "BadAdjustment"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Edit a batch (expiry / notes / prep state)",
+        "tags": ["batches"]
+      }
+    },
+    "/batches/{id}/adjust": {
+      "post": {
+        "operationId": "batches.adjustQty",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "delta": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "enum": ["spoiled", "wasted", "correction"],
+                    "type": "string"
+                  }
+                },
+                "required": ["delta", "reason"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "newQty": {
+                          "type": "number"
+                        },
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok", "newQty"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "BatchNotFound",
+                            "BatchDeleted",
+                            "NegativeQty",
+                            "CannotEditFromRun",
+                            "BadExpiry",
+                            "BadAdjustment"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Adjust a batch quantity (spoiled / wasted / correction)",
+        "tags": ["batches"]
+      }
+    },
+    "/batches/{id}/relocate": {
+      "post": {
+        "operationId": "batches.relocate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "location": {
+                    "enum": ["pantry", "fridge", "freezer", "other"],
+                    "type": "string"
+                  }
+                },
+                "required": ["location"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "BatchNotFound",
+                            "BatchDeleted",
+                            "NegativeQty",
+                            "CannotEditFromRun",
+                            "BadExpiry",
+                            "BadAdjustment"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Move a batch to another location",
+        "tags": ["batches"]
+      }
+    },
     "/conversions/resolve": {
       "get": {
         "operationId": "conversions.resolve",
@@ -2158,6 +3019,311 @@
         },
         "summary": "Update an ingredient weight",
         "tags": ["conversions"]
+      }
+    },
+    "/fridge/recipes-using-batch": {
+      "get": {
+        "operationId": "fridge.recipesUsingBatch",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "batchId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "lastCookedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lineCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "recipeId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "recipeNeedsQty": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "recipeSlug": {
+                            "type": "string"
+                          },
+                          "recipeType": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "recipeId",
+                          "recipeSlug",
+                          "title",
+                          "recipeType",
+                          "lineCount",
+                          "recipeNeedsQty",
+                          "lastCookedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Recipes that reference the batch’s variant (FIFO cook suggestions)",
+        "tags": ["fridge"]
+      }
+    },
+    "/fridge/view": {
+      "post": {
+        "operationId": "fridge.view",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expiringSoon": {
+                    "type": "boolean"
+                  },
+                  "includeDeleted": {
+                    "type": "boolean"
+                  },
+                  "includeEmpty": {
+                    "type": "boolean"
+                  },
+                  "locations": {
+                    "items": {
+                      "enum": ["pantry", "fridge", "freezer", "other"],
+                      "type": "string"
+                    },
+                    "maxItems": 4,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "recipeYieldedOnly": {
+                    "type": "boolean"
+                  },
+                  "search": {
+                    "maxLength": 120,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "counts": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "deleted": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "empty": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "visible": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["visible", "empty", "deleted"],
+                      "type": "object"
+                    },
+                    "sections": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "count": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "ingredients": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "batches": {
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "daysToExpiry": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "nullable": true,
+                                        "type": "integer"
+                                      },
+                                      "deletedAt": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "expiresAt": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "id": {
+                                        "exclusiveMinimum": true,
+                                        "maximum": 9007199254740991,
+                                        "minimum": 0,
+                                        "type": "integer"
+                                      },
+                                      "notes": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "prepStateLabel": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "producedAt": {
+                                        "type": "string"
+                                      },
+                                      "qtyRemaining": {
+                                        "type": "number"
+                                      },
+                                      "sourceRecipeSlug": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "sourceType": {
+                                        "enum": ["purchase", "recipe_run", "gift", "other"],
+                                        "type": "string"
+                                      },
+                                      "unit": {
+                                        "enum": ["g", "ml", "count"],
+                                        "type": "string"
+                                      },
+                                      "variantName": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "variantSlug": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "variantName",
+                                      "variantSlug",
+                                      "prepStateLabel",
+                                      "qtyRemaining",
+                                      "unit",
+                                      "expiresAt",
+                                      "daysToExpiry",
+                                      "producedAt",
+                                      "sourceType",
+                                      "sourceRecipeSlug",
+                                      "notes",
+                                      "deletedAt"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "readOnly": true,
+                                  "type": "array"
+                                },
+                                "ingredientId": {
+                                  "exclusiveMinimum": true,
+                                  "maximum": 9007199254740991,
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                "ingredientName": {
+                                  "type": "string"
+                                },
+                                "ingredientSlug": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "ingredientId",
+                                "ingredientName",
+                                "ingredientSlug",
+                                "batches"
+                              ],
+                              "type": "object"
+                            },
+                            "readOnly": true,
+                            "type": "array"
+                          },
+                          "location": {
+                            "enum": ["pantry", "fridge", "freezer", "other"],
+                            "type": "string"
+                          }
+                        },
+                        "required": ["location", "count", "ingredients"],
+                        "type": "object"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    }
+                  },
+                  "required": ["sections", "counts"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Fridge/pantry view grouped by location → ingredient → batch",
+        "tags": ["fridge"]
       }
     },
     "/ingredient-tags": {
