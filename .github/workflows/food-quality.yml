@@ -79,6 +79,11 @@ jobs:
           pnpm --filter @pops/food generate:openapi
           git diff --exit-code pillars/food/openapi/food.openapi.json
 
+      - name: Verify api-types.generated.ts is up to date
+        run: |
+          pnpm --filter @pops/food generate:api-types
+          git diff --exit-code pillars/food/src/contract/api-types.generated.ts
+
       - name: Verify manifest.generated.ts is up to date
         run: |
           pnpm --filter @pops/food generate:manifest
