@@ -18,7 +18,7 @@
   "devDependencies": {
     "@trpc/server": "11.17.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "peerDependencies": {
     "react": "^19.0.0"
