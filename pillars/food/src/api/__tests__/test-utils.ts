@@ -13,6 +13,41 @@ import type { Express } from 'express';
 
 import type { IngredientWeight, UnitConversion } from '../modules/conversions/types.js';
 
+interface PrepState {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+interface IngredientVariant {
+  id: number;
+  ingredientId: number;
+  name: string;
+  slug: string;
+  defaultUnit: 'g' | 'ml' | 'count';
+  packageSizeG: number | null;
+  notes: string | null;
+  defaultShelfLifeDaysFridge: number | null;
+  defaultShelfLifeDaysFreezer: number | null;
+  createdAt: string;
+}
+
+interface SlugMatch {
+  slug: string;
+  kind: 'ingredient' | 'recipe' | 'prep_state';
+  targetId: number;
+  name: string;
+}
+
+interface CreateVariantBody {
+  ingredientId: number;
+  slug: string;
+  name: string;
+  defaultUnit: 'g' | 'ml' | 'count';
+  packageSizeG?: number | null;
+  notes?: string | null;
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -75,6 +110,25 @@ export function makeClient(app: Express) {
       deleteWeight: (id: number) => send<DeleteResult>(r.delete(`/conversions/weights/${id}`)),
       resolve: (query: { ingredientId: number; variantId?: number; unit: string; qty: number }) =>
         send<ResolveResult>(r.get('/conversions/resolve').query(query)),
+    },
+    prepStates: {
+      list: () => send<{ items: PrepState[] }>(r.get('/prep-states')),
+      create: (body: { slug: string; name: string }) =>
+        send<{ data: PrepState }>(r.post('/prep-states').send(body)),
+    },
+    slugs: {
+      search: (query: {
+        query: string;
+        kinds?: ('ingredient' | 'recipe' | 'prep_state')[];
+        limit?: number;
+      }) => send<{ items: SlugMatch[] }>(r.get('/slugs/search').query(query)),
+    },
+    variants: {
+      create: (body: CreateVariantBody) =>
+        send<{ data: IngredientVariant }>(r.post('/variants').send(body)),
+      update: (id: number, body: { name?: string; slug?: string; packageSizeG?: number | null }) =>
+        send<{ data: IngredientVariant }>(r.patch(`/variants/${id}`).send(body)),
+      delete: (id: number) => send<{ ok: true }>(r.delete(`/variants/${id}`)),
     },
   };
 }
