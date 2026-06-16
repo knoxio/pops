@@ -11,6 +11,12 @@ import supertest from 'supertest';
 import type { Express } from 'express';
 
 import type { Budget } from '../modules/budgets-types.js';
+import type { ImportProgress } from '../modules/imports/index.js';
+import type {
+  CommitResult,
+  CreateEntityOutput,
+  ProcessImportOutput,
+} from '../modules/imports/types.js';
 import type { Transaction } from '../modules/transactions-types.js';
 import type { WishListItem } from '../modules/wishlist-types.js';
 
@@ -186,5 +192,50 @@ export function makeClient(app: Express) {
           r.post('/tag-rules/reject').send(body)
         ),
     },
+    imports: {
+      processImport: (body: Record<string, unknown>) =>
+        send<{ sessionId: string }>(r.post('/imports/process').send(body)),
+      executeImport: (body: Record<string, unknown>) =>
+        send<{ sessionId: string }>(r.post('/imports/execute').send(body)),
+      getImportProgress: (sessionId: string) =>
+        send<ImportProgress | null>(r.get('/imports/progress').query({ sessionId })),
+      createEntity: (body: { name: string }) =>
+        send<CreateEntityOutput>(r.post('/imports/entities').send(body)),
+      applyChangeSetAndReevaluate: (body: Record<string, unknown>) =>
+        send<{ result: ProcessImportOutput; affectedCount: number }>(
+          r.post('/imports/apply-changeset-reevaluate').send(body)
+        ),
+      commitImport: (body: Record<string, unknown>) =>
+        send<{ data: CommitResult; message: string }>(r.post('/imports/commit').send(body)),
+      reevaluateWithPendingRules: (body: Record<string, unknown>) =>
+        send<{ result: ProcessImportOutput; affectedCount: number }>(
+          r.post('/imports/reevaluate-pending').send(body)
+        ),
+    },
   };
+}
+
+/**
+ * Poll an import session until it reports `completed`, returning the result.
+ * The single pillar process completes small batches near-instantly, but the
+ * processImport handler does its work on a detached promise so we still poll.
+ */
+export async function waitForImportCompletion<T>(
+  client: ReturnType<typeof makeClient>,
+  sessionId: string,
+  maxAttempts = 50
+): Promise<T> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const progress = await client.imports.getImportProgress(sessionId);
+    if (!progress) throw new Error('Progress not found');
+    if (progress.status === 'completed') {
+      if (!progress.result) throw new Error('Import completed but result is missing');
+      return progress.result as T;
+    }
+    if (progress.status === 'failed') {
+      throw new Error(`Import failed: ${progress.errors.map((e) => e.error).join(', ')}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error('Timeout waiting for import to complete');
 }

@@ -11,6 +11,7 @@
  * because db-types still owned `entities`; that shadow is now deleted.
  */
 export { entities } from '@pops/core-db';
+export { ENTITY_TYPES } from '@pops/core-db';
 
 export { budgets } from './schema/budgets.js';
 export { transactionCorrections } from './schema/corrections.js';

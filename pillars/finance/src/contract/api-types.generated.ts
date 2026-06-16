@@ -40,6 +40,125 @@ export interface paths {
     patch: operations['budgets.update'];
     trace?: never;
   };
+  '/imports/apply-changeset-reevaluate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply a correction ChangeSet atomically, then re-evaluate the import session */
+    post: operations['imports.applyChangeSetAndReevaluate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/imports/commit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Atomically create entities, apply changeSets + tag-rule changeSets, write transactions */
+    post: operations['imports.commitImport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/imports/entities': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new entity during an import session */
+    post: operations['imports.createEntity'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/imports/execute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Write confirmed transactions to SQLite; returns a session id to poll */
+    post: operations['imports.executeImport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/imports/process': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start an import process (dedup + entity matching); returns a session id to poll */
+    post: operations['imports.processImport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/imports/progress': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Poll an import session for progress (null when the session is unknown/expired) */
+    get: operations['imports.getImportProgress'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/imports/reevaluate-pending': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Re-evaluate the import session against merged (DB + pending) rules; no DB writes */
+    post: operations['imports.reevaluateWithPendingRules'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/tag-rules/apply': {
     parameters: {
       query?: never;
@@ -622,6 +741,1577 @@ export interface operations {
       };
       /** @description 409 */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'imports.applyChangeSetAndReevaluate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          changeSet: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    /** @default [] */
+                    tags: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern?: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /** @enum {string} */
+                    matchType?: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags?: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          };
+          /** @default 0.7 */
+          minConfidence: number;
+          /** Format: uuid */
+          sessionId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            affectedCount: number;
+            result: {
+              aiUsage?: {
+                apiCalls: number;
+                avgCostPerCall: number;
+                cacheHits: number;
+                totalCostUsd: number;
+                totalInputTokens: number;
+                totalOutputTokens: number;
+              };
+              failed: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              matched: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              skipped: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              uncertain: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              warnings?: {
+                affectedCount?: number;
+                details?: string;
+                message: string;
+                /** @enum {string} */
+                type: 'AI_CATEGORIZATION_UNAVAILABLE' | 'AI_API_ERROR';
+              }[];
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 412 */
+      412: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'imports.commitImport': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @default [] */
+          changeSets: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    /** @default [] */
+                    tags: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern?: string;
+                    entityId?: string | null;
+                    entityName?: string | null;
+                    isActive?: boolean;
+                    location?: string | null;
+                    /** @enum {string} */
+                    matchType?: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags?: string[];
+                    /** @enum {string|null} */
+                    transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          }[];
+          /** @default [] */
+          entities: {
+            name: string;
+            tempId: string;
+            /**
+             * @default company
+             * @enum {string}
+             */
+            type: 'company' | 'person' | 'government' | 'bank' | 'place' | 'brand' | 'organisation';
+          }[];
+          /** @default [] */
+          tagRuleChangeSets: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags: string[];
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    priority?: number;
+                    tags?: string[];
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          }[];
+          transactions: {
+            account: string;
+            amount: number;
+            checksum: string;
+            date: string;
+            description: string;
+            entityId?: string;
+            entityName?: string;
+            location?: string;
+            rawRow: string;
+            suggestedTags?: {
+              isNew?: boolean;
+              pattern?: string;
+              /** @enum {string} */
+              source: 'ai' | 'rule' | 'entity';
+              tag: string;
+            }[];
+            tags?: string[];
+            /** @enum {string} */
+            transactionType?: 'purchase' | 'transfer' | 'income';
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              entitiesCreated: number;
+              failedDetails: {
+                checksum: string | null;
+                error: string;
+              }[];
+              retroactiveReclassifications: number;
+              rulesApplied: {
+                add: number;
+                disable: number;
+                edit: number;
+                remove: number;
+              };
+              tagRulesApplied: number;
+              transactionsFailed: number;
+              transactionsImported: number;
+            };
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'imports.createEntity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          name: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            entityId: string;
+            entityName: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'imports.executeImport': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          transactions: {
+            account: string;
+            amount: number;
+            checksum: string;
+            date: string;
+            description: string;
+            entityId?: string;
+            entityName?: string;
+            location?: string;
+            rawRow: string;
+            suggestedTags?: {
+              isNew?: boolean;
+              pattern?: string;
+              /** @enum {string} */
+              source: 'ai' | 'rule' | 'entity';
+              tag: string;
+            }[];
+            tags?: string[];
+            /** @enum {string} */
+            transactionType?: 'purchase' | 'transfer' | 'income';
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            sessionId: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'imports.processImport': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          account: string;
+          transactions: {
+            account: string;
+            amount: number;
+            checksum: string;
+            date: string;
+            description: string;
+            location?: string;
+            rawRow: string;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            sessionId: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'imports.getImportProgress': {
+    parameters: {
+      query: {
+        sessionId: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            currentBatch: {
+              description: string;
+              error?: string;
+              /** @enum {string} */
+              status: 'processing' | 'success' | 'failed';
+            }[];
+            /** @enum {string} */
+            currentStep: 'deduplicating' | 'matching' | 'writing';
+            errors: {
+              description: string;
+              error: string;
+            }[];
+            processedCount: number;
+            result?:
+              | {
+                  aiUsage?: {
+                    apiCalls: number;
+                    avgCostPerCall: number;
+                    cacheHits: number;
+                    totalCostUsd: number;
+                    totalInputTokens: number;
+                    totalOutputTokens: number;
+                  };
+                  failed: {
+                    account: string;
+                    amount: number;
+                    checksum: string;
+                    date: string;
+                    description: string;
+                    entity: {
+                      confidence?: number;
+                      entityId?: string;
+                      entityName?: string;
+                      /** @enum {string} */
+                      matchType:
+                        | 'alias'
+                        | 'exact'
+                        | 'prefix'
+                        | 'contains'
+                        | 'ai'
+                        | 'learned'
+                        | 'manual'
+                        | 'none';
+                    };
+                    error?: string;
+                    location?: string;
+                    matchedRules?: {
+                      confidence: number;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      priority: number;
+                      ruleId: string;
+                    }[];
+                    rawRow: string;
+                    ruleProvenance?: {
+                      confidence: number;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      ruleId: string;
+                      /** @enum {string} */
+                      source: 'correction';
+                    };
+                    skipReason?: string;
+                    /** @enum {string} */
+                    status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                    suggestedTags?: {
+                      isNew?: boolean;
+                      pattern?: string;
+                      /** @enum {string} */
+                      source: 'ai' | 'rule' | 'entity';
+                      tag: string;
+                    }[];
+                    /** @enum {string} */
+                    transactionType?: 'purchase' | 'transfer' | 'income';
+                  }[];
+                  matched: {
+                    account: string;
+                    amount: number;
+                    checksum: string;
+                    date: string;
+                    description: string;
+                    entity: {
+                      confidence?: number;
+                      entityId?: string;
+                      entityName?: string;
+                      /** @enum {string} */
+                      matchType:
+                        | 'alias'
+                        | 'exact'
+                        | 'prefix'
+                        | 'contains'
+                        | 'ai'
+                        | 'learned'
+                        | 'manual'
+                        | 'none';
+                    };
+                    error?: string;
+                    location?: string;
+                    matchedRules?: {
+                      confidence: number;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      priority: number;
+                      ruleId: string;
+                    }[];
+                    rawRow: string;
+                    ruleProvenance?: {
+                      confidence: number;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      ruleId: string;
+                      /** @enum {string} */
+                      source: 'correction';
+                    };
+                    skipReason?: string;
+                    /** @enum {string} */
+                    status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                    suggestedTags?: {
+                      isNew?: boolean;
+                      pattern?: string;
+                      /** @enum {string} */
+                      source: 'ai' | 'rule' | 'entity';
+                      tag: string;
+                    }[];
+                    /** @enum {string} */
+                    transactionType?: 'purchase' | 'transfer' | 'income';
+                  }[];
+                  skipped: {
+                    account: string;
+                    amount: number;
+                    checksum: string;
+                    date: string;
+                    description: string;
+                    entity: {
+                      confidence?: number;
+                      entityId?: string;
+                      entityName?: string;
+                      /** @enum {string} */
+                      matchType:
+                        | 'alias'
+                        | 'exact'
+                        | 'prefix'
+                        | 'contains'
+                        | 'ai'
+                        | 'learned'
+                        | 'manual'
+                        | 'none';
+                    };
+                    error?: string;
+                    location?: string;
+                    matchedRules?: {
+                      confidence: number;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      priority: number;
+                      ruleId: string;
+                    }[];
+                    rawRow: string;
+                    ruleProvenance?: {
+                      confidence: number;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      ruleId: string;
+                      /** @enum {string} */
+                      source: 'correction';
+                    };
+                    skipReason?: string;
+                    /** @enum {string} */
+                    status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                    suggestedTags?: {
+                      isNew?: boolean;
+                      pattern?: string;
+                      /** @enum {string} */
+                      source: 'ai' | 'rule' | 'entity';
+                      tag: string;
+                    }[];
+                    /** @enum {string} */
+                    transactionType?: 'purchase' | 'transfer' | 'income';
+                  }[];
+                  uncertain: {
+                    account: string;
+                    amount: number;
+                    checksum: string;
+                    date: string;
+                    description: string;
+                    entity: {
+                      confidence?: number;
+                      entityId?: string;
+                      entityName?: string;
+                      /** @enum {string} */
+                      matchType:
+                        | 'alias'
+                        | 'exact'
+                        | 'prefix'
+                        | 'contains'
+                        | 'ai'
+                        | 'learned'
+                        | 'manual'
+                        | 'none';
+                    };
+                    error?: string;
+                    location?: string;
+                    matchedRules?: {
+                      confidence: number;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      priority: number;
+                      ruleId: string;
+                    }[];
+                    rawRow: string;
+                    ruleProvenance?: {
+                      confidence: number;
+                      /** @enum {string} */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      pattern: string;
+                      ruleId: string;
+                      /** @enum {string} */
+                      source: 'correction';
+                    };
+                    skipReason?: string;
+                    /** @enum {string} */
+                    status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                    suggestedTags?: {
+                      isNew?: boolean;
+                      pattern?: string;
+                      /** @enum {string} */
+                      source: 'ai' | 'rule' | 'entity';
+                      tag: string;
+                    }[];
+                    /** @enum {string} */
+                    transactionType?: 'purchase' | 'transfer' | 'income';
+                  }[];
+                  warnings?: {
+                    affectedCount?: number;
+                    details?: string;
+                    message: string;
+                    /** @enum {string} */
+                    type: 'AI_CATEGORIZATION_UNAVAILABLE' | 'AI_API_ERROR';
+                  }[];
+                }
+              | {
+                  failed: {
+                    error?: string;
+                    pageId?: string;
+                    success: boolean;
+                    transaction: {
+                      account: string;
+                      amount: number;
+                      checksum: string;
+                      date: string;
+                      description: string;
+                      entityId?: string;
+                      entityName?: string;
+                      location?: string;
+                      rawRow: string;
+                      suggestedTags?: {
+                        isNew?: boolean;
+                        pattern?: string;
+                        /** @enum {string} */
+                        source: 'ai' | 'rule' | 'entity';
+                        tag: string;
+                      }[];
+                      tags?: string[];
+                      /** @enum {string} */
+                      transactionType?: 'purchase' | 'transfer' | 'income';
+                    };
+                  }[];
+                  imported: number;
+                  skipped: number;
+                };
+            sessionId: string;
+            startedAt: string;
+            /** @enum {string} */
+            status: 'processing' | 'completed' | 'failed';
+            totalTransactions: number;
+          } | null;
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'imports.reevaluateWithPendingRules': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @default 0.7 */
+          minConfidence: number;
+          pendingChangeSets: {
+            changeSet: {
+              ops: (
+                | {
+                    data: {
+                      confidence?: number;
+                      descriptionPattern: string;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      isActive?: boolean;
+                      location?: string | null;
+                      /**
+                       * @default exact
+                       * @enum {string}
+                       */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      priority?: number;
+                      /** @default [] */
+                      tags: string[];
+                      /** @enum {string|null} */
+                      transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                    };
+                    /** @enum {string} */
+                    op: 'add';
+                  }
+                | {
+                    data: {
+                      confidence?: number;
+                      descriptionPattern?: string;
+                      entityId?: string | null;
+                      entityName?: string | null;
+                      isActive?: boolean;
+                      location?: string | null;
+                      /** @enum {string} */
+                      matchType?: 'exact' | 'contains' | 'regex';
+                      priority?: number;
+                      tags?: string[];
+                      /** @enum {string|null} */
+                      transactionType?: 'purchase' | 'transfer' | 'income' | null;
+                    };
+                    id: string;
+                    /** @enum {string} */
+                    op: 'edit';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'disable';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'remove';
+                  }
+              )[];
+              reason?: string;
+              source?: string;
+            };
+          }[];
+          /** Format: uuid */
+          sessionId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            affectedCount: number;
+            result: {
+              aiUsage?: {
+                apiCalls: number;
+                avgCostPerCall: number;
+                cacheHits: number;
+                totalCostUsd: number;
+                totalInputTokens: number;
+                totalOutputTokens: number;
+              };
+              failed: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              matched: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              skipped: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              uncertain: {
+                account: string;
+                amount: number;
+                checksum: string;
+                date: string;
+                description: string;
+                entity: {
+                  confidence?: number;
+                  entityId?: string;
+                  entityName?: string;
+                  /** @enum {string} */
+                  matchType:
+                    | 'alias'
+                    | 'exact'
+                    | 'prefix'
+                    | 'contains'
+                    | 'ai'
+                    | 'learned'
+                    | 'manual'
+                    | 'none';
+                };
+                error?: string;
+                location?: string;
+                matchedRules?: {
+                  confidence: number;
+                  entityId?: string | null;
+                  entityName?: string | null;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  priority: number;
+                  ruleId: string;
+                }[];
+                rawRow: string;
+                ruleProvenance?: {
+                  confidence: number;
+                  /** @enum {string} */
+                  matchType: 'exact' | 'contains' | 'regex';
+                  pattern: string;
+                  ruleId: string;
+                  /** @enum {string} */
+                  source: 'correction';
+                };
+                skipReason?: string;
+                /** @enum {string} */
+                status: 'matched' | 'uncertain' | 'failed' | 'skipped';
+                suggestedTags?: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'ai' | 'rule' | 'entity';
+                  tag: string;
+                }[];
+                /** @enum {string} */
+                transactionType?: 'purchase' | 'transfer' | 'income';
+              }[];
+              warnings?: {
+                affectedCount?: number;
+                details?: string;
+                message: string;
+                /** @enum {string} */
+                type: 'AI_CATEGORIZATION_UNAVAILABLE' | 'AI_API_ERROR';
+              }[];
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 412 */
+      412: {
         headers: {
           [name: string]: unknown;
         };
