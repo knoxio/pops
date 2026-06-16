@@ -15,12 +15,18 @@
 import { initContract } from '@ts-rest/core';
 
 import { foodConversionsContract } from './rest-conversions.js';
+import { foodPrepStatesContract } from './rest-prep-states.js';
+import { foodSlugsContract } from './rest-slugs.js';
+import { foodVariantsContract } from './rest-variants.js';
 
 const c = initContract();
 
 export const foodContract = c.router(
   {
     conversions: foodConversionsContract,
+    prepStates: foodPrepStatesContract,
+    slugs: foodSlugsContract,
+    variants: foodVariantsContract,
   },
   {
     pathPrefix: '',

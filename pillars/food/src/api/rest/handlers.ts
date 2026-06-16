@@ -10,6 +10,9 @@ import { initServer } from '@ts-rest/express';
 import { foodContract } from '../../contract/rest.js';
 import { type OpenedFoodDb } from '../../db/index.js';
 import { makeConversionsHandlers } from './conversions-handlers.js';
+import { makePrepStatesHandlers } from './prep-states-handlers.js';
+import { makeSlugsHandlers } from './slugs-handlers.js';
+import { makeVariantsHandlers } from './variants-handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
 
@@ -19,5 +22,8 @@ export function makeFoodRestHandlers(deps: {
   const db = deps.foodDb.db;
   return server.router(foodContract, {
     conversions: makeConversionsHandlers(db),
+    prepStates: makePrepStatesHandlers(db),
+    slugs: makeSlugsHandlers(db),
+    variants: makeVariantsHandlers(db),
   });
 }
