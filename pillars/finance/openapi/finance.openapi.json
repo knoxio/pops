@@ -2921,6 +2921,94 @@
         "tags": ["transactions"]
       }
     },
+    "/transactions/available-tags": {
+      "get": {
+        "operationId": "transactions.availableTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["tags"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Distinct tag values across all transactions (autocomplete)",
+        "tags": ["transactions"]
+      }
+    },
+    "/transactions/descriptions-preview": {
+      "get": {
+        "operationId": "transactions.descriptionsForPreview",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 2000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "checksum": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["description", "checksum"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["data", "total", "truncated"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Descriptions (+ checksums) of existing transactions for client-side rule preview",
+        "tags": ["transactions"]
+      }
+    },
     "/transactions/restore": {
       "post": {
         "operationId": "transactions.restore",
@@ -3179,6 +3267,52 @@
           }
         },
         "summary": "Restore a previously-deleted transaction from its snapshot",
+        "tags": ["transactions"]
+      }
+    },
+    "/transactions/suggest-tags": {
+      "get": {
+        "operationId": "transactions.suggestTags",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "description",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entityId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["tags"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Rule-based tag suggestions for a description/entity (no LLM call)",
         "tags": ["transactions"]
       }
     },

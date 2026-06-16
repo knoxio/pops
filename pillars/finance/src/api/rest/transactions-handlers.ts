@@ -12,6 +12,7 @@ import {
   TransactionNotFoundError,
   transactionsService,
 } from '../../db/index.js';
+import { suggestTags as computeSuggestedTags } from '../modules/tag-suggester/index.js';
 import { toTransaction } from '../modules/transactions-types.js';
 import { ConflictError, NotFoundError } from '../shared/errors.js';
 import { paginationMeta } from '../shared/pagination.js';
@@ -25,6 +26,7 @@ type Req = ServerInferRequest<typeof financeTransactionsContract>;
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
+const PREVIEW_DESCRIPTIONS_LIMIT = 2000;
 
 function translateTransactionError(err: unknown, id?: string): never {
   if (err instanceof TransactionNotFoundError) throw new NotFoundError('Transaction', id ?? err.id);
@@ -59,6 +61,30 @@ export function makeTransactionsHandlers(db: FinanceDb) {
           body: { data: rows.map(toTransaction), pagination: paginationMeta(total, limit, offset) },
         };
       }),
+
+    suggestTags: ({ query }: Req['suggestTags']) =>
+      runHttp(() => {
+        const suggested = computeSuggestedTags(db, {
+          description: query.description,
+          entityId: query.entityId ?? null,
+        });
+        return { status: 200 as const, body: { tags: suggested.map((s) => s.tag) } };
+      }),
+
+    descriptionsForPreview: ({ query }: Req['descriptionsForPreview']) =>
+      runHttp(() => ({
+        status: 200 as const,
+        body: transactionsService.listDescriptionsForPreview(
+          db,
+          query.limit ?? PREVIEW_DESCRIPTIONS_LIMIT
+        ),
+      })),
+
+    availableTags: () =>
+      runHttp(() => ({
+        status: 200 as const,
+        body: { tags: transactionsService.collectAvailableTags(db) },
+      })),
 
     get: ({ params }: Req['get']) =>
       runHttp(() => {

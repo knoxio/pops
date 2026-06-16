@@ -125,6 +125,35 @@ export const financeTransactionsContract = c.router({
     },
     summary: 'List transactions with optional filters and pagination',
   },
+  // Literal sub-paths declared BEFORE `:id` so they are never shadowed by the param route.
+  suggestTags: {
+    method: 'GET',
+    path: '/transactions/suggest-tags',
+    query: z.object({ description: z.string(), entityId: z.string().optional() }),
+    responses: { 200: z.object({ tags: z.array(z.string()) }) },
+    summary: 'Rule-based tag suggestions for a description/entity (no LLM call)',
+  },
+  descriptionsForPreview: {
+    method: 'GET',
+    path: '/transactions/descriptions-preview',
+    query: z.object({
+      limit: z.coerce.number().int().positive().max(2000).optional(),
+    }),
+    responses: {
+      200: z.object({
+        data: z.array(z.object({ description: z.string(), checksum: z.string().nullable() })),
+        total: z.number(),
+        truncated: z.boolean(),
+      }),
+    },
+    summary: 'Descriptions (+ checksums) of existing transactions for client-side rule preview',
+  },
+  availableTags: {
+    method: 'GET',
+    path: '/transactions/available-tags',
+    responses: { 200: z.object({ tags: z.array(z.string()) }) },
+    summary: 'Distinct tag values across all transactions (autocomplete)',
+  },
   get: {
     method: 'GET',
     path: '/transactions/:id',

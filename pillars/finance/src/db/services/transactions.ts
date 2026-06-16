@@ -262,3 +262,10 @@ export function restoreTransaction(db: FinanceDb, snapshot: TransactionRow): Tra
   db.insert(transactions).values(snapshot).run();
   return getTransaction(db, snapshot.id);
 }
+
+export {
+  collectAvailableTags,
+  type DescriptionPreviewResult,
+  type DescriptionPreviewRow,
+  listDescriptionsForPreview,
+} from './transactions-reads.js';
