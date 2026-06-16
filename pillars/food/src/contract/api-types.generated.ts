@@ -90,6 +90,93 @@ export interface paths {
     patch: operations['aliases.updateText'];
     trace?: never;
   };
+  '/batches': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a manual batch */
+    post: operations['batches.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/batches/search-for-consume': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** FIFO-ordered batches for the consume/override picker */
+    post: operations['batches.searchForConsume'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/batches/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a batch with resolved variant / ingredient / source */
+    get: operations['batches.get'];
+    put?: never;
+    post?: never;
+    /** Soft-delete a batch */
+    delete: operations['batches.delete'];
+    options?: never;
+    head?: never;
+    /** Edit a batch (expiry / notes / prep state) */
+    patch: operations['batches.edit'];
+    trace?: never;
+  };
+  '/batches/{id}/adjust': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Adjust a batch quantity (spoiled / wasted / correction) */
+    post: operations['batches.adjustQty'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/batches/{id}/relocate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Move a batch to another location */
+    post: operations['batches.relocate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/conversions/resolve': {
     parameters: {
       query?: never;
@@ -177,6 +264,40 @@ export interface paths {
     head?: never;
     /** Update an ingredient weight */
     patch: operations['conversions.updateWeight'];
+    trace?: never;
+  };
+  '/fridge/recipes-using-batch': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Recipes that reference the batch’s variant (FIFO cook suggestions) */
+    get: operations['fridge.recipesUsingBatch'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/fridge/view': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Fridge/pantry view grouped by location → ingredient → batch */
+    post: operations['fridge.view'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   '/ingredient-tags': {
@@ -973,6 +1094,407 @@ export interface operations {
       };
     };
   };
+  'batches.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          expiresAt?: string;
+          /** @enum {string} */
+          location: 'pantry' | 'fridge' | 'freezer' | 'other';
+          notes?: string;
+          prepStateId: number | null;
+          producedAt?: string;
+          qty: number;
+          /** @enum {string} */
+          sourceType: 'purchase' | 'gift' | 'other';
+          /** @enum {string} */
+          unit: 'g' | 'ml' | 'count';
+          variantId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            batchId: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'batches.searchForConsume': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          ingredientId?: number;
+          limit?: number;
+          /** @enum {string} */
+          location?: 'pantry' | 'fridge' | 'freezer' | 'other';
+          qtyGreaterThan?: number;
+          variantId?: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            readonly items: {
+              expiresAt: string | null;
+              id: number;
+              ingredientId: number;
+              ingredientName: string;
+              /** @enum {string} */
+              location: 'pantry' | 'fridge' | 'freezer' | 'other';
+              prepStateId: number | null;
+              prepStateLabel: string | null;
+              producedAt: string;
+              qtyRemaining: number;
+              /** @enum {string} */
+              unit: 'g' | 'ml' | 'count';
+              variantId: number;
+              variantName: string;
+              variantSlug: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'batches.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              deletedAt: string | null;
+              expiresAt: string | null;
+              id: number;
+              ingredientId: number;
+              ingredientName: string;
+              ingredientSlug: string;
+              /** @enum {string} */
+              location: 'pantry' | 'fridge' | 'freezer' | 'other';
+              notes: string | null;
+              prepStateId: number | null;
+              prepStateLabel: string | null;
+              producedAt: string;
+              qtyRemaining: number;
+              sourceId: number | null;
+              sourceRecipeRunId: number | null;
+              sourceRecipeSlug: string | null;
+              /** @enum {string} */
+              sourceType: 'purchase' | 'recipe_run' | 'gift' | 'other';
+              /** @enum {string} */
+              unit: 'g' | 'ml' | 'count';
+              variantId: number;
+              variantName: string;
+              variantSlug: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'batches.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'BatchNotFound'
+                  | 'BatchDeleted'
+                  | 'NegativeQty'
+                  | 'CannotEditFromRun'
+                  | 'BadExpiry'
+                  | 'BadAdjustment';
+              };
+        };
+      };
+    };
+  };
+  'batches.edit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          expiresAt?: string | null;
+          notes?: string | null;
+          prepStateId?: number | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'BatchNotFound'
+                  | 'BatchDeleted'
+                  | 'NegativeQty'
+                  | 'CannotEditFromRun'
+                  | 'BadExpiry'
+                  | 'BadAdjustment';
+              };
+        };
+      };
+    };
+  };
+  'batches.adjustQty': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          delta: number;
+          /** @enum {string} */
+          reason: 'spoiled' | 'wasted' | 'correction';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                newQty: number;
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'BatchNotFound'
+                  | 'BatchDeleted'
+                  | 'NegativeQty'
+                  | 'CannotEditFromRun'
+                  | 'BadExpiry'
+                  | 'BadAdjustment';
+              };
+        };
+      };
+    };
+  };
+  'batches.relocate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          location: 'pantry' | 'fridge' | 'freezer' | 'other';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'BatchNotFound'
+                  | 'BatchDeleted'
+                  | 'NegativeQty'
+                  | 'CannotEditFromRun'
+                  | 'BadExpiry'
+                  | 'BadAdjustment';
+              };
+        };
+      };
+    };
+  };
   'conversions.resolve': {
     parameters: {
       query: {
@@ -1547,6 +2069,104 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'fridge.recipesUsingBatch': {
+    parameters: {
+      query: {
+        batchId: number;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            readonly items: {
+              lastCookedAt: string | null;
+              lineCount: number;
+              recipeId: number;
+              recipeNeedsQty: number | null;
+              recipeSlug: string;
+              recipeType: string | null;
+              title: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'fridge.view': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          expiringSoon?: boolean;
+          includeDeleted?: boolean;
+          includeEmpty?: boolean;
+          locations?: ('pantry' | 'fridge' | 'freezer' | 'other')[];
+          recipeYieldedOnly?: boolean;
+          search?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            counts: {
+              deleted: number;
+              empty: number;
+              visible: number;
+            };
+            readonly sections: {
+              count: number;
+              readonly ingredients: {
+                readonly batches: {
+                  daysToExpiry: number | null;
+                  deletedAt: string | null;
+                  expiresAt: string | null;
+                  id: number;
+                  notes: string | null;
+                  prepStateLabel: string | null;
+                  producedAt: string;
+                  qtyRemaining: number;
+                  sourceRecipeSlug: string | null;
+                  /** @enum {string} */
+                  sourceType: 'purchase' | 'recipe_run' | 'gift' | 'other';
+                  /** @enum {string} */
+                  unit: 'g' | 'ml' | 'count';
+                  variantName: string | null;
+                  variantSlug: string | null;
+                }[];
+                ingredientId: number;
+                ingredientName: string;
+                ingredientSlug: string;
+              }[];
+              /** @enum {string} */
+              location: 'pantry' | 'fridge' | 'freezer' | 'other';
+            }[];
           };
         };
       };

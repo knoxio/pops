@@ -10,7 +10,9 @@ import { initServer } from '@ts-rest/express';
 import { foodContract } from '../../contract/rest.js';
 import { type OpenedFoodDb } from '../../db/index.js';
 import { makeAliasesHandlers } from './aliases-handlers.js';
+import { makeBatchesHandlers } from './batches-handlers.js';
 import { makeConversionsHandlers } from './conversions-handlers.js';
+import { makeFridgeHandlers } from './fridge-handlers.js';
 import { makeIngredientTagsHandlers } from './ingredient-tags-handlers.js';
 import { makeIngredientsHandlers } from './ingredients-handlers.js';
 import { makePrepStatesHandlers } from './prep-states-handlers.js';
@@ -27,7 +29,9 @@ export function makeFoodRestHandlers(deps: {
   const db = deps.foodDb.db;
   return server.router(foodContract, {
     aliases: makeAliasesHandlers(db),
+    batches: makeBatchesHandlers(db),
     conversions: makeConversionsHandlers(db),
+    fridge: makeFridgeHandlers(db),
     ingredients: makeIngredientsHandlers(db),
     ingredientTags: makeIngredientTagsHandlers(db),
     prepStates: makePrepStatesHandlers(db),
