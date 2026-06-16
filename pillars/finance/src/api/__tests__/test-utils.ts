@@ -89,6 +89,43 @@ export interface TransactionQuery {
   offset?: number;
 }
 
+interface TagSuggestion {
+  tag: string;
+  source: string;
+  pattern?: string;
+  isNew?: boolean;
+}
+
+interface TagRulePreview {
+  counts: { affected: number; suggestionChanges: number; newTagProposals: number };
+  affected: {
+    transactionId: string;
+    description: string;
+    before: { suggestedTags: TagSuggestion[] };
+    after: { suggestedTags: TagSuggestion[] };
+  }[];
+}
+
+interface TagRuleProposal {
+  changeSet: { source?: string; reason?: string; ops: unknown[] };
+  rationale: string;
+  preview: TagRulePreview;
+}
+
+interface TagRule {
+  id: string;
+  descriptionPattern: string;
+  matchType: string;
+  entityId: string | null;
+  tags: string[];
+  isActive: boolean;
+  confidence: number;
+  priority: number;
+  timesApplied: number;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
@@ -125,6 +162,19 @@ export function makeClient(app: Express) {
       restore: (snapshot: TransactionSnapshot) =>
         send<{ data: Transaction; message: string }>(
           r.post('/transactions/restore').send(snapshot)
+        ),
+    },
+    tagRules: {
+      vocabulary: () => send<{ tags: string[] }>(r.get('/tag-rules/vocabulary')),
+      propose: (body: Record<string, unknown>) =>
+        send<TagRuleProposal>(r.post('/tag-rules/propose').send(body)),
+      preview: (body: Record<string, unknown>) =>
+        send<TagRulePreview>(r.post('/tag-rules/preview').send(body)),
+      apply: (body: Record<string, unknown>) =>
+        send<{ rules: TagRule[] }>(r.post('/tag-rules/apply').send(body)),
+      reject: (body: Record<string, unknown>) =>
+        send<{ message: string; followUpProposal: TagRuleProposal | null }>(
+          r.post('/tag-rules/reject').send(body)
         ),
     },
   };
