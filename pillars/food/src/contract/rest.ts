@@ -24,6 +24,7 @@ import { foodIngredientTagsContract } from './rest-ingredient-tags.js';
 import { foodIngredientsContract } from './rest-ingredients.js';
 import { foodPrepStatesContract } from './rest-prep-states.js';
 import { foodRecipesContract } from './rest-recipes.js';
+import { foodSendToListContract } from './rest-send-to-list.js';
 import { foodSlugsContract } from './rest-slugs.js';
 import { foodSolverContract } from './rest-solver.js';
 import { foodSubstitutionsContract } from './rest-substitutions.js';
@@ -43,6 +44,7 @@ export const foodContract = c.router(
     ingredientTags: foodIngredientTagsContract,
     prepStates: foodPrepStatesContract,
     recipes: foodRecipesContract,
+    sendToList: foodSendToListContract,
     slugs: foodSlugsContract,
     solver: foodSolverContract,
     substitutions: foodSubstitutionsContract,

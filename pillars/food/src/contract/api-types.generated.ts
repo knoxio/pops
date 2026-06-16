@@ -779,6 +779,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/recipes/versions/{versionId}/send-to-list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send a recipe version’s ingredients to a shopping list */
+    post: operations['sendToList.send'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/recipes/versions/{versionId}/send-to-list/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Preview the items a recipe version would add to a shopping list */
+    get: operations['sendToList.prepare'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/recipes/{recipeId}/hero-image': {
     parameters: {
       query?: never;
@@ -4144,6 +4178,136 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'sendToList.send': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        versionId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          scaleFactor?: number;
+          target:
+            | {
+                /** @enum {string} */
+                kind: 'existing';
+                listId: number;
+              }
+            | {
+                /** @enum {string} */
+                kind: 'new';
+                name: string;
+              };
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                addedCount: number;
+                listId: number;
+                mergedCount: number;
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'RecipeNotFound'
+                  | 'NoIngredients'
+                  | 'TargetListNotFound'
+                  | 'TargetListArchived'
+                  | 'TargetListNotShopping'
+                  | 'NameRequiredForNew'
+                  | 'CompileNotReady';
+              };
+        };
+      };
+    };
+  };
+  'sendToList.prepare': {
+    parameters: {
+      query?: {
+        scaleFactor?: number;
+      };
+      header?: never;
+      path: {
+        versionId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            alreadySentToListIds: number[];
+            canonicalItems: {
+              ingredientId: number;
+              label: string;
+              prepStateLabel: string | null;
+              qty: number | null;
+              sourceLineIds: number[];
+              unit: string | null;
+              variantId: number | null;
+            }[];
+            recipeTitle: string;
+            scaleFactor: number;
+            unconvertedItems: {
+              ingredientId: number;
+              label: string;
+              prepStateLabel: string | null;
+              qty: number | null;
+              sourceLineIds: number[];
+              unit: string | null;
+              variantId: number | null;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
           };
         };
       };

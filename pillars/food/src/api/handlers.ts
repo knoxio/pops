@@ -11,6 +11,7 @@ import { getPillarRegistry } from './pillars/registry.js';
 import type { PillarRegistryEntry } from '@pops/types';
 
 import type { OpenedFoodDb } from '../db/index.js';
+import type { ListsClient } from './modules/recipes/send-to-list/lists-client.js';
 
 export interface FoodApiDeps {
   /** Open handle to the food pillar's SQLite. */
@@ -23,6 +24,12 @@ export interface FoodApiDeps {
    * special-case the host pillar.
    */
   selfBaseUrl: string;
+  /**
+   * Cross-pillar lists client used by send-to-list. Optional — production
+   * resolves the real HTTP client lazily from `POPS_PILLARS`; tests inject
+   * a stub so the flow runs without a live lists-api.
+   */
+  listsClient?: ListsClient;
 }
 
 export interface HealthResponse {

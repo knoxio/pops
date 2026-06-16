@@ -6704,6 +6704,348 @@
         "tags": ["recipes"]
       }
     },
+    "/recipes/versions/{versionId}/send-to-list": {
+      "post": {
+        "operationId": "sendToList.send",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "scaleFactor": {
+                    "type": "number"
+                  },
+                  "target": {
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "enum": ["existing"],
+                            "type": "string"
+                          },
+                          "listId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          }
+                        },
+                        "required": ["kind", "listId"],
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "enum": ["new"],
+                            "type": "string"
+                          },
+                          "name": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": ["kind", "name"],
+                        "type": "object"
+                      }
+                    ]
+                  }
+                },
+                "required": ["target"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "addedCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "listId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "mergedCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok", "listId", "addedCount", "mergedCount"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "RecipeNotFound",
+                            "NoIngredients",
+                            "TargetListNotFound",
+                            "TargetListArchived",
+                            "TargetListNotShopping",
+                            "NameRequiredForNew",
+                            "CompileNotReady"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Send a recipe version’s ingredients to a shopping list",
+        "tags": ["sendToList"]
+      }
+    },
+    "/recipes/versions/{versionId}/send-to-list/preview": {
+      "get": {
+        "operationId": "sendToList.prepare",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scaleFactor",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "alreadySentToListIds": {
+                      "items": {
+                        "maximum": 9007199254740991,
+                        "minimum": -9007199254740991,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "canonicalItems": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "ingredientId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "prepStateLabel": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "qty": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "sourceLineIds": {
+                            "items": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "type": "array"
+                          },
+                          "unit": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "variantId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "qty",
+                          "unit",
+                          "ingredientId",
+                          "variantId",
+                          "prepStateLabel",
+                          "sourceLineIds"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "recipeTitle": {
+                      "type": "string"
+                    },
+                    "scaleFactor": {
+                      "type": "number"
+                    },
+                    "unconvertedItems": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "ingredientId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "prepStateLabel": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "qty": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "sourceLineIds": {
+                            "items": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "type": "array"
+                          },
+                          "unit": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "variantId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "qty",
+                          "unit",
+                          "ingredientId",
+                          "variantId",
+                          "prepStateLabel",
+                          "sourceLineIds"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "recipeTitle",
+                    "scaleFactor",
+                    "canonicalItems",
+                    "unconvertedItems",
+                    "alreadySentToListIds"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Preview the items a recipe version would add to a shopping list",
+        "tags": ["sendToList"]
+      }
+    },
     "/recipes/{recipeId}/hero-image": {
       "delete": {
         "operationId": "heroImage.remove",
