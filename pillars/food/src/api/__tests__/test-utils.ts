@@ -159,6 +159,19 @@ interface ListPage<T> {
   nextCursor: string | null;
 }
 
+interface RecipeListItem {
+  id: number;
+  slug: string;
+  title: string | null;
+}
+type PromoteResult = { ok: true; versionId: number } | { ok: false; reason: string };
+interface CreateRecipeResult {
+  slug: string;
+  recipeId: number;
+  versionId: number;
+  compile: unknown;
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -371,6 +384,35 @@ export function makeClient(app: Express) {
       pendingCount: () => send<{ count: number }>(r.get('/inbox/pending-count')),
       getForReview: (sourceId: number) =>
         send<InspectorResult>(r.get('/inbox/review').query({ sourceId })),
+    },
+    recipes: {
+      list: (body: { search?: string; includeDraftOnly?: boolean } = {}) =>
+        send<{ items: RecipeListItem[]; nextCursor: string | null }>(
+          r.post('/recipes/search').send(body)
+        ),
+      create: (dsl: string) => send<CreateRecipeResult>(r.post('/recipes').send({ dsl })),
+      getForRendering: (slug: string, versionNo?: number) =>
+        send<unknown>(r.get(`/recipes/${slug}`).query(versionNo ? { versionNo } : {})),
+      listDrafts: (slug: string) =>
+        send<{ drafts: { versionId: number; versionNo: number }[] }>(
+          r.get(`/recipes/${slug}/drafts`)
+        ),
+      createNewDraft: (slug: string) =>
+        send<{ versionId: number; versionNo: number }>(r.post(`/recipes/${slug}/drafts`).send({})),
+      archiveRecipe: (slug: string) =>
+        send<{ ok: true }>(r.post(`/recipes/${slug}/archive`).send({})),
+      saveDraft: (versionId: number, dsl: string) =>
+        send<{ compile: unknown }>(r.patch(`/recipes/versions/${versionId}`).send({ dsl })),
+      promote: (versionId: number) =>
+        send<PromoteResult>(r.post(`/recipes/versions/${versionId}/promote`).send({})),
+      archiveVersion: (versionId: number) =>
+        send<{ ok: true }>(r.post(`/recipes/versions/${versionId}/archive`).send({})),
+      restoreVersion: (versionId: number) =>
+        send<{ newVersionId: number; newVersionNo: number }>(
+          r.post(`/recipes/versions/${versionId}/restore`).send({})
+        ),
+      listProposedSlugs: (versionId: number) =>
+        send<{ items: unknown[] }>(r.get(`/recipes/versions/${versionId}/proposed-slugs`)),
     },
   };
 }
