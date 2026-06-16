@@ -17,6 +17,7 @@ import { makeInboxHandlers } from './inbox-handlers.js';
 import { makeIngredientTagsHandlers } from './ingredient-tags-handlers.js';
 import { makeIngredientsHandlers } from './ingredients-handlers.js';
 import { makePrepStatesHandlers } from './prep-states-handlers.js';
+import { makeRecipesHandlers } from './recipes-handlers.js';
 import { makeSlugsHandlers } from './slugs-handlers.js';
 import { makeSolverHandlers } from './solver-handlers.js';
 import { makeSubstitutionsHandlers } from './substitutions-handlers.js';
@@ -37,6 +38,7 @@ export function makeFoodRestHandlers(deps: {
     ingredients: makeIngredientsHandlers(db),
     ingredientTags: makeIngredientTagsHandlers(db),
     prepStates: makePrepStatesHandlers(db),
+    recipes: makeRecipesHandlers(db),
     slugs: makeSlugsHandlers(db),
     solver: makeSolverHandlers(db),
     substitutions: makeSubstitutionsHandlers(db),
