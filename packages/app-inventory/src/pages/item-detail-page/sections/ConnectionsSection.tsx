@@ -1,8 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { GitBranch, Link2, Network, Unlink } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,8 +22,12 @@ import {
 import { ConnectDialog } from '../../../components/ConnectDialog';
 import { ConnectionGraph } from '../../../components/ConnectionGraph';
 import { ConnectionTracePanel } from '../../../components/ConnectionTracePanel';
+import { unwrap } from '../../../inventory-api-helpers.js';
+import { itemsGet } from '../../../inventory-api/index.js';
 
-import type { ItemConnection } from '@pops/api/modules/inventory/connections/types';
+import type { ConnectionsListForItemResponses } from '../../../inventory-api/index.js';
+
+type ItemConnection = ConnectionsListForItemResponses[200]['data'][number];
 
 function ConnectionRow({
   connectedItemId,
@@ -34,14 +38,10 @@ function ConnectionRow({
   onDisconnect: () => void;
   isDisconnecting: boolean;
 }) {
-  const { data } = usePillarQuery<{
-    data: {
-      itemName: string;
-      brand: string | null;
-      assetId: string | null;
-      type: string | null;
-    } | null;
-  }>('inventory', ['items', 'get'], { id: connectedItemId });
+  const { data } = useQuery({
+    queryKey: ['inventory', 'items', 'get', { id: connectedItemId }],
+    queryFn: async () => unwrap(await itemsGet({ path: { id: connectedItemId } })),
+  });
   const item = data?.data;
   const itemName = item?.itemName ?? connectedItemId;
 

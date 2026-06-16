@@ -1,27 +1,17 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Skeleton } from '@pops/ui';
 
 import { LinkDocumentDialog } from '../../../components/LinkDocumentDialog';
-import { DocumentsBody, type LinkedDoc } from './DocumentsSection.parts';
-
-interface DocumentsListResult {
-  data: LinkedDoc[];
-}
-
-interface PaperlessStatusResult {
-  data: {
-    configured: boolean;
-    available: boolean;
-    baseUrl: string | null;
-  } | null;
-}
-
-interface UnlinkInput {
-  id: number;
-}
+import { unwrap } from '../../../inventory-api-helpers.js';
+import {
+  documentsListForItem,
+  documentsUnlink,
+  paperlessStatus,
+} from '../../../inventory-api/index.js';
+import { DocumentsBody } from './DocumentsSection.parts';
 
 function DocumentsList({
   itemId,
@@ -30,22 +20,21 @@ function DocumentsList({
   itemId: string;
   paperlessBaseUrl: string | null;
 }) {
-  const { data, isLoading } = usePillarQuery<DocumentsListResult>(
-    'inventory',
-    ['documents', 'listForItem'],
-    { itemId }
-  );
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ['inventory', 'documents', 'listForItem', { itemId }],
+    queryFn: async () => unwrap(await documentsListForItem({ path: { itemId } })),
+  });
 
-  const unlinkMutation = usePillarMutation<UnlinkInput, unknown>(
-    'inventory',
-    ['documents', 'unlink'],
-    {
-      onSuccess: () => {
-        toast.success('Document unlinked');
-      },
-      onError: (err) => toast.error(`Failed to unlink: ${err.message}`),
-    }
-  );
+  const unlinkMutation = useMutation({
+    mutationFn: async (input: { id: number }) =>
+      unwrap(await documentsUnlink({ path: { id: input.id } })),
+    onSuccess: () => {
+      toast.success('Document unlinked');
+    },
+    onError: (err: Error) => toast.error(`Failed to unlink: ${err.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'documents'] }),
+  });
 
   const docs = data?.data ?? [];
 
@@ -62,7 +51,7 @@ function DocumentsList({
         <LinkDocumentDialog
           itemId={itemId}
           onLinked={() => {
-            /* Pillar SDK auto-invalidates the `inventory.documents` router prefix on success. */
+            void queryClient.invalidateQueries({ queryKey: ['inventory', 'documents'] });
           }}
         />
       </div>
@@ -94,11 +83,10 @@ interface DocumentsSectionProps {
 }
 
 export function DocumentsSection({ itemId }: DocumentsSectionProps) {
-  const { data: statusData, isLoading: statusLoading } = usePillarQuery<PaperlessStatusResult>(
-    'inventory',
-    ['paperless', 'status'],
-    undefined
-  );
+  const { data: statusData, isLoading: statusLoading } = useQuery({
+    queryKey: ['inventory', 'paperless', 'status'],
+    queryFn: async () => unwrap(await paperlessStatus()),
+  });
   const status = statusData?.data;
 
   if (!statusLoading && !status?.configured) return null;

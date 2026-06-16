@@ -1,16 +1,18 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
-
 import { useImageProcessor } from '../../hooks/useImageProcessor';
+import { unwrap } from '../../inventory-api-helpers.js';
+import {
+  photosListForItem,
+  photosRemove,
+  photosReorder,
+  photosUpload,
+} from '../../inventory-api/index.js';
 import { processAndUpload, type PhotoUploadMutation } from './photo-upload-helpers';
 
 import type { PhotoItem } from '../../components/PhotoGallery';
 import type { UploadedFile } from '../../components/PhotoUpload';
-
-interface PhotosListResult {
-  data: PhotoItem[];
-}
 
 interface PhotoUploadInput {
   itemId: string;
@@ -32,30 +34,34 @@ function usePhotoMutations(
   isEditMode: boolean,
   setDeleteConfirmId: (v: number | null) => void
 ) {
-  const { data: photosData } = usePillarQuery<PhotosListResult>(
-    'inventory',
-    ['photos', 'listForItem'],
-    { itemId: id ?? '' },
-    { enabled: isEditMode }
-  );
+  const queryClient = useQueryClient();
+  const invalidatePhotos = () =>
+    queryClient.invalidateQueries({ queryKey: ['inventory', 'photos'] });
+
+  const { data: photosData } = useQuery({
+    queryKey: ['inventory', 'photos', 'listForItem', { itemId: id ?? '' }],
+    queryFn: async () => unwrap(await photosListForItem({ path: { itemId: id ?? '' } })),
+    enabled: isEditMode,
+  });
   const existingPhotos: PhotoItem[] = photosData?.data ?? [];
-  const uploadMutation = usePillarMutation<PhotoUploadInput, unknown>('inventory', [
-    'photos',
-    'upload',
-  ]);
-  const photoDeleteMutation = usePillarMutation<PhotoDeleteInput, unknown>(
-    'inventory',
-    ['photos', 'remove'],
-    {
-      onSuccess: () => {
-        setDeleteConfirmId(null);
-      },
-    }
-  );
-  const reorderMutation = usePillarMutation<PhotoReorderInput, unknown>('inventory', [
-    'photos',
-    'reorder',
-  ]);
+  const uploadMutation = useMutation({
+    mutationFn: async ({ itemId, fileBase64, sortOrder }: PhotoUploadInput) =>
+      unwrap(await photosUpload({ path: { itemId }, body: { fileBase64, sortOrder } })),
+    onSettled: invalidatePhotos,
+  });
+  const photoDeleteMutation = useMutation({
+    mutationFn: async ({ id: photoId }: PhotoDeleteInput) =>
+      unwrap(await photosRemove({ path: { id: photoId } })),
+    onSuccess: () => {
+      setDeleteConfirmId(null);
+    },
+    onSettled: invalidatePhotos,
+  });
+  const reorderMutation = useMutation({
+    mutationFn: async ({ itemId, orderedIds }: PhotoReorderInput) =>
+      unwrap(await photosReorder({ path: { itemId }, body: { orderedIds } })),
+    onSettled: invalidatePhotos,
+  });
   return { existingPhotos, uploadMutation, photoDeleteMutation, reorderMutation };
 }
 

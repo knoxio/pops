@@ -1,24 +1,29 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useSetPageContext } from '@pops/navigation';
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { type SelectOption } from '@pops/ui';
 
-import { usePillarCall } from '../../lib/pillar-call';
+import { unwrap } from '../../inventory-api-helpers.js';
+import {
+  itemsDelete,
+  itemsDistinctTypes,
+  itemsList,
+  itemsSearchByAssetId,
+  locationsTree,
+} from '../../inventory-api/index.js';
 import {
   buildQueryInput,
   hasAnyActiveFilter,
   useItemsPageFilters,
   type Filters,
 } from './useItemsPageFilters';
-import {
-  buildLocationPathMap,
-  flattenLocations,
-  type LocationTreeNodeShape,
-} from './useItemsPageLocations';
+import { buildLocationPathMap, flattenLocations } from './useItemsPageLocations';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+import type { ItemsListResponses } from '../../inventory-api/types.gen.js';
+
+type InventoryItem = ItemsListResponses['200']['data'][number];
 
 const VIEW_STORAGE_KEY = 'inventory-view-mode';
 
@@ -38,41 +43,30 @@ export const VIEW_STORAGE = VIEW_STORAGE_KEY;
 
 export { useItemsPageFilters };
 
-interface DistinctTypesResult {
-  data: string[];
-}
-interface LocationsTreeResult {
-  data: LocationTreeNodeShape[];
-}
 interface ItemsListResult {
   data: InventoryItem[];
   pagination?: { total?: number };
   totals?: { totalReplacementValue?: number; totalResaleValue?: number };
-}
-interface SearchByAssetIdResult {
-  data: { id: string } | null;
 }
 interface DeleteItemInput {
   id: string;
 }
 
 function useItemsPageOptions() {
-  const { data: typesData } = usePillarQuery<DistinctTypesResult>(
-    'inventory',
-    ['items', 'distinctTypes'],
-    undefined
-  );
+  const { data: typesData } = useQuery({
+    queryKey: ['inventory', 'items', 'distinctTypes', undefined],
+    queryFn: async () => unwrap(await itemsDistinctTypes()),
+  });
   const typeOptions = useMemo<SelectOption[]>(() => {
     const opts: SelectOption[] = [{ value: '', label: 'All Types' }];
     for (const t of typesData?.data ?? []) opts.push({ value: t, label: t });
     return opts;
   }, [typesData]);
 
-  const { data: locationsData } = usePillarQuery<LocationsTreeResult>(
-    'inventory',
-    ['locations', 'tree'],
-    undefined
-  );
+  const { data: locationsData } = useQuery({
+    queryKey: ['inventory', 'locations', 'tree', undefined],
+    queryFn: async () => unwrap(await locationsTree()),
+  });
   const locationOptions = useMemo(
     () => flattenLocations(locationsData?.data ?? []),
     [locationsData]
@@ -86,26 +80,24 @@ function useItemsPageOptions() {
 
 function useAssetIdSearchHandler(filters: Filters) {
   const navigate = useNavigate();
-  const pillarCall = usePillarCall();
   const [, setAssetIdSearching] = useState(false);
   return useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== 'Enter' || !filters.search.trim()) return;
       setAssetIdSearching(true);
       try {
-        const result = await pillarCall<SearchByAssetIdResult>(
-          'inventory',
-          ['items', 'searchByAssetId'],
-          { assetId: filters.search.trim() }
-        );
-        if (result.kind === 'ok' && result.value.data) {
-          void navigate(`/inventory/items/${result.value.data.id}`);
+        const result = await itemsSearchByAssetId({ query: { assetId: filters.search.trim() } });
+        const value = unwrap(result);
+        if (value.data) {
+          void navigate(`/inventory/items/${value.data.id}`);
         }
+      } catch {
+        // swallow: a failed lookup leaves the user on the list view
       } finally {
         setAssetIdSearching(false);
       }
     },
-    [filters.search, pillarCall, navigate]
+    [filters.search, navigate]
   );
 }
 
@@ -133,6 +125,7 @@ function useItemsPageContext(filters: Filters): void {
 
 export function useItemsPageModel() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const filters = useItemsPageFilters();
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialView);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
@@ -142,22 +135,20 @@ export function useItemsPageModel() {
   const handleSearchKeyDown = useAssetIdSearchHandler(filters);
 
   const queryInput = useMemo(() => buildQueryInput(filters), [filters]);
-  const { data, isLoading } = usePillarQuery<ItemsListResult>(
-    'inventory',
-    ['items', 'list'],
-    queryInput
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: ['inventory', 'items', 'list', queryInput],
+    queryFn: async () => unwrap(await itemsList({ query: queryInput })),
+  });
   const summary = summarize(data);
 
-  const deleteMutation = usePillarMutation<DeleteItemInput, unknown>(
-    'inventory',
-    ['items', 'delete'],
-    {
-      onSuccess: () => {
-        setDeletingItemId(null);
-      },
-    }
-  );
+  const deleteMutation = useMutation({
+    mutationFn: async (input: DeleteItemInput) =>
+      unwrap(await itemsDelete({ path: { id: input.id } })),
+    onSuccess: () => {
+      setDeletingItemId(null);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'items'] }),
+  });
 
   return {
     navigate,

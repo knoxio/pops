@@ -74,7 +74,7 @@ export default defineConfig({
       // existing endpoints keep answering. Once per-pillar APIs run as
       // separate processes the rewrite goes away and each prefix targets
       // its own upstream.
-      '^/trpc-(core|finance|media|inventory|cerebrum|food)': {
+      '^/trpc-(core|finance|media|cerebrum|food)': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (urlPath: string) => urlPath.replace(/^\/trpc-[^/]+/, '/trpc'),
@@ -88,6 +88,11 @@ export default defineConfig({
         target: 'http://localhost:3006',
         changeOrigin: true,
         rewrite: (urlPath: string) => urlPath.replace(/^\/lists-api/, ''),
+      },
+      '/inventory-api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/inventory-api/, ''),
       },
       '/media/images': {
         target: 'http://localhost:3000',

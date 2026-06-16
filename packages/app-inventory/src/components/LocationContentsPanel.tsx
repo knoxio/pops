@@ -6,9 +6,7 @@ import { AssetIdBadge, Button, ContainerPanel, formatAUD, Skeleton, TypeBadge } 
 
 import { collectDescendantIds, useLocationItems } from './location-contents-panel-data';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
-
-import type { LocationTreeNode } from './location-contents-panel-data';
+import type { InventoryItem, LocationTreeNode } from './location-contents-panel-data';
 
 export interface LocationContentsPanelProps {
   locationId: string;

@@ -2,9 +2,10 @@ import { Link2, Search, X } from 'lucide-react';
 
 import { Badge, Button, Skeleton, TextInput } from '@pops/ui';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
-
+import type { ItemsListResponse } from '../../../inventory-api/types.gen.js';
 import type { PendingConnection } from '../useItemFormPageModel';
+
+type InventoryItem = ItemsListResponse['data'][number];
 
 interface ConnectionsSectionProps {
   pendingConnections: PendingConnection[];

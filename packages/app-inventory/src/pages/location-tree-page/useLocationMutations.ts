@@ -1,7 +1,9 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../inventory-api-helpers.js';
+import { locationsCreate, locationsDelete, locationsUpdate } from '../../inventory-api/index.js';
 
 import type { LocationTreeNode } from './utils';
 
@@ -31,7 +33,7 @@ interface CreateLocationInput {
 
 interface UpdateLocationInput {
   id: string;
-  data: { name?: string; parentId?: string | null };
+  data: { name?: string; parentId?: string | null; sortOrder?: number };
 }
 
 interface DeleteLocationInput {
@@ -39,67 +41,67 @@ interface DeleteLocationInput {
   force?: boolean;
 }
 
-interface DeleteLocationResult {
-  requiresConfirmation?: boolean;
-  stats?: DeleteConfirmState['stats'];
-}
+type DeleteLocationResult =
+  | { message: string }
+  | { requiresConfirmation: true; stats: DeleteConfirmState['stats'] };
+
+const LOCATIONS_KEY = ['inventory', 'locations'] as const;
 
 function useDeleteFlow(
   args: LocationMutationsArgs,
   pendingDeleteRef: React.MutableRefObject<{ id: string; name: string } | null>,
   setDeleteConfirm: (v: DeleteConfirmState | null) => void
 ) {
-  return usePillarMutation<DeleteLocationInput, DeleteLocationResult>(
-    'inventory',
-    ['locations', 'delete'],
-    {
-      onSuccess: (result) => {
-        if (result.requiresConfirmation && result.stats) {
-          const node = pendingDeleteRef.current;
-          if (node) setDeleteConfirm({ id: node.id, name: node.name, stats: result.stats });
-          return;
-        }
-        toast.success('Location deleted');
-        if (args.selectedId === pendingDeleteRef.current?.id) args.setSelectedId(null);
-        setDeleteConfirm(null);
-        pendingDeleteRef.current = null;
-      },
-      onError: (err) => {
-        toast.error(`Failed to delete: ${err.message}`);
-        setDeleteConfirm(null);
-        pendingDeleteRef.current = null;
-      },
-    }
-  );
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, force }: DeleteLocationInput): Promise<DeleteLocationResult> =>
+      unwrap(await locationsDelete({ path: { id }, query: { force } })),
+    onSuccess: (result) => {
+      if ('requiresConfirmation' in result) {
+        const node = pendingDeleteRef.current;
+        if (node) setDeleteConfirm({ id: node.id, name: node.name, stats: result.stats });
+        return;
+      }
+      toast.success('Location deleted');
+      if (args.selectedId === pendingDeleteRef.current?.id) args.setSelectedId(null);
+      setDeleteConfirm(null);
+      pendingDeleteRef.current = null;
+    },
+    onError: (err: Error) => {
+      toast.error(`Failed to delete: ${err.message}`);
+      setDeleteConfirm(null);
+      pendingDeleteRef.current = null;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: LOCATIONS_KEY }),
+  });
 }
 
 export function useLocationMutations(args: LocationMutationsArgs) {
+  const queryClient = useQueryClient();
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState | null>(null);
   const pendingDeleteRef = useRef<{ id: string; name: string } | null>(null);
 
-  const createMutation = usePillarMutation<CreateLocationInput, unknown>(
-    'inventory',
-    ['locations', 'create'],
-    {
-      onSuccess: () => {
-        toast.success('Location created');
-        args.setAddingChildOf(null);
-        args.setAddingRoot(false);
-      },
-      onError: (err) => toast.error(`Failed to create location: ${err.message}`),
-    }
-  );
+  const createMutation = useMutation({
+    mutationFn: async ({ name, parentId }: CreateLocationInput) =>
+      unwrap(await locationsCreate({ body: { name, parentId, sortOrder: 0 } })),
+    onSuccess: () => {
+      toast.success('Location created');
+      args.setAddingChildOf(null);
+      args.setAddingRoot(false);
+    },
+    onError: (err: Error) => toast.error(`Failed to create location: ${err.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: LOCATIONS_KEY }),
+  });
 
-  const updateMutation = usePillarMutation<UpdateLocationInput, unknown>(
-    'inventory',
-    ['locations', 'update'],
-    {
-      onSuccess: () => {
-        toast.success('Location updated');
-      },
-      onError: (err) => toast.error(`Failed to update location: ${err.message}`),
-    }
-  );
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: UpdateLocationInput) =>
+      unwrap(await locationsUpdate({ path: { id }, body: data })),
+    onSuccess: () => {
+      toast.success('Location updated');
+    },
+    onError: (err: Error) => toast.error(`Failed to update location: ${err.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: LOCATIONS_KEY }),
+  });
 
   const deleteMutation = useDeleteFlow(args, pendingDeleteRef, setDeleteConfirm);
 

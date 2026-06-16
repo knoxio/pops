@@ -5,10 +5,12 @@ import { type LocationSegment, Skeleton } from '@pops/ui';
 import { InventoryCard } from '../../components/InventoryCard';
 import { InventoryTable } from '../../components/InventoryTable';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
 import type { Condition } from '@pops/ui';
 
+import type { ItemsListResponse } from '../../inventory-api/types.gen.js';
 import type { ViewMode } from './useItemsPageModel';
+
+type InventoryItem = ItemsListResponse['data'][number];
 
 function ItemsPageSkeleton() {
   return (

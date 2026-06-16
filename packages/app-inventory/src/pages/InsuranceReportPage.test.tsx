@@ -1,31 +1,32 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockInsuranceReportQuery = vi.fn();
-const mockLocationsTreeQuery = vi.fn();
-const mockNavigate = vi.fn();
+import type {
+  LocationsTreeResponses,
+  ReportsInsuranceReportResponses,
+} from '../inventory-api/types.gen';
+
+const { reportsInsuranceReportMock, locationsTreeMock, navigateMock } = vi.hoisted(() => ({
+  reportsInsuranceReportMock: vi.fn(),
+  locationsTreeMock: vi.fn(),
+  navigateMock: vi.fn(),
+}));
+
+vi.mock('../inventory-api/index.js', () => ({
+  reportsInsuranceReport: (...args: unknown[]) => reportsInsuranceReportMock(...args),
+  locationsTree: (...args: unknown[]) => locationsTreeMock(...args),
+}));
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual('react-router');
   return {
     ...actual,
-    useNavigate: () => mockNavigate,
+    useNavigate: () => navigateMock,
   };
 });
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'reports.insuranceReport') return mockInsuranceReportQuery(input);
-    if (key === 'locations.tree') return mockLocationsTreeQuery();
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-}));
-
-/* ------------------------------------------------------------------ */
-/*  Mock LocationPicker to avoid popover complexity in tests           */
-/* ------------------------------------------------------------------ */
 vi.mock('../components/LocationPicker', () => ({
   LocationPicker: ({
     value,
@@ -50,10 +51,11 @@ vi.mock('../components/LocationPicker', () => ({
 
 import { InsuranceReportPage } from './InsuranceReportPage';
 
-/* ------------------------------------------------------------------ */
-/*  Fixtures                                                          */
-/* ------------------------------------------------------------------ */
-const sampleReport = {
+type ReportPayload = NonNullable<ReportsInsuranceReportResponses[200]>;
+type ReportSummary = ReportPayload['data'];
+type TreePayload = NonNullable<LocationsTreeResponses[200]>;
+
+const sampleReport: ReportSummary = {
   totalItems: 3,
   totalValue: 5000,
   groups: [
@@ -72,6 +74,7 @@ const sampleReport = {
           photoPath: 'tv.jpg',
           locationId: 'loc-1',
           locationName: 'Living Room',
+          type: null,
           receiptDocumentIds: [1234, 5678],
         },
         {
@@ -85,6 +88,7 @@ const sampleReport = {
           photoPath: null,
           locationId: 'loc-1',
           locationName: 'Living Room',
+          type: null,
           receiptDocumentIds: [],
         },
       ],
@@ -104,6 +108,7 @@ const sampleReport = {
           photoPath: 'toaster.jpg',
           locationId: 'loc-2',
           locationName: 'Kitchen',
+          type: null,
           receiptDocumentIds: [9999],
         },
       ],
@@ -111,222 +116,200 @@ const sampleReport = {
   ],
 };
 
-const locationTree = [
-  { id: 'loc-1', name: 'Living Room', parentId: null, children: [] },
-  { id: 'loc-2', name: 'Kitchen', parentId: null, children: [] },
+const locationTree: TreePayload['data'] = [
+  { id: 'loc-1', name: 'Living Room', parentId: null, sortOrder: 0, children: [] },
+  { id: 'loc-2', name: 'Kitchen', parentId: null, sortOrder: 1, children: [] },
 ];
 
-function renderPage(initialEntry = '/inventory/insurance-report') {
-  return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <Routes>
-        <Route path="/inventory/insurance-report" element={<InsuranceReportPage />} />
-      </Routes>
-    </MemoryRouter>
+function mockReportSuccess(summary: ReportSummary): void {
+  reportsInsuranceReportMock.mockImplementation(async () => ({
+    data: { data: summary } satisfies ReportPayload,
+    error: undefined,
+  }));
+}
+
+function mockReportUnavailable(message = 'boom'): void {
+  reportsInsuranceReportMock.mockImplementation(async () => ({
+    data: undefined,
+    error: { message },
+    response: { status: 500 },
+  }));
+}
+
+function mockReportNeverResolves(): void {
+  reportsInsuranceReportMock.mockImplementation(
+    () => new Promise(() => undefined) as Promise<{ data: ReportPayload; error: undefined }>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Tests                                                             */
-/* ------------------------------------------------------------------ */
+function renderPage(initialEntry = '/inventory/insurance-report'): ReturnType<typeof render> {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route path="/inventory/insurance-report" element={<InsuranceReportPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
+function lastReportQuery(): Record<string, unknown> | undefined {
+  const lastCall = reportsInsuranceReportMock.mock.lastCall;
+  if (!lastCall) return undefined;
+  const [args] = lastCall as [{ query?: Record<string, unknown> }];
+  return args?.query;
+}
+
 describe('InsuranceReportPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockLocationsTreeQuery.mockReturnValue({ data: { data: locationTree } });
+    reportsInsuranceReportMock.mockReset();
+    locationsTreeMock.mockReset();
+    navigateMock.mockReset();
+    locationsTreeMock.mockImplementation(async () => ({
+      data: { data: locationTree } satisfies TreePayload,
+      error: undefined,
+    }));
   });
 
   it('shows loading skeleton while data is fetching', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    });
+    mockReportNeverResolves();
     renderPage();
     expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
-    // The loading state renders Skeleton components
     expect(screen.queryByText('Insurance Report')).not.toBeInTheDocument();
   });
 
-  it('shows error state when report fails to load', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-    });
+  it('shows error state when report is unavailable', async () => {
+    mockReportUnavailable();
     renderPage();
-    expect(screen.getByText('Failed to load report.')).toBeInTheDocument();
+    expect(await screen.findByText('Failed to load report.')).toBeInTheDocument();
   });
 
-  it('renders report header with title and date', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders report header with title and date', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('Insurance Report')).toBeInTheDocument();
+    expect(await screen.findByText('Insurance Report')).toBeInTheDocument();
     expect(screen.getByText(/Generated/)).toBeInTheDocument();
   });
 
-  it('renders summary cards with totals', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders summary cards with totals', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(await screen.findByText('3')).toBeInTheDocument();
     expect(screen.getByText('$5,000')).toBeInTheDocument();
   });
 
-  it('renders location groups with item counts', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders location groups with item counts', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText(/Living Room/)).toBeInTheDocument();
+    expect(await screen.findByText(/Living Room/)).toBeInTheDocument();
     expect(screen.getByText(/Kitchen/)).toBeInTheDocument();
     expect(screen.getByText('(2 items)')).toBeInTheDocument();
     expect(screen.getByText('(1 item)')).toBeInTheDocument();
   });
 
-  it('renders item details in table rows', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders item details in table rows', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('Television')).toBeInTheDocument();
+    expect(await screen.findByText('Television')).toBeInTheDocument();
     expect(screen.getByText('Sofa')).toBeInTheDocument();
     expect(screen.getByText('Toaster')).toBeInTheDocument();
     expect(screen.getByText('Samsung')).toBeInTheDocument();
   });
 
-  it('renders photo with alt text when photoPath exists', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders photo with alt text when photoPath exists', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    const img = screen.getByAltText('Photo of Television');
+    const img = await screen.findByAltText('Photo of Television');
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('src', '/inventory/photos/tv.jpg');
   });
 
-  it('renders photo thumbnails with print max-width class', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders photo thumbnails with print max-width class', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    const img = screen.getByAltText('Photo of Television');
+    const img = await screen.findByAltText('Photo of Television');
     expect(img).toBeInTheDocument();
     expect(img.className).toContain('print:max-w-50');
   });
 
-  it('renders photo thumbnails with break-inside-avoid for print', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders photo thumbnails with break-inside-avoid for print', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    const img = screen.getByAltText('Photo of Television');
+    const img = await screen.findByAltText('Photo of Television');
     expect(img?.className).toContain('print:break-inside-avoid');
   });
 
-  it('renders fallback div with aria-label when no photo', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders fallback div with aria-label when no photo', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    const fallbacks = screen.getAllByLabelText('No photo available');
+    const fallbacks = await screen.findAllByLabelText('No photo available');
     expect(fallbacks.length).toBeGreaterThan(0);
   });
 
-  it('shows expired warranty badge', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('shows expired warranty badge', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('Expired')).toBeInTheDocument();
+    expect(await screen.findByText('Expired')).toBeInTheDocument();
   });
 
-  it('shows None for items without warranty', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('shows None for items without warranty', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('None')).toBeInTheDocument();
+    expect(await screen.findByText('None')).toBeInTheDocument();
   });
 
-  it('shows dashes for null values', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('shows dashes for null values', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    // Sofa has no brand, condition — should show dashes
-    const dashes = screen.getAllByText('—');
+    const dashes = await screen.findAllByText('—');
     expect(dashes.length).toBeGreaterThan(0);
   });
 
-  it('renders location picker with All locations placeholder', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders location picker with All locations placeholder', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    const picker = screen.getByTestId('location-picker');
+    const picker = await screen.findByTestId('location-picker');
     expect(picker).toHaveTextContent('All locations');
   });
 
-  it('passes locationId to location picker when in URL', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('passes locationId to location picker when in URL', async () => {
+    mockReportSuccess(sampleReport);
     renderPage('/inventory/insurance-report?locationId=loc-1');
-    const picker = screen.getByTestId('location-picker');
+    const picker = await screen.findByTestId('location-picker');
     expect(picker).toHaveAttribute('data-value', 'loc-1');
   });
 
-  it('renders Export CSV button', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders Export CSV button', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('Export CSV')).toBeInTheDocument();
+    expect(await screen.findByText('Export CSV')).toBeInTheDocument();
   });
 
-  it('renders Print / PDF button', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders Print / PDF button', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('Print / PDF')).toBeInTheDocument();
+    expect(await screen.findByText('Print / PDF')).toBeInTheDocument();
   });
 
-  it('applies break-inside-avoid to item rows for print', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('applies break-inside-avoid to item rows for print', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
+    await screen.findByText('Television');
     const rows = document.querySelectorAll('tbody tr');
-    expect(rows.length).toBe(3); // 2 items in Living Room + 1 in Kitchen
+    expect(rows.length).toBe(3);
     rows.forEach((row) => {
       expect(row.className).toContain('print:break-inside-avoid');
     });
   });
 
-  it('applies page-break-before on second location group (not first)', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('applies page-break-before on second location group (not first)', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
+    await screen.findByText('Television');
     const headers = document.querySelectorAll('h2');
     expect(headers.length).toBe(2);
     const firstGroup = headers[0]!.parentElement!;
@@ -335,34 +318,28 @@ describe('InsuranceReportPage', () => {
     expect(secondGroup.className).toContain('print:break-before-page');
   });
 
-  it('applies print font sizes to section headers', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('applies print font sizes to section headers', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
+    await screen.findByText('Television');
     const headers = document.querySelectorAll('h2');
     headers.forEach((h) => {
       expect(h.className).toContain('print:text-[14pt]');
     });
   });
 
-  it('applies print base font size to container', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('applies print base font size to container', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
+    await screen.findByText('Television');
     const container = document.querySelector("[class*='print:text-\\[11pt\\]']");
     expect(container).toBeInTheDocument();
   });
 
-  it('applies print border classes to table for structure', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('applies print border classes to table for structure', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
+    await screen.findByText('Television');
     const tables = document.querySelectorAll('table');
     tables.forEach((table) => {
       expect(table.className).toContain('print:border');
@@ -370,18 +347,13 @@ describe('InsuranceReportPage', () => {
     });
   });
 
-  it('removes badge backgrounds for print', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('removes badge backgrounds for print', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    // Warranty badges are rendered with print:bg-transparent for print-friendly output.
-    // Other badges (AssetIdBadge, ConditionBadge) don't need print overrides.
+    await screen.findByText('Television');
     const warrantyBadges = document.querySelectorAll(
       '[data-slot="badge"][class*="print:bg-transparent"]'
     );
-    // 3 items in sampleReport → 3 warranty badges
     expect(warrantyBadges.length).toBe(3);
     warrantyBadges.forEach((badge) => {
       expect(badge.className).toContain('print:border');
@@ -389,105 +361,81 @@ describe('InsuranceReportPage', () => {
     });
   });
 
-  it('shows empty state when no items found', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: { totalItems: 0, totalValue: 0, groups: [] } },
-      isLoading: false,
-    });
+  it('shows empty state when no items found', async () => {
+    mockReportSuccess({ totalItems: 0, totalValue: 0, groups: [] });
     renderPage();
-    expect(screen.getByText('No inventory items found.')).toBeInTheDocument();
+    expect(await screen.findByText('No inventory items found.')).toBeInTheDocument();
   });
 
-  it('calls window.print when Print / PDF button is clicked', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('calls window.print when Print / PDF button is clicked', async () => {
+    mockReportSuccess(sampleReport);
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
     renderPage();
-    const printBtn = screen.getByText('Print / PDF');
+    const printBtn = await screen.findByText('Print / PDF');
     fireEvent.click(printBtn);
     expect(printSpy).toHaveBeenCalled();
     printSpy.mockRestore();
   });
 
-  it('triggers CSV download when Export CSV is clicked', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('triggers CSV download when Export CSV is clicked', async () => {
+    mockReportSuccess(sampleReport);
     const createObjectURLSpy = vi.fn(() => 'blob:test');
     const revokeObjectURLSpy = vi.fn();
     global.URL.createObjectURL = createObjectURLSpy;
     global.URL.revokeObjectURL = revokeObjectURLSpy;
 
     renderPage();
-    const csvBtn = screen.getByText('Export CSV');
+    const csvBtn = await screen.findByText('Export CSV');
     fireEvent.click(csvBtn);
     expect(createObjectURLSpy).toHaveBeenCalled();
     expect(revokeObjectURLSpy).toHaveBeenCalled();
   });
 
-  it('shows include sub-locations toggle when location is selected', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('shows include sub-locations toggle when location is selected', async () => {
+    mockReportSuccess(sampleReport);
     renderPage('/inventory/insurance-report?locationId=loc-1');
-    expect(screen.getByLabelText('Include sub-locations')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Include sub-locations')).toBeInTheDocument();
   });
 
-  it('hides include sub-locations toggle when no location selected', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('hides include sub-locations toggle when no location selected', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
+    await screen.findByText('Television');
     expect(screen.queryByLabelText('Include sub-locations')).not.toBeInTheDocument();
   });
 
-  it('renders sort selector with default value', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders sort selector with default value', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    const select = screen.getByDisplayValue('Value (high first)');
+    const select = await screen.findByDisplayValue('Value (high first)');
     expect(select).toBeInTheDocument();
   });
 
-  it('renders sort selector with URL param value', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders sort selector with URL param value', async () => {
+    mockReportSuccess(sampleReport);
     renderPage('/inventory/insurance-report?sortBy=name');
-    const select = screen.getByDisplayValue('Name');
+    const select = await screen.findByDisplayValue('Name');
     expect(select).toBeInTheDocument();
   });
 
-  it('renders receipt document IDs for items that have them', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('renders receipt document IDs for items that have them', async () => {
+    mockReportSuccess(sampleReport);
     renderPage();
-    expect(screen.getByText('#1234, #5678')).toBeInTheDocument();
+    expect(await screen.findByText('#1234, #5678')).toBeInTheDocument();
     expect(screen.getByText('#9999')).toBeInTheDocument();
   });
 
-  it('passes sortBy and includeChildren to query', () => {
-    mockInsuranceReportQuery.mockReturnValue({
-      data: { data: sampleReport },
-      isLoading: false,
-    });
+  it('passes sortBy and includeChildren to the report query', async () => {
+    mockReportSuccess(sampleReport);
     renderPage('/inventory/insurance-report?locationId=loc-1&sortBy=name&includeChildren=false');
-    expect(mockInsuranceReportQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        locationId: 'loc-1',
-        sortBy: 'name',
-        includeChildren: false,
-      })
+    await waitFor(() =>
+      expect(lastReportQuery()).toEqual(
+        expect.objectContaining({
+          locationId: 'loc-1',
+          sortBy: 'name',
+          includeChildren: false,
+        })
+      )
     );
   });
 });

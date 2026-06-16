@@ -1,11 +1,13 @@
+import { useQuery } from '@tanstack/react-query';
 import { ShieldCheck } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { PageHeader } from '@pops/ui';
 
+import { isUnavailableError, unwrap } from '../inventory-api-helpers.js';
+import { paperlessStatus, reportsWarranties } from '../inventory-api/index.js';
 import { CollapsibleSection, ExpiringSection } from './warranties-page/sections';
 import { EmptyState, ErrorState, WarrantySkeleton } from './warranties-page/states';
 import { categorizeWarranties, type WarrantyTiers } from './warranties-page/utils';
@@ -122,13 +124,16 @@ function WarrantiesBody({
 export function WarrantiesPage() {
   const { t } = useTranslation('inventory');
   const navigate = useNavigate();
-  const { data, isLoading, isError, refetch, isUnavailable, isContractMismatch } =
-    usePillarQuery<WarrantiesResult>('inventory', ['reports', 'warranties'], undefined);
-  const { data: paperlessData } = usePillarQuery<PaperlessStatusResult>(
-    'inventory',
-    ['paperless', 'status'],
-    undefined
-  );
+  const warrantiesQuery = useQuery<WarrantiesResult>({
+    queryKey: ['inventory', 'reports', 'warranties', undefined],
+    queryFn: async () => unwrap(await reportsWarranties()),
+  });
+  const { data, isLoading, isError, refetch } = warrantiesQuery;
+  const isUnavailable = isUnavailableError(warrantiesQuery.error);
+  const { data: paperlessData } = useQuery<PaperlessStatusResult>({
+    queryKey: ['inventory', 'paperless', 'status', undefined],
+    queryFn: async () => unwrap(await paperlessStatus()),
+  });
   const paperlessBaseUrl = paperlessData?.data?.available ? paperlessData.data.baseUrl : null;
   const tiers = useMemo(() => categorizeWarranties(data?.data ?? []), [data]);
 
@@ -144,7 +149,7 @@ export function WarrantiesPage() {
       />
       <WarrantiesBody
         isLoading={isLoading}
-        isError={isError || isUnavailable || isContractMismatch}
+        isError={isError || isUnavailable}
         tiers={tiers}
         paperlessBaseUrl={paperlessBaseUrl}
         onRetry={() => refetch()}

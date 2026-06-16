@@ -356,7 +356,7 @@
       }
     },
     {
-      "files": ["packages/app-*/src/**/*.gen.ts"],
+      "files": ["packages/app-*/src/**/*.gen.ts", "packages/app-*/src/*-api/**/*.{ts,tsx}"],
       "rules": {
         "max-lines": "off",
         "max-lines-per-function": "off",

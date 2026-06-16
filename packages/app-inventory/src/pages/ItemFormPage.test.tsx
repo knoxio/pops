@@ -1,8 +1,18 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { type ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { extractPrefix } from './ItemFormPage';
+
+import type {
+  ItemsCountByAssetPrefixResponses,
+  ItemsGetResponses,
+  ItemsListResponses,
+  ItemsSearchByAssetIdResponses,
+  PhotosListForItemResponses,
+} from '../inventory-api/types.gen';
 
 const mockNavigate = vi.fn();
 
@@ -76,105 +86,63 @@ describe('zero-padding format', () => {
 
 // ---------- component tests ----------
 
-const mockItemQuery = vi.fn();
-const mockListQuery = vi.fn();
-const mockSearchByAssetIdFetch = vi.fn();
-const mockCountByAssetPrefixFetch = vi.fn();
-const mockCreateMutate = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockConnectMutate = vi.fn();
-const mockPhotosListQuery = vi.fn();
-const mockAttachMutate = vi.fn();
-const mockRemoveMutate = vi.fn();
-const mockReorderMutate = vi.fn();
-const mockRefetchPhotos = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'items.get') return mockItemQuery(input);
-    if (key === 'items.list') return mockListQuery(input);
-    if (key === 'locations.tree') return { data: { data: [] }, isLoading: false };
-    if (key === 'photos.listForItem') {
-      const result = mockPhotosListQuery(input);
-      return { ...result, refetch: mockRefetchPhotos };
-    }
-    if (key === 'documentFiles.listForItem') return { data: { data: [] }, isLoading: false };
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: Record<string, unknown>
-  ) => {
-    const key = path.join('.');
-    if (key === 'items.create') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockCreateMutate(...args);
-          if (typeof opts?.onSuccess === 'function') {
-            (opts.onSuccess as (data: { data: { id: string } }) => void)({
-              data: { id: 'new-id' },
-            });
-          }
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'items.update') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockUpdateMutate(...args);
-          if (typeof opts?.onSuccess === 'function') {
-            (opts.onSuccess as (data: unknown) => void)(undefined);
-          }
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'connections.connect') {
-      return { mutateAsync: mockConnectMutate, mutate: vi.fn(), isPending: false };
-    }
-    if (key === 'locations.create') {
-      return { mutate: vi.fn(), isPending: false };
-    }
-    if (key === 'photos.upload') {
-      return { mutateAsync: mockAttachMutate, mutate: vi.fn(), isPending: false };
-    }
-    if (key === 'photos.remove') {
-      return {
-        mutate: (...args: unknown[]) => {
-          mockRemoveMutate(...args);
-          if (typeof opts?.onSuccess === 'function') {
-            (opts.onSuccess as (data: unknown) => void)(undefined);
-          }
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'photos.reorder') {
-      return { mutate: mockReorderMutate, isPending: false };
-    }
-    if (key === 'documentFiles.upload' || key === 'documentFiles.removeUpload') {
-      return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-    }
-    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-  },
+const {
+  itemsGetMock,
+  itemsListMock,
+  itemsCreateMock,
+  itemsUpdateMock,
+  itemsSearchByAssetIdMock,
+  itemsCountByAssetPrefixMock,
+  locationsTreeMock,
+  locationsCreateMock,
+  connectionsConnectMock,
+  photosListForItemMock,
+  photosUploadMock,
+  photosRemoveMock,
+  photosReorderMock,
+  documentFilesListForItemMock,
+  documentFilesUploadMock,
+  documentFilesRemoveUploadMock,
+} = vi.hoisted(() => ({
+  itemsGetMock: vi.fn(),
+  itemsListMock: vi.fn(),
+  itemsCreateMock: vi.fn(),
+  itemsUpdateMock: vi.fn(),
+  itemsSearchByAssetIdMock: vi.fn(),
+  itemsCountByAssetPrefixMock: vi.fn(),
+  locationsTreeMock: vi.fn(),
+  locationsCreateMock: vi.fn(),
+  connectionsConnectMock: vi.fn(),
+  photosListForItemMock: vi.fn(),
+  photosUploadMock: vi.fn(),
+  photosRemoveMock: vi.fn(),
+  photosReorderMock: vi.fn(),
+  documentFilesListForItemMock: vi.fn(),
+  documentFilesUploadMock: vi.fn(),
+  documentFilesRemoveUploadMock: vi.fn(),
 }));
 
-vi.mock('../lib/pillar-call', () => ({
-  usePillarCall: () => async (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'items.searchByAssetId') {
-      const result = await mockSearchByAssetIdFetch(input);
-      return { kind: 'ok', value: result };
-    }
-    if (key === 'items.countByAssetPrefix') {
-      const result = await mockCountByAssetPrefixFetch(input);
-      return { kind: 'ok', value: result };
-    }
-    return { kind: 'contract-mismatch', pillar: 'inventory', actual: key };
-  },
+vi.mock('../inventory-api/index.js', () => ({
+  itemsGet: (...args: unknown[]) => itemsGetMock(...args),
+  itemsList: (...args: unknown[]) => itemsListMock(...args),
+  itemsCreate: (...args: unknown[]) => itemsCreateMock(...args),
+  itemsUpdate: (...args: unknown[]) => itemsUpdateMock(...args),
+  itemsSearchByAssetId: (...args: unknown[]) => itemsSearchByAssetIdMock(...args),
+  itemsCountByAssetPrefix: (...args: unknown[]) => itemsCountByAssetPrefixMock(...args),
+  locationsTree: (...args: unknown[]) => locationsTreeMock(...args),
+  locationsCreate: (...args: unknown[]) => locationsCreateMock(...args),
+  connectionsConnect: (...args: unknown[]) => connectionsConnectMock(...args),
+  photosListForItem: (...args: unknown[]) => photosListForItemMock(...args),
+  photosUpload: (...args: unknown[]) => photosUploadMock(...args),
+  photosRemove: (...args: unknown[]) => photosRemoveMock(...args),
+  photosReorder: (...args: unknown[]) => photosReorderMock(...args),
+  documentFilesListForItem: (...args: unknown[]) => documentFilesListForItemMock(...args),
+  documentFilesUpload: (...args: unknown[]) => documentFilesUploadMock(...args),
+  documentFilesRemoveUpload: (...args: unknown[]) => documentFilesRemoveUploadMock(...args),
+}));
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
 }));
 
 // Mock react-markdown
@@ -206,8 +174,79 @@ vi.mock('../hooks/useImageProcessor', () => ({
 
 import { ItemFormPage } from './ItemFormPage';
 
-function renderCreate() {
-  return render(
+type ItemRecord = NonNullable<ItemsGetResponses[200]>['data'];
+type Photo = NonNullable<PhotosListForItemResponses[200]>['data'][number];
+
+interface SdkSuccess<T> {
+  data: T;
+  error: undefined;
+}
+
+interface SdkFailure {
+  data: undefined;
+  error: { message: string };
+  response: { status: number };
+}
+
+function ok<T>(data: T): SdkSuccess<T> {
+  return { data, error: undefined };
+}
+
+function fail(message: string, status: number): SdkFailure {
+  return { data: undefined, error: { message }, response: { status } };
+}
+
+function buildItem(overrides: Partial<ItemRecord> = {}): ItemRecord {
+  return {
+    id: 'item-1',
+    itemName: 'MacBook',
+    brand: null,
+    model: null,
+    itemId: null,
+    type: 'Electronics',
+    condition: 'Good',
+    room: null,
+    location: null,
+    inUse: false,
+    deductible: false,
+    purchaseDate: null,
+    warrantyExpires: null,
+    replacementValue: null,
+    resaleValue: null,
+    purchasePrice: null,
+    assetId: 'ELEC01',
+    notes: null,
+    locationId: null,
+    lastEditedTime: '2026-01-01',
+    purchaseTransactionId: null,
+    purchasedFromId: null,
+    purchasedFromName: null,
+    ...overrides,
+  };
+}
+
+function mockItemGetSuccess(item: ItemRecord): void {
+  itemsGetMock.mockResolvedValue(ok({ data: item } satisfies NonNullable<ItemsGetResponses[200]>));
+}
+
+function mockPhotosSuccess(photos: Photo[]): void {
+  photosListForItemMock.mockResolvedValue(
+    ok({
+      data: photos,
+      pagination: { hasMore: false, limit: 50, offset: 0, total: photos.length },
+    } satisfies NonNullable<PhotosListForItemResponses[200]>)
+  );
+}
+
+const QC_OPTIONS = { defaultOptions: { queries: { retry: false }, mutations: { retry: false } } };
+
+function renderWithProviders(ui: ReactElement): ReturnType<typeof render> {
+  const queryClient = new QueryClient(QC_OPTIONS);
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+function renderCreate(): ReturnType<typeof render> {
+  return renderWithProviders(
     <MemoryRouter initialEntries={['/inventory/items/new']}>
       <Routes>
         <Route path="/inventory/items/new" element={<ItemFormPage />} />
@@ -216,8 +255,8 @@ function renderCreate() {
   );
 }
 
-function renderEdit(id: string) {
-  return render(
+function renderEdit(id: string): ReturnType<typeof render> {
+  return renderWithProviders(
     <MemoryRouter initialEntries={[`/inventory/items/${id}/edit`]}>
       <Routes>
         <Route path="/inventory/items/:id/edit" element={<ItemFormPage />} />
@@ -229,24 +268,34 @@ function renderEdit(id: string) {
 beforeEach(() => {
   vi.clearAllMocks();
 
-  mockItemQuery.mockReturnValue({
-    data: null,
-    isLoading: false,
-    error: null,
-  });
-
-  mockListQuery.mockReturnValue({
-    data: { data: [] },
-    isLoading: false,
-  });
-
-  mockSearchByAssetIdFetch.mockResolvedValue({ data: null });
-  mockCountByAssetPrefixFetch.mockResolvedValue({ data: 0 });
-
-  mockPhotosListQuery.mockReturnValue({
-    data: { data: [] },
-    isLoading: false,
-  });
+  itemsGetMock.mockResolvedValue(fail('item not found', 404));
+  itemsListMock.mockResolvedValue(
+    ok({
+      data: [],
+      pagination: { hasMore: false, limit: 10, offset: 0, total: 0 },
+      totals: { totalReplacementValue: 0, totalResaleValue: 0 },
+    } satisfies NonNullable<ItemsListResponses[200]>)
+  );
+  itemsCreateMock.mockResolvedValue(ok({ data: buildItem({ id: 'new-id' }), message: 'created' }));
+  itemsUpdateMock.mockResolvedValue(ok({ data: buildItem(), message: 'updated' }));
+  itemsSearchByAssetIdMock.mockResolvedValue(
+    ok({ data: null } satisfies NonNullable<ItemsSearchByAssetIdResponses[200]>)
+  );
+  itemsCountByAssetPrefixMock.mockResolvedValue(
+    ok({ data: 0 } satisfies NonNullable<ItemsCountByAssetPrefixResponses[200]>)
+  );
+  locationsTreeMock.mockResolvedValue(ok({ data: [] }));
+  locationsCreateMock.mockResolvedValue(ok({ data: { id: 'loc-1' }, message: 'created' }));
+  connectionsConnectMock.mockResolvedValue(ok({ data: { id: 1 }, message: 'connected' }));
+  mockPhotosSuccess([]);
+  photosUploadMock.mockResolvedValue(ok({ data: { id: 1 }, message: 'uploaded' }));
+  photosRemoveMock.mockResolvedValue(ok({ data: { id: 1 }, message: 'removed' }));
+  photosReorderMock.mockResolvedValue(ok({ data: [], message: 'reordered' }));
+  documentFilesListForItemMock.mockResolvedValue(
+    ok({ data: [], pagination: { hasMore: false, limit: 50, offset: 0, total: 0 } })
+  );
+  documentFilesUploadMock.mockResolvedValue(ok({ data: { id: 1 }, message: 'uploaded' }));
+  documentFilesRemoveUploadMock.mockResolvedValue(ok({ data: { id: 1 }, message: 'removed' }));
 });
 
 describe('ItemFormPage — Asset ID generation', () => {
@@ -271,9 +320,9 @@ describe('ItemFormPage — Asset ID generation', () => {
   });
 
   it('shows asset ID uniqueness error on blur when taken', async () => {
-    mockSearchByAssetIdFetch.mockResolvedValue({
-      data: { id: 'other-item', itemName: 'Existing Item' },
-    });
+    itemsSearchByAssetIdMock.mockResolvedValue(
+      ok({ data: buildItem({ id: 'other-item', itemName: 'Existing Item' }) })
+    );
 
     renderCreate();
     const assetInput = document.querySelector('input[name="assetId"]') as HTMLInputElement;
@@ -281,55 +330,22 @@ describe('ItemFormPage — Asset ID generation', () => {
     fireEvent.change(assetInput, { target: { value: 'ELEC01' } });
     fireEvent.blur(assetInput);
 
-    // Wait for async validation
-    await vi.waitFor(() => {
-      expect(screen.getByText(/Asset ID already in use by Existing Item/)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/Asset ID already in use by Existing Item/)).toBeInTheDocument();
   });
 
   it('skips uniqueness error for own asset ID in edit mode', async () => {
-    mockItemQuery.mockReturnValue({
-      data: {
-        data: {
-          id: 'item-1',
-          itemName: 'MacBook',
-          brand: null,
-          model: null,
-          itemId: null,
-          type: 'Electronics',
-          condition: 'Good',
-          room: null,
-          inUse: false,
-          deductible: false,
-          purchaseDate: null,
-          warrantyExpires: null,
-          replacementValue: null,
-          resaleValue: null,
-          purchasePrice: null,
-          assetId: 'ELEC01',
-          notes: null,
-          locationId: null,
-          lastEditedTime: '2026-01-01',
-          purchaseTransactionId: null,
-          purchasedFromId: null,
-          purchasedFromName: null,
-        },
-      },
-      isLoading: false,
-      error: null,
-    });
-
-    mockSearchByAssetIdFetch.mockResolvedValue({
-      data: { id: 'item-1', itemName: 'MacBook' },
-    });
+    mockItemGetSuccess(buildItem({ id: 'item-1', itemName: 'MacBook', assetId: 'ELEC01' }));
+    itemsSearchByAssetIdMock.mockResolvedValue(
+      ok({ data: buildItem({ id: 'item-1', itemName: 'MacBook' }) })
+    );
 
     renderEdit('item-1');
 
-    const assetInput = screen.getByDisplayValue('ELEC01');
+    const assetInput = await screen.findByDisplayValue('ELEC01');
     fireEvent.blur(assetInput);
 
-    await vi.waitFor(() => {
-      expect(mockSearchByAssetIdFetch).toHaveBeenCalledWith({ assetId: 'ELEC01' });
+    await waitFor(() => {
+      expect(itemsSearchByAssetIdMock).toHaveBeenCalledWith({ query: { assetId: 'ELEC01' } });
     });
     expect(screen.queryByText(/Asset ID already in use/)).not.toBeInTheDocument();
   });
@@ -339,7 +355,7 @@ describe('ItemFormPage — Asset ID generation', () => {
     const assetInput = document.querySelector('input[name="assetId"]') as HTMLInputElement;
     expect(assetInput).toBeInTheDocument();
     fireEvent.blur(assetInput);
-    expect(mockSearchByAssetIdFetch).not.toHaveBeenCalled();
+    expect(itemsSearchByAssetIdMock).not.toHaveBeenCalled();
   });
 });
 
@@ -354,96 +370,49 @@ describe('ItemFormPage — Photos section', () => {
     expect(screen.getByRole('button', { name: /upload photos/i })).toBeInTheDocument();
   });
 
-  it('renders existing photos in edit mode', () => {
-    mockItemQuery.mockReturnValue({
-      data: {
-        data: {
-          id: 'item-1',
-          itemName: 'Camera',
-          brand: null,
-          model: null,
-          itemId: null,
-          type: null,
-          condition: null,
-          room: null,
-          inUse: false,
-          deductible: false,
-          purchaseDate: null,
-          warrantyExpires: null,
-          replacementValue: null,
-          resaleValue: null,
-          purchasePrice: null,
-          assetId: null,
-          notes: null,
-          locationId: null,
-          lastEditedTime: '2026-01-01',
-          purchasedFromId: null,
-          purchasedFromName: null,
-          purchaseTransactionId: null,
-        },
+  it('renders existing photos in edit mode', async () => {
+    mockItemGetSuccess(buildItem({ itemName: 'Camera', type: null, condition: null }));
+    mockPhotosSuccess([
+      {
+        id: 1,
+        itemId: 'item-1',
+        filePath: 'photo1.jpg',
+        caption: 'Front view',
+        sortOrder: 0,
+        createdAt: '2026-01-01',
       },
-      isLoading: false,
-      error: null,
-    });
-
-    mockPhotosListQuery.mockReturnValue({
-      data: {
-        data: [
-          { id: 1, filePath: 'photo1.jpg', caption: 'Front view', sortOrder: 0 },
-          { id: 2, filePath: 'photo2.jpg', caption: 'Back view', sortOrder: 1 },
-        ],
+      {
+        id: 2,
+        itemId: 'item-1',
+        filePath: 'photo2.jpg',
+        caption: 'Back view',
+        sortOrder: 1,
+        createdAt: '2026-01-01',
       },
-      isLoading: false,
-    });
+    ]);
 
     renderEdit('item-1');
 
-    expect(screen.getByAltText('Front view')).toBeInTheDocument();
+    expect(await screen.findByAltText('Front view')).toBeInTheDocument();
     expect(screen.getByAltText('Back view')).toBeInTheDocument();
   });
 
-  it('shows delete confirmation when delete button is clicked', () => {
-    mockItemQuery.mockReturnValue({
-      data: {
-        data: {
-          id: 'item-1',
-          itemName: 'Camera',
-          brand: null,
-          model: null,
-          itemId: null,
-          type: null,
-          condition: null,
-          room: null,
-          inUse: false,
-          deductible: false,
-          purchaseDate: null,
-          warrantyExpires: null,
-          replacementValue: null,
-          resaleValue: null,
-          purchasePrice: null,
-          assetId: null,
-          notes: null,
-          locationId: null,
-          lastEditedTime: '2026-01-01',
-          purchasedFromId: null,
-          purchasedFromName: null,
-          purchaseTransactionId: null,
-        },
+  it('shows delete confirmation when delete button is clicked', async () => {
+    mockItemGetSuccess(buildItem({ itemName: 'Camera', type: null, condition: null }));
+    mockPhotosSuccess([
+      {
+        id: 1,
+        itemId: 'item-1',
+        filePath: 'photo1.jpg',
+        caption: 'Front',
+        sortOrder: 0,
+        createdAt: '2026-01-01',
       },
-      isLoading: false,
-      error: null,
-    });
-
-    mockPhotosListQuery.mockReturnValue({
-      data: {
-        data: [{ id: 1, filePath: 'photo1.jpg', caption: 'Front', sortOrder: 0 }],
-      },
-      isLoading: false,
-    });
+    ]);
 
     renderEdit('item-1');
 
-    fireEvent.click(screen.getByLabelText(/delete photo front/i));
+    fireEvent.click(await screen.findByLabelText(/delete photo front/i));
     const confirmText = screen.getByText(/delete this photo/i);
     expect(confirmText).toBeInTheDocument();
     // Scope to the confirmation bar to avoid matching the form-level Cancel button
@@ -453,48 +422,22 @@ describe('ItemFormPage — Photos section', () => {
     expect(confirmScope.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
-  it('dismisses delete confirmation on cancel', () => {
-    mockItemQuery.mockReturnValue({
-      data: {
-        data: {
-          id: 'item-1',
-          itemName: 'Camera',
-          brand: null,
-          model: null,
-          itemId: null,
-          type: null,
-          condition: null,
-          room: null,
-          inUse: false,
-          deductible: false,
-          purchaseDate: null,
-          warrantyExpires: null,
-          replacementValue: null,
-          resaleValue: null,
-          purchasePrice: null,
-          assetId: null,
-          notes: null,
-          locationId: null,
-          lastEditedTime: '2026-01-01',
-          purchasedFromId: null,
-          purchasedFromName: null,
-          purchaseTransactionId: null,
-        },
+  it('dismisses delete confirmation on cancel', async () => {
+    mockItemGetSuccess(buildItem({ itemName: 'Camera', type: null, condition: null }));
+    mockPhotosSuccess([
+      {
+        id: 1,
+        itemId: 'item-1',
+        filePath: 'photo1.jpg',
+        caption: 'Front',
+        sortOrder: 0,
+        createdAt: '2026-01-01',
       },
-      isLoading: false,
-      error: null,
-    });
-
-    mockPhotosListQuery.mockReturnValue({
-      data: {
-        data: [{ id: 1, filePath: 'photo1.jpg', caption: 'Front', sortOrder: 0 }],
-      },
-      isLoading: false,
-    });
+    ]);
 
     renderEdit('item-1');
 
-    fireEvent.click(screen.getByLabelText(/delete photo front/i));
+    fireEvent.click(await screen.findByLabelText(/delete photo front/i));
     const confirmText = screen.getByText(/delete this photo/i);
     expect(confirmText).toBeInTheDocument();
 
@@ -531,9 +474,9 @@ describe('ItemFormPage — Form gaps (#1851)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /create item/i }));
 
-    await vi.waitFor(() => {
-      expect(mockCreateMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ purchasePrice: 149.99 })
+    await waitFor(() => {
+      expect(itemsCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ body: expect.objectContaining({ purchasePrice: 149.99 }) })
       );
     });
   });
@@ -547,9 +490,9 @@ describe('ItemFormPage — Form gaps (#1851)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /create item/i }));
 
-    await vi.waitFor(() => {
-      expect(mockCreateMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ purchasePrice: null })
+    await waitFor(() => {
+      expect(itemsCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ body: expect.objectContaining({ purchasePrice: null }) })
       );
     });
   });
@@ -588,10 +531,8 @@ describe('ItemFormPage — Form gaps (#1851)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /create item/i }));
 
-    await vi.waitFor(() => {
-      expect(screen.getByText('Type is required')).toBeInTheDocument();
-    });
-    expect(mockCreateMutate).not.toHaveBeenCalled();
+    expect(await screen.findByText('Type is required')).toBeInTheDocument();
+    expect(itemsCreateMock).not.toHaveBeenCalled();
   });
 
   it('shows notes preview toggle button', () => {
@@ -630,55 +571,35 @@ describe('ItemFormPage — Form gaps (#1851)', () => {
 });
 
 describe('ItemFormPage — Navigation order on save (#2157)', () => {
-  it('navigates to detail page before invalidating cache on update', async () => {
-    mockItemQuery.mockReturnValue({
-      data: {
-        data: {
-          id: 'item-1',
-          itemName: 'MacBook',
-          brand: null,
-          model: null,
-          itemId: null,
-          type: 'Electronics',
-          condition: 'good',
-          room: null,
-          inUse: false,
-          deductible: false,
-          purchaseDate: null,
-          warrantyExpires: null,
-          replacementValue: null,
-          resaleValue: null,
-          purchasePrice: null,
-          assetId: null,
-          notes: null,
-          locationId: null,
-          lastEditedTime: '2026-01-01',
-          purchaseTransactionId: null,
-          purchasedFromId: null,
-          purchasedFromName: null,
-        },
-      },
-      isLoading: false,
-      error: null,
-    });
+  it('navigates to detail page on update', async () => {
+    mockItemGetSuccess(buildItem({ id: 'item-1', itemName: 'MacBook', condition: 'good' }));
 
     renderEdit('item-1');
+
+    // Wait for the edit form to hydrate from the item query before submitting.
+    await screen.findByDisplayValue('MacBook');
 
     // Save the form (no field changes required — RHF submits current values).
     fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
-    await vi.waitFor(() => {
-      expect(mockUpdateMutate).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(itemsUpdateMock).toHaveBeenCalledTimes(1);
     });
+    expect(itemsUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ path: { id: 'item-1' } })
+    );
 
-    // Navigate must be called with the detail URL.
-    // Navigation must happen as part of the onSuccess callback. Cache
-    // invalidation is owned by the pillar SDK (router-prefix invalidation
-    // runs synchronously before our onSuccess fires `navigate`).
-    expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/item-1');
+    // Navigation runs from the mutation's onSuccess after the SDK call resolves.
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/item-1');
+    });
   });
 
-  it('navigates to detail page before invalidating cache on create', async () => {
+  it('navigates to detail page on create', async () => {
+    itemsCreateMock.mockResolvedValue(
+      ok({ data: buildItem({ id: 'new-id' }), message: 'created' })
+    );
+
     renderCreate();
 
     const nameInput = document.querySelector('input[name="itemName"]') as HTMLInputElement;
@@ -688,12 +609,12 @@ describe('ItemFormPage — Navigation order on save (#2157)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /create item/i }));
 
-    await vi.waitFor(() => {
-      expect(mockCreateMutate).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(itemsCreateMock).toHaveBeenCalledTimes(1);
     });
 
-    // mockCreateMutate's onSuccess returns { data: { id: 'new-id' } }.
-    await vi.waitFor(() => {
+    // itemsCreate resolves with { data: { id: 'new-id' } }; onSuccess navigates there.
+    await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/new-id');
     });
   });
@@ -708,60 +629,33 @@ describe('ItemFormPage — Navigation order on save (#2157)', () => {
  * `reset(itemToFormValues(item))` must propagate the seeded boolean values
  * into the rendered `<button role="checkbox">` elements.
  */
-function seededItem(overrides: { inUse?: boolean; deductible?: boolean } = {}) {
-  return {
-    id: 'item-1',
-    itemName: 'MacBook',
-    brand: null,
-    model: null,
-    itemId: null,
-    type: 'Electronics',
+function seededItem(overrides: { inUse?: boolean; deductible?: boolean } = {}): ItemRecord {
+  return buildItem({
     condition: 'good',
-    room: null,
     inUse: overrides.inUse ?? false,
     deductible: overrides.deductible ?? false,
-    purchaseDate: null,
-    warrantyExpires: null,
-    replacementValue: null,
-    resaleValue: null,
-    purchasePrice: null,
-    assetId: 'ELEC01',
-    notes: null,
-    locationId: null,
-    lastEditedTime: '2026-01-01',
-    purchaseTransactionId: null,
-    purchasedFromId: null,
-    purchasedFromName: null,
-  };
+  });
 }
 
 describe('ItemFormPage — checkbox population (#2175)', () => {
   it('populates In Use checkbox from seeded item in edit mode', async () => {
-    mockItemQuery.mockReturnValue({
-      data: { data: seededItem({ inUse: true }) },
-      isLoading: false,
-      error: null,
-    });
+    mockItemGetSuccess(seededItem({ inUse: true }));
 
     renderEdit('item-1');
 
     const inUse = await screen.findByRole('checkbox', { name: /in use/i });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(inUse.getAttribute('aria-checked')).toBe('true');
     });
   });
 
   it('populates Tax Deductible checkbox from seeded item in edit mode', async () => {
-    mockItemQuery.mockReturnValue({
-      data: { data: seededItem({ deductible: true }) },
-      isLoading: false,
-      error: null,
-    });
+    mockItemGetSuccess(seededItem({ deductible: true }));
 
     renderEdit('item-1');
 
     const deductible = await screen.findByRole('checkbox', { name: /tax deductible/i });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(deductible.getAttribute('aria-checked')).toBe('true');
     });
   });
@@ -780,15 +674,11 @@ describe('ItemFormPage — checkbox population (#2175)', () => {
   });
 
   it('pre-fills Condition select from lowercase stored value in edit mode (#2407)', async () => {
-    mockItemQuery.mockReturnValue({
-      data: { data: seededItem({ inUse: false }) },
-      isLoading: false,
-      error: null,
-    });
+    mockItemGetSuccess(seededItem({ inUse: false }));
 
     renderEdit('item-1');
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       const conditionSelect = document.querySelector(
         'select[name="condition"]'
       ) as HTMLSelectElement;
@@ -797,15 +687,11 @@ describe('ItemFormPage — checkbox population (#2175)', () => {
   });
 
   it('pre-fills Condition select from lowercase excellent stored value in edit mode (#2407)', async () => {
-    mockItemQuery.mockReturnValue({
-      data: { data: { ...seededItem(), condition: 'excellent' } },
-      isLoading: false,
-      error: null,
-    });
+    mockItemGetSuccess(buildItem({ condition: 'excellent' }));
 
     renderEdit('item-1');
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       const conditionSelect = document.querySelector(
         'select[name="condition"]'
       ) as HTMLSelectElement;
@@ -830,9 +716,11 @@ describe('ItemFormPage — checkbox population (#2175)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /create item/i }));
 
-    await vi.waitFor(() => {
-      expect(mockCreateMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ inUse: true, deductible: false })
+    await waitFor(() => {
+      expect(itemsCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({ inUse: true, deductible: false }),
+        })
       );
     });
   });
