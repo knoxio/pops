@@ -18,11 +18,15 @@
       "types": "./dist/contract/manifest.d.ts",
       "default": "./dist/contract/manifest.js"
     },
+    "./api-types": {
+      "types": "./dist/contract/api-types.generated.d.ts",
+      "default": "./dist/contract/api-types.generated.js"
+    },
     "./openapi": "./openapi/lists.openapi.json",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsx scripts/verify-manifest.ts && tsc && tsx scripts/generate-openapi.ts",
+    "build": "tsx scripts/verify-manifest.ts && tsc && tsx scripts/generate-openapi.ts && tsx scripts/generate-api-types.ts",
     "dev": "tsx watch --clear-screen=false src/api/server.ts",
     "start": "node dist/api/server.js",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
@@ -31,12 +35,15 @@
     "test:watch": "vitest",
     "generate:manifest": "tsx scripts/generate-manifest.ts",
     "verify:manifest": "tsx scripts/verify-manifest.ts",
-    "generate:openapi": "tsx scripts/generate-openapi.ts"
+    "generate:openapi": "tsx scripts/generate-openapi.ts",
+    "generate:api-types": "tsx scripts/generate-api-types.ts"
   },
   "dependencies": {
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
-    "@trpc/server": "11.17.0",
+    "@ts-rest/core": "3.53.0-rc.1",
+    "@ts-rest/express": "3.53.0-rc.1",
+    "@ts-rest/open-api": "3.53.0-rc.1",
     "better-sqlite3": "^12.10.0",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
@@ -49,6 +56,7 @@
     "@types/node": "^25.9.3",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.8",
+    "openapi-typescript": "^7.13.0",
     "supertest": "^7.1.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",

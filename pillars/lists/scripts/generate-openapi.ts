@@ -1,44 +1,47 @@
 /**
- * OpenAPI generator for `@pops/lists-contract` (Theme 13 PRD-153 US-04).
+ * OpenAPI generator for `@pops/lists` — projects the ts-rest contract in
+ * `src/contract/rest.ts` to a static `openapi/lists.openapi.json` file.
  *
- * Why this script is hand-rolled rather than using `trpc-to-openapi`:
+ * The contract is the canonical declaration of the lists wire surface; this
+ * script is a pure projection of it. Polyglot consumers (iOS Swift, Rust)
+ * consume the JSON directly; TS consumers feed it through
+ * `openapi-typescript` (see `generate-api-types.ts`) for `openapi-fetch`.
  *
- * The lists pillar's tRPC router (in `@pops/lists-api`) is intentionally
- * tRPC-only — adding `.meta({ openapi: { ... } })` to every procedure
- * would be a separate, invasive change touching every router file in
- * lists-api and would require wiring `OpenApiMeta` into the trpc
- * builder. That is option (a) from PRD-153's investigation guidance
- * and out of scope here.
- *
- * Instead we take option (c): hand-build a minimal OpenAPI snapshot from
- * the contract's own Zod schemas. The contract package is already the
- * canonical declaration of the public wire shape (PRD-153), so deriving
- * the spec from it is consistent with the package's design.
- *
- * Drift detection vs the live router is intentionally NOT part of this
- * script — PRD-154's drift-check CI job will own it. Importing the live
- * `listsRouter` here would pull the entire lists-api runtime graph
- * (`@pops/lists-db`, sqlite, …) into the contract's build step, which
- * defeats the "contract has no runtime dependencies on pillar packages"
- * rule from PRD-153.
- *
- * Output:
- *   - OpenAPI 3.x JSON written to `openapi/lists.openapi.json`
- *   - Deterministic key order (alphabetical recursively) so future drift
- *     diffs are stable irrespective of object-insertion order changes
- *   - Trailing newline so `git diff` is happy
- *
- * iOS Swift codegen (different theme) consumes this committed file.
+ * Output is deterministic (recursively sorted keys + oxfmt pass) so the
+ * `pnpm generate:openapi && git diff --exit-code` drift check is stable.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildPaths } from './openapi-paths.js';
-import { buildComponentSchemas } from './openapi-schemas.js';
+import { generateOpenApi } from '@ts-rest/open-api';
+import { z } from 'zod';
 
-import type { OpenApiDocument } from './openapi-types.js';
+import { listsContract } from '../src/contract/rest.js';
+
+type OpenApiSchema = Record<string, unknown>;
+
+/**
+ * Custom schema transformer for zod 4 — the bundled `ZOD_3_SCHEMA_TRANSFORMER`
+ * uses `@anatine/zod-openapi` which only knows about zod 3 (`z.ZodTypeAny`).
+ * zod 4 ships its own `z.toJSONSchema` that emits a draft-2020-12 schema; we
+ * strip the JSON-Schema draft marker so the output is OpenAPI 3.0-safe.
+ */
+function isZodType(value: unknown): value is z.ZodType {
+  return value !== null && typeof value === 'object' && '_zod' in value && 'parse' in value;
+}
+
+function zodToOpenApiSchema(schema: z.ZodType): OpenApiSchema {
+  const raw = z.toJSONSchema(schema, { target: 'openapi-3.0' }) as Record<string, unknown>;
+  const { $schema: _ignored, ...rest } = raw;
+  return rest;
+}
+
+function listsSchemaTransformer({ schema }: { schema: unknown }): OpenApiSchema | null {
+  if (isZodType(schema)) return zodToOpenApiSchema(schema);
+  return null;
+}
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_JSON_PATH = resolve(HERE, '..', 'package.json');
@@ -59,42 +62,35 @@ function sortJson<T>(value: T): T {
   return value;
 }
 
-function buildDocument(): OpenApiDocument {
-  return {
-    openapi: '3.0.3',
-    info: {
-      title: '@pops/lists',
-      description:
-        "OpenAPI snapshot of the lists pillar's public wire surface. " +
-        "Derived from the contract's Zod schemas. Consumed by iOS Swift " +
-        'codegen.',
-      version: CONTRACT_VERSION,
-    },
-    servers: [{ url: '/api/v1', description: 'Lists pillar API' }],
-    tags: [{ name: 'items', description: 'Lists items' }],
-    paths: buildPaths(),
-    components: { schemas: buildComponentSchemas() },
-  };
-}
-
 function main(): void {
-  const document = sortJson(buildDocument());
-  const serialized = `${JSON.stringify(document, null, 2)}\n`;
+  const document = generateOpenApi(
+    listsContract,
+    {
+      info: {
+        title: '@pops/lists',
+        description:
+          "OpenAPI projection of the lists pillar's REST contract. " +
+          'Authored as a ts-rest contract (src/contract/rest.ts); ' +
+          'consumed directly by polyglot clients and via ' +
+          'openapi-typescript by TS consumers.',
+        version: CONTRACT_VERSION,
+      },
+    },
+    { schemaTransformer: listsSchemaTransformer }
+  );
+  const sorted = sortJson(document);
+  const serialized = `${JSON.stringify(sorted, null, 2)}\n`;
 
   const outFile = resolve(HERE, '..', 'openapi', 'lists.openapi.json');
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, serialized, 'utf8');
 
-  // Run oxfmt over the output so the committed file and the regenerated
-  // file stay byte-identical (drift check is `generate && git diff`).
-  // The repo formats JSON inline-arrays-when-short; without this pass,
-  // CI's format check fails on every commit.
   execFileSync('pnpm', ['exec', 'oxfmt', '--write', outFile], {
     cwd: resolve(HERE, '..'),
     stdio: 'inherit',
   });
 
-  process.stdout.write(`[lists-contract] wrote OpenAPI snapshot to ${outFile}\n`);
+  process.stdout.write(`[lists] wrote OpenAPI projection to ${outFile}\n`);
 }
 
 main();

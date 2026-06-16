@@ -340,6 +340,20 @@
       "rules": {
         "max-lines": "off"
       }
+    },
+    {
+      "files": ["pillars/*/src/contract/*.generated.ts"],
+      "rules": {
+        "max-lines": "off"
+      }
+    },
+    {
+      "files": ["pillars/*/src/api/rest/*-handlers.ts"],
+      "rules": {
+        "max-lines-per-function": "off",
+        "typescript/explicit-module-boundary-types": "off",
+        "typescript/explicit-function-return-type": "off"
+      }
     }
   ],
   "settings": {
