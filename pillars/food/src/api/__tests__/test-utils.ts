@@ -149,6 +149,16 @@ interface FridgeView {
   counts: { visible: number; empty: number; deleted: number };
 }
 
+type ApproveResult =
+  | { ok: true; recipeSlug: string; promotedVersionNo: number }
+  | { ok: false; reason: string };
+type SimpleOkResult = { ok: true } | { ok: false; reason: string };
+type InspectorResult = { ok: true; review: unknown } | { ok: false; reason: 'SourceNotFound' };
+interface ListPage<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -343,6 +353,24 @@ export function makeClient(app: Express) {
       ) => send<FridgeView>(r.post('/fridge/view').send(body)),
       recipesUsingBatch: (batchId: number, limit?: number) =>
         send<{ items: unknown[] }>(r.get('/fridge/recipes-using-batch').query({ batchId, limit })),
+    },
+    inbox: {
+      approve: (versionId: number) =>
+        send<ApproveResult>(r.post('/inbox/approve').send({ versionId })),
+      reject: (versionId: number, reason: string, note?: string | null) =>
+        send<SimpleOkResult>(r.post('/inbox/reject').send({ versionId, reason, note })),
+      unreject: (versionId: number) =>
+        send<SimpleOkResult>(r.post('/inbox/unreject').send({ versionId })),
+      list: (body: { limit?: number; cursor?: string } = {}) =>
+        send<ListPage<{ versionId: number }>>(r.post('/inbox/list').send(body)),
+      listRejected: (body: { limit?: number } = {}) =>
+        send<ListPage<{ versionId: number }>>(r.post('/inbox/rejected').send(body)),
+      listFailed: (body: { limit?: number } = {}) =>
+        send<ListPage<{ sourceId: number }>>(r.post('/inbox/failed').send(body)),
+      failedErrorCodes: () => send<{ items: string[] }>(r.get('/inbox/failed/error-codes')),
+      pendingCount: () => send<{ count: number }>(r.get('/inbox/pending-count')),
+      getForReview: (sourceId: number) =>
+        send<InspectorResult>(r.get('/inbox/review').query({ sourceId })),
     },
   };
 }

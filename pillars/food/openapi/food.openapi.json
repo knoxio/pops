@@ -3326,6 +3326,938 @@
         "tags": ["fridge"]
       }
     },
+    "/inbox/approve": {
+      "post": {
+        "operationId": "inbox.approve",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "versionId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["versionId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        },
+                        "promotedVersionNo": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "recipeSlug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "recipeSlug", "promotedVersionNo"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "NotIngestOriginated",
+                            "VersionNotFound",
+                            "NotADraft",
+                            "NotArchived",
+                            "NoRejectionRecord",
+                            "NotCompiled",
+                            "AlreadyReviewed",
+                            "RecipeArchived",
+                            "ConcurrentPromotion",
+                            "NoteRequired",
+                            "NoteTooLong"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Approve (promote) an ingest draft version",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/failed": {
+      "post": {
+        "operationId": "inbox.listFailed",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "cursor": {
+                    "type": "string"
+                  },
+                  "errorCodes": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "kinds": {
+                    "items": {
+                      "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "sinceDays": {
+                    "anyOf": [
+                      {
+                        "enum": [7],
+                        "type": "number"
+                      },
+                      {
+                        "enum": [30],
+                        "type": "number"
+                      },
+                      {
+                        "enum": [90],
+                        "type": "number"
+                      }
+                    ],
+                    "nullable": true
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "attempts": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "errorCode": {
+                            "type": "string"
+                          },
+                          "errorMessage": {
+                            "type": "string"
+                          },
+                          "ingestKind": {
+                            "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                            "type": "string"
+                          },
+                          "ingestedAt": {
+                            "type": "string"
+                          },
+                          "sourceId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "sourceUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "sourceId",
+                          "ingestKind",
+                          "sourceUrl",
+                          "errorCode",
+                          "errorMessage",
+                          "ingestedAt",
+                          "attempts"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "nextCursor": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": ["items", "nextCursor"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List failed ingest sources",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/failed/error-codes": {
+      "get": {
+        "operationId": "inbox.failedErrorCodes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Distinct error codes across failed ingests",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/list": {
+      "post": {
+        "operationId": "inbox.list",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "bands": {
+                    "items": {
+                      "enum": ["clean", "minor", "attention", "blocked"],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "cursor": {
+                    "type": "string"
+                  },
+                  "freshOnly": {
+                    "type": "boolean"
+                  },
+                  "kinds": {
+                    "items": {
+                      "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "partialReasons": {
+                    "items": {
+                      "enum": [
+                        "auth-dead",
+                        "rate-limited",
+                        "stt-failed",
+                        "vision-failed",
+                        "caption-only-fallback",
+                        "empty-extraction"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "sort": {
+                    "enum": ["quality-asc", "quality-desc", "oldest", "newest"],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "compileStatus": {
+                            "enum": ["uncompiled", "compiled", "failed"],
+                            "type": "string"
+                          },
+                          "creationCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "ingestKind": {
+                            "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                            "type": "string"
+                          },
+                          "ingestedAt": {
+                            "type": "string"
+                          },
+                          "partialReason": {
+                            "enum": [
+                              "auth-dead",
+                              "rate-limited",
+                              "stt-failed",
+                              "vision-failed",
+                              "caption-only-fallback",
+                              "empty-extraction"
+                            ],
+                            "type": "string"
+                          },
+                          "proposedSlugCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "qualityBand": {
+                            "enum": ["clean", "minor", "attention", "blocked"],
+                            "type": "string"
+                          },
+                          "qualityScore": {
+                            "type": "number"
+                          },
+                          "recipeSlug": {
+                            "type": "string"
+                          },
+                          "recipeType": {
+                            "enum": [
+                              "plate",
+                              "component",
+                              "technique",
+                              "sauce",
+                              "dressing",
+                              "drink",
+                              "condiment"
+                            ],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "sourceId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "sourceUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "topSignals": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "code": {
+                                  "type": "string"
+                                },
+                                "detail": {
+                                  "type": "string"
+                                },
+                                "weight": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["code", "weight"],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "versionId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "sourceId",
+                          "versionId",
+                          "recipeSlug",
+                          "title",
+                          "recipeType",
+                          "ingestKind",
+                          "sourceUrl",
+                          "ingestedAt",
+                          "qualityBand",
+                          "qualityScore",
+                          "topSignals",
+                          "proposedSlugCount",
+                          "creationCount",
+                          "compileStatus"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "nextCursor": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": ["items", "nextCursor"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List ingest drafts (scored + paginated)",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/pending-count": {
+      "get": {
+        "operationId": "inbox.pendingCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "count": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["count"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Unfiltered pending-draft queue depth",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/reject": {
+      "post": {
+        "operationId": "inbox.reject",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "note": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "reason": {
+                    "enum": [
+                      "wrong-recipe",
+                      "low-quality-extraction",
+                      "duplicate",
+                      "not-a-recipe",
+                      "other"
+                    ],
+                    "type": "string"
+                  },
+                  "versionId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["versionId", "reason"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "NotIngestOriginated",
+                            "VersionNotFound",
+                            "NotADraft",
+                            "NotArchived",
+                            "NoRejectionRecord",
+                            "NotCompiled",
+                            "AlreadyReviewed",
+                            "RecipeArchived",
+                            "ConcurrentPromotion",
+                            "NoteRequired",
+                            "NoteTooLong"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Reject an ingest draft version",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/rejected": {
+      "post": {
+        "operationId": "inbox.listRejected",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "cursor": {
+                    "type": "string"
+                  },
+                  "kinds": {
+                    "items": {
+                      "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "reasons": {
+                    "items": {
+                      "enum": [
+                        "wrong-recipe",
+                        "low-quality-extraction",
+                        "duplicate",
+                        "not-a-recipe",
+                        "other"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "sinceDays": {
+                    "anyOf": [
+                      {
+                        "enum": [7],
+                        "type": "number"
+                      },
+                      {
+                        "enum": [30],
+                        "type": "number"
+                      },
+                      {
+                        "enum": [90],
+                        "type": "number"
+                      }
+                    ],
+                    "nullable": true
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "ingestCostUsd": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "ingestKind": {
+                            "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                            "type": "string"
+                          },
+                          "note": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "reason": {
+                            "enum": [
+                              "wrong-recipe",
+                              "low-quality-extraction",
+                              "duplicate",
+                              "not-a-recipe",
+                              "other"
+                            ],
+                            "type": "string"
+                          },
+                          "recipeSlug": {
+                            "type": "string"
+                          },
+                          "rejectedAt": {
+                            "type": "string"
+                          },
+                          "sourceId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "sourceUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "versionId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "versionId",
+                          "recipeSlug",
+                          "sourceId",
+                          "title",
+                          "reason",
+                          "note",
+                          "rejectedAt",
+                          "ingestKind",
+                          "sourceUrl",
+                          "ingestCostUsd"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "nextCursor": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": ["items", "nextCursor"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List rejected draft versions",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/review": {
+      "get": {
+        "operationId": "inbox.getForReview",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sourceId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        },
+                        "review": {}
+                      },
+                      "required": ["ok", "review"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": ["SourceNotFound"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Per-draft inspector view (source + draft aggregate)",
+        "tags": ["inbox"]
+      }
+    },
+    "/inbox/unreject": {
+      "post": {
+        "operationId": "inbox.unreject",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "versionId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["versionId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        },
+                        "restoredAs": {
+                          "enum": ["draft"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "restoredAs"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "NotIngestOriginated",
+                            "VersionNotFound",
+                            "NotADraft",
+                            "NotArchived",
+                            "NoRejectionRecord",
+                            "NotCompiled",
+                            "AlreadyReviewed",
+                            "RecipeArchived",
+                            "ConcurrentPromotion",
+                            "NoteRequired",
+                            "NoteTooLong"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Restore a rejected draft back to draft",
+        "tags": ["inbox"]
+      }
+    },
     "/ingredient-tags": {
       "get": {
         "operationId": "ingredientTags.list",
