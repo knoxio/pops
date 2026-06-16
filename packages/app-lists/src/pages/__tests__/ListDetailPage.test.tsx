@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
 import { useMemo, type ReactElement } from 'react';
@@ -10,122 +11,50 @@ import enAULists from '../../../../../apps/pops-shell/src/i18n/locales/en-AU/lis
 
 import type { ListItemRow, ListRow } from '../detail/types.js';
 
-interface MutationCalls {
-  update: ReturnType<typeof vi.fn>;
-  archive: ReturnType<typeof vi.fn>;
-  unarchive: ReturnType<typeof vi.fn>;
-  del: ReturnType<typeof vi.fn>;
-  add: ReturnType<typeof vi.fn>;
-  check: ReturnType<typeof vi.fn>;
-  uncheck: ReturnType<typeof vi.fn>;
-  itemUpdate: ReturnType<typeof vi.fn>;
-  remove: ReturnType<typeof vi.fn>;
-  reorder: ReturnType<typeof vi.fn>;
-}
-
-const calls: MutationCalls = {
-  update: vi.fn(),
-  archive: vi.fn(),
-  unarchive: vi.fn(),
-  del: vi.fn(),
-  add: vi.fn(),
-  check: vi.fn(),
-  uncheck: vi.fn(),
-  itemUpdate: vi.fn(),
-  remove: vi.fn(),
-  reorder: vi.fn(),
+const sdkMocks = {
+  listGet: vi.fn(),
+  listUpdate: vi.fn(),
+  listArchive: vi.fn(),
+  listUnarchive: vi.fn(),
+  listDelete: vi.fn(),
+  itemsAdd: vi.fn(),
+  itemsCheck: vi.fn(),
+  itemsUncheck: vi.fn(),
+  itemsUpdate: vi.fn(),
+  itemsRemove: vi.fn(),
+  itemsReorder: vi.fn(),
 };
 
-const mockGet = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => {
-  const procImpls: Record<string, (args: unknown) => unknown> = {
-    'lists.list.update': (args) => {
-      calls.update(args);
-      return { ok: true };
-    },
-    'lists.list.archive': (args) => {
-      calls.archive(args);
-      return { ok: true };
-    },
-    'lists.list.unarchive': (args) => {
-      calls.unarchive(args);
-      return { ok: true };
-    },
-    'lists.list.delete': (args) => {
-      calls.del(args);
-      return { ok: true };
-    },
-    'lists.items.add': (args) => {
-      calls.add(args);
-      return { id: 99, position: 5 };
-    },
-    'lists.items.check': (args) => {
-      calls.check(args);
-      return { ok: true, checkedAt: '2026-06-10T00:00:00Z' };
-    },
-    'lists.items.uncheck': (args) => {
-      calls.uncheck(args);
-      return { ok: true };
-    },
-    'lists.items.update': (args) => {
-      calls.itemUpdate(args);
-      return { ok: true };
-    },
-    'lists.items.remove': (args) => {
-      calls.remove(args);
-      return { ok: true };
-    },
-    'lists.items.reorder': (args) => {
-      calls.reorder(args);
-      return { ok: true };
-    },
-  };
-  return {
-    usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
-      const key = `${pillarId}.${path.join('.')}`;
-      if (key === 'lists.list.get') return mockGet(input);
-      throw new Error(`Unexpected pillar query: ${key}`);
-    },
-    usePillarMutation: (pillarId: string, path: readonly string[]) => {
-      const key = `${pillarId}.${path.join('.')}`;
-      const impl = procImpls[key];
-      if (!impl) throw new Error(`Unexpected pillar mutation: ${key}`);
-      return {
-        mutate: (args: unknown) => {
-          impl(args);
-        },
-        mutateAsync: async (args: unknown) => impl(args),
-        isPending: false,
-        error: null,
-      };
-    },
-    usePillarUtils: () => ({
-      setData: () => undefined,
-      invalidate: async () => undefined,
-    }),
-  };
-});
+vi.mock('../../lists-api/index.js', () => ({
+  listGet: (...args: unknown[]) => sdkMocks.listGet(...args),
+  listUpdate: (...args: unknown[]) => sdkMocks.listUpdate(...args),
+  listArchive: (...args: unknown[]) => sdkMocks.listArchive(...args),
+  listUnarchive: (...args: unknown[]) => sdkMocks.listUnarchive(...args),
+  listDelete: (...args: unknown[]) => sdkMocks.listDelete(...args),
+  itemsAdd: (...args: unknown[]) => sdkMocks.itemsAdd(...args),
+  itemsCheck: (...args: unknown[]) => sdkMocks.itemsCheck(...args),
+  itemsUncheck: (...args: unknown[]) => sdkMocks.itemsUncheck(...args),
+  itemsUpdate: (...args: unknown[]) => sdkMocks.itemsUpdate(...args),
+  itemsRemove: (...args: unknown[]) => sdkMocks.itemsRemove(...args),
+  itemsReorder: (...args: unknown[]) => sdkMocks.itemsReorder(...args),
+}));
 
 const navigateMock = vi.fn();
 vi.mock('react-router', async (orig) => {
   const actual = await orig<typeof import('react-router')>();
-  return {
-    ...actual,
-    useNavigate: () => navigateMock,
-  };
+  return { ...actual, useNavigate: () => navigateMock };
 });
 
 import { ListDetailPage } from '../ListDetailPage.js';
+
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
 
 function makeList(overrides: Partial<ListRow> = {}): ListRow {
   return {
     id: 7,
     name: 'Weekend shop',
-    // PRD-141 dispatches `shopping` to the specialised body; the generic-path
-    // test suite uses `todo` so it keeps exercising `GenericDetailContent`.
-    // ShoppingDetailContent has its own RTL coverage in
-    // `components/shopping/__tests__/ShoppingDetailContent.test.tsx`.
     kind: 'todo',
     ownerApp: 'user',
     archivedAt: null,
@@ -153,6 +82,10 @@ function makeItem(overrides: Partial<ListItemRow> = {}): ListItemRow {
   };
 }
 
+function setListGet(payload: { list: ListRow; items: ListItemRow[] } | null) {
+  sdkMocks.listGet.mockImplementation(async () => ok(payload));
+}
+
 function mountAt(listId: number, children: ReactElement) {
   return (
     <MemoryRouter initialEntries={[`/lists/${listId}`]}>
@@ -176,40 +109,61 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
-  return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
+  const qc = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      }),
+    []
+  );
+  return (
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+    </I18nextProvider>
+  );
 }
 
 beforeEach(() => {
-  Object.values(calls).forEach((fn) => fn.mockReset());
-  mockGet.mockReset();
+  Object.values(sdkMocks).forEach((fn) => fn.mockReset());
   navigateMock.mockReset();
+  sdkMocks.listUpdate.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.listArchive.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.listUnarchive.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.listDelete.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsAdd.mockImplementation(async () => ok({ id: 99, position: 5 }));
+  sdkMocks.itemsCheck.mockImplementation(async () =>
+    ok({ ok: true as const, checkedAt: '2026-06-10T00:00:00Z' })
+  );
+  sdkMocks.itemsUncheck.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsUpdate.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsRemove.mockImplementation(async () => ok({ ok: true as const }));
+  sdkMocks.itemsReorder.mockImplementation(async () => ok({ ok: true as const }));
 });
 
 describe('PRD-140-C — ListDetailPage', () => {
-  it('shows loading state then renders header + items', () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: {
-        list: makeList(),
-        items: [makeItem(), makeItem({ id: 2, label: 'Bread', qty: null, unit: null })],
-      },
-      error: null,
+  it('shows loading state then renders header + items', async () => {
+    setListGet({
+      list: makeList(),
+      items: [makeItem(), makeItem({ id: 2, label: 'Bread', qty: null, unit: null })],
     });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(screen.getByRole('heading', { name: 'Weekend shop' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Weekend shop' })).toBeInTheDocument();
     expect(screen.getByTestId('list-kind-chip')).toHaveTextContent('Todo');
     expect(screen.getByTestId('list-item-1')).toBeInTheDocument();
     expect(screen.getByTestId('list-item-2')).toBeInTheDocument();
   });
 
-  it('renders the not-found shell when the query resolves to null', () => {
-    mockGet.mockReturnValue({ isLoading: false, data: null, error: null });
+  it('renders the not-found shell when the query resolves to null', async () => {
+    setListGet(null);
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(screen.getByRole('alert')).toHaveTextContent(/list not found/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/list not found/i);
   });
 
   it('renders the not-found shell for non-numeric route params', () => {
-    mockGet.mockReturnValue({ isLoading: false, data: null, error: null });
+    setListGet(null);
     render(
       <Wrapper>
         <MemoryRouter initialEntries={['/lists/banana']}>
@@ -222,187 +176,179 @@ describe('PRD-140-C — ListDetailPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/list not found/i);
   });
 
-  it('renders an empty state when there are no items', () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [] },
-      error: null,
-    });
+  it('renders an empty state when there are no items', async () => {
+    setListGet({ list: makeList(), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(screen.getByText(/no items yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no items yet/i)).toBeInTheDocument();
   });
 
   it('toggles checked state via the item checkbox', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [makeItem()] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [makeItem()] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByLabelText(/toggle done for apples/i));
-    expect(calls.check).toHaveBeenCalledWith({ id: 1 });
+    await userEvent.click(await screen.findByLabelText(/toggle done for apples/i));
+    await waitFor(() =>
+      expect(sdkMocks.itemsCheck).toHaveBeenCalledWith(expect.objectContaining({ path: { id: 1 } }))
+    );
   });
 
   it('unchecks an already-checked item', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: {
-        list: makeList(),
-        items: [makeItem({ checked: 1, checkedAt: '2026-06-10T00:00:00Z' })],
-      },
-      error: null,
+    setListGet({
+      list: makeList(),
+      items: [makeItem({ checked: 1, checkedAt: '2026-06-10T00:00:00Z' })],
     });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByLabelText(/toggle done for apples/i));
-    expect(calls.uncheck).toHaveBeenCalledWith({ id: 1 });
+    await userEvent.click(await screen.findByLabelText(/toggle done for apples/i));
+    await waitFor(() =>
+      expect(sdkMocks.itemsUncheck).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { id: 1 } })
+      )
+    );
   });
 
   it('submits the add-item form on Enter and clears the input', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    const input = screen.getByPlaceholderText(/add item/i);
+    const input = await screen.findByPlaceholderText(/add item/i);
     await userEvent.type(input, 'Onions{Enter}');
-    expect(calls.add).toHaveBeenCalledWith(
-      expect.objectContaining({ listId: 7, label: 'Onions', qty: null, unit: null })
+    await waitFor(() =>
+      expect(sdkMocks.itemsAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { listId: 7 },
+          body: expect.objectContaining({ label: 'Onions', qty: null, unit: null }),
+        })
+      )
     );
     expect(input).toHaveValue('');
   });
 
   it('opens edit modal from the action menu and saves a rename', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: /list actions/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /list actions/i }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
     const dialog = screen.getByRole('dialog');
     const nameInput = screen.getByLabelText(/name/i);
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, 'Sunday shop');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(calls.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 7, name: 'Sunday shop', kind: 'todo' })
+    await waitFor(() =>
+      expect(sdkMocks.listUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { id: 7 },
+          body: expect.objectContaining({ name: 'Sunday shop', kind: 'todo' }),
+        })
+      )
     );
     expect(dialog).not.toBeInTheDocument();
   });
 
   it('rejects whitespace-only rename without firing the mutation', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: /list actions/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /list actions/i }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
     const nameInput = screen.getByLabelText(/name/i);
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, '   ');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(calls.update).not.toHaveBeenCalled();
+    expect(sdkMocks.listUpdate).not.toHaveBeenCalled();
     expect(screen.getByText(/name is required/i)).toBeInTheDocument();
   });
 
   it('archives via the action menu', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: /list actions/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /list actions/i }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Archive' }));
-    expect(calls.archive).toHaveBeenCalledWith({ id: 7 });
+    await waitFor(() =>
+      expect(sdkMocks.listArchive).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { id: 7 } })
+      )
+    );
   });
 
   it('shows Restore + archived badge when the list is archived', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList({ archivedAt: '2026-06-08T00:00:00Z' }), items: [] },
-      error: null,
-    });
+    setListGet({ list: makeList({ archivedAt: '2026-06-08T00:00:00Z' }), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(screen.getByTestId('archived-badge')).toBeInTheDocument();
+    expect(await screen.findByTestId('archived-badge')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /list actions/i }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Restore' }));
-    expect(calls.unarchive).toHaveBeenCalledWith({ id: 7 });
+    await waitFor(() =>
+      expect(sdkMocks.listUnarchive).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { id: 7 } })
+      )
+    );
   });
 
   it('confirms delete then fires the mutation and navigates', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [makeItem()] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [makeItem()] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: /list actions/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /list actions/i }));
     await userEvent.click(screen.getByRole('menuitem', { name: /delete/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Delete list' }));
-    expect(calls.del).toHaveBeenCalledWith({ id: 7 });
-    expect(navigateMock).toHaveBeenCalledWith('/lists');
+    await waitFor(() =>
+      expect(sdkMocks.listDelete).toHaveBeenCalledWith(expect.objectContaining({ path: { id: 7 } }))
+    );
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/lists'));
   });
 
   it('saves an inline label edit on Enter', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [makeItem()] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [makeItem()] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: /2kg apples/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /2kg apples/i }));
     const input = screen.getByLabelText(/edit item label/i);
     await userEvent.clear(input);
     await userEvent.type(input, 'Green apples{Enter}');
-    expect(calls.itemUpdate).toHaveBeenCalledWith({ id: 1, label: 'Green apples' });
+    await waitFor(() =>
+      expect(sdkMocks.itemsUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { id: 1 },
+          body: expect.objectContaining({ label: 'Green apples' }),
+        })
+      )
+    );
   });
 
   it('reorders via the Move down menu item', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: {
-        list: makeList(),
-        items: [
-          makeItem({ id: 1, label: 'Apples', position: 0 }),
-          makeItem({ id: 2, label: 'Bread', position: 1, qty: null, unit: null }),
-        ],
-      },
-      error: null,
+    setListGet({
+      list: makeList(),
+      items: [
+        makeItem({ id: 1, label: 'Apples', position: 0 }),
+        makeItem({ id: 2, label: 'Bread', position: 1, qty: null, unit: null }),
+      ],
     });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    const itemMenus = screen.getAllByRole('button', { name: /item actions/i });
+    const itemMenus = await screen.findAllByRole('button', { name: /item actions/i });
     await userEvent.click(itemMenus[0]!);
     await userEvent.click(screen.getByRole('menuitem', { name: 'Move down' }));
-    expect(calls.reorder).toHaveBeenCalledWith({ listId: 7, orderedIds: [2, 1] });
+    await waitFor(() =>
+      expect(sdkMocks.itemsReorder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { listId: 7 },
+          body: { orderedIds: [2, 1] },
+        })
+      )
+    );
   });
 
   it('removes an item via the item action menu', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [makeItem()] },
-      error: null,
-    });
+    setListGet({ list: makeList(), items: [makeItem()] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    await userEvent.click(screen.getByRole('button', { name: /item actions/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /item actions/i }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
-    expect(calls.remove).toHaveBeenCalledWith({ id: 1 });
+    await waitFor(() =>
+      expect(sdkMocks.itemsRemove).toHaveBeenCalledWith(
+        expect.objectContaining({ path: { id: 1 } })
+      )
+    );
   });
 
-  it('polls every 60s via refetchInterval on the get query', () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: { list: makeList(), items: [] },
-      error: null,
-    });
+  it('fetches the detail payload with the listId from the route', async () => {
+    setListGet({ list: makeList(), items: [] });
     render(<Wrapper>{mountAt(7, <ListDetailPage />)}</Wrapper>);
-    expect(mockGet).toHaveBeenCalledWith({ id: 7 });
-    // The query options live alongside the input in the page; this test asserts
-    // the page reaches the body branch (proxy for the useQuery call landing).
+    await waitFor(() =>
+      expect(sdkMocks.listGet).toHaveBeenCalledWith(expect.objectContaining({ path: { id: 7 } }))
+    );
   });
 });

@@ -1,6 +1,6 @@
 import { httpBatchLink, splitLink } from '@trpc/client';
 
-import { PILLARS, type KnownPillarId } from '@pops/pillar-sdk/capabilities';
+import { TRPC_PILLARS, type TrpcPillarId } from '@pops/pillar-sdk/capabilities';
 
 import type { Operation, TRPCLink } from '@trpc/client';
 
@@ -16,22 +16,21 @@ import type { AppRouter } from '@pops/api';
  * prefixes to per-pillar upstreams in production. A future PRD (217) will
  * generate this map from the pillar registry.
  */
-export const PILLAR_TRPC_URLS: Readonly<Record<KnownPillarId, string>> = {
+export const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {
   core: '/trpc-core',
   finance: '/trpc-finance',
   media: '/trpc-media',
   inventory: '/trpc-inventory',
   cerebrum: '/trpc-cerebrum',
   food: '/trpc-food',
-  lists: '/trpc-lists',
 };
 
 /** Legacy pops-api URL — catches every procedure that isn't pillar-prefixed. */
 export const LEGACY_TRPC_URL = '/trpc';
 
-const PILLAR_SET: ReadonlySet<string> = new Set(PILLARS);
+const PILLAR_SET: ReadonlySet<string> = new Set(TRPC_PILLARS);
 
-function isKnownPillarId(value: string): value is KnownPillarId {
+function isTrpcPillarId(value: string): value is TrpcPillarId {
   return PILLAR_SET.has(value);
 }
 
@@ -44,10 +43,10 @@ function isKnownPillarId(value: string): value is KnownPillarId {
  *   pillarOfPath('health')                // null
  *   pillarOfPath('pops.health')           // null
  */
-export function pillarOfPath(path: string): KnownPillarId | null {
+export function pillarOfPath(path: string): TrpcPillarId | null {
   const namespace = path.split('.')[0];
   if (!namespace) return null;
-  return isKnownPillarId(namespace) ? namespace : null;
+  return isTrpcPillarId(namespace) ? namespace : null;
 }
 
 /**
@@ -59,7 +58,7 @@ export type TerminalLinkFactory = (url: string) => TRPCLink<AppRouter>;
 
 export interface CreateSplitLinkOptions {
   /** Map of pillar id → URL. Defaults to {@link PILLAR_TRPC_URLS}. */
-  readonly pillarUrls?: Readonly<Record<KnownPillarId, string>>;
+  readonly pillarUrls?: Readonly<Record<TrpcPillarId, string>>;
   /** Catch-all URL for non-pillar procedures. Defaults to {@link LEGACY_TRPC_URL}. */
   readonly legacyUrl?: string;
   /**
@@ -103,12 +102,15 @@ export function createPillarSplitLink(opts: CreateSplitLinkOptions = {}): TRPCLi
 
   const legacyLink = linkFor(legacyUrl);
 
-  return PILLARS.reduce<TRPCLink<AppRouter>>((falseBranch, pillar) => {
-    const pillarLink = linkFor(pillarUrls[pillar]);
-    return splitLink<AppRouter>({
-      condition: (op: Operation) => pillarOfPath(op.path) === pillar,
-      true: pillarLink,
-      false: falseBranch,
-    });
-  }, legacyLink);
+  return TRPC_PILLARS.reduce<TRPCLink<AppRouter>>(
+    (falseBranch: TRPCLink<AppRouter>, pillar: TrpcPillarId) => {
+      const pillarLink = linkFor(pillarUrls[pillar]);
+      return splitLink<AppRouter>({
+        condition: (op: Operation) => pillarOfPath(op.path) === pillar,
+        true: pillarLink,
+        false: falseBranch,
+      });
+    },
+    legacyLink
+  );
 }

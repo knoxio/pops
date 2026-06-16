@@ -27,7 +27,7 @@ export type {
 export type { CallResult, CallResultKind } from './call-result.js';
 export { PillarCallError } from './call-result.js';
 export type { CallablePillar } from './callable-pillar.js';
-export type { KnownPillarId } from './known-pillar-id.js';
-export { PILLARS } from './known-pillar-id.js';
+export type { KnownPillarId, TrpcPillarId } from './known-pillar-id.js';
+export { PILLARS, TRPC_PILLARS } from './known-pillar-id.js';
 export type { ModuleId } from './module-id.js';
 export { ALL_MODULE_IDS, MODULE_PARENT_PILLAR, isKnownPillarId, isModuleId } from './module-id.js';

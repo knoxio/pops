@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -8,35 +9,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAULists from '../../../../../apps/pops-shell/src/i18n/locales/en-AU/lists.json';
 
+import type { ListListAggregateResponses } from '../../lists-api/types.gen';
 import type { ListIndexItemView } from '../lists-index/useListsIndexQuery';
 
-const mockListQuery = vi.fn();
-const mockCreateMutate = vi.fn();
-let mockOnSuccess: ((res: { id: number }) => void) | undefined;
-let mockOnError: ((err: Error) => void) | undefined;
+const listListAggregateMock = vi.fn();
+const listCreateMock = vi.fn();
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown) => {
-    const key = `${pillarId}.${path.join('.')}`;
-    if (key === 'lists.list.list') return mockListQuery(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    pillarId: string,
-    path: readonly string[],
-    opts: {
-      onSuccess?: (res: { id: number }) => void;
-      onError?: (err: Error) => void;
-    } = {}
-  ) => {
-    const key = `${pillarId}.${path.join('.')}`;
-    if (key !== 'lists.list.create') {
-      throw new Error(`Unexpected pillar mutation: ${key}`);
-    }
-    mockOnSuccess = opts.onSuccess;
-    mockOnError = opts.onError;
-    return { mutate: mockCreateMutate, isPending: false };
-  },
+vi.mock('../../lists-api/index.js', () => ({
+  listListAggregate: (...args: unknown[]) => listListAggregateMock(...args),
+  listCreate: (...args: unknown[]) => listCreateMock(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -59,19 +40,40 @@ function buildItem(overrides: Partial<ListIndexItemView> = {}): ListIndexItemVie
   };
 }
 
-interface QueryResultOpts {
-  items?: ListIndexItemView[];
-  isLoading?: boolean;
-  error?: Error | null;
+type AggregatePayload = NonNullable<ListListAggregateResponses[200]>;
+
+function mockSuccessAggregate(items: ListIndexItemView[]): void {
+  listListAggregateMock.mockImplementation(async () => ({
+    data: { items } satisfies AggregatePayload,
+    error: undefined,
+  }));
 }
 
-function makeQueryResult({ items = [], isLoading = false, error = null }: QueryResultOpts) {
-  return {
-    data: { items },
-    isLoading,
-    error,
-    refetch: vi.fn(),
-  };
+function mockAggregateError(message: string): void {
+  listListAggregateMock.mockImplementation(async () => ({
+    data: undefined,
+    error: { message },
+  }));
+}
+
+function mockNeverResolvingAggregate(): void {
+  listListAggregateMock.mockImplementation(
+    () => new Promise(() => undefined) as Promise<{ data: AggregatePayload; error: undefined }>
+  );
+}
+
+function mockSuccessCreate(id: number): void {
+  listCreateMock.mockImplementation(async () => ({
+    data: { id },
+    error: undefined,
+  }));
+}
+
+function mockCreateError(message: string): void {
+  listCreateMock.mockImplementation(async () => ({
+    data: undefined,
+    error: { message },
+  }));
 }
 
 const DEFAULT_ENTRIES = ['/lists'];
@@ -95,28 +97,46 @@ function Wrapper({
     });
     return instance;
   }, []);
+  const qc = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      }),
+    []
+  );
   return (
     <I18nextProvider i18n={i18n}>
-      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+      </QueryClientProvider>
     </I18nextProvider>
   );
 }
 
+function lastAggregateQuery(): Record<string, unknown> | undefined {
+  const lastCall = listListAggregateMock.mock.lastCall;
+  if (!lastCall) return undefined;
+  const [args] = lastCall as [{ query?: Record<string, unknown> }];
+  return args?.query;
+}
+
 beforeEach(() => {
-  mockListQuery.mockReset();
-  mockCreateMutate.mockReset();
-  mockOnSuccess = undefined;
-  mockOnError = undefined;
+  listListAggregateMock.mockReset();
+  listCreateMock.mockReset();
 });
 
 describe('PRD-140 part B — ListsIndexPage', () => {
-  it('renders the heading and the new-list CTA', () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+  it('renders the heading and the new-list CTA', async () => {
+    mockSuccessAggregate([]);
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
+    await waitFor(() => expect(listListAggregateMock).toHaveBeenCalled());
     expect(screen.getByRole('heading', { name: /^Lists$/, level: 1 })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /\+ new list/i })).toHaveAttribute(
       'href',
@@ -124,40 +144,34 @@ describe('PRD-140 part B — ListsIndexPage', () => {
     );
   });
 
-  it('renders a row per list with name and kind chip', () => {
-    mockListQuery.mockReturnValue(
-      makeQueryResult({
-        items: [buildItem(), buildItem({ id: 2, name: 'Camping', kind: 'packing' })],
-      })
-    );
+  it('renders a row per list with name and kind chip', async () => {
+    mockSuccessAggregate([buildItem(), buildItem({ id: 2, name: 'Camping', kind: 'packing' })]);
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
-    const grocLink = screen.getByRole('link', { name: /weekly groceries/i });
+    const grocLink = await screen.findByRole('link', { name: /weekly groceries/i });
     const campLink = screen.getByRole('link', { name: /camping/i });
     expect(grocLink).toHaveAttribute('href', '/lists/1');
     expect(campLink).toHaveAttribute('href', '/lists/2');
-    // Row-level kind chip uses `data-kind` to disambiguate from the
-    // identically-labelled filter chip above.
     expect(grocLink.querySelector('[data-kind="shopping"]')).not.toBeNull();
     expect(campLink.querySelector('[data-kind="packing"]')).not.toBeNull();
   });
 
-  it('shows the empty state when no lists exist', () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+  it('shows the empty state when no lists exist', async () => {
+    mockSuccessAggregate([]);
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
-    expect(screen.getByText(/no lists yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no lists yet/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /create your first list/i })).toBeInTheDocument();
   });
 
   it('shows the loading state while the query resolves', () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ isLoading: true }));
+    mockNeverResolvingAggregate();
     render(
       <Wrapper>
         <ListsIndexPage />
@@ -167,147 +181,129 @@ describe('PRD-140 part B — ListsIndexPage', () => {
   });
 
   it('renders the error state with a retry button', async () => {
-    const refetch = vi.fn();
-    mockListQuery.mockReturnValue({
-      ...makeQueryResult({ error: new Error('boom') }),
-      refetch,
-    });
+    mockAggregateError('boom');
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
-    expect(screen.getByRole('alert')).toHaveTextContent(/could not load lists/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not load lists/i);
+    const callsBefore = listListAggregateMock.mock.calls.length;
     await userEvent.click(screen.getByRole('button', { name: /retry/i }));
-    expect(refetch).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(listListAggregateMock.mock.calls.length).toBeGreaterThan(callsBefore)
+    );
   });
 
   it('passes filter state into the query when the user toggles a chip OFF', async () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [buildItem()] }));
+    mockSuccessAggregate([buildItem()]);
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
-    // Default is "all kinds selected" — clicking Packing deselects it. The
-    // hook collapses a full set to `undefined`, but here only 3 of 4 are
-    // active so the wire-shape carries the explicit set.
+    await waitFor(() => expect(listListAggregateMock).toHaveBeenCalled());
     await userEvent.click(screen.getByRole('button', { name: /^Packing$/ }));
-    await waitFor(() =>
-      expect(mockListQuery).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          kinds: expect.arrayContaining(['shopping', 'todo', 'generic']),
-        })
-      )
-    );
-    expect(mockListQuery.mock.lastCall?.[0]?.kinds).not.toContain('packing');
+    await waitFor(() => {
+      const q = lastAggregateQuery();
+      expect(q?.kinds).toEqual(expect.arrayContaining(['shopping', 'todo', 'generic']));
+      expect(q?.kinds).not.toContain('packing');
+    });
   });
 
-  it('collapses the "all kinds selected" default to undefined on the wire', () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [buildItem()] }));
+  it('collapses the "all kinds selected" default to undefined on the wire', async () => {
+    mockSuccessAggregate([buildItem()]);
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
-    expect(mockListQuery).toHaveBeenLastCalledWith(expect.objectContaining({ kinds: undefined }));
+    await waitFor(() => expect(listListAggregateMock).toHaveBeenCalled());
+    expect(lastAggregateQuery()?.kinds).toBeUndefined();
   });
 
   it('toggles the archive filter through the query', async () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+    mockSuccessAggregate([]);
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
+    await waitFor(() => expect(listListAggregateMock).toHaveBeenCalled());
     await userEvent.click(screen.getByRole('checkbox', { name: /show archived/i }));
-    await waitFor(() =>
-      expect(mockListQuery).toHaveBeenLastCalledWith(
-        expect.objectContaining({ includeArchived: true })
-      )
-    );
+    await waitFor(() => expect(lastAggregateQuery()?.includeArchived).toBe(true));
   });
 
   it('changes sort through the query', async () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+    mockSuccessAggregate([]);
     render(
       <Wrapper>
         <ListsIndexPage />
       </Wrapper>
     );
+    await waitFor(() => expect(listListAggregateMock).toHaveBeenCalled());
     await userEvent.selectOptions(screen.getByRole('combobox'), 'name');
-    await waitFor(() =>
-      expect(mockListQuery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: 'name' }))
-    );
+    await waitFor(() => expect(lastAggregateQuery()?.sort).toBe('name'));
   });
 
-  it('opens the create modal when navigated with ?new=1', () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+  it('opens the create modal when navigated with ?new=1', async () => {
+    mockSuccessAggregate([]);
     render(
       <Wrapper initialEntries={['/lists?new=1']}>
         <ListsIndexPage />
       </Wrapper>
     );
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /^New list$/i })).toBeInTheDocument();
   });
 
   it('submits the create mutation with the trimmed name + kind', async () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+    mockSuccessAggregate([]);
+    mockSuccessCreate(42);
     render(
       <Wrapper initialEntries={['/lists?new=1']}>
         <ListsIndexPage />
       </Wrapper>
     );
-    const nameInput = screen.getByLabelText(/^name$/i);
-    // Shopping kind auto-fills the placeholder on focus per PRD-140; clear
-    // it so the test can drive an explicit value through `userEvent.type`.
+    const nameInput = await screen.findByLabelText(/^name$/i);
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, '  Camping list  ');
     await userEvent.click(screen.getByRole('button', { name: /^Create$/i }));
-    expect(mockCreateMutate).toHaveBeenCalledWith({ name: 'Camping list', kind: 'shopping' });
+    await waitFor(() =>
+      expect(listCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ body: { name: 'Camping list', kind: 'shopping' } })
+      )
+    );
   });
 
   it('auto-fills the shopping placeholder on focus when the field is empty', async () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+    mockSuccessAggregate([]);
     render(
       <Wrapper initialEntries={['/lists?new=1']}>
         <ListsIndexPage />
       </Wrapper>
     );
-    const nameInput = screen.getByLabelText(/^name$/i) as HTMLInputElement;
-    // Use `fireEvent.focus` rather than `el.focus()` — the native DOM call
-    // doesn't reliably dispatch through React's synthetic event system
-    // under jsdom (Radix Dialog's focus management interferes), but
-    // `fireEvent.focus` always invokes the React-bound `onFocus` handler.
-    // Per PRD-140 §Create modal, `kind='shopping'` + empty name + focus →
-    // auto-fill `Shopping list — <yyyy-MM-dd>`.
+    const nameInput = (await screen.findByLabelText(/^name$/i)) as HTMLInputElement;
     fireEvent.focus(nameInput);
     await waitFor(() => expect(nameInput.value).toMatch(/^Shopping list — \d{4}-\d{2}-\d{2}$/));
   });
 
-  it('wires onSuccess so the SDK can invalidate the index cache + the page can navigate', () => {
-    // Cache invalidation is owned by `usePillarMutation`'s built-in
-    // router-prefix invalidate; the page just needs to register an
-    // `onSuccess` that the SDK can chain. This test asserts the wiring is
-    // in place (the callback exists and runs without throwing).
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
+  it('does not throw when the create mutation reports an error', async () => {
+    mockSuccessAggregate([]);
+    mockCreateError('boom');
     render(
       <Wrapper initialEntries={['/lists?new=1']}>
         <ListsIndexPage />
       </Wrapper>
     );
-    expect(mockOnSuccess).toBeDefined();
-    expect(() => mockOnSuccess?.({ id: 42 })).not.toThrow();
-  });
-
-  it('does not throw when the create mutation reports an error', () => {
-    mockListQuery.mockReturnValue(makeQueryResult({ items: [] }));
-    render(
-      <Wrapper initialEntries={['/lists?new=1']}>
-        <ListsIndexPage />
-      </Wrapper>
-    );
-    expect(() => mockOnError?.(new Error('boom'))).not.toThrow();
+    const nameInput = await screen.findByLabelText(/^name$/i);
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, 'Bad list');
+    await expect(
+      (async () => {
+        await userEvent.click(screen.getByRole('button', { name: /^Create$/i }));
+        await waitFor(() => expect(listCreateMock).toHaveBeenCalled());
+      })()
+    ).resolves.not.toThrow();
   });
 });

@@ -1,13 +1,18 @@
 /**
  * Shared types for the `/lists/:id` detail page (PRD-140-C).
  *
- * Wire shapes are re-exported from `@pops/app-lists-db` so the page renders
- * the exact rows the backend services return. The discriminated `ListKind`
+ * Row shapes are derived from the generated Hey API SDK so the page renders
+ * the exact rows the lists pillar returns. The discriminated `ListKind`
  * union mirrors the SQLite CHECK constraint on `lists.kind`.
  */
-import type { ListItemRefKind, ListItemRow, ListKind, ListRow } from '@pops/app-lists-db';
+import type { ListGetResponses } from '../../lists-api/types.gen.js';
 
-export type { ListItemRefKind, ListItemRow, ListKind, ListRow };
+type DetailPayload = NonNullable<ListGetResponses[200]>;
+
+export type ListRow = DetailPayload['list'];
+export type ListItemRow = DetailPayload['items'][number];
+export type ListKind = ListRow['kind'];
+export type ListItemRefKind = ListItemRow['refKind'];
 
 export interface ListWithItems {
   list: ListRow;
