@@ -50,6 +50,14 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/(app-lists-db|lists-db|lists-contract|lists-api)(/|$)' },
     },
+    {
+      name: 'no-dead-inventory-pkgs',
+      severity: 'error',
+      comment:
+        'The `@pops/app-inventory-db`, `@pops/inventory-db`, `@pops/inventory-contract`, and `@pops/inventory-api` packages no longer exist — inventory collapsed into `pillars/inventory/`. Consumers go through `@pops/inventory` (contract types + api-types + openapi) and the inventory REST API for cross-pillar calls.',
+      from: { path: '.*' },
+      to: { path: '^@pops/(app-inventory-db|inventory-db|inventory-contract|inventory-api)(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {

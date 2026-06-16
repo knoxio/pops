@@ -15,13 +15,11 @@ COPY packages/finance-db/package.json ./packages/finance-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
-COPY packages/inventory-contract/package.json ./packages/inventory-contract/
 COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/food-contract/package.json ./packages/food-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
-COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY packages/food-db/package.json ./packages/food-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
@@ -50,9 +48,6 @@ COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/food-contracts/src ./packages/food-contracts/src
 COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
-COPY packages/inventory-db/src ./packages/inventory-db/src
-COPY packages/inventory-db/tsconfig.json ./packages/inventory-db/
-COPY packages/inventory-db/migrations ./packages/inventory-db/migrations
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
@@ -62,7 +57,6 @@ COPY packages/food-db/migrations ./packages/food-db/migrations
 COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
-COPY packages/inventory-contract/ ./packages/inventory-contract/
 COPY packages/media-contract/ ./packages/media-contract/
 COPY packages/food-contract/ ./packages/food-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
@@ -76,8 +70,6 @@ COPY apps/pops-api/scripts ./apps/pops-api/scripts
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/media-db
-RUN pnpm build
-WORKDIR /app/packages/inventory-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
@@ -100,8 +92,6 @@ RUN pnpm build
 WORKDIR /app/packages/cerebrum-contract
 RUN pnpm build
 WORKDIR /app/packages/core-contract
-RUN pnpm build
-WORKDIR /app/packages/inventory-contract
 RUN pnpm build
 WORKDIR /app/packages/media-contract
 RUN pnpm build
@@ -146,9 +136,6 @@ COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-d
 COPY --from=builder /app/packages/finance-db/dist ./node_modules/@pops/finance-db/dist
 COPY --from=builder /app/packages/finance-db/package.json ./node_modules/@pops/finance-db/
 COPY --from=builder /app/packages/finance-db/migrations ./node_modules/@pops/finance-db/migrations
-COPY --from=builder /app/packages/inventory-db/dist ./node_modules/@pops/inventory-db/dist
-COPY --from=builder /app/packages/inventory-db/package.json ./node_modules/@pops/inventory-db/
-COPY --from=builder /app/packages/inventory-db/migrations ./node_modules/@pops/inventory-db/migrations
 COPY --from=builder /app/packages/media-db/dist ./node_modules/@pops/media-db/dist
 COPY --from=builder /app/packages/media-db/package.json ./node_modules/@pops/media-db/
 COPY --from=builder /app/packages/media-db/migrations ./node_modules/@pops/media-db/migrations
