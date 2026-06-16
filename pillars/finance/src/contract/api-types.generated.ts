@@ -143,6 +143,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/transactions/available-tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Distinct tag values across all transactions (autocomplete) */
+    get: operations['transactions.availableTags'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/transactions/descriptions-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Descriptions (+ checksums) of existing transactions for client-side rule preview */
+    get: operations['transactions.descriptionsForPreview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/transactions/restore': {
     parameters: {
       query?: never;
@@ -154,6 +188,23 @@ export interface paths {
     put?: never;
     /** Restore a previously-deleted transaction from its snapshot */
     post: operations['transactions.restore'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/transactions/suggest-tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Rule-based tag suggestions for a description/entity (no LLM call) */
+    get: operations['transactions.suggestTags'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1392,6 +1443,57 @@ export interface operations {
       };
     };
   };
+  'transactions.availableTags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tags: string[];
+          };
+        };
+      };
+    };
+  };
+  'transactions.descriptionsForPreview': {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              checksum: string | null;
+              description: string;
+            }[];
+            total: number;
+            truncated: boolean;
+          };
+        };
+      };
+    };
+  };
   'transactions.restore': {
     parameters: {
       query?: never;
@@ -1487,6 +1589,31 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'transactions.suggestTags': {
+    parameters: {
+      query: {
+        description: string;
+        entityId?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tags: string[];
           };
         };
       };

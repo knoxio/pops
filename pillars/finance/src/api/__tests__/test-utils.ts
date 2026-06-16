@@ -163,6 +163,15 @@ export function makeClient(app: Express) {
         send<{ data: Transaction; message: string }>(
           r.post('/transactions/restore').send(snapshot)
         ),
+      suggestTags: (query: { description: string; entityId?: string }) =>
+        send<{ tags: string[] }>(r.get('/transactions/suggest-tags').query(query)),
+      descriptionsForPreview: (query: { limit?: number } = {}) =>
+        send<{
+          data: { description: string; checksum: string | null }[];
+          total: number;
+          truncated: boolean;
+        }>(r.get('/transactions/descriptions-preview').query(query)),
+      availableTags: () => send<{ tags: string[] }>(r.get('/transactions/available-tags')),
     },
     tagRules: {
       vocabulary: () => send<{ tags: string[] }>(r.get('/tag-rules/vocabulary')),
