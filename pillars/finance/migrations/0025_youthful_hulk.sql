@@ -1,0 +1,1 @@
+ALTER TABLE `transaction_corrections` ADD `is_active` integer DEFAULT true NOT NULL;
