@@ -19,7 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "commander": "^14.0.1"
+    "commander": "^15.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
