@@ -13,13 +13,13 @@ this doc records only what is **different** for food.
 Food is in a **split** state — further back than lists/inventory were when their
 REST work began:
 
-| Layer | in pillar? |
-| --- | --- |
-| `pillars/food/src/db` (schema, services) | ✅ |
-| `pillars/food/src/worker` (bullmq ingest: AI parse, web/instagram scrape, screenshots, prompts) | ✅ |
-| `pillars/food/src/{domain,dsl,inbox,seed}` | ✅ |
-| **API handlers** | ❌ still in `apps/pops-api/src/modules/food/**` + `apps/pops-api/src/routes/food/**` |
-| `pillars/food/src/api/` | only `/health` + `/pillars` scaffold; `contract/router.ts` exports `unknown` |
+| Layer                                                                                           | in pillar?                                                                           |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `pillars/food/src/db` (schema, services)                                                        | ✅                                                                                   |
+| `pillars/food/src/worker` (bullmq ingest: AI parse, web/instagram scrape, screenshots, prompts) | ✅                                                                                   |
+| `pillars/food/src/{domain,dsl,inbox,seed}`                                                      | ✅                                                                                   |
+| **API handlers**                                                                                | ❌ still in `apps/pops-api/src/modules/food/**` + `apps/pops-api/src/routes/food/**` |
+| `pillars/food/src/api/`                                                                         | only `/health` + `/pillars` scaffold; `contract/router.ts` exports `unknown`         |
 
 Surface to move/migrate:
 
@@ -77,8 +77,8 @@ Suggested slice order (leaf-first, defer the cross-cutting ones):
    client). This slice closes lists Phase E.
 5. `plan`, `shopping` (depends on recipes + send-to-list).
 6. `ingest` (`routers/ingest-*`, `services/ingest-*`, `routes/food/ingest-files.ts`)
-   + `ai`. Enqueue/status/cancel; keep the worker contract in
-   `pillars/food/src/contract/queue` intact.
+   - `ai`. Enqueue/status/cancel; keep the worker contract in
+     `pillars/food/src/contract/queue` intact.
 
 Gotcha: food's db/worker already import each other inside the pillar — moving the
 API in means the pillar's dep graph closes; watch for `apps/pops-api` → food
@@ -95,6 +95,7 @@ graph is a candidate), `@hey-api`-free `api-types.generated.ts`, drop auth,
 supertest tests via a `makeClient` shim.
 
 Async surface in the contract:
+
 - `POST /recipes/ingest` (or per existing path) → enqueue, returns job id.
 - `GET /ingest/:id` → status. `POST /ingest/:id/cancel` → cancel.
 - File upload (`ingest-files`) → base64 body field, decoded in the handler.
