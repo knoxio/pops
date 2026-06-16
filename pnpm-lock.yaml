@@ -2212,9 +2212,6 @@ importers:
       '@pops/core-contract':
         specifier: workspace:*
         version: link:../../packages/core-contract
-      '@pops/core-db':
-        specifier: workspace:*
-        version: link:../../packages/core-db
       '@pops/finance-contract':
         specifier: workspace:*
         version: link:../../packages/finance-contract
@@ -2227,6 +2224,15 @@ importers:
       '@trpc/server':
         specifier: ^11.17.0
         version: 11.17.0(typescript@6.0.3)
+      '@ts-rest/core':
+        specifier: 3.53.0-rc.1
+        version: 3.53.0-rc.1(@types/node@25.9.3)
+      '@ts-rest/express':
+        specifier: 3.53.0-rc.1
+        version: 3.53.0-rc.1(@ts-rest/core@3.53.0-rc.1(@types/node@25.9.3))(express@5.2.1)
+      '@ts-rest/open-api':
+        specifier: 3.53.0-rc.1
+        version: 3.53.0-rc.1(@ts-rest/core@3.53.0-rc.1(@types/node@25.9.3))(zod@4.4.3)
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
@@ -2239,9 +2245,6 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.2.1
-      jsonwebtoken:
-        specifier: ^9.0.3
-        version: 9.0.3
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
@@ -2255,9 +2258,6 @@ importers:
       '@types/express':
         specifier: ^5.0.4
         version: 5.0.6
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
       '@types/node':
         specifier: ^25.9.3
         version: 25.9.3
@@ -2267,6 +2267,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.8
         version: 4.1.8(vitest@4.1.8)
+      openapi-typescript:
+        specifier: ^7.13.0
+        version: 7.13.0(typescript@6.0.3)
       supertest:
         specifier: ^7.1.4
         version: 7.2.2

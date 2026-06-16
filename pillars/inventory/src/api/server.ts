@@ -17,12 +17,10 @@
  * triggers `pillarHandle.stop()` so the heartbeat clears and the
  * registry sees an explicit deregister.
  */
-import { openCoreDb } from '@pops/core-db';
 import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bootstrap';
 
 import { openInventoryDb } from '../db/index.js';
 import { createInventoryApiApp } from './app.js';
-import { resolveCoreSqlitePath } from './core-sqlite-path.js';
 import { resolveInventorySqlitePath } from './inventory-sqlite-path.js';
 import { buildInventoryManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
@@ -62,8 +60,7 @@ function resolveSelfBaseUrl(): string {
 const selfBaseUrl = resolveSelfBaseUrl();
 
 const inventoryDb = openInventoryDb(resolveInventorySqlitePath());
-const coreDb = openCoreDb(resolveCoreSqlitePath());
-const app = createInventoryApiApp({ inventoryDb, coreDb, version, selfBaseUrl });
+const app = createInventoryApiApp({ inventoryDb, version, selfBaseUrl });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
@@ -85,7 +82,6 @@ function shutdown(signal: NodeJS.Signals): void {
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       inventoryDb.raw.close();
-      coreDb.raw.close();
     });
   });
 }
