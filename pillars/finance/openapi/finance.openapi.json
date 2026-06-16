@@ -771,6 +771,1731 @@
         "tags": ["budgets"]
       }
     },
+    "/tag-rules/apply": {
+      "post": {
+        "operationId": "tagRules.apply",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "acceptedNewTags": {
+                    "default": [],
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "changeSet": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ops": {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "descriptionPattern": {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "matchType": {
+                                      "default": "exact",
+                                      "enum": ["exact", "contains", "regex"],
+                                      "type": "string"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "minItems": 1,
+                                      "type": "array"
+                                    }
+                                  },
+                                  "required": ["descriptionPattern", "matchType", "tags"],
+                                  "type": "object"
+                                },
+                                "op": {
+                                  "enum": ["add"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["edit"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["disable"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["remove"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["ops"],
+                    "type": "object"
+                  }
+                },
+                "required": ["changeSet", "acceptedNewTags"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "rules": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "descriptionPattern": {
+                            "type": "string"
+                          },
+                          "entityId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          },
+                          "lastUsedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "matchType": {
+                            "enum": ["exact", "contains", "regex"],
+                            "type": "string"
+                          },
+                          "priority": {
+                            "type": "number"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "timesApplied": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "descriptionPattern",
+                          "matchType",
+                          "entityId",
+                          "tags",
+                          "isActive",
+                          "confidence",
+                          "priority",
+                          "timesApplied",
+                          "createdAt",
+                          "lastUsedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["rules"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Apply a tag-rule ChangeSet; upserts accepted new vocabulary tags",
+        "tags": ["tagRules"]
+      }
+    },
+    "/tag-rules/preview": {
+      "post": {
+        "operationId": "tagRules.preview",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "changeSet": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ops": {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "descriptionPattern": {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "matchType": {
+                                      "default": "exact",
+                                      "enum": ["exact", "contains", "regex"],
+                                      "type": "string"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "minItems": 1,
+                                      "type": "array"
+                                    }
+                                  },
+                                  "required": ["descriptionPattern", "matchType", "tags"],
+                                  "type": "object"
+                                },
+                                "op": {
+                                  "enum": ["add"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["edit"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["disable"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["remove"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["ops"],
+                    "type": "object"
+                  },
+                  "maxPreviewItems": {
+                    "default": 200,
+                    "exclusiveMinimum": true,
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "transactions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "description": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "entityId": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "transactionId": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "userTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": ["transactionId", "description"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["changeSet", "transactions", "maxPreviewItems"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "affected": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "after": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "suggestedTags": {
+                                "items": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "isNew": {
+                                      "type": "boolean"
+                                    },
+                                    "pattern": {
+                                      "type": "string"
+                                    },
+                                    "source": {
+                                      "enum": ["tag_rule", "rule", "ai", "entity"],
+                                      "type": "string"
+                                    },
+                                    "tag": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["tag", "source"],
+                                  "type": "object"
+                                },
+                                "type": "array"
+                              }
+                            },
+                            "required": ["suggestedTags"],
+                            "type": "object"
+                          },
+                          "before": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "suggestedTags": {
+                                "items": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "isNew": {
+                                      "type": "boolean"
+                                    },
+                                    "pattern": {
+                                      "type": "string"
+                                    },
+                                    "source": {
+                                      "enum": ["tag_rule", "rule", "ai", "entity"],
+                                      "type": "string"
+                                    },
+                                    "tag": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["tag", "source"],
+                                  "type": "object"
+                                },
+                                "type": "array"
+                              }
+                            },
+                            "required": ["suggestedTags"],
+                            "type": "object"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "transactionId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["transactionId", "description", "before", "after"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "counts": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "affected": {
+                          "type": "number"
+                        },
+                        "newTagProposals": {
+                          "type": "number"
+                        },
+                        "suggestionChanges": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["affected", "suggestionChanges", "newTagProposals"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["counts", "affected"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Preview the suggestion-impact of a tag-rule ChangeSet over the supplied transactions",
+        "tags": ["tagRules"]
+      }
+    },
+    "/tag-rules/propose": {
+      "post": {
+        "operationId": "tagRules.propose",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "maxPreviewItems": {
+                    "default": 200,
+                    "exclusiveMinimum": true,
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "signal": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "descriptionPattern": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "entityId": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "matchType": {
+                        "enum": ["exact", "contains", "regex"],
+                        "type": "string"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    },
+                    "required": ["descriptionPattern", "matchType", "tags"],
+                    "type": "object"
+                  },
+                  "transactions": {
+                    "default": [],
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "description": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "entityId": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "transactionId": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "userTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": ["transactionId", "description"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["signal", "transactions", "maxPreviewItems"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "changeSet": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ops": {
+                          "items": {
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "data": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "confidence": {
+                                        "maximum": 1,
+                                        "minimum": 0,
+                                        "type": "number"
+                                      },
+                                      "descriptionPattern": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "entityId": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "isActive": {
+                                        "type": "boolean"
+                                      },
+                                      "matchType": {
+                                        "default": "exact",
+                                        "enum": ["exact", "contains", "regex"],
+                                        "type": "string"
+                                      },
+                                      "priority": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": 0,
+                                        "type": "integer"
+                                      },
+                                      "tags": {
+                                        "items": {
+                                          "type": "string"
+                                        },
+                                        "minItems": 1,
+                                        "type": "array"
+                                      }
+                                    },
+                                    "required": ["descriptionPattern", "matchType", "tags"],
+                                    "type": "object"
+                                  },
+                                  "op": {
+                                    "enum": ["add"],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["op", "data"],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "data": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "confidence": {
+                                        "maximum": 1,
+                                        "minimum": 0,
+                                        "type": "number"
+                                      },
+                                      "entityId": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "isActive": {
+                                        "type": "boolean"
+                                      },
+                                      "priority": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": 0,
+                                        "type": "integer"
+                                      },
+                                      "tags": {
+                                        "items": {
+                                          "type": "string"
+                                        },
+                                        "type": "array"
+                                      }
+                                    },
+                                    "type": "object"
+                                  },
+                                  "id": {
+                                    "minLength": 1,
+                                    "type": "string"
+                                  },
+                                  "op": {
+                                    "enum": ["edit"],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["op", "id", "data"],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "id": {
+                                    "minLength": 1,
+                                    "type": "string"
+                                  },
+                                  "op": {
+                                    "enum": ["disable"],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["op", "id"],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "id": {
+                                    "minLength": 1,
+                                    "type": "string"
+                                  },
+                                  "op": {
+                                    "enum": ["remove"],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["op", "id"],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "minItems": 1,
+                          "type": "array"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ops"],
+                      "type": "object"
+                    },
+                    "preview": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "affected": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "after": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "suggestedTags": {
+                                    "items": {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "isNew": {
+                                          "type": "boolean"
+                                        },
+                                        "pattern": {
+                                          "type": "string"
+                                        },
+                                        "source": {
+                                          "enum": ["tag_rule", "rule", "ai", "entity"],
+                                          "type": "string"
+                                        },
+                                        "tag": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["tag", "source"],
+                                      "type": "object"
+                                    },
+                                    "type": "array"
+                                  }
+                                },
+                                "required": ["suggestedTags"],
+                                "type": "object"
+                              },
+                              "before": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "suggestedTags": {
+                                    "items": {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "isNew": {
+                                          "type": "boolean"
+                                        },
+                                        "pattern": {
+                                          "type": "string"
+                                        },
+                                        "source": {
+                                          "enum": ["tag_rule", "rule", "ai", "entity"],
+                                          "type": "string"
+                                        },
+                                        "tag": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["tag", "source"],
+                                      "type": "object"
+                                    },
+                                    "type": "array"
+                                  }
+                                },
+                                "required": ["suggestedTags"],
+                                "type": "object"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "transactionId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["transactionId", "description", "before", "after"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "counts": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "affected": {
+                              "type": "number"
+                            },
+                            "newTagProposals": {
+                              "type": "number"
+                            },
+                            "suggestionChanges": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["affected", "suggestionChanges", "newTagProposals"],
+                          "type": "object"
+                        }
+                      },
+                      "required": ["counts", "affected"],
+                      "type": "object"
+                    },
+                    "rationale": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["changeSet", "rationale", "preview"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Propose a tag-rule ChangeSet from a tag-edit signal (deterministic, with impact preview)",
+        "tags": ["tagRules"]
+      }
+    },
+    "/tag-rules/reject": {
+      "post": {
+        "operationId": "tagRules.reject",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "changeSet": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ops": {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "descriptionPattern": {
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "matchType": {
+                                      "default": "exact",
+                                      "enum": ["exact", "contains", "regex"],
+                                      "type": "string"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "minItems": 1,
+                                      "type": "array"
+                                    }
+                                  },
+                                  "required": ["descriptionPattern", "matchType", "tags"],
+                                  "type": "object"
+                                },
+                                "op": {
+                                  "enum": ["add"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "data": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "confidence": {
+                                      "maximum": 1,
+                                      "minimum": 0,
+                                      "type": "number"
+                                    },
+                                    "entityId": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "isActive": {
+                                      "type": "boolean"
+                                    },
+                                    "priority": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": 0,
+                                      "type": "integer"
+                                    },
+                                    "tags": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["edit"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id", "data"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["disable"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "op": {
+                                  "enum": ["remove"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["op", "id"],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["ops"],
+                    "type": "object"
+                  },
+                  "feedback": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxPreviewItems": {
+                    "default": 200,
+                    "exclusiveMinimum": true,
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "signal": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "descriptionPattern": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "entityId": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "matchType": {
+                        "enum": ["exact", "contains", "regex"],
+                        "type": "string"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    },
+                    "required": ["descriptionPattern", "matchType", "tags"],
+                    "type": "object"
+                  },
+                  "transactions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "description": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "entityId": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "transactionId": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "userTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": ["transactionId", "description"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["changeSet", "feedback", "maxPreviewItems"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "followUpProposal": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "changeSet": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "ops": {
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "data": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "confidence": {
+                                            "maximum": 1,
+                                            "minimum": 0,
+                                            "type": "number"
+                                          },
+                                          "descriptionPattern": {
+                                            "minLength": 1,
+                                            "type": "string"
+                                          },
+                                          "entityId": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "isActive": {
+                                            "type": "boolean"
+                                          },
+                                          "matchType": {
+                                            "default": "exact",
+                                            "enum": ["exact", "contains", "regex"],
+                                            "type": "string"
+                                          },
+                                          "priority": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "tags": {
+                                            "items": {
+                                              "type": "string"
+                                            },
+                                            "minItems": 1,
+                                            "type": "array"
+                                          }
+                                        },
+                                        "required": ["descriptionPattern", "matchType", "tags"],
+                                        "type": "object"
+                                      },
+                                      "op": {
+                                        "enum": ["add"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "data"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "data": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "confidence": {
+                                            "maximum": 1,
+                                            "minimum": 0,
+                                            "type": "number"
+                                          },
+                                          "entityId": {
+                                            "nullable": true,
+                                            "type": "string"
+                                          },
+                                          "isActive": {
+                                            "type": "boolean"
+                                          },
+                                          "priority": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "tags": {
+                                            "items": {
+                                              "type": "string"
+                                            },
+                                            "type": "array"
+                                          }
+                                        },
+                                        "type": "object"
+                                      },
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["edit"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id", "data"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["disable"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id"],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "id": {
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "op": {
+                                        "enum": ["remove"],
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["op", "id"],
+                                    "type": "object"
+                                  }
+                                ]
+                              },
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "source": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["ops"],
+                          "type": "object"
+                        },
+                        "preview": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "affected": {
+                              "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "after": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "suggestedTags": {
+                                        "items": {
+                                          "additionalProperties": false,
+                                          "properties": {
+                                            "isNew": {
+                                              "type": "boolean"
+                                            },
+                                            "pattern": {
+                                              "type": "string"
+                                            },
+                                            "source": {
+                                              "enum": ["tag_rule", "rule", "ai", "entity"],
+                                              "type": "string"
+                                            },
+                                            "tag": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": ["tag", "source"],
+                                          "type": "object"
+                                        },
+                                        "type": "array"
+                                      }
+                                    },
+                                    "required": ["suggestedTags"],
+                                    "type": "object"
+                                  },
+                                  "before": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "suggestedTags": {
+                                        "items": {
+                                          "additionalProperties": false,
+                                          "properties": {
+                                            "isNew": {
+                                              "type": "boolean"
+                                            },
+                                            "pattern": {
+                                              "type": "string"
+                                            },
+                                            "source": {
+                                              "enum": ["tag_rule", "rule", "ai", "entity"],
+                                              "type": "string"
+                                            },
+                                            "tag": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": ["tag", "source"],
+                                          "type": "object"
+                                        },
+                                        "type": "array"
+                                      }
+                                    },
+                                    "required": ["suggestedTags"],
+                                    "type": "object"
+                                  },
+                                  "description": {
+                                    "type": "string"
+                                  },
+                                  "transactionId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["transactionId", "description", "before", "after"],
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            "counts": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "affected": {
+                                  "type": "number"
+                                },
+                                "newTagProposals": {
+                                  "type": "number"
+                                },
+                                "suggestionChanges": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["affected", "suggestionChanges", "newTagProposals"],
+                              "type": "object"
+                            }
+                          },
+                          "required": ["counts", "affected"],
+                          "type": "object"
+                        },
+                        "rationale": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["changeSet", "rationale", "preview"],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message", "followUpProposal"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Reject a ChangeSet with feedback; optionally returns a revised follow-up proposal",
+        "tags": ["tagRules"]
+      }
+    },
+    "/tag-rules/vocabulary": {
+      "get": {
+        "operationId": "tagRules.vocabulary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["tags"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List the user tag vocabulary",
+        "tags": ["tagRules"]
+      }
+    },
     "/transactions": {
       "get": {
         "operationId": "transactions.list",

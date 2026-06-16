@@ -40,6 +40,91 @@ export interface paths {
     patch: operations['budgets.update'];
     trace?: never;
   };
+  '/tag-rules/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply a tag-rule ChangeSet; upserts accepted new vocabulary tags */
+    post: operations['tagRules.apply'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/tag-rules/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Preview the suggestion-impact of a tag-rule ChangeSet over the supplied transactions */
+    post: operations['tagRules.preview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/tag-rules/propose': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Propose a tag-rule ChangeSet from a tag-edit signal (deterministic, with impact preview) */
+    post: operations['tagRules.propose'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/tag-rules/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject a ChangeSet with feedback; optionally returns a revised follow-up proposal */
+    post: operations['tagRules.reject'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/tag-rules/vocabulary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the user tag vocabulary */
+    get: operations['tagRules.vocabulary'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/transactions': {
     parameters: {
       query?: never;
@@ -494,6 +579,663 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'tagRules.apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @default [] */
+          acceptedNewTags: string[];
+          changeSet: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags: string[];
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    priority?: number;
+                    tags?: string[];
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            rules: {
+              confidence: number;
+              createdAt: string;
+              descriptionPattern: string;
+              entityId: string | null;
+              id: string;
+              isActive: boolean;
+              lastUsedAt: string | null;
+              /** @enum {string} */
+              matchType: 'exact' | 'contains' | 'regex';
+              priority: number;
+              tags: string[];
+              timesApplied: number;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'tagRules.preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          changeSet: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags: string[];
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    priority?: number;
+                    tags?: string[];
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          };
+          /** @default 200 */
+          maxPreviewItems: number;
+          transactions: {
+            description: string;
+            entityId?: string | null;
+            transactionId: string;
+            userTags?: string[];
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            affected: {
+              after: {
+                suggestedTags: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'tag_rule' | 'rule' | 'ai' | 'entity';
+                  tag: string;
+                }[];
+              };
+              before: {
+                suggestedTags: {
+                  isNew?: boolean;
+                  pattern?: string;
+                  /** @enum {string} */
+                  source: 'tag_rule' | 'rule' | 'ai' | 'entity';
+                  tag: string;
+                }[];
+              };
+              description: string;
+              transactionId: string;
+            }[];
+            counts: {
+              affected: number;
+              newTagProposals: number;
+              suggestionChanges: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'tagRules.propose': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @default 200 */
+          maxPreviewItems: number;
+          signal: {
+            descriptionPattern: string;
+            entityId?: string | null;
+            /** @enum {string} */
+            matchType: 'exact' | 'contains' | 'regex';
+            tags: string[];
+          };
+          /** @default [] */
+          transactions: {
+            description: string;
+            entityId?: string | null;
+            transactionId: string;
+            userTags?: string[];
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            changeSet: {
+              ops: (
+                | {
+                    data: {
+                      confidence?: number;
+                      descriptionPattern: string;
+                      entityId?: string | null;
+                      isActive?: boolean;
+                      /**
+                       * @default exact
+                       * @enum {string}
+                       */
+                      matchType: 'exact' | 'contains' | 'regex';
+                      priority?: number;
+                      tags: string[];
+                    };
+                    /** @enum {string} */
+                    op: 'add';
+                  }
+                | {
+                    data: {
+                      confidence?: number;
+                      entityId?: string | null;
+                      isActive?: boolean;
+                      priority?: number;
+                      tags?: string[];
+                    };
+                    id: string;
+                    /** @enum {string} */
+                    op: 'edit';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'disable';
+                  }
+                | {
+                    id: string;
+                    /** @enum {string} */
+                    op: 'remove';
+                  }
+              )[];
+              reason?: string;
+              source?: string;
+            };
+            preview: {
+              affected: {
+                after: {
+                  suggestedTags: {
+                    isNew?: boolean;
+                    pattern?: string;
+                    /** @enum {string} */
+                    source: 'tag_rule' | 'rule' | 'ai' | 'entity';
+                    tag: string;
+                  }[];
+                };
+                before: {
+                  suggestedTags: {
+                    isNew?: boolean;
+                    pattern?: string;
+                    /** @enum {string} */
+                    source: 'tag_rule' | 'rule' | 'ai' | 'entity';
+                    tag: string;
+                  }[];
+                };
+                description: string;
+                transactionId: string;
+              }[];
+              counts: {
+                affected: number;
+                newTagProposals: number;
+                suggestionChanges: number;
+              };
+            };
+            rationale: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'tagRules.reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          changeSet: {
+            ops: (
+              | {
+                  data: {
+                    confidence?: number;
+                    descriptionPattern: string;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    /**
+                     * @default exact
+                     * @enum {string}
+                     */
+                    matchType: 'exact' | 'contains' | 'regex';
+                    priority?: number;
+                    tags: string[];
+                  };
+                  /** @enum {string} */
+                  op: 'add';
+                }
+              | {
+                  data: {
+                    confidence?: number;
+                    entityId?: string | null;
+                    isActive?: boolean;
+                    priority?: number;
+                    tags?: string[];
+                  };
+                  id: string;
+                  /** @enum {string} */
+                  op: 'edit';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'disable';
+                }
+              | {
+                  id: string;
+                  /** @enum {string} */
+                  op: 'remove';
+                }
+            )[];
+            reason?: string;
+            source?: string;
+          };
+          feedback: string;
+          /** @default 200 */
+          maxPreviewItems: number;
+          signal?: {
+            descriptionPattern: string;
+            entityId?: string | null;
+            /** @enum {string} */
+            matchType: 'exact' | 'contains' | 'regex';
+            tags: string[];
+          };
+          transactions?: {
+            description: string;
+            entityId?: string | null;
+            transactionId: string;
+            userTags?: string[];
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            followUpProposal: {
+              changeSet: {
+                ops: (
+                  | {
+                      data: {
+                        confidence?: number;
+                        descriptionPattern: string;
+                        entityId?: string | null;
+                        isActive?: boolean;
+                        /**
+                         * @default exact
+                         * @enum {string}
+                         */
+                        matchType: 'exact' | 'contains' | 'regex';
+                        priority?: number;
+                        tags: string[];
+                      };
+                      /** @enum {string} */
+                      op: 'add';
+                    }
+                  | {
+                      data: {
+                        confidence?: number;
+                        entityId?: string | null;
+                        isActive?: boolean;
+                        priority?: number;
+                        tags?: string[];
+                      };
+                      id: string;
+                      /** @enum {string} */
+                      op: 'edit';
+                    }
+                  | {
+                      id: string;
+                      /** @enum {string} */
+                      op: 'disable';
+                    }
+                  | {
+                      id: string;
+                      /** @enum {string} */
+                      op: 'remove';
+                    }
+                )[];
+                reason?: string;
+                source?: string;
+              };
+              preview: {
+                affected: {
+                  after: {
+                    suggestedTags: {
+                      isNew?: boolean;
+                      pattern?: string;
+                      /** @enum {string} */
+                      source: 'tag_rule' | 'rule' | 'ai' | 'entity';
+                      tag: string;
+                    }[];
+                  };
+                  before: {
+                    suggestedTags: {
+                      isNew?: boolean;
+                      pattern?: string;
+                      /** @enum {string} */
+                      source: 'tag_rule' | 'rule' | 'ai' | 'entity';
+                      tag: string;
+                    }[];
+                  };
+                  description: string;
+                  transactionId: string;
+                }[];
+                counts: {
+                  affected: number;
+                  newTagProposals: number;
+                  suggestionChanges: number;
+                };
+              };
+              rationale: string;
+            } | null;
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'tagRules.vocabulary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tags: string[];
           };
         };
       };
