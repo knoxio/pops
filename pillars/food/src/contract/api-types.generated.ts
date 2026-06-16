@@ -247,6 +247,127 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/ingredients': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List ingredients (optionally filtered by search / parent) */
+    get: operations['ingredients.list'];
+    put?: never;
+    /** Create an ingredient */
+    post: operations['ingredients.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredients/rename': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Rename an ingredient slug (updates the slug registry) */
+    post: operations['ingredients.rename'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredients/{idOrSlug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an ingredient (by numeric id or slug) with its variants */
+    get: operations['ingredients.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredients/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete an ingredient; returns blockers when variants/aliases remain */
+    delete: operations['ingredients.delete'];
+    options?: never;
+    head?: never;
+    /** Update an ingredient */
+    patch: operations['ingredients.update'];
+    trace?: never;
+  };
+  '/ingredients/{id}/blockers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** FK-backed delete blockers (variants + aliases counts) */
+    get: operations['ingredients.blockers'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredients/{id}/parent': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Re-parent an ingredient (cycle / depth guarded) */
+    post: operations['ingredients.changeParent'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredients/{id}/recipe-refs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Recipes referencing this ingredient via compiled lines */
+    get: operations['ingredients.recipeRefs'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/prep-states': {
     parameters: {
       query?: never;
@@ -1443,6 +1564,588 @@ export interface operations {
                 /** @enum {string} */
                 reason: 'BadTagFormat' | 'TagTooLong' | 'IngredientNotFound';
               };
+        };
+      };
+    };
+  };
+  'ingredients.list': {
+    parameters: {
+      query?: {
+        search?: string;
+        parentId?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              createdAt: string;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              densityGPerMl: number | null;
+              id: number;
+              name: string;
+              notes: string | null;
+              parentId: number | null;
+              slug: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'ingredients.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          defaultUnit: 'g' | 'ml' | 'count';
+          densityGPerMl?: number | null;
+          name: string;
+          notes?: string | null;
+          parentId?: number | null;
+          slug: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              densityGPerMl: number | null;
+              id: number;
+              name: string;
+              notes: string | null;
+              parentId: number | null;
+              slug: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingredients.rename': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          newSlug: string;
+          oldSlug: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              densityGPerMl: number | null;
+              id: number;
+              name: string;
+              notes: string | null;
+              parentId: number | null;
+              slug: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingredients.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        idOrSlug: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ingredient: {
+              createdAt: string;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              densityGPerMl: number | null;
+              id: number;
+              name: string;
+              notes: string | null;
+              parentId: number | null;
+              slug: string;
+            };
+            variants: {
+              createdAt: string;
+              defaultShelfLifeDaysFreezer: number | null;
+              defaultShelfLifeDaysFridge: number | null;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              id: number;
+              ingredientId: number;
+              name: string;
+              notes: string | null;
+              packageSizeG: number | null;
+              slug: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingredients.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                blockers: {
+                  aliases: number;
+                  variants: number;
+                };
+                /** @enum {boolean} */
+                ok: false;
+              };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingredients.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          defaultUnit?: 'g' | 'ml' | 'count';
+          densityGPerMl?: number | null;
+          name?: string;
+          notes?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              densityGPerMl: number | null;
+              id: number;
+              name: string;
+              notes: string | null;
+              parentId: number | null;
+              slug: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingredients.blockers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              aliases: number;
+              variants: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'ingredients.changeParent': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          newParentId: number | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              densityGPerMl: number | null;
+              id: number;
+              name: string;
+              notes: string | null;
+              parentId: number | null;
+              slug: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingredients.recipeRefs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            count: number;
+            recipes: {
+              recipeId: number;
+              recipeSlug: string;
+              recipeTitle: string;
+            }[];
+          };
         };
       };
     };

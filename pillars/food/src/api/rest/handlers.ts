@@ -12,6 +12,7 @@ import { type OpenedFoodDb } from '../../db/index.js';
 import { makeAliasesHandlers } from './aliases-handlers.js';
 import { makeConversionsHandlers } from './conversions-handlers.js';
 import { makeIngredientTagsHandlers } from './ingredient-tags-handlers.js';
+import { makeIngredientsHandlers } from './ingredients-handlers.js';
 import { makePrepStatesHandlers } from './prep-states-handlers.js';
 import { makeSlugsHandlers } from './slugs-handlers.js';
 import { makeVariantsHandlers } from './variants-handlers.js';
@@ -25,6 +26,7 @@ export function makeFoodRestHandlers(deps: {
   return server.router(foodContract, {
     aliases: makeAliasesHandlers(db),
     conversions: makeConversionsHandlers(db),
+    ingredients: makeIngredientsHandlers(db),
     ingredientTags: makeIngredientTagsHandlers(db),
     prepStates: makePrepStatesHandlers(db),
     slugs: makeSlugsHandlers(db),
