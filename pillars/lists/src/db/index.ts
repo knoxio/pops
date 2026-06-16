@@ -36,5 +36,13 @@ export {
   reorderItems,
   updateItem,
 } from './services/list-items.js';
+export { searchListItems, type SearchListItemsFilter } from './services/list-items-search.js';
+export {
+  upsertItemByRef,
+  type UpsertConflictMode,
+  type UpsertItemByRefInput,
+  type UpsertOutcome,
+  type UpsertRefKind,
+} from './services/list-items-upsert.js';
 
 export { openListsDb, type OpenedListsDb } from './open-lists-db.js';

@@ -136,6 +136,27 @@ function makeClient(app: Express): {
     }) => Promise<{ ok: true } | { ok: false; reason: 'BadIds' }>;
     uncheckAll: (input: { listId: number }) => Promise<{ ok: true; count: number }>;
     removeChecked: (input: { listId: number }) => Promise<{ ok: true; removedCount: number }>;
+    search: (q?: {
+      kind?: 'shopping' | 'packing' | 'todo' | 'generic';
+      listId?: number;
+      includeArchived?: boolean;
+      labelContains?: string;
+      notesContains?: string;
+    }) => Promise<{ items: ListItemWire[] }>;
+    upsertByRef: (input: {
+      listId: number;
+      refKind: 'ingredient' | 'variant' | 'recipe' | 'custom';
+      refId: number;
+      label: string;
+      qty?: number | null;
+      unit?: string | null;
+      notes?: string | null;
+      onConflict?: 'merge-additive' | 'replace' | 'skip';
+    }) => Promise<
+      | { outcome: 'inserted'; itemId: number; position: number }
+      | { outcome: 'merged'; itemId: number }
+      | { outcome: 'skipped'; itemId: number }
+    >;
   };
 } {
   const api = supertest(app);
@@ -164,8 +185,26 @@ function makeClient(app: Express): {
         assert2xx(await api.post(`/lists/${listId}/items/uncheck-all`).send({})),
       removeChecked: async ({ listId }) =>
         assert2xx(await api.delete(`/lists/${listId}/items/checked`)),
+      search: async (q) => assert2xx(await api.get('/items').query(q ?? {})),
+      upsertByRef: async ({ listId, ...body }) =>
+        assert2xx(await api.post(`/lists/${listId}/items/upsert-by-ref`).send(body)),
     },
   };
+}
+
+interface ListItemWire {
+  id: number;
+  listId: number;
+  label: string;
+  qty: number | null;
+  unit: string | null;
+  refKind: string;
+  refId: number | null;
+  notes: string | null;
+  position: number;
+  checked: number;
+  checkedAt: string | null;
+  createdAt: string;
 }
 
 interface ListAggregateWire {
@@ -586,6 +625,237 @@ describe('PRD-140 lists REST surface', () => {
       await client.items.removeChecked({ listId: listA });
       const detailB = await client.list.get({ id: listB });
       expect(detailB?.items.length).toBe(1);
+    });
+  });
+
+  describe('GET /items (search)', () => {
+    it('filters by notesContains across all matching lists', async () => {
+      const { id: shopA } = await client.list.create({ name: 'Shop A', kind: 'shopping' });
+      const { id: shopB } = await client.list.create({ name: 'Shop B', kind: 'shopping' });
+      const { id: todoC } = await client.list.create({ name: 'Todo C', kind: 'todo' });
+      await client.items.add({ listId: shopA, label: 'tomato', notes: 'Risotto Verde' });
+      await client.items.add({ listId: shopB, label: 'onion', notes: 'Risotto Verde + Soup' });
+      await client.items.add({ listId: shopB, label: 'salt', notes: 'pantry' });
+      await client.items.add({ listId: todoC, label: 'call mum', notes: 'Risotto Verde dinner' });
+
+      const { items } = await client.items.search({ notesContains: 'risotto verde' });
+      const matchedLists = new Set(items.map((it) => it.listId));
+      expect(matchedLists.has(shopA)).toBe(true);
+      expect(matchedLists.has(shopB)).toBe(true);
+      expect(matchedLists.has(todoC)).toBe(true);
+      expect(items.find((it) => it.label === 'salt')).toBeUndefined();
+    });
+
+    it('combines notesContains with kind=shopping to scope away other list kinds', async () => {
+      const { id: shop } = await client.list.create({ name: 'Shop', kind: 'shopping' });
+      const { id: todo } = await client.list.create({ name: 'Todo', kind: 'todo' });
+      await client.items.add({ listId: shop, label: 'tomato', notes: 'Risotto' });
+      await client.items.add({ listId: todo, label: 'call mum', notes: 'Risotto dinner' });
+
+      const { items } = await client.items.search({ notesContains: 'risotto', kind: 'shopping' });
+      const matched = new Set(items.map((it) => it.listId));
+      expect(matched.has(shop)).toBe(true);
+      expect(matched.has(todo)).toBe(false);
+    });
+
+    it('hides items from archived lists by default; surfaces them with includeArchived', async () => {
+      const { id: listId } = await client.list.create({ name: 'A', kind: 'shopping' });
+      await client.items.add({ listId, label: 'milk', notes: 'recipe X' });
+      await client.list.archive({ id: listId });
+
+      const hidden = await client.items.search({ notesContains: 'recipe X' });
+      expect(hidden.items).toHaveLength(0);
+
+      const visible = await client.items.search({
+        notesContains: 'recipe X',
+        includeArchived: true,
+      });
+      expect(visible.items).toHaveLength(1);
+    });
+
+    it('escapes %, _, and \\ in contains-strings so they are matched literally', async () => {
+      const { id: listId } = await client.list.create({ name: 'A', kind: 'shopping' });
+      await client.items.add({ listId, label: '100% wholemeal' });
+      await client.items.add({ listId, label: 'rough_label' });
+      await client.items.add({ listId, label: 'normal label' });
+
+      const pct = await client.items.search({ labelContains: '100%' });
+      expect(pct.items.map((it) => it.label)).toEqual(['100% wholemeal']);
+
+      const underscore = await client.items.search({ labelContains: 'rough_label' });
+      expect(underscore.items.map((it) => it.label)).toEqual(['rough_label']);
+    });
+
+    it('filters by listId to constrain search to one list', async () => {
+      const { id: listA } = await client.list.create({ name: 'A', kind: 'shopping' });
+      const { id: listB } = await client.list.create({ name: 'B', kind: 'shopping' });
+      await client.items.add({ listId: listA, label: 'tomato' });
+      await client.items.add({ listId: listB, label: 'tomato' });
+      const { items } = await client.items.search({ listId: listA, labelContains: 'tomato' });
+      expect(items).toHaveLength(1);
+      expect(items[0]?.listId).toBe(listA);
+    });
+  });
+
+  describe('POST /lists/:listId/items/upsert-by-ref', () => {
+    it('inserts when no matching (refKind, refId) row exists', async () => {
+      const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
+      const result = await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 42,
+        label: 'tomato 200g',
+        qty: 200,
+        unit: 'g',
+        notes: 'Risotto Verde',
+      });
+      expect(result.outcome).toBe('inserted');
+      const row = raw
+        .prepare(`SELECT qty, unit, notes, label FROM list_items WHERE list_id = ? AND ref_id = ?`)
+        .get(listId, 42) as { qty: number; unit: string; notes: string; label: string };
+      expect(row).toMatchObject({
+        qty: 200,
+        unit: 'g',
+        notes: 'Risotto Verde',
+        label: 'tomato 200g',
+      });
+    });
+
+    it('merge-additive (default) sums qty, joins notes with newline, replaces label', async () => {
+      const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
+      await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 42,
+        label: 'tomato 200g',
+        qty: 200,
+        unit: 'g',
+        notes: 'Risotto Verde',
+      });
+      const merged = await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 42,
+        label: 'tomato 350g',
+        qty: 150,
+        unit: 'g',
+        notes: 'Soup',
+      });
+      expect(merged.outcome).toBe('merged');
+      const row = raw
+        .prepare(`SELECT qty, unit, notes, label FROM list_items WHERE list_id = ? AND ref_id = ?`)
+        .get(listId, 42) as { qty: number; unit: string; notes: string; label: string };
+      expect(row).toMatchObject({
+        qty: 350,
+        unit: 'g',
+        notes: 'Risotto Verde\nSoup',
+        label: 'tomato 350g',
+      });
+    });
+
+    it('replace mode overwrites qty, unit, notes, label wholesale', async () => {
+      const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
+      await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 42,
+        label: 'tomato 200g',
+        qty: 200,
+        unit: 'g',
+        notes: 'Risotto Verde',
+      });
+      const replaced = await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 42,
+        label: 'tomato 1pc',
+        qty: 1,
+        unit: 'pc',
+        notes: 'Direct add',
+        onConflict: 'replace',
+      });
+      expect(replaced.outcome).toBe('merged');
+      const row = raw
+        .prepare(`SELECT qty, unit, notes, label FROM list_items WHERE list_id = ? AND ref_id = ?`)
+        .get(listId, 42) as { qty: number; unit: string; notes: string; label: string };
+      expect(row).toMatchObject({ qty: 1, unit: 'pc', notes: 'Direct add', label: 'tomato 1pc' });
+    });
+
+    it('skip mode leaves the existing row untouched', async () => {
+      const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
+      await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 42,
+        label: 'tomato 200g',
+        qty: 200,
+        unit: 'g',
+        notes: 'Risotto Verde',
+      });
+      const skipped = await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 42,
+        label: 'tomato 1pc',
+        qty: 1,
+        unit: 'pc',
+        notes: 'Direct add',
+        onConflict: 'skip',
+      });
+      expect(skipped.outcome).toBe('skipped');
+      const row = raw
+        .prepare(`SELECT qty, unit, notes, label FROM list_items WHERE list_id = ? AND ref_id = ?`)
+        .get(listId, 42) as { qty: number; unit: string; notes: string; label: string };
+      expect(row).toMatchObject({
+        qty: 200,
+        unit: 'g',
+        notes: 'Risotto Verde',
+        label: 'tomato 200g',
+      });
+    });
+
+    it('rejects refKind=free with HTTP 400 at the contract boundary', async () => {
+      const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
+      const res = await supertest(buildApp(raw, db))
+        .post(`/lists/${listId}/items/upsert-by-ref`)
+        .send({
+          refKind: 'free',
+          refId: 1,
+          label: 'x',
+          qty: 1,
+        });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns HTTP 400 (FK constraint) when listId references a missing list', async () => {
+      await expect(
+        client.items.upsertByRef({
+          listId: 99999,
+          refKind: 'ingredient',
+          refId: 42,
+          label: 'x',
+          qty: 1,
+        })
+      ).rejects.toMatchObject({ message: expect.stringMatching(/foreign key/i) });
+    });
+
+    it('keeps separate identities for matching refId across different refKinds', async () => {
+      const { id: listId } = await client.list.create({ name: 'Shop', kind: 'shopping' });
+      const a = await client.items.upsertByRef({
+        listId,
+        refKind: 'ingredient',
+        refId: 7,
+        label: 'tomato',
+      });
+      const b = await client.items.upsertByRef({
+        listId,
+        refKind: 'variant',
+        refId: 7,
+        label: 'tinned tomato',
+      });
+      expect(a.outcome).toBe('inserted');
+      expect(b.outcome).toBe('inserted');
+      expect(a.itemId).not.toBe(b.itemId);
     });
   });
 });

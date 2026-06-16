@@ -6,6 +6,154 @@
   },
   "openapi": "3.0.2",
   "paths": {
+    "/items": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "schema": {
+              "enum": ["shopping", "packing", "todo", "generic"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "listId",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeArchived",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "labelContains",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "notesContains",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "checked": {
+                            "maximum": 1,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "checkedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "dueAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "listId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "position": {
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "qty": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "refId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "refKind": {
+                            "enum": ["free", "ingredient", "variant", "recipe", "custom"],
+                            "type": "string"
+                          },
+                          "unit": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "listId",
+                          "position",
+                          "label",
+                          "qty",
+                          "unit",
+                          "refKind",
+                          "refId",
+                          "checked",
+                          "checkedAt",
+                          "dueAt",
+                          "notes",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Search items across lists (filters: kind, listId, includeArchived, labelContains, notesContains)",
+        "tags": ["items"]
+      }
+    },
     "/items/{id}": {
       "delete": {
         "parameters": [
@@ -1403,6 +1551,245 @@
           }
         },
         "summary": "Uncheck every checked item in a list",
+        "tags": ["items"]
+      }
+    },
+    "/lists/{listId}/items/upsert-by-ref": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "label": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "notes": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "onConflict": {
+                    "enum": ["merge-additive", "replace", "skip"],
+                    "type": "string"
+                  },
+                  "qty": {
+                    "nullable": true,
+                    "type": "number"
+                  },
+                  "refId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "refKind": {
+                    "enum": ["ingredient", "variant", "recipe", "custom"],
+                    "type": "string"
+                  },
+                  "unit": {
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": ["refKind", "refId", "label"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "itemId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "outcome": {
+                          "enum": ["inserted"],
+                          "type": "string"
+                        },
+                        "position": {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["outcome", "itemId", "position"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "itemId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "outcome": {
+                          "enum": ["merged"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["outcome", "itemId"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "itemId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "outcome": {
+                          "enum": ["skipped"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["outcome", "itemId"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "itemId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "outcome": {
+                          "enum": ["inserted"],
+                          "type": "string"
+                        },
+                        "position": {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["outcome", "itemId", "position"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "itemId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "outcome": {
+                          "enum": ["merged"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["outcome", "itemId"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "itemId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "outcome": {
+                          "enum": ["skipped"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["outcome", "itemId"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "201"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Atomic merge-or-insert by (refKind, refId). onConflict picks merge-additive / replace / skip",
         "tags": ["items"]
       }
     }

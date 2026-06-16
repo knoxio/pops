@@ -33,3 +33,22 @@ export function expectRow<T>(rows: readonly T[], label: string): T {
 export function nowIso(): string {
   return new Date().toISOString();
 }
+
+import { eq, max as sqlMax } from 'drizzle-orm';
+
+import { listItems } from '../schema.js';
+
+/**
+ * Next `position` for an insert into a given list — `max(position) + 1`
+ * or `0` if the list is empty. Shared between `addItem`, `bulkAdd`, and
+ * `upsertItemByRef`.
+ */
+export function nextPosition(db: ListsDb, listId: number): number {
+  const rows = db
+    .select({ max: sqlMax(listItems.position) })
+    .from(listItems)
+    .where(eq(listItems.listId, listId))
+    .all();
+  const max = rows[0]?.max ?? null;
+  return max === null ? 0 : max + 1;
+}

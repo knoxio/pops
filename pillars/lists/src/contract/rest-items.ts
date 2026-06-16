@@ -9,14 +9,48 @@ import { z } from 'zod';
 import {
   ErrorBodySchema,
   ItemAddBodySchema,
+  KIND_ENUM,
+  ListItemRowSchema,
   OkSchema,
   PathPositiveInt,
   PositiveInt,
+  UpsertByRefBodySchema,
+  UpsertByRefResponseSchema,
 } from './rest-schemas.js';
 
 const c = initContract();
 
 export const listsItemsContract = c.router({
+  search: {
+    method: 'GET',
+    path: '/items',
+    query: z.object({
+      kind: KIND_ENUM.optional(),
+      listId: PathPositiveInt.optional(),
+      includeArchived: z.coerce.boolean().optional(),
+      labelContains: z.string().min(1).optional(),
+      notesContains: z.string().min(1).optional(),
+    }),
+    responses: {
+      200: z.object({ items: z.array(ListItemRowSchema) }),
+    },
+    summary:
+      'Search items across lists (filters: kind, listId, includeArchived, labelContains, notesContains)',
+  },
+  upsertByRef: {
+    method: 'POST',
+    path: '/lists/:listId/items/upsert-by-ref',
+    pathParams: z.object({ listId: PathPositiveInt }),
+    body: UpsertByRefBodySchema,
+    responses: {
+      200: UpsertByRefResponseSchema,
+      201: UpsertByRefResponseSchema,
+      400: ErrorBodySchema,
+      404: ErrorBodySchema,
+    },
+    summary:
+      'Atomic merge-or-insert by (refKind, refId). onConflict picks merge-additive / replace / skip',
+  },
   add: {
     method: 'POST',
     path: '/lists/:listId/items',

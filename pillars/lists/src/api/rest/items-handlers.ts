@@ -13,13 +13,17 @@ import {
   removeCheckedItems,
   removeItem,
   reorderItems,
+  searchListItems,
   updateItem,
+  upsertItemByRef,
 } from '../../db/index.js';
 import { tryMapServiceError } from './error-mapping.js';
 
-import type { ListsDb } from '../../db/index.js';
+import type { ListsDb, UpsertConflictMode, UpsertRefKind } from '../../db/index.js';
 
 type RefKind = 'free' | 'ingredient' | 'variant' | 'recipe' | 'custom';
+
+type ListKind = 'shopping' | 'packing' | 'todo' | 'generic';
 
 interface ConflictBody {
   message: string;
@@ -52,6 +56,48 @@ function isPermutationOfList(current: readonly number[], candidate: readonly num
 
 export function makeItemsHandlers(db: ListsDb) {
   return {
+    search: async ({
+      query,
+    }: {
+      query: {
+        kind?: ListKind;
+        listId?: number;
+        includeArchived?: boolean;
+        labelContains?: string;
+        notesContains?: string;
+      };
+    }) => {
+      const items = searchListItems(db, query);
+      return { status: 200 as const, body: { items: [...items] } };
+    },
+
+    upsertByRef: async ({
+      params,
+      body,
+    }: {
+      params: { listId: number };
+      body: {
+        refKind: UpsertRefKind;
+        refId: number;
+        label: string;
+        qty?: number | null;
+        unit?: string | null;
+        notes?: string | null;
+        onConflict?: UpsertConflictMode;
+      };
+    }) => {
+      try {
+        const result = upsertItemByRef(db, { listId: params.listId, ...body });
+        const status = result.outcome === 'inserted' ? (201 as const) : (200 as const);
+        return { status, body: result };
+      } catch (err) {
+        const mapped = notFoundOrConflict(err);
+        if (mapped?.kind === 'notFound') return { status: 404 as const, body: mapped.body };
+        if (mapped?.kind === 'conflict') return { status: 400 as const, body: mapped.body };
+        throw err as Error;
+      }
+    },
+
     add: async ({ params, body }: { params: { listId: number }; body: AddItemBody }) => {
       try {
         const row = addItem(db, { listId: params.listId, ...body });
