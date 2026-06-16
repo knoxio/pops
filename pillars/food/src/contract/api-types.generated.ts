@@ -3,6 +3,93 @@
  * Do not edit by hand — regenerate via `pnpm -F @pops/food generate:api-types`.
  */
 export interface paths {
+  '/aliases': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List aliases (optionally filtered by search / source / target) */
+    get: operations['aliases.list'];
+    put?: never;
+    /** Create an alias */
+    post: operations['aliases.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/aliases/bulk-approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Flip llm-sourced aliases to user-approved */
+    post: operations['aliases.bulkApprove'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/aliases/merge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Re-point several aliases onto a single canonical target */
+    post: operations['aliases.merge'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/aliases/with-targets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List aliases joined with their resolved target metadata */
+    get: operations['aliases.listWithTargets'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/aliases/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete an alias */
+    delete: operations['aliases.delete'];
+    options?: never;
+    head?: never;
+    /** Rename an alias */
+    patch: operations['aliases.updateText'];
+    trace?: never;
+  };
   '/conversions/resolve': {
     parameters: {
       query?: never;
@@ -92,6 +179,74 @@ export interface paths {
     patch: operations['conversions.updateWeight'];
     trace?: never;
   };
+  '/ingredient-tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List an ingredient's tags */
+    get: operations['ingredientTags.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredient-tags/by-tag': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Ingredients carrying a given tag */
+    get: operations['ingredientTags.byTag'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredient-tags/distinct': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Distinct tags with usage counts (optionally namespace-scoped) */
+    get: operations['ingredientTags.distinct'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingredient-tags/{ingredientId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Replace an ingredient's tag set */
+    put: operations['ingredientTags.set'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/prep-states': {
     parameters: {
       query?: never;
@@ -174,6 +329,425 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'aliases.list': {
+    parameters: {
+      query?: {
+        search?: string;
+        source?: 'user' | 'llm' | 'ingest';
+        targetKind?: 'ingredient' | 'variant';
+        targetId?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              alias: string;
+              createdAt: string;
+              id: number;
+              ingredientId: number | null;
+              /** @enum {string} */
+              source: 'user' | 'llm' | 'ingest';
+              variantId: number | null;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'aliases.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          alias: string;
+          /** @enum {string} */
+          source?: 'user' | 'llm' | 'ingest';
+          target: {
+            id: number;
+            /** @enum {string} */
+            kind: 'ingredient' | 'variant';
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              alias: string;
+              createdAt: string;
+              id: number;
+              ingredientId: number | null;
+              /** @enum {string} */
+              source: 'user' | 'llm' | 'ingest';
+              variantId: number | null;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'aliases.bulkApprove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          aliasIds: number[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            updatedCount: number;
+          };
+        };
+      };
+    };
+  };
+  'aliases.merge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          aliasIds: number[];
+          target: {
+            id: number;
+            /** @enum {string} */
+            kind: 'ingredient' | 'variant';
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            mergedCount: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'aliases.listWithTargets': {
+    parameters: {
+      query?: {
+        search?: string;
+        source?: 'user' | 'llm' | 'ingest';
+        targetKind?: 'ingredient' | 'variant';
+        targetId?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              alias: {
+                alias: string;
+                createdAt: string;
+                id: number;
+                /** @enum {string} */
+                source: 'user' | 'llm' | 'ingest';
+              };
+              target:
+                | {
+                    id: number;
+                    /** @enum {string} */
+                    kind: 'ingredient';
+                    name: string;
+                    slug: string;
+                  }
+                | {
+                    id: number;
+                    /** @enum {string} */
+                    kind: 'variant';
+                    name: string;
+                    parentIngredientName: string;
+                    parentIngredientSlug: string;
+                    slug: string;
+                  };
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'aliases.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'aliases.updateText': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          alias: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              alias: string;
+              createdAt: string;
+              id: number;
+              ingredientId: number | null;
+              /** @enum {string} */
+              source: 'user' | 'llm' | 'ingest';
+              variantId: number | null;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'conversions.resolve': {
     parameters: {
       query: {
@@ -749,6 +1323,126 @@ export interface operations {
             message: string;
             messageKey?: string;
           };
+        };
+      };
+    };
+  };
+  'ingredientTags.list': {
+    parameters: {
+      query: {
+        ingredientId: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tags: string[];
+          };
+        };
+      };
+    };
+  };
+  'ingredientTags.byTag': {
+    parameters: {
+      query: {
+        tag: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ingredients: {
+              id: number;
+              name: string;
+              slug: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'ingredientTags.distinct': {
+    parameters: {
+      query?: {
+        namespacePrefix?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tags: {
+              firstSeenAt: string;
+              ingredientCount: number;
+              tag: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'ingredientTags.set': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ingredientId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          tags: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'BadTagFormat' | 'TagTooLong' | 'IngredientNotFound';
+              };
         };
       };
     };

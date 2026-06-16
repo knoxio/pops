@@ -14,7 +14,9 @@
  */
 import { initContract } from '@ts-rest/core';
 
+import { foodAliasesContract } from './rest-aliases.js';
 import { foodConversionsContract } from './rest-conversions.js';
+import { foodIngredientTagsContract } from './rest-ingredient-tags.js';
 import { foodPrepStatesContract } from './rest-prep-states.js';
 import { foodSlugsContract } from './rest-slugs.js';
 import { foodVariantsContract } from './rest-variants.js';
@@ -23,7 +25,9 @@ const c = initContract();
 
 export const foodContract = c.router(
   {
+    aliases: foodAliasesContract,
     conversions: foodConversionsContract,
+    ingredientTags: foodIngredientTagsContract,
     prepStates: foodPrepStatesContract,
     slugs: foodSlugsContract,
     variants: foodVariantsContract,

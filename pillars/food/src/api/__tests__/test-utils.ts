@@ -48,6 +48,22 @@ interface CreateVariantBody {
   notes?: string | null;
 }
 
+type AliasSource = 'user' | 'llm' | 'ingest';
+type AliasTarget = { kind: 'ingredient' | 'variant'; id: number };
+
+interface IngredientAlias {
+  id: number;
+  ingredientId: number | null;
+  variantId: number | null;
+  alias: string;
+  source: AliasSource;
+  createdAt: string;
+}
+
+type TagOpResult =
+  | { ok: true }
+  | { ok: false; reason: 'BadTagFormat' | 'TagTooLong' | 'IngredientNotFound' };
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -129,6 +145,35 @@ export function makeClient(app: Express) {
       update: (id: number, body: { name?: string; slug?: string; packageSizeG?: number | null }) =>
         send<{ data: IngredientVariant }>(r.patch(`/variants/${id}`).send(body)),
       delete: (id: number) => send<{ ok: true }>(r.delete(`/variants/${id}`)),
+    },
+    ingredientTags: {
+      list: (ingredientId: number) =>
+        send<{ tags: string[] }>(r.get('/ingredient-tags').query({ ingredientId })),
+      distinct: (query: { namespacePrefix?: string; limit?: number } = {}) =>
+        send<{ tags: { tag: string; ingredientCount: number; firstSeenAt: string }[] }>(
+          r.get('/ingredient-tags/distinct').query(query)
+        ),
+      byTag: (tag: string) =>
+        send<{ ingredients: { id: number; slug: string; name: string }[] }>(
+          r.get('/ingredient-tags/by-tag').query({ tag })
+        ),
+      set: (ingredientId: number, tags: string[]) =>
+        send<TagOpResult>(r.put(`/ingredient-tags/${ingredientId}`).send({ tags })),
+    },
+    aliases: {
+      list: (query: { search?: string; source?: AliasSource } = {}) =>
+        send<{ items: IngredientAlias[] }>(r.get('/aliases').query(query)),
+      listWithTargets: (query: { search?: string } = {}) =>
+        send<{ items: unknown[] }>(r.get('/aliases/with-targets').query(query)),
+      create: (body: { alias: string; target: AliasTarget; source?: AliasSource }) =>
+        send<{ data: IngredientAlias }>(r.post('/aliases').send(body)),
+      updateText: (id: number, alias: string) =>
+        send<{ data: IngredientAlias }>(r.patch(`/aliases/${id}`).send({ alias })),
+      delete: (id: number) => send<{ ok: true }>(r.delete(`/aliases/${id}`)),
+      merge: (aliasIds: number[], target: AliasTarget) =>
+        send<{ mergedCount: number }>(r.post('/aliases/merge').send({ aliasIds, target })),
+      bulkApprove: (aliasIds: number[]) =>
+        send<{ updatedCount: number }>(r.post('/aliases/bulk-approve').send({ aliasIds })),
     },
   };
 }
