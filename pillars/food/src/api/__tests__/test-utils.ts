@@ -64,6 +64,33 @@ type TagOpResult =
   | { ok: true }
   | { ok: false; reason: 'BadTagFormat' | 'TagTooLong' | 'IngredientNotFound' };
 
+interface Ingredient {
+  id: number;
+  parentId: number | null;
+  name: string;
+  slug: string;
+  defaultUnit: 'g' | 'ml' | 'count';
+  densityGPerMl: number | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+interface DeleteBlockerSummary {
+  variants: number;
+  aliases: number;
+}
+
+type IngredientDeleteResult = { ok: true } | { ok: false; blockers: DeleteBlockerSummary };
+
+interface CreateIngredientBody {
+  slug: string;
+  name: string;
+  defaultUnit: 'g' | 'ml' | 'count';
+  parentId?: number | null;
+  densityGPerMl?: number | null;
+  notes?: string | null;
+}
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -174,6 +201,29 @@ export function makeClient(app: Express) {
         send<{ mergedCount: number }>(r.post('/aliases/merge').send({ aliasIds, target })),
       bulkApprove: (aliasIds: number[]) =>
         send<{ updatedCount: number }>(r.post('/aliases/bulk-approve').send({ aliasIds })),
+    },
+    ingredients: {
+      list: (query: { search?: string; parentId?: number } = {}) =>
+        send<{ items: Ingredient[] }>(r.get('/ingredients').query(query)),
+      get: (idOrSlug: number | string) =>
+        send<{ ingredient: Ingredient; variants: IngredientVariant[] }>(
+          r.get(`/ingredients/${idOrSlug}`)
+        ),
+      create: (body: CreateIngredientBody) =>
+        send<{ data: Ingredient }>(r.post('/ingredients').send(body)),
+      update: (
+        id: number,
+        body: { name?: string; defaultUnit?: 'g' | 'ml' | 'count'; notes?: string | null }
+      ) => send<{ data: Ingredient }>(r.patch(`/ingredients/${id}`).send(body)),
+      rename: (oldSlug: string, newSlug: string) =>
+        send<{ data: Ingredient }>(r.post('/ingredients/rename').send({ oldSlug, newSlug })),
+      changeParent: (id: number, newParentId: number | null) =>
+        send<{ data: Ingredient }>(r.post(`/ingredients/${id}/parent`).send({ newParentId })),
+      blockers: (id: number) =>
+        send<{ data: DeleteBlockerSummary }>(r.get(`/ingredients/${id}/blockers`)),
+      recipeRefs: (id: number) =>
+        send<{ count: number; recipes: unknown[] }>(r.get(`/ingredients/${id}/recipe-refs`)),
+      delete: (id: number) => send<IngredientDeleteResult>(r.delete(`/ingredients/${id}`)),
     },
   };
 }
