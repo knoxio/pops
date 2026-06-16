@@ -403,6 +403,110 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/solver/can-i-cook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Rank cookable recipes by substitution count given current inventory */
+    post: operations['solver.canICook'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/substitutions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List substitutions (raw FK ids) */
+    get: operations['substitutions.list'];
+    put?: never;
+    /** Create a substitution edge */
+    post: operations['substitutions.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/substitutions/graph-view': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Node/edge projection of the substitution graph */
+    get: operations['substitutions.graphView'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/substitutions/hydrated': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List substitutions widened with slug + display name per endpoint */
+    get: operations['substitutions.listHydrated'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/substitutions/resolve-line': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Per-line substitution candidates with batch coverage */
+    get: operations['substitutions.resolveForLine'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/substitutions/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a substitution edge */
+    delete: operations['substitutions.delete'];
+    options?: never;
+    head?: never;
+    /** Update a substitution edge */
+    patch: operations['substitutions.update'];
+    trace?: never;
+  };
   '/variants': {
     parameters: {
       query?: never;
@@ -2276,6 +2380,609 @@ export interface operations {
               slug: string;
               targetId: number;
             }[];
+          };
+        };
+      };
+    };
+  };
+  'solver.canICook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          excludeSubs?: boolean;
+          maxMinutes?: number;
+          recipeTypes?: (
+            | 'plate'
+            | 'component'
+            | 'technique'
+            | 'sauce'
+            | 'dressing'
+            | 'drink'
+            | 'condiment'
+          )[];
+          tags?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            cookableCount: number;
+            recipes: {
+              cookMinutes: number | null;
+              heroImagePath: string | null;
+              lastCookedAt: string | null;
+              prepMinutes: number | null;
+              recipeId: number;
+              recipeSlug: string;
+              /** @enum {string|null} */
+              recipeType:
+                | 'plate'
+                | 'component'
+                | 'technique'
+                | 'sauce'
+                | 'dressing'
+                | 'drink'
+                | 'condiment'
+                | null;
+              subs: {
+                candidateSubName: string;
+                fromIngredientName: string;
+                fromVariantName: string | null;
+                lineIndex: number;
+                substitutionId: number;
+              }[];
+              subsNeeded: number;
+              title: string;
+            }[];
+            totalCandidates: number;
+          };
+        };
+      };
+    };
+  };
+  'substitutions.list': {
+    parameters: {
+      query?: {
+        fromIngredientId?: number;
+        fromVariantId?: number;
+        toIngredientId?: number;
+        toVariantId?: number;
+        scope?: 'global' | 'recipe';
+        recipeId?: number;
+        contextTag?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              readonly contextTags: string[];
+              createdAt: string;
+              fromIngredientId: number | null;
+              fromVariantId: number | null;
+              id: number;
+              notes: string | null;
+              ratio: number;
+              recipeId: number | null;
+              /** @enum {string} */
+              scope: 'global' | 'recipe';
+              toIngredientId: number | null;
+              toVariantId: number | null;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'substitutions.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          contextTags?: string[];
+          from: {
+            ingredientId?: number;
+            variantId?: number;
+          };
+          notes?: string | null;
+          ratio?: number;
+          recipeId?: number | null;
+          /** @enum {string} */
+          scope?: 'global' | 'recipe';
+          to: {
+            ingredientId?: number;
+            variantId?: number;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description 201 */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              readonly contextTags: string[];
+              createdAt: string;
+              fromIngredientId: number | null;
+              fromVariantId: number | null;
+              id: number;
+              notes: string | null;
+              ratio: number;
+              recipeId: number | null;
+              /** @enum {string} */
+              scope: 'global' | 'recipe';
+              toIngredientId: number | null;
+              toVariantId: number | null;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'substitutions.graphView': {
+    parameters: {
+      query?: {
+        scope?: 'global' | 'recipe';
+        recipeId?: number;
+        contextTag?: string;
+        search?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            edges: {
+              readonly contextTags: string[];
+              fromNodeId: string;
+              id: number;
+              notes: string | null;
+              ratio: number;
+              recipeId: number | null;
+              recipeSlug: string | null;
+              /** @enum {string} */
+              scope: 'global' | 'recipe';
+              toNodeId: string;
+            }[];
+            nodes: {
+              id: string;
+              ingredientId: number;
+              ingredientName: string;
+              ingredientSlug: string;
+              /** @enum {string} */
+              kind: 'ingredient' | 'variant';
+              variantId: number | null;
+              variantName: string | null;
+              variantSlug: string | null;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'substitutions.listHydrated': {
+    parameters: {
+      query?: {
+        fromIngredientId?: number;
+        fromVariantId?: number;
+        toIngredientId?: number;
+        toVariantId?: number;
+        scope?: 'global' | 'recipe';
+        recipeId?: number;
+        contextTag?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              readonly contextTags: string[];
+              createdAt: string;
+              from: {
+                id: number;
+                /** @enum {string} */
+                kind: 'ingredient' | 'variant';
+                name: string;
+                parentSlug: string | null;
+                slug: string;
+              };
+              fromIngredientId: number | null;
+              fromVariantId: number | null;
+              id: number;
+              notes: string | null;
+              ratio: number;
+              recipeId: number | null;
+              recipeSlug: string | null;
+              /** @enum {string} */
+              scope: 'global' | 'recipe';
+              to: {
+                id: number;
+                /** @enum {string} */
+                kind: 'ingredient' | 'variant';
+                name: string;
+                parentSlug: string | null;
+                slug: string;
+              };
+              toIngredientId: number | null;
+              toVariantId: number | null;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'substitutions.resolveForLine': {
+    parameters: {
+      query: {
+        recipeVersionId: number;
+        lineIndex: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            readonly candidates: {
+              readonly batches: {
+                batchId: number;
+                expiresAt: string | null;
+                /** @enum {string} */
+                location: 'pantry' | 'fridge' | 'freezer' | 'other';
+                prepStateId: number | null;
+                prepStateLabel: string | null;
+                qtyRemaining: number;
+                /** @enum {string} */
+                unit: 'g' | 'ml' | 'count';
+              }[];
+              readonly contextTags: string[];
+              notes: string | null;
+              ratio: number;
+              recipeId: number | null;
+              /** @enum {string} */
+              scope: 'global' | 'recipe';
+              substituteIngredientId: number;
+              substituteIngredientName: string;
+              substituteVariantId: number;
+              substituteVariantName: string;
+              substitutionId: number;
+            }[];
+            lineIndex: number;
+            linePrepStateId: number | null;
+            linePrepStateLabel: string | null;
+            lineQty: number;
+            /** @enum {string} */
+            lineUnit: 'g' | 'ml' | 'count';
+            lineVariantId: number;
+            lineVariantName: string;
+            readonly recipeContextTags: string[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'substitutions.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'substitutions.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          contextTags?: string[];
+          notes?: string | null;
+          ratio?: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              readonly contextTags: string[];
+              createdAt: string;
+              fromIngredientId: number | null;
+              fromVariantId: number | null;
+              id: number;
+              notes: string | null;
+              ratio: number;
+              recipeId: number | null;
+              /** @enum {string} */
+              scope: 'global' | 'recipe';
+              toIngredientId: number | null;
+              toVariantId: number | null;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
           };
         };
       };
