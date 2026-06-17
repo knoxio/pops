@@ -5,18 +5,11 @@ import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockDimensionsQuery = vi.fn();
+const mockComparisonsListDimensions = vi.fn();
 const mockComparisonsRankings = vi.fn();
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'comparisons.listDimensions') return mockDimensionsQuery();
-    return { data: undefined, isLoading: false };
-  },
-}));
-
 vi.mock('../media-api/index.js', () => ({
+  comparisonsListDimensions: () => mockComparisonsListDimensions(),
   comparisonsRankings: (opts: unknown) => mockComparisonsRankings(opts),
 }));
 
@@ -84,10 +77,7 @@ const dimensions = [
 ];
 
 function setupDefaults() {
-  mockDimensionsQuery.mockReturnValue({
-    data: { data: dimensions },
-    isLoading: false,
-  });
+  mockComparisonsListDimensions.mockResolvedValue({ data: { data: dimensions } });
   mockComparisonsRankings.mockResolvedValue(
     rankingsResult(rankedEntries, { total: 2, limit: 25, offset: 0, hasMore: false })
   );
@@ -105,7 +95,7 @@ describe('RankingsPage', () => {
   });
 
   it('shows loading skeleton when dimensions are loading', () => {
-    mockDimensionsQuery.mockReturnValue({ data: undefined, isLoading: true });
+    mockComparisonsListDimensions.mockReturnValue(new Promise(() => {}));
     renderPage();
     expect(screen.queryByRole('list', { name: 'Rankings' })).not.toBeInTheDocument();
   });
@@ -119,9 +109,9 @@ describe('RankingsPage', () => {
     expect(screen.getByText('Beta Movie')).toBeInTheDocument();
   });
 
-  it('displays dimension tabs', () => {
+  it('displays dimension tabs', async () => {
     renderPage();
-    expect(screen.getByRole('tab', { name: 'Overall' })).toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: 'Overall' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Story' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Visuals' })).toBeInTheDocument();
   });
@@ -130,7 +120,7 @@ describe('RankingsPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    const storyTab = screen.getByRole('tab', { name: 'Story' });
+    const storyTab = await screen.findByRole('tab', { name: 'Story' });
     await user.click(storyTab);
 
     await waitFor(() =>
@@ -184,20 +174,18 @@ describe('RankingsPage', () => {
     expect(screen.getByText('Next')).toBeInTheDocument();
   });
 
-  it('hides tabs when no active dimensions', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-    });
+  it('hides tabs when no active dimensions', async () => {
+    mockComparisonsListDimensions.mockResolvedValue({ data: { data: [] } });
 
     renderPage();
+    await screen.findByRole('heading', { name: 'Rankings' });
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
   });
 
-  it('selects Visuals tab when URL has ?dimension=2', () => {
+  it('selects Visuals tab when URL has ?dimension=2', async () => {
     renderPage('/media/rankings?dimension=2');
 
-    const visualsTab = screen.getByRole('tab', { name: 'Visuals' });
+    const visualsTab = await screen.findByRole('tab', { name: 'Visuals' });
     expect(visualsTab).toHaveAttribute('aria-selected', 'true');
 
     const overallTab = screen.getByRole('tab', { name: 'Overall' });

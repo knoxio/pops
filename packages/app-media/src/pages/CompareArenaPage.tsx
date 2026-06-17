@@ -1,6 +1,3 @@
-import { useCallback, useState } from 'react';
-
-import { usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { ButtonPrimitive } from '@pops/ui';
 
 import { BlacklistConfirmDialog } from '../components/BlacklistConfirmDialog';
@@ -10,11 +7,10 @@ import { ArenaEmptyState } from './compare-arena/ArenaEmptyState';
 import { ArenaHeader } from './compare-arena/ArenaHeader';
 import { ArenaPair } from './compare-arena/ArenaPair';
 import { ArenaPrompt } from './compare-arena/ArenaPrompt';
-import { useArenaActions } from './compare-arena/useArenaActions';
-import { useArenaBlacklist } from './compare-arena/useArenaBlacklist';
-import { useArenaWatchlist } from './compare-arena/useArenaWatchlist';
+import { useCompareArenaPageModel } from './compare-arena/useCompareArenaPageModel';
 
-import type { Dimension, PairData } from './compare-arena/types';
+import type { PairData } from './compare-arena/types';
+import type { useArenaActions } from './compare-arena/useArenaActions';
 
 function ArenaError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -35,76 +31,6 @@ function ArenaSkeleton() {
       <ComparisonMovieCardSkeleton />
     </div>
   );
-}
-
-interface DimensionsResult {
-  data?: Dimension[];
-}
-
-interface SmartPairResult {
-  data?: PairData | null;
-}
-
-function useCompareArenaPageModel() {
-  const [manualDimensionId, setManualDimensionId] = useState<number | null>(null);
-
-  const { data: dimensionsData, isLoading: dimsLoading } = usePillarQuery<DimensionsResult>(
-    'media',
-    ['comparisons', 'listDimensions'],
-    undefined
-  );
-  const activeDimensions: Dimension[] = dimensionsData?.data?.filter((d) => d.active) ?? [];
-
-  const pairQuery = usePillarQuery<SmartPairResult>(
-    'media',
-    ['comparisons', 'getSmartPair'],
-    manualDimensionId ? { dimensionId: manualDimensionId } : {},
-    { enabled: activeDimensions.length > 0, refetchOnWindowFocus: false, gcTime: 0, staleTime: 0 }
-  );
-
-  const utils = usePillarUtils('media');
-  const pair: PairData | null | undefined = pairQuery.data?.data;
-  const dimensionId = pair?.dimensionId ?? null;
-
-  const resolveTitle = useCallback(
-    (mediaId: number) => {
-      if (pair?.movieA.id === mediaId) return pair.movieA.title;
-      if (pair?.movieB.id === mediaId) return pair.movieB.title;
-      return 'Movie';
-    },
-    [pair]
-  );
-
-  const onAfterAction = useCallback(() => setManualDimensionId(null), []);
-
-  const watchlist = useArenaWatchlist({ enabled: !!pair, resolveTitle });
-  const actions = useArenaActions({ pair, dimensionId, resolveTitle, onAfterAction });
-  const blacklist = useArenaBlacklist({ resolveTitle, onAfterAction });
-
-  const activeDim = activeDimensions.find((d) => d.id === dimensionId);
-
-  const onDimensionChange = useCallback(
-    (id: number) => {
-      setManualDimensionId(id);
-      actions.setScoreDelta(null);
-      void utils.invalidate(['comparisons', 'getSmartPair']);
-    },
-    [actions, utils]
-  );
-
-  return {
-    dimsLoading,
-    activeDimensions,
-    pair,
-    pairQuery,
-    dimensionId,
-    activeDimName: activeDim?.name ?? 'Overall',
-    activeDimDesc: activeDim?.description ?? null,
-    watchlist,
-    actions,
-    blacklist,
-    onDimensionChange,
-  };
 }
 
 export function CompareArenaPage() {

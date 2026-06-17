@@ -6,44 +6,28 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  mockMovieSearch,
-  mockTvSearch,
+  mockSearchMovies,
+  mockSearchTvShows,
   mockMoviesList,
   mockTvShowsList,
   mockLibraryAddMovie,
   mockLibraryAddTvShow,
   mockWatchlistAdd,
   mockWatchHistoryLog,
-  mockMovieRefetch,
-  mockTvRefetch,
 } = vi.hoisted(() => ({
-  mockMovieSearch: vi.fn(),
-  mockTvSearch: vi.fn(),
+  mockSearchMovies: vi.fn(),
+  mockSearchTvShows: vi.fn(),
   mockMoviesList: vi.fn(),
   mockTvShowsList: vi.fn(),
   mockLibraryAddMovie: vi.fn(),
   mockLibraryAddTvShow: vi.fn(),
   mockWatchlistAdd: vi.fn(),
   mockWatchHistoryLog: vi.fn(),
-  mockMovieRefetch: vi.fn(),
-  mockTvRefetch: vi.fn(),
-}));
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    input: unknown,
-    options: unknown
-  ) => {
-    const key = path.join('.');
-    if (key === 'search.movies') return mockMovieSearch(input, options);
-    if (key === 'search.tvShows') return mockTvSearch(input, options);
-    return { data: undefined, isLoading: false, error: null };
-  },
 }));
 
 vi.mock('../media-api/index.js', () => ({
+  searchMovies: (opts: unknown) => mockSearchMovies(opts),
+  searchTvShows: (opts: unknown) => mockSearchTvShows(opts),
   moviesList: (opts: unknown) => mockMoviesList(opts),
   tvShowsList: (opts: unknown) => mockTvShowsList(opts),
   libraryAddMovie: (opts: unknown) => mockLibraryAddMovie(opts),
@@ -138,24 +122,29 @@ const LIBRARY_MOVIES = [
 ];
 const LIBRARY_TV = [{ id: 2, tvdbId: 201 }];
 
-function setupMovieResults(overrides = {}) {
-  mockMovieSearch.mockReturnValue({
-    data: { results: MOVIE_RESULTS },
-    isLoading: false,
-    error: null,
-    refetch: mockMovieRefetch,
-    ...overrides,
-  });
+interface SearchOverride {
+  data?: { results: unknown[] } | null;
+  isLoading?: boolean;
+  error?: { message: string };
 }
 
-function setupTvResults(overrides = {}) {
-  mockTvSearch.mockReturnValue({
-    data: { results: TV_RESULTS },
-    isLoading: false,
-    error: null,
-    refetch: mockTvRefetch,
-    ...overrides,
-  });
+function sdkResult(defaultResults: unknown[], override: SearchOverride) {
+  if (override.isLoading) {
+    return () => new Promise(() => {});
+  }
+  if (override.error) {
+    return async () => ({ error: override.error });
+  }
+  const results = override.data?.results ?? defaultResults;
+  return async () => ({ data: { results } });
+}
+
+function setupMovieResults(overrides: SearchOverride = {}) {
+  mockSearchMovies.mockImplementation(sdkResult(MOVIE_RESULTS, overrides));
+}
+
+function setupTvResults(overrides: SearchOverride = {}) {
+  mockSearchTvShows.mockImplementation(sdkResult(TV_RESULTS, overrides));
 }
 
 function setupLibrary() {
@@ -235,76 +224,76 @@ describe('SearchPage — both sections render independently', () => {
     expect(screen.getByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
   });
 
-  it('movie section shows skeleton while loading, TV section shows results', () => {
+  it('movie section shows skeleton while loading, TV section shows results', async () => {
     setupMovieResults({ data: null, isLoading: true });
     setupTvResults();
     renderPage();
 
-    expect(screen.getByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
+    expect(await screen.findByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
     expect(screen.getByText('Breaking Bad')).toBeInTheDocument();
     expect(screen.queryByTestId('card-movie-Inception')).not.toBeInTheDocument();
   });
 
-  it('TV section shows skeleton while loading, movie section shows results', () => {
+  it('TV section shows skeleton while loading, movie section shows results', async () => {
     setupTvResults({ data: null, isLoading: true });
     setupMovieResults();
     renderPage();
 
-    expect(screen.getByTestId('card-movie-Inception')).toBeInTheDocument();
+    expect(await screen.findByTestId('card-movie-Inception')).toBeInTheDocument();
     expect(screen.queryByTestId('card-tv-Breaking Bad')).not.toBeInTheDocument();
   });
 });
 
 describe('SearchPage — per-section error states', () => {
-  it('shows movie error with Retry button when movie search fails', () => {
+  it('shows movie error with Retry button when movie search fails', async () => {
     setupMovieResults({ data: null, isLoading: false, error: { message: 'TMDB error' } });
     renderPage();
 
-    expect(screen.getByText('Movie search failed')).toBeInTheDocument();
+    expect(await screen.findByText('Movie search failed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
-  it('calls movieSearch.refetch when movie Retry is clicked', () => {
+  it('calls movieSearch.refetch when movie Retry is clicked', async () => {
     setupMovieResults({ data: null, isLoading: false, error: { message: 'Error' } });
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(mockMovieRefetch).toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(mockSearchMovies.mock.calls.length).toBeGreaterThan(1));
   });
 
-  it('shows TV error with Retry button when TV search fails', () => {
+  it('shows TV error with Retry button when TV search fails', async () => {
     setupTvResults({ data: null, isLoading: false, error: { message: 'TVDB error' } });
     renderPage();
 
-    expect(screen.getByText('TV search failed')).toBeInTheDocument();
+    expect(await screen.findByText('TV search failed')).toBeInTheDocument();
   });
 
-  it('calls tvSearch.refetch when TV Retry is clicked', () => {
+  it('calls tvSearch.refetch when TV Retry is clicked', async () => {
     setupTvResults({ data: null, isLoading: false, error: { message: 'Error' } });
     renderPage();
 
-    const retryButtons = screen.getAllByRole('button', { name: 'Retry' });
+    const retryButtons = await screen.findAllByRole('button', { name: 'Retry' });
     fireEvent.click(retryButtons[0]!);
-    expect(mockTvRefetch).toHaveBeenCalled();
+    await waitFor(() => expect(mockSearchTvShows.mock.calls.length).toBeGreaterThan(1));
   });
 
-  it('TV section shows results independently when movie section has error', () => {
+  it('TV section shows results independently when movie section has error', async () => {
     setupMovieResults({ data: null, isLoading: false, error: { message: 'Error' } });
     setupTvResults();
     renderPage();
 
-    expect(screen.getByText('Movie search failed')).toBeInTheDocument();
-    expect(screen.getByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
+    expect(await screen.findByText('Movie search failed')).toBeInTheDocument();
+    expect(await screen.findByTestId('card-tv-Breaking Bad')).toBeInTheDocument();
   });
 });
 
 describe('SearchPage — no results message', () => {
-  it('shows no results message when both sections return empty', () => {
+  it('shows no results message when both sections return empty', async () => {
     setupMovieResults({ data: { results: [] } });
     setupTvResults({ data: { results: [] } });
     renderPage();
 
-    expect(screen.getByText(/No results found for/)).toBeInTheDocument();
+    expect(await screen.findByText(/No results found for/)).toBeInTheDocument();
     expect(screen.getByText(/inception/i)).toBeInTheDocument();
   });
 
