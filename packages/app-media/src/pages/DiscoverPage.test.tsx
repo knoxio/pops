@@ -1,33 +1,20 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
+const mockAssembleSession = vi.fn();
+const mockProfile = vi.fn();
+const mockGetDismissed = vi.fn();
 
-const mockAssembleSessionQuery = vi.fn();
-const mockAssembleSessionRefetch = vi.fn();
-const mockProfileQuery = vi.fn();
-const mockGetDismissedQuery = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    input: unknown,
-    options: unknown
-  ) => {
-    const key = path.join('.');
-    if (key === 'discovery.assembleSession') {
-      const result = mockAssembleSessionQuery(input, options);
-      return { ...result, refetch: mockAssembleSessionRefetch };
-    }
-    if (key === 'discovery.profile') return mockProfileQuery(input, options);
-    if (key === 'discovery.getDismissed') return mockGetDismissedQuery(input, options);
-    return { data: undefined, isLoading: false, error: null };
-  },
+vi.mock('../media-api/index.js', () => ({
+  discoveryAssembleSession: () => mockAssembleSession(),
+  discoveryProfile: () => mockProfile(),
+  discoveryGetDismissed: () => mockGetDismissed(),
 }));
 
-// Mock useDiscoverCardActions to avoid wiring up all mutation deps
 vi.mock('../hooks/useDiscoverCardActions', () => ({
   useDiscoverCardActions: () => ({
     addingToLibrary: new Set<number>(),
@@ -44,7 +31,6 @@ vi.mock('../hooks/useDiscoverCardActions', () => ({
   }),
 }));
 
-// Mock ShelfSection — renders shelfId + title as a simple section marker
 vi.mock('../components/ShelfSection', () => ({
   ShelfSection: ({ shelfId, title }: { shelfId: string; title: string }) => (
     <section data-testid={`shelf-${shelfId}`}>
@@ -59,46 +45,37 @@ vi.mock('../components/PreferenceProfile', () => ({
 
 import { DiscoverPage } from './DiscoverPage';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function makeShelf(shelfId: string, title: string) {
   return {
     shelfId,
     title,
-    subtitle: undefined,
-    emoji: undefined,
+    subtitle: null,
+    emoji: null,
     items: [],
     hasMore: false,
   };
 }
 
 function defaultProfile(totalComparisons = 10) {
-  mockProfileQuery.mockReturnValue({
+  mockProfile.mockResolvedValue({
     data: {
       data: {
         totalComparisons,
         totalMoviesWatched: 10,
+        genreDistribution: [],
         genreAffinities: [],
         dimensionWeights: [],
       },
     },
-    isLoading: false,
   });
 }
 
 function defaultDismissed() {
-  mockGetDismissedQuery.mockReturnValue({
-    data: { data: [] },
-    isLoading: false,
-  });
+  mockGetDismissed.mockResolvedValue({ data: { data: [] } });
 }
 
 function defaultSession(shelves = [makeShelf('trending-tmdb', 'Trending')]) {
-  mockAssembleSessionQuery.mockReturnValue({
-    data: { shelves },
-    isLoading: false,
-    error: null,
-  });
+  mockAssembleSession.mockResolvedValue({ data: { shelves } });
 }
 
 function setupDefaults() {
@@ -108,14 +85,17 @@ function setupDefaults() {
 }
 
 function renderPage() {
-  return render(
-    <MemoryRouter initialEntries={['/media/discover']}>
-      <DiscoverPage />
-    </MemoryRouter>
-  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(
+      QueryClientProvider,
+      { client },
+      createElement(MemoryRouter, { initialEntries: ['/media/discover'] }, children)
+    );
+  return render(<DiscoverPage />, { wrapper });
 }
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('DiscoverPage — loading', () => {
   beforeEach(() => {
@@ -125,25 +105,15 @@ describe('DiscoverPage — loading', () => {
   });
 
   it('renders loading skeleton while assembleSession is in flight', () => {
-    mockAssembleSessionQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-    });
+    mockAssembleSession.mockReturnValue(new Promise(() => {}));
     renderPage();
 
-    // Skeleton rows are rendered as animated pulse divs — page header still present
     expect(screen.getByText('Discover')).toBeTruthy();
-    // No ShelfSection rendered yet
     expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
   });
 
   it('does not render shelf sections while loading', () => {
-    mockAssembleSessionQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-    });
+    mockAssembleSession.mockReturnValue(new Promise(() => {}));
     renderPage();
 
     expect(screen.queryByTestId(/^shelf-/)).toBeNull();
@@ -157,25 +127,18 @@ describe('DiscoverPage — error state', () => {
     defaultDismissed();
   });
 
-  it('shows error message when assembleSession fails', () => {
-    mockAssembleSessionQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: { message: 'Server error' },
-    });
+  it('shows error message when assembleSession fails', async () => {
+    mockAssembleSession.mockResolvedValue({ error: { message: 'Server error' } });
     renderPage();
 
-    expect(screen.getByText(/Failed to load discover shelves/)).toBeTruthy();
+    expect(await screen.findByText(/Failed to load discover shelves/)).toBeTruthy();
   });
 
-  it('does not render shelves on error', () => {
-    mockAssembleSessionQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: { message: 'Server error' },
-    });
+  it('does not render shelves on error', async () => {
+    mockAssembleSession.mockResolvedValue({ error: { message: 'Server error' } });
     renderPage();
 
+    await screen.findByText(/Failed to load discover shelves/);
     expect(screen.queryByTestId(/^shelf-/)).toBeNull();
   });
 });
@@ -187,7 +150,7 @@ describe('DiscoverPage — shelf rendering', () => {
     defaultDismissed();
   });
 
-  it('renders a ShelfSection for each shelf returned by assembly', () => {
+  it('renders a ShelfSection for each shelf returned by assembly', async () => {
     defaultSession([
       makeShelf('trending-tmdb', 'Trending'),
       makeShelf('hidden-gems', 'Hidden Gems'),
@@ -195,12 +158,12 @@ describe('DiscoverPage — shelf rendering', () => {
     ]);
     renderPage();
 
-    expect(screen.getByTestId('shelf-trending-tmdb')).toBeTruthy();
+    expect(await screen.findByTestId('shelf-trending-tmdb')).toBeTruthy();
     expect(screen.getByTestId('shelf-hidden-gems')).toBeTruthy();
     expect(screen.getByTestId('shelf-new-releases')).toBeTruthy();
   });
 
-  it('renders shelves in the order returned by assembly', () => {
+  it('renders shelves in the order returned by assembly', async () => {
     defaultSession([
       makeShelf('shelf-a', 'Shelf A'),
       makeShelf('shelf-b', 'Shelf B'),
@@ -208,24 +171,25 @@ describe('DiscoverPage — shelf rendering', () => {
     ]);
     renderPage();
 
+    await screen.findByTestId('shelf-shelf-a');
     const sections = screen.getAllByRole('heading', { level: 2 });
     expect(sections[0]!.textContent).toBe('Shelf A');
     expect(sections[1]!.textContent).toBe('Shelf B');
     expect(sections[2]!.textContent).toBe('Shelf C');
   });
 
-  it('shows empty state spinner when assembly returns no shelves', () => {
+  it('shows empty state spinner when assembly returns no shelves', async () => {
     defaultSession([]);
     renderPage();
 
-    expect(screen.getByText('Assembling your discover page…')).toBeTruthy();
+    expect(await screen.findByText('Assembling your discover page…')).toBeTruthy();
   });
 
-  it('renders page header always', () => {
+  it('renders page header always', async () => {
     setupDefaults();
     renderPage();
 
-    expect(screen.getByText('Discover')).toBeTruthy();
+    expect(await screen.findByText('Discover')).toBeTruthy();
     expect(screen.getByText('Find your next favourite movie')).toBeTruthy();
   });
 });
@@ -237,44 +201,46 @@ describe('DiscoverPage — compare-to-unlock CTA', () => {
     defaultSession();
   });
 
-  it('shows CTA when totalComparisons < 5', () => {
+  it('shows CTA when totalComparisons < 5', async () => {
     defaultProfile(2);
     renderPage();
 
-    expect(screen.getByText('Compare more movies to unlock recommendations')).toBeTruthy();
+    expect(await screen.findByText('Compare more movies to unlock recommendations')).toBeTruthy();
   });
 
-  it('shows exact comparison count in CTA', () => {
+  it('shows exact comparison count in CTA', async () => {
     defaultProfile(3);
     renderPage();
 
-    expect(screen.getByText(/you have 3 so far/)).toBeTruthy();
+    expect(await screen.findByText(/you have 3 so far/)).toBeTruthy();
   });
 
-  it('links CTA to /media/compare', () => {
+  it('links CTA to /media/compare', async () => {
     defaultProfile(0);
     renderPage();
 
-    const link = screen.getByText('Start Comparing').closest('a');
+    const link = (await screen.findByText('Start Comparing')).closest('a');
     expect(link?.getAttribute('href')).toBe('/media/compare');
   });
 
-  it('hides CTA when totalComparisons >= 5', () => {
+  it('hides CTA when totalComparisons >= 5', async () => {
     defaultProfile(5);
     renderPage();
 
+    await screen.findByTestId('preference-profile');
     expect(screen.queryByText('Compare more movies to unlock recommendations')).toBeNull();
   });
 
-  it('hides CTA when totalComparisons > 5', () => {
+  it('hides CTA when totalComparisons > 5', async () => {
     defaultProfile(10);
     renderPage();
 
+    await screen.findByTestId('preference-profile');
     expect(screen.queryByText('Compare more movies to unlock recommendations')).toBeNull();
   });
 
   it('hides CTA while profile is loading', () => {
-    mockProfileQuery.mockReturnValue({ data: undefined, isLoading: true });
+    mockProfile.mockReturnValue(new Promise(() => {}));
     renderPage();
 
     expect(screen.queryByText('Compare more movies to unlock recommendations')).toBeNull();
@@ -287,10 +253,10 @@ describe('DiscoverPage — PreferenceProfile', () => {
     setupDefaults();
   });
 
-  it('renders PreferenceProfile', () => {
+  it('renders PreferenceProfile', async () => {
     renderPage();
 
-    expect(screen.getByTestId('preference-profile')).toBeTruthy();
+    expect(await screen.findByTestId('preference-profile')).toBeTruthy();
   });
 });
 
@@ -300,27 +266,25 @@ describe('DiscoverPage — Refresh button', () => {
     setupDefaults();
   });
 
-  it('renders the Refresh button', () => {
+  it('renders the Refresh button', async () => {
     renderPage();
 
-    expect(screen.getByRole('button', { name: /refresh shelf selection/i })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /refresh shelf selection/i })).toBeTruthy();
   });
 
-  it('calls session refetch on click', () => {
+  it('calls session refetch on click', async () => {
+    const user = userEvent.setup();
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /refresh shelf selection/i }));
+    const btn = await screen.findByRole('button', { name: /refresh shelf selection/i });
+    await waitFor(() => expect(mockAssembleSession).toHaveBeenCalledTimes(1));
+    await user.click(btn);
 
-    expect(mockAssembleSessionRefetch).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockAssembleSession).toHaveBeenCalledTimes(2));
   });
 
   it('disables Refresh button while isFetching', () => {
-    mockAssembleSessionQuery.mockReturnValue({
-      data: { shelves: [] },
-      isLoading: false,
-      isFetching: true,
-      error: null,
-    });
+    mockAssembleSession.mockReturnValue(new Promise(() => {}));
     renderPage();
 
     const btn = screen.getByRole('button', { name: /refresh shelf selection/i });

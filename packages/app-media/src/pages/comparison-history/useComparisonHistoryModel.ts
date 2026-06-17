@@ -1,9 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { useDebouncedValue } from '@pops/ui';
 
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  comparisonsDelete,
+  comparisonsListAll,
+  comparisonsListDimensions,
+} from '../../media-api/index.js';
 import { UNDO_DELAY_MS } from './UndoToast';
 
 import type { ComparisonRowData } from './ComparisonRow';
@@ -46,15 +52,17 @@ export interface UseComparisonHistoryModelReturn {
 }
 
 function useDeleteMutation(setPendingDeletes: React.Dispatch<React.SetStateAction<Set<number>>>) {
-  const utils = usePillarUtils('media');
-  return usePillarMutation<{ id: number }, unknown>('media', ['comparisons', 'delete'], {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: { id: number }) =>
+      unwrap(await comparisonsDelete({ path: { id: variables.id } })),
     onSuccess: (_data, variables) => {
       setPendingDeletes((prev) => {
         const next = new Set(prev);
         next.delete(variables.id);
         return next;
       });
-      void utils.invalidate(['comparisons']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'comparisons'] });
     },
     onError: (_error, variables) => {
       setPendingDeletes((prev) => {
@@ -125,23 +133,23 @@ export function useComparisonHistoryModel(
   const filters = useFilters();
   const { pendingDeletes, handleDelete, handleUndo } = useDeleteFlow(renderToast);
 
-  const { data: dimensionsData } = usePillarQuery<DimensionsListResult>(
-    'media',
-    ['comparisons', 'listDimensions'],
-    undefined
-  );
+  const { data: dimensionsData } = useQuery<DimensionsListResult>({
+    queryKey: ['media', 'comparisons', 'listDimensions'],
+    queryFn: async () => unwrap(await comparisonsListDimensions()),
+  });
   const dimensions = dimensionsData?.data ?? [];
 
-  const { data, isLoading } = usePillarQuery<ComparisonsListAllResult>(
-    'media',
-    ['comparisons', 'listAll'],
-    {
-      dimensionId: filters.dimensionFilter ? Number(filters.dimensionFilter) : undefined,
-      search: filters.debouncedSearch.trim() || undefined,
-      limit: PAGE_SIZE,
-      offset: filters.page * PAGE_SIZE,
-    }
-  );
+  const listAllQuery = {
+    dimensionId: filters.dimensionFilter ? Number(filters.dimensionFilter) : undefined,
+    search: filters.debouncedSearch.trim() || undefined,
+    limit: PAGE_SIZE,
+    offset: filters.page * PAGE_SIZE,
+  };
+
+  const { data, isLoading } = useQuery<ComparisonsListAllResult>({
+    queryKey: ['media', 'comparisons', 'listAll', listAllQuery],
+    queryFn: async () => unwrap(await comparisonsListAll({ query: listAllQuery })),
+  });
 
   const totalPages = data?.pagination ? Math.ceil(data.pagination.total / PAGE_SIZE) : 0;
 

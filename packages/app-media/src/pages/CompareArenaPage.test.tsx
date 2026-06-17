@@ -6,10 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TooltipProvider } from '@pops/ui';
 
-const mockDimensionsQuery = vi.fn();
-const mockPairQuery = vi.fn();
-const mockRefetchPair = vi.fn();
-const mockPageInvalidate = vi.fn();
+const mockComparisonsListDimensions = vi.fn();
+const mockComparisonsGetSmartPair = vi.fn();
 
 const mockComparisonsRecord = vi.fn();
 const mockComparisonsRecordSkip = vi.fn();
@@ -22,27 +20,9 @@ const mockWatchlistList = vi.fn();
 const mockWatchlistAdd = vi.fn();
 const mockWatchlistRemove = vi.fn();
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'comparisons.listDimensions') return mockDimensionsQuery(input);
-    if (key === 'comparisons.getSmartPair') {
-      const result = mockPairQuery(input);
-      return { ...result, refetch: mockRefetchPair };
-    }
-    return { data: undefined, isLoading: false, error: null };
-  },
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: (path?: readonly string[]) => {
-      mockPageInvalidate(path?.join('.') ?? '');
-      return Promise.resolve();
-    },
-    fetchQuery: vi.fn(),
-  }),
-}));
-
 vi.mock('../media-api/index.js', () => ({
+  comparisonsListDimensions: () => mockComparisonsListDimensions(),
+  comparisonsGetSmartPair: (opts: unknown) => mockComparisonsGetSmartPair(opts),
   comparisonsRecord: (opts: unknown) => mockComparisonsRecord(opts),
   comparisonsRecordSkip: (opts: unknown) => mockComparisonsRecordSkip(opts),
   comparisonsMarkStale: (opts: unknown) => mockComparisonsMarkStale(opts),
@@ -93,14 +73,9 @@ function renderPage(queryClient?: QueryClient) {
 }
 
 function setupArena() {
-  mockDimensionsQuery.mockReturnValue({
-    data: { data: [dim1, dim2, dim3] },
-    isLoading: false,
-  });
-  mockPairQuery.mockReturnValue({
+  mockComparisonsListDimensions.mockResolvedValue({ data: { data: [dim1, dim2, dim3] } });
+  mockComparisonsGetSmartPair.mockResolvedValue({
     data: { data: { movieA, movieB, dimensionId: 1 } },
-    isLoading: false,
-    error: null,
   });
 }
 
@@ -119,19 +94,19 @@ describe('CompareArenaPage', () => {
     mockWatchlistRemove.mockResolvedValue({ data: {} });
   });
 
-  it('renders pair with movie titles', () => {
+  it('renders pair with movie titles', async () => {
     setupArena();
     renderPage();
 
-    expect(screen.getAllByText('The Matrix').length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('The Matrix')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Inception').length).toBeGreaterThan(0);
   });
 
-  it('renders dimension dropdown with active dimension selected', () => {
+  it('renders dimension dropdown with active dimension selected', async () => {
     setupArena();
     renderPage();
 
-    const select = screen.getByLabelText('Comparison dimension');
+    const select = await screen.findByLabelText('Comparison dimension');
     expect(select).toBeTruthy();
     expect((select as HTMLSelectElement).value).toBe('1');
   });
@@ -140,7 +115,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getAllByText('The Matrix')[0]!);
+    fireEvent.click((await screen.findAllByText('The Matrix'))[0]!);
 
     await waitFor(() => {
       expect(mockComparisonsRecord).toHaveBeenCalledWith({
@@ -158,7 +133,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Skip this pair'));
+    fireEvent.click(await screen.findByLabelText('Skip this pair'));
 
     await waitFor(() => {
       expect(mockComparisonsRecordSkip).toHaveBeenCalledWith({
@@ -174,31 +149,21 @@ describe('CompareArenaPage', () => {
     expect(mockComparisonsRecord).not.toHaveBeenCalled();
   });
 
-  it('shows minimum threshold message when pair data is null', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [dim1] },
-      isLoading: false,
-    });
-    mockPairQuery.mockReturnValue({
-      data: { data: null },
-      isLoading: false,
-      error: null,
+  it('shows minimum threshold message when pair data is null', async () => {
+    mockComparisonsListDimensions.mockResolvedValue({ data: { data: [dim1] } });
+    mockComparisonsGetSmartPair.mockResolvedValue({
+      data: { data: null, reason: 'insufficient_watched_movies' },
     });
 
     renderPage();
 
-    expect(screen.getByText('Not enough watched movies')).toBeTruthy();
+    expect(await screen.findByText('Not enough watched movies')).toBeTruthy();
   });
 
-  it('shows watchlist depletion message when pool is empty and movies are watchlisted', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [dim1] },
-      isLoading: false,
-    });
-    mockPairQuery.mockReturnValue({
-      data: { data: null },
-      isLoading: false,
-      error: null,
+  it('shows watchlist depletion message when pool is empty and movies are watchlisted', async () => {
+    mockComparisonsListDimensions.mockResolvedValue({ data: { data: [dim1] } });
+    mockComparisonsGetSmartPair.mockResolvedValue({
+      data: { data: null, reason: 'insufficient_watched_movies' },
     });
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -211,7 +176,7 @@ describe('CompareArenaPage', () => {
 
     renderPage(queryClient);
 
-    expect(screen.getByText('Not enough movies')).toBeTruthy();
+    expect(await screen.findByText('Not enough movies')).toBeTruthy();
     expect(screen.getByText('Some are on your watchlist.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'View watchlist' })).toBeTruthy();
   });
@@ -220,7 +185,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getAllByText('The Matrix')[0]!);
+    fireEvent.click((await screen.findAllByText('The Matrix'))[0]!);
 
     await waitFor(() => {
       expect(mockComparisonsRecord).toHaveBeenCalledWith({
@@ -233,7 +198,9 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    const bookmarkButtons = screen.getAllByRole('button', { name: /add .* to watchlist/i });
+    const bookmarkButtons = await screen.findAllByRole('button', {
+      name: /add .* to watchlist/i,
+    });
     expect(bookmarkButtons.length).toBeGreaterThan(0);
     fireEvent.click(bookmarkButtons[0]!);
 
@@ -244,26 +211,16 @@ describe('CompareArenaPage', () => {
     });
 
     expect(mockComparisonsRecord).not.toHaveBeenCalled();
-    expect(mockRefetchPair).not.toHaveBeenCalled();
 
     await waitFor(() => {
       expect(mockToastSuccess).toHaveBeenCalledWith('The Matrix added to watchlist');
     });
-    expect(mockRefetchPair).not.toHaveBeenCalled();
     expect(mockComparisonsRecord).not.toHaveBeenCalled();
   });
 
   it('renders loading skeletons when pair is loading', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [dim1] },
-      isLoading: false,
-    });
-    mockPairQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isFetching: true,
-      error: null,
-    });
+    mockComparisonsListDimensions.mockResolvedValue({ data: { data: [dim1] } });
+    mockComparisonsGetSmartPair.mockReturnValue(new Promise(() => {}));
 
     renderPage();
 
@@ -272,28 +229,30 @@ describe('CompareArenaPage', () => {
   });
 
   it('renders loading skeletons when pair is fetching (background refetch)', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [dim1] },
-      isLoading: false,
+    mockComparisonsListDimensions.mockResolvedValue({ data: { data: [dim1] } });
+    mockComparisonsGetSmartPair.mockReturnValue(new Promise(() => {}));
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
-    mockPairQuery.mockReturnValue({
-      data: { data: { movieA, movieB, dimensionId: 1 } },
-      isLoading: false,
-      isFetching: true,
-      error: null,
+    queryClient.setQueryData(['media', 'comparisons', 'listDimensions'], {
+      data: [dim1],
+    });
+    queryClient.setQueryData(['media', 'comparisons', 'getSmartPair', { dimensionId: null }], {
+      data: { movieA, movieB, dimensionId: 1 },
     });
 
-    renderPage();
+    renderPage(queryClient);
 
     expect(screen.queryByText('The Matrix')).toBeNull();
     expect(screen.queryByText('Not enough watched movies')).toBeNull();
   });
 
-  it('renders stale buttons for both movies', () => {
+  it('renders stale buttons for both movies', async () => {
     setupArena();
     renderPage();
 
-    expect(screen.getByLabelText('Mark The Matrix as stale')).toBeTruthy();
+    expect(await screen.findByLabelText('Mark The Matrix as stale')).toBeTruthy();
     expect(screen.getByLabelText('Mark Inception as stale')).toBeTruthy();
   });
 
@@ -301,7 +260,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Mark The Matrix as stale'));
+    fireEvent.click(await screen.findByLabelText('Mark The Matrix as stale'));
 
     await waitFor(() => {
       expect(mockComparisonsMarkStale).toHaveBeenCalledWith({
@@ -314,7 +273,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Mark Inception as stale'));
+    fireEvent.click(await screen.findByLabelText('Mark Inception as stale'));
 
     await waitFor(() => {
       expect(mockComparisonsMarkStale).toHaveBeenCalledWith({
@@ -327,7 +286,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Mark The Matrix as stale'));
+    fireEvent.click(await screen.findByLabelText('Mark The Matrix as stale'));
 
     await waitFor(() => {
       expect(mockComparisonsMarkStale).toHaveBeenCalled();
@@ -339,7 +298,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('N/A: The Matrix'));
+    fireEvent.click(await screen.findByLabelText('N/A: The Matrix'));
 
     await waitFor(() => {
       expect(mockComparisonsExcludeFromDimension).toHaveBeenCalledWith({
@@ -353,7 +312,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('N/A: Inception'));
+    fireEvent.click(await screen.findByLabelText('N/A: Inception'));
 
     await waitFor(() => {
       expect(mockComparisonsExcludeFromDimension).toHaveBeenCalledWith({
@@ -363,19 +322,19 @@ describe('CompareArenaPage', () => {
     expect(mockComparisonsRecord).not.toHaveBeenCalled();
   });
 
-  it('renders Not Watched buttons on both cards', () => {
+  it('renders Not Watched buttons on both cards', async () => {
     setupArena();
     renderPage();
 
-    expect(screen.getByLabelText('Not watched The Matrix')).toBeTruthy();
+    expect(await screen.findByLabelText('Not watched The Matrix')).toBeTruthy();
     expect(screen.getByLabelText('Not watched Inception')).toBeTruthy();
   });
 
-  it('opens confirmation dialog when Not Watched button is clicked', () => {
+  it('opens confirmation dialog when Not Watched button is clicked', async () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Not watched The Matrix'));
+    fireEvent.click(await screen.findByLabelText('Not watched The Matrix'));
 
     expect(screen.getByText('Mark as not watched?')).toBeTruthy();
     expect(screen.getByText('Cancel')).toBeTruthy();
@@ -389,7 +348,7 @@ describe('CompareArenaPage', () => {
     });
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Not watched The Matrix'));
+    fireEvent.click(await screen.findByLabelText('Not watched The Matrix'));
 
     expect(await screen.findByText('5')).toBeTruthy();
     expect(screen.getByText(/comparisons involving/)).toBeTruthy();
@@ -399,7 +358,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Not watched Inception'));
+    fireEvent.click(await screen.findByLabelText('Not watched Inception'));
     fireEvent.click(screen.getByRole('button', { name: 'Not watched' }));
 
     await waitFor(() => {
@@ -409,22 +368,22 @@ describe('CompareArenaPage', () => {
     });
   });
 
-  it('closes dialog on cancel without calling blacklist', () => {
+  it('closes dialog on cancel without calling blacklist', async () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Not watched The Matrix'));
+    fireEvent.click(await screen.findByLabelText('Not watched The Matrix'));
     expect(screen.getByText('Mark as not watched?')).toBeTruthy();
 
     fireEvent.click(screen.getByText('Cancel'));
     expect(mockComparisonsBlacklistMovie).not.toHaveBeenCalled();
   });
 
-  it('renders draw tier buttons with tooltips', () => {
+  it('renders draw tier buttons with tooltips', async () => {
     setupArena();
     renderPage();
 
-    expect(screen.getByLabelText('Equally great')).toBeTruthy();
+    expect(await screen.findByLabelText('Equally great')).toBeTruthy();
     expect(screen.getByLabelText('Equally average')).toBeTruthy();
     expect(screen.getByLabelText('Equally poor')).toBeTruthy();
   });
@@ -433,7 +392,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Equally great'));
+    fireEvent.click(await screen.findByLabelText('Equally great'));
 
     await waitFor(() => {
       expect(mockComparisonsRecord).toHaveBeenCalledWith({
@@ -452,7 +411,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Equally average'));
+    fireEvent.click(await screen.findByLabelText('Equally average'));
 
     await waitFor(() => {
       expect(mockComparisonsRecord).toHaveBeenCalledWith({
@@ -468,7 +427,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Equally poor'));
+    fireEvent.click(await screen.findByLabelText('Equally poor'));
 
     await waitFor(() => {
       expect(mockComparisonsRecord).toHaveBeenCalledWith({
@@ -484,7 +443,7 @@ describe('CompareArenaPage', () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText('Equally great'));
+    fireEvent.click(await screen.findByLabelText('Equally great'));
 
     await waitFor(() => {
       expect(mockComparisonsRecord).toHaveBeenCalledTimes(1);
@@ -494,10 +453,10 @@ describe('CompareArenaPage', () => {
     });
   });
 
-  it('renders history link in header', () => {
+  it('renders history link in header', async () => {
     setupArena();
     renderPage();
 
-    expect(screen.getByLabelText('Comparison history')).toBeTruthy();
+    expect(await screen.findByLabelText('Comparison history')).toBeTruthy();
   });
 });

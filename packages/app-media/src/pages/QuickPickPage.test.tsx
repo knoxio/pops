@@ -1,24 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockQuickPickQuery = vi.fn();
-const mockRefetch = vi.fn();
+const mockLibraryQuickPick = vi.fn();
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    input: unknown,
-    options: unknown
-  ) => {
-    const key = path.join('.');
-    if (key === 'library.quickPick') {
-      const result = mockQuickPickQuery(input, options);
-      return { ...result, refetch: mockRefetch };
-    }
-    return { data: undefined, isLoading: false };
-  },
+vi.mock('../media-api/index.js', () => ({
+  libraryQuickPick: (opts: unknown) => mockLibraryQuickPick(opts),
 }));
 
 vi.mock('../components/MediaCard', () => ({
@@ -40,12 +30,21 @@ const makeMovie = (id: number, title: string) => ({
   overview: `Overview for ${title}`,
 });
 
+function resolveWith(movies: ReturnType<typeof makeMovie>[]) {
+  mockLibraryQuickPick.mockResolvedValue({ data: { data: movies } });
+}
+
 function renderPage(route = '/media/quick-pick') {
-  return render(
-    <MemoryRouter initialEntries={[route]}>
-      <QuickPickPage />
-    </MemoryRouter>
-  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(
+      QueryClientProvider,
+      { client },
+      createElement(MemoryRouter, { initialEntries: [route] }, children)
+    );
+  return render(<QuickPickPage />, { wrapper });
 }
 
 describe('QuickPickPage', () => {
@@ -53,127 +52,97 @@ describe('QuickPickPage', () => {
     vi.clearAllMocks();
   });
 
-  it('displays the correct number of movies (default 3)', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: {
-        data: [makeMovie(1, 'Movie A'), makeMovie(2, 'Movie B'), makeMovie(3, 'Movie C')],
-      },
-      isLoading: false,
-    });
+  it('displays the correct number of movies (default 3)', async () => {
+    resolveWith([makeMovie(1, 'Movie A'), makeMovie(2, 'Movie B'), makeMovie(3, 'Movie C')]);
 
     renderPage();
 
-    expect(screen.getByTestId('media-card-1')).toBeInTheDocument();
+    expect(await screen.findByTestId('media-card-1')).toBeInTheDocument();
     expect(screen.getByTestId('media-card-2')).toBeInTheDocument();
     expect(screen.getByTestId('media-card-3')).toBeInTheDocument();
   });
 
-  it('passes count from ?count= query param to the query', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: { data: [makeMovie(1, 'A'), makeMovie(2, 'B')] },
-      isLoading: false,
-    });
+  it('passes count from ?count= query param to the query', async () => {
+    resolveWith([makeMovie(1, 'A'), makeMovie(2, 'B')]);
 
     renderPage('/media/quick-pick?count=2');
 
-    expect(mockQuickPickQuery).toHaveBeenCalledWith({ count: 2 }, expect.anything());
+    await waitFor(() => expect(mockLibraryQuickPick).toHaveBeenCalledWith({ query: { count: 2 } }));
   });
 
-  it('defaults invalid count param to 3', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: { data: [makeMovie(1, 'A'), makeMovie(2, 'B'), makeMovie(3, 'C')] },
-      isLoading: false,
-    });
+  it('defaults invalid count param to 3', async () => {
+    resolveWith([makeMovie(1, 'A'), makeMovie(2, 'B'), makeMovie(3, 'C')]);
 
     renderPage('/media/quick-pick?count=99');
 
-    expect(mockQuickPickQuery).toHaveBeenCalledWith({ count: 3 }, expect.anything());
+    await waitFor(() => expect(mockLibraryQuickPick).toHaveBeenCalledWith({ query: { count: 3 } }));
   });
 
-  it('renders count selector with 2, 3, 4, 5 options', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: { data: [makeMovie(1, 'A')] },
-      isLoading: false,
-    });
+  it('renders count selector with 2, 3, 4, 5 options', async () => {
+    resolveWith([makeMovie(1, 'A')]);
 
     renderPage();
 
     for (const n of [2, 3, 4, 5]) {
-      expect(screen.getByRole('button', { name: String(n) })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: String(n) })).toBeInTheDocument();
     }
   });
 
-  it('highlights the active count option', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: { data: [makeMovie(1, 'A')] },
-      isLoading: false,
-    });
+  it('highlights the active count option', async () => {
+    resolveWith([makeMovie(1, 'A')]);
 
     renderPage('/media/quick-pick?count=4');
 
-    const btn4 = screen.getByRole('button', { name: '4' });
+    const btn4 = await screen.findByRole('button', { name: '4' });
     expect(btn4.getAttribute('aria-pressed')).toBe('true');
     const btn3 = screen.getByRole('button', { name: '3' });
     expect(btn3.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it("calls refetch when 'Show me others' is clicked", () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: { data: [makeMovie(1, 'A')] },
-      isLoading: false,
-    });
+  it("calls refetch when 'Show me others' is clicked", async () => {
+    const user = userEvent.setup();
+    resolveWith([makeMovie(1, 'A')]);
 
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /show me others/i }));
-    expect(mockRefetch).toHaveBeenCalled();
+    const btn = await screen.findByRole('button', { name: /show me others/i });
+    await waitFor(() => expect(mockLibraryQuickPick).toHaveBeenCalledTimes(1));
+    await user.click(btn);
+
+    await waitFor(() => expect(mockLibraryQuickPick).toHaveBeenCalledTimes(2));
   });
 
-  it("renders 'Watch This' button for each movie", () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: {
-        data: [makeMovie(1, 'Movie A'), makeMovie(2, 'Movie B')],
-      },
-      isLoading: false,
-    });
+  it("renders 'Watch This' button for each movie", async () => {
+    resolveWith([makeMovie(1, 'Movie A'), makeMovie(2, 'Movie B')]);
 
     renderPage('/media/quick-pick?count=2');
 
-    const watchButtons = screen.getAllByRole('button', { name: /watch this/i });
+    const watchButtons = await screen.findAllByRole('button', { name: /watch this/i });
     expect(watchButtons).toHaveLength(2);
   });
 
-  it('renders empty state when no unwatched movies', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-    });
+  it('renders empty state when no unwatched movies', async () => {
+    resolveWith([]);
 
     renderPage();
 
-    expect(screen.getByText('Nothing unwatched in your library')).toBeInTheDocument();
+    expect(await screen.findByText('Nothing unwatched in your library')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /search for movies/i })).toBeInTheDocument();
   });
 
-  it('renders partial fill when fewer movies than count', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: { data: [makeMovie(1, 'Only One')] },
-      isLoading: false,
-    });
+  it('renders partial fill when fewer movies than count', async () => {
+    resolveWith([makeMovie(1, 'Only One')]);
 
     renderPage('/media/quick-pick?count=5');
 
-    expect(screen.getByTestId('media-card-1')).toBeInTheDocument();
+    expect(await screen.findByTestId('media-card-1')).toBeInTheDocument();
     expect(screen.getByText('Only One')).toBeInTheDocument();
     const watchButtons = screen.getAllByRole('button', { name: /watch this/i });
     expect(watchButtons).toHaveLength(1);
   });
 
   it('shows loading skeletons', () => {
-    mockQuickPickQuery.mockReturnValue({
-      data: null,
-      isLoading: true,
-    });
+    mockLibraryQuickPick.mockReturnValue(new Promise(() => {}));
 
     renderPage();
 

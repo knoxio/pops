@@ -1,13 +1,18 @@
+import { useQuery } from '@tanstack/react-query';
 import { Compass, Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
-
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * DiscoverPage — dynamic shelf-based movie discovery.
  */
 
 import { PreferenceProfile } from '../components/PreferenceProfile';
 import { useDiscoverCardActions } from '../hooks/useDiscoverCardActions';
+import { unwrap } from '../media-api-helpers.js';
+import {
+  discoveryAssembleSession,
+  discoveryGetDismissed,
+  discoveryProfile,
+} from '../media-api/index.js';
 import {
   COMPARISON_THRESHOLD,
   CompareUnlockPrompt,
@@ -20,36 +25,22 @@ import type { ComponentProps } from 'react';
 
 type DiscoverShelf = ComponentProps<typeof DiscoverShelves>['shelves'][number];
 
-interface AssembleSessionResult {
-  shelves: DiscoverShelf[];
-}
-
-type PreferenceProfileData = NonNullable<ComponentProps<typeof PreferenceProfile>['data']>;
-
-interface ProfileEnvelope {
-  data: PreferenceProfileData | undefined;
-}
-
-interface DismissedEnvelope {
-  data: number[];
-}
-
 function useDiscoverPageModel() {
-  const session = usePillarQuery<AssembleSessionResult>(
-    'media',
-    ['discovery', 'assembleSession'],
-    undefined,
-    { staleTime: 0 }
-  );
-  const profile = usePillarQuery<ProfileEnvelope>('media', ['discovery', 'profile'], undefined, {
+  const session = useQuery({
+    queryKey: ['media', 'discovery', 'assembleSession'],
+    queryFn: async () => unwrap(await discoveryAssembleSession()),
+    staleTime: 0,
+  });
+  const profile = useQuery({
+    queryKey: ['media', 'discovery', 'profile'],
+    queryFn: async () => unwrap(await discoveryProfile()),
     staleTime: 5 * 60 * 1000,
   });
-  const dismissed = usePillarQuery<DismissedEnvelope>(
-    'media',
-    ['discovery', 'getDismissed'],
-    undefined,
-    { staleTime: 5 * 60 * 1000 }
-  );
+  const dismissed = useQuery({
+    queryKey: ['media', 'discovery', 'getDismissed'],
+    queryFn: async () => unwrap(await discoveryGetDismissed()),
+    staleTime: 5 * 60 * 1000,
+  });
   const actions = useDiscoverCardActions();
 
   const totalComparisons = profile.data?.data?.totalComparisons ?? 0;
@@ -60,6 +51,19 @@ function useDiscoverPageModel() {
     [dismissed.data, actions.optimisticDismissed]
   );
 
+  const shelves = useMemo<DiscoverShelf[]>(
+    () =>
+      (session.data?.shelves ?? []).map((shelf) => ({
+        shelfId: shelf.shelfId,
+        title: shelf.title,
+        subtitle: shelf.subtitle ?? undefined,
+        emoji: shelf.emoji ?? undefined,
+        items: shelf.items,
+        hasMore: shelf.hasMore,
+      })),
+    [session.data]
+  );
+
   return {
     session,
     profile,
@@ -67,7 +71,7 @@ function useDiscoverPageModel() {
     totalComparisons,
     hasEnoughComparisons,
     dismissedSet,
-    shelves: session.data?.shelves ?? [],
+    shelves,
   };
 }
 

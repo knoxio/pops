@@ -1,10 +1,12 @@
+import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, Search, Sparkles } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Skeleton } from '@pops/ui';
 
 import { MediaCard } from '../components/MediaCard';
+import { unwrap } from '../media-api-helpers.js';
+import { libraryQuickPick } from '../media-api/index.js';
 
 const COUNT_OPTIONS = [2, 3, 4, 5] as const;
 const DEFAULT_COUNT = 3;
@@ -31,12 +33,11 @@ export function QuickPickPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const count = parseCount(searchParams.get('count'));
 
-  const { data, isLoading, refetch } = usePillarQuery<QuickPickEnvelope>(
-    'media',
-    ['library', 'quickPick'],
-    { count },
-    { refetchOnWindowFocus: false }
-  );
+  const { data, isLoading, refetch } = useQuery<QuickPickEnvelope>({
+    queryKey: ['media', 'library', 'quickPick', { count }],
+    queryFn: async () => unwrap(await libraryQuickPick({ query: { count } })),
+    refetchOnWindowFocus: false,
+  });
 
   const picks = data?.data ?? [];
 
