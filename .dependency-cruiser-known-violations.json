@@ -4,11 +4,7 @@
     "from": "apps/pops-api/src/db/backfill-cerebrum-from-shared.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -19,10 +15,7 @@
     "from": "apps/pops-api/src/db/cerebrum-handle.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -33,10 +26,7 @@
     "from": "apps/pops-api/src/jobs/handlers/embeddings-helpers.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -47,10 +37,7 @@
     "from": "apps/pops-api/src/jobs/handlers/embeddings-source.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -61,10 +48,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/ego/persistence.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -75,11 +59,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/ego/types.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -90,11 +70,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/archive-engram.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -105,11 +81,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/change-type.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -120,11 +92,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/create-engram.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -135,10 +103,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/delete-engram.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -149,10 +114,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/fs-helpers.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -163,10 +125,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/link-helpers.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -177,10 +136,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/list-engrams.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -191,11 +147,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/restore-engram.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -206,10 +158,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/handlers/upsert-index.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -220,10 +169,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/reclassify.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -234,11 +180,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/scope-filter.test.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -249,10 +191,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/scope-filter.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -263,11 +202,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/scopes-router.test.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -278,10 +213,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/scopes-router.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -292,10 +224,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/service.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -306,11 +235,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/tags-router.test.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -321,10 +246,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/engrams/tags-router.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -335,10 +257,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/glia/action-service.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -349,10 +268,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/glia/digest-channels.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -363,10 +279,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/ingest/pipeline-helpers.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -377,10 +290,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/nudges/__tests__/nudge-service.test.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-import"
-    ],
+    "dependencyTypes": ["undetermined", "type-import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -391,10 +301,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/nudges/detectors/citation-flush.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -405,10 +312,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/nudges/nudge-persistence.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -419,10 +323,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/nudges/nudge-service.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -433,11 +334,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/plexus/__tests__/lifecycle.test.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -448,10 +345,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/plexus/lifecycle-db.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -462,11 +356,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/plexus/lifecycle.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -477,10 +367,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/plexus/router.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -491,10 +378,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/reflex/reflex-io.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -505,10 +389,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/reflex/reflex-queries.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -519,10 +400,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/reflex/reflex-service.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -533,10 +411,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/retrieval/router.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -547,10 +422,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/retrieval/semantic-search-metadata.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -561,10 +433,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/retrieval/structured-query-conditions.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -575,10 +444,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/retrieval/structured-query.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -589,10 +455,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/cross-source.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -603,10 +466,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/instance.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -617,10 +477,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/router.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "dynamic-import"
-    ],
+    "dependencyTypes": ["undetermined", "dynamic-import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -631,10 +488,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/sync-junctions.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -645,10 +499,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/sync.test.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -659,10 +510,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/sync.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -673,10 +521,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/dispatchers/nudge.ts",
     "to": "packages/cerebrum-db/dist/index.d.ts",
     "unresolvedTo": "@pops/cerebrum-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-cerebrum"
@@ -687,10 +532,7 @@
     "from": "apps/pops-api/src/db.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -701,11 +543,7 @@
     "from": "apps/pops-api/src/db/backfill-core-from-shared.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -716,10 +554,7 @@
     "from": "apps/pops-api/src/jobs/handlers/embeddings-helpers.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -730,10 +565,7 @@
     "from": "apps/pops-api/src/lib/inference-middleware.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -744,10 +576,7 @@
     "from": "apps/pops-api/src/lib/inference-pricing.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -758,10 +587,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/glia/__tests__/toml-config.test.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -772,10 +598,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/alerts-store.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -786,10 +609,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/evaluator.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -800,10 +620,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/evaluators/budget.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -814,10 +631,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/evaluators/error-spike.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -828,10 +642,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/evaluators/latency.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -842,11 +653,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/mappers.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -857,10 +664,7 @@
     "from": "apps/pops-api/src/modules/core/ai-alerts/service.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -871,10 +675,7 @@
     "from": "apps/pops-api/src/modules/core/ai-budgets/enforcement.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -885,10 +686,7 @@
     "from": "apps/pops-api/src/modules/core/ai-budgets/service.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -899,10 +697,7 @@
     "from": "apps/pops-api/src/modules/core/ai-observability/group-stats.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -913,10 +708,7 @@
     "from": "apps/pops-api/src/modules/core/ai-observability/history.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -927,10 +719,7 @@
     "from": "apps/pops-api/src/modules/core/ai-observability/retention-db.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -941,11 +730,7 @@
     "from": "apps/pops-api/src/modules/core/ai-observability/retention.test.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -956,11 +741,7 @@
     "from": "apps/pops-api/src/modules/core/ai-observability/retention.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -971,10 +752,7 @@
     "from": "apps/pops-api/src/modules/core/ai-observability/service.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -985,10 +763,7 @@
     "from": "apps/pops-api/src/modules/core/ai-observability/summary.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -999,10 +774,7 @@
     "from": "apps/pops-api/src/modules/core/ai-providers/service.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1013,10 +785,7 @@
     "from": "apps/pops-api/src/modules/core/ai-usage/service.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1027,10 +796,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/ai-inference.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1041,10 +807,7 @@
     "from": "apps/pops-api/src/modules/core/entities/search-adapter.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1055,10 +818,7 @@
     "from": "apps/pops-api/src/modules/core/entities/service.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1069,10 +829,7 @@
     "from": "apps/pops-api/src/modules/core/entities/types.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1083,10 +840,7 @@
     "from": "apps/pops-api/src/modules/core/features/user-settings.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1097,10 +851,7 @@
     "from": "apps/pops-api/src/modules/core/settings/service.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1111,11 +862,7 @@
     "from": "apps/pops-api/src/modules/core/settings/types.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1126,10 +873,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/lib/transaction-persistence.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1140,10 +884,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/router.test.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1154,10 +895,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/service.test.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1168,10 +906,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/types.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1182,10 +917,7 @@
     "from": "apps/pops-api/src/modules/finance/tag-suggester/index.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1196,10 +928,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/ai-router.test.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1210,10 +939,7 @@
     "from": "apps/pops-api/src/modules/food/routers/ai.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1224,10 +950,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/rotation-config-router.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1238,10 +961,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/scheduler.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1252,10 +972,7 @@
     "from": "apps/pops-api/src/trpc.ts",
     "to": "packages/core-db/dist/index.d.ts",
     "unresolvedTo": "@pops/core-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-core"
@@ -1266,10 +983,7 @@
     "from": "apps/pops-api/src/db/finance-handle.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1280,10 +994,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/retrieval/semantic-search-metadata.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1294,10 +1005,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/cross-source.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1308,10 +1016,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/ai-revise.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1322,10 +1027,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/apply-corrections.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1336,10 +1038,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/changeset-impact.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1350,10 +1049,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/compute-changeset.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1364,10 +1060,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/pattern-match.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1378,10 +1071,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/preview-matches.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1392,10 +1082,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/handlers/query-helpers.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1406,10 +1093,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/lib/tag-loader.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1420,11 +1104,7 @@
     "from": "apps/pops-api/src/modules/core/corrections/types-base.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1435,10 +1115,7 @@
     "from": "apps/pops-api/src/modules/core/entities/service.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1449,10 +1126,7 @@
     "from": "apps/pops-api/src/modules/core/tag-rules/preview.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1463,10 +1137,7 @@
     "from": "apps/pops-api/src/modules/core/tag-rules/router.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1477,10 +1148,7 @@
     "from": "apps/pops-api/src/modules/core/tag-rules/service.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1491,10 +1159,7 @@
     "from": "apps/pops-api/src/modules/core/tag-rules/tag-rules.test.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1505,10 +1170,7 @@
     "from": "apps/pops-api/src/modules/finance/budgets/budgets.test.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1519,10 +1181,7 @@
     "from": "apps/pops-api/src/modules/finance/budgets/router.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1533,10 +1192,7 @@
     "from": "apps/pops-api/src/modules/finance/budgets/search-adapter.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1547,11 +1203,7 @@
     "from": "apps/pops-api/src/modules/finance/budgets/types.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1562,10 +1214,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/imports.e2e.test.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1576,10 +1225,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/lib/deduplication.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1590,10 +1236,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/lib/entity-lookup.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1604,10 +1247,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/lib/reclassify-existing.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1618,10 +1258,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/lib/tag-management.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1632,10 +1269,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/lib/transaction-persistence.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1646,10 +1280,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/service.test.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1660,10 +1291,7 @@
     "from": "apps/pops-api/src/modules/finance/imports/service.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1674,10 +1302,7 @@
     "from": "apps/pops-api/src/modules/finance/tag-suggester/index.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1688,10 +1313,7 @@
     "from": "apps/pops-api/src/modules/finance/transactions/router.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1702,10 +1324,7 @@
     "from": "apps/pops-api/src/modules/finance/transactions/search-adapter.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1716,10 +1335,7 @@
     "from": "apps/pops-api/src/modules/finance/transactions/transactions.test.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1730,11 +1346,7 @@
     "from": "apps/pops-api/src/modules/finance/transactions/types.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1745,10 +1357,7 @@
     "from": "apps/pops-api/src/modules/finance/uri-handler.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1759,10 +1368,7 @@
     "from": "apps/pops-api/src/modules/finance/wishlist/router.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1773,10 +1379,7 @@
     "from": "apps/pops-api/src/modules/finance/wishlist/search-adapter.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1787,10 +1390,7 @@
     "from": "apps/pops-api/src/modules/finance/wishlist/types.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1801,10 +1401,7 @@
     "from": "apps/pops-api/src/modules/finance/wishlist/wishlist.test.ts",
     "to": "packages/finance-db/dist/index.d.ts",
     "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-finance"
@@ -1815,11 +1412,7 @@
     "from": "apps/pops-api/src/db/backfill-media-from-shared.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1830,10 +1423,7 @@
     "from": "apps/pops-api/src/db/media-db-handle.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1844,10 +1434,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/retrieval/semantic-search-metadata.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1858,10 +1445,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/cross-source.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1872,10 +1456,7 @@
     "from": "apps/pops-api/src/modules/media/arr/download-and-protect.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1886,10 +1467,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/dimensions.service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1900,10 +1478,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/global-count.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1914,10 +1489,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/lib/batch-record.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1928,10 +1500,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/lib/comparison-queries.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1942,10 +1511,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/lib/dimension-exclusion.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1956,10 +1522,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/lib/score-management.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1970,10 +1533,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/lib/skip-cooloff.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1984,10 +1544,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/lib/submit-tier-list.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -1998,10 +1555,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/pairs/movie-helpers.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2012,10 +1566,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/pairs/random-pair.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2026,10 +1577,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/pairs/smart-pair-fetch.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2040,10 +1588,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/rankings-overall.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2054,10 +1599,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/scores.service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2068,10 +1610,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2082,10 +1621,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/staleness.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2096,11 +1632,7 @@
     "from": "apps/pops-api/src/modules/media/comparisons/types-domain.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2111,10 +1643,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/context-picks-service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2125,10 +1654,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/flags.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2139,10 +1665,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/flags.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2153,10 +1676,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/plex-service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2167,10 +1687,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/router-shelf.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2181,10 +1698,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/router-tmdb.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2195,10 +1709,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/router.assemble-session.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2209,10 +1720,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/service-library.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2223,10 +1731,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/service-preference-profile.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2237,10 +1742,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/service-rewatch.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2251,10 +1753,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2265,10 +1764,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/because-you-watched.shelf.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2279,10 +1775,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/credits-shelves.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2293,10 +1786,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/dimension-inspired.shelf.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2307,10 +1797,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/local-misc-shelves.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2321,10 +1808,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/local-runtime-shelves.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2335,10 +1819,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/local-score-shelves.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2349,10 +1830,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/local-shelves-helpers.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2363,10 +1841,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/local-watch-shelves.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2377,10 +1852,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/session.service.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2391,10 +1863,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/session.service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2405,10 +1874,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/tmdb-shelves-helpers.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2419,10 +1885,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/shelf/top-dimension.shelf.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2433,10 +1896,7 @@
     "from": "apps/pops-api/src/modules/media/discovery/tmdb-service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2447,10 +1907,7 @@
     "from": "apps/pops-api/src/modules/media/library/list-service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2461,10 +1918,7 @@
     "from": "apps/pops-api/src/modules/media/library/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2475,10 +1929,7 @@
     "from": "apps/pops-api/src/modules/media/library/tv-show-service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2489,10 +1940,7 @@
     "from": "apps/pops-api/src/modules/media/movies/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2503,11 +1951,7 @@
     "from": "apps/pops-api/src/modules/media/movies/types.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2518,11 +1962,7 @@
     "from": "apps/pops-api/src/modules/media/plex/router-helpers.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2533,10 +1973,7 @@
     "from": "apps/pops-api/src/modules/media/plex/router-sync.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2547,10 +1984,7 @@
     "from": "apps/pops-api/src/modules/media/plex/scheduler-sync-logs.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2561,10 +1995,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-discover-check.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2575,10 +2006,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-discover-episode.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2589,10 +2017,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-discover-movie.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2603,10 +2028,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-discover-show.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2617,10 +2039,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-discover-watches.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2631,10 +2050,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-helpers.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2645,10 +2061,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-tv.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-import"
-    ],
+    "dependencyTypes": ["undetermined", "type-import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2659,10 +2072,7 @@
     "from": "apps/pops-api/src/modules/media/plex/sync-watchlist.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2673,10 +2083,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/addition-gating.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2687,10 +2094,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/candidate-queue.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2701,10 +2105,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/download-candidate.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2715,10 +2116,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/exclusion-list.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2729,10 +2127,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/leaving-lifecycle.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2743,10 +2138,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/removal-selection.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2757,10 +2149,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/rotation-candidates-router.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2771,10 +2160,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/rotation-exclusions-router.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2785,10 +2171,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/rotation-log.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2799,10 +2182,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/rotation-log.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2813,10 +2193,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/rotation-scheduler-router.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2827,10 +2204,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/rotation-sources-router.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2841,10 +2215,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/selection-policy.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2855,10 +2226,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/selection-policy.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2869,10 +2237,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/source-crud.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2883,10 +2248,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/sync-all-sources.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2897,10 +2259,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/sync-source.test.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2911,10 +2270,7 @@
     "from": "apps/pops-api/src/modules/media/rotation/sync-source.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2925,10 +2281,7 @@
     "from": "apps/pops-api/src/modules/media/search/movies-adapter.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2939,10 +2292,7 @@
     "from": "apps/pops-api/src/modules/media/search/tv-shows-adapter.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2953,10 +2303,7 @@
     "from": "apps/pops-api/src/modules/media/thetvdb/refresh-episodes.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2967,10 +2314,7 @@
     "from": "apps/pops-api/src/modules/media/thetvdb/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2981,11 +2325,7 @@
     "from": "apps/pops-api/src/modules/media/thetvdb/types-inserts.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -2996,10 +2336,7 @@
     "from": "apps/pops-api/src/modules/media/tv-shows/episodes-service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3010,10 +2347,7 @@
     "from": "apps/pops-api/src/modules/media/tv-shows/seasons-service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3024,10 +2358,7 @@
     "from": "apps/pops-api/src/modules/media/tv-shows/tv-shows-base.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3038,11 +2369,7 @@
     "from": "apps/pops-api/src/modules/media/tv-shows/types-domain.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3053,11 +2380,7 @@
     "from": "apps/pops-api/src/modules/media/tv-shows/types-mappers.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3068,10 +2391,7 @@
     "from": "apps/pops-api/src/modules/media/watch-history/handlers/auto-remove-show.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3082,10 +2402,7 @@
     "from": "apps/pops-api/src/modules/media/watch-history/handlers/batch-operations.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3096,10 +2413,7 @@
     "from": "apps/pops-api/src/modules/media/watch-history/handlers/list-recent.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3110,10 +2424,7 @@
     "from": "apps/pops-api/src/modules/media/watch-history/handlers/log-watch-event.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3124,10 +2435,7 @@
     "from": "apps/pops-api/src/modules/media/watch-history/handlers/progress.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3138,10 +2446,7 @@
     "from": "apps/pops-api/src/modules/media/watch-history/handlers/query-helpers.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3152,11 +2457,7 @@
     "from": "apps/pops-api/src/modules/media/watch-history/types.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "type-only",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "type-only", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3167,10 +2468,7 @@
     "from": "apps/pops-api/src/modules/media/watchlist/plex-push.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3181,10 +2479,7 @@
     "from": "apps/pops-api/src/modules/media/watchlist/service.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3195,10 +2490,7 @@
     "from": "apps/pops-api/src/modules/media/watchlist/types.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
-    "dependencyTypes": [
-      "undetermined",
-      "import"
-    ],
+    "dependencyTypes": ["undetermined", "import"],
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
@@ -3209,9 +2501,7 @@
     "from": "apps/pops-api/src/db/backfill-food-from-shared.ts",
     "to": "@pops/food-db",
     "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3222,9 +2512,7 @@
     "from": "apps/pops-api/src/db/food-handle.ts",
     "to": "@pops/food-db",
     "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3235,9 +2523,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/batches-router.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3248,9 +2534,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/cook-overrides.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3261,9 +2545,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/cook-router.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3274,9 +2556,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/cook-substitution.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3287,9 +2567,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/cook-test-helpers.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3300,9 +2578,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/fridge-router.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3313,9 +2589,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/inbox-drafts.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3326,9 +2600,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/inbox-inspector.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3339,9 +2611,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/inbox-inspector.test.ts",
     "to": "@pops/food-db",
     "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3352,9 +2622,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/inbox-rejected-failed.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3365,9 +2633,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/inbox-rejected-failed.test.ts",
     "to": "@pops/food-db",
     "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3378,9 +2644,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/inbox-router.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3391,9 +2655,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/plan-router.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3404,9 +2666,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/recipes-router.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3417,9 +2677,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/search-for-consume.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3430,9 +2688,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/solver.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3443,9 +2699,7 @@
     "from": "apps/pops-api/src/modules/food/__tests__/substitutions-resolve-for-line.test.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3456,9 +2710,7 @@
     "from": "apps/pops-api/src/modules/food/batches/get.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3469,9 +2721,7 @@
     "from": "apps/pops-api/src/modules/food/batches/router.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3482,9 +2732,7 @@
     "from": "apps/pops-api/src/modules/food/batches/search-for-consume.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3495,9 +2743,7 @@
     "from": "apps/pops-api/src/modules/food/conversions/error-mapping.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3508,9 +2754,7 @@
     "from": "apps/pops-api/src/modules/food/conversions/router.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3521,9 +2765,7 @@
     "from": "apps/pops-api/src/modules/food/conversions/types.ts",
     "to": "@pops/food-db",
     "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3534,9 +2776,7 @@
     "from": "apps/pops-api/src/modules/food/cook/mark-cooked-helpers.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3547,9 +2787,7 @@
     "from": "apps/pops-api/src/modules/food/cook/mark-cooked-overrides.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3560,9 +2798,7 @@
     "from": "apps/pops-api/src/modules/food/cook/mark-cooked-substitution.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3573,9 +2809,7 @@
     "from": "apps/pops-api/src/modules/food/cook/mark-cooked.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3586,9 +2820,7 @@
     "from": "apps/pops-api/src/modules/food/cook/prepare-loaders.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3599,9 +2831,7 @@
     "from": "apps/pops-api/src/modules/food/cook/prepare.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3612,9 +2842,7 @@
     "from": "apps/pops-api/src/modules/food/cook/router.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3625,9 +2853,7 @@
     "from": "apps/pops-api/src/modules/food/fridge/recipes-using-batch.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3638,9 +2864,7 @@
     "from": "apps/pops-api/src/modules/food/fridge/router.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3651,9 +2875,7 @@
     "from": "apps/pops-api/src/modules/food/fridge/view-grouping.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3664,9 +2886,7 @@
     "from": "apps/pops-api/src/modules/food/fridge/view-query.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3677,9 +2897,7 @@
     "from": "apps/pops-api/src/modules/food/fridge/view.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3690,9 +2908,7 @@
     "from": "apps/pops-api/src/modules/food/hero-image/service.ts",
     "to": "@pops/food-db",
     "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3703,9 +2919,7 @@
     "from": "apps/pops-api/src/modules/food/inbox/router.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3716,9 +2930,7 @@
     "from": "apps/pops-api/src/modules/food/plan/router-helpers.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3729,9 +2941,7 @@
     "from": "apps/pops-api/src/modules/food/plan/router.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3742,9 +2952,7 @@
     "from": "apps/pops-api/src/modules/food/plan/slot-procedures.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3755,9 +2963,7 @@
     "from": "apps/pops-api/src/modules/food/plan/week-view.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3768,9 +2974,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/create.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3781,9 +2985,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/error-mapping.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3794,9 +2996,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/get-for-rendering.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3807,9 +3007,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/queries-drafts.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3820,9 +3018,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/queries.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3833,9 +3029,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/save.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3846,9 +3040,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/aggregate.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3859,9 +3051,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/prepare.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3872,9 +3062,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/send.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3885,9 +3073,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/version-load.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3898,9 +3084,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/types.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3911,9 +3095,7 @@
     "from": "apps/pops-api/src/modules/food/routers/aliases.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3924,9 +3106,7 @@
     "from": "apps/pops-api/src/modules/food/routers/ingest-procedures-control.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3937,9 +3117,7 @@
     "from": "apps/pops-api/src/modules/food/routers/ingest-procedures-start.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3950,9 +3128,7 @@
     "from": "apps/pops-api/src/modules/food/routers/ingest-procedures-status.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3963,9 +3139,7 @@
     "from": "apps/pops-api/src/modules/food/routers/ingest-router.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3976,9 +3150,7 @@
     "from": "apps/pops-api/src/modules/food/routers/ingredient-tags.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -3989,9 +3161,7 @@
     "from": "apps/pops-api/src/modules/food/routers/ingredients.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4002,9 +3172,7 @@
     "from": "apps/pops-api/src/modules/food/routers/prep-states.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4015,9 +3183,7 @@
     "from": "apps/pops-api/src/modules/food/routers/prep-states.ts",
     "to": "@pops/food-db",
     "unresolvedTo": "@pops/food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4028,9 +3194,7 @@
     "from": "apps/pops-api/src/modules/food/routers/slugs.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4041,9 +3205,7 @@
     "from": "apps/pops-api/src/modules/food/routers/substitutions-graph-view.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4054,9 +3216,7 @@
     "from": "apps/pops-api/src/modules/food/routers/substitutions.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4067,9 +3227,7 @@
     "from": "apps/pops-api/src/modules/food/routers/variants.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4080,9 +3238,7 @@
     "from": "apps/pops-api/src/modules/food/services/ingest-state.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4093,9 +3249,7 @@
     "from": "apps/pops-api/src/modules/food/services/ingest-worker-complete.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4106,9 +3260,7 @@
     "from": "apps/pops-api/src/modules/food/services/substitutions-resolve-line-loaders.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4119,9 +3271,7 @@
     "from": "apps/pops-api/src/modules/food/services/substitutions-resolve-line.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4132,9 +3282,7 @@
     "from": "apps/pops-api/src/modules/food/services/substitutions-resolve-loaders.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4145,9 +3293,7 @@
     "from": "apps/pops-api/src/modules/food/shopping/aggregate.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4158,9 +3304,7 @@
     "from": "apps/pops-api/src/modules/food/shopping/generate.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4171,9 +3315,7 @@
     "from": "apps/pops-api/src/modules/food/shopping/load-plan.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4184,9 +3326,7 @@
     "from": "apps/pops-api/src/modules/food/shopping/load-tags.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4197,9 +3337,7 @@
     "from": "apps/pops-api/src/modules/food/shopping/pantry.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4210,9 +3348,7 @@
     "from": "apps/pops-api/src/modules/food/shopping/preview.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4223,9 +3359,7 @@
     "from": "apps/pops-api/src/modules/food/solver/can-i-cook.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4236,9 +3370,7 @@
     "from": "apps/pops-api/src/modules/food/solver/candidates.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4249,9 +3381,7 @@
     "from": "apps/pops-api/src/modules/food/solver/lines.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4262,9 +3392,7 @@
     "from": "apps/pops-api/src/modules/food/solver/name-lookup.ts",
     "to": "@pops/app-food-db",
     "unresolvedTo": "@pops/app-food-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-food-pkgs"
@@ -4275,9 +3403,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/retrieval/semantic-search-metadata.ts",
     "to": "@pops/inventory-db",
     "unresolvedTo": "@pops/inventory-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-inventory-pkgs"
@@ -4288,9 +3414,7 @@
     "from": "apps/pops-api/src/modules/cerebrum/thalamus/cross-source.ts",
     "to": "@pops/inventory-db",
     "unresolvedTo": "@pops/inventory-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-inventory-pkgs"
@@ -4301,9 +3425,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/already-sent.ts",
     "to": "@pops/app-lists-db",
     "unresolvedTo": "@pops/app-lists-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-lists-pkgs"
@@ -4314,9 +3436,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/merge.ts",
     "to": "@pops/app-lists-db",
     "unresolvedTo": "@pops/app-lists-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-lists-pkgs"
@@ -4327,9 +3447,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/prepare.ts",
     "to": "@pops/app-lists-db",
     "unresolvedTo": "@pops/app-lists-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-lists-pkgs"
@@ -4340,9 +3458,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/send.ts",
     "to": "@pops/app-lists-db",
     "unresolvedTo": "@pops/app-lists-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-lists-pkgs"
@@ -4353,9 +3469,7 @@
     "from": "apps/pops-api/src/modules/food/recipes/send-to-list/target-resolve.ts",
     "to": "@pops/app-lists-db",
     "unresolvedTo": "@pops/app-lists-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-lists-pkgs"
@@ -4366,9 +3480,7 @@
     "from": "apps/pops-api/src/modules/food/shopping/generate.ts",
     "to": "@pops/app-lists-db",
     "unresolvedTo": "@pops/app-lists-db",
-    "dependencyTypes": [
-      "unknown"
-    ],
+    "dependencyTypes": ["unknown"],
     "rule": {
       "severity": "error",
       "name": "no-dead-lists-pkgs"
