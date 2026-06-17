@@ -1,29 +1,21 @@
 /**
  * Data + UI state for the ingredients tab.
  *
- * Owns the list query (`food.ingredients.list`), the per-selection detail
- * query (`food.ingredients.get`), and the local state for selection, tree
+ * Owns the list query (`ingredientsList`), the per-selection detail
+ * query (`ingredientsGet`), and the local state for selection, tree
  * expansion, and the create dialog. The page-level component composes
  * these into the tree + detail panel layout.
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientsCreate, ingredientsGet, ingredientsList } from '../../../food-api/index.js';
 import { buildIngredientTree } from './buildIngredientTree';
 import { mapMutationError } from './errors';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
 import type { CreateIngredientInput } from './CreateIngredientDialog';
-
-type IngredientsListOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['list'];
-type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
-type IngredientsCreateInput = inferRouterInputs<AppRouter>['food']['ingredients']['create'];
-type IngredientsCreateOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['create'];
 
 function useExpandedSet() {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
@@ -48,24 +40,22 @@ function useExpandedSet() {
 
 function useCreateDialog() {
   const { t } = useTranslation('food');
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const utils = usePillarUtils('food');
-  const mutation = usePillarMutation<IngredientsCreateInput, IngredientsCreateOutput>(
-    'food',
-    ['ingredients', 'create'],
-    {
-      onSuccess: () => {
-        setErrorMessage(null);
-        setOpen(false);
-        void utils.invalidate(['ingredients', 'list']);
-      },
-      onError: (err) =>
-        setErrorMessage(
-          mapMutationError(err, t, { fallbackKey: 'data.ingredients.create.error.generic' })
-        ),
-    }
-  );
+  const mutation = useMutation({
+    mutationFn: async (input: CreateIngredientInput) =>
+      unwrap(await ingredientsCreate({ body: input })),
+    onSuccess: () => {
+      setErrorMessage(null);
+      setOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ['food', 'ingredients', 'list'] });
+    },
+    onError: (err: Error) =>
+      setErrorMessage(
+        mapMutationError(err, t, { fallbackKey: 'data.ingredients.create.error.generic' })
+      ),
+  });
   const submit = useCallback(
     (input: CreateIngredientInput) => {
       setErrorMessage(null);
@@ -93,9 +83,9 @@ function useCreateDialog() {
 
 /**
  * Return type is intentionally inferred (not explicitly annotated) so
- * the `detail` field carries the per-procedure tRPC useQuery shape
- * with full `data` typing. An explicit annotation collapses it back
- * to the generic `{}` data type.
+ * the `detail` field carries the per-query react-query shape with full
+ * `data` typing (`{ ingredient, variants }`). An explicit annotation
+ * collapses it back to the generic data type.
  */
 export function useIngredientsTab() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -103,15 +93,17 @@ export function useIngredientsTab() {
   const { expandedIds, toggleNode, expandMany } = useExpandedSet();
   const createDialog = useCreateDialog();
 
-  const listQuery = usePillarQuery<IngredientsListOutput>('food', ['ingredients', 'list'], {
-    search: search.length > 0 ? search : undefined,
+  const listInput = { search: search.length > 0 ? search : undefined };
+  const listQuery = useQuery({
+    queryKey: ['food', 'ingredients', 'list', listInput],
+    queryFn: async () => unwrap(await ingredientsList({ query: listInput })),
   });
-  const detail = usePillarQuery<IngredientsGetOutput>(
-    'food',
-    ['ingredients', 'get'],
-    { idOrSlug: selectedId ?? 0 },
-    { enabled: selectedId !== null }
-  );
+  const detail = useQuery({
+    queryKey: ['food', 'ingredients', 'get', selectedId],
+    queryFn: async () =>
+      unwrap(await ingredientsGet({ path: { idOrSlug: String(selectedId ?? 0) } })),
+    enabled: selectedId !== null,
+  });
 
   const flatIngredients = useMemo(() => listQuery.data?.items ?? [], [listQuery.data]);
   const tree = useMemo(() => buildIngredientTree(flatIngredients), [flatIngredients]);

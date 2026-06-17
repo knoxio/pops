@@ -1,99 +1,90 @@
 /**
- * tRPC mutations for ingredient_weights. Same shape as `useUnitMutations`;
- * separate hook so each section owns its own error state. Each `submit*`
- * accepts an optional `onSuccess` callback the call site can use to close
- * its dialog AFTER the server confirms (avoids the synchronous-state
- * race where the dialog would close on every submit regardless of outcome).
+ * React Query mutations for ingredient_weights (PRD-123 Phase D). Same
+ * shape as `useUnitMutations`; separate hook so each section owns its own
+ * error state. Each `submit*` accepts an optional `onSuccess` callback the
+ * call site can use to close its dialog AFTER the server confirms (avoids
+ * the synchronous-state race where the dialog would close on every submit
+ * regardless of outcome).
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { isBadRequest, isConflict, isNotFound } from '@pops/pillar-sdk/client';
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+import { FoodApiError, unwrap } from '../../../food-api-helpers.js';
+import {
+  conversionsCreateWeight,
+  conversionsDeleteWeight,
+  conversionsUpdateWeight,
+} from '../../../food-api/index.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { TFunction } from 'i18next';
-
-import type { AppRouter } from '@pops/api';
 
 import type { CreateWeightInput, UpdateWeightInput } from './types';
 
-type CreateWeightMutationInput =
-  inferRouterInputs<AppRouter>['food']['conversions']['createWeight'];
-type CreateWeightMutationOutput =
-  inferRouterOutputs<AppRouter>['food']['conversions']['createWeight'];
-type UpdateWeightMutationInput =
-  inferRouterInputs<AppRouter>['food']['conversions']['updateWeight'];
-type UpdateWeightMutationOutput =
-  inferRouterOutputs<AppRouter>['food']['conversions']['updateWeight'];
-type DeleteWeightMutationInput =
-  inferRouterInputs<AppRouter>['food']['conversions']['deleteWeight'];
-type DeleteWeightMutationOutput =
-  inferRouterOutputs<AppRouter>['food']['conversions']['deleteWeight'];
+type UpdateWeightMutationInput = UpdateWeightInput & { id: number };
+type DeleteWeightMutationInput = { id: number };
+
+function hasStatus(err: unknown, status: number): boolean {
+  return err instanceof FoodApiError && err.status === status;
+}
 
 function mapMutationError(err: unknown, t: TFunction): string {
-  if (isConflict(err)) return t('data.conversions.weights.error.duplicate');
-  if (isNotFound(err)) return t('data.conversions.weights.error.notFound');
-  if (isBadRequest(err)) return t('data.conversions.weights.error.invalid');
+  if (hasStatus(err, 409)) return t('data.conversions.weights.error.duplicate');
+  if (hasStatus(err, 404)) return t('data.conversions.weights.error.notFound');
+  if (hasStatus(err, 400)) return t('data.conversions.weights.error.invalid');
   return t('data.conversions.weights.error.generic');
 }
 
 type SetError = (msg: string | null) => void;
 
 function useCreateWeight(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
-  return usePillarMutation<CreateWeightMutationInput, CreateWeightMutationOutput>(
-    'food',
-    ['conversions', 'createWeight'],
-    {
-      onSuccess: () => {
-        setErrorMessage(null);
-        invalidate();
-      },
-      onError: (err) => setErrorMessage(mapMutationError(err, t)),
-    }
-  );
+  return useMutation({
+    mutationFn: async (input: CreateWeightInput) =>
+      unwrap(await conversionsCreateWeight({ body: input })),
+    onSuccess: () => {
+      setErrorMessage(null);
+      invalidate();
+    },
+    onError: (err: Error) => setErrorMessage(mapMutationError(err, t)),
+  });
 }
 
 function useUpdateWeight(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
-  return usePillarMutation<UpdateWeightMutationInput, UpdateWeightMutationOutput>(
-    'food',
-    ['conversions', 'updateWeight'],
-    {
-      onSuccess: () => {
-        setErrorMessage(null);
-        invalidate();
-      },
-      onError: (err) => setErrorMessage(mapMutationError(err, t)),
-    }
-  );
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: UpdateWeightMutationInput) =>
+      unwrap(await conversionsUpdateWeight({ path: { id }, body: patch })),
+    onSuccess: () => {
+      setErrorMessage(null);
+      invalidate();
+    },
+    onError: (err: Error) => setErrorMessage(mapMutationError(err, t)),
+  });
 }
 
 function useDeleteWeight(invalidate: () => void, setErrorMessage: SetError, t: TFunction) {
-  return usePillarMutation<DeleteWeightMutationInput, DeleteWeightMutationOutput>(
-    'food',
-    ['conversions', 'deleteWeight'],
-    {
-      onSuccess: (result) => {
-        if (result.ok) {
-          setErrorMessage(null);
-          invalidate();
-          return;
-        }
-        setErrorMessage(t('data.conversions.weights.error.seeded'));
-      },
-      onError: (err) => setErrorMessage(mapMutationError(err, t)),
-    }
-  );
+  return useMutation({
+    mutationFn: async ({ id }: DeleteWeightMutationInput) =>
+      unwrap(await conversionsDeleteWeight({ path: { id } })),
+    onSuccess: (result) => {
+      if (result.ok) {
+        setErrorMessage(null);
+        invalidate();
+        return;
+      }
+      setErrorMessage(t('data.conversions.weights.error.seeded'));
+    },
+    onError: (err: Error) => setErrorMessage(mapMutationError(err, t)),
+  });
 }
 
 export function useWeightMutations() {
   const { t } = useTranslation('food');
-  const utils = usePillarUtils('food');
+  const qc = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const invalidate = useCallback(() => {
-    void utils.invalidate(['conversions', 'listWeights']);
-  }, [utils]);
+    void qc.invalidateQueries({ queryKey: ['food', 'conversions', 'listWeights'] });
+  }, [qc]);
 
   const create = useCreateWeight(invalidate, setErrorMessage, t);
   const update = useUpdateWeight(invalidate, setErrorMessage, t);

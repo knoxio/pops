@@ -3,7 +3,7 @@
  *
  * Top-level page. Lifts header filters and side-panel selection into URL
  * search params so the page is shareable + back-navigable. The graphView
- * tRPC query (PRD-148) returns the minimum spanning subgraph for the
+ * query (PRD-148) returns the minimum spanning subgraph for the
  * current filters; node/edge selection drives which side panel is shown.
  *
  * State model:
@@ -15,23 +15,23 @@
  *   - `?node=<slug>` triggers the radial focus view + node side panel.
  *   - `?edge=<id>` opens the edge side panel on load.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../../food-api-helpers.js';
+import { substitutionsGraphView } from '../../../food-api/index.js';
 
 import { distinctContextTags, findNodeBySlug } from './helpers';
 import { SubGraphBody } from './SubGraphBody';
 import { SubGraphHeader } from './SubGraphHeader';
 import { useSubGraphState } from './useSubGraphState';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
+import type { SubstitutionsGraphViewResponses } from '../../../food-api/types.gen.js';
 
 import type { ForceGraphInternalProps } from './ForceGraphCanvas';
 import type { SubGraphView } from './types';
 
-type GraphViewOutput = inferRouterOutputs<AppRouter>['food']['substitutions']['graphView'];
+type GraphViewOutput = SubstitutionsGraphViewResponses[200];
 
 const TABLE_HREF = '/food/data/substitutions';
 
@@ -49,12 +49,12 @@ export function SubGraphPage(props: SubGraphPageProps = {}): React.ReactElement 
   const state = useSubGraphState();
   const { filters } = state;
   const skipQuery = filters.scope === 'recipe' && filters.recipeId === null;
-  const query = usePillarQuery<GraphViewOutput>(
-    'food',
-    ['substitutions', 'graphView'],
-    state.queryInput,
-    { enabled: !skipQuery }
-  );
+  const query = useQuery({
+    queryKey: ['food', 'substitutions', 'graphView', state.queryInput],
+    queryFn: async (): Promise<GraphViewOutput> =>
+      unwrap(await substitutionsGraphView({ query: state.queryInput })),
+    enabled: !skipQuery,
+  });
   const view: SubGraphView = query.data ?? { nodes: [], edges: [] };
   const focusedNode =
     filters.focusedSlug !== null ? findNodeBySlug(view.nodes, filters.focusedSlug) : null;

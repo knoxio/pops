@@ -3,20 +3,17 @@
  * its variants, then unit + grams + notes. Variants load lazily once an
  * ingredient is picked.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
+
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientsGet } from '../../../food-api/index.js';
 
 import { DialogActions, FormError } from './dialog-helpers';
 import { NumberFieldRow, SelectFieldRow, TextareaFieldRow, TextFieldRow } from './form-fields';
-
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
 
 export interface IngredientOption {
   id: number;
@@ -41,12 +38,12 @@ const INITIAL: FormState = {
 };
 
 function useVariantsFor(ingredientId: number | null) {
-  return usePillarQuery<IngredientsGetOutput>(
-    'food',
-    ['ingredients', 'get'],
-    { idOrSlug: ingredientId ?? 0 },
-    { enabled: ingredientId !== null }
-  );
+  return useQuery({
+    queryKey: ['food', 'ingredients', 'get', ingredientId],
+    queryFn: async () =>
+      unwrap(await ingredientsGet({ path: { idOrSlug: String(ingredientId) } })),
+    enabled: ingredientId !== null,
+  });
 }
 
 function buildVariantOptions(

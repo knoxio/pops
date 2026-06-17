@@ -1,13 +1,14 @@
 /**
  * PRD-138 — RTL coverage for the Rejected tab.
  *
- *   - renders rows from the mocked tRPC query
- *   - Undo invokes `food.inbox.unreject` with `{ versionId }` + surfaces
+ *   - renders rows from the mocked SDK query
+ *   - Undo invokes `inbox.unreject` with `{ versionId }` + surfaces
  *     a success toast on `{ ok: true }`
- *   - Undo failure restores the snapshot + surfaces an error toast
+ *   - Undo failure rolls back the optimistic removal + surfaces an error toast
  *   - filter chip toggle updates the query input
  *   - empty state renders the recovery copy
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -21,41 +22,12 @@ import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/f
 
 import type { RejectedRow } from '../inbox-types';
 
-const mockListRejected = vi.fn();
-const mockSetData = vi.fn();
-const mockInvalidate = vi.fn();
-const mockUnrejectMutate = vi.fn();
-let mockUnrejectOpts:
-  | {
-      onMutate?: (input: { versionId: number }) => { snapshot: unknown };
-      onError?: (err: Error, input: { versionId: number }, ctx: { snapshot: unknown }) => void;
-      onSuccess?: (res: { ok: boolean; reason?: string }) => void;
-      onSettled?: () => void;
-    }
-  | undefined;
+const inboxListRejectedMock = vi.hoisted(() => vi.fn());
+const inboxUnrejectMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'inbox.listRejected') return mockListRejected(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: NonNullable<typeof mockUnrejectOpts>
-  ) => {
-    const key = path.join('.');
-    if (key === 'inbox.unreject') {
-      mockUnrejectOpts = opts;
-      return { mutate: mockUnrejectMutate, isPending: false, variables: undefined };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    setData: mockSetData,
-    invalidate: mockInvalidate,
-  }),
+vi.mock('../../../food-api/index.js', () => ({
+  inboxListRejected: inboxListRejectedMock,
+  inboxUnreject: inboxUnrejectMock,
 }));
 
 import { RejectedTab } from '../RejectedTab.js';
@@ -76,6 +48,15 @@ function makeRow(over: Partial<RejectedRow> = {}): RejectedRow {
   };
 }
 
+function mockList(items: RejectedRow[], nextCursor: string | null = null): void {
+  inboxListRejectedMock.mockResolvedValue({ data: { items, nextCursor } });
+}
+
+function lastListBody(): Record<string, unknown> {
+  const call = inboxListRejectedMock.mock.calls.at(-1);
+  return (call?.[0] as { body: Record<string, unknown> }).body;
+}
+
 function Wrapper({ children }: { children: ReactElement }): ReactElement {
   const i18n = useMemo(() => {
     const instance = createInstance();
@@ -89,13 +70,22 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>
-        {children}
-        <Toaster />
-      </MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>
+          {children}
+          <Toaster />
+        </MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -103,98 +93,76 @@ const FIXED_NOW = new Date('2026-06-10T18:00:00Z');
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockUnrejectOpts = undefined;
 });
 
 describe('RejectedTab — PRD-138', () => {
-  it('renders rows from listRejected', () => {
-    mockListRejected.mockReturnValue({
-      data: {
-        items: [makeRow(), makeRow({ versionId: 2, title: 'Lentil dahl' })],
-        nextCursor: null,
-      },
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
+  it('renders rows from listRejected', async () => {
+    mockList([makeRow(), makeRow({ versionId: 2, title: 'Lentil dahl' })]);
     render(
       <Wrapper>
         <RejectedTab now={FIXED_NOW} />
       </Wrapper>
     );
-    expect(screen.getByText('Banana pancakes')).toBeInTheDocument();
+    expect(await screen.findByText('Banana pancakes')).toBeInTheDocument();
     expect(screen.getByText('Lentil dahl')).toBeInTheDocument();
   });
 
-  it('shows the empty-state copy when listRejected returns []', () => {
-    mockListRejected.mockReturnValue({
-      data: { items: [], nextCursor: null },
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
+  it('shows the empty-state copy when listRejected returns []', async () => {
+    mockList([]);
     render(
       <Wrapper>
         <RejectedTab now={FIXED_NOW} />
       </Wrapper>
     );
-    expect(screen.getByText(/No rejected drafts/i)).toBeInTheDocument();
+    expect(await screen.findByText(/No rejected drafts/i)).toBeInTheDocument();
   });
 
   it('invokes Undo and surfaces a success toast on { ok: true }', async () => {
-    mockListRejected.mockReturnValue({
-      data: { items: [makeRow()], nextCursor: null },
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
+    mockList([makeRow()]);
+    inboxUnrejectMock.mockResolvedValue({ data: { ok: true, restoredAs: 'draft' } });
     render(
       <Wrapper>
         <RejectedTab now={FIXED_NOW} />
       </Wrapper>
     );
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: /Undo rejection/i }));
-    expect(mockUnrejectMutate).toHaveBeenCalledWith({ versionId: 1 });
-    mockUnrejectOpts?.onSuccess?.({ ok: true });
+    await user.click(await screen.findByRole('button', { name: /Undo rejection/i }));
+    expect(inboxUnrejectMock).toHaveBeenCalledWith({ body: { versionId: 1 } });
     await waitFor(() => {
       expect(screen.getByText('Restored to Drafts.')).toBeInTheDocument();
     });
   });
 
-  it('rolls back optimistic update + surfaces an error toast on onError', async () => {
-    const snapshot = { items: [makeRow()], nextCursor: null };
-    mockListRejected.mockReturnValue({
-      data: snapshot,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
+  it('rolls back the optimistic removal + surfaces an error toast on failure', async () => {
+    mockList([makeRow()]);
+    let rejectUnreject: (e: unknown) => void = () => {};
+    inboxUnrejectMock.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectUnreject = reject;
+      })
+    );
     render(
       <Wrapper>
         <RejectedTab now={FIXED_NOW} />
       </Wrapper>
     );
     const user = userEvent.setup();
+    expect(await screen.findByText('Banana pancakes')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Undo rejection/i }));
-    mockUnrejectOpts?.onError?.(new Error('boom'), { versionId: 1 }, { snapshot });
-    expect(mockSetData).toHaveBeenCalledWith(
-      ['inbox', 'listRejected'],
-      expect.objectContaining({}),
-      expect.any(Function)
-    );
+    // Optimistic: the row vanishes before the mutation resolves.
+    await waitFor(() => {
+      expect(screen.queryByText('Banana pancakes')).not.toBeInTheDocument();
+    });
+    rejectUnreject(new Error('boom'));
+    // Rollback: the row reappears + the error toast surfaces.
+    expect(await screen.findByText('Banana pancakes')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText(/Couldn’t undo: boom/i)).toBeInTheDocument();
     });
   });
 
   it('passes filter chip toggles into the query input', async () => {
-    mockListRejected.mockReturnValue({
-      data: { items: [], nextCursor: null },
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
+    mockList([]);
     render(
       <Wrapper>
         <RejectedTab now={FIXED_NOW} />
@@ -202,9 +170,9 @@ describe('RejectedTab — PRD-138', () => {
     );
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Duplicate' }));
-    const inputsSeen = mockListRejected.mock.calls.map(([input]) => input);
-    expect(
-      inputsSeen.some((i) => Array.isArray(i.reasons) && i.reasons.includes('duplicate'))
-    ).toBe(true);
+    await waitFor(() => {
+      const reasons = lastListBody().reasons;
+      expect(Array.isArray(reasons) && reasons.includes('duplicate')).toBe(true);
+    });
   });
 });

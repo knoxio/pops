@@ -1,15 +1,16 @@
+import { useQuery } from '@tanstack/react-query';
 import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Label, TextInput, useDebouncedValue } from '@pops/ui';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../food-api-helpers.js';
+import { slugsSearch } from '../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
+import type { SlugsSearchResponses } from '../../food-api/types.gen.js';
 
-type SlugSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
+type SlugSearchOutput = SlugsSearchResponses[200];
 
 interface SearchItem {
   slug: string;
@@ -102,12 +103,12 @@ export function GlobalSearchBar() {
   const [query, setQuery] = useState('');
   const debounced = useDebouncedValue(query.trim(), 200);
   const enabled = debounced.length > 0;
-  const searchQuery = usePillarQuery<SlugSearchOutput>(
-    'food',
-    ['slugs', 'search'],
-    { query: debounced, limit: 8 },
-    { enabled }
-  );
+  const searchInput = { query: debounced, limit: 8 };
+  const searchQuery = useQuery({
+    queryKey: ['food', 'slugs', 'search', searchInput],
+    queryFn: async (): Promise<SlugSearchOutput> => unwrap(await slugsSearch({ query: searchInput })),
+    enabled,
+  });
   const items = useMemo<readonly SearchItem[]>(
     () => (searchQuery.data?.items as readonly SearchItem[] | undefined) ?? [],
     [searchQuery.data]

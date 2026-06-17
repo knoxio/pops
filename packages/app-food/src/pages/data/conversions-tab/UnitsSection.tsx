@@ -3,23 +3,20 @@
  * + the Add button + the inline edit/delete state. List data comes from
  * `food.conversions.listUnits`; mutations route through `useUnitMutations`.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Checkbox, Label, TextInput } from '@pops/ui';
+
+import { unwrap } from '../../../food-api-helpers.js';
+import { conversionsListUnits } from '../../../food-api/index.js';
 
 import { CreateUnitDialog, EditUnitDialog } from './UnitDialogs';
 import { UnitsTable } from './UnitsTable';
 import { useUnitMutations } from './useUnitMutations';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
 import type { UnitConversionRow } from './types';
-
-type ConversionsListUnitsOutput = inferRouterOutputs<AppRouter>['food']['conversions']['listUnits'];
 
 function useUnitFilters() {
   const [search, setSearch] = useState('');
@@ -105,14 +102,14 @@ function useDialogState(clearError: () => void): DialogState {
 export function UnitsSection() {
   const { t } = useTranslation('food');
   const filters = useUnitFilters();
-  const listQuery = usePillarQuery<ConversionsListUnitsOutput>(
-    'food',
-    ['conversions', 'listUnits'],
-    {
-      search: filters.search.length > 0 ? filters.search : undefined,
-      seededOnly: filters.seededOnly ? true : undefined,
-    }
-  );
+  const listInput = {
+    search: filters.search.length > 0 ? filters.search : undefined,
+    seededOnly: filters.seededOnly ? true : undefined,
+  };
+  const listQuery = useQuery({
+    queryKey: ['food', 'conversions', 'listUnits', listInput],
+    queryFn: async () => unwrap(await conversionsListUnits({ query: listInput })),
+  });
   const mutations = useUnitMutations();
   const dialog = useDialogState(mutations.clearError);
 

@@ -7,33 +7,27 @@
  * button alongside Approve / Reject; `auth-dead` disables it with a
  * tooltip linking to the IG cookie runbook.
  */
+import { useMutation } from '@tanstack/react-query';
 import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
+import { unwrap } from '../../../food-api-helpers.js';
+import { inboxUnreject, ingestRetry } from '../../../food-api/index.js';
 import { ApproveDialog } from './ApproveDialog.js';
 import { AutoCreateBanner } from './AutoCreateBanner.js';
 import { ProposedSlugsList } from './ProposedSlugsList.js';
 import { QualityBandCard } from './QualityBandCard.js';
 import { RejectDialog } from './RejectDialog.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
 import type {
   InspectorDraftView,
   InspectorProposedSlugRow,
   InspectorReviewView,
 } from '@pops/app-food-db';
-
-type InboxUnrejectInput = inferRouterInputs<AppRouter>['food']['inbox']['unreject'];
-type InboxUnrejectOutput = inferRouterOutputs<AppRouter>['food']['inbox']['unreject'];
-type IngestRetryInput = inferRouterInputs<AppRouter>['food']['ingest']['retry'];
-type IngestRetryOutput = inferRouterOutputs<AppRouter>['food']['ingest']['retry'];
 
 interface Props {
   review: InspectorReviewView;
@@ -134,23 +128,21 @@ interface ArchivedControlsProps {
 function ArchivedControls({ draft, onMutated }: ArchivedControlsProps): ReactElement {
   const { t } = useTranslation('food');
   const navigate = useNavigate();
-  const unrejectMutation = usePillarMutation<InboxUnrejectInput, InboxUnrejectOutput>(
-    'food',
-    ['inbox', 'unreject'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          toast.success(t('inbox.inspector.decision.undo.success'));
-          onMutated();
-          void navigate('/food/inbox?tab=rejected');
-        } else {
-          toast.error(t(`inbox.inspector.decision.undo.error.${res.reason}` as const));
-        }
-      },
-      onError: (err) =>
-        toast.error(t('inbox.inspector.decision.undo.error.generic', { message: err.message })),
-    }
-  );
+  const unrejectMutation = useMutation({
+    mutationFn: async (input: { versionId: number }) =>
+      unwrap(await inboxUnreject({ body: input })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(t('inbox.inspector.decision.undo.success'));
+        onMutated();
+        void navigate('/food/inbox?tab=rejected');
+      } else {
+        toast.error(t(`inbox.inspector.decision.undo.error.${res.reason}` as const));
+      }
+    },
+    onError: (err: Error) =>
+      toast.error(t('inbox.inspector.decision.undo.error.generic', { message: err.message })),
+  });
   return (
     <div className="space-y-3" data-testid="inspector-archived-controls">
       {draft.rejection !== null && (
@@ -198,18 +190,16 @@ function RerunPipelineButton({
   // explicit invalidate after re-queue the UI sticks on the old partial draft
   // until the user reloads. Bumping `onRequeued` invalidates the query
   // (Copilot R1).
-  const mutation = usePillarMutation<IngestRetryInput, IngestRetryOutput>(
-    'food',
-    ['ingest', 'retry'],
-    {
-      onSuccess: () => {
-        toast.success(t('inbox.inspector.decision.rerun.success'));
-        onRequeued();
-      },
-      onError: (err) =>
-        toast.error(t('inbox.inspector.decision.rerun.error', { message: err.message })),
-    }
-  );
+  const mutation = useMutation({
+    mutationFn: async (input: { sourceId: number }) =>
+      unwrap(await ingestRetry({ body: input })),
+    onSuccess: () => {
+      toast.success(t('inbox.inspector.decision.rerun.success'));
+      onRequeued();
+    },
+    onError: (err: Error) =>
+      toast.error(t('inbox.inspector.decision.rerun.error', { message: err.message })),
+  });
   return (
     <Button
       type="button"

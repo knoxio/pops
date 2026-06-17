@@ -11,20 +11,28 @@
  * CI runs hit the lazy module's pending promise and `findByText`
  * times out before resolution.
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
 import { FoodDataLayout, getActiveTabSlug } from '../FoodDataLayout';
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'slugs.search') return { data: { items: [] }, isLoading: false };
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
+const slugsSearchMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../../food-api/index.js', () => ({
+  slugsSearch: slugsSearchMock,
 }));
+
+slugsSearchMock.mockResolvedValue({ data: { items: [] } });
+
+function withClient(children: ReactNode): ReactNode {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
 // Mount FoodDataLayout directly (no `React.lazy`) so the tablist/dropdown
 // assertions don't race the dynamic imports of the per-tab modules. The
@@ -54,9 +62,11 @@ function renderAt(initialPath: string) {
     { initialEntries: [initialPath] }
   );
   return render(
-    <Suspense fallback={<div data-testid="lazy-fallback">loading</div>}>
-      <RouterProvider router={router} />
-    </Suspense>
+    withClient(
+      <Suspense fallback={<div data-testid="lazy-fallback">loading</div>}>
+        <RouterProvider router={router} />
+      </Suspense>
+    )
   );
 }
 

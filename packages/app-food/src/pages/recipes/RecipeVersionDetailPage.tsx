@@ -3,19 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { useMutation } from '@tanstack/react-query';
 
 import { RecipeRenderer } from '../../components/RecipeRenderer.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../food-api-helpers.js';
+import { recipesRestoreVersion } from '../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
 import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
 
 type RecipeVersionRow = RecipeVersionWithCompiledData['version'];
-
-type RestoreVersionInput = inferRouterInputs<AppRouter>['food']['recipes']['restoreVersion'];
-type RestoreVersionOutput = inferRouterOutputs<AppRouter>['food']['recipes']['restoreVersion'];
 import { RecipeScaleProvider, useRecipeScale } from './RecipeScaleProvider.js';
 import { useRecipeDetailData } from './useRecipeDetailData.js';
 
@@ -59,23 +56,21 @@ function RecipeVersionDetailBody({ slug, versionNo }: BodyProps): ReactElement {
     includeDrafts: false,
   });
 
-  const restoreMutation = usePillarMutation<RestoreVersionInput, RestoreVersionOutput>(
-    'food',
-    ['recipes', 'restoreVersion'],
-    {
-      onSuccess: () => {
-        toast.success(t('recipes.versionDetail.restore.success'));
-        void navigate(`/food/recipes/${slug}/edit`);
-      },
-      onError: (err) => {
-        toast.error(t('recipes.versionDetail.restore.error', { message: err.message }));
-      },
-    }
-  );
+  const restoreMutation = useMutation({
+    mutationFn: async (versionId: number) =>
+      unwrap(await recipesRestoreVersion({ path: { versionId } })),
+    onSuccess: () => {
+      toast.success(t('recipes.versionDetail.restore.success'));
+      void navigate(`/food/recipes/${slug}/edit`);
+    },
+    onError: (err: Error) => {
+      toast.error(t('recipes.versionDetail.restore.error', { message: err.message }));
+    },
+  });
 
   const onRestore = useCallback(() => {
     if (data === undefined) return;
-    restoreMutation.mutate({ sourceVersionId: data.version.id });
+    restoreMutation.mutate(data.version.id);
   }, [data, restoreMutation]);
 
   if (isLoading) return <Status text={t('recipes.detail.loading')} />;

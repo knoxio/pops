@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
 
-import { usePillarInfiniteQuery } from '@pops/pillar-sdk/react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
+import { unwrap } from '../../food-api-helpers.js';
+import { recipesList } from '../../food-api/index.js';
 
 import type { RecipeListFilterState, RecipeType } from './recipe-list-types.js';
 
-type RecipeListOutput = inferRouterOutputs<AppRouter>['food']['recipes']['list'];
-type RecipeListCursor = string | null;
+import type { RecipesListData } from '../../food-api/types.gen.js';
+
+type RecipeListBody = NonNullable<RecipesListData['body']>;
 
 export interface UseRecipeListQueryArgs {
   filters: RecipeListFilterState;
@@ -41,16 +41,16 @@ export interface UseRecipeListQueryResult {
 }
 
 /**
- * Wraps `food.recipes.list` paginated reads via `usePillarInfiniteQuery`
- * so the page component stays declarative. The hook is keyed off the
- * filter state plus a pre-debounced search string — the caller owns
- * debouncing so this hook doesn't re-trigger on every keystroke.
+ * Wraps `recipes.list` paginated reads via `useInfiniteQuery` so the page
+ * component stays declarative. The hook is keyed off the filter state plus
+ * a pre-debounced search string — the caller owns debouncing so this hook
+ * doesn't re-trigger on every keystroke.
  */
 export function useRecipeListQuery({
   filters,
   debouncedSearch,
 }: UseRecipeListQueryArgs): UseRecipeListQueryResult {
-  const input = useMemo(
+  const input = useMemo<Omit<RecipeListBody, 'cursor'>>(
     () => ({
       search: debouncedSearch.length === 0 ? undefined : debouncedSearch,
       recipeTypes: filters.recipeTypes.length === 0 ? undefined : filters.recipeTypes,
@@ -62,15 +62,13 @@ export function useRecipeListQuery({
     [debouncedSearch, filters]
   );
 
-  const query = usePillarInfiniteQuery<RecipeListOutput, RecipeListCursor>(
-    'food',
-    ['recipes', 'list'],
-    input,
-    {
-      initialPageParam: null as RecipeListCursor,
-      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    }
-  );
+  const query = useInfiniteQuery({
+    queryKey: ['food', 'recipes', 'list', input],
+    queryFn: async ({ pageParam }) =>
+      unwrap(await recipesList({ body: { ...input, cursor: pageParam } })),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
 
   const items = useMemo(
     () => (query.data?.pages ?? []).flatMap((page) => page.items),

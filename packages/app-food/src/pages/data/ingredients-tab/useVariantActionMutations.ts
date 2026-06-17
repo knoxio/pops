@@ -1,78 +1,78 @@
 /**
- * The four variant-action tRPC mutations (create / update / delete) and the
+ * The four variant-action mutations (create / update / delete) and the
  * shared error mapping. Split out from `useVariantActions` so that hook
  * stays under the per-function lint cap.
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { isConflict } from '@pops/pillar-sdk/client';
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { FoodApiError, unwrap } from '../../../food-api-helpers.js';
+import { variantsCreate, variantsDelete, variantsUpdate } from '../../../food-api/index.js';
 import { mapVariantMutationError } from './errors';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { VariantsCreateData, VariantsUpdateData } from '../../../food-api/types.gen.js';
+import type { VariantFormValues } from './variant-form-helpers';
 
-import type { AppRouter } from '@pops/api';
-
-type CreateVariantInput = inferRouterInputs<AppRouter>['food']['variants']['create'];
-type CreateVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['create'];
-type UpdateVariantInput = inferRouterInputs<AppRouter>['food']['variants']['update'];
-type UpdateVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['update'];
-type DeleteVariantInput = inferRouterInputs<AppRouter>['food']['variants']['delete'];
-type DeleteVariantOutput = inferRouterOutputs<AppRouter>['food']['variants']['delete'];
+type CreateVariantInput = NonNullable<VariantsCreateData['body']>;
+type UpdateBody = NonNullable<VariantsUpdateData['body']>;
+type UpdateVariantInput = VariantFormValues & { id: number };
+interface DeleteVariantInput {
+  id: number;
+}
 
 interface Args {
   onFormSuccess: () => void;
   onDeleteSuccess: () => void;
 }
 
+function isConflict(err: unknown): boolean {
+  return err instanceof FoodApiError && err.status === 409;
+}
+
 export function useVariantActionMutations({ onFormSuccess, onDeleteSuccess }: Args) {
   const { t } = useTranslation('food');
-  const utils = usePillarUtils('food');
+  const queryClient = useQueryClient();
   const [formError, setFormError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const invalidate = useCallback(() => utils.invalidate(['ingredients', 'get']), [utils]);
-  const create = usePillarMutation<CreateVariantInput, CreateVariantOutput>(
-    'food',
-    ['variants', 'create'],
-    {
-      onSuccess: async () => {
-        await invalidate();
-        onFormSuccess();
-      },
-      onError: (err) => setFormError(mapVariantMutationError(err, t)),
-    }
+  const invalidate = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ['food', 'ingredients', 'get'] }),
+    [queryClient]
   );
-  const update = usePillarMutation<UpdateVariantInput, UpdateVariantOutput>(
-    'food',
-    ['variants', 'update'],
-    {
-      onSuccess: async () => {
-        await invalidate();
-        onFormSuccess();
-      },
-      onError: (err) => setFormError(mapVariantMutationError(err, t)),
-    }
-  );
-  const deleteMutation = usePillarMutation<DeleteVariantInput, DeleteVariantOutput>(
-    'food',
-    ['variants', 'delete'],
-    {
-      onSuccess: async () => {
-        await invalidate();
-        onDeleteSuccess();
-      },
-      onError: (err) => {
-        if (isConflict(err)) {
-          setDeleteError(t('data.ingredients.variants.delete.referenced'));
-          return;
-        }
-        setDeleteError(t('data.ingredients.variants.error.generic'));
-      },
-    }
-  );
+  const create = useMutation({
+    mutationFn: async (input: CreateVariantInput) => unwrap(await variantsCreate({ body: input })),
+    onSuccess: async () => {
+      await invalidate();
+      onFormSuccess();
+    },
+    onError: (err: Error) => setFormError(mapVariantMutationError(err, t)),
+  });
+  const update = useMutation({
+    mutationFn: async ({ id, slug, name, defaultUnit, packageSizeG, notes }: UpdateVariantInput) => {
+      const body: UpdateBody = { slug, name, defaultUnit, packageSizeG, notes };
+      return unwrap(await variantsUpdate({ path: { id }, body }));
+    },
+    onSuccess: async () => {
+      await invalidate();
+      onFormSuccess();
+    },
+    onError: (err: Error) => setFormError(mapVariantMutationError(err, t)),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id }: DeleteVariantInput) => unwrap(await variantsDelete({ path: { id } })),
+    onSuccess: async () => {
+      await invalidate();
+      onDeleteSuccess();
+    },
+    onError: (err: Error) => {
+      if (isConflict(err)) {
+        setDeleteError(t('data.ingredients.variants.delete.referenced'));
+        return;
+      }
+      setDeleteError(t('data.ingredients.variants.error.generic'));
+    },
+  });
 
   return {
     formError,

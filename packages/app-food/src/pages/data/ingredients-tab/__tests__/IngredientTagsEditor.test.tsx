@@ -1,14 +1,15 @@
 /**
  * PRD-151 — IngredientTagsEditor unit tests.
  *
- * Mocks `@pops/pillar-sdk` so the component is exercised against a fully
- * synchronous tRPC stand-in. Covers:
+ * Mocks the generated food SDK so the component is exercised against a
+ * controlled stand-in. Covers:
  *   - initial render hydrates from the server-side list
  *   - adding a chip is local until Save
  *   - removing a chip toggles dirty + the Save button
  *   - autocomplete suggestions come from `distinct`
  *   - server-side BadTagFormat surfaces inline (no thrown error)
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -18,27 +19,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-const mockListUseQuery = vi.fn();
-const mockDistinctUseQuery = vi.fn();
-const mockSetMutate = vi.fn();
-const mockSetUseMutation = vi.fn();
-const mockInvalidate = vi.fn();
+const ingredientTagsListMock = vi.hoisted(() => vi.fn());
+const ingredientTagsDistinctMock = vi.hoisted(() => vi.fn());
+const ingredientTagsSetMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'ingredients.tags.list') return mockListUseQuery(input);
-    if (key === 'ingredients.tags.distinct') return mockDistinctUseQuery(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[], opts: unknown) => {
-    const key = path.join('.');
-    if (key === 'ingredients.tags.set') return mockSetUseMutation(opts);
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: mockInvalidate,
-  }),
+vi.mock('../../../../food-api/index.js', () => ({
+  ingredientTagsList: ingredientTagsListMock,
+  ingredientTagsDistinct: ingredientTagsDistinctMock,
+  ingredientTagsSet: ingredientTagsSetMock,
 }));
 
 import { IngredientTagsEditor } from '../IngredientTagsEditor.js';
@@ -56,41 +44,45 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
-  return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
+  const client = useMemo(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+    []
+  );
+  return (
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+    </QueryClientProvider>
+  );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListUseQuery.mockReturnValue({ data: { tags: [] }, isLoading: false });
-  mockDistinctUseQuery.mockReturnValue({ data: { tags: [] } });
-  mockSetUseMutation.mockReturnValue({
-    mutate: mockSetMutate,
-    isPending: false,
-  });
+  ingredientTagsListMock.mockResolvedValue({ data: { tags: [] } });
+  ingredientTagsDistinctMock.mockResolvedValue({ data: { tags: [] } });
+  ingredientTagsSetMock.mockResolvedValue({ data: { ok: true } });
 });
 
 describe('IngredientTagsEditor', () => {
-  it('renders the empty state when the ingredient has no tags', () => {
+  it('renders the empty state when the ingredient has no tags', async () => {
     render(
       <Wrapper>
         <IngredientTagsEditor ingredientId={1} />
       </Wrapper>
     );
-    expect(screen.getByText(/no tags yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no tags yet/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
   });
 
-  it('hydrates from the server-side list', () => {
-    mockListUseQuery.mockReturnValue({
+  it('hydrates from the server-side list', async () => {
+    ingredientTagsListMock.mockResolvedValue({
       data: { tags: ['diet:vegan', 'store-section:produce'] },
-      isLoading: false,
     });
     render(
       <Wrapper>
         <IngredientTagsEditor ingredientId={1} />
       </Wrapper>
     );
-    expect(screen.getByText('diet:vegan')).toBeInTheDocument();
+    expect(await screen.findByText('diet:vegan')).toBeInTheDocument();
     expect(screen.getByText('store-section:produce')).toBeInTheDocument();
   });
 
@@ -101,7 +93,7 @@ describe('IngredientTagsEditor', () => {
         <IngredientTagsEditor ingredientId={1} />
       </Wrapper>
     );
-    await user.type(screen.getByLabelText(/new tag/i), 'store-section:produce');
+    await user.type(await screen.findByLabelText(/new tag/i), 'store-section:produce');
     await user.click(screen.getByRole('button', { name: /^add$/i }));
     expect(screen.getByText('store-section:produce')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save/i })).not.toBeDisabled();
@@ -114,36 +106,40 @@ describe('IngredientTagsEditor', () => {
         <IngredientTagsEditor ingredientId={1} />
       </Wrapper>
     );
-    const input = screen.getByLabelText(/new tag/i);
+    const input = await screen.findByLabelText(/new tag/i);
     await user.type(input, 'diet:vegan{Enter}');
     expect(screen.getByText('diet:vegan')).toBeInTheDocument();
   });
 
   it('clicking Save invokes the mutation with the dirty set', async () => {
     const user = userEvent.setup();
-    mockListUseQuery.mockReturnValue({ data: { tags: ['old:one'] }, isLoading: false });
+    ingredientTagsListMock.mockResolvedValue({ data: { tags: ['old:one'] } });
     render(
       <Wrapper>
         <IngredientTagsEditor ingredientId={42} />
       </Wrapper>
     );
+    expect(await screen.findByText('old:one')).toBeInTheDocument();
     await user.type(screen.getByLabelText(/new tag/i), 'diet:vegan');
     await user.click(screen.getByRole('button', { name: /^add$/i }));
     await user.click(screen.getByRole('button', { name: /^save$/i }));
-    expect(mockSetMutate).toHaveBeenCalledWith(
-      { ingredientId: 42, tags: ['old:one', 'diet:vegan'] },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
-    );
+    await waitFor(() => {
+      expect(ingredientTagsSetMock).toHaveBeenCalledWith({
+        path: { ingredientId: 42 },
+        body: { tags: ['old:one', 'diet:vegan'] },
+      });
+    });
   });
 
   it('Reset returns to the server-side set', async () => {
     const user = userEvent.setup();
-    mockListUseQuery.mockReturnValue({ data: { tags: ['kept:one'] }, isLoading: false });
+    ingredientTagsListMock.mockResolvedValue({ data: { tags: ['kept:one'] } });
     render(
       <Wrapper>
         <IngredientTagsEditor ingredientId={1} />
       </Wrapper>
     );
+    expect(await screen.findByText('kept:one')).toBeInTheDocument();
     await user.type(screen.getByLabelText(/new tag/i), 'diet:vegan');
     await user.click(screen.getByRole('button', { name: /^add$/i }));
     expect(screen.getByText('diet:vegan')).toBeInTheDocument();
@@ -152,8 +148,8 @@ describe('IngredientTagsEditor', () => {
     expect(screen.getByText('kept:one')).toBeInTheDocument();
   });
 
-  it('autocomplete suggestions surface in the datalist', () => {
-    mockDistinctUseQuery.mockReturnValue({
+  it('autocomplete suggestions surface in the datalist', async () => {
+    ingredientTagsDistinctMock.mockResolvedValue({
       data: {
         tags: [
           { tag: 'store-section:produce', ingredientCount: 3, firstSeenAt: '2026-06-10' },
@@ -166,24 +162,22 @@ describe('IngredientTagsEditor', () => {
         <IngredientTagsEditor ingredientId={1} />
       </Wrapper>
     );
-    const datalist = container.querySelector('datalist');
-    expect(datalist).not.toBeNull();
-    const options = datalist?.querySelectorAll('option') ?? [];
-    expect(options).toHaveLength(2);
+    await waitFor(() => {
+      expect(container.querySelectorAll('datalist option')).toHaveLength(2);
+    });
+    const options = container.querySelectorAll('datalist option');
     expect(options[0]?.getAttribute('value')).toBe('store-section:produce');
   });
 
   it('surfaces BadTagFormat from the server inline', async () => {
     const user = userEvent.setup();
-    mockSetMutate.mockImplementation((_input, opts: { onSuccess: (r: unknown) => void }) => {
-      opts.onSuccess({ ok: false, reason: 'BadTagFormat' });
-    });
+    ingredientTagsSetMock.mockResolvedValue({ data: { ok: false, reason: 'BadTagFormat' } });
     render(
       <Wrapper>
         <IngredientTagsEditor ingredientId={1} />
       </Wrapper>
     );
-    await user.type(screen.getByLabelText(/new tag/i), 'has space');
+    await user.type(await screen.findByLabelText(/new tag/i), 'has space');
     await user.click(screen.getByRole('button', { name: /^add$/i }));
     await user.click(screen.getByRole('button', { name: /^save$/i }));
     await waitFor(() => {

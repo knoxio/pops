@@ -1,52 +1,37 @@
-import { render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const substitutionsListHydratedMock = vi.hoisted(() => vi.fn());
+const slugsSearchMock = vi.hoisted(() => vi.fn());
+const ingredientsGetMock = vi.hoisted(() => vi.fn());
+const substitutionsCreateMock = vi.hoisted(() => vi.fn());
+const substitutionsUpdateMock = vi.hoisted(() => vi.fn());
+const substitutionsDeleteMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../../../food-api/index.js', () => ({
+  substitutionsListHydrated: substitutionsListHydratedMock,
+  slugsSearch: slugsSearchMock,
+  ingredientsGet: ingredientsGetMock,
+  substitutionsCreate: substitutionsCreateMock,
+  substitutionsUpdate: substitutionsUpdateMock,
+  substitutionsDelete: substitutionsDeleteMock,
+}));
 
 import { SubstitutionsTab } from '../../SubstitutionsTab';
 
-const mockListHydratedQuery = vi.fn();
-const mockSlugSearchQuery = vi.fn();
-const mockIngredientGetQuery = vi.fn();
-const mockCreateMutate = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockDeleteMutate = vi.fn();
-let createOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
-let _updateOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
-let _deleteOpts: { onSuccess?: () => void; onError?: (e: unknown) => void } = {};
-const mockInvalidate = vi.fn();
+function withClient(children: ReactNode): JSX.Element {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
-    const key = path.join('.');
-    if (key === 'substitutions.listHydrated') return mockListHydratedQuery(input);
-    if (key === 'slugs.search') return mockSlugSearchQuery(input, opts);
-    if (key === 'ingredients.get') return mockIngredientGetQuery(input, opts);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: { onSuccess?: () => void; onError?: (e: unknown) => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'substitutions.create') {
-      createOpts = opts;
-      return { mutate: mockCreateMutate, mutateAsync: vi.fn(), isPending: false };
-    }
-    if (key === 'substitutions.update') {
-      _updateOpts = opts;
-      return { mutate: mockUpdateMutate, mutateAsync: vi.fn(), isPending: false };
-    }
-    if (key === 'substitutions.delete') {
-      _deleteOpts = opts;
-      return { mutate: mockDeleteMutate, mutateAsync: vi.fn(), isPending: false };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: mockInvalidate,
-  }),
-}));
+function renderTab(): void {
+  render(withClient(<SubstitutionsTab />));
+}
 
 function row(
   overrides: Partial<{
@@ -95,51 +80,52 @@ function row(
 }
 
 function seedList(rows: ReturnType<typeof row>[]) {
-  mockListHydratedQuery.mockReturnValue({ data: { items: rows }, isLoading: false });
+  substitutionsListHydratedMock.mockResolvedValue({ data: { items: rows } });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  createOpts = {};
-  _updateOpts = {};
-  _deleteOpts = {};
-  mockSlugSearchQuery.mockReturnValue({ data: { items: [] }, isLoading: false });
-  mockIngredientGetQuery.mockReturnValue({ data: undefined, isLoading: false });
+  substitutionsListHydratedMock.mockResolvedValue({ data: { items: [] } });
+  slugsSearchMock.mockResolvedValue({ data: { items: [] } });
+  ingredientsGetMock.mockResolvedValue({ data: { ingredient: {}, variants: [] } });
+  substitutionsCreateMock.mockResolvedValue({ data: {} });
+  substitutionsUpdateMock.mockResolvedValue({ data: {} });
+  substitutionsDeleteMock.mockResolvedValue({ data: { ok: true } });
 });
 
 describe('PRD-122-D — SubstitutionsTab', () => {
-  it('renders rows for each substitution returned by listHydrated', () => {
+  it('renders rows for each substitution returned by listHydrated', async () => {
     seedList([
       row({ id: 1, ratio: 1.25, contextTags: ['baking'] }),
       row({ id: 2, fromSlug: 'sugar', toSlug: 'honey', ratio: 0.75 }),
     ]);
-    render(<SubstitutionsTab />);
-    expect(screen.getByTestId('sub-row-1')).toBeInTheDocument();
+    renderTab();
+    expect(await screen.findByTestId('sub-row-1')).toBeInTheDocument();
     expect(screen.getByTestId('sub-row-2')).toBeInTheDocument();
     expect(screen.getByText('butter')).toBeInTheDocument();
     expect(screen.getByText('honey')).toBeInTheDocument();
     expect(screen.getByText('baking')).toBeInTheDocument();
   });
 
-  it('renders variant endpoints with parent slug prefix', () => {
+  it('renders variant endpoints with parent slug prefix', async () => {
     seedList([
       row({ id: 3, fromKind: 'variant', fromSlug: 'whole', toKind: 'variant', toSlug: 'skim' }),
     ]);
-    render(<SubstitutionsTab />);
-    expect(screen.getByText('milk:whole')).toBeInTheDocument();
+    renderTab();
+    expect(await screen.findByText('milk:whole')).toBeInTheDocument();
     expect(screen.getByText('olive:skim')).toBeInTheDocument();
   });
 
-  it('shows the empty state when no rows match', () => {
+  it('shows the empty state when no rows match', async () => {
     seedList([]);
-    render(<SubstitutionsTab />);
-    expect(screen.getByText(/no substitutions match/i)).toBeInTheDocument();
+    renderTab();
+    expect(await screen.findByText(/no substitutions match/i)).toBeInTheDocument();
   });
 
   it('clicking Edit reveals inline ratio + tags inputs and Save fires update mutation', async () => {
     seedList([row({ id: 5, ratio: 1, contextTags: ['baking'] })]);
-    render(<SubstitutionsTab />);
-    const row5 = screen.getByTestId('sub-row-5');
+    renderTab();
+    const row5 = await screen.findByTestId('sub-row-5');
     await userEvent.click(within(row5).getByRole('button', { name: /^edit$/i }));
     const ratioInput = within(row5).getByLabelText(/edit ratio for substitution 5/i);
     await userEvent.clear(ratioInput);
@@ -148,44 +134,67 @@ describe('PRD-122-D — SubstitutionsTab', () => {
     await userEvent.clear(tagsInput);
     await userEvent.type(tagsInput, 'baking, vegan');
     await userEvent.click(within(row5).getByRole('button', { name: /^save$/i }));
-    expect(mockUpdateMutate).toHaveBeenCalledWith({
-      id: 5,
-      ratio: 2.5,
-      contextTags: ['baking', 'vegan'],
+    await waitFor(() => {
+      expect(substitutionsUpdateMock).toHaveBeenCalledWith({
+        path: { id: 5 },
+        body: { ratio: 2.5, contextTags: ['baking', 'vegan'] },
+      });
     });
   });
 
   it('Delete button fires the delete mutation', async () => {
     seedList([row({ id: 7 })]);
-    render(<SubstitutionsTab />);
-    const row7 = screen.getByTestId('sub-row-7');
+    renderTab();
+    const row7 = await screen.findByTestId('sub-row-7');
     await userEvent.click(within(row7).getByRole('button', { name: /^delete$/i }));
-    expect(mockDeleteMutate).toHaveBeenCalledWith({ id: 7 });
+    await waitFor(() => {
+      expect(substitutionsDeleteMock).toHaveBeenCalledWith({ path: { id: 7 } });
+    });
   });
 
-  it('surfaces a duplicate error from the create mutation', async () => {
+  it('surfaces a duplicate error from create', async () => {
     seedList([]);
-    render(<SubstitutionsTab />);
-    createOpts.onError?.({ message: 'already exists', data: { code: 'CONFLICT' } });
+    slugsSearchMock.mockResolvedValue({
+      data: { items: [{ kind: 'ingredient', name: 'Butter', slug: 'butter', targetId: 100 }] },
+    });
+    substitutionsCreateMock.mockResolvedValue({
+      error: { message: 'already exists' },
+      response: { status: 409 },
+    });
+    renderTab();
+
+    const form = screen.getByRole('form', { name: /add substitution/i });
+    const [fromBox, toBox] = within(form).getAllByPlaceholderText(/search slug/i);
+    await userEvent.type(fromBox, 'butter');
+    await userEvent.click(await within(form).findByRole('option', { name: /butter/i }));
+    await userEvent.type(toBox, 'butter');
+    await userEvent.click(await within(form).findByRole('option', { name: /butter/i }));
+
+    await userEvent.click(within(form).getByRole('button', { name: /^add$/i }));
+
     expect(await screen.findByRole('alert')).toHaveTextContent(/already exists/i);
   });
 
   it('filter scope=recipe reveals a recipeId filter input and includes it in the list query', async () => {
     seedList([]);
-    render(<SubstitutionsTab />);
+    renderTab();
     const scopeSelect = screen.getByLabelText(/^scope$/i, { selector: '#sub-filter-scope' });
     await userEvent.selectOptions(scopeSelect, 'recipe');
     const recipeFilter = screen.getByLabelText(/recipe id/i, { selector: '#sub-filter-recipe' });
     await userEvent.type(recipeFilter, '42');
-    const calls = mockListHydratedQuery.mock.calls;
-    const lastInput = calls[calls.length - 1]?.[0] as { scope?: string; recipeId?: number };
-    expect(lastInput.scope).toBe('recipe');
-    expect(lastInput.recipeId).toBe(42);
+    await waitFor(() => {
+      const lastInput = substitutionsListHydratedMock.mock.lastCall?.[0]?.query as {
+        scope?: string;
+        recipeId?: number;
+      };
+      expect(lastInput.scope).toBe('recipe');
+      expect(lastInput.recipeId).toBe(42);
+    });
   });
 
-  it('recipe-scope rows display the recipe slug', () => {
+  it('recipe-scope rows display the recipe slug', async () => {
     seedList([row({ id: 9, scope: 'recipe', recipeId: 42, recipeSlug: 'weeknight-pasta' })]);
-    render(<SubstitutionsTab />);
-    expect(screen.getByText(/recipe \(weeknight-pasta\)/i)).toBeInTheDocument();
+    renderTab();
+    expect(await screen.findByText(/recipe \(weeknight-pasta\)/i)).toBeInTheDocument();
   });
 });

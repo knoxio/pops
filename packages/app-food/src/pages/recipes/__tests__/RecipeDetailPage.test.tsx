@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -10,37 +11,14 @@ import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/f
 
 import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
 
-const mockGet = vi.fn();
-const mockDrafts = vi.fn();
-const mockArchiveMutate = vi.fn();
-let mockArchivePending = false;
-let mockArchiveOnSuccess: (() => void) | undefined;
-let mockArchiveOnError: ((err: Error) => void) | undefined;
+const recipesGetForRenderingMock = vi.hoisted(() => vi.fn());
+const recipesListDraftsMock = vi.hoisted(() => vi.fn());
+const recipesArchiveRecipeMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'recipes.getForRendering') return mockGet(input);
-    if (key === 'recipes.listDrafts') return mockDrafts(input);
-    return { isLoading: false, data: undefined, error: null, refetch: vi.fn() };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: { onSuccess?: () => void; onError?: (err: Error) => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'recipes.archiveRecipe') {
-      mockArchiveOnSuccess = opts.onSuccess;
-      mockArchiveOnError = opts.onError;
-      return { mutate: mockArchiveMutate, isPending: mockArchivePending };
-    }
-    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    invalidate: vi.fn(),
-    setData: vi.fn(),
-  }),
+vi.mock('../../../food-api/index.js', () => ({
+  recipesGetForRendering: recipesGetForRenderingMock,
+  recipesListDrafts: recipesListDraftsMock,
+  recipesArchiveRecipe: recipesArchiveRecipeMock,
 }));
 
 vi.mock('../../../components/RecipeRenderer.js', () => ({
@@ -121,25 +99,33 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
 beforeEach(() => {
-  mockGet.mockReset();
-  mockDrafts.mockReset();
-  mockArchiveMutate.mockReset();
+  recipesGetForRenderingMock.mockReset();
+  recipesListDraftsMock.mockReset();
+  recipesArchiveRecipeMock.mockReset();
   navigateMock.mockReset();
-  mockArchivePending = false;
+  recipesListDraftsMock.mockResolvedValue({ data: { drafts: [] } });
 });
 
 describe('PRD-119-B — RecipeDetailPage', () => {
   it('shows the loading state while the query resolves', () => {
-    mockGet.mockReturnValue({ isLoading: true, data: undefined, error: null, refetch: vi.fn() });
-    mockDrafts.mockReturnValue({ data: undefined, error: null, refetch: vi.fn() });
+    recipesGetForRenderingMock.mockReturnValue(new Promise(() => {}));
     render(
       <Wrapper>
         <RecipeDetailPage />
@@ -148,115 +134,101 @@ describe('PRD-119-B — RecipeDetailPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/loading recipe/i);
   });
 
-  it('renders the RecipeRenderer stub when the query resolves', () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: makePayload(),
-      error: null,
-      refetch: vi.fn(),
-    });
-    mockDrafts.mockReturnValue({ data: { drafts: [] }, error: null, refetch: vi.fn() });
+  it('renders the RecipeRenderer stub when the query resolves', async () => {
+    recipesGetForRenderingMock.mockResolvedValue({ data: makePayload() });
     render(
       <Wrapper>
         <RecipeDetailPage />
       </Wrapper>
     );
-    expect(screen.getByTestId('renderer-stub')).toHaveTextContent('pancakes');
+    expect(await screen.findByTestId('renderer-stub')).toHaveTextContent('pancakes');
   });
 
-  it('routes NOT_FOUND errors to the not-found shell', () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: undefined,
-      error: new Error('Recipe "ghost" not found'),
-      refetch: vi.fn(),
+  it('routes NOT_FOUND errors to the not-found shell', async () => {
+    recipesGetForRenderingMock.mockResolvedValue({
+      error: { message: 'Recipe "ghost" not found' },
+      response: { status: 404 },
     });
-    mockDrafts.mockReturnValue({ data: { drafts: [] }, error: null, refetch: vi.fn() });
     render(
       <Wrapper>
         <RecipeDetailPage />
       </Wrapper>
     );
-    expect(screen.getByRole('alert')).toHaveTextContent(/recipe not found/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/recipe not found/i);
   });
 
   it('renders the action menu with the draft count surfaced', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: makePayload(),
-      error: null,
-      refetch: vi.fn(),
-    });
-    mockDrafts.mockReturnValue({
-      data: { drafts: [{ versionId: 1 }, { versionId: 2 }] },
-      error: null,
-      refetch: vi.fn(),
+    recipesGetForRenderingMock.mockResolvedValue({ data: makePayload() });
+    recipesListDraftsMock.mockResolvedValue({
+      data: {
+        drafts: [
+          { versionId: 1, versionNo: 1, title: 'a', compileStatus: 'compiled', createdAt: 'x', preview: '' },
+          { versionId: 2, versionNo: 2, title: 'b', compileStatus: 'compiled', createdAt: 'x', preview: '' },
+        ],
+      },
     });
     render(
       <Wrapper>
         <RecipeDetailPage />
       </Wrapper>
     );
+    await screen.findByTestId('renderer-stub');
     await userEvent.click(screen.getByRole('button', { name: /actions/i }));
     expect(screen.getByText(/drafts.*2/i)).toBeInTheDocument();
   });
 
   it('opens the archive dialog from the menu and fires the mutation on confirm', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: makePayload(),
-      error: null,
-      refetch: vi.fn(),
-    });
-    mockDrafts.mockReturnValue({ data: { drafts: [] }, error: null, refetch: vi.fn() });
+    recipesGetForRenderingMock.mockResolvedValue({ data: makePayload() });
+    recipesArchiveRecipeMock.mockResolvedValue({ data: { ok: true } });
     render(
       <Wrapper>
         <RecipeDetailPage />
       </Wrapper>
     );
+    await screen.findByTestId('renderer-stub');
     await userEvent.click(screen.getByRole('button', { name: /actions/i }));
     await userEvent.click(screen.getByRole('menuitem', { name: /archive/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText(/type "archive"/i), 'archive');
     await userEvent.click(screen.getByRole('button', { name: /archive recipe/i }));
-    expect(mockArchiveMutate).toHaveBeenCalledWith({ slug: 'pancakes' });
+    await waitFor(() =>
+      expect(recipesArchiveRecipeMock).toHaveBeenCalledWith({ path: { slug: 'pancakes' } })
+    );
   });
 
   it('navigates back to the list page on archive success', async () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: makePayload(),
-      error: null,
-      refetch: vi.fn(),
-    });
-    mockDrafts.mockReturnValue({ data: { drafts: [] }, error: null, refetch: vi.fn() });
+    recipesGetForRenderingMock.mockResolvedValue({ data: makePayload() });
+    recipesArchiveRecipeMock.mockResolvedValue({ data: { ok: true } });
     render(
       <Wrapper>
         <RecipeDetailPage />
       </Wrapper>
     );
-    // Mounting registers the callback; invoking it should trigger the
-    // navigate side-effect.
-    expect(mockArchiveOnSuccess).toBeDefined();
-    mockArchiveOnSuccess?.();
+    await screen.findByTestId('renderer-stub');
+    await userEvent.click(screen.getByRole('button', { name: /actions/i }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /archive/i }));
+    await userEvent.type(screen.getByLabelText(/type "archive"/i), 'archive');
+    await userEvent.click(screen.getByRole('button', { name: /archive recipe/i }));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/food/recipes'));
   });
 
-  it('surfaces the toast errors path via the mutation onError hook', () => {
-    mockGet.mockReturnValue({
-      isLoading: false,
-      data: makePayload(),
-      error: null,
-      refetch: vi.fn(),
+  it('surfaces the toast errors path when archive fails', async () => {
+    recipesGetForRenderingMock.mockResolvedValue({ data: makePayload() });
+    recipesArchiveRecipeMock.mockResolvedValue({
+      error: { message: 'boom' },
+      response: { status: 500 },
     });
-    mockDrafts.mockReturnValue({ data: { drafts: [] }, error: null, refetch: vi.fn() });
     render(
       <Wrapper>
         <RecipeDetailPage />
       </Wrapper>
     );
-    expect(mockArchiveOnError).toBeDefined();
-    // Calling it should not throw — covers the error branch.
-    expect(() => mockArchiveOnError?.(new Error('boom'))).not.toThrow();
+    await screen.findByTestId('renderer-stub');
+    await userEvent.click(screen.getByRole('button', { name: /actions/i }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /archive/i }));
+    await userEvent.type(screen.getByLabelText(/type "archive"/i), 'archive');
+    await userEvent.click(screen.getByRole('button', { name: /archive recipe/i }));
+    await waitFor(() => expect(recipesArchiveRecipeMock).toHaveBeenCalledTimes(1));
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });

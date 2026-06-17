@@ -11,20 +11,21 @@
  * v1 is read-only. Rename / merge / bulk operations are deferred to a
  * future PRD that introduces multi-select on the Ingredients tab too.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientTagsByTag, ingredientTagsDistinct } from '../../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
-import type { TagDistinctRow } from '@pops/app-food-db';
+import type {
+  IngredientTagsByTagResponses,
+  IngredientTagsDistinctResponses,
+} from '../../../food-api/types.gen.js';
 
-type TagsDistinctOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['distinct'];
-type TagsFindByTagOutput =
-  inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['findByTag'];
+type TagDistinctRow = IngredientTagsDistinctResponses[200]['tags'][number];
 
 const NO_NAMESPACE = '__none__';
 
@@ -60,11 +61,11 @@ function formatTimestamp(value: string): string {
 
 export function TagsTab() {
   const { t } = useTranslation('food');
-  const distinctQuery = usePillarQuery<TagsDistinctOutput>(
-    'food',
-    ['ingredients', 'tags', 'distinct'],
-    { limit: 500 }
-  );
+  const distinctQuery = useQuery({
+    queryKey: ['food', 'ingredients', 'tags', 'distinct', { limit: 500 }],
+    queryFn: async (): Promise<IngredientTagsDistinctResponses[200]> =>
+      unwrap(await ingredientTagsDistinct({ query: { limit: 500 } })),
+  });
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   if (distinctQuery.isLoading) {
@@ -174,12 +175,12 @@ function TagDetailsPanel({
 }) {
   const { t } = useTranslation('food');
   const enabled = selectedTag !== null;
-  const findQuery = usePillarQuery<TagsFindByTagOutput>(
-    'food',
-    ['ingredients', 'tags', 'findByTag'],
-    { tag: selectedTag ?? '' },
-    { enabled }
-  );
+  const findQuery = useQuery({
+    queryKey: ['food', 'ingredients', 'tags', 'findByTag', { tag: selectedTag ?? '' }],
+    queryFn: async (): Promise<IngredientTagsByTagResponses[200]> =>
+      unwrap(await ingredientTagsByTag({ query: { tag: selectedTag ?? '' } })),
+    enabled,
+  });
   if (selectedTag === null) {
     return (
       <aside aria-label={t('data.tags.detail.ariaLabel')} className="text-muted-foreground text-sm">

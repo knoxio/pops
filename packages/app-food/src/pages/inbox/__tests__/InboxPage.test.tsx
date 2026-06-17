@@ -5,8 +5,9 @@
  *   - `?tab=rejected` → Rejected tab body
  *   - invalid `?tab` is normalised to `drafts` and the URL is updated
  *   - tab change pushes the new `?tab` into the URL
- *   - pendingCount renders from `food.inbox.pendingCount`
+ *   - pendingCount renders from `inbox.pendingCount`
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -18,44 +19,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-const mockListQuery = vi.fn(() => ({
-  data: { items: [], nextCursor: null },
-  isLoading: false,
-  isError: false,
-  error: null,
-}));
-const mockListRejected = vi.fn(() => ({
-  data: { items: [], nextCursor: null },
-  isLoading: false,
-  isError: false,
-  error: null,
-}));
-const mockListFailed = vi.fn(() => ({
-  data: { items: [], nextCursor: null },
-  isLoading: false,
-  isError: false,
-  error: null,
-}));
-const mockPendingCount = vi.fn(() => ({
-  data: { count: 5 },
-  isLoading: false,
-  isError: false,
-  error: null,
-}));
-const mockFailedErrorCodes = vi.fn(() => ({ data: [], isLoading: false }));
+const inboxListMock = vi.hoisted(() => vi.fn());
+const inboxListRejectedMock = vi.hoisted(() => vi.fn());
+const inboxListFailedMock = vi.hoisted(() => vi.fn());
+const inboxPendingCountMock = vi.hoisted(() => vi.fn());
+const inboxFailedErrorCodesMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'inbox.list') return mockListQuery(input);
-    if (key === 'inbox.pendingCount') return mockPendingCount();
-    if (key === 'inbox.listRejected') return mockListRejected(input);
-    if (key === 'inbox.listFailed') return mockListFailed(input);
-    if (key === 'inbox.failedErrorCodes') return mockFailedErrorCodes();
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: () => ({ mutate: vi.fn(), isPending: false, variables: undefined }),
-  usePillarUtils: () => ({ setData: vi.fn(), invalidate: vi.fn() }),
+vi.mock('../../../food-api/index.js', () => ({
+  inboxList: inboxListMock,
+  inboxListRejected: inboxListRejectedMock,
+  inboxListFailed: inboxListFailedMock,
+  inboxPendingCount: inboxPendingCountMock,
+  inboxFailedErrorCodes: inboxFailedErrorCodesMock,
 }));
 
 import { InboxPage } from '../InboxPage.js';
@@ -84,24 +59,35 @@ function Wrapper({ initial }: { initial: string }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter initialEntries={[initial]}>
-        <Routes>
-          <Route
-            path="/food/inbox"
-            element={<InboxPage now={new Date('2026-06-10T18:00:00Z')} />}
-          />
-        </Routes>
-        <LocationProbe />
-        <Toaster />
-      </MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter initialEntries={[initial]}>
+          <Routes>
+            <Route
+              path="/food/inbox"
+              element={<InboxPage now={new Date('2026-06-10T18:00:00Z')} />}
+            />
+          </Routes>
+          <LocationProbe />
+          <Toaster />
+        </MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  inboxListMock.mockResolvedValue({ data: { items: [], nextCursor: null } });
+  inboxListRejectedMock.mockResolvedValue({ data: { items: [], nextCursor: null } });
+  inboxListFailedMock.mockResolvedValue({ data: { items: [], nextCursor: null } });
+  inboxPendingCountMock.mockResolvedValue({ data: { count: 5 } });
+  inboxFailedErrorCodesMock.mockResolvedValue({ data: { items: [] } });
 });
 
 describe('InboxPage — PRD-134', () => {
@@ -135,8 +121,10 @@ describe('InboxPage — PRD-134', () => {
     expect(screen.getByTestId('failed-tab')).toBeInTheDocument();
   });
 
-  it('renders the pending-count from food.inbox.pendingCount', () => {
+  it('renders the pending-count from inbox.pendingCount', async () => {
     render(<Wrapper initial="/food/inbox" />);
-    expect(screen.getByTestId('inbox-pending-count').textContent).toMatch(/5 drafts/);
+    await waitFor(() => {
+      expect(screen.getByTestId('inbox-pending-count').textContent).toMatch(/5 drafts/);
+    });
   });
 });

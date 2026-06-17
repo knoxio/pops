@@ -1,15 +1,19 @@
+import { useQuery } from '@tanstack/react-query';
 import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Label, useDebouncedValue } from '@pops/ui';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientsGet, slugsSearch } from '../../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
+import type {
+  IngredientsGetResponses,
+  SlugsSearchResponses,
+} from '../../../food-api/types.gen.js';
 
-type SlugSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
-type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
+type SlugSearchOutput = SlugsSearchResponses[200];
+type IngredientsGetOutput = IngredientsGetResponses[200];
 
 import { IngredientSearch, type SlugSearchItem } from './endpoint-picker/IngredientSearch';
 import { KindToggle } from './endpoint-picker/KindToggle';
@@ -31,26 +35,26 @@ function useEndpointPickerQueries(
   debounced: string
 ) {
   const searchEnabled = value === null && debounced.length > 0;
-  const searchQuery = usePillarQuery<SlugSearchOutput>(
-    'food',
-    ['slugs', 'search'],
-    { query: debounced, kinds: ['ingredient'], limit: 8 },
-    { enabled: searchEnabled }
-  );
+  const searchQuery = useQuery({
+    queryKey: ['food', 'slugs', 'search', debounced],
+    queryFn: async (): Promise<SlugSearchOutput> =>
+      unwrap(await slugsSearch({ query: { query: debounced, kinds: ['ingredient'], limit: 8 } })),
+    enabled: searchEnabled,
+  });
   const matches = useMemo<readonly SlugSearchItem[]>(
-    () => (searchQuery.data?.items as readonly SlugSearchItem[] | undefined) ?? [],
+    () => searchQuery.data?.items ?? [],
     [searchQuery.data]
   );
   const detailEnabled = kind === 'variant' && parentIngredientId !== null && value === null;
-  const detailQuery = usePillarQuery<IngredientsGetOutput>(
-    'food',
-    ['ingredients', 'get'],
-    { idOrSlug: parentIngredientId ?? 0 },
-    { enabled: detailEnabled }
-  );
+  const detailQuery = useQuery({
+    queryKey: ['food', 'ingredients', 'get', parentIngredientId],
+    queryFn: async (): Promise<IngredientsGetOutput> =>
+      unwrap(await ingredientsGet({ path: { idOrSlug: String(parentIngredientId ?? 0) } })),
+    enabled: detailEnabled,
+  });
   const variants = useMemo<readonly VariantOption[]>(
     () =>
-      ((detailQuery.data?.variants as readonly VariantOption[] | undefined) ?? []).map((v) => ({
+      (detailQuery.data?.variants ?? []).map((v) => ({
         id: v.id,
         slug: v.slug,
         name: v.name,

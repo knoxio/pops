@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { createInstance } from 'i18next';
 import { useMemo, type ReactElement } from 'react';
@@ -7,14 +8,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-const mockListDrafts = vi.fn();
+const recipesListDraftsMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'recipes.listDrafts') return mockListDrafts(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
+vi.mock('../../../food-api/index.js', () => ({
+  recipesListDrafts: recipesListDraftsMock,
 }));
 
 vi.mock('../RecipeEditPage.js', () => ({
@@ -63,15 +60,35 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
+function resolveDrafts(drafts: { versionId: number; versionNo: number }[]): void {
+  recipesListDraftsMock.mockResolvedValue({
+    data: {
+      drafts: drafts.map((d) => ({
+        ...d,
+        title: 't',
+        compileStatus: 'compiled',
+        createdAt: 'x',
+        preview: '',
+      })),
+    },
+  });
+}
+
 beforeEach(() => {
-  mockListDrafts.mockReset();
+  recipesListDraftsMock.mockReset();
   currentParams = { slug: 'pancakes', draftNo: '2' };
 });
 
@@ -97,7 +114,7 @@ describe('PRD-119-D — RecipeDraftEditPage', () => {
   });
 
   it('shows loading status while drafts are being fetched', () => {
-    mockListDrafts.mockReturnValue({ isLoading: true, data: undefined, error: null });
+    recipesListDraftsMock.mockReturnValue(new Promise(() => {}));
     render(
       <Wrapper>
         <RecipeDraftEditPage />
@@ -106,37 +123,27 @@ describe('PRD-119-D — RecipeDraftEditPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/loading draft/i);
   });
 
-  it('alerts when no matching draftNo is found', () => {
-    mockListDrafts.mockReturnValue({
-      isLoading: false,
-      data: { drafts: [{ versionId: 1, versionNo: 1 }] },
-      error: null,
-    });
+  it('alerts when no matching draftNo is found', async () => {
+    resolveDrafts([{ versionId: 1, versionNo: 1 }]);
     render(
       <Wrapper>
         <RecipeDraftEditPage />
       </Wrapper>
     );
-    expect(screen.getByRole('alert')).toHaveTextContent(/draft #2 does not exist/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/draft #2 does not exist/i);
   });
 
-  it('renders the edit-shell stub with the matched (versionId, versionNo)', () => {
-    mockListDrafts.mockReturnValue({
-      isLoading: false,
-      data: {
-        drafts: [
-          { versionId: 1, versionNo: 1 },
-          { versionId: 22, versionNo: 2 },
-        ],
-      },
-      error: null,
-    });
+  it('renders the edit-shell stub with the matched (versionId, versionNo)', async () => {
+    resolveDrafts([
+      { versionId: 1, versionNo: 1 },
+      { versionId: 22, versionNo: 2 },
+    ]);
     render(
       <Wrapper>
         <RecipeDraftEditPage />
       </Wrapper>
     );
-    const stub = screen.getByTestId('edit-shell-stub');
+    const stub = await screen.findByTestId('edit-shell-stub');
     expect(stub).toHaveAttribute('data-slug', 'pancakes');
     expect(stub).toHaveAttribute('data-vid', '22');
     expect(stub).toHaveAttribute('data-vno', '2');
