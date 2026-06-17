@@ -1136,6 +1136,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.7)
+      '@hey-api/client-fetch':
+        specifier: ^0.13.1
+        version: 0.13.1(@hey-api/openapi-ts@0.98.2(magicast@0.5.3)(typescript@6.0.3))
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3
@@ -1197,6 +1200,9 @@ importers:
         specifier: ^2.0.0
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
+      '@hey-api/openapi-ts':
+        specifier: ^0.98.2
+        version: 0.98.2(magicast@0.5.3)(typescript@6.0.3)
       '@lezer/generator':
         specifier: ^1.8.0
         version: 1.8.0
