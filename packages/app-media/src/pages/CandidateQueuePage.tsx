@@ -1,6 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * CandidateQueuePage — tabbed view of rotation candidate queue.
  *
@@ -8,20 +8,19 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
  */
 import { Badge, PageHeader, Tabs, TabsContent, TabsList, TabsTrigger } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import { rotationListCandidates } from '../media-api/index.js';
 import { CandidateList } from './candidate-queue/CandidateList';
 import { ExclusionList } from './candidate-queue/ExclusionList';
-
-interface PendingCountResult {
-  total: number;
-}
 
 export function CandidateQueuePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') ?? 'pending';
 
-  const pendingCount = usePillarQuery<PendingCountResult>('media', ['rotation', 'listCandidates'], {
-    status: 'pending',
-    limit: 1,
+  const pendingCountInput = { status: 'pending' as const, limit: 1 };
+  const pendingCount = useQuery({
+    queryKey: ['media', 'rotation', 'listCandidates', pendingCountInput],
+    queryFn: async () => unwrap(await rotationListCandidates({ query: pendingCountInput })),
   });
 
   return (
@@ -47,9 +46,9 @@ export function CandidateQueuePage() {
         <TabsList>
           <TabsTrigger value="pending">
             Pending
-            {pendingCount.data?.total ? (
+            {pendingCount.data?.data.total ? (
               <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">
-                {pendingCount.data.total}
+                {pendingCount.data.data.total}
               </Badge>
             ) : null}
           </TabsTrigger>

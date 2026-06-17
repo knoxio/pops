@@ -1,8 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * RotationLogPage — paginated history of rotation cycle events.
  *
@@ -10,6 +10,8 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
  */
 import { Button, Card, CardContent, PageHeader, Skeleton } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import { rotationListRotationLog, rotationRotationLogStats } from '../media-api/index.js';
 import { LogEntry } from './rotation-log/LogEntry';
 import { StatsGrid } from './rotation-log/StatsGrid';
 
@@ -84,34 +86,23 @@ function LogList({ isLoading, items }: { isLoading: boolean; items: LogEntryData
   );
 }
 
-interface RotationLogResult {
-  items: LogEntryData[];
-  total: number;
-}
-
-interface RotationLogStats {
-  totalRotated: number;
-  avgPerDay: number;
-  streak: number;
-}
-
 export function RotationLogPage() {
   const [page, setPage] = useState(0);
 
-  const { data, isLoading } = usePillarQuery<RotationLogResult>(
-    'media',
-    ['rotation', 'listRotationLog'],
-    { limit: PAGE_SIZE, offset: page * PAGE_SIZE }
-  );
+  const logInput = { limit: PAGE_SIZE, offset: page * PAGE_SIZE };
+  const { data, isLoading } = useQuery({
+    queryKey: ['media', 'rotation', 'listRotationLog', logInput],
+    queryFn: async () => unwrap(await rotationListRotationLog({ query: logInput })),
+  });
 
-  const { data: stats, isLoading: statsLoading } = usePillarQuery<RotationLogStats>(
-    'media',
-    ['rotation', 'getRotationLogStats'],
-    undefined
-  );
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['media', 'rotation', 'rotationLogStats'],
+    queryFn: async () => unwrap(await rotationRotationLogStats()),
+  });
 
-  const items = data?.items ?? [];
-  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
+  const log = data?.data;
+  const items: LogEntryData[] = log?.items ?? [];
+  const totalPages = log ? Math.ceil(log.total / PAGE_SIZE) : 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-6">
@@ -126,7 +117,7 @@ export function RotationLogPage() {
         ]}
         renderLink={Link}
       />
-      <StatsGrid stats={stats} isLoading={statsLoading} />
+      <StatsGrid stats={stats?.data} isLoading={statsLoading} />
       <LogList isLoading={isLoading} items={items} />
       <LogPagination page={page} totalPages={totalPages} setPage={setPage} />
     </div>

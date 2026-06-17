@@ -1,10 +1,12 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button, Skeleton } from '@pops/ui';
 
+import { unwrap } from '../../media-api-helpers.js';
+import { rotationListExclusions, rotationRemoveExclusion } from '../../media-api/index.js';
 import { Pagination } from './Pagination';
 
 const PAGE_SIZE = 20;
@@ -48,34 +50,31 @@ function ExclusionRow({
   );
 }
 
-interface ListExclusionsResult {
-  items: Exclusion[];
-  total: number;
-}
-
 export function ExclusionList() {
   const [page, setPage] = useState(0);
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
 
-  const query = usePillarQuery<ListExclusionsResult>('media', ['rotation', 'listExclusions'], {
-    limit: PAGE_SIZE,
-    offset: page * PAGE_SIZE,
+  const queryInput = { limit: PAGE_SIZE, offset: page * PAGE_SIZE };
+  const query = useQuery({
+    queryKey: ['media', 'rotation', 'listExclusions', queryInput],
+    queryFn: async () => unwrap(await rotationListExclusions({ query: queryInput })),
   });
 
-  const unexcludeMutation = usePillarMutation<{ tmdbId: number }, unknown>(
-    'media',
-    ['rotation', 'removeExclusion'],
-    {
-      onSuccess: () => {
-        toast.success('Exclusion removed');
-        void utils.invalidate(['rotation', 'listExclusions']);
-        void utils.invalidate(['rotation', 'listCandidates']);
-      },
-      onError: (err) => toast.error(err.message || 'Failed to remove exclusion'),
-    }
-  );
+  const unexcludeMutation = useMutation({
+    mutationFn: async (input: { tmdbId: number }) =>
+      unwrap(await rotationRemoveExclusion({ path: { tmdbId: input.tmdbId } })),
+    onSuccess: () => {
+      toast.success('Exclusion removed');
+      void queryClient.invalidateQueries({ queryKey: ['media', 'rotation', 'listExclusions'] });
+      void queryClient.invalidateQueries({ queryKey: ['media', 'rotation', 'listCandidates'] });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to remove exclusion'),
+  });
 
-  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / PAGE_SIZE));
+  const result = query.data?.data;
+  const items: Exclusion[] = result?.items ?? [];
+  const total = result?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   if (query.isLoading) {
     return (
@@ -87,14 +86,14 @@ export function ExclusionList() {
     );
   }
 
-  if (!query.data?.items.length) {
+  if (!items.length) {
     return <p className="text-sm text-muted-foreground py-8 text-center">No exclusions</p>;
   }
 
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        {query.data.items.map((e) => (
+        {items.map((e) => (
           <ExclusionRow
             key={e.id}
             e={e}
@@ -103,12 +102,7 @@ export function ExclusionList() {
           />
         ))}
       </div>
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={query.data.total}
-        onPageChange={setPage}
-      />
+      <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
     </div>
   );
 }
