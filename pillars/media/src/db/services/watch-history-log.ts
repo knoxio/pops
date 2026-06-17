@@ -3,18 +3,15 @@
  *
  * Lifted from the monolith `watch-history/handlers/log-watch-event.ts` +
  * `auto-remove-show.ts` and converted to the pillar's `(db, …)` arg-passing
- * pattern. All media-only writes (watch_history insert, watchlist removal,
- * priority resequence) run inside a single `db.transaction(...)`.
- *
- * NOTE: the monolith also called `resetStaleness(...)` (the comparisons
- * domain) on completion. Comparisons is not resident in this pillar yet —
- * that side effect is deferred until the comparisons domain is ported
- * (wave 3). Everything else (logging + watchlist auto-removal + resequence)
- * is preserved.
+ * pattern. All media-only writes (watch_history insert, comparison-staleness
+ * reset, watchlist removal, priority resequence) run inside a single
+ * `db.transaction(...)`.
  */
 import { and, countDistinct, eq, inArray } from 'drizzle-orm';
 
 import { episodes, mediaWatchlist, seasons, watchHistory } from '../schema.js';
+import { resetStaleness } from './comparisons/staleness.js';
+import { resolveComparisonTarget } from './watch-history-comp-target.js';
 import { resequencePriorities } from './watchlist.js';
 
 import type { MediaDb } from './internal.js';
@@ -167,6 +164,11 @@ function runMediaTx(
       .where(eq(watchHistory.id, Number(result.lastInsertRowid)))
       .get();
     if (!entry) throw new Error('Watch history entry not found after insert');
+
+    if (completed === 1) {
+      const target = resolveComparisonTarget(tx, input.mediaType, input.mediaId);
+      resetStaleness(tx, target.type, target.id);
+    }
 
     let watchlistRemoved = false;
     if (completed === 1 && input.source !== 'plex_sync') {
