@@ -10,10 +10,17 @@
  *   - `dismiss`        → POST /nudges/:id/dismiss
  *   - `contradictions` → POST /nudges/contradictions
  *
- * `scan` / `act` / `configure` stay in the legacy router: they pull in the
- * detectors, the HybridSearchService, the EngramService and an LLM
- * contradiction analyzer — none of which have migrated. They follow a later
- * slice once retrieval lands.
+ * The write surface completes the domain:
+ *
+ *   - `scan`      → POST /nudges/scan       (runs detectors, persists nudges)
+ *   - `act`       → POST /nudges/:id/act    (executes the suggested action)
+ *   - `configure` → POST /nudges/configure  (updates detection thresholds)
+ *
+ * `scan` drives the consolidation / staleness / pattern detectors over the
+ * active engram corpus (reusing the in-pillar retrieval + engrams services and
+ * an injectable contradiction LLM); `act` runs the nudge's action through the
+ * EngramService; `configure` mutates the in-process thresholds (see the
+ * write-service JSDoc for the non-persistence deviation).
  *
  * Non-identity domain — served on the docker-network trust boundary with no
  * per-request auth (parity with templates / engrams). `list` /
@@ -82,6 +89,17 @@ export type NudgeContradictionWire = z.infer<typeof nudgeContradictionSchema>;
 
 const idParams = z.object({ id: z.string().min(1) });
 
+/** Detection thresholds patch — every field optional (parity with the monolith). */
+export const nudgeConfigureSchema = z.object({
+  consolidationSimilarity: z.number().min(0).max(1).optional(),
+  consolidationMinCluster: z.number().int().positive().optional(),
+  stalenessDays: z.number().int().positive().optional(),
+  patternMinOccurrences: z.number().int().positive().optional(),
+  maxPendingNudges: z.number().int().positive().optional(),
+  nudgeCooldownHours: z.number().positive().optional(),
+});
+export type NudgeConfigureWire = z.infer<typeof nudgeConfigureSchema>;
+
 export const cerebrumNudgesContract = c.router({
   list: {
     method: 'POST',
@@ -134,6 +152,38 @@ export const cerebrumNudgesContract = c.router({
         contradictions: z.array(nudgeContradictionSchema),
         total: z.number().int(),
       }),
+    },
+  },
+  scan: {
+    method: 'POST',
+    path: '/nudges/scan',
+    summary: 'Run the nudge detectors over the active engram corpus.',
+    body: z.object({ type: nudgeTypeSchema.optional() }),
+    responses: {
+      200: z.object({ created: z.number().int() }),
+    },
+  },
+  act: {
+    method: 'POST',
+    path: '/nudges/:id/act',
+    summary: 'Act on a pending nudge — execute its suggested action.',
+    pathParams: idParams,
+    body: z.object({}),
+    responses: {
+      200: z.object({
+        result: z.object({ success: z.boolean(), nudge: nudgeSchema.nullable() }),
+      }),
+      404: errorBodySchema,
+      409: errorBodySchema,
+    },
+  },
+  configure: {
+    method: 'POST',
+    path: '/nudges/configure',
+    summary: 'Update the in-process nudge detection thresholds.',
+    body: nudgeConfigureSchema,
+    responses: {
+      200: z.object({ success: z.boolean() }),
     },
   },
 });

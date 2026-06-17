@@ -3,8 +3,10 @@
  *
  * Boots the app against a per-test temp `cerebrum.db` (nudge_log present via
  * migrations 0039/0044) and seeds `nudge_log` rows directly through the
- * drizzle handle. Covers the read/dismiss surface only — `scan`/`act`/
- * `configure` are deferred to a post-retrieval slice.
+ * drizzle handle. Covers the full surface: read/dismiss/contradictions plus the
+ * write surface (`scan` / `act` / `configure`). Write-surface tests seed real
+ * engrams through a test {@link EngramService} (backdated `now` for staleness)
+ * and inject an offline contradiction analyzer — no real API is reached.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -22,13 +24,19 @@ import {
   type OpenedCerebrumDb,
 } from '../../db/index.js';
 import { createCerebrumApiApp } from '../app.js';
+import { EngramService } from '../modules/engrams/service.js';
+import { resetCitationCounts } from '../modules/nudges/detectors/citation-tracker.js';
 import {
   HttpError,
   makeClient,
   makeEmptyPeerClients,
+  makeFakeContradictionAnalyzer,
   makeReflexService,
   makeTemplateRegistry,
 } from './test-utils.js';
+
+import type { ContradictionAnalyzer } from '../modules/nudges/contradiction-analyzer.js';
+import type { TemplateRegistry } from '../modules/templates/registry.js';
 
 interface SeedNudge {
   id: string;
@@ -84,29 +92,51 @@ function contradictionAction(over: Partial<Record<string, string>> = {}): {
 }
 
 let tmpDir: string;
+let engramRoot: string;
+let templateRegistry: TemplateRegistry;
 let cerebrumDb: OpenedCerebrumDb;
 
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), 'cerebrum-api-nudges-test-'));
+  engramRoot = mkdtempSync(join(tmpdir(), 'cerebrum-api-nudges-root-'));
+  templateRegistry = makeTemplateRegistry();
   cerebrumDb = openCerebrumDb(join(tmpDir, 'cerebrum.db'));
+  resetCitationCounts();
 });
 
 afterEach(() => {
   cerebrumDb.raw.close();
   rmSync(tmpDir, { recursive: true, force: true });
+  rmSync(engramRoot, { recursive: true, force: true });
 });
 
-function client() {
+function client(analyzer?: ContradictionAnalyzer) {
   return makeClient(
     createCerebrumApiApp({
       cerebrumDb,
-      templateRegistry: makeTemplateRegistry(),
+      templateRegistry,
+      engramRoot,
       reflexService: makeReflexService(cerebrumDb.db, join(tmpDir, 'reflexes.toml')),
       version: '0.0.1-test',
       selfBaseUrl: 'http://localhost:3007',
       peerClients: makeEmptyPeerClients(),
+      nudgeContradictionAnalyzer: analyzer,
     })
   );
+}
+
+/**
+ * Build a test {@link EngramService} bound to the same db / root / templates as
+ * the app, with an optional backdated `now` so created engrams carry old
+ * `created`/`modified` timestamps (needed to exercise the staleness detector).
+ */
+function engramService(now?: () => Date): EngramService {
+  return new EngramService({
+    root: engramRoot,
+    db: cerebrumDb.db,
+    templates: templateRegistry,
+    now,
+  });
 }
 
 describe('cerebrum.nudges.list', () => {
@@ -331,5 +361,224 @@ describe('cerebrum.nudges.contradictions', () => {
     const { contradictions, total } = await client().nudges.contradictions();
     expect(contradictions).toEqual([]);
     expect(total).toBe(0);
+  });
+});
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function daysAgo(days: number): () => Date {
+  const fixed = new Date(Date.now() - days * DAY_MS);
+  return () => fixed;
+}
+
+describe('cerebrum.nudges.scan', () => {
+  it('runs the staleness detector over old engrams and persists nudges', async () => {
+    const svc = engramService(daysAgo(200));
+    svc.create({ type: 'note', title: 'Ancient One', body: 'a', scopes: ['work.alpha'] });
+    svc.create({ type: 'note', title: 'Ancient Two', body: 'b', scopes: ['work.beta'] });
+
+    const c = client();
+    const { created } = await c.nudges.scan({ type: 'staleness' });
+    expect(created).toBe(2);
+
+    const { nudges, total } = await c.nudges.list({ type: 'staleness' });
+    expect(total).toBe(2);
+    expect(nudges.every((n) => n.action?.type === 'review')).toBe(true);
+  });
+
+  it('feeds the contradiction pass through the injected analyzer', async () => {
+    const svc = engramService();
+    svc.create({
+      type: 'note',
+      title: 'Pro',
+      body: 'Coffee is great for focus.',
+      scopes: ['work.research'],
+      tags: ['coffee'],
+    });
+    svc.create({
+      type: 'note',
+      title: 'Con',
+      body: 'Coffee wrecks focus.',
+      scopes: ['work.research'],
+      tags: ['coffee'],
+    });
+
+    const analyzer = makeFakeContradictionAnalyzer((engramA, _bodyA, engramB) => ({
+      engramA,
+      engramB,
+      excerptA: 'Coffee is great for focus.',
+      excerptB: 'Coffee wrecks focus.',
+      conflict: 'One says coffee helps focus, the other says it harms it.',
+    }));
+
+    const c = client(analyzer);
+    const { created } = await c.nudges.scan({ type: 'pattern' });
+    expect(created).toBe(1);
+
+    const { contradictions, total } = await c.nudges.contradictions();
+    expect(total).toBe(1);
+    expect(contradictions[0]).toMatchObject({
+      conflict: 'One says coffee helps focus, the other says it harms it.',
+      excerptA: 'Coffee is great for focus.',
+      excerptB: 'Coffee wrecks focus.',
+    });
+  });
+
+  it('surfaces no contradictions when no analyzer is wired (noop path)', async () => {
+    const svc = engramService();
+    svc.create({
+      type: 'note',
+      title: 'Pro',
+      body: 'Coffee is great.',
+      scopes: ['work.research'],
+      tags: ['coffee'],
+    });
+    svc.create({
+      type: 'note',
+      title: 'Con',
+      body: 'Coffee is bad.',
+      scopes: ['work.research'],
+      tags: ['coffee'],
+    });
+
+    const c = client();
+    const { created } = await c.nudges.scan({ type: 'pattern' });
+    expect(created).toBe(0);
+  });
+});
+
+describe('cerebrum.nudges.act', () => {
+  it('executes a review action and bumps the engram modified timestamp', async () => {
+    const svc = engramService(daysAgo(100));
+    const engram = svc.create({
+      type: 'note',
+      title: 'Reviewable',
+      body: 'old',
+      scopes: ['work.alpha'],
+    });
+    const before = engram.modified;
+
+    seedNudge(cerebrumDb.db, {
+      id: 'nudge_review',
+      type: 'staleness',
+      status: 'pending',
+      engramIds: [engram.id],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      action: { type: 'review', label: 'Mark as reviewed', params: { engramId: engram.id } },
+    });
+
+    const c = client();
+    const { result } = await c.nudges.act('nudge_review');
+    expect(result.success).toBe(true);
+    expect(result.nudge?.status).toBe('acted');
+
+    const { engram: after } = await c.engrams.get(engram.id);
+    expect(after.modified > before).toBe(true);
+  });
+
+  it('executes an archive action and archives the engram', async () => {
+    const svc = engramService();
+    const engram = svc.create({
+      type: 'note',
+      title: 'Archivable',
+      body: 'stale',
+      scopes: ['work.alpha'],
+    });
+
+    seedNudge(cerebrumDb.db, {
+      id: 'nudge_archive',
+      type: 'staleness',
+      status: 'pending',
+      engramIds: [engram.id],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      action: { type: 'archive', label: 'Archive', params: { engramId: engram.id } },
+    });
+
+    const c = client();
+    const { result } = await c.nudges.act('nudge_archive');
+    expect(result.success).toBe(true);
+
+    const { engram: after } = await c.engrams.get(engram.id);
+    expect(after.status).toBe('archived');
+  });
+
+  it('executes a consolidate action: merges sources and marks them consolidated', async () => {
+    const svc = engramService();
+    const a = svc.create({
+      type: 'note',
+      title: 'Source A',
+      body: 'alpha body',
+      scopes: ['work.alpha'],
+      tags: ['t1'],
+    });
+    const b = svc.create({
+      type: 'note',
+      title: 'Source B',
+      body: 'beta body',
+      scopes: ['work.alpha'],
+      tags: ['t2'],
+    });
+
+    seedNudge(cerebrumDb.db, {
+      id: 'nudge_consolidate',
+      type: 'consolidation',
+      status: 'pending',
+      engramIds: [a.id, b.id],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      action: {
+        type: 'consolidate',
+        label: 'Merge',
+        params: { engramIds: [a.id, b.id] },
+      },
+    });
+
+    const c = client();
+    const { result } = await c.nudges.act('nudge_consolidate');
+    expect(result.success).toBe(true);
+
+    const afterA = await c.engrams.get(a.id);
+    const afterB = await c.engrams.get(b.id);
+    expect(afterA.engram.status).toBe('consolidated');
+    expect(afterB.engram.status).toBe('consolidated');
+
+    const all = await c.engrams.search({});
+    expect(all.total).toBe(3);
+    const mergedRow = all.engrams.find((e) => e.id !== a.id && e.id !== b.id);
+    expect(mergedRow).toBeDefined();
+    if (!mergedRow) throw new Error('merged engram not found');
+    expect(mergedRow.status).toBe('active');
+
+    const { body } = await c.engrams.get(mergedRow.id);
+    expect(body).toContain('alpha body');
+    expect(body).toContain('beta body');
+  });
+
+  it('404s on a missing nudge and 409s on a non-pending nudge', async () => {
+    await expect(client().nudges.act('ghost')).rejects.toMatchObject({ status: 404 });
+
+    seedNudge(cerebrumDb.db, {
+      id: 'nudge_acted',
+      status: 'acted',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    await expect(client().nudges.act('nudge_acted')).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('cerebrum.nudges.configure', () => {
+  it('round-trips: a reconfigured staleness threshold changes the next scan', async () => {
+    const svc = engramService(daysAgo(100));
+    svc.create({ type: 'note', title: 'Hundred Days', body: 'x', scopes: ['work.alpha'] });
+
+    const c = client();
+
+    const raised = await c.nudges.configure({ stalenessDays: 200 });
+    expect(raised).toEqual({ success: true });
+    const afterRaise = await c.nudges.scan({ type: 'staleness' });
+    expect(afterRaise.created).toBe(0);
+
+    await c.nudges.configure({ stalenessDays: 50 });
+    const afterLower = await c.nudges.scan({ type: 'staleness' });
+    expect(afterLower.created).toBe(1);
   });
 });

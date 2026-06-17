@@ -12,10 +12,14 @@ import { initServer } from '@ts-rest/express';
 import { cerebrumContract } from '../../contract/rest.js';
 import { AnthropicEgoLlm } from '../modules/ego/llm.js';
 import { AnthropicGenerationLlm } from '../modules/emit/llm.js';
+import { EngramService } from '../modules/engrams/service.js';
 import { resolveGliaConfigPath } from '../modules/glia/instance.js';
 import { AnthropicIngestLlm } from '../modules/ingest/llm.js';
 import { getCurationQueue } from '../modules/ingest/queue.js';
+import { AnthropicContradictionAnalyzer } from '../modules/nudges/contradiction-analyzer.js';
+import { getDefaultNudgeThresholds } from '../modules/nudges/types.js';
 import { AnthropicQueryLlm, AnthropicQueryStreamLlm } from '../modules/query/llm.js';
+import { HybridSearchService } from '../modules/retrieval/hybrid-search.js';
 import { getEmbeddingsQueue } from '../modules/thalamus/queue.js';
 import { AnthropicContradictionDetector } from '../modules/workers/llm.js';
 import { makeEgoHandlers } from './ego-handlers.js';
@@ -37,6 +41,23 @@ import { makeWorkersHandlers } from './workers-handlers.js';
 import type { CerebrumApiDeps } from '../handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
+
+function buildNudgesDeps(
+  deps: CerebrumApiDeps,
+  base: Parameters<typeof makeRetrievalHandlers>[0]
+): Parameters<typeof makeNudgesHandlers>[0] {
+  return {
+    db: base.db,
+    searchService: new HybridSearchService(base),
+    engramService: new EngramService({
+      root: deps.engramRoot,
+      db: base.db,
+      templates: deps.templateRegistry,
+    }),
+    contradictionAnalyzer: deps.nudgeContradictionAnalyzer ?? new AnthropicContradictionAnalyzer(),
+    thresholdsStore: { current: getDefaultNudgeThresholds() },
+  };
+}
 
 export function makeCerebrumRestHandlers(
   deps: CerebrumApiDeps
@@ -61,7 +82,7 @@ export function makeCerebrumRestHandlers(
       ...engramDeps,
       configPath: deps.gliaConfigPath ?? resolveGliaConfigPath(),
     }),
-    nudges: makeNudgesHandlers(db),
+    nudges: makeNudgesHandlers(buildNudgesDeps(deps, base)),
     retrieval: makeRetrievalHandlers(base),
     ingest: makeIngestHandlers({
       ...engramDeps,
