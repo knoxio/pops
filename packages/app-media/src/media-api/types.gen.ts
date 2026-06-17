@@ -5162,6 +5162,67 @@ export type RotationRemoveFromQueueResponses = {
 export type RotationRemoveFromQueueResponse =
   RotationRemoveFromQueueResponses[keyof RotationRemoveFromQueueResponses];
 
+export type RotationListExclusionsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    limit?: number;
+    offset?: number;
+  };
+  url: '/rotation/exclusions';
+};
+
+export type RotationListExclusionsErrors = {
+  /**
+   * 400
+   */
+  400: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 404
+   */
+  404: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+  /**
+   * 409
+   */
+  409: {
+    code?: string;
+    message: string;
+    messageKey?: string;
+  };
+};
+
+export type RotationListExclusionsError =
+  RotationListExclusionsErrors[keyof RotationListExclusionsErrors];
+
+export type RotationListExclusionsResponses = {
+  /**
+   * 200
+   */
+  200: {
+    data: {
+      items: Array<{
+        excludedAt: string;
+        id: number;
+        reason: string | null;
+        title: string;
+        tmdbId: number;
+      }>;
+      total: number;
+    };
+  };
+};
+
+export type RotationListExclusionsResponse =
+  RotationListExclusionsResponses[keyof RotationListExclusionsResponses];
+
 export type RotationAddExclusionData = {
   /**
    * Body
