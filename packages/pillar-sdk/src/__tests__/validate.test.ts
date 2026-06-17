@@ -94,7 +94,7 @@ describe('validateManifestPayload', () => {
   describe('cross-field rules', () => {
     it('reports mismatched contract.package', () => {
       const m = validManifest();
-      m.contract.package = '@pops/media-contract';
+      m.contract.package = '@pops/food-contract';
       const result = validateManifestPayload(m);
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -102,8 +102,8 @@ describe('validateManifestPayload', () => {
         const issue = result.issues[0]!;
         expect(issue.field).toBe('contract.package');
         expect(issue.reason).toContain('expected @pops/finance-contract');
-        expect(issue.reason).toContain('got @pops/media-contract');
-        expect(issue.got).toBe('@pops/media-contract');
+        expect(issue.reason).toContain('got @pops/food-contract');
+        expect(issue.got).toBe('@pops/food-contract');
       }
     });
 
@@ -122,7 +122,7 @@ describe('validateManifestPayload', () => {
 
     it('collects both cross-field violations in one pass (no short-circuit)', () => {
       const m = validManifest();
-      m.contract.package = '@pops/media-contract';
+      m.contract.package = '@pops/food-contract';
       m.contract.tag = 'contract-finance@v9.9.9';
       const result = validateManifestPayload(m);
       expect(result.ok).toBe(false);
@@ -195,7 +195,7 @@ describe('cross-field checkers (pure)', () => {
 
   it('checkContractPackageMatchesPillar emits one ValidationIssue on mismatch', () => {
     const m = validManifest();
-    m.contract.package = '@pops/media-contract';
+    m.contract.package = '@pops/food-contract';
     const issues = checkContractPackageMatchesPillar(m);
     expect(issues).toHaveLength(1);
     expect(issues[0]!.field).toBe('contract.package');

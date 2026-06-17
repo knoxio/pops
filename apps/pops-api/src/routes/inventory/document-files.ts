@@ -22,7 +22,7 @@ import { resolve } from 'node:path';
 import { type Router as ExpressRouter, type Request, Router } from 'express';
 
 import { getInventoryDocumentsDir } from '../../modules/inventory/document-files/paths.js';
-import { tryServeFile } from '../media/images-helpers.js';
+import { tryServeFile } from '../shared/serve-file.js';
 
 /** Cache for one hour — uploaded documents can change on re-upload. */
 const CACHE_CONTROL = 'private, max-age=3600';

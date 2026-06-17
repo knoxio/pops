@@ -20,13 +20,11 @@ import { openCerebrumDb, type OpenedCerebrumDb } from '@pops/cerebrum-db';
 import { openCoreDb, type OpenedCoreDb } from '@pops/core-db';
 import { openFinanceDb, type OpenedFinanceDb } from '@pops/finance-db';
 import { openInventoryDb, type OpenedInventoryDb } from '@pops/inventory-db';
-import { openMediaDb, type OpenedMediaDb } from '@pops/media-db';
 
 import { closeDb, setCoreDb, setDb } from '../../../db.js';
 import { setCerebrumDb } from '../../../db/cerebrum-handle.js';
 import { setFinanceDb } from '../../../db/finance-handle.js';
 import { setInventoryDb } from '../../../db/inventory-handle.js';
-import { setMediaDb } from '../../../db/media-db-handle.js';
 import { appRouter } from '../../../router.js';
 import {
   enumeratePillarQueries,
@@ -74,7 +72,6 @@ const CORE_INPUTS: PillarSmokeInputs = {
 let coreHandle: OpenedCoreDb | null = null;
 let financeHandle: OpenedFinanceDb | null = null;
 let inventoryHandle: OpenedInventoryDb | null = null;
-let mediaHandle: OpenedMediaDb | null = null;
 let cerebrumHandle: OpenedCerebrumDb | null = null;
 
 beforeEach(() => {
@@ -82,12 +79,10 @@ beforeEach(() => {
   coreHandle = openCoreDb(':memory:');
   financeHandle = openFinanceDb(':memory:');
   inventoryHandle = openInventoryDb(':memory:');
-  mediaHandle = openMediaDb(':memory:');
   cerebrumHandle = openCerebrumDb(':memory:');
   setCoreDb(coreHandle);
   setFinanceDb(financeHandle);
   setInventoryDb(inventoryHandle);
-  setMediaDb(mediaHandle);
   setCerebrumDb(cerebrumHandle);
 });
 
@@ -95,17 +90,14 @@ afterEach(() => {
   setCoreDb(null);
   setFinanceDb(null);
   setInventoryDb(null);
-  setMediaDb(null);
   setCerebrumDb(null);
   coreHandle?.raw.close();
   financeHandle?.raw.close();
   inventoryHandle?.raw.close();
-  mediaHandle?.raw.close();
   cerebrumHandle?.raw.close();
   coreHandle = null;
   financeHandle = null;
   inventoryHandle = null;
-  mediaHandle = null;
   cerebrumHandle = null;
   closeDb();
 });

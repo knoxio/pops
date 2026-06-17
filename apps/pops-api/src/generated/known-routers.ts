@@ -10,12 +10,10 @@ import { coreRouter } from '../modules/core/index.js';
 import { financeRouter } from '../modules/finance/index.js';
 import { inventoryRouter } from '../modules/inventory/index.js';
 import { listsRouter } from '../modules/lists/index.js';
-import { mediaRouter } from '../modules/media/index.js';
 
 export const KNOWN_ROUTERS_GENERATED = {
   core: coreRouter,
   finance: financeRouter,
   inventory: inventoryRouter,
   lists: listsRouter,
-  media: mediaRouter,
 } as const;

@@ -47,9 +47,9 @@ describe('PRD-100 module gate (tRPC)', () => {
   it('rejects calls to absent app modules with NOT_FOUND', async () => {
     process.env[APP_KEY] = 'finance';
     const caller = makeCaller();
-    await expect(caller.media.movies.list({})).rejects.toMatchObject({
+    await expect(caller.inventory.items.list({})).rejects.toMatchObject({
       code: 'NOT_FOUND',
-      message: expect.stringContaining("'media' is not installed"),
+      message: expect.stringContaining("'inventory' is not installed"),
     });
   });
 

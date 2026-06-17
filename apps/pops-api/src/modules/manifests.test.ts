@@ -5,13 +5,11 @@ import { assertModuleManifest, type ModuleManifest } from '@pops/types';
 import { manifest as coreManifest } from './core/index.js';
 import { manifest as financeManifest } from './finance/index.js';
 import { manifest as inventoryManifest } from './inventory/index.js';
-import { manifest as mediaManifest } from './media/index.js';
 
 const manifests: ReadonlyArray<readonly [string, ModuleManifest]> = [
   ['core', coreManifest],
   ['finance', financeManifest],
   ['inventory', inventoryManifest],
-  ['media', mediaManifest],
 ];
 
 describe('PRD-098 backend module manifests', () => {

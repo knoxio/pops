@@ -142,7 +142,12 @@ services:
   # subsequent slices (watchlist, watch_history, comparisons, rotation,
   # debrief, …) move their tRPC routers + URI dispatcher behind it.
   media-api:
-    image: ghcr.io/knoxio/pops-media-api:${POPS_IMAGE_TAG:-main}
+    build:
+      context: ..
+      dockerfile: pillars/media/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-media:${POPS_IMAGE_TAG:-main}
     container_name: pops-media-api
     restart: unless-stopped
     labels:

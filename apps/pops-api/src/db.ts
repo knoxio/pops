@@ -14,7 +14,6 @@ import { closeFinanceDb } from './db/finance-handle.js';
 import { closeInventoryDb } from './db/inventory-handle.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
 import { closeListsDb } from './db/lists-handle.js';
-import { closeMediaDb } from './db/media-db-handle.js';
 import { migrationOwners } from './db/migration-ownership.js';
 import {
   getPendingMigrations,
@@ -240,7 +239,6 @@ export function closeDb(): void {
   closeCoreDb();
   closeFinanceDb();
   closeInventoryDb();
-  closeMediaDb();
   closeCerebrumDb();
   closeListsDb();
 }
@@ -306,11 +304,6 @@ export function backfillCoreFromSharedDb(sharedPath: string): void {
   if (!coreDb) return;
   backfillCoreFromShared(coreDb, sharedPath);
 }
-
-// `getMediaDrizzle` / `closeMediaDb` / `setMediaDb` live in
-// `./db/media-db-handle.ts` so this file stays under the eslint(max-lines)
-// cap. `closeDb` calls the close helper at shutdown; the rest are imported
-// directly by their consumers.
 
 export function setDb(newDb: BetterSqlite3.Database): BetterSqlite3.Database | null {
   const prev = prodDb;

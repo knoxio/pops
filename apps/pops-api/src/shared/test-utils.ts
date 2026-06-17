@@ -6,7 +6,6 @@ import { setCerebrumDb } from '../db/cerebrum-handle.js';
 import { setFinanceDb } from '../db/finance-handle.js';
 import { setInventoryDb } from '../db/inventory-handle.js';
 import { setListsDb } from '../db/lists-handle.js';
-import { setMediaDb } from '../db/media-db-handle.js';
 import { appRouter } from '../router.js';
 import { TAG_VOCABULARY_V1 } from './tag-vocabulary.js';
 
@@ -1493,15 +1492,13 @@ export function setupTestContext() {
   function setup(): { db: Database; caller: ReturnType<typeof createCaller> } {
     db = createTestDb();
     setDb(db);
-    // Route the core + media pillar handles at the same in-memory DB so
-    // the post-cutover call sites (which read/write via
-    // getCoreDrizzle() / getMediaDrizzle()) keep operating on the test
-    // fixture without each suite having to seed a separate per-pillar
-    // file. The shared `service_accounts` + `shelf_impressions` tables
-    // live in `createTestDb()` and are populated/queried through all
-    // three connections transparently.
+    // Route the core pillar handle at the same in-memory DB so the
+    // post-cutover call sites (which read/write via getCoreDrizzle())
+    // keep operating on the test fixture without each suite having to
+    // seed a separate per-pillar file. The shared `service_accounts`
+    // table lives in `createTestDb()` and is populated/queried through
+    // both connections transparently.
     setCoreDb({ db: drizzle(db), raw: db });
-    setMediaDb({ db: drizzle(db), raw: db });
 
     // Same for the inventory pillar handle (phase 2 PR 3): every
     // inventory module read/write now resolves getInventoryDrizzle(),
@@ -1540,7 +1537,6 @@ export function setupTestContext() {
     setCoreDb(null);
     setFinanceDb(null);
     setInventoryDb(null);
-    setMediaDb(null);
     setCerebrumDb(null);
     setListsDb(null);
     closeDb();

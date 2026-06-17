@@ -26,8 +26,6 @@ import { budgetsSearchAdapter } from './finance/budgets/search-adapter.js';
 import { transactionsSearchAdapter } from './finance/transactions/search-adapter.js';
 import { wishlistSearchAdapter } from './finance/wishlist/search-adapter.js';
 import { inventoryItemsSearchAdapter } from './inventory/items/search-adapter.js';
-import { moviesSearchAdapter } from './media/search/movies-adapter.js';
-import { tvShowsSearchAdapter } from './media/search/tv-shows-adapter.js';
 
 import type { SearchAdapter } from './core/search/types.js';
 
@@ -53,7 +51,6 @@ const ADAPTER_BINDINGS: readonly { moduleId: string; adapters: readonly SearchAd
     adapters: [transactionsSearchAdapter, budgetsSearchAdapter, wishlistSearchAdapter],
   },
   { moduleId: 'inventory', adapters: [inventoryItemsSearchAdapter] },
-  { moduleId: 'media', adapters: [moviesSearchAdapter, tvShowsSearchAdapter] },
 ];
 
 /**

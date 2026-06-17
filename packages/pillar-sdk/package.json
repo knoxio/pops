@@ -70,7 +70,6 @@
   "dependencies": {
     "@pops/cerebrum-contract": "workspace:*",
     "@pops/core-contract": "workspace:*",
-    "@pops/media-contract": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

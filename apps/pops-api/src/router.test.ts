@@ -31,7 +31,6 @@ import {
 } from './modules/installed-modules.js';
 import { manifest as inventoryManifest } from './modules/inventory/index.js';
 import { manifest as listsManifest } from './modules/lists/index.js';
-import { manifest as mediaManifest } from './modules/media/index.js';
 import { appRouter } from './router.js';
 
 import type { ModuleManifest } from '@pops/types';
@@ -64,7 +63,6 @@ describe('PRD-101 US-03 root router composition', () => {
     const expectedTops = new Set([
       coreManifest.id,
       financeManifest.id,
-      mediaManifest.id,
       inventoryManifest.id,
       // PRD-140 fills `listsRouter` with the lists CRUD procedures, so the
       // `lists` top-level id appears under `appRouter` now.
@@ -130,7 +128,6 @@ describe('PRD-101 US-03 AppRouter type narrowing (compile-time)', () => {
     const allowed = new Set([
       coreManifest.id,
       financeManifest.id,
-      mediaManifest.id,
       inventoryManifest.id,
       listsManifest.id,
     ]);
@@ -156,7 +153,7 @@ describe('PRD-101 US-03 reduced-install appRouter composition', () => {
     vi.resetModules();
   });
 
-  it('finance-only install set produces an appRouter without media/inventory', async () => {
+  it('finance-only install set produces an appRouter without inventory', async () => {
     vi.resetModules();
     vi.doMock('./modules/installed-modules.js', async () => {
       // Re-export everything from the real module, then override
@@ -177,7 +174,6 @@ describe('PRD-101 US-03 reduced-install appRouter composition', () => {
 
     expect(tops.has(coreManifest.id)).toBe(true);
     expect(tops.has(financeManifest.id)).toBe(true);
-    expect(tops.has(mediaManifest.id)).toBe(false);
     expect(tops.has(inventoryManifest.id)).toBe(false);
   });
 
