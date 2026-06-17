@@ -1,13 +1,15 @@
+import { useQuery } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * CalendarPage — upcoming episodes calendar from Sonarr.
  */
 import { Alert, AlertDescription, AlertTitle, Badge, Skeleton } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import { arrConfig, arrGetCalendar } from '../media-api/index.js';
 import { CalendarEpisodeRow } from './calendar/CalendarEpisodeRow';
 
 function parseLocalDate(dateStr: string): Date {
@@ -66,39 +68,28 @@ interface CalendarEpisode {
   posterUrl: string | null;
 }
 
-interface ArrConfigResult {
-  data: { sonarrConfigured: boolean; radarrConfigured: boolean };
-}
-
-interface CalendarResult {
-  data: CalendarEpisode[];
-}
-
 function useCalendarPageModel() {
-  const { data: configData } = usePillarQuery<ArrConfigResult>(
-    'media',
-    ['arr', 'getConfig'],
-    undefined
-  );
+  const { data: configData } = useQuery({
+    queryKey: ['media', 'arr', 'config'],
+    queryFn: async () => unwrap(await arrConfig()),
+  });
   const config = configData?.data;
 
   const now = new Date();
   const start = now.toISOString().split('T')[0] ?? '';
   const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] ?? '';
 
+  const calendarInput = { start, end };
   const {
     data: calendarData,
     isLoading,
     error,
-  } = usePillarQuery<CalendarResult>(
-    'media',
-    ['arr', 'getCalendar'],
-    { start, end },
-    {
-      enabled: config?.sonarrConfigured === true,
-      refetchOnWindowFocus: true,
-    }
-  );
+  } = useQuery({
+    queryKey: ['media', 'arr', 'getCalendar', calendarInput],
+    queryFn: async () => unwrap(await arrGetCalendar({ query: calendarInput })),
+    enabled: config?.sonarrConfigured === true,
+    refetchOnWindowFocus: true,
+  });
 
   const episodes = calendarData?.data ?? [];
 
