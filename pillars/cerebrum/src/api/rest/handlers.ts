@@ -8,7 +8,9 @@
 import { initServer } from '@ts-rest/express';
 
 import { cerebrumContract } from '../../contract/rest.js';
+import { resolveGliaConfigPath } from '../modules/glia/instance.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
+import { makeGliaHandlers } from './glia-handlers.js';
 import { makePlexusHandlers } from './plexus-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
 import { makeScopesHandlers } from './scopes-handlers.js';
@@ -34,5 +36,11 @@ export function makeCerebrumRestHandlers(
     engrams: makeEngramsHandlers(engramDeps),
     scopes: makeScopesHandlers(engramDeps),
     tags: makeTagsHandlers(deps.cerebrumDb.db),
+    glia: makeGliaHandlers({
+      db: deps.cerebrumDb.db,
+      engramRoot: deps.engramRoot,
+      templates: deps.templateRegistry,
+      configPath: deps.gliaConfigPath ?? resolveGliaConfigPath(),
+    }),
   });
 }

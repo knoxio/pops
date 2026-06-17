@@ -124,6 +124,159 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/glia/actions/history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Query the action audit trail (filtered + paginated). */
+    post: operations['glia.actions.history'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/actions/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** List glia actions matching the supplied filters (proposal queue + audit trail). */
+    post: operations['glia.actions.list'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/actions/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single glia action by id. */
+    get: operations['glia.actions.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/actions/{id}/decide': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Record a user decision on a pending action; eagerly re-evaluate graduation. */
+    post: operations['glia.actions.decide'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/actions/{id}/execute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Execute an approved action. */
+    post: operations['glia.actions.execute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/actions/{id}/revert': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Revert an executed action (DB-state flip + file-level undo). */
+    post: operations['glia.actions.revert'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/digest': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate (and optionally deliver) the autonomous-action digest. */
+    post: operations['glia.digest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/trust-state': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List trust state for every action type. */
+    get: operations['glia.trustState.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/trust-state/{actionType}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get trust state for a single action type. */
+    get: operations['glia.trustState.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/plexus/adapters': {
     parameters: {
       query?: never;
@@ -1058,6 +1211,598 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'glia.actions.history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          actionType?: 'prune' | 'consolidate' | 'link' | 'audit';
+          dateFrom?: string;
+          dateTo?: string;
+          limit?: number;
+          offset?: number;
+          /** @enum {string} */
+          status?: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            actions: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              decidedAt: string | null;
+              executedAt: string | null;
+              id: string;
+              payload: unknown;
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              revertedAt: string | null;
+              /** @enum {string} */
+              status: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+              /** @enum {string|null} */
+              userDecision: 'approve' | 'reject' | 'modify' | null;
+              userNote: string | null;
+            }[];
+            total: number;
+          };
+        };
+      };
+    };
+  };
+  'glia.actions.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          actionType?: 'prune' | 'consolidate' | 'link' | 'audit';
+          dateFrom?: string;
+          dateTo?: string;
+          limit?: number;
+          offset?: number;
+          /** @enum {string} */
+          status?: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            actions: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              decidedAt: string | null;
+              executedAt: string | null;
+              id: string;
+              payload: unknown;
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              revertedAt: string | null;
+              /** @enum {string} */
+              status: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+              /** @enum {string|null} */
+              userDecision: 'approve' | 'reject' | 'modify' | null;
+              userNote: string | null;
+            }[];
+            total: number;
+          };
+        };
+      };
+    };
+  };
+  'glia.actions.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            action: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              decidedAt: string | null;
+              executedAt: string | null;
+              id: string;
+              payload: unknown;
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              revertedAt: string | null;
+              /** @enum {string} */
+              status: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+              /** @enum {string|null} */
+              userDecision: 'approve' | 'reject' | 'modify' | null;
+              userNote: string | null;
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'glia.actions.decide': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          decision: 'approve' | 'reject' | 'modify';
+          note?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            action: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              decidedAt: string | null;
+              executedAt: string | null;
+              id: string;
+              payload: unknown;
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              revertedAt: string | null;
+              /** @enum {string} */
+              status: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+              /** @enum {string|null} */
+              userDecision: 'approve' | 'reject' | 'modify' | null;
+              userNote: string | null;
+            };
+            transition: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              /** @enum {string} */
+              newPhase: 'propose' | 'act_report' | 'silent';
+              /** @enum {string} */
+              oldPhase: 'propose' | 'act_report' | 'silent';
+              reason: string;
+              transitioned: boolean;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'glia.actions.execute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            action: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              decidedAt: string | null;
+              executedAt: string | null;
+              id: string;
+              payload: unknown;
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              revertedAt: string | null;
+              /** @enum {string} */
+              status: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+              /** @enum {string|null} */
+              userDecision: 'approve' | 'reject' | 'modify' | null;
+              userNote: string | null;
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'glia.actions.revert': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            action: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              decidedAt: string | null;
+              executedAt: string | null;
+              id: string;
+              payload: unknown;
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              revertedAt: string | null;
+              /** @enum {string} */
+              status: 'pending' | 'approved' | 'rejected' | 'executed' | 'reverted';
+              /** @enum {string|null} */
+              userDecision: 'approve' | 'reject' | 'modify' | null;
+              userNote: string | null;
+            };
+            revertResult: {
+              errors: string[];
+              restoredIds: string[];
+              success: boolean;
+            };
+            transition: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              /** @enum {string} */
+              newPhase: 'propose' | 'act_report' | 'silent';
+              /** @enum {string} */
+              oldPhase: 'propose' | 'act_report' | 'silent';
+              reason: string;
+              transitioned: boolean;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'glia.digest': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          actionType?: 'prune' | 'consolidate' | 'link' | 'audit';
+          deliver?: boolean;
+          /** @enum {string} */
+          period?: 'daily' | 'weekly';
+          rejectionRateThreshold?: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            delivery: {
+              attempted: boolean;
+              channels: {
+                /** @enum {string} */
+                channel: 'shell' | 'moltbot';
+                delivered: boolean;
+                reason: string | null;
+              }[];
+              suppressedReason: string | null;
+            };
+            report: {
+              anomalies: {
+                /** @enum {string} */
+                actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+                autonomousSince: string;
+                executedCount: number;
+                rejectionRatePostGraduation: number;
+                revertedCount: number;
+                threshold: number;
+              }[];
+              endDate: string;
+              groups: {
+                /** @enum {string} */
+                actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+                actions: {
+                  affectedIds: string[];
+                  executedAt: string;
+                  id: string;
+                  rationale: string;
+                }[];
+                count: number;
+              }[];
+              /** @enum {string} */
+              period: 'daily' | 'weekly';
+              startDate: string;
+              totalAutonomousActions: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'glia.trustState.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            states: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              approvedCount: number;
+              autonomousSince: string | null;
+              /** @enum {string} */
+              currentPhase: 'propose' | 'act_report' | 'silent';
+              graduatedAt: string | null;
+              lastRevertAt: string | null;
+              rejectedCount: number;
+              revertedCount: number;
+              updatedAt: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'glia.trustState.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            state: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              approvedCount: number;
+              autonomousSince: string | null;
+              /** @enum {string} */
+              currentPhase: 'propose' | 'act_report' | 'silent';
+              graduatedAt: string | null;
+              lastRevertAt: string | null;
+              rejectedCount: number;
+              revertedCount: number;
+              updatedAt: string;
+            };
           };
         };
       };

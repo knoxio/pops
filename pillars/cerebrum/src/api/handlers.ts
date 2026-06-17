@@ -25,6 +25,12 @@ export interface CerebrumApiDeps {
   engramRoot: string;
   /** TOML-driven reflex registry + execution-log accessor (PRD-089). */
   reflexService: ReflexService;
+  /**
+   * Absolute path to the glia graduation-threshold TOML (`glia.toml`).
+   * Optional — defaults to `resolveGliaConfigPath()` (env-driven, tolerant of
+   * a missing file → hardcoded ADR-021 defaults). Tests pin it to a fixture.
+   */
+  gliaConfigPath?: string;
   /** Semver of the build, surfaced on the health response. */
   version: string;
   /**
