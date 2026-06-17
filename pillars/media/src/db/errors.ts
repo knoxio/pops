@@ -46,6 +46,42 @@ export class TvShowConflictError extends Error {
   }
 }
 
+export class SeasonNotFoundError extends Error {
+  override readonly name = 'SeasonNotFoundError' as const;
+  readonly id: number;
+
+  constructor(id: number) {
+    super(`Season '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class SeasonConflictError extends Error {
+  override readonly name = 'SeasonConflictError' as const;
+
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class EpisodeNotFoundError extends Error {
+  override readonly name = 'EpisodeNotFoundError' as const;
+  readonly id: number;
+
+  constructor(id: number) {
+    super(`Episode '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class EpisodeConflictError extends Error {
+  override readonly name = 'EpisodeConflictError' as const;
+
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class WatchHistoryNotFoundError extends Error {
   override readonly name = 'WatchHistoryNotFoundError' as const;
   readonly id: number;

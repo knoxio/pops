@@ -19,8 +19,12 @@ export type { MediaDb } from './services/internal.js';
 export { openMediaDb, type OpenedMediaDb } from './open-media-db.js';
 
 export {
+  EpisodeConflictError,
+  EpisodeNotFoundError,
   MovieConflictError,
   MovieNotFoundError,
+  SeasonConflictError,
+  SeasonNotFoundError,
   TvShowConflictError,
   TvShowNotFoundError,
   WatchHistoryConflictError,
@@ -54,6 +58,14 @@ export type {
 } from './services/tv-shows.js';
 
 export * as tvShowsService from './services/tv-shows.js';
+
+export type { CreateSeasonInput, SeasonListResult } from './services/seasons.js';
+
+export * as seasonsService from './services/seasons.js';
+
+export type { CreateEpisodeInput, EpisodeListResult } from './services/episodes.js';
+
+export * as episodesService from './services/episodes.js';
 
 export type {
   AddWatchHistoryInput,
