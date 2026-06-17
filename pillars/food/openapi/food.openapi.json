@@ -4371,6 +4371,662 @@
         "tags": ["inbox"]
       }
     },
+    "/ingest/cancel": {
+      "post": {
+        "operationId": "ingest.cancel",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "sourceId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["sourceId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": ["not-cancellable"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Best-effort cancel of a queued ingest job",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/list": {
+      "post": {
+        "operationId": "ingest.list",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "cursor": {
+                    "type": "string"
+                  },
+                  "limit": {
+                    "default": 20,
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "state": {
+                    "enum": ["pending", "processing", "completed", "failed", "partial"],
+                    "type": "string"
+                  }
+                },
+                "required": ["limit"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "attempts": {
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "completedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "draftRecipeId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "errorCode": {
+                            "type": "string"
+                          },
+                          "errorMessage": {
+                            "type": "string"
+                          },
+                          "jobId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "kind": {
+                            "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                            "type": "string"
+                          },
+                          "partialReason": {
+                            "enum": [
+                              "auth-dead",
+                              "rate-limited",
+                              "stt-failed",
+                              "vision-failed",
+                              "caption-only-fallback",
+                              "empty-extraction"
+                            ],
+                            "type": "string"
+                          },
+                          "sourceId": {
+                            "exclusiveMinimum": true,
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "startedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "state": {
+                            "enum": ["pending", "processing", "completed", "failed", "partial"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "sourceId",
+                          "kind",
+                          "state",
+                          "jobId",
+                          "startedAt",
+                          "completedAt",
+                          "draftRecipeId",
+                          "attempts"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "nextCursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Cursor-paginated ingest sources for the inbox UI",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/retry": {
+      "post": {
+        "operationId": "ingest.retry",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "sourceId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["sourceId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "jobId": {
+                      "type": "string"
+                    },
+                    "queuedAt": {
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                      "type": "string"
+                    }
+                  },
+                  "required": ["jobId", "queuedAt"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "503"
+          }
+        },
+        "summary": "Re-enqueue a failed ingest job from its persisted row",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/start": {
+      "post": {
+        "operationId": "ingest.start",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "enum": ["url-web"],
+                        "type": "string"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "type": "string"
+                      }
+                    },
+                    "required": ["kind", "url"],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "enum": ["url-instagram"],
+                        "type": "string"
+                      },
+                      "url": {
+                        "format": "uri",
+                        "type": "string"
+                      }
+                    },
+                    "required": ["kind", "url"],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "body": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "kind": {
+                        "enum": ["text"],
+                        "type": "string"
+                      }
+                    },
+                    "required": ["kind", "body"],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "contentBase64": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "kind": {
+                        "enum": ["screenshot"],
+                        "type": "string"
+                      },
+                      "mimeType": {
+                        "enum": ["image/jpeg", "image/png", "image/webp"],
+                        "type": "string"
+                      }
+                    },
+                    "required": ["kind", "mimeType", "contentBase64"],
+                    "type": "object"
+                  }
+                ]
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "jobId": {
+                      "type": "string"
+                    },
+                    "queuedAt": {
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                      "type": "string"
+                    },
+                    "sourceId": {
+                      "exclusiveMinimum": true,
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["sourceId", "jobId", "queuedAt"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "503"
+          }
+        },
+        "summary": "Start an ingest job (enqueues BullMQ work)",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/status": {
+      "post": {
+        "operationId": "ingest.status",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "sourceId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["sourceId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "nullable": true,
+                  "properties": {
+                    "attempts": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "completedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "draftRecipeId": {
+                      "exclusiveMinimum": true,
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "nullable": true,
+                      "type": "integer"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "jobId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "kind": {
+                      "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                      "type": "string"
+                    },
+                    "partialReason": {
+                      "enum": [
+                        "auth-dead",
+                        "rate-limited",
+                        "stt-failed",
+                        "vision-failed",
+                        "caption-only-fallback",
+                        "empty-extraction"
+                      ],
+                      "type": "string"
+                    },
+                    "sourceId": {
+                      "exclusiveMinimum": true,
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "startedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "state": {
+                      "enum": ["pending", "processing", "completed", "failed", "partial"],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "sourceId",
+                    "kind",
+                    "state",
+                    "jobId",
+                    "startedAt",
+                    "completedAt",
+                    "draftRecipeId",
+                    "attempts"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Live job + persisted state for one ingest source",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/worker-complete": {
+      "post": {
+        "operationId": "ingest.workerComplete",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "dsl": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "meta": {
+                        "additionalProperties": {},
+                        "properties": {
+                          "extractor_version": {
+                            "type": "string"
+                          },
+                          "stages": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          }
+                        },
+                        "required": ["extractor_version", "stages"],
+                        "type": "object"
+                      },
+                      "ok": {
+                        "enum": [true],
+                        "type": "boolean"
+                      },
+                      "partialReason": {
+                        "enum": [
+                          "auth-dead",
+                          "rate-limited",
+                          "stt-failed",
+                          "vision-failed",
+                          "caption-only-fallback",
+                          "empty-extraction"
+                        ],
+                        "type": "string"
+                      },
+                      "sourceId": {
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": ["sourceId", "ok", "dsl", "meta"],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "errorCode": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "errorMessage": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "meta": {
+                        "additionalProperties": {},
+                        "properties": {
+                          "extractor_version": {
+                            "type": "string"
+                          },
+                          "stages": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          }
+                        },
+                        "required": ["extractor_version", "stages"],
+                        "type": "object"
+                      },
+                      "ok": {
+                        "enum": [false],
+                        "type": "boolean"
+                      },
+                      "sourceId": {
+                        "exclusiveMinimum": true,
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": ["sourceId", "ok", "errorCode", "errorMessage", "meta"],
+                    "type": "object"
+                  }
+                ]
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "compileStatus": {
+                          "enum": ["compiled", "failed", "uncompiled"],
+                          "type": "string"
+                        },
+                        "draftRecipeId": {
+                          "exclusiveMinimum": true,
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok", "draftRecipeId", "compileStatus"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Worker callback (internal; success or failure) for one job",
+        "tags": ["ingest"]
+      }
+    },
     "/ingredient-tags": {
       "get": {
         "operationId": "ingredientTags.list",

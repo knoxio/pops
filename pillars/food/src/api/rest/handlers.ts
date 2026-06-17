@@ -21,6 +21,7 @@ import { makeConversionsHandlers } from './conversions-handlers.js';
 import { makeFridgeHandlers } from './fridge-handlers.js';
 import { makeHeroImageHandlers } from './hero-image-handlers.js';
 import { makeInboxHandlers } from './inbox-handlers.js';
+import { makeIngestHandlers } from './ingest-handlers.js';
 import { makeIngredientTagsHandlers } from './ingredient-tags-handlers.js';
 import { makeIngredientsHandlers } from './ingredients-handlers.js';
 import { makePlanHandlers } from './plan-handlers.js';
@@ -53,6 +54,7 @@ export function makeFoodRestHandlers(
     fridge: makeFridgeHandlers(db),
     heroImage: makeHeroImageHandlers(db),
     inbox: makeInboxHandlers(db),
+    ingest: makeIngestHandlers(db),
     ingredients: makeIngredientsHandlers(db),
     ingredientTags: makeIngredientTagsHandlers(db),
     plan: makePlanHandlers(db),

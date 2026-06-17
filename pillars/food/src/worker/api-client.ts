@@ -1,16 +1,13 @@
 /**
- * Raw HTTP client for posting worker results back to pops-api.
+ * Raw HTTP client for posting worker results back to the food-api pillar.
  *
- * Replaces the tRPC typed client (which would couple the worker to
- * pops-api's compiled `AppRouter` type) with a single-purpose fetch
- * against the `food.ingest.workerComplete` tRPC endpoint. The wire
- * format is tRPC v11's batched POST shape (`{ "0": { "json": <input> } }`
- * at `?batch=1`) — pops-api keeps its existing `httpBatchLink` handler.
+ * Single-purpose fetch against the ts-rest `ingest.workerComplete` endpoint
+ * (`POST /ingest/worker-complete`) — plain-JSON body, no tRPC batch
+ * envelope. `apiUrl` points at the food-api container's base URL.
  *
- * The auth header (`x-pops-internal-token`) is the contract PRD-125
- * landed; pops-api validates the lowercase form regardless of the
- * PRD-126 spec text saying `X-Internal-Token` (see
- * `apps/pops-api/src/trpc.ts`'s `isInternalCall`).
+ * The auth header (`x-pops-internal-token`) is validated by the
+ * `requireInternalToken` middleware in `pillars/food/src/api/app.ts`, which
+ * gates `/ingest/worker-complete` on `POPS_API_INTERNAL_TOKEN`.
  */
 import type { IngestJobResult } from '../contract/queue/index.js';
 
@@ -83,8 +80,8 @@ export async function postWorkerComplete(
   sourceId: number,
   result: IngestJobResult
 ): Promise<void> {
-  const url = `${client.apiUrl}/trpc/food.ingest.workerComplete?batch=1`;
-  const body = JSON.stringify({ 0: { json: buildInput(sourceId, result) } });
+  const url = `${client.apiUrl}/ingest/worker-complete`;
+  const body = JSON.stringify(buildInput(sourceId, result));
 
   const response = await fetch(url, {
     method: 'POST',
@@ -98,16 +95,7 @@ export async function postWorkerComplete(
   if (!response.ok) {
     const text = await response.text().catch(() => '<no-body>');
     throw new Error(
-      `food.ingest.workerComplete returned HTTP ${response.status}: ${text.slice(0, 500)}`
+      `ingest.workerComplete returned HTTP ${response.status}: ${text.slice(0, 500)}`
     );
-  }
-
-  const payload = (await response.json().catch(() => null)) as ReadonlyArray<{
-    error?: { json?: { message?: string } };
-  }> | null;
-  const errorEntry = payload?.find((entry) => entry?.error !== undefined);
-  if (errorEntry?.error !== undefined) {
-    const msg = errorEntry.error.json?.message ?? 'unknown tRPC error';
-    throw new Error(`food.ingest.workerComplete tRPC error: ${msg}`);
   }
 }
