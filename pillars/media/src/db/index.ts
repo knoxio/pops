@@ -49,6 +49,16 @@ export type { DismissedDiscoverRow } from './services/dismissed-discover.js';
 export * as dismissedDiscoverService from './services/dismissed-discover.js';
 
 export type {
+  LibraryListInput,
+  LibraryListResult,
+  LibraryRawRow,
+  LibrarySortOption,
+  LibraryType,
+} from './services/library.js';
+
+export * as libraryService from './services/library.js';
+
+export type {
   CreateTvShowInput,
   TvShow,
   TvShowFilters,

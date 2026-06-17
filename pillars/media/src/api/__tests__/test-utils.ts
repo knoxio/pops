@@ -10,6 +10,7 @@ import supertest from 'supertest';
 
 import type { Express } from 'express';
 
+import type { LibraryItem } from '../modules/library-types.js';
 import type { Movie } from '../modules/movie-types.js';
 import type { Episode, Season, TvShow } from '../modules/tv-show-types.js';
 import type {
@@ -96,6 +97,15 @@ export function makeClient(app: Express) {
           r.post(`/seasons/${seasonId}/episodes`).send(body)
         ),
       deleteEpisode: (id: number) => send<{ message: string }>(r.delete(`/episodes/${id}`)),
+    },
+    library: {
+      list: (query: Record<string, unknown> = {}) =>
+        send<{ data: LibraryItem[]; pagination: Record<string, number | boolean> }>(
+          r.get('/library').query(query)
+        ),
+      genres: () => send<{ data: string[] }>(r.get('/library/genres')),
+      quickPick: (query: { count?: number } = {}) =>
+        send<{ data: Movie[] }>(r.get('/library/quick-pick').query(query)),
     },
     watchlist: {
       list: (query: WatchlistQuery = {}) =>
