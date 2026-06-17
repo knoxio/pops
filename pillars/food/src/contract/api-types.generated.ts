@@ -470,6 +470,108 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/ingest/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Best-effort cancel of a queued ingest job */
+    post: operations['ingest.cancel'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cursor-paginated ingest sources for the inbox UI */
+    post: operations['ingest.list'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/retry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Re-enqueue a failed ingest job from its persisted row */
+    post: operations['ingest.retry'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start an ingest job (enqueues BullMQ work) */
+    post: operations['ingest.start'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Live job + persisted state for one ingest source */
+    post: operations['ingest.status'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/worker-complete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Worker callback (internal; success or failure) for one job */
+    post: operations['ingest.workerComplete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/ingredient-tags': {
     parameters: {
       query?: never;
@@ -3224,6 +3326,327 @@ export interface operations {
                   | 'ConcurrentPromotion'
                   | 'NoteRequired'
                   | 'NoteTooLong';
+              };
+        };
+      };
+    };
+  };
+  'ingest.cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          sourceId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'not-cancellable';
+              };
+        };
+      };
+    };
+  };
+  'ingest.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          cursor?: string;
+          /** @default 20 */
+          limit: number;
+          /** @enum {string} */
+          state?: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: {
+              attempts: number;
+              completedAt: string | null;
+              draftRecipeId: number | null;
+              errorCode?: string;
+              errorMessage?: string;
+              jobId: string | null;
+              /** @enum {string} */
+              kind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+              /** @enum {string} */
+              partialReason?:
+                | 'auth-dead'
+                | 'rate-limited'
+                | 'stt-failed'
+                | 'vision-failed'
+                | 'caption-only-fallback'
+                | 'empty-extraction';
+              sourceId: number;
+              startedAt: string | null;
+              /** @enum {string} */
+              state: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
+            }[];
+            nextCursor?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.retry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          sourceId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            jobId: string;
+            /** Format: date-time */
+            queuedAt: string;
+          };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json':
+          | {
+              /** @enum {string} */
+              kind: 'url-web';
+              /** Format: uri */
+              url: string;
+            }
+          | {
+              /** @enum {string} */
+              kind: 'url-instagram';
+              /** Format: uri */
+              url: string;
+            }
+          | {
+              body: string;
+              /** @enum {string} */
+              kind: 'text';
+            }
+          | {
+              contentBase64: string;
+              /** @enum {string} */
+              kind: 'screenshot';
+              /** @enum {string} */
+              mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+            };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            jobId: string;
+            /** Format: date-time */
+            queuedAt: string;
+            sourceId: number;
+          };
+        };
+      };
+      /** @description 503 */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            message: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          sourceId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            attempts: number;
+            completedAt: string | null;
+            draftRecipeId: number | null;
+            errorCode?: string;
+            errorMessage?: string;
+            jobId: string | null;
+            /** @enum {string} */
+            kind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+            /** @enum {string} */
+            partialReason?:
+              | 'auth-dead'
+              | 'rate-limited'
+              | 'stt-failed'
+              | 'vision-failed'
+              | 'caption-only-fallback'
+              | 'empty-extraction';
+            sourceId: number;
+            startedAt: string | null;
+            /** @enum {string} */
+            state: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
+          } | null;
+        };
+      };
+    };
+  };
+  'ingest.workerComplete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json':
+          | {
+              dsl: string;
+              meta: {
+                extractor_version: string;
+                stages: {
+                  [key: string]: unknown;
+                };
+              } & {
+                [key: string]: unknown;
+              };
+              /** @enum {boolean} */
+              ok: true;
+              /** @enum {string} */
+              partialReason?:
+                | 'auth-dead'
+                | 'rate-limited'
+                | 'stt-failed'
+                | 'vision-failed'
+                | 'caption-only-fallback'
+                | 'empty-extraction';
+              sourceId: number;
+            }
+          | {
+              errorCode: string;
+              errorMessage: string;
+              meta: {
+                extractor_version: string;
+                stages: {
+                  [key: string]: unknown;
+                };
+              } & {
+                [key: string]: unknown;
+              };
+              /** @enum {boolean} */
+              ok: false;
+              sourceId: number;
+            };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {string} */
+                compileStatus: 'compiled' | 'failed' | 'uncompiled';
+                draftRecipeId: number;
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                reason: string;
               };
         };
       };

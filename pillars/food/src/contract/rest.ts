@@ -21,6 +21,7 @@ import { foodConversionsContract } from './rest-conversions.js';
 import { foodFridgeContract } from './rest-fridge.js';
 import { foodHeroImageContract } from './rest-hero-image.js';
 import { foodInboxContract } from './rest-inbox.js';
+import { foodIngestContract } from './rest-ingest.js';
 import { foodIngredientTagsContract } from './rest-ingredient-tags.js';
 import { foodIngredientsContract } from './rest-ingredients.js';
 import { foodPlanContract } from './rest-plan.js';
@@ -44,6 +45,7 @@ export const foodContract = c.router(
     fridge: foodFridgeContract,
     heroImage: foodHeroImageContract,
     inbox: foodInboxContract,
+    ingest: foodIngestContract,
     ingredients: foodIngredientsContract,
     ingredientTags: foodIngredientTagsContract,
     plan: foodPlanContract,

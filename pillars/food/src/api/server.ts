@@ -28,6 +28,7 @@ import { createFoodApiApp } from './app.js';
 import { resolveFoodSqlitePath } from './food-sqlite-path.js';
 import { buildFoodManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
+import { closeFoodIngestQueue } from './queue.js';
 
 function resolvePort(): number {
   // 3001 is core-api, 3002 is inventory-api, 3003 is media-api,
@@ -85,11 +86,13 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[food-api] Shutting down (${signal})`);
-  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
-    server.close(() => {
-      foodDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve())
+    .finally(() => closeFoodIngestQueue())
+    .finally(() => {
+      server.close(() => {
+        foodDb.raw.close();
+      });
     });
-  });
 }
 
 process.on('SIGTERM', shutdown);

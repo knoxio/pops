@@ -270,9 +270,59 @@ interface LogInferenceBody {
   metadata?: Record<string, unknown>;
 }
 
+type IngestStartBody =
+  | { kind: 'url-web'; url: string }
+  | { kind: 'url-instagram'; url: string }
+  | { kind: 'text'; body: string }
+  | { kind: 'screenshot'; mimeType: string; contentBase64: string };
+
+interface IngestStartResult {
+  sourceId: number;
+  jobId: string;
+  queuedAt: string;
+}
+
+interface IngestStatusView {
+  sourceId: number;
+  kind: string;
+  state: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
+  jobId: string | null;
+  draftRecipeId: number | null;
+  attempts: number;
+}
+
+type IngestCancelResult = { ok: true } | { ok: false; reason: 'not-cancellable' };
+
+interface WireMeta {
+  extractor_version: string;
+  stages: Record<string, unknown>;
+}
+type WorkerCompleteBody =
+  | { sourceId: number; ok: true; dsl: string; meta: WireMeta; partialReason?: string }
+  | { sourceId: number; ok: false; errorCode: string; errorMessage: string; meta: WireMeta };
+type WorkerCompleteResult =
+  | { ok: true; draftRecipeId: number; compileStatus: 'compiled' | 'failed' | 'uncompiled' }
+  | { ok: false; reason: string };
+
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
+    ingest: {
+      start: (body: IngestStartBody) => send<IngestStartResult>(r.post('/ingest/start').send(body)),
+      status: (sourceId: number) =>
+        send<IngestStatusView | null>(r.post('/ingest/status').send({ sourceId })),
+      list: (body: { state?: string; cursor?: string; limit?: number } = {}) =>
+        send<ListPage<IngestStatusView>>(r.post('/ingest/list').send(body)),
+      cancel: (sourceId: number) =>
+        send<IngestCancelResult>(r.post('/ingest/cancel').send({ sourceId })),
+      retry: (sourceId: number) =>
+        send<IngestStartResult>(r.post('/ingest/retry').send({ sourceId })),
+      workerComplete: (body: WorkerCompleteBody, token?: string) => {
+        const req = r.post('/ingest/worker-complete');
+        if (token !== undefined) req.set('x-pops-internal-token', token);
+        return send<WorkerCompleteResult>(req.send(body));
+      },
+    },
     ai: {
       logInference: (body: LogInferenceBody, token?: string) => {
         const req = r.post('/ai/log-inference');

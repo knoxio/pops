@@ -16,6 +16,7 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import { foodContract } from '../contract/rest.js';
 import { type FoodApiDeps, makeRequestHandler } from './handlers.js';
 import { serveHeroImage } from './modules/hero-image/serve.js';
+import { makeServeIngestScreenshot, makeServeIngestVideo } from './modules/ingest/serve.js';
 import { makeFoodRestHandlers } from './rest/handlers.js';
 
 /**
@@ -66,6 +67,11 @@ export function createFoodApiApp(deps: FoodApiDeps): Express {
   // Binary hero-image serving — registered before the ts-rest endpoints so
   // `…/hero.jpg` resolves to a file; falls through to ts-rest otherwise.
   app.get('/recipes/:recipeId/:filename', serveHeroImage);
+
+  // Binary ingest-media serving (screenshot/video) for the inbox UI. GET-only
+  // and on a distinct subpath, so no collision with the POST `ingest.*` API.
+  app.get('/ingest/source/:sourceId/screenshot', makeServeIngestScreenshot(deps.foodDb.db));
+  app.get('/ingest/source/:sourceId/video', makeServeIngestVideo(deps.foodDb.db));
 
   createExpressEndpoints(foodContract, makeFoodRestHandlers(deps), app);
 
