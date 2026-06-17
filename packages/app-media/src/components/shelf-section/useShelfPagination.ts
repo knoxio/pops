@@ -1,7 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { discoveryGetShelfPage } from '../../media-api/index.js';
 
 import type { ShelfItem } from './types';
 
@@ -48,7 +50,7 @@ export function useShelfPagination({
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(initialItems.length);
 
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
 
   const patchItem = useCallback((tmdbId: number, patch: Partial<ShelfItem>) => {
     setItems((prev) => prev.map((i) => (i.tmdbId === tmdbId ? { ...i, ...patch } : i)));
@@ -57,10 +59,20 @@ export function useShelfPagination({
   const handleShowMore = useCallback(async () => {
     setLoadingMore(true);
     try {
-      const data = await utils.fetchQuery<ShelfPageResponse>(['discovery', 'getShelfPage'], {
-        shelfId,
-        limit: LOAD_MORE_LIMIT,
-        offset,
+      const data = await queryClient.fetchQuery<ShelfPageResponse>({
+        queryKey: [
+          'media',
+          'discovery',
+          'getShelfPage',
+          { shelfId, limit: LOAD_MORE_LIMIT, offset },
+        ],
+        queryFn: async () =>
+          unwrap(
+            await discoveryGetShelfPage({
+              path: { shelfId },
+              query: { limit: LOAD_MORE_LIMIT, offset },
+            })
+          ),
       });
       const existingIds = new Set(items.map((i) => i.tmdbId));
       const newItems = data.items.filter((i) => !existingIds.has(i.tmdbId));
@@ -72,7 +84,7 @@ export function useShelfPagination({
     } finally {
       setLoadingMore(false);
     }
-  }, [shelfId, offset, items, utils]);
+  }, [shelfId, offset, items, queryClient]);
 
   return {
     sentinelRef,

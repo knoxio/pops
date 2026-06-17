@@ -1,6 +1,12 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  arrGetSonarrLanguageProfiles,
+  arrGetSonarrQualityProfiles,
+  arrGetSonarrRootFolders,
+} from '../../media-api/index.js';
 
 import type { SeasonInfo } from '../RequestSeriesModal';
 
@@ -52,24 +58,24 @@ interface DefaultsArgs {
 }
 
 export function useSeriesQueries(open: boolean) {
-  const profiles = usePillarQuery<QualityProfilesResult>(
-    'media',
-    ['arr', 'getSonarrQualityProfiles'],
-    undefined,
-    { enabled: open, retry: false }
-  );
-  const folders = usePillarQuery<RootFoldersResult>(
-    'media',
-    ['arr', 'getSonarrRootFolders'],
-    undefined,
-    { enabled: open, retry: false }
-  );
-  const languages = usePillarQuery<LanguageProfilesResult>(
-    'media',
-    ['arr', 'getSonarrLanguageProfiles'],
-    undefined,
-    { enabled: open, retry: false }
-  );
+  const profiles = useQuery<QualityProfilesResult>({
+    queryKey: ['media', 'arr', 'getSonarrQualityProfiles'],
+    queryFn: async () => unwrap(await arrGetSonarrQualityProfiles()),
+    enabled: open,
+    retry: false,
+  });
+  const folders = useQuery<RootFoldersResult>({
+    queryKey: ['media', 'arr', 'getSonarrRootFolders'],
+    queryFn: async () => unwrap(await arrGetSonarrRootFolders()),
+    enabled: open,
+    retry: false,
+  });
+  const languages = useQuery<LanguageProfilesResult>({
+    queryKey: ['media', 'arr', 'getSonarrLanguageProfiles'],
+    queryFn: async () => unwrap(await arrGetSonarrLanguageProfiles()),
+    enabled: open,
+    retry: false,
+  });
   return { profiles, folders, languages };
 }
 

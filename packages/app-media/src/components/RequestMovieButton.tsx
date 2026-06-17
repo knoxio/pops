@@ -1,6 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * RequestMovieButton — requests a movie via Radarr.
  *
@@ -12,6 +12,8 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
  */
 import { Button } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import { arrConfig, arrGetMovieStatus } from '../media-api/index.js';
 import { ConditionalModalButton } from './ConditionalModalButton';
 import { RequestMovieModal } from './RequestMovieModal';
 
@@ -92,18 +94,16 @@ function RequestButtonShell({
 }
 
 function useRequestMovieGate(tmdbId: number) {
-  const { data: configData } = usePillarQuery<ArrConfigResult>(
-    'media',
-    ['arr', 'getConfig'],
-    undefined
-  );
+  const { data: configData } = useQuery<ArrConfigResult>({
+    queryKey: ['media', 'arr', 'getConfig'],
+    queryFn: async () => unwrap(await arrConfig()),
+  });
   const config = configData?.data;
-  const movieStatus = usePillarQuery<MovieStatusResult>(
-    'media',
-    ['arr', 'getMovieStatus'],
-    { tmdbId },
-    { enabled: config?.radarrConfigured === true }
-  );
+  const movieStatus = useQuery<MovieStatusResult>({
+    queryKey: ['media', 'arr', 'getMovieStatus', { tmdbId }],
+    queryFn: async () => unwrap(await arrGetMovieStatus({ path: { tmdbId } })),
+    enabled: config?.radarrConfigured === true,
+  });
   return { config, movieStatus };
 }
 

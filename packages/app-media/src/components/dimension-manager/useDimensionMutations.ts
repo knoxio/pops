@@ -1,7 +1,9 @@
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, type UsePillarMutationResult } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsCreateDimension, comparisonsUpdateDimension } from '../../media-api/index.js';
 
 import type { Dimension, EditState } from './types';
 
@@ -33,35 +35,35 @@ interface UpdateDimensionInput {
   };
 }
 
-type UpdateMutation = UsePillarMutationResult<UpdateDimensionInput, unknown>;
+type UpdateMutation = UseMutationResult<unknown, Error, UpdateDimensionInput>;
 
 function useCoreMutations(
   args: Pick<MutationsArgs, 'setEditing' | 'setAddName' | 'setAddDescription'>
 ) {
-  const createMutation = usePillarMutation<CreateDimensionInput, unknown>(
-    'media',
-    ['comparisons', 'createDimension'],
-    {
-      onSuccess: () => {
-        args.setAddName('');
-        args.setAddDescription('');
-        toast.success('Dimension created');
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
 
-  const updateMutation = usePillarMutation<UpdateDimensionInput, unknown>(
-    'media',
-    ['comparisons', 'updateDimension'],
-    {
-      onSuccess: () => {
-        args.setEditing(null);
-        toast.success('Dimension updated');
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const createMutation = useMutation({
+    mutationFn: async (input: CreateDimensionInput) =>
+      unwrap(await comparisonsCreateDimension({ body: { ...input, active: true, weight: 1 } })),
+    onSuccess: () => {
+      args.setAddName('');
+      args.setAddDescription('');
+      toast.success('Dimension created');
+      void queryClient.invalidateQueries({ queryKey: ['media', 'comparisons'] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateDimensionInput) =>
+      unwrap(await comparisonsUpdateDimension({ path: { id: input.id }, body: input.data })),
+    onSuccess: () => {
+      args.setEditing(null);
+      toast.success('Dimension updated');
+      void queryClient.invalidateQueries({ queryKey: ['media', 'comparisons'] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   return { createMutation, updateMutation };
 }

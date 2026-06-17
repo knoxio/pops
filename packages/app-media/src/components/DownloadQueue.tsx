@@ -1,4 +1,5 @@
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
+
 /**
  * DownloadQueue — shows active downloads from Radarr + Sonarr.
  *
@@ -6,6 +7,9 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
  * or when neither service is configured.
  */
 import { Badge } from '@pops/ui';
+
+import { unwrap } from '../media-api-helpers.js';
+import { arrConfig, arrQueue } from '../media-api/index.js';
 
 interface ArrConfigResult {
   data: { radarrConfigured: boolean; sonarrConfigured: boolean };
@@ -49,20 +53,19 @@ function DownloadRow({ item }: { item: DownloadQueueItem }) {
 }
 
 export function DownloadQueue() {
-  const { data: configData } = usePillarQuery<ArrConfigResult>(
-    'media',
-    ['arr', 'getConfig'],
-    undefined
-  );
+  const { data: configData } = useQuery<ArrConfigResult>({
+    queryKey: ['media', 'arr', 'getConfig'],
+    queryFn: async () => unwrap(await arrConfig()),
+  });
   const config = configData?.data;
   const hasAnyService = config?.radarrConfigured ?? config?.sonarrConfigured;
 
-  const { data } = usePillarQuery<DownloadQueueResult>(
-    'media',
-    ['arr', 'getDownloadQueue'],
-    undefined,
-    { enabled: hasAnyService === true, refetchInterval: 30_000 }
-  );
+  const { data } = useQuery<DownloadQueueResult>({
+    queryKey: ['media', 'arr', 'getDownloadQueue'],
+    queryFn: async () => unwrap(await arrQueue()),
+    enabled: hasAnyService === true,
+    refetchInterval: 30_000,
+  });
 
   const items = data?.data;
   if (!items || items.length === 0) return null;

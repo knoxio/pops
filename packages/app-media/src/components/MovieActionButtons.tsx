@@ -1,6 +1,3 @@
-import { useState } from 'react';
-
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * MovieActionButtons — conditional action buttons for non-library movies.
  *
@@ -10,7 +7,11 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
  *
  * PRD-072 US-05
  */
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
+import { unwrap } from '../media-api-helpers.js';
+import { rotationSchedulerStatus } from '../media-api/index.js';
 import { QueueActionButtons } from './movie-action-buttons/QueueActionButtons';
 import { ExcludedButton, InQueueButton } from './movie-action-buttons/StatusButtons';
 import { useRotationButtonsModel } from './movie-action-buttons/useRotationButtonsModel';
@@ -39,11 +40,10 @@ export function MovieActionButtons({
   rating,
   variant = 'standard',
 }: MovieActionButtonsProps) {
-  const { data: statusData } = usePillarQuery<RotationStatusResult>(
-    'media',
-    ['rotation', 'status'],
-    undefined
-  );
+  const { data: statusData } = useQuery<RotationStatusResult>({
+    queryKey: ['media', 'rotation', 'status'],
+    queryFn: async () => (await unwrap(await rotationSchedulerStatus())).data,
+  });
   const rotationEnabled = statusData?.isRunning ?? false;
 
   if (!rotationEnabled) {

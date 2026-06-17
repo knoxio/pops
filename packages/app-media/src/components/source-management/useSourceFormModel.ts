@@ -1,7 +1,13 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  rotationCreateSource,
+  rotationListPlexFriends,
+  rotationUpdateSource,
+} from '../../media-api/index.js';
 
 import type { SourceFormValues } from './types';
 
@@ -87,28 +93,41 @@ function useSourceFormState(initialValues: SourceFormValues | undefined, sourceT
 }
 
 function useSourceMutations(onClose: () => void) {
-  const createMutation = usePillarMutation<CreateSourceInput, unknown>(
-    'media',
-    ['rotation', 'createSource'],
-    {
-      onSuccess: () => {
-        toast.success('Source created');
-        onClose();
-      },
-      onError: () => toast.error('Failed to create source'),
-    }
-  );
-  const updateMutation = usePillarMutation<UpdateSourceInput, unknown>(
-    'media',
-    ['rotation', 'updateSource'],
-    {
-      onSuccess: () => {
-        toast.success('Source updated');
-        onClose();
-      },
-      onError: () => toast.error('Failed to update source'),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidateRotation = () =>
+    void queryClient.invalidateQueries({ queryKey: ['media', 'rotation'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (input: CreateSourceInput) =>
+      unwrap(await rotationCreateSource({ body: input })),
+    onSuccess: () => {
+      toast.success('Source created');
+      invalidateRotation();
+      onClose();
+    },
+    onError: () => toast.error('Failed to create source'),
+  });
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateSourceInput) =>
+      unwrap(
+        await rotationUpdateSource({
+          path: { id: input.id },
+          body: {
+            name: input.name,
+            priority: input.priority,
+            enabled: input.enabled,
+            syncIntervalHours: input.syncIntervalHours,
+            config: input.config,
+          },
+        })
+      ),
+    onSuccess: () => {
+      toast.success('Source updated');
+      invalidateRotation();
+      onClose();
+    },
+    onError: () => toast.error('Failed to update source'),
+  });
   return { createMutation, updateMutation };
 }
 
@@ -120,12 +139,11 @@ export function useSourceFormModel({
 }: UseSourceFormArgs) {
   const state = useSourceFormState(initialValues, sourceTypes);
   const { createMutation, updateMutation } = useSourceMutations(onClose);
-  const plexFriendsQuery = usePillarQuery<PlexFriendsResult>(
-    'media',
-    ['rotation', 'listPlexFriends'],
-    undefined,
-    { enabled: state.type === 'plex_friends' }
-  );
+  const plexFriendsQuery = useQuery<PlexFriendsResult>({
+    queryKey: ['media', 'rotation', 'listPlexFriends'],
+    queryFn: async () => (await unwrap(await rotationListPlexFriends())).data,
+    enabled: state.type === 'plex_friends',
+  });
 
   const handleSubmit = () => {
     if (!state.name.trim()) {

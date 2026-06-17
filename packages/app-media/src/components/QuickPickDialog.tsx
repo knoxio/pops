@@ -1,8 +1,8 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Button,
   Dialog,
@@ -13,6 +13,8 @@ import {
   DialogTrigger,
 } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import { discoveryQuickPick, watchlistAdd } from '../media-api/index.js';
 import { PickCard } from './quick-pick/PickCard';
 import { EmptyView, ErrorView, FinishedView, PickLoading } from './quick-pick/PickViews';
 
@@ -35,29 +37,27 @@ interface AddToWatchlistInput {
 }
 
 function useQuickPickModel() {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { data, isLoading, error, refetch } = usePillarQuery<QuickPickResult>(
-    'media',
-    ['discovery', 'quickPick'],
-    { count: 5 },
-    { enabled: open }
-  );
+  const { data, isLoading, error, refetch } = useQuery<QuickPickResult>({
+    queryKey: ['media', 'discovery', 'quickPick', { count: 5 }],
+    queryFn: async () => unwrap(await discoveryQuickPick({ query: { count: 5 } })),
+    enabled: open,
+  });
 
-  const addToWatchlist = usePillarMutation<AddToWatchlistInput, unknown>(
-    'media',
-    ['watchlist', 'add'],
-    {
-      onSuccess: () => {
-        toast.success('Added to watchlist!');
-        setOpen(false);
-      },
-      onError: (err) => {
-        toast.error(`Failed to add: ${err.message}`);
-      },
-    }
-  );
+  const addToWatchlist = useMutation({
+    mutationFn: async (input: AddToWatchlistInput) => unwrap(await watchlistAdd({ body: input })),
+    onSuccess: () => {
+      toast.success('Added to watchlist!');
+      setOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Failed to add: ${err.message}`);
+    },
+  });
 
   const movies = data?.data ?? [];
   const currentMovie = movies[currentIndex];

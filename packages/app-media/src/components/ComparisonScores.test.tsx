@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeScore } from './ComparisonScores';
 
@@ -19,17 +21,12 @@ vi.mock('recharts', () => ({
   Tooltip: () => <div data-testid="tooltip" />,
 }));
 
-// Mock tRPC hooks
-const mockScoresQuery = vi.fn();
-const mockDimensionsQuery = vi.fn();
+const comparisonsScoresMock = vi.hoisted(() => vi.fn());
+const comparisonsListDimensionsMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'comparisons.scores') return mockScoresQuery(input);
-    if (key === 'comparisons.listDimensions') return mockDimensionsQuery();
-    return { data: undefined, isLoading: false };
-  },
+vi.mock('../media-api/index.js', () => ({
+  comparisonsScores: (...args: unknown[]) => comparisonsScoresMock(...args),
+  comparisonsListDimensions: (...args: unknown[]) => comparisonsListDimensionsMock(...args),
 }));
 
 import { ComparisonScores } from './ComparisonScores';
@@ -46,85 +43,95 @@ const baseScores = [
   { dimensionId: 3, score: 1700, comparisonCount: 3 },
 ];
 
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+}
+
+function renderScores(props: { mediaType: 'movie' | 'tv_show'; mediaId: number }) {
+  const queryClient = makeQueryClient();
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return render(<ComparisonScores {...props} />, { wrapper });
+}
+
+afterEach(() => {
+  cleanup();
+});
+
 beforeEach(() => {
-  mockScoresQuery.mockReturnValue({
-    data: { data: baseScores },
-    isLoading: false,
-  });
-  mockDimensionsQuery.mockReturnValue({
-    data: { data: baseDimensions },
-    isLoading: false,
-  });
+  vi.clearAllMocks();
+  comparisonsScoresMock.mockResolvedValue(ok({ data: baseScores }));
+  comparisonsListDimensionsMock.mockResolvedValue(ok({ data: baseDimensions }));
 });
 
 describe('ComparisonScores', () => {
   describe('chart renders with scores', () => {
-    it('renders radar chart when sufficient comparisons exist', () => {
-      render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      expect(screen.getByTestId('radar-chart')).toBeInTheDocument();
+    it('renders radar chart when sufficient comparisons exist', async () => {
+      renderScores({ mediaType: 'movie', mediaId: 1 });
+      expect(await screen.findByTestId('radar-chart')).toBeInTheDocument();
       expect(screen.getByText('Comparison Scores')).toBeInTheDocument();
     });
 
-    it('passes correct number of data points to radar chart', () => {
-      render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      const chart = screen.getByTestId('radar-chart');
+    it('passes correct number of data points to radar chart', async () => {
+      renderScores({ mediaType: 'movie', mediaId: 1 });
+      const chart = await screen.findByTestId('radar-chart');
       expect(chart).toHaveAttribute('data-points', '3');
     });
   });
 
   describe('hidden when no comparisons', () => {
-    it('returns null when totalComparisons is zero', () => {
-      mockScoresQuery.mockReturnValue({
-        data: { data: [] },
-        isLoading: false,
-      });
-      const { container } = render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      expect(container.innerHTML).toBe('');
+    it('returns null when totalComparisons is zero', async () => {
+      comparisonsScoresMock.mockResolvedValue(ok({ data: [] }));
+      const { container } = renderScores({ mediaType: 'movie', mediaId: 1 });
+      await waitFor(() => expect(comparisonsScoresMock).toHaveBeenCalled());
+      await waitFor(() => expect(container.innerHTML).toBe(''));
     });
 
-    it('returns null when all scores have zero comparisonCount', () => {
-      mockScoresQuery.mockReturnValue({
-        data: {
+    it('returns null when all scores have zero comparisonCount', async () => {
+      comparisonsScoresMock.mockResolvedValue(
+        ok({
           data: [
             { dimensionId: 1, score: 1000, comparisonCount: 0 },
             { dimensionId: 2, score: 1000, comparisonCount: 0 },
           ],
-        },
-        isLoading: false,
-      });
-      const { container } = render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      expect(container.innerHTML).toBe('');
+        })
+      );
+      const { container } = renderScores({ mediaType: 'movie', mediaId: 1 });
+      await waitFor(() => expect(comparisonsScoresMock).toHaveBeenCalled());
+      await waitFor(() => expect(container.innerHTML).toBe(''));
     });
   });
 
   describe('placeholder for 1-2 comparisons', () => {
-    it('shows placeholder when totalComparisons is 1', () => {
-      mockScoresQuery.mockReturnValue({
-        data: {
-          data: [{ dimensionId: 1, score: 1200, comparisonCount: 1 }],
-        },
-        isLoading: false,
-      });
-      render(<ComparisonScores mediaType="movie" mediaId={1} />);
+    it('shows placeholder when totalComparisons is 1', async () => {
+      comparisonsScoresMock.mockResolvedValue(
+        ok({ data: [{ dimensionId: 1, score: 1200, comparisonCount: 1 }] })
+      );
+      renderScores({ mediaType: 'movie', mediaId: 1 });
       expect(
-        screen.getByText('Not enough data — at least 3 comparisons needed')
+        await screen.findByText('Not enough data — at least 3 comparisons needed')
       ).toBeInTheDocument();
       expect(screen.queryByTestId('radar-chart')).not.toBeInTheDocument();
     });
 
-    it('shows placeholder when totalComparisons is 2', () => {
-      mockScoresQuery.mockReturnValue({
-        data: {
+    it('shows placeholder when totalComparisons is 2', async () => {
+      comparisonsScoresMock.mockResolvedValue(
+        ok({
           data: [
             { dimensionId: 1, score: 1200, comparisonCount: 1 },
             { dimensionId: 2, score: 1300, comparisonCount: 1 },
           ],
-        },
-        isLoading: false,
-      });
-      render(<ComparisonScores mediaType="movie" mediaId={1} />);
+        })
+      );
+      renderScores({ mediaType: 'movie', mediaId: 1 });
       expect(
-        screen.getByText('Not enough data — at least 3 comparisons needed')
+        await screen.findByText('Not enough data — at least 3 comparisons needed')
       ).toBeInTheDocument();
     });
   });
@@ -153,33 +160,31 @@ describe('ComparisonScores', () => {
 
   describe('loading state', () => {
     it('shows skeleton when loading', () => {
-      mockScoresQuery.mockReturnValue({ data: null, isLoading: true });
-      mockDimensionsQuery.mockReturnValue({ data: null, isLoading: true });
-      const { container } = render(<ComparisonScores mediaType="movie" mediaId={1} />);
+      comparisonsScoresMock.mockReturnValue(new Promise(() => {}));
+      comparisonsListDimensionsMock.mockReturnValue(new Promise(() => {}));
+      const { container } = renderScores({ mediaType: 'movie', mediaId: 1 });
       expect(container.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(0);
     });
   });
 
   describe('axis count', () => {
-    it('renders correct number of axes matching dimensions', () => {
-      render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      // The radar chart receives 3 data points (one per dimension with scores)
-      const chart = screen.getByTestId('radar-chart');
+    it('renders correct number of axes matching dimensions', async () => {
+      renderScores({ mediaType: 'movie', mediaId: 1 });
+      const chart = await screen.findByTestId('radar-chart');
       expect(chart).toHaveAttribute('data-points', '3');
     });
 
-    it('renders chart with fewer axes when fewer dimensions have scores', () => {
-      mockScoresQuery.mockReturnValue({
-        data: {
+    it('renders chart with fewer axes when fewer dimensions have scores', async () => {
+      comparisonsScoresMock.mockResolvedValue(
+        ok({
           data: [
             { dimensionId: 1, score: 1500, comparisonCount: 3 },
             { dimensionId: 2, score: 1300, comparisonCount: 2 },
           ],
-        },
-        isLoading: false,
-      });
-      render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      const chart = screen.getByTestId('radar-chart');
+        })
+      );
+      renderScores({ mediaType: 'movie', mediaId: 1 });
+      const chart = await screen.findByTestId('radar-chart');
       expect(chart).toHaveAttribute('data-points', '2');
     });
   });

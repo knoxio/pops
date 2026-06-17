@@ -1,46 +1,24 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── Mocks ──────────────────────────────────────────────────────────────────
+const qualityProfilesMock = vi.hoisted(() => vi.fn());
+const rootFoldersMock = vi.hoisted(() => vi.fn());
+const languageProfilesMock = vi.hoisted(() => vi.fn());
+const addSeriesMock = vi.hoisted(() => vi.fn());
 
-const mockProfilesQuery = vi.fn();
-const mockFoldersQuery = vi.fn();
-const mockLanguagesQuery = vi.fn();
-const mockAddSeriesMutate = vi.fn();
-let addSeriesOpts: Record<string, unknown> = {};
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    _input: unknown,
-    opts?: Record<string, unknown>
-  ) => {
-    const key = path.join('.');
-    if (key === 'arr.getSonarrQualityProfiles') return mockProfilesQuery(_input, opts);
-    if (key === 'arr.getSonarrRootFolders') return mockFoldersQuery(_input, opts);
-    if (key === 'arr.getSonarrLanguageProfiles') return mockLanguagesQuery(_input, opts);
-    return { data: null, isLoading: false, error: null };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: Record<string, unknown>
-  ) => {
-    const key = path.join('.');
-    if (key === 'arr.addSeries') {
-      addSeriesOpts = opts;
-      return { mutate: mockAddSeriesMutate, isPending: false };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
+vi.mock('../media-api/index.js', () => ({
+  arrGetSonarrQualityProfiles: (...args: unknown[]) => qualityProfilesMock(...args),
+  arrGetSonarrRootFolders: (...args: unknown[]) => rootFoldersMock(...args),
+  arrGetSonarrLanguageProfiles: (...args: unknown[]) => languageProfilesMock(...args),
+  arrAddSeries: (...args: unknown[]) => addSeriesMock(...args),
 }));
 
 import { RequestSeriesModal } from './RequestSeriesModal';
 
 import type { SeasonInfo } from './RequestSeriesModal';
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 const profiles = [
   { id: 1, name: 'HD - 720p/1080p' },
@@ -69,40 +47,25 @@ const futureSeasons: SeasonInfo[] = [
 
 const mixedSeasons: SeasonInfo[] = [...pastSeasons, ...futureSeasons];
 
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
+
 function setupDefaults(
   overrides: {
-    profilesLoading?: boolean;
-    foldersLoading?: boolean;
-    languagesLoading?: boolean;
     profileList?: typeof profiles;
     folderList?: typeof folders;
     languageList?: typeof languageProfiles;
   } = {}
 ) {
   const {
-    profilesLoading = false,
-    foldersLoading = false,
-    languagesLoading = false,
     profileList = profiles,
     folderList = folders,
     languageList = languageProfiles,
   } = overrides;
-
-  mockProfilesQuery.mockReturnValue({
-    isLoading: profilesLoading,
-    data: profilesLoading ? null : { data: profileList },
-    refetch: vi.fn(),
-  });
-  mockFoldersQuery.mockReturnValue({
-    isLoading: foldersLoading,
-    data: foldersLoading ? null : { data: folderList },
-    refetch: vi.fn(),
-  });
-  mockLanguagesQuery.mockReturnValue({
-    isLoading: languagesLoading,
-    data: languagesLoading ? null : { data: languageList },
-    refetch: vi.fn(),
-  });
+  qualityProfilesMock.mockResolvedValue(ok({ data: profileList }));
+  rootFoldersMock.mockResolvedValue(ok({ data: folderList }));
+  languageProfilesMock.mockResolvedValue(ok({ data: languageList }));
 }
 
 const defaultProps = {
@@ -114,239 +77,248 @@ const defaultProps = {
   seasons: mixedSeasons,
 };
 
-function renderModal(props: Partial<typeof defaultProps> = {}) {
-  return render(<RequestSeriesModal {...defaultProps} {...props} />);
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
 }
 
-// ── Tests ──────────────────────────────────────────────────────────────────
+function renderModal(props: Partial<typeof defaultProps> = {}) {
+  const queryClient = makeQueryClient();
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return render(<RequestSeriesModal {...defaultProps} {...props} />, { wrapper });
+}
+
+/** Resolves once the option dropdowns have hydrated from the SDK mocks. */
+async function awaitFormReady() {
+  await waitFor(() => {
+    const select = document.querySelector('#language-profile') as HTMLSelectElement | null;
+    expect(select?.value).toBe('1');
+  });
+}
+
+afterEach(() => {
+  cleanup();
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
-  addSeriesOpts = {};
+  setupDefaults();
+  addSeriesMock.mockResolvedValue(ok({ data: { id: 1 } }));
 });
 
 describe('RequestSeriesModal', () => {
   it('shows series title and year in header', () => {
-    setupDefaults();
     renderModal();
 
     expect(screen.getByText('Request Series')).toBeInTheDocument();
     expect(screen.getByText('Breaking Bad (2008)')).toBeInTheDocument();
   });
 
-  it('populates quality profile dropdown from API', () => {
-    setupDefaults();
+  it('populates quality profile dropdown from API', async () => {
     renderModal();
 
+    await awaitFormReady();
     const select = document.querySelector('#quality-profile') as HTMLSelectElement;
-    expect(select).toBeTruthy();
     const options = select.querySelectorAll('option');
     expect(options).toHaveLength(2);
     expect(options[0]!.textContent).toBe('HD - 720p/1080p');
     expect(options[1]!.textContent).toBe('Ultra-HD');
   });
 
-  it('populates root folder dropdown with free space', () => {
-    setupDefaults();
+  it('populates root folder dropdown with free space', async () => {
     renderModal();
 
+    await awaitFormReady();
     const select = document.querySelector('#root-folder') as HTMLSelectElement;
-    expect(select).toBeTruthy();
     const options = select.querySelectorAll('option');
     expect(options).toHaveLength(2);
     expect(options[0]!.textContent).toContain('/tv');
     expect(options[0]!.textContent).toContain('GB free');
   });
 
-  it('populates language profile dropdown from API', () => {
-    setupDefaults();
+  it('populates language profile dropdown from API', async () => {
     renderModal();
 
+    await awaitFormReady();
     const select = document.querySelector('#language-profile') as HTMLSelectElement;
-    expect(select).toBeTruthy();
     const options = select.querySelectorAll('option');
     expect(options).toHaveLength(2);
     expect(options[0]!.textContent).toBe('English');
     expect(options[1]!.textContent).toBe('Any');
   });
 
-  it('defaults to first quality profile, root folder, and language profile', () => {
-    setupDefaults();
+  it('defaults to first quality profile, root folder, and language profile', async () => {
     renderModal();
 
+    await awaitFormReady();
     expect((document.querySelector('#quality-profile') as HTMLSelectElement).value).toBe('1');
     expect((document.querySelector('#root-folder') as HTMLSelectElement).value).toBe('/tv');
     expect((document.querySelector('#language-profile') as HTMLSelectElement).value).toBe('1');
   });
 
-  it('applies smart season defaults — future checked, past unchecked', () => {
-    setupDefaults();
+  it('applies smart season defaults — future checked, past unchecked', async () => {
     renderModal();
 
+    await awaitFormReady();
     const checkboxes = screen.getAllByRole('checkbox');
-    // Season 1 (2020) and Season 2 (2021) should be unchecked
     expect(checkboxes[0]).not.toBeChecked(); // Season 1
     expect(checkboxes[1]).not.toBeChecked(); // Season 2
-    // Season 3 (2028) and Season 4 (null/unannounced) should be checked
     expect(checkboxes[2]).toBeChecked(); // Season 3
     expect(checkboxes[3]).toBeChecked(); // Season 4
   });
 
-  it('allows toggling individual season checkboxes', () => {
-    setupDefaults();
+  it('allows toggling individual season checkboxes', async () => {
+    const user = userEvent.setup();
     renderModal();
 
+    await awaitFormReady();
     const checkboxes = screen.getAllByRole('checkbox');
-    // Toggle Season 1 on
-    fireEvent.click(checkboxes[0]!);
+    await user.click(checkboxes[0]!);
     expect(checkboxes[0]!).toBeChecked();
-    // Toggle Season 3 off
-    fireEvent.click(checkboxes[2]!);
+    await user.click(checkboxes[2]!);
     expect(checkboxes[2]!).not.toBeChecked();
   });
 
-  it('shows Select All / Deselect All when more than 3 seasons', () => {
-    setupDefaults();
+  it('shows Select All / Deselect All when more than 3 seasons', async () => {
     renderModal();
 
+    await awaitFormReady();
     expect(screen.getByText('Select All')).toBeInTheDocument();
     expect(screen.getByText('Deselect All')).toBeInTheDocument();
   });
 
-  it('does not show bulk controls when 3 or fewer seasons', () => {
-    setupDefaults();
+  it('does not show bulk controls when 3 or fewer seasons', async () => {
     renderModal({ seasons: pastSeasons });
 
+    await awaitFormReady();
     expect(screen.queryByText('Select All')).not.toBeInTheDocument();
     expect(screen.queryByText('Deselect All')).not.toBeInTheDocument();
   });
 
-  it('Select All checks all seasons', () => {
-    setupDefaults();
+  it('Select All checks all seasons', async () => {
+    const user = userEvent.setup();
     renderModal();
 
-    fireEvent.click(screen.getByText('Select All'));
+    await awaitFormReady();
+    await user.click(screen.getByText('Select All'));
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    for (const cb of checkboxes) {
+    for (const cb of screen.getAllByRole('checkbox')) {
       expect(cb).toBeChecked();
     }
   });
 
-  it('Deselect All unchecks all seasons', () => {
-    setupDefaults();
+  it('Deselect All unchecks all seasons', async () => {
+    const user = userEvent.setup();
     renderModal();
 
-    fireEvent.click(screen.getByText('Deselect All'));
+    await awaitFormReady();
+    await user.click(screen.getByText('Deselect All'));
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    for (const cb of checkboxes) {
+    for (const cb of screen.getAllByRole('checkbox')) {
       expect(cb).not.toBeChecked();
     }
   });
 
-  it('sends correct addSeries payload on confirm', () => {
-    setupDefaults();
+  it('sends correct addSeries payload on confirm', async () => {
+    const user = userEvent.setup();
     renderModal();
 
-    fireEvent.click(screen.getByText('Request'));
+    await awaitFormReady();
+    await user.click(screen.getByText('Request'));
 
-    expect(mockAddSeriesMutate).toHaveBeenCalledWith({
-      tvdbId: 81189,
-      title: 'Breaking Bad',
-      qualityProfileId: 1,
-      rootFolderPath: '/tv',
-      languageProfileId: 1,
-      seasons: [
-        { seasonNumber: 1, monitored: false },
-        { seasonNumber: 2, monitored: false },
-        { seasonNumber: 3, monitored: true },
-        { seasonNumber: 4, monitored: true },
-      ],
-    });
+    await waitFor(() =>
+      expect(addSeriesMock).toHaveBeenCalledWith({
+        body: {
+          tvdbId: 81189,
+          title: 'Breaking Bad',
+          qualityProfileId: 1,
+          rootFolderPath: '/tv',
+          languageProfileId: 1,
+          seasons: [
+            { seasonNumber: 1, monitored: false },
+            { seasonNumber: 2, monitored: false },
+            { seasonNumber: 3, monitored: true },
+            { seasonNumber: 4, monitored: true },
+          ],
+        },
+      })
+    );
   });
 
-  it('calls onClose after successful add', () => {
-    vi.useFakeTimers();
-    setupDefaults();
+  it('calls onClose after successful add', async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
     renderModal({ onClose });
 
-    fireEvent.click(screen.getByText('Request'));
+    await awaitFormReady();
+    await user.click(screen.getByText('Request'));
 
-    const onSuccess = addSeriesOpts.onSuccess as () => void;
-    act(() => {
-      onSuccess();
-    });
-
-    expect(screen.getByText('Series Added')).toBeInTheDocument();
-
-    act(() => vi.advanceTimersByTime(1500));
-    expect(onClose).toHaveBeenCalled();
-
-    vi.useRealTimers();
+    expect(await screen.findByText('Series Added')).toBeInTheDocument();
+    // The modal intentionally waits 1500ms on the success state before closing.
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: 2000 });
   });
 
-  it('shows inline error on failure', () => {
-    setupDefaults();
+  it('shows inline error on failure', async () => {
+    addSeriesMock.mockResolvedValue({
+      data: undefined,
+      error: { message: 'Series already exists in Sonarr' },
+      response: { status: 409 },
+    });
+    const user = userEvent.setup();
     renderModal();
 
-    fireEvent.click(screen.getByText('Request'));
+    await awaitFormReady();
+    await user.click(screen.getByText('Request'));
 
-    const onError = addSeriesOpts.onError as (err: { message: string }) => void;
-    act(() => {
-      onError({ message: 'Series already exists in Sonarr' });
-    });
-
-    expect(screen.getByText('Series already exists in Sonarr')).toBeInTheDocument();
+    expect(await screen.findByText('Series already exists in Sonarr')).toBeInTheDocument();
   });
 
-  it('calls onClose on cancel without API call', () => {
-    setupDefaults();
+  it('calls onClose on cancel without API call', async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
     renderModal({ onClose });
 
-    fireEvent.click(screen.getByText('Cancel'));
+    await user.click(screen.getByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
-    expect(mockAddSeriesMutate).not.toHaveBeenCalled();
+    expect(addSeriesMock).not.toHaveBeenCalled();
   });
 
   it('shows loading state while fetching options', () => {
-    setupDefaults({ profilesLoading: true });
+    qualityProfilesMock.mockReturnValue(new Promise(() => {}));
     renderModal();
 
     expect(screen.getByText('Loading options...')).toBeInTheDocument();
   });
 
-  it('shows retry when no profiles available', () => {
+  it('shows retry when no profiles available', async () => {
     setupDefaults({ profileList: [] });
     renderModal();
 
-    expect(screen.getByText(/No quality profiles found/)).toBeInTheDocument();
+    expect(await screen.findByText(/No quality profiles found/)).toBeInTheDocument();
     expect(screen.getByText('Retry')).toBeInTheDocument();
   });
 
-  it('shows retry when no language profiles available', () => {
+  it('shows retry when no language profiles available', async () => {
     setupDefaults({ languageList: [] });
     renderModal();
 
-    expect(screen.getByText(/No language profiles found/)).toBeInTheDocument();
+    expect(await screen.findByText(/No language profiles found/)).toBeInTheDocument();
   });
 
-  it('displays season year from firstAirDate', () => {
-    setupDefaults();
+  it('displays season year from firstAirDate', async () => {
     renderModal();
 
+    await awaitFormReady();
     expect(screen.getByText('— 2020')).toBeInTheDocument();
     expect(screen.getByText('— 2028')).toBeInTheDocument();
   });
 
-  it('displays Specials for season 0', () => {
-    setupDefaults();
-    renderModal({
-      seasons: [{ seasonNumber: 0, firstAirDate: '2019-01-01' }],
-    });
+  it('displays Specials for season 0', async () => {
+    renderModal({ seasons: [{ seasonNumber: 0, firstAirDate: '2019-01-01' }] });
 
+    await awaitFormReady();
     expect(screen.getByText('Specials')).toBeInTheDocument();
   });
 });
