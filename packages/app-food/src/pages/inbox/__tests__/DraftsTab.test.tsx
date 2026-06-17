@@ -60,7 +60,8 @@ function mockList(items: InboxDraftRow[], nextCursor: string | null = null): voi
 
 function lastBody(): Record<string, unknown> {
   const call = inboxListMock.mock.calls.at(-1);
-  return (call?.[0] as { body: Record<string, unknown> }).body;
+  if (call === undefined) throw new Error('inboxList was not called');
+  return (call[0] as { body: Record<string, unknown> }).body;
 }
 
 function StatefulHost({ now }: { now: Date }): ReactElement {

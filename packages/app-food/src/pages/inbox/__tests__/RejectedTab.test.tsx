@@ -54,7 +54,8 @@ function mockList(items: RejectedRow[], nextCursor: string | null = null): void 
 
 function lastListBody(): Record<string, unknown> {
   const call = inboxListRejectedMock.mock.calls.at(-1);
-  return (call?.[0] as { body: Record<string, unknown> }).body;
+  if (call === undefined) throw new Error('inboxListRejected was not called');
+  return (call[0] as { body: Record<string, unknown> }).body;
 }
 
 function Wrapper({ children }: { children: ReactElement }): ReactElement {
