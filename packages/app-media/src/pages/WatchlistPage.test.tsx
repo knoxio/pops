@@ -1,52 +1,42 @@
-import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockWatchlistQuery = vi.fn();
-const mockMoviesQuery = vi.fn();
-const mockTvShowsQuery = vi.fn();
-const mockRemoveMutate = vi.fn();
-const mockReorderMutate = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockInvalidate = vi.fn();
-const capturedOpts: Record<string, Record<string, unknown>> = {};
+const {
+  watchlistListMock,
+  moviesListMock,
+  tvShowsListMock,
+  watchlistRemoveMock,
+  watchlistReorderMock,
+  watchlistUpdateMock,
+  plexGetActiveSyncJobsMock,
+  plexGetSyncJobStatusMock,
+  plexStartSyncJobMock,
+} = vi.hoisted(() => ({
+  watchlistListMock: vi.fn(),
+  moviesListMock: vi.fn(),
+  tvShowsListMock: vi.fn(),
+  watchlistRemoveMock: vi.fn(),
+  watchlistReorderMock: vi.fn(),
+  watchlistUpdateMock: vi.fn(),
+  plexGetActiveSyncJobsMock: vi.fn(),
+  plexGetSyncJobStatusMock: vi.fn(),
+  plexStartSyncJobMock: vi.fn(),
+}));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'plex.getActiveSyncJobs') return { data: { data: [] }, isLoading: false };
-    if (key === 'plex.getSyncJobStatus') return { data: undefined, isLoading: false };
-    if (key === 'watchlist.list') return mockWatchlistQuery(input);
-    if (key === 'movies.list') return mockMoviesQuery(input);
-    if (key === 'tvShows.list') return mockTvShowsQuery(input);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: Record<string, unknown> = {}
-  ) => {
-    const key = path.join('.');
-    if (key === 'watchlist.remove') {
-      capturedOpts.remove = opts;
-      return { mutate: mockRemoveMutate, isPending: false };
-    }
-    if (key === 'watchlist.reorder') {
-      capturedOpts.reorder = opts;
-      return { mutate: mockReorderMutate, isPending: false };
-    }
-    if (key === 'watchlist.update') {
-      capturedOpts.update = opts;
-      return { mutate: mockUpdateMutate, isPending: false, variables: null };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: mockInvalidate,
-    fetchQuery: vi.fn(),
-  }),
+vi.mock('../media-api/index.js', () => ({
+  watchlistList: (...args: unknown[]) => watchlistListMock(...args),
+  moviesList: (...args: unknown[]) => moviesListMock(...args),
+  tvShowsList: (...args: unknown[]) => tvShowsListMock(...args),
+  watchlistRemove: (...args: unknown[]) => watchlistRemoveMock(...args),
+  watchlistReorder: (...args: unknown[]) => watchlistReorderMock(...args),
+  watchlistUpdate: (...args: unknown[]) => watchlistUpdateMock(...args),
+  plexGetActiveSyncJobs: (...args: unknown[]) => plexGetActiveSyncJobsMock(...args),
+  plexGetSyncJobStatus: (...args: unknown[]) => plexGetSyncJobStatusMock(...args),
+  plexStartSyncJob: (...args: unknown[]) => plexStartSyncJobMock(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -61,11 +51,24 @@ vi.mock('../components/LeavingBadge', () => ({
 
 import { WatchlistPage } from './WatchlistPage';
 
-function renderPage() {
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+}
+
+function renderPage(queryClient = makeQueryClient()) {
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
   return render(
     <MemoryRouter>
       <WatchlistPage />
-    </MemoryRouter>
+    </MemoryRouter>,
+    { wrapper }
   );
 }
 
@@ -97,154 +100,138 @@ const entry3 = {
 };
 
 function setupMultipleEntries() {
-  mockWatchlistQuery.mockReturnValue({
-    data: { data: [entry1, entry2, entry3] },
-    isLoading: false,
-    error: null,
-  });
-  mockMoviesQuery.mockReturnValue({
-    data: {
+  watchlistListMock.mockResolvedValue(ok({ data: [entry1, entry2, entry3] }));
+  moviesListMock.mockResolvedValue(
+    ok({
       data: [
         { id: 10, title: 'The Matrix', releaseDate: '1999-03-31', posterUrl: null },
         { id: 30, title: 'Inception', releaseDate: '2010-07-16', posterUrl: null },
       ],
-    },
-    isLoading: false,
-  });
-  mockTvShowsQuery.mockReturnValue({
-    data: {
-      data: [{ id: 20, name: 'Breaking Bad', firstAirDate: '2008-01-20', posterUrl: null }],
-    },
-    isLoading: false,
-  });
+    })
+  );
+  tvShowsListMock.mockResolvedValue(
+    ok({ data: [{ id: 20, name: 'Breaking Bad', firstAirDate: '2008-01-20', posterUrl: null }] })
+  );
 }
 
 function setupSingleEntry() {
-  mockWatchlistQuery.mockReturnValue({
-    data: { data: [entry1] },
-    isLoading: false,
-    error: null,
-  });
-  mockMoviesQuery.mockReturnValue({
-    data: {
-      data: [{ id: 10, title: 'The Matrix', releaseDate: '1999-03-31', posterUrl: null }],
-    },
-    isLoading: false,
-  });
-  mockTvShowsQuery.mockReturnValue({
-    data: { data: [] },
-    isLoading: false,
-  });
+  watchlistListMock.mockResolvedValue(ok({ data: [entry1] }));
+  moviesListMock.mockResolvedValue(
+    ok({ data: [{ id: 10, title: 'The Matrix', releaseDate: '1999-03-31', posterUrl: null }] })
+  );
+  tvShowsListMock.mockResolvedValue(ok({ data: [] }));
 }
 
 describe('WatchlistPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    plexGetActiveSyncJobsMock.mockResolvedValue(ok({ data: [] }));
+    plexGetSyncJobStatusMock.mockResolvedValue(ok({ data: undefined }));
+    plexStartSyncJobMock.mockResolvedValue(ok({ data: { jobId: 'job-1' } }));
+    watchlistListMock.mockResolvedValue(ok({ data: [] }));
+    moviesListMock.mockResolvedValue(ok({ data: [] }));
+    tvShowsListMock.mockResolvedValue(ok({ data: [] }));
   });
 
-  it('renders watchlist entries with titles', () => {
+  it('renders watchlist entries with titles', async () => {
     setupMultipleEntries();
     renderPage();
 
-    expect(screen.getAllByText('The Matrix').length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('The Matrix')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Breaking Bad').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Inception').length).toBeGreaterThan(0);
   });
 
-  it('renders grab handle on desktop cards for multiple items', () => {
+  it('renders grab handle on desktop cards for multiple items', async () => {
     setupMultipleEntries();
     renderPage();
 
-    const handles = screen.getAllByLabelText(/Drag to reorder/);
+    const handles = await screen.findAllByLabelText(/Drag to reorder/);
     expect(handles.length).toBeGreaterThan(0);
   });
 
-  it('hides reorder controls for single-item list', () => {
+  it('hides reorder controls for single-item list', async () => {
     setupSingleEntry();
     renderPage();
 
+    await screen.findAllByText('The Matrix');
     expect(screen.queryByLabelText(/Move .* up/)).toBeNull();
     expect(screen.queryByLabelText(/Move .* down/)).toBeNull();
     expect(screen.queryByLabelText(/Drag to reorder/)).toBeNull();
   });
 
-  it('renders up/down buttons for mobile with multiple items', () => {
+  it('renders up/down buttons for mobile with multiple items', async () => {
     setupMultipleEntries();
     renderPage();
 
-    const upButtons = screen.getAllByLabelText(/Move .* up/);
+    const upButtons = await screen.findAllByLabelText(/Move .* up/);
     const downButtons = screen.getAllByLabelText(/Move .* down/);
     expect(upButtons.length).toBe(3);
     expect(downButtons.length).toBe(3);
   });
 
-  it('disables up button on first item and down button on last item', () => {
+  it('disables up button on first item and down button on last item', async () => {
     setupMultipleEntries();
     renderPage();
 
-    const upButtons = screen.getAllByLabelText(/Move .* up/);
+    const upButtons = await screen.findAllByLabelText(/Move .* up/);
     const downButtons = screen.getAllByLabelText(/Move .* down/);
 
-    // First item's up button should be disabled
     expect(upButtons[0]).toBeDisabled();
-    // Last item's down button should be disabled
     expect(downButtons.at(-1)).toBeDisabled();
   });
 
-  it('renders empty state when watchlist is empty', () => {
-    mockWatchlistQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-      error: null,
-    });
-    mockMoviesQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
-    mockTvShowsQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
+  it('renders empty state when watchlist is empty', async () => {
+    watchlistListMock.mockResolvedValue(ok({ data: [] }));
+    moviesListMock.mockResolvedValue(ok({ data: [] }));
+    tvShowsListMock.mockResolvedValue(ok({ data: [] }));
 
     renderPage();
 
-    expect(screen.getByText(/Your watchlist is empty/)).toBeTruthy();
+    expect(await screen.findByText(/Your watchlist is empty/)).toBeInTheDocument();
   });
 
-  it('renders priority badges on desktop cards', () => {
+  it('renders priority badges on desktop cards', async () => {
     setupMultipleEntries();
     renderPage();
 
-    expect(screen.getAllByText('#1').length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('#1')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('#2').length).toBeGreaterThan(0);
     expect(screen.getAllByText('#3').length).toBeGreaterThan(0);
   });
 
-  it('renders priority numbers on mobile list items', () => {
+  it('renders priority numbers on mobile list items', async () => {
     setupMultipleEntries();
     renderPage();
 
-    // Mobile items show numeric priority (1, 2, 3) without # prefix
-    expect(screen.getAllByText('1').length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('1')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('2').length).toBeGreaterThan(0);
     expect(screen.getAllByText('3').length).toBeGreaterThan(0);
   });
 
-  it('renders notes text on watchlist items', () => {
+  it('renders notes text on watchlist items', async () => {
     setupMultipleEntries();
     renderPage();
 
-    // entry2 has notes "Great show"
-    expect(screen.getAllByText('Great show').length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('Great show')).length).toBeGreaterThan(0);
   });
 
   describe('filter tabs', () => {
-    it('renders All, Movies, TV Shows filter tabs', () => {
+    it('renders All, Movies, TV Shows filter tabs', async () => {
       setupMultipleEntries();
       renderPage();
-      expect(screen.getByRole('tab', { name: 'All' })).toBeInTheDocument();
+      expect(await screen.findByRole('tab', { name: 'All' })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: 'Movies' })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: 'TV Shows' })).toBeInTheDocument();
     });
 
-    it('All tab is selected by default', () => {
+    it('All tab is selected by default', async () => {
       setupMultipleEntries();
       renderPage();
-      expect(screen.getByRole('tab', { name: 'All' })).toHaveAttribute('aria-selected', 'true');
+      expect(await screen.findByRole('tab', { name: 'All' })).toHaveAttribute(
+        'aria-selected',
+        'true'
+      );
       expect(screen.getByRole('tab', { name: 'Movies' })).toHaveAttribute('aria-selected', 'false');
     });
 
@@ -253,11 +240,13 @@ describe('WatchlistPage', () => {
       const user = userEvent.setup();
       renderPage();
 
-      await user.click(screen.getByRole('tab', { name: 'Movies' }));
+      await user.click(await screen.findByRole('tab', { name: 'Movies' }));
 
-      const calls = mockWatchlistQuery.mock.calls;
-      const lastCall = calls.at(-1)!;
-      expect(lastCall[0]).toEqual(expect.objectContaining({ mediaType: 'movie' }));
+      await waitFor(() =>
+        expect(watchlistListMock).toHaveBeenCalledWith({
+          query: expect.objectContaining({ mediaType: 'movie' }),
+        })
+      );
     });
 
     it('clicking TV Shows tab calls API with tv_show filter', async () => {
@@ -265,11 +254,13 @@ describe('WatchlistPage', () => {
       const user = userEvent.setup();
       renderPage();
 
-      await user.click(screen.getByRole('tab', { name: 'TV Shows' }));
+      await user.click(await screen.findByRole('tab', { name: 'TV Shows' }));
 
-      const calls = mockWatchlistQuery.mock.calls;
-      const lastCall = calls.at(-1)!;
-      expect(lastCall[0]).toEqual(expect.objectContaining({ mediaType: 'tv_show' }));
+      await waitFor(() =>
+        expect(watchlistListMock).toHaveBeenCalledWith({
+          query: expect.objectContaining({ mediaType: 'tv_show' }),
+        })
+      );
     });
 
     it('clicking All tab removes mediaType filter', async () => {
@@ -277,12 +268,20 @@ describe('WatchlistPage', () => {
       const user = userEvent.setup();
       renderPage();
 
-      await user.click(screen.getByRole('tab', { name: 'Movies' }));
+      await user.click(await screen.findByRole('tab', { name: 'Movies' }));
+      await waitFor(() =>
+        expect(watchlistListMock).toHaveBeenCalledWith({
+          query: expect.objectContaining({ mediaType: 'movie' }),
+        })
+      );
+
+      watchlistListMock.mockClear();
       await user.click(screen.getByRole('tab', { name: 'All' }));
 
-      const calls = mockWatchlistQuery.mock.calls;
-      const lastCall = calls.at(-1)!;
-      expect(lastCall[0]).not.toHaveProperty('mediaType');
+      await waitFor(() => expect(watchlistListMock).toHaveBeenCalled());
+      const lastCall = watchlistListMock.mock.calls.at(-1)!;
+      const lastQuery = (lastCall[0] as { query: Record<string, unknown> }).query;
+      expect(lastQuery).not.toHaveProperty('mediaType');
     });
 
     it('shows filter-specific empty state for movies', async () => {
@@ -290,15 +289,12 @@ describe('WatchlistPage', () => {
       const user = userEvent.setup();
       renderPage();
 
-      mockWatchlistQuery.mockReturnValue({
-        data: { data: [] },
-        isLoading: false,
-        error: null,
-      });
+      await screen.findByRole('tab', { name: 'Movies' });
+      watchlistListMock.mockResolvedValue(ok({ data: [] }));
 
       await user.click(screen.getByRole('tab', { name: 'Movies' }));
 
-      expect(screen.getByText('No movies on your watchlist.')).toBeInTheDocument();
+      expect(await screen.findByText('No movies on your watchlist.')).toBeInTheDocument();
     });
 
     it('shows filter-specific empty state for TV shows', async () => {
@@ -306,27 +302,20 @@ describe('WatchlistPage', () => {
       const user = userEvent.setup();
       renderPage();
 
-      mockWatchlistQuery.mockReturnValue({
-        data: { data: [] },
-        isLoading: false,
-        error: null,
-      });
+      await screen.findByRole('tab', { name: 'TV Shows' });
+      watchlistListMock.mockResolvedValue(ok({ data: [] }));
 
       await user.click(screen.getByRole('tab', { name: 'TV Shows' }));
 
-      expect(screen.getByText('No TV shows on your watchlist.')).toBeInTheDocument();
+      expect(await screen.findByText('No TV shows on your watchlist.')).toBeInTheDocument();
     });
   });
 
   describe('leaving badge', () => {
-    it('shows LeavingBadge for a movie with rotationStatus leaving', () => {
-      mockWatchlistQuery.mockReturnValue({
-        data: { data: [entry1] },
-        isLoading: false,
-        error: null,
-      });
-      mockMoviesQuery.mockReturnValue({
-        data: {
+    it('shows LeavingBadge for a movie with rotationStatus leaving', async () => {
+      watchlistListMock.mockResolvedValue(ok({ data: [entry1] }));
+      moviesListMock.mockResolvedValue(
+        ok({
           data: [
             {
               id: 10,
@@ -337,27 +326,19 @@ describe('WatchlistPage', () => {
               rotationExpiresAt: '2026-05-01T00:00:00Z',
             },
           ],
-        },
-        isLoading: false,
-      });
-      mockTvShowsQuery.mockReturnValue({
-        data: { data: [] },
-        isLoading: false,
-      });
+        })
+      );
+      tvShowsListMock.mockResolvedValue(ok({ data: [] }));
 
       renderPage();
 
-      expect(screen.getAllByTestId('leaving-badge').length).toBeGreaterThan(0);
+      expect((await screen.findAllByTestId('leaving-badge')).length).toBeGreaterThan(0);
     });
 
-    it('does not show LeavingBadge when rotationStatus is not leaving', () => {
-      mockWatchlistQuery.mockReturnValue({
-        data: { data: [entry1] },
-        isLoading: false,
-        error: null,
-      });
-      mockMoviesQuery.mockReturnValue({
-        data: {
+    it('does not show LeavingBadge when rotationStatus is not leaving', async () => {
+      watchlistListMock.mockResolvedValue(ok({ data: [entry1] }));
+      moviesListMock.mockResolvedValue(
+        ok({
           data: [
             {
               id: 10,
@@ -368,16 +349,13 @@ describe('WatchlistPage', () => {
               rotationExpiresAt: null,
             },
           ],
-        },
-        isLoading: false,
-      });
-      mockTvShowsQuery.mockReturnValue({
-        data: { data: [] },
-        isLoading: false,
-      });
+        })
+      );
+      tvShowsListMock.mockResolvedValue(ok({ data: [] }));
 
       renderPage();
 
+      await screen.findAllByText('The Matrix');
       expect(screen.queryByTestId('leaving-badge')).not.toBeInTheDocument();
     });
   });
