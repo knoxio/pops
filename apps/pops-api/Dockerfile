@@ -9,14 +9,12 @@ COPY packages/db-types/package.json ./packages/db-types/
 COPY packages/types/package.json ./packages/types/
 COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/api-client/package.json ./packages/api-client/
-COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/media-db/package.json ./packages/media-db/
-COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
@@ -31,16 +29,12 @@ COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
 COPY packages/module-registry/src ./packages/module-registry/src
 COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
-COPY packages/app-food-db/src ./packages/app-food-db/src
-COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/tsconfig.json ./packages/core-db/
 COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/media-db/src ./packages/media-db/src
 COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
-COPY packages/food-contracts/src ./packages/food-contracts/src
-COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
@@ -66,10 +60,6 @@ RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/module-registry
-RUN pnpm build
-WORKDIR /app/packages/food-contracts
-RUN pnpm build
-WORKDIR /app/packages/app-food-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-contract
 RUN pnpm build
@@ -108,8 +98,6 @@ COPY --from=builder /app/packages/types/dist ./node_modules/@pops/types/dist
 COPY --from=builder /app/packages/types/package.json ./node_modules/@pops/types/
 COPY --from=builder /app/packages/module-registry/dist ./node_modules/@pops/module-registry/dist
 COPY --from=builder /app/packages/module-registry/package.json ./node_modules/@pops/module-registry/
-COPY --from=builder /app/packages/app-food-db/dist ./node_modules/@pops/app-food-db/dist
-COPY --from=builder /app/packages/app-food-db/package.json ./node_modules/@pops/app-food-db/
 COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
 COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
 COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations

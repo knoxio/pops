@@ -10,7 +10,6 @@ import { egoRouter } from '../modules/cerebrum/ego/index.js';
 import { cerebrumRouter } from '../modules/cerebrum/index.js';
 import { coreRouter } from '../modules/core/index.js';
 import { financeRouter } from '../modules/finance/index.js';
-import { foodRouter } from '../modules/food/index.js';
 import { inventoryRouter } from '../modules/inventory/index.js';
 import { listsRouter } from '../modules/lists/index.js';
 import { mediaRouter } from '../modules/media/index.js';
@@ -20,7 +19,6 @@ export const KNOWN_ROUTERS_GENERATED = {
   core: coreRouter,
   ego: egoRouter,
   finance: financeRouter,
-  food: foodRouter,
   inventory: inventoryRouter,
   lists: listsRouter,
   media: mediaRouter,

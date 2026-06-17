@@ -9,7 +9,6 @@ import { createApp } from './app.js';
 import { backfillCoreFromSharedDb, closeDb, getCoreDrizzle } from './db.js';
 import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-handle.js';
 import { getFinanceDrizzle } from './db/finance-handle.js';
-import { backfillFoodFromSharedDb, getFoodDrizzle } from './db/food-handle.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { getListsDrizzle } from './db/lists-handle.js';
 import { backfillMediaFromSharedDb, getMediaDrizzle } from './db/media-db-handle.js';
@@ -116,25 +115,6 @@ try {
   backfillCerebrumFromSharedDb(resolveSqlitePath());
 } catch (err) {
   console.error('[db] Failed to bootstrap the cerebrum pillar SQLite:', err);
-  throw err;
-}
-
-// Eagerly open the food pillar's SQLite + apply its journal at boot.
-// The earlier prep_states slice finished its PR4 writer cutover so the
-// original ATTACH bridge was retired. Theme-13 Wave-5 reintroduces the
-// bridge for two PR4 slices: the conversions slice
-// (`unit_conversions` + `ingredient_weights`, landed in
-// `0059_food_conversions.sql`) and the ingredients slice (this PR —
-// `ingredients`, `ingredient_variants`, `ingredient_aliases`,
-// `ingredient_tags`, and the food-owned rows of `slug_registry`). The
-// backfill is idempotent (per-table `WHERE NOT EXISTS (...)` filters
-// keyed on natural business keys or surrogate ids) and non-fatal
-// (partial failure logs + continues).
-try {
-  getFoodDrizzle();
-  backfillFoodFromSharedDb(resolveSqlitePath());
-} catch (err) {
-  console.error('[db] Failed to bootstrap the food pillar SQLite:', err);
   throw err;
 }
 
