@@ -36,41 +36,30 @@ import type { CerebrumApiDeps } from '../handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
 
-type EngramDeps = {
-  db: CerebrumApiDeps['cerebrumDb']['db'];
-  engramRoot: string;
-  templates: CerebrumApiDeps['templateRegistry'];
-};
-
-function searchDeps(deps: CerebrumApiDeps) {
-  return {
-    db: deps.cerebrumDb.db,
+export function makeCerebrumRestHandlers(
+  deps: CerebrumApiDeps
+): ReturnType<typeof server.router<typeof cerebrumContract>> {
+  const db = deps.cerebrumDb.db;
+  const engramDeps = { db, engramRoot: deps.engramRoot, templates: deps.templateRegistry };
+  const base = {
+    db,
     raw: deps.cerebrumDb.raw,
     vecAvailable: deps.cerebrumDb.vecAvailable,
     peers: deps.peerClients,
     embeddingClient: deps.embeddingClient,
   };
-}
-
-function coreHandlerMap(deps: CerebrumApiDeps, engramDeps: EngramDeps) {
-  return {
+  return server.router(cerebrumContract, {
     templates: makeTemplatesHandlers(deps.templateRegistry),
     reflex: makeReflexHandlers(deps.reflexService),
-    plexus: makePlexusHandlers(deps.cerebrumDb.db),
+    plexus: makePlexusHandlers(db),
     engrams: makeEngramsHandlers(engramDeps),
     scopes: makeScopesHandlers(engramDeps),
-    tags: makeTagsHandlers(deps.cerebrumDb.db),
+    tags: makeTagsHandlers(db),
     glia: makeGliaHandlers({
       ...engramDeps,
       configPath: deps.gliaConfigPath ?? resolveGliaConfigPath(),
     }),
-    nudges: makeNudgesHandlers(deps.cerebrumDb.db),
-  };
-}
-
-function aiHandlerMap(deps: CerebrumApiDeps, engramDeps: EngramDeps) {
-  const base = searchDeps(deps);
-  return {
+    nudges: makeNudgesHandlers(db),
     retrieval: makeRetrievalHandlers(base),
     ingest: makeIngestHandlers({
       ...engramDeps,
@@ -96,19 +85,5 @@ function aiHandlerMap(deps: CerebrumApiDeps, engramDeps: EngramDeps) {
       contradictionDetector:
         deps.auditorContradictionDetector ?? new AnthropicContradictionDetector(),
     }),
-  };
-}
-
-export function makeCerebrumRestHandlers(
-  deps: CerebrumApiDeps
-): ReturnType<typeof server.router<typeof cerebrumContract>> {
-  const engramDeps: EngramDeps = {
-    db: deps.cerebrumDb.db,
-    engramRoot: deps.engramRoot,
-    templates: deps.templateRegistry,
-  };
-  return server.router(cerebrumContract, {
-    ...coreHandlerMap(deps, engramDeps),
-    ...aiHandlerMap(deps, engramDeps),
   });
 }
