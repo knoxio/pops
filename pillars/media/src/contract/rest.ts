@@ -12,12 +12,16 @@
 import { initContract } from '@ts-rest/core';
 
 import { mediaMoviesContract } from './rest-movies.js';
+import { mediaShelfImpressionsContract } from './rest-shelf-impressions.js';
+import { mediaWatchlistContract } from './rest-watchlist.js';
 
 const c = initContract();
 
 export const mediaContract = c.router(
   {
     movies: mediaMoviesContract,
+    watchlist: mediaWatchlistContract,
+    shelfImpressions: mediaShelfImpressionsContract,
   },
   {
     pathPrefix: '',
