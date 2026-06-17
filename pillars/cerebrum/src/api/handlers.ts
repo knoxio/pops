@@ -10,8 +10,10 @@ import { getPillarRegistry } from './pillars/registry.js';
 import type { PillarRegistryEntry } from '@pops/types';
 
 import type { OpenedCerebrumDb } from '../db/index.js';
+import type { GenerationLlm } from './modules/emit/llm.js';
 import type { IngestLlm } from './modules/ingest/llm.js';
 import type { CurationQueueAccessor } from './modules/ingest/pipeline.js';
+import type { QueryLlm, QueryStreamLlm } from './modules/query/llm.js';
 import type { ReflexService } from './modules/reflex/reflex-service.js';
 import type { EmbeddingClient } from './modules/retrieval/embedding-client.js';
 import type { PeerClients } from './modules/retrieval/peer-clients.js';
@@ -69,6 +71,24 @@ export interface CerebrumApiDeps {
    * degrades to BM25-only.
    */
   embeddingClient?: EmbeddingClient;
+  /**
+   * LLM port driving the `emit` document-generation pipeline. Optional —
+   * defaults to an Anthropic-backed client (`ANTHROPIC_API_KEY`,
+   * `claude-sonnet-4-6` / `CEREBRUM_EMIT_MODEL`). Tests inject an offline fake.
+   */
+  emitLlm?: GenerationLlm;
+  /**
+   * One-shot LLM port driving `query.ask`. Optional — defaults to an
+   * Anthropic-backed client (`ANTHROPIC_API_KEY`, `claude-sonnet-4-6` /
+   * `CEREBRUM_QUERY_MODEL`). Tests inject an offline fake.
+   */
+  queryLlm?: QueryLlm;
+  /**
+   * Streaming LLM port driving the `POST /query/stream` SSE route. Optional —
+   * defaults to an Anthropic streaming client. Tests inject a fake that yields
+   * canned tokens (no real API).
+   */
+  queryStreamLlm?: QueryStreamLlm;
 }
 
 export interface HealthResponse {
