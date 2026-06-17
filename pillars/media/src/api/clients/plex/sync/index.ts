@@ -11,3 +11,7 @@ export {
   type StartSyncJobInput,
   type SyncJobType,
 } from './types.js';
+
+export { importMoviesFromPlex, type MovieSyncProgress } from './sync-movies.js';
+export { importTvShowsFromPlex, type TvSyncProgress } from './sync-tv.js';
+export { syncWatchlistFromPlex, type WatchlistSyncProgress } from './sync-watchlist.js';

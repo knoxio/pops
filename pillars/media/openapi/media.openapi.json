@@ -6810,6 +6810,447 @@
         "tags": ["plex"]
       }
     },
+    "/plex/scheduler/start": {
+      "post": {
+        "operationId": "plex.startScheduler",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "intervalMs": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "movieSectionId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tvSectionId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "intervalMs": {
+                          "type": "number"
+                        },
+                        "isRunning": {
+                          "type": "boolean"
+                        },
+                        "lastSyncAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastSyncError": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "moviesSynced": {
+                          "type": "number"
+                        },
+                        "nextSyncAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tvShowsSynced": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "isRunning",
+                        "intervalMs",
+                        "lastSyncAt",
+                        "lastSyncError",
+                        "nextSyncAt",
+                        "moviesSynced",
+                        "tvShowsSynced"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Arm the periodic Plex sync scheduler (fires one tick immediately)",
+        "tags": ["plex"]
+      }
+    },
+    "/plex/scheduler/status": {
+      "get": {
+        "operationId": "plex.getSchedulerStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "intervalMs": {
+                          "type": "number"
+                        },
+                        "isRunning": {
+                          "type": "boolean"
+                        },
+                        "lastSyncAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastSyncError": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "moviesSynced": {
+                          "type": "number"
+                        },
+                        "nextSyncAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tvShowsSynced": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "isRunning",
+                        "intervalMs",
+                        "lastSyncAt",
+                        "lastSyncError",
+                        "nextSyncAt",
+                        "moviesSynced",
+                        "tvShowsSynced"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Read the scheduler run state + last-sync stats",
+        "tags": ["plex"]
+      }
+    },
+    "/plex/scheduler/stop": {
+      "post": {
+        "operationId": "plex.stopScheduler",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "intervalMs": {
+                          "type": "number"
+                        },
+                        "isRunning": {
+                          "type": "boolean"
+                        },
+                        "lastSyncAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastSyncError": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "moviesSynced": {
+                          "type": "number"
+                        },
+                        "nextSyncAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tvShowsSynced": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "isRunning",
+                        "intervalMs",
+                        "lastSyncAt",
+                        "lastSyncError",
+                        "nextSyncAt",
+                        "moviesSynced",
+                        "tvShowsSynced"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Stop the periodic Plex sync scheduler",
+        "tags": ["plex"]
+      }
+    },
+    "/plex/scheduler/sync-logs": {
+      "get": {
+        "operationId": "plex.getSyncLogs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "durationMs": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "errors": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "nullable": true,
+                            "type": "array"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "moviesSynced": {
+                            "type": "number"
+                          },
+                          "syncedAt": {
+                            "type": "string"
+                          },
+                          "tvShowsSynced": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "syncedAt",
+                          "moviesSynced",
+                          "tvShowsSynced",
+                          "errors",
+                          "durationMs"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List recent periodic-sync log entries (newest first)",
+        "tags": ["plex"]
+      }
+    },
     "/plex/section-ids": {
       "get": {
         "operationId": "plex.getSectionIds",

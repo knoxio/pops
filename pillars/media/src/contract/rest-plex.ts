@@ -13,6 +13,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
+import { plexSchedulerRoutes } from './rest-plex-scheduler.js';
 import { plexSyncRoutes } from './rest-plex-sync.js';
 import { ERR_RESPONSES, MessageSchema } from './rest-schemas.js';
 
@@ -131,5 +132,6 @@ export const mediaPlexContract = c.router({
     responses: { 200: MessageSchema },
     summary: 'Persist the Plex library section ids',
   },
+  ...plexSchedulerRoutes,
   ...plexSyncRoutes,
 });

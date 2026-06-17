@@ -98,6 +98,8 @@ const MEDIA_ROUTES: ManifestPayload['routes'] = {
     'media.plex.getPlexUsername',
     'media.plex.getSyncStatus',
     'media.plex.getSectionIds',
+    'media.plex.getSchedulerStatus',
+    'media.plex.getSyncLogs',
   ],
   mutations: [
     'media.movies.create',
@@ -141,6 +143,8 @@ const MEDIA_ROUTES: ManifestPayload['routes'] = {
     'media.plex.checkAuthPin',
     'media.plex.disconnect',
     'media.plex.saveSectionIds',
+    'media.plex.startScheduler',
+    'media.plex.stopScheduler',
   ],
   subscriptions: [],
 };

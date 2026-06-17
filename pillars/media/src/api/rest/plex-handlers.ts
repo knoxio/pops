@@ -24,6 +24,7 @@ import {
 } from '../clients/plex/index.js';
 import { ConflictError } from '../shared/errors.js';
 import { runHttp } from './error-mapping.js';
+import { makePlexSchedulerHandlers } from './plex-scheduler-handlers.js';
 import { makePlexSyncHandlers } from './plex-sync-handlers.js';
 
 import type { ServerInferRequest } from '@ts-rest/core';
@@ -41,6 +42,7 @@ function requirePlexClient(db: MediaDb): PlexClient {
 export function makePlexHandlers(db: MediaDb) {
   return {
     ...makePlexSyncHandlers(db),
+    ...makePlexSchedulerHandlers(db),
     testConnection: () =>
       runHttp(async () => {
         const client = requirePlexClient(db);

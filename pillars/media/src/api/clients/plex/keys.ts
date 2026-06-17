@@ -12,4 +12,6 @@ export const PLEX_KEYS = {
   clientIdentifier: 'plex_client_identifier',
   movieSectionId: 'plex_movie_section_id',
   tvSectionId: 'plex_tv_section_id',
+  schedulerEnabled: 'plex_scheduler_enabled',
+  schedulerIntervalMs: 'plex_scheduler_interval_ms',
 } as const;
