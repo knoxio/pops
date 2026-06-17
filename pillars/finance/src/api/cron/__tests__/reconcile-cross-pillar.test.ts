@@ -13,8 +13,7 @@ import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { budgets, openFinanceDb, type OpenedFinanceDb } from '@pops/finance-db';
-
+import { budgets, openFinanceDb, type OpenedFinanceDb } from '../../../db/index.js';
 import {
   startReconcileCrossPillarWorker,
   type ReconcileLookupFn,
