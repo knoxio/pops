@@ -1,0 +1,21 @@
+import { sql } from 'drizzle-orm';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+
+export const watchHistory = sqliteTable(
+  'watch_history',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    mediaType: text('media_type', { enum: ['movie', 'episode'] }).notNull(),
+    mediaId: integer('media_id').notNull(),
+    watchedAt: text('watched_at')
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    completed: integer('completed').notNull().default(1),
+    blacklisted: integer('blacklisted').notNull().default(0),
+  },
+  (table) => [
+    index('idx_watch_history_media').on(table.mediaType, table.mediaId),
+    index('idx_watch_history_watched_at').on(table.watchedAt),
+    uniqueIndex('idx_watch_history_unique').on(table.mediaType, table.mediaId, table.watchedAt),
+  ]
+);
