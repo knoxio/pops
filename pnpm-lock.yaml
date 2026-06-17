@@ -2037,6 +2037,12 @@ importers:
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
+      chokidar:
+        specifier: ^5.0.0
+        version: 5.0.0
+      cron-parser:
+        specifier: ^5.5.0
+        version: 5.5.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
@@ -2049,6 +2055,9 @@ importers:
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
+      smol-toml:
+        specifier: ^1.6.1
+        version: 1.6.1
       sqlite-vec:
         specifier: ^0.1.7
         version: 0.1.9

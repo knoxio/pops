@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { openCerebrumDb, type OpenedCerebrumDb } from '../../db/index.js';
 import { createCerebrumApiApp } from '../app.js';
 import { __resetPillarRegistryCache } from '../pillars/registry.js';
-import { makeTemplateRegistry } from './test-utils.js';
+import { makeReflexService, makeTemplateRegistry } from './test-utils.js';
 
 let tmpDir: string;
 let cerebrumDb: OpenedCerebrumDb;
@@ -40,6 +40,7 @@ function makeApp(): ReturnType<typeof createCerebrumApiApp> {
   return createCerebrumApiApp({
     cerebrumDb,
     templateRegistry: makeTemplateRegistry(),
+    reflexService: makeReflexService(cerebrumDb.db, join(tmpDir, 'reflexes.toml')),
     version: '0.0.1-test',
     selfBaseUrl: 'http://cerebrum-api:3007',
   });
