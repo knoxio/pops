@@ -1,9 +1,9 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
-import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { watchlistRemove, watchlistReorder, watchlistUpdate } from '../../media-api/index.js';
 
 import type { WatchlistEntry } from './types';
 
@@ -25,14 +25,17 @@ interface ReorderInput {
   items: Array<{ id: number; priority: number }>;
 }
 
-function useRemoveMutation(utils: UsePillarUtilsResult, setRemovingId: (v: number | null) => void) {
-  return usePillarMutation<RemoveInput, unknown>('media', ['watchlist', 'remove'], {
+function useRemoveMutation(setRemovingId: (v: number | null) => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: RemoveInput) =>
+      unwrap(await watchlistRemove({ path: { id: input.id } })),
     onSuccess: () => {
       setRemovingId(null);
       toast.success('Removed from watchlist');
-      void utils.invalidate(['watchlist', 'list']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist', 'list'] });
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       setRemovingId(null);
       toast.error(`Failed to remove: ${err.message}`);
     },
@@ -40,31 +43,35 @@ function useRemoveMutation(utils: UsePillarUtilsResult, setRemovingId: (v: numbe
 }
 
 function useUpdateMutation(
-  utils: UsePillarUtilsResult,
   setUpdateErrorId: (v: number | null) => void,
   setUpdateErrorMsg: (v: string | null) => void
 ) {
-  return usePillarMutation<UpdateInput, unknown>('media', ['watchlist', 'update'], {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UpdateInput) =>
+      unwrap(await watchlistUpdate({ path: { id: input.id }, body: input.data })),
     onSuccess: () => {
       setUpdateErrorId(null);
       setUpdateErrorMsg(null);
       toast.success('Notes saved');
-      void utils.invalidate(['watchlist', 'list']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist', 'list'] });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       setUpdateErrorMsg(error.message ?? 'Failed to save notes');
       toast.error(`Failed to save notes: ${error.message}`);
     },
   });
 }
 
-function useReorderMutation(utils: UsePillarUtilsResult, args: MutationsArgs) {
-  return usePillarMutation<ReorderInput, unknown>('media', ['watchlist', 'reorder'], {
+function useReorderMutation(args: MutationsArgs) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ReorderInput) => unwrap(await watchlistReorder({ body: input })),
     onSuccess: () => {
       args.setOptimisticOrder(null);
-      void utils.invalidate(['watchlist', 'list']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist', 'list'] });
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       args.setOptimisticOrder(null);
       toast.error(`Failed to reorder: ${err.message}`);
     },
@@ -75,14 +82,13 @@ function useReorderMutation(utils: UsePillarUtilsResult, args: MutationsArgs) {
 }
 
 export function useWatchlistMutations(args: MutationsArgs) {
-  const utils = usePillarUtils('media');
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [updateErrorId, setUpdateErrorId] = useState<number | null>(null);
   const [updateErrorMsg, setUpdateErrorMsg] = useState<string | null>(null);
 
-  const removeMutation = useRemoveMutation(utils, setRemovingId);
-  const updateMutation = useUpdateMutation(utils, setUpdateErrorId, setUpdateErrorMsg);
-  const reorderMutation = useReorderMutation(utils, args);
+  const removeMutation = useRemoveMutation(setRemovingId);
+  const updateMutation = useUpdateMutation(setUpdateErrorId, setUpdateErrorMsg);
+  const reorderMutation = useReorderMutation(args);
 
   return {
     removeMutation,

@@ -1,10 +1,11 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockStartMutate = vi.fn();
 const mockGetActive = vi.fn();
 const mockGetStatus = vi.fn();
-const mockInvalidateWatchlist = vi.fn();
 let capturedStartOpts: Record<string, (...args: unknown[]) => unknown> = {};
 
 vi.mock('@pops/pillar-sdk/react', () => ({
@@ -31,11 +32,6 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     }
     return { mutate: vi.fn(), isPending: false };
   },
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: mockInvalidateWatchlist,
-    fetchQuery: vi.fn(),
-  }),
 }));
 
 const mockToastSuccess = vi.fn();
@@ -48,6 +44,15 @@ vi.mock('sonner', () => ({
 }));
 
 import { WatchlistPlexSyncButton } from './WatchlistPlexSyncButton';
+
+function renderButton() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return render(<WatchlistPlexSyncButton />, { wrapper });
+}
 
 function setupIdle(): void {
   mockGetActive.mockReturnValue({ data: { data: [] }, isLoading: false });
@@ -82,7 +87,7 @@ describe('WatchlistPlexSyncButton', () => {
 
   it('renders the sync button with label "Sync with Plex" when idle', () => {
     setupIdle();
-    render(<WatchlistPlexSyncButton />);
+    renderButton();
     const button = screen.getByTestId('watchlist-plex-sync-button');
     expect(button).toBeInTheDocument();
     expect(button).toHaveTextContent('Sync with Plex');
@@ -91,13 +96,13 @@ describe('WatchlistPlexSyncButton', () => {
 
   it('exposes an aria-label for assistive tech', () => {
     setupIdle();
-    render(<WatchlistPlexSyncButton />);
+    renderButton();
     expect(screen.getByRole('button', { name: 'Sync watchlist with Plex' })).toBeInTheDocument();
   });
 
   it('triggers a plexSyncWatchlist mutation when clicked', () => {
     setupIdle();
-    render(<WatchlistPlexSyncButton />);
+    renderButton();
     fireEvent.click(screen.getByTestId('watchlist-plex-sync-button'));
     expect(mockStartMutate).toHaveBeenCalledTimes(1);
     expect(mockStartMutate).toHaveBeenCalledWith({ jobType: 'plexSyncWatchlist' });
@@ -105,7 +110,7 @@ describe('WatchlistPlexSyncButton', () => {
 
   it('disables the button and swaps copy to "Syncing…" while a job is running', () => {
     setupRunning();
-    render(<WatchlistPlexSyncButton />);
+    renderButton();
     const button = screen.getByTestId('watchlist-plex-sync-button');
     expect(button).toBeDisabled();
     expect(button).toHaveTextContent('Syncing…');
@@ -113,7 +118,7 @@ describe('WatchlistPlexSyncButton', () => {
 
   it('surfaces the start mutation error path via the hook (error toast)', () => {
     setupIdle();
-    render(<WatchlistPlexSyncButton />);
+    renderButton();
     const onError = capturedStartOpts.onError;
     expect(typeof onError).toBe('function');
     if (typeof onError !== 'function') return;

@@ -10,16 +10,16 @@
  * Toasts ("Watchlist sync complete" / "failed") are emitted by the hook
  * itself — this component owns only the UI affordance and cache invalidation.
  */
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { useSyncJob } from '../../hooks/useSyncJob';
 
 export function WatchlistPlexSyncButton() {
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
   const sync = useSyncJob('plexSyncWatchlist');
   const previousStatusRef = useRef(sync.status);
 
@@ -30,10 +30,10 @@ export function WatchlistPlexSyncButton() {
   // history.
   useEffect(() => {
     if (previousStatusRef.current === 'running' && sync.status === 'completed') {
-      void utils.invalidate(['watchlist', 'list']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist', 'list'] });
     }
     previousStatusRef.current = sync.status;
-  }, [sync.status, utils]);
+  }, [sync.status, queryClient]);
 
   const busy = sync.isStarting || sync.isRunning;
 
