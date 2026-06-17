@@ -12,6 +12,13 @@ import type { Express } from 'express';
 
 import type { Movie } from '../modules/movie-types.js';
 import type { Episode, Season, TvShow } from '../modules/tv-show-types.js';
+import type {
+  BatchLogResult,
+  BatchProgressEntry,
+  RecentWatchHistoryEntry,
+  TvShowProgress,
+  WatchHistoryEntry,
+} from '../modules/watch-history-types.js';
 import type { WatchlistEntry } from '../modules/watchlist-types.js';
 
 export class HttpError extends Error {
@@ -107,6 +114,34 @@ export function makeClient(app: Express) {
       update: (id: number, data: Record<string, unknown>) =>
         send<{ data: WatchlistEntry; message: string }>(r.patch(`/watchlist/${id}`).send(data)),
       remove: (id: number) => send<{ message: string }>(r.delete(`/watchlist/${id}`)),
+    },
+    watchHistory: {
+      list: (
+        query: { mediaType?: string; mediaId?: number; limit?: number; offset?: number } = {}
+      ) =>
+        send<{ data: WatchHistoryEntry[]; pagination: Pagination }>(
+          r.get('/watch-history').query(query)
+        ),
+      listRecent: (
+        query: { mediaType?: string; startDate?: string; endDate?: string; limit?: number } = {}
+      ) =>
+        send<{ data: RecentWatchHistoryEntry[]; pagination: Pagination }>(
+          r.get('/watch-history/recent').query(query)
+        ),
+      progress: (tvShowId: number) =>
+        send<{ data: TvShowProgress }>(r.get(`/watch-history/progress/${tvShowId}`)),
+      batchProgress: (tvShowIds: number[]) =>
+        send<{ data: BatchProgressEntry[] }>(
+          r.post('/watch-history/batch-progress').send({ tvShowIds })
+        ),
+      get: (id: number) => send<{ data: WatchHistoryEntry }>(r.get(`/watch-history/${id}`)),
+      log: (body: Record<string, unknown>) =>
+        send<{ data: WatchHistoryEntry; watchlistRemoved: boolean; message: string }>(
+          r.post('/watch-history').send(body)
+        ),
+      batchLog: (body: Record<string, unknown>) =>
+        send<{ data: BatchLogResult; message: string }>(r.post('/watch-history/batch').send(body)),
+      delete: (id: number) => send<{ message: string }>(r.delete(`/watch-history/${id}`)),
     },
     shelfImpressions: {
       record: (shelfIds: string[]) =>

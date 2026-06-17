@@ -79,6 +79,31 @@ export type {
 
 export * as watchHistoryService from './services/watch-history.js';
 
+export type {
+  BatchProgressEntry,
+  NextEpisode,
+  SeasonProgress,
+  TvShowProgress,
+} from './services/watch-history-progress.js';
+
+export * as watchHistoryProgressService from './services/watch-history-progress.js';
+
+export type {
+  RecentWatchHistoryEntry,
+  RecentWatchHistoryFilters,
+  RecentWatchHistoryListResult,
+} from './services/watch-history-recent.js';
+
+export * as watchHistoryRecentService from './services/watch-history-recent.js';
+
+export type { LogWatchInput, LogWatchResult } from './services/watch-history-log.js';
+
+export * as watchHistoryLogService from './services/watch-history-log.js';
+
+export type { BatchLogResult, BatchLogWatchInput } from './services/watch-history-batch.js';
+
+export * as watchHistoryBatchService from './services/watch-history-batch.js';
+
 export * as watchlistService from './services/watchlist.js';
 
 export {

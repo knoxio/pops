@@ -12,6 +12,7 @@ import { type OpenedMediaDb } from '../../db/index.js';
 import { makeMoviesHandlers } from './movies-handlers.js';
 import { makeShelfImpressionsHandlers } from './shelf-impressions-handlers.js';
 import { makeTvShowsHandlers } from './tv-shows-handlers.js';
+import { makeWatchHistoryHandlers } from './watch-history-handlers.js';
 import { makeWatchlistHandlers } from './watchlist-handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
@@ -24,6 +25,7 @@ export function makeMediaRestHandlers(deps: {
     movies: makeMoviesHandlers(db),
     tvShows: makeTvShowsHandlers(db),
     watchlist: makeWatchlistHandlers(db),
+    watchHistory: makeWatchHistoryHandlers(db),
     shelfImpressions: makeShelfImpressionsHandlers(db),
   });
 }
