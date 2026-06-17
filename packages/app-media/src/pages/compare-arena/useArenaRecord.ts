@@ -1,10 +1,12 @@
+import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsRecord, comparisonsRecordSkip } from '../../media-api/index.js';
 
 import type { DrawTier, PairData } from './types';
-import type { MediaUtils, RecordVariables } from './useScoreDelta';
+import type { MediaQueryClient, RecordVariables } from './useScoreDelta';
 
 interface RecordInput {
   dimensionId: number;
@@ -28,7 +30,7 @@ interface SkipInput {
 interface RecordArgs {
   pair: PairData | null | undefined;
   dimensionId: number | null;
-  utils: MediaUtils;
+  queryClient: MediaQueryClient;
   fetchScoreDelta: (v: RecordVariables) => Promise<void>;
   onAfterAction: () => void;
   setSessionCount: React.Dispatch<React.SetStateAction<number>>;
@@ -36,37 +38,37 @@ interface RecordArgs {
 }
 
 function useArenaMutations({
-  utils,
+  queryClient,
   fetchScoreDelta,
   onAfterAction,
   setSessionCount,
   scheduleClear,
 }: Omit<RecordArgs, 'pair' | 'dimensionId'>) {
-  const recordMutation = usePillarMutation<RecordInput, unknown>(
-    'media',
-    ['comparisons', 'record'],
-    {
-      onSuccess: async (_data, variables) => {
-        await fetchScoreDelta(variables);
-        setSessionCount((c) => c + 1);
-        onAfterAction();
-        void utils.invalidate(['comparisons', 'getSmartPair']);
-        scheduleClear();
-      },
-    }
-  );
+  const recordMutation = useMutation({
+    mutationFn: async (variables: RecordInput) =>
+      unwrap(await comparisonsRecord({ body: variables })),
+    onSuccess: async (_data, variables) => {
+      await fetchScoreDelta(variables);
+      setSessionCount((c) => c + 1);
+      onAfterAction();
+      void queryClient.invalidateQueries({
+        queryKey: ['media', 'comparisons', 'getSmartPair'],
+      });
+      scheduleClear();
+    },
+  });
 
-  const skipMutation = usePillarMutation<SkipInput, unknown>(
-    'media',
-    ['comparisons', 'recordSkip'],
-    {
-      onSuccess: () => {
-        toast.success('Pair skipped');
-        onAfterAction();
-        void utils.invalidate(['comparisons', 'getSmartPair']);
-      },
-    }
-  );
+  const skipMutation = useMutation({
+    mutationFn: async (variables: SkipInput) =>
+      unwrap(await comparisonsRecordSkip({ body: variables })),
+    onSuccess: () => {
+      toast.success('Pair skipped');
+      onAfterAction();
+      void queryClient.invalidateQueries({
+        queryKey: ['media', 'comparisons', 'getSmartPair'],
+      });
+    },
+  });
 
   return { recordMutation, skipMutation };
 }
