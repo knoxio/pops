@@ -1,6 +1,12 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  rotationAddExclusion,
+  rotationDownloadCandidate,
+  rotationRemoveExclusion,
+} from '../../media-api/index.js';
 
 import type { Candidate } from './CandidateCard';
 
@@ -19,42 +25,45 @@ interface UnexcludeInput {
 }
 
 export function useCardMutations(candidate: Candidate, setPopoverOpen: (v: boolean) => void) {
-  const utils = usePillarUtils('media');
-  const downloadMutation = usePillarMutation<DownloadInput, unknown>(
-    'media',
-    ['rotation', 'downloadCandidate'],
-    {
-      onSuccess: () => {
-        toast.success(`Downloading "${candidate.title}"`);
-        void utils.invalidate(['rotation', 'listCandidates']);
-      },
-      onError: (err) => toast.error(err.message || 'Failed to download'),
-    }
-  );
-  const excludeMutation = usePillarMutation<ExcludeInput, unknown>(
-    'media',
-    ['rotation', 'excludeCandidate'],
-    {
-      onSuccess: () => {
-        toast.success(`Excluded "${candidate.title}"`);
-        void utils.invalidate(['rotation', 'listCandidates']);
-        void utils.invalidate(['rotation', 'listExclusions']);
-        setPopoverOpen(false);
-      },
-      onError: (err) => toast.error(err.message || 'Failed to exclude'),
-    }
-  );
-  const unexcludeMutation = usePillarMutation<UnexcludeInput, unknown>(
-    'media',
-    ['rotation', 'removeExclusion'],
-    {
-      onSuccess: () => {
-        toast.success(`Restored "${candidate.title}" to queue`);
-        void utils.invalidate(['rotation', 'listCandidates']);
-        void utils.invalidate(['rotation', 'listExclusions']);
-      },
-      onError: (err) => toast.error(err.message || 'Failed to restore'),
-    }
-  );
+  const queryClient = useQueryClient();
+
+  const invalidateCandidates = () =>
+    queryClient.invalidateQueries({ queryKey: ['media', 'rotation', 'listCandidates'] });
+  const invalidateExclusions = () =>
+    queryClient.invalidateQueries({ queryKey: ['media', 'rotation', 'listExclusions'] });
+
+  const downloadMutation = useMutation({
+    mutationFn: async (input: DownloadInput) =>
+      unwrap(await rotationDownloadCandidate({ path: { candidateId: input.candidateId } })),
+    onSuccess: () => {
+      toast.success(`Downloading "${candidate.title}"`);
+      void invalidateCandidates();
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to download'),
+  });
+
+  const excludeMutation = useMutation({
+    mutationFn: async (input: ExcludeInput) =>
+      unwrap(await rotationAddExclusion({ body: { tmdbId: input.tmdbId, reason: input.reason } })),
+    onSuccess: () => {
+      toast.success(`Excluded "${candidate.title}"`);
+      void invalidateCandidates();
+      void invalidateExclusions();
+      setPopoverOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to exclude'),
+  });
+
+  const unexcludeMutation = useMutation({
+    mutationFn: async (input: UnexcludeInput) =>
+      unwrap(await rotationRemoveExclusion({ path: { tmdbId: input.tmdbId } })),
+    onSuccess: () => {
+      toast.success(`Restored "${candidate.title}" to queue`);
+      void invalidateCandidates();
+      void invalidateExclusions();
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to restore'),
+  });
+
   return { downloadMutation, excludeMutation, unexcludeMutation };
 }
