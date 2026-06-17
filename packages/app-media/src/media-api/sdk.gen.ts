@@ -278,6 +278,9 @@ import type {
   RotationListCandidatesData,
   RotationListCandidatesErrors,
   RotationListCandidatesResponses,
+  RotationListExclusionsData,
+  RotationListExclusionsErrors,
+  RotationListExclusionsResponses,
   RotationListPlexFriendsData,
   RotationListPlexFriendsResponses,
   RotationListRotationLogData,
@@ -1879,6 +1882,18 @@ export const rotationRemoveFromQueue = <ThrowOnError extends boolean = false>(
       ...options.headers,
     },
   });
+
+/**
+ * List exclusion entries, most-recent first, with pagination
+ */
+export const rotationListExclusions = <ThrowOnError extends boolean = false>(
+  options?: Options<RotationListExclusionsData, ThrowOnError>
+): RequestResult<RotationListExclusionsResponses, RotationListExclusionsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    RotationListExclusionsResponses,
+    RotationListExclusionsErrors,
+    ThrowOnError
+  >({ url: '/rotation/exclusions', ...options });
 
 /**
  * Exclude a movie from rotation
