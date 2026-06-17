@@ -3,7 +3,9 @@
  *
  * Stitches the per-domain handler factories into the typed
  * `RouterImplementation<CerebrumRestContract>` that `createExpressEndpoints`
- * consumes in `app.ts`. Domains are added here as each migration slice lands.
+ * consumes in `app.ts`. The map is split into a `core` group (plain DB-backed
+ * domains) and an `ai` group (retrieval + the LLM-backed domains that share the
+ * vector-search dep bundle) so neither builder trips the per-function line cap.
  */
 import { initServer } from '@ts-rest/express';
 
@@ -34,15 +36,24 @@ import type { CerebrumApiDeps } from '../handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
 
-export function makeCerebrumRestHandlers(
-  deps: CerebrumApiDeps
-): ReturnType<typeof server.router<typeof cerebrumContract>> {
-  const engramDeps = {
+type EngramDeps = {
+  db: CerebrumApiDeps['cerebrumDb']['db'];
+  engramRoot: string;
+  templates: CerebrumApiDeps['templateRegistry'];
+};
+
+function searchDeps(deps: CerebrumApiDeps) {
+  return {
     db: deps.cerebrumDb.db,
-    engramRoot: deps.engramRoot,
-    templates: deps.templateRegistry,
+    raw: deps.cerebrumDb.raw,
+    vecAvailable: deps.cerebrumDb.vecAvailable,
+    peers: deps.peerClients,
+    embeddingClient: deps.embeddingClient,
   };
-  return server.router(cerebrumContract, {
+}
+
+function coreHandlerMap(deps: CerebrumApiDeps, engramDeps: EngramDeps) {
+  return {
     templates: makeTemplatesHandlers(deps.templateRegistry),
     reflex: makeReflexHandlers(deps.reflexService),
     plexus: makePlexusHandlers(deps.cerebrumDb.db),
@@ -50,63 +61,54 @@ export function makeCerebrumRestHandlers(
     scopes: makeScopesHandlers(engramDeps),
     tags: makeTagsHandlers(deps.cerebrumDb.db),
     glia: makeGliaHandlers({
-      db: deps.cerebrumDb.db,
-      engramRoot: deps.engramRoot,
-      templates: deps.templateRegistry,
+      ...engramDeps,
       configPath: deps.gliaConfigPath ?? resolveGliaConfigPath(),
     }),
     nudges: makeNudgesHandlers(deps.cerebrumDb.db),
+  };
+}
+
+function aiHandlerMap(deps: CerebrumApiDeps, engramDeps: EngramDeps) {
+  const base = searchDeps(deps);
+  return {
+    retrieval: makeRetrievalHandlers(base),
     ingest: makeIngestHandlers({
-      db: deps.cerebrumDb.db,
-      engramRoot: deps.engramRoot,
-      templates: deps.templateRegistry,
+      ...engramDeps,
       llm: deps.ingestLlm ?? new AnthropicIngestLlm(),
       curationQueue: deps.curationQueue ?? getCurationQueue,
     }),
-    retrieval: makeRetrievalHandlers({
-      db: deps.cerebrumDb.db,
-      raw: deps.cerebrumDb.raw,
-      vecAvailable: deps.cerebrumDb.vecAvailable,
-      peers: deps.peerClients,
-      embeddingClient: deps.embeddingClient,
-    }),
-    ego: makeEgoHandlers({
-      db: deps.cerebrumDb.db,
-      raw: deps.cerebrumDb.raw,
-      vecAvailable: deps.cerebrumDb.vecAvailable,
-      engramRoot: deps.engramRoot,
-      templates: deps.templateRegistry,
-      llm: deps.egoLlm ?? new AnthropicEgoLlm(),
-      peers: deps.peerClients,
-      embeddingClient: deps.embeddingClient,
-    }),
-    workers: makeWorkersHandlers({
-      db: deps.cerebrumDb.db,
-      raw: deps.cerebrumDb.raw,
-      vecAvailable: deps.cerebrumDb.vecAvailable,
-      engramRoot: deps.engramRoot,
-      templates: deps.templateRegistry,
-      peers: deps.peerClients,
-      embeddingClient: deps.embeddingClient,
-      contradictionDetector:
-        deps.auditorContradictionDetector ?? new AnthropicContradictionDetector(),
-    }),
-    emit: makeEmitHandlers({
-      db: deps.cerebrumDb.db,
-      raw: deps.cerebrumDb.raw,
-      vecAvailable: deps.cerebrumDb.vecAvailable,
-      peers: deps.peerClients,
-      embeddingClient: deps.embeddingClient,
-      llm: deps.emitLlm ?? new AnthropicGenerationLlm(),
-    }),
+    emit: makeEmitHandlers({ ...base, llm: deps.emitLlm ?? new AnthropicGenerationLlm() }),
     query: makeQueryHandlers({
-      db: deps.cerebrumDb.db,
-      raw: deps.cerebrumDb.raw,
-      vecAvailable: deps.cerebrumDb.vecAvailable,
-      peers: deps.peerClients,
-      embeddingClient: deps.embeddingClient,
+      ...base,
       llm: deps.queryLlm ?? new AnthropicQueryLlm(),
       streamLlm: deps.queryStreamLlm ?? new AnthropicQueryStreamLlm(),
     }),
+    ego: makeEgoHandlers({
+      ...base,
+      engramRoot: deps.engramRoot,
+      templates: deps.templateRegistry,
+      llm: deps.egoLlm ?? new AnthropicEgoLlm(),
+    }),
+    workers: makeWorkersHandlers({
+      ...base,
+      engramRoot: deps.engramRoot,
+      templates: deps.templateRegistry,
+      contradictionDetector:
+        deps.auditorContradictionDetector ?? new AnthropicContradictionDetector(),
+    }),
+  };
+}
+
+export function makeCerebrumRestHandlers(
+  deps: CerebrumApiDeps
+): ReturnType<typeof server.router<typeof cerebrumContract>> {
+  const engramDeps: EngramDeps = {
+    db: deps.cerebrumDb.db,
+    engramRoot: deps.engramRoot,
+    templates: deps.templateRegistry,
+  };
+  return server.router(cerebrumContract, {
+    ...coreHandlerMap(deps, engramDeps),
+    ...aiHandlerMap(deps, engramDeps),
   });
 }
