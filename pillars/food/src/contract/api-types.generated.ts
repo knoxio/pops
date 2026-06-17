@@ -642,6 +642,128 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/plan/entries': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a plan entry */
+    post: operations['plan.addEntry'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plan/entries/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a plan entry */
+    delete: operations['plan.deleteEntry'];
+    options?: never;
+    head?: never;
+    /** Update a plan entry */
+    patch: operations['plan.updateEntry'];
+    trace?: never;
+  };
+  '/plan/entries/{id}/move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Move a plan entry to another date/slot */
+    post: operations['plan.moveEntry'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plan/reorder': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reorder entries within a date/slot cell */
+    post: operations['plan.reorderSlot'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plan/slots': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List plan slots */
+    get: operations['plan.listSlots'];
+    put?: never;
+    /** Add a plan slot */
+    post: operations['plan.addSlot'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plan/slots/{slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a plan slot */
+    delete: operations['plan.deleteSlot'];
+    options?: never;
+    head?: never;
+    /** Update a plan slot */
+    patch: operations['plan.updateSlot'];
+    trace?: never;
+  };
+  '/plan/week': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Denormalised meal-plan week view */
+    get: operations['plan.weekView'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/prep-states': {
     parameters: {
       query?: never;
@@ -877,6 +999,40 @@ export interface paths {
     put?: never;
     /** Fork a new draft from a recipe’s current version */
     post: operations['recipes.createNewDraft'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/shopping/generate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a shopping list from a plan range (writes to lists) */
+    post: operations['shopping.generate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/shopping/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Preview the shopping list a plan range would generate */
+    post: operations['shopping.preview'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3706,6 +3862,460 @@ export interface operations {
       };
     };
   };
+  'plan.addEntry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          date: string;
+          notes?: string;
+          plannedServings: number;
+          recipeId: number;
+          recipeVersionId?: number;
+          slot: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                id: number;
+                /** @enum {boolean} */
+                ok: true;
+                position: number;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'NotFound'
+                  | 'AlreadyCooked'
+                  | 'BadDate'
+                  | 'BadSlot'
+                  | 'RecipeArchived'
+                  | 'RecipeHasNoCurrentVersion';
+              };
+        };
+      };
+    };
+  };
+  'plan.deleteEntry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'NotFound'
+                  | 'AlreadyCooked'
+                  | 'BadDate'
+                  | 'BadSlot'
+                  | 'RecipeArchived'
+                  | 'RecipeHasNoCurrentVersion';
+              };
+        };
+      };
+    };
+  };
+  'plan.updateEntry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          notes?: string | null;
+          plannedServings?: number;
+          recipeVersionId?: number | null;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'NotFound'
+                  | 'AlreadyCooked'
+                  | 'BadDate'
+                  | 'BadSlot'
+                  | 'RecipeArchived'
+                  | 'RecipeHasNoCurrentVersion';
+              };
+        };
+      };
+    };
+  };
+  'plan.moveEntry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          date: string;
+          position?: number;
+          slot: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'NotFound'
+                  | 'AlreadyCooked'
+                  | 'BadDate'
+                  | 'BadSlot'
+                  | 'RecipeArchived'
+                  | 'RecipeHasNoCurrentVersion';
+              };
+        };
+      };
+    };
+  };
+  'plan.reorderSlot': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          date: string;
+          orderedIds: number[];
+          slot: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'BadIds' | 'EmptySlot';
+              };
+        };
+      };
+    };
+  };
+  'plan.listSlots': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            readonly slots: {
+              displayOrder: number;
+              isDefault: boolean;
+              name: string;
+              slug: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'plan.addSlot': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          name: string;
+          slug: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'SlugTaken' | 'SlugInvalid';
+              };
+        };
+      };
+    };
+  };
+  'plan.deleteSlot': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        slug: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'SlotNotFound' | 'CannotDeleteDefault' | 'SlotInUse';
+              };
+        };
+      };
+    };
+  };
+  'plan.updateSlot': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        slug: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          displayOrder?: number;
+          name?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'SlotNotFound' | 'CannotEditDefault';
+              };
+        };
+      };
+    };
+  };
+  'plan.weekView': {
+    parameters: {
+      query: {
+        weekStart: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            readonly entries: {
+              date: string;
+              heroImagePath: string | null;
+              id: number;
+              notes: string | null;
+              plannedServings: number;
+              position: number;
+              recipeId: number;
+              recipeRunCookedAt: string | null;
+              recipeRunId: number | null;
+              recipeSlug: string;
+              recipeTitle: string;
+              recipeType: string | null;
+              recipeVersionId: number | null;
+              slot: string;
+            }[];
+            readonly slots: {
+              displayOrder: number;
+              isDefault: boolean;
+              name: string;
+              slug: string;
+            }[];
+            weekEnd: string;
+            weekStart: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'prepStates.list': {
     parameters: {
       query?: never;
@@ -4728,6 +5338,113 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'shopping.generate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          endDate: string;
+          listName: string;
+          startDate: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                itemCount: number;
+                listId: number;
+                /** @enum {boolean} */
+                ok: true;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason: 'BadDateRange' | 'NoPlanEntries' | 'ListNameEmpty' | 'BulkAddFailed';
+              };
+        };
+      };
+    };
+  };
+  'shopping.preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          endDate: string;
+          startDate: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            endDate: string;
+            planEntryCount: number;
+            recipeTitles: string[];
+            sections: {
+              items: {
+                buyQty: number;
+                /** @enum {string} */
+                canonicalUnit: 'g' | 'ml' | 'count';
+                ingredientId: number;
+                ingredientName: string;
+                isUnconverted: boolean;
+                needQty: number;
+                originalQty: number | null;
+                originalUnit: string | null;
+                pantryQty: number;
+                sourceLineIds: number[];
+                variantId: number | null;
+                variantName: string | null;
+              }[];
+              sectionLabel: string;
+              sectionTag: string | null;
+            }[];
+            skippedPlanEntryCount: number;
+            startDate: string;
+            uncategorisedIngredientIds: number[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
           };
         };
       };

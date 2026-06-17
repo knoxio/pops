@@ -22,9 +22,11 @@ import { makeHeroImageHandlers } from './hero-image-handlers.js';
 import { makeInboxHandlers } from './inbox-handlers.js';
 import { makeIngredientTagsHandlers } from './ingredient-tags-handlers.js';
 import { makeIngredientsHandlers } from './ingredients-handlers.js';
+import { makePlanHandlers } from './plan-handlers.js';
 import { makePrepStatesHandlers } from './prep-states-handlers.js';
 import { makeRecipesHandlers } from './recipes-handlers.js';
 import { makeSendToListHandlers } from './send-to-list-handlers.js';
+import { makeShoppingHandlers } from './shopping-handlers.js';
 import { makeSlugsHandlers } from './slugs-handlers.js';
 import { makeSolverHandlers } from './solver-handlers.js';
 import { makeSubstitutionsHandlers } from './substitutions-handlers.js';
@@ -51,9 +53,11 @@ export function makeFoodRestHandlers(
     inbox: makeInboxHandlers(db),
     ingredients: makeIngredientsHandlers(db),
     ingredientTags: makeIngredientTagsHandlers(db),
+    plan: makePlanHandlers(db),
     prepStates: makePrepStatesHandlers(db),
     recipes: makeRecipesHandlers(db),
     sendToList: makeSendToListHandlers(db, resolveListsClient),
+    shopping: makeShoppingHandlers(db, resolveListsClient),
     slugs: makeSlugsHandlers(db),
     solver: makeSolverHandlers(db),
     substitutions: makeSubstitutionsHandlers(db),

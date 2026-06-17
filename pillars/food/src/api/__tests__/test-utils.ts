@@ -191,6 +191,27 @@ type SendToListResult =
   | { ok: true; listId: number; addedCount: number; mergedCount: number }
   | { ok: false; reason: string };
 
+interface WeekView {
+  weekStart: string;
+  weekEnd: string;
+  slots: { slug: string; name: string }[];
+  entries: { id: number; recipeId: number; slot: string }[];
+}
+type OkOr<R extends string> = { ok: true } | { ok: false; reason: R };
+type AddEntryResult = { ok: true; id: number; position: number } | { ok: false; reason: string };
+
+interface GeneratorPreview {
+  startDate: string;
+  endDate: string;
+  planEntryCount: number;
+  skippedPlanEntryCount: number;
+  sections: { sectionLabel: string; items: { ingredientId: number; buyQty: number }[] }[];
+  recipeTitles: string[];
+}
+type GenerateResult =
+  | { ok: true; listId: number; itemCount: number }
+  | { ok: false; reason: string };
+
 export class HttpError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -452,6 +473,31 @@ export function makeClient(app: Express) {
         send<SendToListResult>(
           r.post(`/recipes/versions/${versionId}/send-to-list`).send({ target, scaleFactor })
         ),
+    },
+    plan: {
+      weekView: (weekStart: string) => send<WeekView>(r.get('/plan/week').query({ weekStart })),
+      listSlots: () => send<{ slots: { slug: string; name: string }[] }>(r.get('/plan/slots')),
+      addSlot: (slug: string, name: string) =>
+        send<OkOr<'SlugTaken' | 'SlugInvalid'>>(r.post('/plan/slots').send({ slug, name })),
+      updateSlot: (slug: string, body: { name?: string; displayOrder?: number }) =>
+        send<OkOr<'SlotNotFound' | 'CannotEditDefault'>>(r.patch(`/plan/slots/${slug}`).send(body)),
+      deleteSlot: (slug: string) =>
+        send<OkOr<'SlotNotFound' | 'CannotDeleteDefault' | 'SlotInUse'>>(
+          r.delete(`/plan/slots/${slug}`)
+        ),
+      addEntry: (body: { date: string; slot: string; recipeId: number; plannedServings: number }) =>
+        send<AddEntryResult>(r.post('/plan/entries').send(body)),
+      updateEntry: (id: number, body: { plannedServings?: number; notes?: string | null }) =>
+        send<OkOr<string>>(r.patch(`/plan/entries/${id}`).send(body)),
+      moveEntry: (id: number, date: string, slot: string) =>
+        send<OkOr<string>>(r.post(`/plan/entries/${id}/move`).send({ date, slot })),
+      deleteEntry: (id: number) => send<OkOr<string>>(r.delete(`/plan/entries/${id}`)),
+    },
+    shopping: {
+      preview: (startDate: string, endDate: string) =>
+        send<GeneratorPreview>(r.post('/shopping/preview').send({ startDate, endDate })),
+      generate: (startDate: string, endDate: string, listName: string) =>
+        send<GenerateResult>(r.post('/shopping/generate').send({ startDate, endDate, listName })),
     },
   };
 }
