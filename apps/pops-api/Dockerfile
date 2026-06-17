@@ -16,12 +16,10 @@ COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/media-contract/package.json ./packages/media-contract/
-COPY packages/food-contract/package.json ./packages/food-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
-COPY packages/food-db/package.json ./packages/food-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -51,14 +49,10 @@ COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
-COPY packages/food-db/src ./packages/food-db/src
-COPY packages/food-db/tsconfig.json ./packages/food-db/
-COPY packages/food-db/migrations ./packages/food-db/migrations
 COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/media-contract/ ./packages/media-contract/
-COPY packages/food-contract/ ./packages/food-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
@@ -72,8 +66,6 @@ RUN pnpm build
 WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
-RUN pnpm build
-WORKDIR /app/packages/food-db
 RUN pnpm build
 WORKDIR /app/packages/core-db
 RUN pnpm build
@@ -94,8 +86,6 @@ RUN pnpm build
 WORKDIR /app/packages/core-contract
 RUN pnpm build
 WORKDIR /app/packages/media-contract
-RUN pnpm build
-WORKDIR /app/packages/food-contract
 RUN pnpm build
 WORKDIR /app/packages/pillar-sdk
 RUN pnpm build
@@ -142,9 +132,6 @@ COPY --from=builder /app/packages/media-db/migrations ./node_modules/@pops/media
 COPY --from=builder /app/packages/cerebrum-db/dist ./node_modules/@pops/cerebrum-db/dist
 COPY --from=builder /app/packages/cerebrum-db/package.json ./node_modules/@pops/cerebrum-db/
 COPY --from=builder /app/packages/cerebrum-db/migrations ./node_modules/@pops/cerebrum-db/migrations
-COPY --from=builder /app/packages/food-db/dist ./node_modules/@pops/food-db/dist
-COPY --from=builder /app/packages/food-db/package.json ./node_modules/@pops/food-db/
-COPY --from=builder /app/packages/food-db/migrations ./node_modules/@pops/food-db/migrations
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src
