@@ -11,7 +11,6 @@ import { backfillCerebrumFromSharedDb, getCerebrumDrizzle } from './db/cerebrum-
 import { getFinanceDrizzle } from './db/finance-handle.js';
 import { getInventoryDrizzle } from './db/inventory-handle.js';
 import { getListsDrizzle } from './db/lists-handle.js';
-import { backfillMediaFromSharedDb, getMediaDrizzle } from './db/media-db-handle.js';
 import { resolveSqlitePath } from './db/sqlite-path.js';
 import { closeQueues } from './jobs/queues.js';
 import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
@@ -30,12 +29,6 @@ import {
 } from './modules/core/ai-observability/summary-scheduler.js';
 import { startupCleanup } from './modules/core/envs/registry.js';
 import { startTtlWatcher } from './modules/core/envs/ttl-watcher.js';
-import { resumeSchedulerIfEnabled, stopPlexSchedulerTask } from './modules/media/plex/scheduler.js';
-import {
-  resumeRotationSchedulerIfEnabled,
-  stopRotationTask,
-  waitForCycleEnd,
-} from './modules/media/rotation/scheduler.js';
 import { getRedisClient, shutdownRedis } from './redis.js';
 
 const port = Number(process.env['PORT'] ?? 3000);
@@ -85,25 +78,6 @@ try {
   throw err;
 }
 
-// Eagerly open the media pillar's SQLite + apply its journal at boot.
-// The earlier media slices (`movies`, `tv_shows`, `seasons`, `episodes`,
-// `shelf_impressions`, `watch_history`, `mediaWatchlist`,
-// `dismissed_discover`, `comparison_staleness`) finished their PR4
-// writer cutovers, so the original ATTACH bridge was retired. Theme-13
-// Wave-5 reintroduces the bridge for the new tables landing in
-// `0030_media_scores_baseline.sql` and `0031_rotation_baseline.sql` —
-// `media_scores` + `rotation_log` + `rotation_sources` +
-// `rotation_candidates` + `rotation_exclusions`. The backfill is
-// idempotent (per-table `WHERE NOT EXISTS (...)` filters) and non-fatal
-// (partial failure logs + continues).
-try {
-  getMediaDrizzle();
-  backfillMediaFromSharedDb(resolveSqlitePath());
-} catch (err) {
-  console.error('[db] Failed to bootstrap the media pillar SQLite:', err);
-  throw err;
-}
-
 // Eagerly open the cerebrum pillar's SQLite + apply its journal at
 // boot. The nudge_log slice now reads/writes against this handle
 // (phase 2 PR 3); the one-shot `backfillCerebrumFromSharedDb` carries
@@ -140,25 +114,6 @@ if (orphaned.length > 0)
 const server = app.listen(port, () => {
   console.warn(`[pops-api] Listening on port ${port}`);
 });
-
-// Auto-resume Plex sync scheduler if it was previously running
-void resumeSchedulerIfEnabled()
-  .then((resumedScheduler) => {
-    if (resumedScheduler) {
-      console.warn(
-        `[pops-api] Plex scheduler resumed (interval: ${resumedScheduler.intervalMs}ms)`
-      );
-    }
-  })
-  .catch((err: unknown) => {
-    console.error('[pops-api] Failed to resume Plex scheduler:', err);
-  });
-
-// Auto-resume rotation scheduler if it was previously running
-const resumedRotation = resumeRotationSchedulerIfEnabled();
-if (resumedRotation) {
-  console.warn(`[pops-api] Rotation scheduler resumed (cron: ${resumedRotation.cronExpression})`);
-}
 
 // Initiate Redis connection eagerly so /health reports accurately (lazyConnect defers otherwise)
 getRedisClient()
@@ -200,27 +155,20 @@ async function shutdown(signal: string): Promise<void> {
   console.warn(`[pops-api] ${signal} — shutting down`);
   // 1. Stop accepting new requests
   server.close();
-  // 2. Stop schedulers (preserve settings for auto-resume on restart)
-  stopRotationTask();
-  stopPlexSchedulerTask();
-  // 3. Stop Thalamus file watcher
+  // 2. Stop Thalamus file watcher
   await stopThalamus();
   await unregisterAiLogRetentionScheduler();
   await unregisterAiAlertsScheduler();
   await unregisterAiObservabilitySummaryScheduler();
-  // 4. Wait for any in-progress rotation cycle to finish
-  if (process.env['NODE_ENV'] !== 'test') {
-    await waitForCycleEnd();
-  }
-  // 5. Stop TTL watcher
+  // 3. Stop TTL watcher
   clearInterval(ttlWatcher);
-  // 6. Close BullMQ queue connections
+  // 4. Close BullMQ queue connections
   await closeQueues();
-  // 7. Close Redis
+  // 5. Close Redis
   await shutdownRedis();
-  // 8. Close DB
+  // 6. Close DB
   closeDb();
-  // 9. Exit
+  // 7. Exit
   process.exit(0);
 }
 

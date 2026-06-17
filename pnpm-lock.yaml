@@ -69,9 +69,6 @@ importers:
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
-      '@pops/media-contract':
-        specifier: workspace:*
-        version: link:../../packages/media-contract
       '@pops/media-db':
         specifier: workspace:*
         version: link:../../packages/media-db
@@ -204,70 +201,6 @@ importers:
         version: 5.5.3
       supertest:
         specifier: ^7.2.2
-        version: 7.2.2
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  apps/pops-cerebrum-api:
-    dependencies:
-      '@pops/cerebrum-contract':
-        specifier: workspace:*
-        version: link:../../packages/cerebrum-contract
-      '@pops/cerebrum-db':
-        specifier: workspace:*
-        version: link:../../packages/cerebrum-db
-      '@pops/core-db':
-        specifier: workspace:*
-        version: link:../../packages/core-db
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../../packages/pillar-sdk
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@trpc/server':
-        specifier: ^11.17.0
-        version: 11.17.0(typescript@6.0.3)
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.10.0)
-      express:
-        specifier: ^5.1.0
-        version: 5.2.1
-      jsonwebtoken:
-        specifier: ^9.0.3
-        version: 9.0.3
-      pino:
-        specifier: ^10.3.1
-        version: 10.3.1
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/express':
-        specifier: ^5.0.4
-        version: 5.0.6
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      '@types/supertest':
-        specifier: ^6.0.3
-        version: 6.0.3
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      supertest:
-        specifier: ^7.1.4
         version: 7.2.2
       tsx:
         specifier: ^4.22.4
@@ -456,64 +389,6 @@ importers:
       '@types/node':
         specifier: ^25.9.3
         version: 25.9.3
-      tsx:
-        specifier: ^4.22.4
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.8
-        version: 4.1.8(@types/node@25.9.3)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.3)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.46.1)(tsx@4.22.4)(yaml@2.9.0))
-
-  apps/pops-media-api:
-    dependencies:
-      '@pops/media-contract':
-        specifier: workspace:*
-        version: link:../../packages/media-contract
-      '@pops/media-db':
-        specifier: workspace:*
-        version: link:../../packages/media-db
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../../packages/pillar-sdk
-      '@pops/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@trpc/server':
-        specifier: ^11.17.0
-        version: 11.17.0(typescript@6.0.3)
-      express:
-        specifier: ^5.1.0
-        version: 5.2.1
-      jsonwebtoken:
-        specifier: ^9.0.3
-        version: 9.0.3
-      pino:
-        specifier: ^10.3.1
-        version: 10.3.1
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/express':
-        specifier: ^5.0.4
-        version: 5.0.6
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
-      '@types/node':
-        specifier: ^25.9.3
-        version: 25.9.3
-      '@types/supertest':
-        specifier: ^6.0.3
-        version: 6.0.3
-      '@vitest/coverage-v8':
-        specifier: ^4.1.8
-        version: 4.1.8(vitest@4.1.8)
-      supertest:
-        specifier: ^7.1.4
-        version: 7.2.2
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -1806,9 +1681,6 @@ importers:
       '@pops/core-contract':
         specifier: workspace:*
         version: link:../core-contract
-      '@pops/media-contract':
-        specifier: workspace:*
-        version: link:../media-contract
       zod:
         specifier: ^4.4.3
         version: 4.4.3

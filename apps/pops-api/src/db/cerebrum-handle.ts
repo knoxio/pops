@@ -12,7 +12,7 @@
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
  * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts` /
- * `finance-handle.ts` / `media-db-handle.ts`.
+ * `finance-handle.ts`.
  */
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 

@@ -15,7 +15,6 @@ import healthRouter from './routes/health.js';
 import inventoryDocumentFilesRouter from './routes/inventory/document-files.js';
 import documentThumbnailRouter from './routes/inventory/documents.js';
 import inventoryPhotosRouter from './routes/inventory/photos.js';
-import mediaImagesRouter from './routes/media/images.js';
 import pillarsRouter from './routes/pillars.js';
 import upBankRouter from './routes/webhooks/up-bank.js';
 import { getRuntimeAppRouter } from './runtime/index.js';
@@ -55,9 +54,6 @@ export function createApp(): express.Express {
 
   // Up Bank webhook handler (processes its own raw body + signature verification)
   app.use(upBankRouter);
-
-  // Media image serving — static file serving, no DB needed
-  app.use(mediaImagesRouter);
 
   // Document thumbnail proxy — proxies Paperless-ngx thumbnails
   app.use(documentThumbnailRouter);

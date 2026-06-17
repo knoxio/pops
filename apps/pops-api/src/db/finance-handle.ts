@@ -12,8 +12,7 @@
  * bridge has nothing left to carry forward.
  *
  * Lives in its own module so `db.ts` stays under the lint cap as more
- * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts`
- * / `media-db-handle.ts`.
+ * pillars come online. Mirrors `core-handle.ts` / `inventory-handle.ts`.
  */
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 

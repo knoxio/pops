@@ -110,12 +110,6 @@ jobs:
           node scripts/generate-pillar-dockerfile.mjs lists
           git diff --exit-code pillars/lists/api/Dockerfile
 
-      - name: Verify pops-media-api Dockerfile is up to date (PRD-252)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: |
-          node scripts/generate-pillar-dockerfile.mjs media
-          git diff --exit-code apps/pops-media-api/Dockerfile
-
       - name: Verify pops-inventory-api Dockerfile is up to date (PRD-252)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
@@ -135,10 +129,6 @@ jobs:
       - name: Build pops-inventory-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-inventory-api/Dockerfile .
-
-      - name: Build pops-media-api (builder stage)
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: docker build --target builder -f apps/pops-media-api/Dockerfile .
 
       - name: Build pops-finance-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
