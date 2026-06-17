@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { assertModuleManifest, type ModuleManifest } from '@pops/types';
 
-import { manifest as egoManifest } from './cerebrum/ego/index.js';
-import { manifest as cerebrumManifest } from './cerebrum/index.js';
 import { manifest as coreManifest } from './core/index.js';
 import { manifest as financeManifest } from './finance/index.js';
 import { manifest as inventoryManifest } from './inventory/index.js';
@@ -14,8 +12,6 @@ const manifests: ReadonlyArray<readonly [string, ModuleManifest]> = [
   ['finance', financeManifest],
   ['inventory', inventoryManifest],
   ['media', mediaManifest],
-  ['ego', egoManifest],
-  ['cerebrum', cerebrumManifest],
 ];
 
 describe('PRD-098 backend module manifests', () => {
@@ -52,7 +48,7 @@ describe('PRD-098 backend module manifests', () => {
     for (const [label, m] of manifests) {
       const declared = (m.search ?? []).map((a) => a.domain).toSorted();
       const aggregated = (ownedDomainsByModule.get(label) ?? []).toSorted();
-      // Skip modules not in the aggregator (e.g. cerebrum/ego — no search yet)
+      // Skip modules that declare no search adapters and contribute none.
       if (declared.length === 0 && aggregated.length === 0) continue;
       expect(aggregated, `aggregator domains for module '${label}'`).toEqual(declared);
     }

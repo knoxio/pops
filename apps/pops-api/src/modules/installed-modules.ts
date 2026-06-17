@@ -19,8 +19,6 @@
  */
 import { INSTALLED_MODULES, MODULES } from '@pops/module-registry';
 
-import { manifest as egoManifest } from './cerebrum/ego/index.js';
-import { manifest as cerebrumManifest } from './cerebrum/index.js';
 import { manifest as coreManifest } from './core/index.js';
 import { manifest as financeManifest } from './finance/index.js';
 import { manifest as inventoryManifest } from './inventory/index.js';
@@ -42,15 +40,7 @@ import type { ModuleManifest } from '@pops/types';
  * core is the platform shell, not a domain module).
  */
 function liveManifests(): readonly ModuleManifest[] {
-  return [
-    coreManifest,
-    financeManifest,
-    listsManifest,
-    mediaManifest,
-    inventoryManifest,
-    cerebrumManifest,
-    egoManifest,
-  ];
+  return [coreManifest, financeManifest, listsManifest, mediaManifest, inventoryManifest];
 }
 
 function liveManifestById(id: string): ModuleManifest | undefined {

@@ -6,16 +6,7 @@ describe('generate-known-routers', () => {
   it('emits keys that match the hand-curated KNOWN_ROUTERS literal in router.ts', async () => {
     const { KNOWN_ROUTERS_GENERATED } = await import('../src/generated/known-routers.js');
     const generatedIds = Object.keys(KNOWN_ROUTERS_GENERATED).toSorted();
-    const handCuratedIds = [
-      'core',
-      'cerebrum',
-      'ego',
-      'finance',
-      'food',
-      'inventory',
-      'lists',
-      'media',
-    ].toSorted();
+    const handCuratedIds = ['core', 'finance', 'food', 'inventory', 'lists', 'media'].toSorted();
     expect(generatedIds).toEqual(handCuratedIds);
   });
 

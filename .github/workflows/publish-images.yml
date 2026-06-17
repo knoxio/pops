@@ -258,29 +258,3 @@ jobs:
           labels: ${{ steps.meta-lists-api.outputs.labels }}
           build-args: |
             BUILD_VERSION=${{ github.sha }}
-
-      - name: Generate metadata for pops-cerebrum-api
-        id: meta-cerebrum-api
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/knoxio/pops-cerebrum-api
-          tags: |
-            type=raw,value=main,enable={{is_default_branch}}
-            type=sha,prefix=sha-,format=short
-            type=semver,pattern={{version}}
-            type=semver,pattern=v{{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=semver,pattern=v{{major}}
-
-      - name: Build and push pops-cerebrum-api
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: apps/pops-cerebrum-api/Dockerfile
-          push: true
-          tags: ${{ steps.meta-cerebrum-api.outputs.tags }}
-          labels: ${{ steps.meta-cerebrum-api.outputs.labels }}
-          build-args: |
-            BUILD_VERSION=${{ github.sha }}

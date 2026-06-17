@@ -6,8 +6,8 @@
  * and a final `done` event with parsed citations + confidence.
  *
  * Mirrors the event shape of the Ego streaming generator
- * (`modules/cerebrum/ego/engine-stream.ts`) so the SSE route handler in
- * `routes/cerebrum/query-stream.ts` can use the same SSE wire format.
+ * (`modules/cerebrum/ego/engine-stream.ts`) so the pillar's SSE route
+ * handler can use the same SSE wire format.
  */
 import Anthropic from '@anthropic-ai/sdk';
 
