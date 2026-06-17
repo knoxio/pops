@@ -8,8 +8,9 @@
  * repointed onto the pillar's env-only Radarr defaults (parity with the arr
  * `downloadAndProtect` path) and the pillar `(db, …)` services.
  *
- * The `rotationStatus='protected'` write is data-plane and stays in this slice.
- * The scheduler / rotation cycle that consumes that flag is slice 11b.
+ * The `rotationStatus='protected'` write keeps a downloaded movie out of the
+ * removal phase — `rotation-removal-queries.getEligibleForRemoval` skips
+ * unexpired `protected` rows.
  */
 import {
   type MediaDb,

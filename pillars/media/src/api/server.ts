@@ -16,6 +16,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 import { openMediaDb } from '../db/index.js';
 import { createMediaApiApp } from './app.js';
 import { plexScheduler } from './cron/plex-scheduler.js';
+import { rotationScheduler } from './cron/rotation-scheduler.js';
 import { buildMediaManifest } from './manifest.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
 import { parseBareOrigin } from './pillars/env.js';
@@ -70,6 +71,16 @@ if (process.env['PLEX_SCHEDULER_ENABLED'] === 'true') {
   plexScheduler.resumeIfEnabled(mediaDb.db);
 }
 
+// Rotation-cycle scheduler (slice 11b). Mirror of the Plex scheduler:
+// MEDIA_ROTATION_SCHEDULER_ENABLED force-starts; otherwise auto-resume from
+// the persisted `rotation_enabled` flag. The controller is a module-level
+// singleton so the REST toggle/run-now handlers drive the same timer.
+if (process.env['MEDIA_ROTATION_SCHEDULER_ENABLED'] === 'true') {
+  rotationScheduler.start({ db: mediaDb.db });
+} else {
+  rotationScheduler.resumeIfEnabled(mediaDb.db);
+}
+
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
@@ -88,6 +99,7 @@ function shutdown(signal: NodeJS.Signals): void {
   shuttingDown = true;
   console.warn(`[media-api] Shutting down (${signal})`);
   plexScheduler.stop();
+  rotationScheduler.stop(mediaDb.db);
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       mediaDb.raw.close();

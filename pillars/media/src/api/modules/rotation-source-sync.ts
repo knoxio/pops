@@ -5,8 +5,8 @@
  * `rotation_candidates` table. This is an api-layer concern (it calls the
  * upstream TMDB / Plex clients), NOT a db service — the `src/db` layer stays
  * HTTP-free. Ported from the monolith `sync-source.ts` (the single-source
- * path; the batch `syncAllSources` + interval gating belongs to the scheduler
- * slice 11b and is intentionally NOT ported here).
+ * path). The batch `syncAllSources` + per-source interval gating lives in
+ * `rotation-sync-all.ts`, which the rotation cycle drives each tick.
  */
 import {
   type MediaDb,

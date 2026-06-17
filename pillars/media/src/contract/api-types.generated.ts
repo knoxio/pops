@@ -1321,6 +1321,159 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/rotation/scheduler/disk-space': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Radarr disk space (degrades to available:false when unreachable) */
+    get: operations['rotation.schedulerDiskSpace'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/last-cycle': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the most recent rotation cycle log entry */
+    get: operations['rotation.schedulerLastCycleLog'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/leaving': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Movies currently in the 'leaving' state, soonest expiry first */
+    get: operations['rotation.schedulerLeavingMovies'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/leaving/{movieId}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Clear a movie's 'leaving' status */
+    post: operations['rotation.schedulerCancelLeaving'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/log': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Paginated rotation log entries, newest first */
+    get: operations['rotation.listRotationLog'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/log-stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Summary statistics for the rotation log page */
+    get: operations['rotation.rotationLogStats'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/run-now': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger one rotation cycle immediately */
+    post: operations['rotation.schedulerRunNow'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the rotation scheduler run state + last-cycle stats */
+    get: operations['rotation.schedulerStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/rotation/scheduler/toggle': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start or stop the rotation scheduler (persists the enabled flag) */
+    post: operations['rotation.schedulerToggle'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/rotation/settings': {
     parameters: {
       query?: never;
@@ -7411,6 +7564,418 @@ export interface operations {
                 uuid: string;
               }[];
             };
+          };
+        };
+      };
+    };
+  };
+  'rotation.schedulerDiskSpace': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              available: boolean;
+              disks: {
+                freeSpace: number;
+                label: string;
+                path: string;
+                totalSpace: number;
+              }[];
+            };
+          };
+        };
+      };
+    };
+  };
+  'rotation.schedulerLastCycleLog': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              details: string | null;
+              executedAt: string;
+              freeSpaceGb: number;
+              id: number;
+              moviesAdded: number;
+              moviesMarkedLeaving: number;
+              moviesRemoved: number;
+              removalsFailed: number;
+              skippedReason: string | null;
+              targetFreeGb: number;
+            } | null;
+          };
+        };
+      };
+    };
+  };
+  'rotation.schedulerLeavingMovies': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              id: number;
+              posterPath: string | null;
+              rotationExpiresAt: string | null;
+              rotationMarkedAt: string | null;
+              title: string;
+              tmdbId: number;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'rotation.schedulerCancelLeaving': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        movieId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              message: string;
+              success: boolean;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'rotation.listRotationLog': {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              items: {
+                details: string | null;
+                executedAt: string;
+                freeSpaceGb: number;
+                id: number;
+                moviesAdded: number;
+                moviesMarkedLeaving: number;
+                moviesRemoved: number;
+                removalsFailed: number;
+                skippedReason: string | null;
+                targetFreeGb: number;
+              }[];
+              total: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'rotation.rotationLogStats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              avgPerDay: number;
+              streak: number;
+              totalRotated: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'rotation.schedulerRunNow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              result: {
+                freeSpaceGb: number;
+                moviesAdded: number;
+                moviesMarkedLeaving: number;
+                moviesRemoved: number;
+                removalsFailed: number;
+                skippedReason: string | null;
+                targetFreeGb: number;
+              } | null;
+              success: boolean;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'rotation.schedulerStatus': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              cronExpression: string;
+              intervalMs: number;
+              isCycleRunning: boolean;
+              isRunning: boolean;
+              lastCycleAt: string | null;
+              lastCycleError: string | null;
+              nextRunAt: string | null;
+            };
+          };
+        };
+      };
+    };
+  };
+  'rotation.schedulerToggle': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          cronExpression?: string;
+          enabled: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              cronExpression: string;
+              intervalMs: number;
+              isCycleRunning: boolean;
+              isRunning: boolean;
+              lastCycleAt: string | null;
+              lastCycleError: string | null;
+              nextRunAt: string | null;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
           };
         };
       };
