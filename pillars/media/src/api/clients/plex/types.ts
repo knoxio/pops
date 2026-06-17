@@ -1,11 +1,10 @@
 /**
- * Plex API types for the connection + auth slice.
+ * Plex API types — raw API responses and mapped domain types.
  *
- * Only the library-listing shapes the connection surface needs are ported
- * here; the sync-related media/episode types stay in the monolith until the
- * sync slices (9b/9c) land. Plex returns XML by default but supports JSON
- * via the `Accept` header; every response wraps its data in a
- * `MediaContainer`.
+ * Plex returns XML by default but supports JSON via the `Accept` header;
+ * every response wraps its data in a `MediaContainer`. The library-listing
+ * shapes back the connection surface (slice 9a); the media/episode shapes
+ * back the sync surface (slice 9b).
  */
 
 export class PlexApiError extends Error {
@@ -39,6 +38,71 @@ export interface RawPlexLibrariesContainer {
   Directory?: RawPlexLibrary[];
 }
 
+export interface RawPlexGuid {
+  id: string; // e.g. "tmdb://550" or "imdb://tt0137523" or "tvdb://81189"
+}
+
+export interface RawPlexMediaItem {
+  ratingKey: string;
+  key: string;
+  guid: string;
+  type: string;
+  title: string;
+  originalTitle?: string;
+  summary?: string;
+  tagline?: string;
+  year?: number;
+  thumb?: string;
+  art?: string;
+  duration?: number;
+  addedAt: number;
+  updatedAt: number;
+  lastViewedAt?: number;
+  viewCount?: number;
+  rating?: number;
+  audienceRating?: number;
+  contentRating?: string;
+  Guid?: RawPlexGuid[];
+  Genre?: { tag: string }[];
+  Director?: { tag: string }[];
+  Role?: { tag: string; role?: string; thumb?: string }[];
+  leafCount?: number;
+  viewedLeafCount?: number;
+  childCount?: number;
+}
+
+export interface RawPlexItemsContainer {
+  size: number;
+  totalSize?: number;
+  offset?: number;
+  Metadata?: RawPlexMediaItem[];
+}
+
+export interface RawPlexEpisode {
+  ratingKey: string;
+  key: string;
+  parentRatingKey: string;
+  grandparentRatingKey: string;
+  type: string;
+  title: string;
+  index: number;
+  parentIndex: number;
+  summary?: string;
+  thumb?: string;
+  duration?: number;
+  addedAt: number;
+  updatedAt: number;
+  lastViewedAt?: number;
+  viewCount?: number;
+}
+
+export interface RawPlexEpisodesContainer {
+  size: number;
+  totalSize?: number;
+  offset?: number;
+  Metadata?: RawPlexEpisode[];
+}
+
 export interface PlexLibrary {
   key: string;
   title: string;
@@ -49,4 +113,52 @@ export interface PlexLibrary {
   uuid: string;
   updatedAt: number;
   scannedAt: number;
+}
+
+export interface PlexExternalId {
+  source: string; // "tmdb", "imdb", "tvdb"
+  id: string;
+}
+
+export interface PlexMediaItem {
+  ratingKey: string;
+  type: string;
+  title: string;
+  originalTitle: string | null;
+  summary: string | null;
+  tagline: string | null;
+  year: number | null;
+  thumbUrl: string | null;
+  artUrl: string | null;
+  durationMs: number | null;
+  addedAt: number;
+  updatedAt: number;
+  lastViewedAt: number | null;
+  viewCount: number;
+  rating: number | null;
+  audienceRating: number | null;
+  contentRating: string | null;
+  externalIds: PlexExternalId[];
+  genres: string[];
+  directors: string[];
+  /** For TV shows: total episode count */
+  leafCount: number | null;
+  /** For TV shows: watched episode count */
+  viewedLeafCount: number | null;
+  /** For TV shows: season count */
+  childCount: number | null;
+}
+
+export interface PlexEpisode {
+  ratingKey: string;
+  title: string;
+  episodeIndex: number;
+  seasonIndex: number;
+  summary: string | null;
+  thumbUrl: string | null;
+  durationMs: number | null;
+  addedAt: number;
+  updatedAt: number;
+  lastViewedAt: number | null;
+  viewCount: number;
 }

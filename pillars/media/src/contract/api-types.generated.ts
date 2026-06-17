@@ -721,6 +721,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/plex/sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start an on-demand Plex sync job (runs async in-process) */
+    post: operations['plex.startSyncJob'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/plex/sync-status': {
     parameters: {
       query?: never;
@@ -730,6 +747,57 @@ export interface paths {
     };
     /** Connection-config snapshot (configured / hasUrl / hasToken) */
     get: operations['plex.getSyncStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plex/sync/active': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List currently-running sync jobs */
+    get: operations['plex.getActiveSyncJobs'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plex/sync/last': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Most recent completed result per sync job type */
+    get: operations['plex.getLastSyncResults'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plex/sync/{jobId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Poll a sync job by id (404 if unknown) */
+    get: operations['plex.getSyncJobStatus'];
     put?: never;
     post?: never;
     delete?: never;
@@ -4315,6 +4383,84 @@ export interface operations {
       };
     };
   };
+  'plex.startSyncJob': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          jobType:
+            | 'plexSyncMovies'
+            | 'plexSyncTvShows'
+            | 'plexSyncWatchlist'
+            | 'plexSyncWatchHistory';
+          movieSectionId?: string;
+          sectionId?: string;
+          tvSectionId?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              jobId: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'plex.getSyncStatus': {
     parameters: {
       query?: never;
@@ -4337,6 +4483,157 @@ export interface operations {
               hasToken: boolean;
               hasUrl: boolean;
             };
+          };
+        };
+      };
+    };
+  };
+  'plex.getActiveSyncJobs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              completedAt: string | null;
+              durationMs: number | null;
+              error: string | null;
+              id: string;
+              jobType: string;
+              progress: {
+                processed: number;
+                total: number;
+              };
+              result: unknown;
+              startedAt: string;
+              /** @enum {string} */
+              status: 'running' | 'completed' | 'failed';
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'plex.getLastSyncResults': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              [key: string]: {
+                completedAt: string | null;
+                durationMs: number | null;
+                error: string | null;
+                id: string;
+                jobType: string;
+                progress: {
+                  processed: number;
+                  total: number;
+                };
+                result: unknown;
+                startedAt: string;
+                /** @enum {string} */
+                status: 'running' | 'completed' | 'failed';
+              } | null;
+            };
+          };
+        };
+      };
+    };
+  };
+  'plex.getSyncJobStatus': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              completedAt: string | null;
+              durationMs: number | null;
+              error: string | null;
+              id: string;
+              jobType: string;
+              progress: {
+                processed: number;
+                total: number;
+              };
+              result: unknown;
+              startedAt: string;
+              /** @enum {string} */
+              status: 'running' | 'completed' | 'failed';
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
           };
         };
       };

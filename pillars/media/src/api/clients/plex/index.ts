@@ -6,7 +6,13 @@
  * (`auth.ts`). Token crypto lives in `crypto.ts`.
  */
 export { PlexClient } from './client.js';
-export { PlexApiError, type PlexLibrary } from './types.js';
+export {
+  PlexApiError,
+  type PlexEpisode,
+  type PlexExternalId,
+  type PlexLibrary,
+  type PlexMediaItem,
+} from './types.js';
 
 export {
   getPlexClient,
