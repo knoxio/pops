@@ -23,7 +23,10 @@ import { unwrap } from '../../../food-api-helpers.js';
 import { recipesSaveDraft } from '../../../food-api/index.js';
 import { InspectorRenderer } from './InspectorRenderer.js';
 
-import type { CompileResult, InspectorDraftView } from '@pops/app-food-db';
+import type { RecipesSaveDraftResponses } from '../../../food-api/types.gen.js';
+import type { InspectorDraftView } from './inspector-wire-types.js';
+
+type CompileResult = RecipesSaveDraftResponses[200]['compile'];
 
 type SaveDraftInput = { versionId: number; dsl: string };
 

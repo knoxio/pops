@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@pops/ui';
 
-import type { DeleteBlockerSummary, IngredientRow } from '@pops/app-food-db';
+import type { DeleteBlockerSummary, IngredientRow } from './ingredient-wire-types.js';
 
 interface Props {
   open: boolean;

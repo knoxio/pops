@@ -8,7 +8,7 @@
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { InspectorProposedSlugRow } from '@pops/app-food-db';
+import type { InspectorProposedSlugRow } from './inspector-wire-types.js';
 
 interface Props {
   proposedSlugs: readonly InspectorProposedSlugRow[];

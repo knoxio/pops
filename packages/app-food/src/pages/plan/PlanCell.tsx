@@ -14,7 +14,7 @@ import { PlanEntryRow } from './PlanEntryRow.js';
 
 import type { ReactElement } from 'react';
 
-import type { WirePlanEntryRow } from '@pops/app-food-db';
+import type { WirePlanEntryRow } from './plan-wire-types.js';
 
 export type PlanCellLayout = 'grid' | 'stacked';
 

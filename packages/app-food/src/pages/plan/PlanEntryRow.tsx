@@ -13,7 +13,7 @@ import { Badge } from '@pops/ui';
 
 import type { ReactElement } from 'react';
 
-import type { WirePlanEntryRow } from '@pops/app-food-db';
+import type { WirePlanEntryRow } from './plan-wire-types.js';
 
 const TITLE_MAX = 18;
 

@@ -18,7 +18,7 @@
  */
 import type { EditorState } from '@codemirror/state';
 
-import type { SourceSpan } from '@pops/app-food-db';
+import type { SourceSpan } from '@pops/food/dsl';
 
 export interface IssueRange {
   from: number;

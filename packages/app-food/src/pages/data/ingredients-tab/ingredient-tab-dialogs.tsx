@@ -8,8 +8,7 @@ import { DeleteVariantDialog } from './DeleteVariantDialog';
 import { RenameIngredientDialog } from './RenameIngredientDialog';
 import { VariantFormDialog } from './VariantFormDialog';
 
-import type { DeleteBlockerSummary, IngredientRow } from '@pops/app-food-db';
-
+import type { DeleteBlockerSummary, IngredientRow } from './ingredient-wire-types.js';
 import type { useIngredientActions } from './useIngredientActions';
 import type { useVariantActions } from './useVariantActions';
 

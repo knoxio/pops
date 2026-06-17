@@ -1075,6 +1075,9 @@ importers:
       '@pops/api':
         specifier: workspace:*
         version: link:../../apps/pops-api
+      '@pops/food':
+        specifier: workspace:*
+        version: link:../../pillars/food
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../pillar-sdk

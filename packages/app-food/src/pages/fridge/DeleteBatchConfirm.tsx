@@ -14,11 +14,10 @@ import { batchesDelete, batchesGet } from '../../food-api/index.js';
 import { FormError } from './form-controls.js';
 import { formatQty } from './format.js';
 
-import type { BatchDetail } from '@pops/app-food-db';
-
-import type { BatchesDeleteData } from '../../food-api/types.gen.js';
+import type { BatchesDeleteData, BatchesGetResponses } from '../../food-api/types.gen.js';
 
 type BatchesDeleteInput = BatchesDeleteData['path'];
+type BatchDetail = BatchesGetResponses[200]['data'];
 
 export interface DeleteBatchConfirmProps {
   batchId: number | null;

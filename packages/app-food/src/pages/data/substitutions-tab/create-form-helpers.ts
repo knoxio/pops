@@ -1,5 +1,4 @@
-import type { SubstitutionScope } from '@pops/app-food-db';
-
+import type { SubstitutionScope } from '../../../food-api-shared-types.js';
 import type { CreateSubstitutionFormInput, SubstitutionEndpointInput } from './types.js';
 
 export interface FormState {

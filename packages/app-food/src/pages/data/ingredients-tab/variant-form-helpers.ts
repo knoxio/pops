@@ -2,7 +2,7 @@
  * Form value helpers for `VariantFormDialog`. Kept as a sibling so the
  * dialog component stays under the per-function lint cap.
  */
-import type { IngredientVariantRow } from '@pops/app-food-db';
+import type { IngredientVariantRow } from './ingredient-wire-types.js';
 
 export type Unit = 'g' | 'ml' | 'count';
 export const UNITS: readonly Unit[] = ['g', 'ml', 'count'];

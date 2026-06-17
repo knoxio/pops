@@ -20,8 +20,7 @@ import {
 } from './cook-modal-helpers.js';
 import { CookModalContent } from './CookModalContent.js';
 
-import type { CookPreparation } from '@pops/app-food-db';
-
+import type { CookPreparation } from './cook-resolution-types.js';
 import type { CookModalProps } from './CookModal.js';
 import type { useCookResolution } from './useCookResolution.js';
 

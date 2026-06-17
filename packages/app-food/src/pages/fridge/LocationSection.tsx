@@ -7,7 +7,10 @@ import { type ReactElement } from 'react';
 
 import { BatchRow, type BatchAction } from './BatchRow.js';
 
-import type { BatchLocation, BatchUnit, FridgeLocationSection } from '@pops/app-food-db';
+import type { BatchLocation, BatchUnit } from '../../food-api-shared-types.js';
+import type { FridgeViewResponses } from '../../food-api/types.gen.js';
+
+type FridgeLocationSection = FridgeViewResponses[200]['sections'][number];
 
 const LOCATION_LABELS: Record<BatchLocation, string> = {
   pantry: 'Pantry',

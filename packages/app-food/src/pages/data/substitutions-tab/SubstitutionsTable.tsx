@@ -2,8 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 import { SubstitutionRow } from './SubstitutionRow';
 
-import type { HydratedSubstitutionView } from '@pops/app-food-db';
-
+import type { HydratedSubstitutionView } from './substitution-wire-types.js';
 import type { UpdateSubstitutionFormInput } from './types';
 
 interface Props {

@@ -4,7 +4,7 @@ import { unwrap } from '../../food-api-helpers.js';
 import { recipesGetForRendering, recipesListDrafts } from '../../food-api/index.js';
 import { asRenderingPayload } from './recipe-payloads.js';
 
-import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
+import type { RecipeVersionWithCompiledData } from '../../components/recipe-render-types.js';
 
 export interface RecipeDetailQueryArgs {
   slug: string;

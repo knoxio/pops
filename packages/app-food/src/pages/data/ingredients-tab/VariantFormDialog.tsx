@@ -23,7 +23,7 @@ import {
 } from './variant-form-helpers';
 import { VariantFormFields } from './VariantFormFields';
 
-import type { IngredientVariantRow } from '@pops/app-food-db';
+import type { IngredientVariantRow } from './ingredient-wire-types.js';
 
 export type { VariantFormValues } from './variant-form-helpers';
 

@@ -125,8 +125,8 @@ dir = "apps/pops-api"
 run = ["pnpm db:seed", "mise run db:seed:food"]
 
 [tasks."db:seed:food"]
-description = "Wipe food + lists tables only, then seed PRD-113 phase-1 food fixtures"
-dir = "packages/app-food"
+description = "Wipe food tables only, then seed PRD-113 phase-1 food fixtures"
+dir = "pillars/food"
 env = { SQLITE_PATH = "{{config_root}}/apps/pops-api/data/pops.db" }
 run = "pnpm db:seed:food"
 

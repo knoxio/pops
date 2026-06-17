@@ -385,6 +385,7 @@ export type {
   RecipesGetForRenderingData,
   RecipesGetForRenderingError,
   RecipesGetForRenderingErrors,
+  RecipesGetForRenderingResponse,
   RecipesGetForRenderingResponses,
   RecipesListData,
   RecipesListDraftsData,

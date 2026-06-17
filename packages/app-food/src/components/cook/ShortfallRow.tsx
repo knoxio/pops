@@ -26,8 +26,7 @@ import type {
   LineConsumeNeed,
   LineResolution,
   LineShortfall,
-} from '@pops/app-food-db';
-
+} from './cook-resolution-types.js';
 import type { SubCandidate, SubCandidateBatch } from './useSubstitutionResolution.js';
 
 type Kind = LineResolution['kind'];

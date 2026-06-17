@@ -18,7 +18,7 @@ import { planWeekView } from '../../food-api/index.js';
 import { useIsMobile } from './useIsMobile.js';
 import { usePlanEntryEdit } from './usePlanEntryEdit.js';
 
-import type { WirePlanEntryRow } from '@pops/app-food-db';
+import type { WirePlanEntryRow } from './plan-wire-types.js';
 
 export interface PlanEntryEditSheetProps {
   entryId: number | null;

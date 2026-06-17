@@ -19,7 +19,9 @@ import { buildEditorIssues } from './compile-result-issues.js';
 import { asRenderingPayload } from './recipe-payloads.js';
 import { useRecipeEditMutations } from './useRecipeEditMutations.js';
 
-import type { CompileResult } from '@pops/app-food-db';
+import type { RecipesSaveDraftResponses } from '../../food-api/types.gen.js';
+
+type CompileResult = RecipesSaveDraftResponses[200]['compile'];
 
 /**
  * `/food/recipes/:slug/edit` — edits the latest draft of `:slug`. If the

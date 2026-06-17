@@ -13,8 +13,11 @@ import { IngredientTabDialogs } from './ingredient-tab-dialogs';
 import { IngredientDetailPanel } from './IngredientDetailPanel';
 import { IngredientsTree } from './IngredientsTree';
 
-import type { DeleteBlockerSummary, IngredientRow, IngredientVariantRow } from '@pops/app-food-db';
-
+import type {
+  DeleteBlockerSummary,
+  IngredientRow,
+  IngredientVariantRow,
+} from './ingredient-wire-types.js';
 import type { useFocusedIngredient } from './useFocusedIngredient';
 import type { useIngredientActions } from './useIngredientActions';
 import type { useIngredientsTab } from './useIngredientsTab';

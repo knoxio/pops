@@ -8,7 +8,7 @@
  * lands its real shortfall-resolution UX.
  */
 
-import type { ConsumptionOverride } from '@pops/app-food-db';
+import type { ConsumptionOverride } from './cook-resolution-types.js';
 
 export interface MarkCookedInput {
   recipeVersionId: number;

@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router';
 
-import type { IngredientRow } from '@pops/app-food-db';
+import type { IngredientRow } from './ingredient-wire-types.js';
 
 const HIGHLIGHT_DURATION_MS = 2000;
 

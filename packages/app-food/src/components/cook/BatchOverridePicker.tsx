@@ -28,8 +28,7 @@ import { useSubstitutionResolution } from './useSubstitutionResolution.js';
 
 import type { ReactNode } from 'react';
 
-import type { BatchForConsumeRow } from '@pops/app-food-db';
-
+import type { BatchForConsumeRow } from './cook-resolution-types.js';
 import type { SubCandidate, SubCandidateBatch } from './useSubstitutionResolution.js';
 
 export type BatchPickerSelection =

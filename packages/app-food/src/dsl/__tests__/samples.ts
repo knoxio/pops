@@ -1,7 +1,7 @@
 /**
  * 11 sample recipes covering the grammar's positive surface — PRD-114 AC.
  *
- * Duplicated from `@pops/app-food-db/src/dsl/__tests__/samples.ts`. The
+ * Duplicated from the food pillar's `src/dsl/__tests__/samples.ts`. The
  * canonical copy lives there alongside the parser tests; this copy stays
  * here because the Lezer parity test (which stays in app-food alongside
  * the Lezer grammar) needs the same fixtures and importing test files

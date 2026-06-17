@@ -7,7 +7,7 @@
  * pointing at an ingredient missing from the list — e.g. a search filter
  * dropped it) get re-rooted so they remain visible.
  */
-import type { IngredientRow } from '@pops/app-food-db';
+import type { IngredientRow } from './ingredient-wire-types.js';
 
 export interface IngredientTreeNode {
   row: IngredientRow;

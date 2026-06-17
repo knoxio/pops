@@ -11,8 +11,7 @@ import { useCallback, useState } from 'react';
 
 import { useVariantActionMutations } from './useVariantActionMutations';
 
-import type { IngredientVariantRow } from '@pops/app-food-db';
-
+import type { IngredientVariantRow } from './ingredient-wire-types.js';
 import type { VariantFormValues } from './VariantFormDialog';
 
 type DialogMode = 'create' | 'edit';

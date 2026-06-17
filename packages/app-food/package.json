@@ -9,7 +9,6 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "db:seed:food": "tsx scripts/db-seed-food.ts",
     "generate:food-client": "openapi-ts && oxfmt --write src/food-api"
   },
   "dependencies": {
@@ -25,6 +24,7 @@
     "@lezer/highlight": "^1.2.3",
     "@lezer/lr": "^1.4.10",
     "@pops/api": "workspace:*",
+    "@pops/food": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",

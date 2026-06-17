@@ -15,7 +15,7 @@
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { InspectorSourceView } from '@pops/app-food-db';
+import type { InspectorSourceView } from './inspector-wire-types.js';
 
 interface Props {
   source: InspectorSourceView;

@@ -11,7 +11,7 @@ import { formatQty } from './cook-format.js';
  */
 import type { ReactNode } from 'react';
 
-import type { LineResolution, LineShortfall } from '@pops/app-food-db';
+import type { LineResolution, LineShortfall } from './cook-resolution-types.js';
 
 type Kind = LineResolution['kind'];
 

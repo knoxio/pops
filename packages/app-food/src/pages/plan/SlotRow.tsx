@@ -7,7 +7,7 @@ import { useState, type ReactElement } from 'react';
 
 import { Button } from '@pops/ui';
 
-import type { WirePlanSlotRow } from '@pops/app-food-db';
+import type { WirePlanSlotRow } from './plan-wire-types.js';
 
 export interface SlotRowProps {
   slot: WirePlanSlotRow;

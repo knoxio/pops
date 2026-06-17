@@ -7,7 +7,7 @@ import { SubstitutionsTable } from './SubstitutionsTable';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import type { HydratedSubstitutionView } from '@pops/app-food-db';
+import type { HydratedSubstitutionView } from './substitution-wire-types.js';
 
 function useFoodI18n(): i18n {
   return useMemo(() => {

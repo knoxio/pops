@@ -16,7 +16,10 @@ import { unwrap } from '../../food-api-helpers.js';
 import { fridgeRecipesUsingBatch } from '../../food-api/index.js';
 import { formatQty } from './format.js';
 
-import type { BatchUnit, RecipeForCookRow } from '@pops/app-food-db';
+import type { BatchUnit } from '../../food-api-shared-types.js';
+import type { FridgeRecipesUsingBatchResponses } from '../../food-api/types.gen.js';
+
+type RecipeForCookRow = FridgeRecipesUsingBatchResponses[200]['items'][number];
 
 export interface CookNowPickerProps {
   batchId: number | null;

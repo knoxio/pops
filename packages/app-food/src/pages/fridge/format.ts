@@ -2,7 +2,7 @@
  * Display formatters for fridge rows — qty + expiry strings.
  */
 
-import type { BatchUnit } from '@pops/app-food-db';
+import type { BatchUnit } from '../../food-api-shared-types.js';
 
 export function formatQty(qty: number, unit: BatchUnit): string {
   if (unit === 'count') {

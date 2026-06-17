@@ -22,9 +22,8 @@ import { unwrap } from '../../food-api-helpers.js';
 import { planMoveEntry, planReorderSlot } from '../../food-api/index.js';
 import { resolveGridDrop } from './plan-grid-dnd.js';
 
-import type { WirePlanEntryRow } from '@pops/app-food-db';
-
 import type { PlanMoveEntryData, PlanReorderSlotData } from '../../food-api/types.gen.js';
+import type { WirePlanEntryRow } from './plan-wire-types.js';
 
 type PlanMoveEntryInput = NonNullable<PlanMoveEntryData['body']> & { id: number };
 type PlanReorderSlotInput = NonNullable<PlanReorderSlotData['body']>;

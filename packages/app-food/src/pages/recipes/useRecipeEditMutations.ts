@@ -8,7 +8,9 @@ import { unwrap } from '../../food-api-helpers.js';
 import { recipesArchiveVersion, recipesPromote, recipesSaveDraft } from '../../food-api/index.js';
 import { asCompileResult } from './recipe-payloads.js';
 
-import type { CompileResult } from '@pops/app-food-db';
+import type { RecipesSaveDraftResponses } from '../../food-api/types.gen.js';
+
+type CompileResult = RecipesSaveDraftResponses[200]['compile'];
 
 interface UseRecipeEditMutationsArgs {
   slug: string;

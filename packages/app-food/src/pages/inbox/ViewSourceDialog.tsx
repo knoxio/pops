@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from '@pops/ui';
 
-import type { IngestSourceKind } from '@pops/app-food-db';
+import type { IngestSourceKind } from '../../food-api-shared-types.js';
 
 export interface ViewSource {
   sourceId: number;

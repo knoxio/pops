@@ -1,10 +1,10 @@
 /**
  * Food-only seed runner (PRD-113 phase 1 + 3).
  *
- * Wipes food + lists tables in the SQLite file at `SQLITE_PATH` (or the dev
- * default `./apps/pops-api/data/pops.db` relative to the repo root) and
- * invokes `seedFood`. Distinct from `apps/pops-api/scripts/db-seed.ts` —
- * leaves finance, inventory, media, and ai_inference rows alone.
+ * Wipes food tables in the SQLite file at `SQLITE_PATH` (or the dev
+ * default `./data/pops.db` relative to `apps/pops-api`) and invokes
+ * `seedFood`. Distinct from `apps/pops-api/scripts/db-seed.ts` — leaves
+ * finance, inventory, media, and ai_inference rows alone.
  *
  * Run via `mise run db:seed:food` from the repo root. The mise task `cd`s
  * into `apps/pops-api` so `./data/pops.db` resolves correctly without an
@@ -15,9 +15,8 @@ import { existsSync } from 'node:fs';
 import BetterSqlite3 from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 
-import { seedFood } from '@pops/app-food-db/seed';
-
-import { compileRecipeVersion } from '../src/dsl/compile';
+import { compileRecipeVersion } from '../src/dsl/compile.js';
+import { seedFood } from '../src/seed/index.js';
 
 if (process.env.NODE_ENV === 'production') {
   console.error("❌ Refusing to run: NODE_ENV is 'production'.");
@@ -33,16 +32,14 @@ if (!existsSync(DB_PATH)) {
   process.exit(1);
 }
 
-// Wipe only food + lists tables. Children first; `foreign_keys = OFF` makes
-// the order purely defensive. PRD-116 (recipe_lines / recipe_steps /
+// Wipe only food tables. Children first; `foreign_keys = OFF` makes the
+// order purely defensive. PRD-116 (recipe_lines / recipe_steps /
 // recipe_version_proposed_slugs) and PRD-123 (unit_conversions /
 // ingredient_weights) tables are wiped too so re-running the seed stays
 // idempotent — the conversion tables carry a UNIQUE on (from_unit,to_unit)
 // / a partial UNIQUE on (ingredient_id, variant_id, unit) that would
 // otherwise collide on the second run.
-const FOOD_AND_LISTS_TABLES = [
-  'list_items',
-  'lists',
+const FOOD_TABLES = [
   'batch_consumptions',
   'recipe_runs',
   'batches',
@@ -57,6 +54,7 @@ const FOOD_AND_LISTS_TABLES = [
   'recipes',
   'ingredient_weights',
   'unit_conversions',
+  'ingredient_tags',
   'ingredient_aliases',
   'ingredient_variants',
   'prep_states',
@@ -69,19 +67,19 @@ const db = new BetterSqlite3(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('busy_timeout = 5000');
 
-console.log(`🌱 Seeding food + lists fixtures at ${DB_PATH}...\n`);
+console.log(`🌱 Seeding food fixtures at ${DB_PATH}...\n`);
 
 db.pragma('foreign_keys = OFF');
 try {
   db.transaction(() => {
-    for (const table of FOOD_AND_LISTS_TABLES) {
+    for (const table of FOOD_TABLES) {
       db.exec(`DELETE FROM "${table}"`);
     }
     const drizzleDb = drizzle(db);
     // Phase 2: drive PRD-116's compile + PRD-107's promote inline so the
     // seed DB ends up with materialised recipe_lines / recipe_steps and
     // every recipe's v1 promoted to `current`.
-    const summary = seedFood(drizzleDb, drizzleDb, { compileRecipeVersion });
+    const summary = seedFood(drizzleDb, { compileRecipeVersion });
     console.log('\n✅ Food seed complete\n');
     console.log('📊 Counts:');
     const printRow = (label: string, value: number): void => {
@@ -101,11 +99,10 @@ try {
     printRow('batches', summary.batches);
     printRow('recipe_runs', summary.recipeRuns);
     printRow('batch_consumptions', summary.batchConsumptions);
-    printRow('lists', summary.lists);
-    printRow('list_items', summary.listItems);
     printRow('ingest_sources', summary.ingestSources);
     printRow('unit_conversions', summary.unitConversions);
     printRow('ingredient_weights', summary.ingredientWeights);
+    printRow('ingredient_tags', summary.ingredientTags);
   })();
 } finally {
   db.pragma('foreign_keys = ON');

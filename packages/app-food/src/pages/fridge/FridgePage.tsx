@@ -32,7 +32,10 @@ import { LocationSectionView } from './LocationSection.js';
 import { RelocateBatchModal } from './RelocateBatchModal.js';
 import { DEFAULT_FRIDGE_FILTERS, type FridgeFilterState, useFridgeView } from './useFridgeView.js';
 
-import type { BatchLocation, BatchUnit, FridgeView } from '@pops/app-food-db';
+import type { BatchLocation, BatchUnit } from '../../food-api-shared-types.js';
+import type { FridgeViewResponses } from '../../food-api/types.gen.js';
+
+type FridgeView = FridgeViewResponses[200];
 
 const SEARCH_DEBOUNCE_MS = 200;
 
