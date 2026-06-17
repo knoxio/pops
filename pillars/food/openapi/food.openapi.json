@@ -5791,6 +5791,951 @@
         "tags": ["ingredients"]
       }
     },
+    "/plan/entries": {
+      "post": {
+        "operationId": "plan.addEntry",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "date": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  },
+                  "notes": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "plannedServings": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "recipeId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "recipeVersionId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "slot": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "type": "string"
+                  }
+                },
+                "required": ["date", "slot", "recipeId", "plannedServings"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        },
+                        "position": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["ok", "id", "position"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "NotFound",
+                            "AlreadyCooked",
+                            "BadDate",
+                            "BadSlot",
+                            "RecipeArchived",
+                            "RecipeHasNoCurrentVersion"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Add a plan entry",
+        "tags": ["plan"]
+      }
+    },
+    "/plan/entries/{id}": {
+      "delete": {
+        "operationId": "plan.deleteEntry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "NotFound",
+                            "AlreadyCooked",
+                            "BadDate",
+                            "BadSlot",
+                            "RecipeArchived",
+                            "RecipeHasNoCurrentVersion"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Delete a plan entry",
+        "tags": ["plan"]
+      },
+      "patch": {
+        "operationId": "plan.updateEntry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "notes": {
+                    "maxLength": 1000,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "plannedServings": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "recipeVersionId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "NotFound",
+                            "AlreadyCooked",
+                            "BadDate",
+                            "BadSlot",
+                            "RecipeArchived",
+                            "RecipeHasNoCurrentVersion"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Update a plan entry",
+        "tags": ["plan"]
+      }
+    },
+    "/plan/entries/{id}/move": {
+      "post": {
+        "operationId": "plan.moveEntry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "date": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  },
+                  "position": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "slot": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "type": "string"
+                  }
+                },
+                "required": ["date", "slot"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "NotFound",
+                            "AlreadyCooked",
+                            "BadDate",
+                            "BadSlot",
+                            "RecipeArchived",
+                            "RecipeHasNoCurrentVersion"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Move a plan entry to another date/slot",
+        "tags": ["plan"]
+      }
+    },
+    "/plan/reorder": {
+      "post": {
+        "operationId": "plan.reorderSlot",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "date": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  },
+                  "orderedIds": {
+                    "items": {
+                      "exclusiveMinimum": true,
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "slot": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "type": "string"
+                  }
+                },
+                "required": ["date", "slot", "orderedIds"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": ["BadIds", "EmptySlot"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Reorder entries within a date/slot cell",
+        "tags": ["plan"]
+      }
+    },
+    "/plan/slots": {
+      "get": {
+        "operationId": "plan.listSlots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "slots": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "displayOrder": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "isDefault": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["slug", "name", "displayOrder", "isDefault"],
+                        "type": "object"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    }
+                  },
+                  "required": ["slots"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List plan slots",
+        "tags": ["plan"]
+      },
+      "post": {
+        "operationId": "plan.addSlot",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "slug": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "type": "string"
+                  }
+                },
+                "required": ["slug", "name"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": ["SlugTaken", "SlugInvalid"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Add a plan slot",
+        "tags": ["plan"]
+      }
+    },
+    "/plan/slots/{slug}": {
+      "delete": {
+        "operationId": "plan.deleteSlot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": ["SlotNotFound", "CannotDeleteDefault", "SlotInUse"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Delete a plan slot",
+        "tags": ["plan"]
+      },
+      "patch": {
+        "operationId": "plan.updateSlot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "displayOrder": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "name": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": ["SlotNotFound", "CannotEditDefault"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Update a plan slot",
+        "tags": ["plan"]
+      }
+    },
+    "/plan/week": {
+      "get": {
+        "operationId": "plan.weekView",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "weekStart",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entries": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "date": {
+                            "type": "string"
+                          },
+                          "heroImagePath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "plannedServings": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "position": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "recipeId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "recipeRunCookedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "recipeRunId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "recipeSlug": {
+                            "type": "string"
+                          },
+                          "recipeTitle": {
+                            "type": "string"
+                          },
+                          "recipeType": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "recipeVersionId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "slot": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "date",
+                          "slot",
+                          "position",
+                          "recipeId",
+                          "recipeSlug",
+                          "recipeTitle",
+                          "recipeType",
+                          "heroImagePath",
+                          "plannedServings",
+                          "recipeVersionId",
+                          "recipeRunId",
+                          "recipeRunCookedAt",
+                          "notes"
+                        ],
+                        "type": "object"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    },
+                    "slots": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "displayOrder": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "isDefault": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["slug", "name", "displayOrder", "isDefault"],
+                        "type": "object"
+                      },
+                      "readOnly": true,
+                      "type": "array"
+                    },
+                    "weekEnd": {
+                      "type": "string"
+                    },
+                    "weekStart": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["weekStart", "weekEnd", "slots", "entries"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Denormalised meal-plan week view",
+        "tags": ["plan"]
+      }
+    },
     "/prep-states": {
       "get": {
         "operationId": "prepStates.list",
@@ -7813,6 +8758,287 @@
         },
         "summary": "Fork a new draft from a recipe’s current version",
         "tags": ["recipes"]
+      }
+    },
+    "/shopping/generate": {
+      "post": {
+        "operationId": "shopping.generate",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "endDate": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  },
+                  "listName": {
+                    "type": "string"
+                  },
+                  "startDate": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  }
+                },
+                "required": ["startDate", "endDate", "listName"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "itemCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "listId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok", "listId", "itemCount"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "BadDateRange",
+                            "NoPlanEntries",
+                            "ListNameEmpty",
+                            "BulkAddFailed"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Generate a shopping list from a plan range (writes to lists)",
+        "tags": ["shopping"]
+      }
+    },
+    "/shopping/preview": {
+      "post": {
+        "operationId": "shopping.preview",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "endDate": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  },
+                  "startDate": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  }
+                },
+                "required": ["startDate", "endDate"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "endDate": {
+                      "type": "string"
+                    },
+                    "planEntryCount": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "recipeTitles": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "sections": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "items": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "buyQty": {
+                                  "type": "number"
+                                },
+                                "canonicalUnit": {
+                                  "enum": ["g", "ml", "count"],
+                                  "type": "string"
+                                },
+                                "ingredientId": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                },
+                                "ingredientName": {
+                                  "type": "string"
+                                },
+                                "isUnconverted": {
+                                  "type": "boolean"
+                                },
+                                "needQty": {
+                                  "type": "number"
+                                },
+                                "originalQty": {
+                                  "nullable": true,
+                                  "type": "number"
+                                },
+                                "originalUnit": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "pantryQty": {
+                                  "type": "number"
+                                },
+                                "sourceLineIds": {
+                                  "items": {
+                                    "maximum": 9007199254740991,
+                                    "minimum": -9007199254740991,
+                                    "type": "integer"
+                                  },
+                                  "type": "array"
+                                },
+                                "variantId": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "nullable": true,
+                                  "type": "integer"
+                                },
+                                "variantName": {
+                                  "nullable": true,
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "ingredientId",
+                                "ingredientName",
+                                "variantId",
+                                "variantName",
+                                "needQty",
+                                "pantryQty",
+                                "buyQty",
+                                "canonicalUnit",
+                                "isUnconverted",
+                                "originalQty",
+                                "originalUnit",
+                                "sourceLineIds"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "sectionLabel": {
+                            "type": "string"
+                          },
+                          "sectionTag": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": ["sectionTag", "sectionLabel", "items"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "skippedPlanEntryCount": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "startDate": {
+                      "type": "string"
+                    },
+                    "uncategorisedIngredientIds": {
+                      "items": {
+                        "maximum": 9007199254740991,
+                        "minimum": -9007199254740991,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "startDate",
+                    "endDate",
+                    "planEntryCount",
+                    "skippedPlanEntryCount",
+                    "sections",
+                    "uncategorisedIngredientIds",
+                    "recipeTitles"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Preview the shopping list a plan range would generate",
+        "tags": ["shopping"]
       }
     },
     "/slugs/search": {
