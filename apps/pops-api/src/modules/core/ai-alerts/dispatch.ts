@@ -59,7 +59,7 @@ export async function dispatchAlert(
       if (channel === 'nudge') {
         delivered = options.nudgeDispatcher
           ? await options.nudgeDispatcher(alert)
-          : dispatchNudge(alert);
+          : await dispatchNudge(alert);
       } else if (channel === 'telegram') {
         delivered = options.telegramDispatcher
           ? await options.telegramDispatcher(alert)

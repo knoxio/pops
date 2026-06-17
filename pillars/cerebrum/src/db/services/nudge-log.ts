@@ -6,6 +6,7 @@
  * here cover the persistence-layer surface the pops-api `NudgeService`
  * needs from this package:
  *
+ *   - {@link createNudge} — insert one alert-driven nudge (no cooldown dedup).
  *   - {@link persistCandidates} — insert new nudges with cooldown dedup.
  *   - {@link listContradictions} — paginated read of contradiction-pattern
  *     nudges, with the SQL-side `json_extract` filter that prevents
@@ -32,10 +33,63 @@ import { generateNudgeId, rowToNudge } from './nudge-log-helpers.js';
 import type { CerebrumDb } from './internal.js';
 import type {
   Nudge,
+  NudgeAction,
   NudgeCandidate,
   NudgePersistenceThresholds,
+  NudgePriority,
   NudgeStatus,
+  NudgeType,
 } from './nudge-log-types.js';
+
+/** Input for {@link createNudge} — a single alert-driven nudge insert. */
+export interface CreateNudgeInput {
+  type?: NudgeType;
+  title: string;
+  body: string;
+  priority: NudgePriority;
+  engramIds?: string[];
+  expiresAt?: string | null;
+  action?: NudgeAction | null;
+}
+
+/**
+ * Insert exactly one nudge and return it as a {@link Nudge}.
+ *
+ * Unlike {@link persistCandidates}, this path applies NO cooldown dedup: the
+ * caller (the ai-alerts pipeline) wants every alert to surface a row rather
+ * than be silently swallowed by a same-type/same-engrams cooldown window.
+ */
+export function createNudge(
+  db: CerebrumDb,
+  input: CreateNudgeInput,
+  now: () => Date = () => new Date()
+): Nudge {
+  const timestamp = now();
+  const type = input.type ?? 'insight';
+  const action = input.action ?? null;
+  const id = generateNudgeId(type, timestamp);
+
+  db.insert(nudgeLog)
+    .values({
+      id,
+      type,
+      title: input.title,
+      body: input.body,
+      engramIds: JSON.stringify(input.engramIds ?? []),
+      priority: input.priority,
+      status: 'pending',
+      createdAt: timestamp.toISOString(),
+      expiresAt: input.expiresAt ?? null,
+      actionType: action?.type ?? null,
+      actionLabel: action?.label ?? null,
+      actionParams: action ? JSON.stringify(action.params) : null,
+    })
+    .run();
+
+  const [row] = db.select().from(nudgeLog).where(eq(nudgeLog.id, id)).all();
+  if (!row) throw new Error(`createNudge: inserted nudge '${id}' not found on read-back`);
+  return rowToNudge(row);
+}
 
 /** Insert new nudges, skipping any whose (type, sorted engramIds) pair is
  * still inside the cooldown window. Returns the number created.
