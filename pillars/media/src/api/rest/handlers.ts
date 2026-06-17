@@ -10,6 +10,8 @@ import { initServer } from '@ts-rest/express';
 import { mediaContract } from '../../contract/rest.js';
 import { type OpenedMediaDb } from '../../db/index.js';
 import { makeMoviesHandlers } from './movies-handlers.js';
+import { makeShelfImpressionsHandlers } from './shelf-impressions-handlers.js';
+import { makeWatchlistHandlers } from './watchlist-handlers.js';
 
 const server: ReturnType<typeof initServer> = initServer();
 
@@ -19,5 +21,7 @@ export function makeMediaRestHandlers(deps: {
   const db = deps.mediaDb.db;
   return server.router(mediaContract, {
     movies: makeMoviesHandlers(db),
+    watchlist: makeWatchlistHandlers(db),
+    shelfImpressions: makeShelfImpressionsHandlers(db),
   });
 }
