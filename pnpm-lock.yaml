@@ -2049,6 +2049,9 @@ importers:
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
+      js-yaml:
+        specifier: ^4.2.0
+        version: 4.2.0
       sqlite-vec:
         specifier: ^0.1.7
         version: 0.1.9
@@ -2062,6 +2065,9 @@ importers:
       '@types/express':
         specifier: ^5.0.4
         version: 5.0.6
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
       '@types/node':
         specifier: ^25.9.3
         version: 25.9.3

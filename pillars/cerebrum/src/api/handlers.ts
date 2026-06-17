@@ -17,6 +17,11 @@ export interface CerebrumApiDeps {
   cerebrumDb: OpenedCerebrumDb;
   /** In-memory registry of on-disk engram templates. */
   templateRegistry: TemplateRegistry;
+  /**
+   * Root directory holding the engram Markdown files (the SQLite index is a
+   * regenerable cache of it). Resolved from `CEREBRUM_ENGRAMS_DIR` at boot.
+   */
+  engramRoot: string;
   /** Semver of the build, surfaced on the health response. */
   version: string;
   /**

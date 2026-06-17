@@ -3,6 +3,127 @@
  * Do not edit by hand — regenerate via `pnpm -F @pops/cerebrum generate:api-types`.
  */
 export interface paths {
+  '/engrams': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create an engram (optionally scaffolded from a template). */
+    post: operations['engrams.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/engrams/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** List engrams matching the supplied filters, with a total count. */
+    post: operations['engrams.list'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/engrams/{engramId}/scopes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add scopes to an engram (merged with its existing scopes). */
+    post: operations['scopes.assign'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/engrams/{engramId}/scopes/remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Remove scopes from an engram (rejects removing the last scope). */
+    post: operations['scopes.remove'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/engrams/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an engram and its Markdown body. */
+    get: operations['engrams.get'];
+    put?: never;
+    post?: never;
+    /** Archive an engram (soft delete — moves the file under .archive/). */
+    delete: operations['engrams.delete'];
+    options?: never;
+    head?: never;
+    /** Update an engram (title/body/scopes/tags/status/template). */
+    patch: operations['engrams.update'];
+    trace?: never;
+  };
+  '/engrams/{sourceId}/links': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a bidirectional link from one engram to another. */
+    post: operations['engrams.link'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/engrams/{sourceId}/links/{targetId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove the link between two engrams. */
+    delete: operations['engrams.unlink'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/plexus/adapters': {
     parameters: {
       query?: never;
@@ -106,6 +227,108 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/scopes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List known scopes with engram counts, optionally filtered by prefix. */
+    get: operations['scopes.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/scopes/filter': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Return engrams matching scope prefixes (secret-scoped excluded by default). */
+    post: operations['scopes.filter'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/scopes/reclassify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Bulk prefix-rename a scope across every matching engram (atomic). */
+    post: operations['scopes.reclassify'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/scopes/reconcile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reconcile user-suggested scopes against the known vocabulary. */
+    post: operations['scopes.reconcile'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/scopes/validate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Validate a single scope string; returns structured errors on failure. */
+    post: operations['scopes.validate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List known tags ranked by usage count, optionally filtered by prefix. */
+    get: operations['tags.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/templates': {
     parameters: {
       query?: never;
@@ -152,6 +375,605 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'engrams.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          body?: string;
+          customFields?: {
+            [key: string]: unknown;
+          };
+          links?: string[];
+          scopes?: string[];
+          source?: string;
+          tags?: string[];
+          template?: string;
+          title: string;
+          type: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engram: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'engrams.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          ids?: string[];
+          limit?: number;
+          offset?: number;
+          scopes?: string[];
+          search?: string;
+          sort?: {
+            /** @enum {string} */
+            direction: 'asc' | 'desc';
+            /** @enum {string} */
+            field: 'created_at' | 'modified_at' | 'title';
+          };
+          /** @enum {string} */
+          status?: 'active' | 'archived' | 'consolidated' | 'stale';
+          tags?: string[];
+          type?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engrams: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            }[];
+            total: number;
+          };
+        };
+      };
+    };
+  };
+  'scopes.assign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        engramId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          scopes: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engram: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'scopes.remove': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        engramId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          scopes: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engram: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'engrams.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            body: string;
+            engram: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'engrams.delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            success: true;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'engrams.update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          body?: string;
+          customFields?: {
+            [key: string]: unknown;
+          };
+          scopes?: string[];
+          /** @enum {string} */
+          status?: 'active' | 'archived' | 'consolidated' | 'stale';
+          tags?: string[];
+          template?: string;
+          title?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engram: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'engrams.link': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          targetId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            success: true;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'engrams.unlink': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sourceId: string;
+        targetId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            success: true;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'plexus.adapters.list': {
     parameters: {
       query?: never;
@@ -428,6 +1250,260 @@ export interface operations {
         content: {
           'application/json': {
             success: boolean;
+          };
+        };
+      };
+    };
+  };
+  'scopes.list': {
+    parameters: {
+      query?: {
+        prefix?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            scopes: {
+              count: number;
+              scope: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'scopes.filter': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          includeSecret?: boolean;
+          scopes: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engrams: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'scopes.reclassify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          dryRun?: boolean;
+          fromScope: string;
+          toScope: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            count: number;
+            ids: string[];
+            rolled_back?: boolean;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'scopes.reconcile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          suggestedScopes: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            reconciled: {
+              canonical: string;
+              confidence: number;
+              original: string;
+              reason: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'scopes.validate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          scope: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            errors?: string[];
+            scope?: string;
+            valid: boolean;
+          };
+        };
+      };
+    };
+  };
+  'tags.list': {
+    parameters: {
+      query?: {
+        prefix?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tags: {
+              count: number;
+              tag: string;
+            }[];
           };
         };
       };
