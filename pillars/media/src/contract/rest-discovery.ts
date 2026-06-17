@@ -5,9 +5,8 @@
  * assembly + paging.
  *
  * Ported from the monolith `media.discovery.*` tRPC routers (basic / tmdb /
- * shelf). Two paths are deliberately stubbed pending the Plex Discover client
- * (wave-3 follow-up): `trendingPlex` always returns `{ data: null }`, and the
- * Plex-backed `trending-plex` shelf is omitted from the session.
+ * shelf). `trendingPlex` returns the Plex Discover trending feed, or `null`
+ * when Plex is not connected (no token).
  *
  * Route order matters: literal sub-paths are declared before `:tmdbId` /
  * `:shelfId` params so the Express adapter doesn't capture them parametrically.
@@ -18,6 +17,7 @@ import { z } from 'zod';
 import {
   AssembleSessionResultSchema,
   ContextPicksResultSchema,
+  DiscoverResultSchema,
   DismissBody,
   GenreSpotlightPageQuery,
   GenreSpotlightPageResultSchema,
@@ -98,8 +98,8 @@ export const mediaDiscoveryContract = c.router({
     method: 'GET',
     path: '/discovery/trending-plex',
     query: z.object({ limit: z.coerce.number().int().positive().max(50).optional() }),
-    responses: { 200: z.object({ data: z.null() }) },
-    summary: 'Trending from Plex Discover (STUB: always null until the client lands)',
+    responses: { 200: z.object({ data: z.array(DiscoverResultSchema).nullable() }) },
+    summary: 'Trending from Plex Discover (null when Plex is not connected)',
   },
   watchlistRecommendations: {
     method: 'GET',

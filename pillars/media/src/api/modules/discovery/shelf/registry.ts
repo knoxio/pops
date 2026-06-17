@@ -4,9 +4,6 @@
  * Unlike the monolith (module-load-time `registerShelf` side-effects into a
  * mutable global), the pillar assembles the registry as a frozen array imported
  * explicitly here. Deterministic, test-friendly, no double-registration risk.
- *
- * The Plex-Discover-backed `trending-plex` shelf is intentionally absent
- * (Plex Discover client not ported — wave-3 follow-up).
  */
 import { becauseYouWatchedShelf } from './because-you-watched.js';
 import { contextShelfDefinition } from './context-shelf.js';
@@ -16,6 +13,7 @@ import {
   fromYourServerShelf,
   fromYourWatchlistShelf,
   recommendationsShelf,
+  trendingPlexShelf,
   trendingTmdbShelf,
   worthRewatchingShelf,
 } from './existing-shelves.js';
@@ -58,6 +56,7 @@ const SHELF_DEFINITIONS: readonly ShelfDefinition[] = Object.freeze([
   awardWinnersShelf,
   decadePicksShelf,
   trendingTmdbShelf,
+  trendingPlexShelf,
   recommendationsShelf,
   fromYourWatchlistShelf,
   worthRewatchingShelf,

@@ -4,7 +4,7 @@
  * Covers the discover surface ported from the pops-api monolith: the dismiss
  * pile round-trip, the preference profile reflecting seeded scores + genres,
  * from-your-server excluding watched + ordering by profile, TMDB trending /
- * recommendations shape (client mocked), the trendingPlex null stub, session
+ * recommendations shape (client mocked), trendingPlex null without a token, session
  * assembly (shelves with items, impressions recorded, dismissed excluded), and
  * shelf paging.
  *
@@ -301,7 +301,7 @@ describe('discovery — TMDB-backed (client mocked)', () => {
     expect(res.results[0]).toHaveProperty('matchPercentage');
   });
 
-  it('stubs trendingPlex to null (Plex Discover client not ported)', async () => {
+  it('returns null trendingPlex when no Plex token is configured', async () => {
     const res = await client().discovery.trendingPlex({ limit: 20 });
     expect(res.data).toBeNull();
   });

@@ -1,17 +1,17 @@
 /**
  * Shelves wrapping the standalone discovery sections so they can participate in
- * session assembly: trending (TMDB), recommendations, from-your-watchlist,
- * worth-rewatching, from-your-server.
+ * session assembly: trending (TMDB), trending (Plex Discover), recommendations,
+ * from-your-watchlist, worth-rewatching, from-your-server.
  *
- * NOTE: the monolith's `trending-plex` shelf is a Plex-Discover-backed path.
- * The Plex Discover client is NOT ported yet (wave-3 follow-up), so that shelf
- * is intentionally omitted from the registry — the session simply has one
- * fewer external shelf until Plex-Discover lands.
+ * The `trending-plex` shelf contributes nothing (an empty page) when Plex is
+ * not connected — `getTrendingFromPlex` returns `null` then — so session
+ * assembly simply drops it under the variety threshold.
  *
  * Ported from the monolith `shelf/existing-shelves.ts`.
  */
 import { discoveryService } from '../../../../db/index.js';
 import { getFromYourServer } from '../basic.js';
+import { getTrendingFromPlex } from '../plex-trending.js';
 import { getRecommendations } from '../recommendations.js';
 import { getWatchlistRecommendations } from '../recommendations.js';
 import { getTrending } from '../trending.js';
@@ -60,6 +60,28 @@ export const trendingTmdbShelf: ShelfDefinition = {
           const { results } = await getTrending(deps, 'week', page);
           const start = offset % TMDB_PAGE_SIZE;
           return results.slice(start, start + limit);
+        },
+      },
+    ];
+  },
+};
+
+export const trendingPlexShelf: ShelfDefinition = {
+  id: 'trending-plex',
+  template: false,
+  category: 'external',
+  generate({ deps }: ShelfGenerateArgs): ShelfInstance[] {
+    return [
+      {
+        shelfId: 'trending-plex',
+        title: 'Trending on Plex',
+        subtitle: 'Popular on Plex Discover right now',
+        emoji: '📺',
+        score: 0.55,
+        query: async ({ limit, offset }) => {
+          const results = await getTrendingFromPlex(deps.db, limit + offset);
+          if (results === null) return [];
+          return results.slice(offset, offset + limit);
         },
       },
     ];
