@@ -5967,6 +5967,1960 @@
         "tags": ["comparisons"]
       }
     },
+    "/discovery/context-picks": {
+      "get": {
+        "operationId": "discovery.contextPicks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pages",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "collections": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "emoji": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "results": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "backdropPath": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "genreIds": {
+                                  "items": {
+                                    "type": "number"
+                                  },
+                                  "type": "array"
+                                },
+                                "inLibrary": {
+                                  "type": "boolean"
+                                },
+                                "isWatched": {
+                                  "type": "boolean"
+                                },
+                                "onWatchlist": {
+                                  "type": "boolean"
+                                },
+                                "overview": {
+                                  "type": "string"
+                                },
+                                "popularity": {
+                                  "type": "number"
+                                },
+                                "posterPath": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "posterUrl": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "releaseDate": {
+                                  "type": "string"
+                                },
+                                "rotationExpiresAt": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "tmdbId": {
+                                  "type": "number"
+                                },
+                                "voteAverage": {
+                                  "type": "number"
+                                },
+                                "voteCount": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "tmdbId",
+                                "title",
+                                "overview",
+                                "releaseDate",
+                                "posterPath",
+                                "posterUrl",
+                                "backdropPath",
+                                "voteAverage",
+                                "voteCount",
+                                "genreIds",
+                                "popularity",
+                                "inLibrary",
+                                "isWatched",
+                                "onWatchlist"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "title", "emoji", "results"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["collections"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Time-of-day context picks (optional pages = JSON map of collectionId→page)",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/dismiss": {
+      "post": {
+        "operationId": "discovery.dismiss",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "tmdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["tmdbId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Dismiss a movie from the discover surface (idempotent)",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/dismissed": {
+      "get": {
+        "operationId": "discovery.getDismissed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "type": "number"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List dismissed TMDB ids",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/from-your-server": {
+      "get": {
+        "operationId": "discovery.fromYourServer",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "inLibrary": {
+                            "type": "boolean"
+                          },
+                          "isWatched": {
+                            "type": "boolean"
+                          },
+                          "matchPercentage": {
+                            "type": "number"
+                          },
+                          "matchReason": {
+                            "type": "string"
+                          },
+                          "onWatchlist": {
+                            "type": "boolean"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "popularity",
+                          "inLibrary",
+                          "isWatched",
+                          "onWatchlist",
+                          "matchPercentage",
+                          "matchReason"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["results"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Unwatched library movies scored by the preference profile",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/genre-spotlight": {
+      "get": {
+        "operationId": "discovery.genreSpotlight",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "genres": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "genreId": {
+                            "type": "number"
+                          },
+                          "genreName": {
+                            "type": "string"
+                          },
+                          "results": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "backdropPath": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "genreIds": {
+                                  "items": {
+                                    "type": "number"
+                                  },
+                                  "type": "array"
+                                },
+                                "inLibrary": {
+                                  "type": "boolean"
+                                },
+                                "isWatched": {
+                                  "type": "boolean"
+                                },
+                                "matchPercentage": {
+                                  "type": "number"
+                                },
+                                "matchReason": {
+                                  "type": "string"
+                                },
+                                "onWatchlist": {
+                                  "type": "boolean"
+                                },
+                                "overview": {
+                                  "type": "string"
+                                },
+                                "popularity": {
+                                  "type": "number"
+                                },
+                                "posterPath": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "posterUrl": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "releaseDate": {
+                                  "type": "string"
+                                },
+                                "rotationExpiresAt": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "tmdbId": {
+                                  "type": "number"
+                                },
+                                "voteAverage": {
+                                  "type": "number"
+                                },
+                                "voteCount": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "tmdbId",
+                                "title",
+                                "overview",
+                                "releaseDate",
+                                "posterPath",
+                                "posterUrl",
+                                "backdropPath",
+                                "voteAverage",
+                                "voteCount",
+                                "genreIds",
+                                "popularity",
+                                "inLibrary",
+                                "isWatched",
+                                "onWatchlist",
+                                "matchPercentage",
+                                "matchReason"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "totalPages": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["genreId", "genreName", "results", "totalPages"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["genres"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Top user genres with high-rated TMDB movies",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/genre-spotlight/page": {
+      "get": {
+        "operationId": "discovery.genreSpotlightPage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "genreId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 2,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "genreId": {
+                      "type": "number"
+                    },
+                    "genreName": {
+                      "type": "string"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "inLibrary": {
+                            "type": "boolean"
+                          },
+                          "isWatched": {
+                            "type": "boolean"
+                          },
+                          "matchPercentage": {
+                            "type": "number"
+                          },
+                          "matchReason": {
+                            "type": "string"
+                          },
+                          "onWatchlist": {
+                            "type": "boolean"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "popularity",
+                          "inLibrary",
+                          "isWatched",
+                          "onWatchlist",
+                          "matchPercentage",
+                          "matchReason"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["genreId", "genreName", "results", "page", "totalPages"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Load more results for one genre spotlight row",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/profile": {
+      "get": {
+        "operationId": "discovery.profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "dimensionWeights": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "avgScore": {
+                                "type": "number"
+                              },
+                              "comparisonCount": {
+                                "type": "number"
+                              },
+                              "dimensionId": {
+                                "type": "number"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["dimensionId", "name", "comparisonCount", "avgScore"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "genreAffinities": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "avgScore": {
+                                "type": "number"
+                              },
+                              "genre": {
+                                "type": "string"
+                              },
+                              "movieCount": {
+                                "type": "number"
+                              },
+                              "totalComparisons": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["genre", "avgScore", "movieCount", "totalComparisons"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "genreDistribution": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "genre": {
+                                "type": "string"
+                              },
+                              "percentage": {
+                                "type": "number"
+                              },
+                              "watchCount": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["genre", "watchCount", "percentage"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "totalComparisons": {
+                          "type": "number"
+                        },
+                        "totalMoviesWatched": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "genreAffinities",
+                        "dimensionWeights",
+                        "genreDistribution",
+                        "totalMoviesWatched",
+                        "totalComparisons"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Computed preference profile (genre affinities, dimension weights, distribution)",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/quick-pick": {
+      "get": {
+        "operationId": "discovery.quickPick",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "count",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genres": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "overview": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "runtime": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tmdbId",
+                          "title",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "overview",
+                          "voteAverage",
+                          "genres",
+                          "runtime"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Random unwatched library movies for the quick-pick flow",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/recommendations": {
+      "get": {
+        "operationId": "discovery.recommendations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sampleSize",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "inLibrary": {
+                            "type": "boolean"
+                          },
+                          "isWatched": {
+                            "type": "boolean"
+                          },
+                          "matchPercentage": {
+                            "type": "number"
+                          },
+                          "matchReason": {
+                            "type": "string"
+                          },
+                          "onWatchlist": {
+                            "type": "boolean"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "popularity",
+                          "inLibrary",
+                          "isWatched",
+                          "onWatchlist",
+                          "matchPercentage",
+                          "matchReason"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "sourceMovies": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "totalComparisons": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["results", "sourceMovies", "totalComparisons"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Recommendations from top-rated library movies, profile-scored",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/rewatch-suggestions": {
+      "get": {
+        "operationId": "discovery.rewatchSuggestions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "eloScore": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "inLibrary": {
+                            "enum": [true],
+                            "type": "boolean"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tmdbId",
+                          "title",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "voteAverage",
+                          "eloScore",
+                          "score",
+                          "inLibrary"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Library movies watched 6+ months ago with high scores",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/session": {
+      "post": {
+        "operationId": "discovery.assembleSession",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "shelves": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "emoji": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "hasMore": {
+                            "type": "boolean"
+                          },
+                          "items": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "backdropPath": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "genreIds": {
+                                  "items": {
+                                    "type": "number"
+                                  },
+                                  "type": "array"
+                                },
+                                "inLibrary": {
+                                  "type": "boolean"
+                                },
+                                "isWatched": {
+                                  "type": "boolean"
+                                },
+                                "onWatchlist": {
+                                  "type": "boolean"
+                                },
+                                "overview": {
+                                  "type": "string"
+                                },
+                                "popularity": {
+                                  "type": "number"
+                                },
+                                "posterPath": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "posterUrl": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "releaseDate": {
+                                  "type": "string"
+                                },
+                                "rotationExpiresAt": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                },
+                                "tmdbId": {
+                                  "type": "number"
+                                },
+                                "voteAverage": {
+                                  "type": "number"
+                                },
+                                "voteCount": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "tmdbId",
+                                "title",
+                                "overview",
+                                "releaseDate",
+                                "posterPath",
+                                "posterUrl",
+                                "backdropPath",
+                                "voteAverage",
+                                "voteCount",
+                                "genreIds",
+                                "popularity",
+                                "inLibrary",
+                                "isWatched",
+                                "onWatchlist"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "pinned": {
+                            "type": "boolean"
+                          },
+                          "shelfId": {
+                            "type": "string"
+                          },
+                          "subtitle": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "totalCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "shelfId",
+                          "title",
+                          "subtitle",
+                          "emoji",
+                          "pinned",
+                          "items",
+                          "totalCount",
+                          "hasMore"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["shelves"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Assemble a discover session (generate → score → select → record impressions)",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/shelves/{shelfId}": {
+      "get": {
+        "operationId": "discovery.getShelfPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shelfId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 50,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "hasMore": {
+                      "type": "boolean"
+                    },
+                    "items": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "inLibrary": {
+                            "type": "boolean"
+                          },
+                          "isWatched": {
+                            "type": "boolean"
+                          },
+                          "onWatchlist": {
+                            "type": "boolean"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "popularity",
+                          "inLibrary",
+                          "isWatched",
+                          "onWatchlist"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "totalCount": {
+                      "nullable": true,
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "hasMore", "totalCount"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Page a single shelf instance by id",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/trending": {
+      "get": {
+        "operationId": "discovery.trending",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "timeWindow",
+            "schema": {
+              "enum": ["day", "week"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 500,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "page": {
+                      "type": "number"
+                    },
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "inLibrary": {
+                            "type": "boolean"
+                          },
+                          "isWatched": {
+                            "type": "boolean"
+                          },
+                          "onWatchlist": {
+                            "type": "boolean"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "popularity",
+                          "inLibrary",
+                          "isWatched",
+                          "onWatchlist"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "totalResults": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["results", "totalResults", "page"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Trending movies from TMDB",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/trending-plex": {
+      "get": {
+        "operationId": "discovery.trendingPlex",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 50,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "enum": [null],
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Trending from Plex Discover (STUB: always null until the client lands)",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/undismiss": {
+      "post": {
+        "operationId": "discovery.undismiss",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "tmdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["tmdbId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Remove a movie from the dismiss pile",
+        "tags": ["discovery"]
+      }
+    },
+    "/discovery/watchlist-recommendations": {
+      "get": {
+        "operationId": "discovery.watchlistRecommendations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "inLibrary": {
+                            "type": "boolean"
+                          },
+                          "isWatched": {
+                            "type": "boolean"
+                          },
+                          "matchPercentage": {
+                            "type": "number"
+                          },
+                          "matchReason": {
+                            "type": "string"
+                          },
+                          "onWatchlist": {
+                            "type": "boolean"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "popularity",
+                          "inLibrary",
+                          "isWatched",
+                          "onWatchlist",
+                          "matchPercentage",
+                          "matchReason"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "sourceMovies": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["results", "sourceMovies"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Recommendations from watchlist movies via TMDB similar",
+        "tags": ["discovery"]
+      }
+    },
     "/episodes/{id}": {
       "delete": {
         "operationId": "tvShows.deleteEpisode",

@@ -736,6 +736,278 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/discovery/context-picks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Time-of-day context picks (optional pages = JSON map of collectionId→page) */
+    get: operations['discovery.contextPicks'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dismiss a movie from the discover surface (idempotent) */
+    post: operations['discovery.dismiss'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/dismissed': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List dismissed TMDB ids */
+    get: operations['discovery.getDismissed'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/from-your-server': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Unwatched library movies scored by the preference profile */
+    get: operations['discovery.fromYourServer'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/genre-spotlight': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Top user genres with high-rated TMDB movies */
+    get: operations['discovery.genreSpotlight'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/genre-spotlight/page': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Load more results for one genre spotlight row */
+    get: operations['discovery.genreSpotlightPage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Computed preference profile (genre affinities, dimension weights, distribution) */
+    get: operations['discovery.profile'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/quick-pick': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Random unwatched library movies for the quick-pick flow */
+    get: operations['discovery.quickPick'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/recommendations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Recommendations from top-rated library movies, profile-scored */
+    get: operations['discovery.recommendations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/rewatch-suggestions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Library movies watched 6+ months ago with high scores */
+    get: operations['discovery.rewatchSuggestions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/session': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Assemble a discover session (generate → score → select → record impressions) */
+    post: operations['discovery.assembleSession'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/shelves/{shelfId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Page a single shelf instance by id */
+    get: operations['discovery.getShelfPage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/trending': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Trending movies from TMDB */
+    get: operations['discovery.trending'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/trending-plex': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Trending from Plex Discover (STUB: always null until the client lands) */
+    get: operations['discovery.trendingPlex'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/undismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Remove a movie from the dismiss pile */
+    post: operations['discovery.undismiss'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/discovery/watchlist-recommendations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Recommendations from watchlist movies via TMDB similar */
+    get: operations['discovery.watchlistRecommendations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/episodes/{id}': {
     parameters: {
       query?: never;
@@ -4943,6 +5215,820 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'discovery.contextPicks': {
+    parameters: {
+      query?: {
+        pages?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            collections: {
+              emoji: string;
+              id: string;
+              results: {
+                backdropPath: string | null;
+                genreIds: number[];
+                inLibrary: boolean;
+                isWatched: boolean;
+                onWatchlist: boolean;
+                overview: string;
+                popularity: number;
+                posterPath: string | null;
+                posterUrl: string | null;
+                releaseDate: string;
+                rotationExpiresAt?: string;
+                title: string;
+                tmdbId: number;
+                voteAverage: number;
+                voteCount: number;
+              }[];
+              title: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'discovery.dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          tmdbId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'discovery.getDismissed': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: number[];
+          };
+        };
+      };
+    };
+  };
+  'discovery.fromYourServer': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            results: {
+              backdropPath: string | null;
+              genreIds: number[];
+              inLibrary: boolean;
+              isWatched: boolean;
+              matchPercentage: number;
+              matchReason: string;
+              onWatchlist: boolean;
+              overview: string;
+              popularity: number;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string;
+              rotationExpiresAt?: string;
+              title: string;
+              tmdbId: number;
+              voteAverage: number;
+              voteCount: number;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'discovery.genreSpotlight': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            genres: {
+              genreId: number;
+              genreName: string;
+              results: {
+                backdropPath: string | null;
+                genreIds: number[];
+                inLibrary: boolean;
+                isWatched: boolean;
+                matchPercentage: number;
+                matchReason: string;
+                onWatchlist: boolean;
+                overview: string;
+                popularity: number;
+                posterPath: string | null;
+                posterUrl: string | null;
+                releaseDate: string;
+                rotationExpiresAt?: string;
+                title: string;
+                tmdbId: number;
+                voteAverage: number;
+                voteCount: number;
+              }[];
+              totalPages: number;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'discovery.genreSpotlightPage': {
+    parameters: {
+      query: {
+        genreId: number;
+        page: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            genreId: number;
+            genreName: string;
+            page: number;
+            results: {
+              backdropPath: string | null;
+              genreIds: number[];
+              inLibrary: boolean;
+              isWatched: boolean;
+              matchPercentage: number;
+              matchReason: string;
+              onWatchlist: boolean;
+              overview: string;
+              popularity: number;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string;
+              rotationExpiresAt?: string;
+              title: string;
+              tmdbId: number;
+              voteAverage: number;
+              voteCount: number;
+            }[];
+            totalPages: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'discovery.profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              dimensionWeights: {
+                avgScore: number;
+                comparisonCount: number;
+                dimensionId: number;
+                name: string;
+              }[];
+              genreAffinities: {
+                avgScore: number;
+                genre: string;
+                movieCount: number;
+                totalComparisons: number;
+              }[];
+              genreDistribution: {
+                genre: string;
+                percentage: number;
+                watchCount: number;
+              }[];
+              totalComparisons: number;
+              totalMoviesWatched: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'discovery.quickPick': {
+    parameters: {
+      query?: {
+        count?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              backdropPath: string | null;
+              genres: string;
+              id: number;
+              overview: string | null;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string | null;
+              runtime: number | null;
+              title: string;
+              tmdbId: number;
+              voteAverage: number | null;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'discovery.recommendations': {
+    parameters: {
+      query?: {
+        sampleSize?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            results: {
+              backdropPath: string | null;
+              genreIds: number[];
+              inLibrary: boolean;
+              isWatched: boolean;
+              matchPercentage: number;
+              matchReason: string;
+              onWatchlist: boolean;
+              overview: string;
+              popularity: number;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string;
+              rotationExpiresAt?: string;
+              title: string;
+              tmdbId: number;
+              voteAverage: number;
+              voteCount: number;
+            }[];
+            sourceMovies: string[];
+            totalComparisons: number;
+          };
+        };
+      };
+    };
+  };
+  'discovery.rewatchSuggestions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              eloScore: number | null;
+              id: number;
+              /** @enum {boolean} */
+              inLibrary: true;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string | null;
+              score: number;
+              title: string;
+              tmdbId: number;
+              voteAverage: number | null;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'discovery.assembleSession': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            shelves: {
+              emoji: string | null;
+              hasMore: boolean;
+              items: {
+                backdropPath: string | null;
+                genreIds: number[];
+                inLibrary: boolean;
+                isWatched: boolean;
+                onWatchlist: boolean;
+                overview: string;
+                popularity: number;
+                posterPath: string | null;
+                posterUrl: string | null;
+                releaseDate: string;
+                rotationExpiresAt?: string;
+                title: string;
+                tmdbId: number;
+                voteAverage: number;
+                voteCount: number;
+              }[];
+              pinned: boolean;
+              shelfId: string;
+              subtitle: string | null;
+              title: string;
+              totalCount: number;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'discovery.getShelfPage': {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        shelfId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            hasMore: boolean;
+            items: {
+              backdropPath: string | null;
+              genreIds: number[];
+              inLibrary: boolean;
+              isWatched: boolean;
+              onWatchlist: boolean;
+              overview: string;
+              popularity: number;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string;
+              rotationExpiresAt?: string;
+              title: string;
+              tmdbId: number;
+              voteAverage: number;
+              voteCount: number;
+            }[];
+            totalCount: number | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'discovery.trending': {
+    parameters: {
+      query?: {
+        timeWindow?: 'day' | 'week';
+        page?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            page: number;
+            results: {
+              backdropPath: string | null;
+              genreIds: number[];
+              inLibrary: boolean;
+              isWatched: boolean;
+              onWatchlist: boolean;
+              overview: string;
+              popularity: number;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string;
+              rotationExpiresAt?: string;
+              title: string;
+              tmdbId: number;
+              voteAverage: number;
+              voteCount: number;
+            }[];
+            totalResults: number;
+          };
+        };
+      };
+    };
+  };
+  'discovery.trendingPlex': {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {string|null} */
+            data: null;
+          };
+        };
+      };
+    };
+  };
+  'discovery.undismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          tmdbId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'discovery.watchlistRecommendations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            results: {
+              backdropPath: string | null;
+              genreIds: number[];
+              inLibrary: boolean;
+              isWatched: boolean;
+              matchPercentage: number;
+              matchReason: string;
+              onWatchlist: boolean;
+              overview: string;
+              popularity: number;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string;
+              rotationExpiresAt?: string;
+              title: string;
+              tmdbId: number;
+              voteAverage: number;
+              voteCount: number;
+            }[];
+            sourceMovies: string[];
           };
         };
       };

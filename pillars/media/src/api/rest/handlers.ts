@@ -11,6 +11,7 @@ import { mediaContract } from '../../contract/rest.js';
 import { type OpenedMediaDb } from '../../db/index.js';
 import { makeArrHandlers } from './arr-handlers.js';
 import { makeComparisonsHandlers } from './comparisons-handlers.js';
+import { makeDiscoveryHandlers } from './discovery-handlers.js';
 import { makeLibraryHandlers } from './library-handlers.js';
 import { makeMoviesHandlers } from './movies-handlers.js';
 import { makePlexHandlers } from './plex-handlers.js';
@@ -37,5 +38,6 @@ export function makeMediaRestHandlers(deps: {
     plex: makePlexHandlers(db),
     comparisons: makeComparisonsHandlers(db),
     rotation: makeRotationHandlers(db),
+    discovery: makeDiscoveryHandlers(db),
   });
 }
