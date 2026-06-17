@@ -25,6 +25,13 @@ import type {
   GliaUserDecisionWire,
 } from '../../contract/rest-glia-schemas.js';
 import type {
+  NudgeContradictionWire,
+  NudgePriorityWire,
+  NudgeStatusWire,
+  NudgeTypeWire,
+  NudgeWire,
+} from '../../contract/rest-nudges.js';
+import type {
   EngramWire,
   PlexusAdapterWire,
   PlexusFilterDefinitionWire,
@@ -145,6 +152,20 @@ export interface GliaDigestInput {
   deliver?: boolean;
 }
 
+export interface ListNudgesFilters {
+  type?: NudgeTypeWire;
+  status?: NudgeStatusWire;
+  priority?: NudgePriorityWire;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListContradictionsFilters {
+  status?: NudgeStatusWire | null;
+  limit?: number;
+  offset?: number;
+}
+
 export function makeClient(app: Express) {
   const r = supertest.agent(app);
   return {
@@ -212,6 +233,16 @@ export function makeClient(app: Express) {
       history: (filters: ReflexHistoryFilters = {}) =>
         send<{ executions: ReflexExecutionWire[]; total: number }>(
           r.post('/reflex/history').send(filters)
+        ),
+    },
+    nudges: {
+      list: (filters: ListNudgesFilters = {}) =>
+        send<{ nudges: NudgeWire[]; total: number }>(r.post('/nudges/search').send(filters)),
+      get: (id: string) => send<{ nudge: NudgeWire }>(r.get(`/nudges/${id}`)),
+      dismiss: (id: string) => send<{ success: boolean }>(r.post(`/nudges/${id}/dismiss`).send({})),
+      contradictions: (filters: ListContradictionsFilters = {}) =>
+        send<{ contradictions: NudgeContradictionWire[]; total: number }>(
+          r.post('/nudges/contradictions').send(filters)
         ),
     },
     plexus: {

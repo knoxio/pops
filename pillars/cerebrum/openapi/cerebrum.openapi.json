@@ -2845,6 +2845,489 @@
         "tags": ["glia", "trustState"]
       }
     },
+    "/nudges/contradictions": {
+      "post": {
+        "operationId": "nudges.contradictions",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "offset": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": ["pending", "dismissed", "acted", "expired"],
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "contradictions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "conflict": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "engramA": {
+                            "type": "string"
+                          },
+                          "engramB": {
+                            "type": "string"
+                          },
+                          "excerptA": {
+                            "type": "string"
+                          },
+                          "excerptB": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "priority": {
+                            "enum": ["low", "medium", "high"],
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["pending", "dismissed", "acted", "expired"],
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "createdAt",
+                          "status",
+                          "priority",
+                          "title",
+                          "engramA",
+                          "engramB",
+                          "excerptA",
+                          "excerptB",
+                          "conflict"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["contradictions", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List contradiction-pattern nudges with structured evidence.",
+        "tags": ["nudges"]
+      }
+    },
+    "/nudges/search": {
+      "post": {
+        "operationId": "nudges.list",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "offset": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "priority": {
+                    "enum": ["low", "medium", "high"],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": ["pending", "dismissed", "acted", "expired"],
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": ["consolidation", "staleness", "pattern", "insight"],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "nudges": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "action": {
+                            "additionalProperties": false,
+                            "nullable": true,
+                            "properties": {
+                              "label": {
+                                "type": "string"
+                              },
+                              "params": {
+                                "additionalProperties": {},
+                                "type": "object"
+                              },
+                              "type": {
+                                "enum": ["consolidate", "archive", "review", "link"],
+                                "type": "string"
+                              }
+                            },
+                            "required": ["type", "label", "params"],
+                            "type": "object"
+                          },
+                          "body": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "engramIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "expiresAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "priority": {
+                            "enum": ["low", "medium", "high"],
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["pending", "dismissed", "acted", "expired"],
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": ["consolidation", "staleness", "pattern", "insight"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "title",
+                          "body",
+                          "engramIds",
+                          "priority",
+                          "status",
+                          "createdAt",
+                          "expiresAt",
+                          "actedAt",
+                          "action"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["nudges", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List nudges matching the supplied filters, with a total count.",
+        "tags": ["nudges"]
+      }
+    },
+    "/nudges/{id}": {
+      "get": {
+        "operationId": "nudges.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "nudge": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "action": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "params": {
+                              "additionalProperties": {},
+                              "type": "object"
+                            },
+                            "type": {
+                              "enum": ["consolidate", "archive", "review", "link"],
+                              "type": "string"
+                            }
+                          },
+                          "required": ["type", "label", "params"],
+                          "type": "object"
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "engramIds": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "expiresAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "priority": {
+                          "enum": ["low", "medium", "high"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["pending", "dismissed", "acted", "expired"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "enum": ["consolidation", "staleness", "pattern", "insight"],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "title",
+                        "body",
+                        "engramIds",
+                        "priority",
+                        "status",
+                        "createdAt",
+                        "expiresAt",
+                        "actedAt",
+                        "action"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["nudge"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Get a single nudge by ID.",
+        "tags": ["nudges"]
+      }
+    },
+    "/nudges/{id}/dismiss": {
+      "post": {
+        "operationId": "nudges.dismiss",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Dismiss a pending nudge.",
+        "tags": ["nudges"]
+      }
+    },
     "/plexus/adapters": {
       "get": {
         "operationId": "plexus.adapters.list",

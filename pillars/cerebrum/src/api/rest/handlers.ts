@@ -11,6 +11,7 @@ import { cerebrumContract } from '../../contract/rest.js';
 import { resolveGliaConfigPath } from '../modules/glia/instance.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
 import { makeGliaHandlers } from './glia-handlers.js';
+import { makeNudgesHandlers } from './nudges-handlers.js';
 import { makePlexusHandlers } from './plexus-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
 import { makeScopesHandlers } from './scopes-handlers.js';
@@ -42,5 +43,6 @@ export function makeCerebrumRestHandlers(
       templates: deps.templateRegistry,
       configPath: deps.gliaConfigPath ?? resolveGliaConfigPath(),
     }),
+    nudges: makeNudgesHandlers(deps.cerebrumDb.db),
   });
 }
