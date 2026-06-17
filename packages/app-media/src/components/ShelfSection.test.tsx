@@ -1,21 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createElement, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
+const getShelfPageMock = vi.hoisted(() => vi.fn());
 
-const mockGetShelfPageFetch = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: vi.fn(),
-    fetchQuery: (path: readonly string[], input: unknown) => {
-      const key = path.join('.');
-      if (key === 'discovery.getShelfPage') return mockGetShelfPageFetch(input);
-      return Promise.resolve(undefined);
-    },
-  }),
+vi.mock('../media-api/index.js', () => ({
+  discoveryGetShelfPage: (...args: unknown[]) => getShelfPageMock(...args),
 }));
 
 // Mock IntersectionObserver — trigger callback immediately to make sections visible
@@ -28,14 +20,13 @@ vi.stubGlobal(
     this: IntersectionObserver,
     callback: IntersectionObserverCallback
   ) {
-    // Immediately fire as intersecting
     callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
     this.observe = mockObserve;
     this.disconnect = mockDisconnect;
   })
 );
 
-// Mock DiscoverCard to avoid pulling in RequestMovieButton (which requires trpc.media.arr)
+// Mock DiscoverCard to avoid pulling in RequestMovieButton (which requires the arr SDK)
 vi.mock('./DiscoverCard', () => ({
   DiscoverCard: ({ title, tmdbId }: { title: string; tmdbId: number }) => (
     <div data-testid={`card-${tmdbId}`}>{title}</div>
@@ -44,7 +35,9 @@ vi.mock('./DiscoverCard', () => ({
 
 import { ShelfSection } from './ShelfSection';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
 
 function makeItem(tmdbId: number) {
   return {
@@ -76,6 +69,12 @@ const noopActions = {
   onNotInterested: vi.fn(async () => ({ ok: true })),
 };
 
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+}
+
 function renderShelf(
   overrides: Partial<{
     shelfId: string;
@@ -83,8 +82,12 @@ function renderShelf(
     subtitle: string;
     initialItems: ReturnType<typeof makeItem>[];
     hasMore: boolean;
+    dismissedSet: Set<number>;
   }> = {}
 ) {
+  const queryClient = makeQueryClient();
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
   return render(
     <ShelfSection
       shelfId={overrides.shelfId ?? 'best-in-genre:drama'}
@@ -93,20 +96,22 @@ function renderShelf(
       initialItems={overrides.initialItems ?? [makeItem(1), makeItem(2), makeItem(3)]}
       hasMore={overrides.hasMore ?? false}
       {...noopActions}
-    />
+      dismissedSet={overrides.dismissedSet ?? noopActions.dismissedSet}
+    />,
+    { wrapper }
   );
 }
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  mockGetShelfPageFetch.mockResolvedValue({
-    items: [makeItem(101), makeItem(102)],
-    hasMore: false,
-    totalCount: null,
-  });
+afterEach(() => {
+  cleanup();
 });
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+beforeEach(() => {
+  vi.clearAllMocks();
+  getShelfPageMock.mockResolvedValue(
+    ok({ items: [makeItem(101), makeItem(102)], hasMore: false, totalCount: null })
+  );
+});
 
 describe('ShelfSection — rendering', () => {
   it('renders shelf title', () => {
@@ -127,27 +132,10 @@ describe('ShelfSection — rendering', () => {
   });
 
   it('hides dismissed items', () => {
-    render(
-      <ShelfSection
-        shelfId="best-in-genre:drama"
-        title="Best in Drama"
-        initialItems={[makeItem(1), makeItem(2), makeItem(3)]}
-        hasMore={false}
-        dismissedSet={new Set([2])}
-        addingToLibrary={new Set()}
-        addingToWatchlist={new Set()}
-        removingFromWatchlist={new Set()}
-        markingWatched={new Set()}
-        markingRewatched={new Set()}
-        dismissing={new Set()}
-        onAddToLibrary={vi.fn(async () => ({ ok: true }))}
-        onAddToWatchlist={vi.fn(async () => ({ ok: true }))}
-        onRemoveFromWatchlist={vi.fn(async () => ({ ok: true }))}
-        onMarkWatched={vi.fn(async () => ({ ok: true }))}
-        onMarkRewatched={vi.fn(async () => ({ ok: true }))}
-        onNotInterested={vi.fn(async () => ({ ok: true }))}
-      />
-    );
+    renderShelf({
+      initialItems: [makeItem(1), makeItem(2), makeItem(3)],
+      dismissedSet: new Set([2]),
+    });
     expect(screen.getByText('Movie 1')).toBeInTheDocument();
     expect(screen.queryByText('Movie 2')).not.toBeInTheDocument();
     expect(screen.getByText('Movie 3')).toBeInTheDocument();
@@ -165,7 +153,7 @@ describe('ShelfSection — show more', () => {
     expect(screen.getByRole('button', { name: /show more/i })).toBeInTheDocument();
   });
 
-  it('calls getShelfPage.fetch with correct shelfId and offset on Show more click', async () => {
+  it('calls getShelfPage with correct shelfId and offset on Show more click', async () => {
     const user = userEvent.setup();
     renderShelf({
       shelfId: 'best-in-genre:drama',
@@ -175,22 +163,19 @@ describe('ShelfSection — show more', () => {
 
     await user.click(screen.getByRole('button', { name: /show more/i }));
 
-    await waitFor(() => {
-      expect(mockGetShelfPageFetch).toHaveBeenCalledWith(
+    await waitFor(() =>
+      expect(getShelfPageMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          shelfId: 'best-in-genre:drama',
-          offset: 3,
+          path: { shelfId: 'best-in-genre:drama' },
+          query: expect.objectContaining({ offset: 3 }),
         })
-      );
-    });
+      )
+    );
   });
 
   it('appends new items after Show more', async () => {
     const user = userEvent.setup();
-    renderShelf({
-      initialItems: [makeItem(1), makeItem(2), makeItem(3)],
-      hasMore: true,
-    });
+    renderShelf({ initialItems: [makeItem(1), makeItem(2), makeItem(3)], hasMore: true });
 
     await user.click(screen.getByRole('button', { name: /show more/i }));
 
@@ -202,25 +187,22 @@ describe('ShelfSection — show more', () => {
 
   it('hides Show more button after last page loaded (hasMore=false from server)', async () => {
     const user = userEvent.setup();
-    mockGetShelfPageFetch.mockResolvedValue({
-      items: [makeItem(101)],
-      hasMore: false,
-      totalCount: null,
-    });
+    getShelfPageMock.mockResolvedValue(
+      ok({ items: [makeItem(101)], hasMore: false, totalCount: null })
+    );
 
     renderShelf({ hasMore: true });
 
     await user.click(screen.getByRole('button', { name: /show more/i }));
 
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /show more/i })).not.toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /show more/i })).not.toBeInTheDocument()
+    );
   });
 });
 
 describe('ShelfSection — lazy loading', () => {
   it('renders content immediately when IntersectionObserver fires on mount', () => {
-    // Our mock IntersectionObserver fires immediately, so content is visible
     renderShelf({ title: 'Best in Drama', initialItems: [makeItem(1)] });
     expect(screen.getByText('Best in Drama')).toBeInTheDocument();
     expect(screen.getByText('Movie 1')).toBeInTheDocument();

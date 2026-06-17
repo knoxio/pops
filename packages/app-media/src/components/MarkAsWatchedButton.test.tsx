@@ -1,78 +1,21 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MarkAsWatchedButton } from './MarkAsWatchedButton';
+const watchHistoryListMock = vi.hoisted(() => vi.fn());
+const watchHistoryLogMock = vi.hoisted(() => vi.fn());
+const watchHistoryDeleteMock = vi.hoisted(() => vi.fn());
+const watchlistAddMock = vi.hoisted(() => vi.fn());
 
-// Capture mutation options
-let logMutationOpts: Record<string, (...args: unknown[]) => unknown> = {};
-let _deleteMutationOpts: Record<string, (...args: unknown[]) => unknown> = {};
-const mockLogMutate = vi.fn();
-const mockDeleteMutate = vi.fn();
-const mockWatchlistAddMutate = vi.fn();
-const mockInvalidateHistory = vi.fn();
-const mockInvalidateWatchlist = vi.fn();
-const mockInvalidatePendingDebriefs = vi.fn();
-
-const mockHistoryQuery = vi.fn();
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual =
-    await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
-  return {
-    ...actual,
-    useQueryClient: () => ({
-      invalidateQueries: ({ queryKey }: { queryKey: readonly string[] }) => {
-        const router = queryKey[1];
-        if (router === 'watchHistory') mockInvalidateHistory();
-        if (router === 'watchlist') mockInvalidateWatchlist();
-        if (router === 'comparisons') mockInvalidatePendingDebriefs();
-      },
-    }),
-  };
-});
-
-function wrapOpts(
-  path: readonly string[],
-  opts?: Record<string, (...args: unknown[]) => unknown>
-): Record<string, (...args: unknown[]) => unknown> {
-  const router = path[0];
-  return {
-    ...opts,
-    onSuccess: (...args: unknown[]) => {
-      if (router === 'watchHistory') mockInvalidateHistory();
-      return opts?.onSuccess?.(...args);
-    },
-  };
-}
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    if (path.join('.') === 'watchHistory.list') return mockHistoryQuery(input);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: Record<string, (...args: unknown[]) => unknown>
-  ) => {
-    const key = path.join('.');
-    const wrapped = wrapOpts(path, opts);
-    if (key === 'watchHistory.log') {
-      logMutationOpts = wrapped;
-      return { mutate: mockLogMutate, isPending: false };
-    }
-    if (key === 'watchHistory.delete') {
-      _deleteMutationOpts = wrapped;
-      return { mutate: mockDeleteMutate, isPending: false };
-    }
-    if (key === 'watchlist.add') {
-      return { mutate: mockWatchlistAddMutate, isPending: false };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
+vi.mock('../media-api/index.js', () => ({
+  watchHistoryList: (...args: unknown[]) => watchHistoryListMock(...args),
+  watchHistoryLog: (...args: unknown[]) => watchHistoryLogMock(...args),
+  watchHistoryDelete: (...args: unknown[]) => watchHistoryDeleteMock(...args),
+  watchlistAdd: (...args: unknown[]) => watchlistAddMock(...args),
 }));
 
-// Mock sonner
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
 vi.mock('sonner', () => ({
@@ -82,23 +25,46 @@ vi.mock('sonner', () => ({
   },
 }));
 
-function setupEmpty() {
-  mockHistoryQuery.mockReturnValue({
-    data: { data: [], pagination: { total: 0 } },
-    isLoading: false,
+import { MarkAsWatchedButton } from './MarkAsWatchedButton';
+
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 }
 
+function renderButton(mediaId = 550) {
+  const queryClient = makeQueryClient();
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return render(<MarkAsWatchedButton mediaId={mediaId} />, { wrapper });
+}
+
+function setupEmpty() {
+  watchHistoryListMock.mockResolvedValue(ok({ data: [], pagination: { total: 0 } }));
+}
+
 function setupWatched(count = 1) {
-  mockHistoryQuery.mockReturnValue({
-    data: {
+  watchHistoryListMock.mockResolvedValue(
+    ok({
       data: Array.from({ length: count }, (_, i) => ({
         id: i + 1,
         watchedAt: '2026-01-01T00:00:00Z',
       })),
-    },
-    isLoading: false,
-  });
+      pagination: { total: count },
+    })
+  );
+}
+
+/** Invokes the Undo action handed to the success toast. */
+function triggerUndo() {
+  const toastCall = mockToastSuccess.mock.calls.find(([msg]) => msg === 'Marked as watched');
+  const opts = toastCall?.[1] as { action?: { onClick: () => void } } | undefined;
+  opts?.action?.onClick();
 }
 
 afterEach(() => {
@@ -107,118 +73,144 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  logMutationOpts = {};
-  _deleteMutationOpts = {};
   setupEmpty();
+  watchHistoryLogMock.mockResolvedValue(
+    ok({ data: { id: 99 }, message: 'ok', watchlistRemoved: false })
+  );
+  watchHistoryDeleteMock.mockResolvedValue(ok({}));
+  watchlistAddMock.mockResolvedValue(ok({ created: true, message: 'ok', data: { id: 1 } }));
 });
 
 describe('MarkAsWatchedButton', () => {
-  it("renders 'Mark as Watched' button for unwatched movie", () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
-    expect(screen.getByLabelText('Mark as watched')).toBeInTheDocument();
+  it("renders 'Mark as Watched' button for unwatched movie", async () => {
+    renderButton();
+    expect(await screen.findByLabelText('Mark as watched')).toBeInTheDocument();
     expect(screen.getByText('Mark as Watched')).toBeInTheDocument();
   });
 
-  it('shows watched count when already watched', () => {
+  it('shows watched count when already watched', async () => {
     setupWatched(2);
-    render(<MarkAsWatchedButton mediaId={550} />);
-    expect(screen.getByText('Watched (2)')).toBeInTheDocument();
+    renderButton();
+    expect(await screen.findByText('Watched (2)')).toBeInTheDocument();
   });
 
-  it('calls log mutation with correct payload on click', () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
+  it('calls log mutation with correct payload on click', async () => {
+    const user = userEvent.setup();
+    renderButton();
 
-    fireEvent.click(screen.getByLabelText('Mark as watched'));
+    await user.click(await screen.findByLabelText('Mark as watched'));
 
-    expect(mockLogMutate).toHaveBeenCalledWith({
-      mediaType: 'movie',
-      mediaId: 550,
-      completed: 1,
-    });
-  });
-
-  it('shows success toast with Undo action on log success', () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
-
-    logMutationOpts.onSuccess!({ data: { id: 99 }, watchlistRemoved: false });
-
-    expect(mockToastSuccess).toHaveBeenCalledWith(
-      'Marked as watched',
-      expect.objectContaining({
-        duration: 5000,
-        action: expect.objectContaining({ label: 'Undo' }),
+    await waitFor(() =>
+      expect(watchHistoryLogMock).toHaveBeenCalledWith({
+        body: {
+          mediaType: 'movie',
+          mediaId: 550,
+          completed: 1,
+          source: 'manual',
+          watchedAt: undefined,
+        },
       })
     );
   });
 
-  it('invalidates watch history on log success', () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
+  it('shows success toast with Undo action on log success', async () => {
+    const user = userEvent.setup();
+    renderButton();
 
-    logMutationOpts.onSuccess!({ data: { id: 99 }, watchlistRemoved: false });
+    await user.click(await screen.findByLabelText('Mark as watched'));
 
-    expect(mockInvalidateHistory).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(mockToastSuccess).toHaveBeenCalledWith(
+        'Marked as watched',
+        expect.objectContaining({
+          duration: 5000,
+          action: expect.objectContaining({ label: 'Undo' }),
+        })
+      )
+    );
   });
 
-  it('shows error toast on log failure', () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
+  it('invalidates watch history on log success', async () => {
+    const user = userEvent.setup();
+    renderButton();
 
-    logMutationOpts.onError!({ message: 'DB error' });
+    await user.click(await screen.findByLabelText('Mark as watched'));
 
-    expect(mockToastError).toHaveBeenCalledWith('Failed to log watch: DB error');
+    // Re-fetch of the history list is the observable effect of invalidation.
+    await waitFor(() => expect(watchHistoryListMock.mock.calls.length).toBeGreaterThan(1));
   });
 
-  it('undo calls delete with entry ID', () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
+  it('shows error toast on log failure', async () => {
+    watchHistoryLogMock.mockResolvedValue({
+      data: undefined,
+      error: { message: 'DB error' },
+      response: { status: 500 },
+    });
+    const user = userEvent.setup();
+    renderButton();
 
-    logMutationOpts.onSuccess!({ data: { id: 99 }, watchlistRemoved: false });
+    await user.click(await screen.findByLabelText('Mark as watched'));
 
-    const toastCall = mockToastSuccess.mock.calls[0];
-    const opts = toastCall?.[1] as { action?: { onClick: () => void } };
-    opts?.action?.onClick();
-
-    expect(mockDeleteMutate).toHaveBeenCalledWith({ id: 99 }, expect.any(Object));
+    await waitFor(() =>
+      expect(mockToastError).toHaveBeenCalledWith('Failed to log watch: DB error')
+    );
   });
 
-  it('undo re-adds to watchlist when watchlistRemoved=true', () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
+  it('undo calls delete with entry ID', async () => {
+    const user = userEvent.setup();
+    renderButton();
 
-    logMutationOpts.onSuccess!({ data: { id: 99 }, watchlistRemoved: true });
+    await user.click(await screen.findByLabelText('Mark as watched'));
+    await waitFor(() =>
+      expect(mockToastSuccess).toHaveBeenCalledWith('Marked as watched', expect.anything())
+    );
+    triggerUndo();
 
-    const toastCall = mockToastSuccess.mock.calls[0];
-    const opts = toastCall?.[1] as { action?: { onClick: () => void } };
-    opts?.action?.onClick();
-
-    // Call the onSuccess of the delete mutation
-    const deleteCall = mockDeleteMutate.mock.calls[0];
-    const deleteOpts = deleteCall?.[1] as { onSuccess?: () => void };
-    deleteOpts?.onSuccess?.();
-
-    expect(mockWatchlistAddMutate).toHaveBeenCalledWith({ mediaType: 'movie', mediaId: 550 });
+    await waitFor(() => expect(watchHistoryDeleteMock).toHaveBeenCalledWith({ path: { id: 99 } }));
   });
 
-  it('undo does not re-add to watchlist when watchlistRemoved=false', () => {
-    render(<MarkAsWatchedButton mediaId={550} />);
+  it('undo re-adds to watchlist when watchlistRemoved=true', async () => {
+    watchHistoryLogMock.mockResolvedValue(
+      ok({ data: { id: 99 }, message: 'ok', watchlistRemoved: true })
+    );
+    const user = userEvent.setup();
+    renderButton();
 
-    logMutationOpts.onSuccess!({ data: { id: 99 }, watchlistRemoved: false });
+    await user.click(await screen.findByLabelText('Mark as watched'));
+    await waitFor(() =>
+      expect(mockToastSuccess).toHaveBeenCalledWith('Marked as watched', expect.anything())
+    );
+    triggerUndo();
 
-    const toastCall = mockToastSuccess.mock.calls[0];
-    const opts = toastCall?.[1] as { action?: { onClick: () => void } };
-    opts?.action?.onClick();
-
-    const deleteCall = mockDeleteMutate.mock.calls[0];
-    const deleteOpts = deleteCall?.[1] as { onSuccess?: () => void };
-    deleteOpts?.onSuccess?.();
-
-    expect(mockWatchlistAddMutate).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(watchlistAddMock).toHaveBeenCalledWith({
+        body: { mediaType: 'movie', mediaId: 550 },
+      })
+    );
   });
 
-  it('button remains usable after logging (can log multiple watches)', () => {
+  it('undo does not re-add to watchlist when watchlistRemoved=false', async () => {
+    const user = userEvent.setup();
+    renderButton();
+
+    await user.click(await screen.findByLabelText('Mark as watched'));
+    await waitFor(() =>
+      expect(mockToastSuccess).toHaveBeenCalledWith('Marked as watched', expect.anything())
+    );
+    triggerUndo();
+
+    await waitFor(() => expect(watchHistoryDeleteMock).toHaveBeenCalled());
+    expect(watchlistAddMock).not.toHaveBeenCalled();
+  });
+
+  it('button remains usable after logging (can log multiple watches)', async () => {
     setupWatched(1);
-    render(<MarkAsWatchedButton mediaId={550} />);
+    const user = userEvent.setup();
+    renderButton();
 
-    const button = screen.getByLabelText('Mark as watched');
+    const button = await screen.findByLabelText('Mark as watched');
     expect(button).not.toBeDisabled();
-    fireEvent.click(button);
-    expect(mockLogMutate).toHaveBeenCalledTimes(1);
+    await user.click(button);
+    await waitFor(() => expect(watchHistoryLogMock).toHaveBeenCalledTimes(1));
   });
 });

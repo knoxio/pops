@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -7,13 +8,15 @@ import {
   Tooltip,
 } from 'recharts';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * ComparisonScores — radar chart showing Elo scores across comparison dimensions.
  * Queries scores and dimensions, merges them, and renders a recharts RadarChart.
  * Hidden when zero comparisons; shows "Not enough data" when 1–2 comparisons.
  */
 import { Skeleton } from '@pops/ui';
+
+import { unwrap } from '../media-api-helpers.js';
+import { comparisonsListDimensions, comparisonsScores } from '../media-api/index.js';
 
 /** Normalize an Elo score (typically 1000–2000) to a 0–100 scale. */
 export function normalizeScore(elo: number): number {
@@ -118,13 +121,14 @@ interface DimensionsResult {
 }
 
 export function ComparisonScores({ mediaType, mediaId }: ComparisonScoresProps) {
-  const { data: scoresResponse, isLoading: scoresLoading } = usePillarQuery<ScoresResult>(
-    'media',
-    ['comparisons', 'scores'],
-    { mediaType, mediaId }
-  );
-  const { data: dimensionsResponse, isLoading: dimensionsLoading } =
-    usePillarQuery<DimensionsResult>('media', ['comparisons', 'listDimensions'], undefined);
+  const { data: scoresResponse, isLoading: scoresLoading } = useQuery<ScoresResult>({
+    queryKey: ['media', 'comparisons', 'scores', { mediaType, mediaId }],
+    queryFn: async () => unwrap(await comparisonsScores({ query: { mediaType, mediaId } })),
+  });
+  const { data: dimensionsResponse, isLoading: dimensionsLoading } = useQuery<DimensionsResult>({
+    queryKey: ['media', 'comparisons', 'listDimensions'],
+    queryFn: async () => unwrap(await comparisonsListDimensions()),
+  });
 
   if (scoresLoading || dimensionsLoading) {
     return (

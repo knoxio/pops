@@ -1,6 +1,13 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  arrAddMovie,
+  arrDownloadAndProtect,
+  arrGetRadarrQualityProfiles,
+  arrGetRadarrRootFolders,
+} from '../../media-api/index.js';
 
 interface QualityProfile {
   id: number;
@@ -44,13 +51,15 @@ interface RequestMovieModelArgs {
 }
 
 function useProfilesAndFolders(open: boolean, isDownloadMode: boolean) {
-  const profiles = usePillarQuery<QualityProfilesResult>(
-    'media',
-    ['arr', 'getQualityProfiles'],
-    undefined,
-    { enabled: open && !isDownloadMode, retry: false }
-  );
-  const folders = usePillarQuery<RootFoldersResult>('media', ['arr', 'getRootFolders'], undefined, {
+  const profiles = useQuery<QualityProfilesResult>({
+    queryKey: ['media', 'arr', 'getQualityProfiles'],
+    queryFn: async () => unwrap(await arrGetRadarrQualityProfiles()),
+    enabled: open && !isDownloadMode,
+    retry: false,
+  });
+  const folders = useQuery<RootFoldersResult>({
+    queryKey: ['media', 'arr', 'getRootFolders'],
+    queryFn: async () => unwrap(await arrGetRadarrRootFolders()),
     enabled: open && !isDownloadMode,
     retry: false,
   });
@@ -97,27 +106,28 @@ interface MutationArgs {
 }
 
 function useRequestMutations({ onClose, resetState, setError, setSuccess }: MutationArgs) {
+  const queryClient = useQueryClient();
   const onMutationSuccess = () => {
     setSuccess(true);
     setError(null);
+    void queryClient.invalidateQueries({ queryKey: ['media', 'arr'] });
     setTimeout(() => {
       onClose();
       resetState();
     }, 1500);
   };
-  const onMutationError = (err: { message: string }) => setError(err.message);
-  const addMovie = usePillarMutation<AddMovieInput, unknown>('media', ['arr', 'addMovie'], {
+  const onMutationError = (err: Error) => setError(err.message);
+  const addMovie = useMutation({
+    mutationFn: async (input: AddMovieInput) => unwrap(await arrAddMovie({ body: input })),
     onSuccess: onMutationSuccess,
     onError: onMutationError,
   });
-  const downloadAndProtect = usePillarMutation<DownloadAndProtectInput, unknown>(
-    'media',
-    ['arr', 'downloadAndProtect'],
-    {
-      onSuccess: onMutationSuccess,
-      onError: onMutationError,
-    }
-  );
+  const downloadAndProtect = useMutation({
+    mutationFn: async (input: DownloadAndProtectInput) =>
+      unwrap(await arrDownloadAndProtect({ body: input })),
+    onSuccess: onMutationSuccess,
+    onError: onMutationError,
+  });
   return { addMovie, downloadAndProtect };
 }
 

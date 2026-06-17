@@ -1,6 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  arrConfig,
+  arrGetMovieStatus,
+  rotationAddToQueue,
+  rotationGetCandidateStatus,
+  rotationRemoveExclusion,
+  rotationRemoveFromQueue,
+} from '../../media-api/index.js';
 
 interface ArrConfigResult {
   data: { radarrConfigured: boolean; sonarrConfigured: boolean };
@@ -17,56 +26,64 @@ interface CandidateStatusResult {
 
 interface AddToQueueInput {
   tmdbId: number;
-  title?: string;
+  title: string;
   year?: number;
   posterPath?: string;
   rating?: number;
 }
 
 export function useRotationButtonsModel(tmdbId: number) {
-  const { data: configData } = usePillarQuery<ArrConfigResult>(
-    'media',
-    ['arr', 'getConfig'],
-    undefined
-  );
+  const queryClient = useQueryClient();
+
+  const { data: configData } = useQuery<ArrConfigResult>({
+    queryKey: ['media', 'arr', 'getConfig'],
+    queryFn: async () => unwrap(await arrConfig()),
+  });
   const radarrConfigured = configData?.data?.radarrConfigured === true;
 
-  const movieStatus = usePillarQuery<MovieStatusResult>(
-    'media',
-    ['arr', 'getMovieStatus'],
-    { tmdbId },
-    { enabled: radarrConfigured }
-  );
+  const movieStatus = useQuery<MovieStatusResult>({
+    queryKey: ['media', 'arr', 'getMovieStatus', { tmdbId }],
+    queryFn: async () => unwrap(await arrGetMovieStatus({ path: { tmdbId } })),
+    enabled: radarrConfigured,
+  });
 
-  const { data: candidateData, isLoading: candidateLoading } =
-    usePillarQuery<CandidateStatusResult>('media', ['rotation', 'getCandidateStatus'], { tmdbId });
+  const { data: candidateData, isLoading: candidateLoading } = useQuery<CandidateStatusResult>({
+    queryKey: ['media', 'rotation', 'getCandidateStatus', { tmdbId }],
+    queryFn: async () =>
+      (await unwrap(await rotationGetCandidateStatus({ path: { tmdbId } }))).data,
+  });
 
-  const addToQueueMutation = usePillarMutation<AddToQueueInput, unknown>(
-    'media',
-    ['rotation', 'addToQueue'],
-    {
-      onSuccess: () => toast.success('Added to rotation queue'),
-      onError: () => toast.error('Failed to add to queue'),
-    }
-  );
+  const invalidateRotation = () =>
+    void queryClient.invalidateQueries({ queryKey: ['media', 'rotation'] });
 
-  const removeFromQueueMutation = usePillarMutation<{ tmdbId: number }, unknown>(
-    'media',
-    ['rotation', 'removeFromQueue'],
-    {
-      onSuccess: () => toast.success('Removed from queue'),
-      onError: () => toast.error('Failed to remove from queue'),
-    }
-  );
+  const addToQueueMutation = useMutation({
+    mutationFn: async (input: AddToQueueInput) => unwrap(await rotationAddToQueue({ body: input })),
+    onSuccess: () => {
+      toast.success('Added to rotation queue');
+      invalidateRotation();
+    },
+    onError: () => toast.error('Failed to add to queue'),
+  });
 
-  const removeExclusionMutation = usePillarMutation<{ tmdbId: number }, unknown>(
-    'media',
-    ['rotation', 'removeExclusion'],
-    {
-      onSuccess: () => toast.success('Exclusion removed'),
-      onError: () => toast.error('Failed to remove exclusion'),
-    }
-  );
+  const removeFromQueueMutation = useMutation({
+    mutationFn: async (input: { tmdbId: number }) =>
+      unwrap(await rotationRemoveFromQueue({ path: { tmdbId: input.tmdbId } })),
+    onSuccess: () => {
+      toast.success('Removed from queue');
+      invalidateRotation();
+    },
+    onError: () => toast.error('Failed to remove from queue'),
+  });
+
+  const removeExclusionMutation = useMutation({
+    mutationFn: async (input: { tmdbId: number }) =>
+      unwrap(await rotationRemoveExclusion({ path: { tmdbId: input.tmdbId } })),
+    onSuccess: () => {
+      toast.success('Exclusion removed');
+      invalidateRotation();
+    },
+    onError: () => toast.error('Failed to remove exclusion'),
+  });
 
   return {
     radarrConfigured,

@@ -1,6 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 /**
  * SourceManagementSection — CRUD UI for rotation source management.
  *
@@ -8,6 +8,8 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
  */
 import { CRUDManagementSection } from '@pops/ui';
 
+import { unwrap } from '../media-api-helpers.js';
+import { rotationListSources, rotationSourceTypes } from '../media-api/index.js';
 import { SourceCard } from './source-management/SourceCard';
 import { SourceForm } from './source-management/SourceForm';
 
@@ -36,6 +38,33 @@ function toFormValues(source: Source): SourceFormValues {
     config: parseConfig(source.config),
     syncIntervalHours: source.syncIntervalHours,
   };
+}
+
+async function fetchSources(): Promise<Source[]> {
+  const { data } = await unwrap(await rotationListSources());
+  return data.map((s) => ({
+    id: s.id,
+    type: s.type,
+    name: s.name,
+    priority: s.priority,
+    enabled: s.enabled ? 1 : 0,
+    config: JSON.stringify(s.config),
+    lastSyncedAt: s.lastSyncedAt,
+    syncIntervalHours: s.syncIntervalHours,
+    candidateCount: s.candidateCount,
+  }));
+}
+
+function useSourceQueries() {
+  const sourcesQuery = useQuery<Source[]>({
+    queryKey: ['media', 'rotation', 'listSources'],
+    queryFn: fetchSources,
+  });
+  const sourceTypesQuery = useQuery<SourceTypesResult>({
+    queryKey: ['media', 'rotation', 'sourceTypes'],
+    queryFn: async () => (await unwrap(await rotationSourceTypes())).data,
+  });
+  return { sourcesQuery, sourceTypesQuery };
 }
 
 function SourceList({
@@ -69,12 +98,7 @@ function SourceList({
 }
 
 export function SourceManagementSection() {
-  const sourcesQuery = usePillarQuery<Source[]>('media', ['rotation', 'listSources'], undefined);
-  const sourceTypesQuery = usePillarQuery<SourceTypesResult>(
-    'media',
-    ['rotation', 'sourceTypes'],
-    undefined
-  );
+  const { sourcesQuery, sourceTypesQuery } = useSourceQueries();
 
   const [showForm, setShowForm] = useState<'create' | 'edit' | null>(null);
   const [editingSource, setEditingSource] = useState<SourceFormValues | null>(null);

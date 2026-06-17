@@ -1,7 +1,8 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../media-api-helpers.js';
+import { arrAddSeries } from '../../media-api/index.js';
 import { useSeriesDefaults, useSeriesQueries } from './useRequestSeriesQueries';
 
 import type { SeasonInfo } from '../RequestSeriesModal';
@@ -55,16 +56,19 @@ function useSubmit({
   args: ModelArgs;
   resetState: () => void;
 }) {
-  const addSeries = usePillarMutation<AddSeriesInput, unknown>('media', ['arr', 'addSeries'], {
+  const queryClient = useQueryClient();
+  const addSeries = useMutation({
+    mutationFn: async (input: AddSeriesInput) => unwrap(await arrAddSeries({ body: input })),
     onSuccess: () => {
       state.setSuccess(true);
       state.setError(null);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'arr'] });
       setTimeout(() => {
         args.onClose();
         resetState();
       }, 1500);
     },
-    onError: (err) => state.setError(err.message),
+    onError: (err: Error) => state.setError(err.message),
   });
 
   const handleSubmit = () => {

@@ -1,4 +1,5 @@
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
+
 /**
  * ArrStatusBadge — shows Radarr/Sonarr monitoring and download status.
  *
@@ -7,6 +8,8 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Badge } from '@pops/ui';
 
 import { ARR_STATUS_STYLES } from '../lib/statusStyles';
+import { unwrap } from '../media-api-helpers.js';
+import { arrConfig, arrGetMovieStatus, arrGetShowStatus } from '../media-api/index.js';
 
 type MediaKind = 'movie' | 'show';
 
@@ -27,26 +30,23 @@ interface ArrStatusResult {
 }
 
 function useArrStatus({ kind, externalId }: ArrStatusBadgeProps) {
-  const { data: configData } = usePillarQuery<ArrConfigResult>(
-    'media',
-    ['arr', 'getConfig'],
-    undefined
-  );
+  const { data: configData } = useQuery<ArrConfigResult>({
+    queryKey: ['media', 'arr', 'getConfig'],
+    queryFn: async () => unwrap(await arrConfig()),
+  });
   const config = configData?.data;
   const isConfigured = kind === 'movie' ? config?.radarrConfigured : config?.sonarrConfigured;
 
-  const movieStatus = usePillarQuery<ArrStatusResult>(
-    'media',
-    ['arr', 'getMovieStatus'],
-    { tmdbId: externalId },
-    { enabled: kind === 'movie' && isConfigured === true }
-  );
-  const showStatus = usePillarQuery<ArrStatusResult>(
-    'media',
-    ['arr', 'getShowStatus'],
-    { tvdbId: externalId },
-    { enabled: kind === 'show' && isConfigured === true }
-  );
+  const movieStatus = useQuery<ArrStatusResult>({
+    queryKey: ['media', 'arr', 'getMovieStatus', { tmdbId: externalId }],
+    queryFn: async () => unwrap(await arrGetMovieStatus({ path: { tmdbId: externalId } })),
+    enabled: kind === 'movie' && isConfigured === true,
+  });
+  const showStatus = useQuery<ArrStatusResult>({
+    queryKey: ['media', 'arr', 'getShowStatus', { tvdbId: externalId }],
+    queryFn: async () => unwrap(await arrGetShowStatus({ path: { tvdbId: externalId } })),
+    enabled: kind === 'show' && isConfigured === true,
+  });
 
   return { isConfigured, query: kind === 'movie' ? movieStatus : showStatus };
 }

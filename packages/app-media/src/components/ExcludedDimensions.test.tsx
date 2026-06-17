@@ -1,19 +1,21 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock tRPC hooks
-const mockScoresQuery = vi.fn();
-const mockDimensionsQuery = vi.fn();
-const mockIncludeMutate = vi.fn();
+const comparisonsScoresMock = vi.hoisted(() => vi.fn());
+const comparisonsListDimensionsMock = vi.hoisted(() => vi.fn());
+const comparisonsIncludeInDimensionMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'comparisons.scores') return mockScoresQuery(input);
-    if (key === 'comparisons.listDimensions') return mockDimensionsQuery();
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: () => ({ mutate: mockIncludeMutate, isPending: false }),
+vi.mock('../media-api/index.js', () => ({
+  comparisonsScores: (...args: unknown[]) => comparisonsScoresMock(...args),
+  comparisonsListDimensions: (...args: unknown[]) => comparisonsListDimensionsMock(...args),
+  comparisonsIncludeInDimension: (...args: unknown[]) => comparisonsIncludeInDimensionMock(...args),
+}));
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
 }));
 
 import { ExcludedDimensions } from './ExcludedDimensions';
@@ -24,45 +26,63 @@ const baseDimensions = [
   { id: 3, name: 'Emotional Impact' },
 ];
 
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+}
+
+function renderExcluded(props: { mediaType: 'movie' | 'tv_show'; mediaId: number }) {
+  const queryClient = makeQueryClient();
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return render(<ExcludedDimensions {...props} />, { wrapper });
+}
+
+afterEach(() => {
+  cleanup();
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockDimensionsQuery.mockReturnValue({
-    data: { data: baseDimensions },
-    isLoading: false,
-  });
+  comparisonsListDimensionsMock.mockResolvedValue(ok({ data: baseDimensions }));
+  comparisonsIncludeInDimensionMock.mockResolvedValue(ok({ message: 'ok' }));
 });
 
 describe('ExcludedDimensions', () => {
-  it('renders nothing when no dimensions are excluded', () => {
-    mockScoresQuery.mockReturnValue({
-      data: {
+  it('renders nothing when no dimensions are excluded', async () => {
+    comparisonsScoresMock.mockResolvedValue(
+      ok({
         data: [
           { dimensionId: 1, score: 1500, comparisonCount: 5, excluded: false },
           { dimensionId: 2, score: 1300, comparisonCount: 4, excluded: false },
         ],
-      },
-      isLoading: false,
-    });
+      })
+    );
 
-    const { container } = render(<ExcludedDimensions mediaType="movie" mediaId={42} />);
-    expect(container.innerHTML).toBe('');
+    const { container } = renderExcluded({ mediaType: 'movie', mediaId: 42 });
+    await waitFor(() => expect(comparisonsScoresMock).toHaveBeenCalled());
+    await waitFor(() => expect(container.innerHTML).toBe(''));
   });
 
-  it('shows excluded dimensions with Include buttons', () => {
-    mockScoresQuery.mockReturnValue({
-      data: {
+  it('shows excluded dimensions with Include buttons', async () => {
+    comparisonsScoresMock.mockResolvedValue(
+      ok({
         data: [
           { dimensionId: 1, score: 1500, comparisonCount: 5, excluded: true },
           { dimensionId: 2, score: 1300, comparisonCount: 4, excluded: false },
           { dimensionId: 3, score: 1200, comparisonCount: 2, excluded: true },
         ],
-      },
-      isLoading: false,
-    });
+      })
+    );
 
-    render(<ExcludedDimensions mediaType="movie" mediaId={42} />);
+    renderExcluded({ mediaType: 'movie', mediaId: 42 });
 
-    expect(screen.getByText('Excluded Dimensions')).toBeInTheDocument();
+    expect(await screen.findByText('Excluded Dimensions')).toBeInTheDocument();
     expect(screen.getByText('Cinematography')).toBeInTheDocument();
     expect(screen.getByText('Emotional Impact')).toBeInTheDocument();
     expect(screen.queryByText('Entertainment')).not.toBeInTheDocument();
@@ -71,42 +91,36 @@ describe('ExcludedDimensions', () => {
     expect(includeButtons).toHaveLength(2);
   });
 
-  it('calls includeInDimension mutation when Include is clicked', () => {
-    mockScoresQuery.mockReturnValue({
-      data: {
-        data: [{ dimensionId: 1, score: 1500, comparisonCount: 5, excluded: true }],
-      },
-      isLoading: false,
-    });
+  it('calls includeInDimension mutation when Include is clicked', async () => {
+    comparisonsScoresMock.mockResolvedValue(
+      ok({ data: [{ dimensionId: 1, score: 1500, comparisonCount: 5, excluded: true }] })
+    );
 
-    render(<ExcludedDimensions mediaType="movie" mediaId={42} />);
+    const user = userEvent.setup();
+    renderExcluded({ mediaType: 'movie', mediaId: 42 });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Include' }));
+    await user.click(await screen.findByRole('button', { name: 'Include' }));
 
-    expect(mockIncludeMutate).toHaveBeenCalledWith({
-      mediaType: 'movie',
-      mediaId: 42,
-      dimensionId: 1,
-    });
+    await waitFor(() =>
+      expect(comparisonsIncludeInDimensionMock).toHaveBeenCalledWith({
+        body: { mediaType: 'movie', mediaId: 42, dimensionId: 1 },
+      })
+    );
   });
 
-  it('renders nothing when scores are empty', () => {
-    mockScoresQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-    });
+  it('renders nothing when scores are empty', async () => {
+    comparisonsScoresMock.mockResolvedValue(ok({ data: [] }));
 
-    const { container } = render(<ExcludedDimensions mediaType="movie" mediaId={42} />);
-    expect(container.innerHTML).toBe('');
+    const { container } = renderExcluded({ mediaType: 'movie', mediaId: 42 });
+    await waitFor(() => expect(comparisonsScoresMock).toHaveBeenCalled());
+    await waitFor(() => expect(container.innerHTML).toBe(''));
   });
 
-  it('renders nothing when scores data is null', () => {
-    mockScoresQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-    });
+  it('renders nothing when scores data is null', async () => {
+    comparisonsScoresMock.mockResolvedValue(ok({ data: [] }));
 
-    const { container } = render(<ExcludedDimensions mediaType="movie" mediaId={42} />);
-    expect(container.innerHTML).toBe('');
+    const { container } = renderExcluded({ mediaType: 'movie', mediaId: 42 });
+    await waitFor(() => expect(comparisonsScoresMock).toHaveBeenCalled());
+    await waitFor(() => expect(container.innerHTML).toBe(''));
   });
 });
