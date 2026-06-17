@@ -194,3 +194,58 @@ export const plexusSyncResultSchema = z.object({
   filtered: z.number().int(),
 });
 export type PlexusSyncResultWire = z.infer<typeof plexusSyncResultSchema>;
+
+const ENGRAM_STATUSES = ['active', 'archived', 'consolidated', 'stale'] as const;
+
+/** Engram id stamp: `eng_{YYYYMMDD}_{HHmm}_{slug}`. */
+export const engramIdSchema = z
+  .string()
+  .regex(/^eng_\d{8}_\d{4}_[a-z0-9-]+$/, 'must match eng_{YYYYMMDD}_{HHmm}_{slug}');
+
+/**
+ * An engram as projected from the index + its many-to-many auxiliaries.
+ * `customFields` carries template-defined frontmatter keys passed through
+ * opaque. `source` is a free string on the wire (the fixed channels plus the
+ * `plexus:{name}` prefix) — validated server-side, not at the contract edge.
+ */
+export const engramSchema = z.object({
+  id: z.string().min(1),
+  type: z.string().min(1),
+  scopes: z.array(z.string()),
+  tags: z.array(z.string()),
+  links: z.array(z.string()),
+  created: z.string(),
+  modified: z.string(),
+  source: z.string(),
+  status: z.enum(ENGRAM_STATUSES),
+  template: z.string().nullable(),
+  title: z.string(),
+  filePath: z.string(),
+  contentHash: z.string(),
+  wordCount: z.number().int(),
+  customFields: z.record(z.string(), z.unknown()),
+});
+export type EngramWire = z.infer<typeof engramSchema>;
+
+/** A scope with its engram usage count. */
+export const scopeInfoSchema = z.object({
+  scope: z.string(),
+  count: z.number().int(),
+});
+export type ScopeInfoWire = z.infer<typeof scopeInfoSchema>;
+
+/** A single reconciliation suggestion. */
+export const scopeSuggestionSchema = z.object({
+  original: z.string(),
+  canonical: z.string(),
+  confidence: z.number(),
+  reason: z.string(),
+});
+export type ScopeSuggestionWire = z.infer<typeof scopeSuggestionSchema>;
+
+/** A tag with its engram usage count. */
+export const tagInfoSchema = z.object({
+  tag: z.string(),
+  count: z.number().int(),
+});
+export type TagInfoWire = z.infer<typeof tagInfoSchema>;
