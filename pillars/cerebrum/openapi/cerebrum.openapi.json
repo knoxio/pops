@@ -1411,6 +1411,1440 @@
         "tags": ["engrams"]
       }
     },
+    "/glia/actions/history": {
+      "post": {
+        "operationId": "glia.actions.history",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "actionType": {
+                    "enum": ["prune", "consolidate", "link", "audit"],
+                    "type": "string"
+                  },
+                  "dateFrom": {
+                    "type": "string"
+                  },
+                  "dateTo": {
+                    "type": "string"
+                  },
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "offset": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "actions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["prune", "consolidate", "link", "audit"],
+                            "type": "string"
+                          },
+                          "affectedIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "decidedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "executedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "payload": {
+                            "nullable": true
+                          },
+                          "phase": {
+                            "enum": ["propose", "act_report", "silent"],
+                            "type": "string"
+                          },
+                          "rationale": {
+                            "type": "string"
+                          },
+                          "revertedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                            "type": "string"
+                          },
+                          "userDecision": {
+                            "enum": ["approve", "reject", "modify"],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "userNote": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "actionType",
+                          "affectedIds",
+                          "rationale",
+                          "payload",
+                          "phase",
+                          "status",
+                          "userDecision",
+                          "userNote",
+                          "executedAt",
+                          "decidedAt",
+                          "revertedAt",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["actions", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Query the action audit trail (filtered + paginated).",
+        "tags": ["glia", "actions"]
+      }
+    },
+    "/glia/actions/search": {
+      "post": {
+        "operationId": "glia.actions.list",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "actionType": {
+                    "enum": ["prune", "consolidate", "link", "audit"],
+                    "type": "string"
+                  },
+                  "dateFrom": {
+                    "type": "string"
+                  },
+                  "dateTo": {
+                    "type": "string"
+                  },
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "offset": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "actions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["prune", "consolidate", "link", "audit"],
+                            "type": "string"
+                          },
+                          "affectedIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "decidedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "executedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "payload": {
+                            "nullable": true
+                          },
+                          "phase": {
+                            "enum": ["propose", "act_report", "silent"],
+                            "type": "string"
+                          },
+                          "rationale": {
+                            "type": "string"
+                          },
+                          "revertedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                            "type": "string"
+                          },
+                          "userDecision": {
+                            "enum": ["approve", "reject", "modify"],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "userNote": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "actionType",
+                          "affectedIds",
+                          "rationale",
+                          "payload",
+                          "phase",
+                          "status",
+                          "userDecision",
+                          "userNote",
+                          "executedAt",
+                          "decidedAt",
+                          "revertedAt",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["actions", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List glia actions matching the supplied filters (proposal queue + audit trail).",
+        "tags": ["glia", "actions"]
+      }
+    },
+    "/glia/actions/{id}": {
+      "get": {
+        "operationId": "glia.actions.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "action": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["prune", "consolidate", "link", "audit"],
+                          "type": "string"
+                        },
+                        "affectedIds": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "decidedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "executedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "payload": {
+                          "nullable": true
+                        },
+                        "phase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "rationale": {
+                          "type": "string"
+                        },
+                        "revertedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                          "type": "string"
+                        },
+                        "userDecision": {
+                          "enum": ["approve", "reject", "modify"],
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "userNote": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "actionType",
+                        "affectedIds",
+                        "rationale",
+                        "payload",
+                        "phase",
+                        "status",
+                        "userDecision",
+                        "userNote",
+                        "executedAt",
+                        "decidedAt",
+                        "revertedAt",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["action"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Get a single glia action by id.",
+        "tags": ["glia", "actions"]
+      }
+    },
+    "/glia/actions/{id}/decide": {
+      "post": {
+        "operationId": "glia.actions.decide",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "decision": {
+                    "enum": ["approve", "reject", "modify"],
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": ["decision"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "action": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["prune", "consolidate", "link", "audit"],
+                          "type": "string"
+                        },
+                        "affectedIds": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "decidedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "executedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "payload": {
+                          "nullable": true
+                        },
+                        "phase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "rationale": {
+                          "type": "string"
+                        },
+                        "revertedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                          "type": "string"
+                        },
+                        "userDecision": {
+                          "enum": ["approve", "reject", "modify"],
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "userNote": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "actionType",
+                        "affectedIds",
+                        "rationale",
+                        "payload",
+                        "phase",
+                        "status",
+                        "userDecision",
+                        "userNote",
+                        "executedAt",
+                        "decidedAt",
+                        "revertedAt",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "transition": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["prune", "consolidate", "link", "audit"],
+                          "type": "string"
+                        },
+                        "newPhase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "oldPhase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "transitioned": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["transitioned", "actionType", "oldPhase", "newPhase", "reason"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["action", "transition"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Record a user decision on a pending action; eagerly re-evaluate graduation.",
+        "tags": ["glia", "actions"]
+      }
+    },
+    "/glia/actions/{id}/execute": {
+      "post": {
+        "operationId": "glia.actions.execute",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "action": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["prune", "consolidate", "link", "audit"],
+                          "type": "string"
+                        },
+                        "affectedIds": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "decidedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "executedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "payload": {
+                          "nullable": true
+                        },
+                        "phase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "rationale": {
+                          "type": "string"
+                        },
+                        "revertedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                          "type": "string"
+                        },
+                        "userDecision": {
+                          "enum": ["approve", "reject", "modify"],
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "userNote": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "actionType",
+                        "affectedIds",
+                        "rationale",
+                        "payload",
+                        "phase",
+                        "status",
+                        "userDecision",
+                        "userNote",
+                        "executedAt",
+                        "decidedAt",
+                        "revertedAt",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["action"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Execute an approved action.",
+        "tags": ["glia", "actions"]
+      }
+    },
+    "/glia/actions/{id}/revert": {
+      "post": {
+        "operationId": "glia.actions.revert",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "action": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["prune", "consolidate", "link", "audit"],
+                          "type": "string"
+                        },
+                        "affectedIds": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "decidedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "executedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "payload": {
+                          "nullable": true
+                        },
+                        "phase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "rationale": {
+                          "type": "string"
+                        },
+                        "revertedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["pending", "approved", "rejected", "executed", "reverted"],
+                          "type": "string"
+                        },
+                        "userDecision": {
+                          "enum": ["approve", "reject", "modify"],
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "userNote": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "actionType",
+                        "affectedIds",
+                        "rationale",
+                        "payload",
+                        "phase",
+                        "status",
+                        "userDecision",
+                        "userNote",
+                        "executedAt",
+                        "decidedAt",
+                        "revertedAt",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "revertResult": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "errors": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "restoredIds": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "success": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["success", "restoredIds", "errors"],
+                      "type": "object"
+                    },
+                    "transition": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["prune", "consolidate", "link", "audit"],
+                          "type": "string"
+                        },
+                        "newPhase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "oldPhase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "transitioned": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["transitioned", "actionType", "oldPhase", "newPhase", "reason"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["action", "transition", "revertResult"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Revert an executed action (DB-state flip + file-level undo).",
+        "tags": ["glia", "actions"]
+      }
+    },
+    "/glia/digest": {
+      "post": {
+        "operationId": "glia.digest",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "actionType": {
+                    "enum": ["prune", "consolidate", "link", "audit"],
+                    "type": "string"
+                  },
+                  "deliver": {
+                    "type": "boolean"
+                  },
+                  "period": {
+                    "enum": ["daily", "weekly"],
+                    "type": "string"
+                  },
+                  "rejectionRateThreshold": {
+                    "exclusiveMinimum": true,
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "delivery": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "attempted": {
+                          "type": "boolean"
+                        },
+                        "channels": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "channel": {
+                                "enum": ["shell", "moltbot"],
+                                "type": "string"
+                              },
+                              "delivered": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": ["channel", "delivered", "reason"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "suppressedReason": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["attempted", "suppressedReason", "channels"],
+                      "type": "object"
+                    },
+                    "report": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "anomalies": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "actionType": {
+                                "enum": ["prune", "consolidate", "link", "audit"],
+                                "type": "string"
+                              },
+                              "autonomousSince": {
+                                "type": "string"
+                              },
+                              "executedCount": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "rejectionRatePostGraduation": {
+                                "type": "number"
+                              },
+                              "revertedCount": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "threshold": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "actionType",
+                              "rejectionRatePostGraduation",
+                              "threshold",
+                              "autonomousSince",
+                              "executedCount",
+                              "revertedCount"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "endDate": {
+                          "type": "string"
+                        },
+                        "groups": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "actionType": {
+                                "enum": ["prune", "consolidate", "link", "audit"],
+                                "type": "string"
+                              },
+                              "actions": {
+                                "items": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "affectedIds": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    },
+                                    "executedAt": {
+                                      "type": "string"
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "rationale": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["id", "affectedIds", "rationale", "executedAt"],
+                                  "type": "object"
+                                },
+                                "type": "array"
+                              },
+                              "count": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              }
+                            },
+                            "required": ["actionType", "count", "actions"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "period": {
+                          "enum": ["daily", "weekly"],
+                          "type": "string"
+                        },
+                        "startDate": {
+                          "type": "string"
+                        },
+                        "totalAutonomousActions": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "period",
+                        "startDate",
+                        "endDate",
+                        "totalAutonomousActions",
+                        "groups",
+                        "anomalies"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["report", "delivery"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Generate (and optionally deliver) the autonomous-action digest.",
+        "tags": ["glia"]
+      }
+    },
+    "/glia/trust-state": {
+      "get": {
+        "operationId": "glia.trustState.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "states": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["prune", "consolidate", "link", "audit"],
+                            "type": "string"
+                          },
+                          "approvedCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "autonomousSince": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "currentPhase": {
+                            "enum": ["propose", "act_report", "silent"],
+                            "type": "string"
+                          },
+                          "graduatedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastRevertAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "rejectedCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "revertedCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "actionType",
+                          "currentPhase",
+                          "approvedCount",
+                          "rejectedCount",
+                          "revertedCount",
+                          "autonomousSince",
+                          "lastRevertAt",
+                          "graduatedAt",
+                          "updatedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["states"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List trust state for every action type.",
+        "tags": ["glia", "trustState"]
+      }
+    },
+    "/glia/trust-state/{actionType}": {
+      "get": {
+        "operationId": "glia.trustState.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actionType",
+            "required": true,
+            "schema": {
+              "enum": ["prune", "consolidate", "link", "audit"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "state": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["prune", "consolidate", "link", "audit"],
+                          "type": "string"
+                        },
+                        "approvedCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "autonomousSince": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "currentPhase": {
+                          "enum": ["propose", "act_report", "silent"],
+                          "type": "string"
+                        },
+                        "graduatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastRevertAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "rejectedCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "revertedCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "actionType",
+                        "currentPhase",
+                        "approvedCount",
+                        "rejectedCount",
+                        "revertedCount",
+                        "autonomousSince",
+                        "lastRevertAt",
+                        "graduatedAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["state"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Get trust state for a single action type.",
+        "tags": ["glia", "trustState"]
+      }
+    },
     "/nudges/contradictions": {
       "post": {
         "operationId": "nudges.contradictions",

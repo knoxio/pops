@@ -14,6 +14,17 @@ import { TemplateRegistry } from '../modules/templates/registry.js';
 import type { Express } from 'express';
 
 import type {
+  GliaActionTypeWire,
+  GliaActionStatusWire,
+  GliaActionWire,
+  GliaDigestDeliveryWire,
+  GliaDigestReportWire,
+  GliaRevertResultWire,
+  GliaTransitionResultWire,
+  GliaTrustStateWire,
+  GliaUserDecisionWire,
+} from '../../contract/rest-glia-schemas.js';
+import type {
   NudgeContradictionWire,
   NudgePriorityWire,
   NudgeStatusWire,
@@ -125,6 +136,22 @@ export interface ReflexHistoryFilters {
   offset?: number;
 }
 
+export interface GliaActionFilters {
+  actionType?: GliaActionTypeWire;
+  status?: GliaActionStatusWire;
+  dateFrom?: string;
+  dateTo?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface GliaDigestInput {
+  period?: 'daily' | 'weekly';
+  actionType?: GliaActionTypeWire;
+  rejectionRateThreshold?: number;
+  deliver?: boolean;
+}
+
 export interface ListNudgesFilters {
   type?: NudgeTypeWire;
   status?: NudgeStatusWire;
@@ -233,6 +260,36 @@ export function makeClient(app: Express) {
       setFilters: (adapterId: string, filters: PlexusFilterDefinitionWire[]) =>
         send<{ filters: PlexusFilterWire[] }>(
           r.post(`/plexus/adapters/${adapterId}/filters`).send({ filters })
+        ),
+    },
+    glia: {
+      list: (filters: GliaActionFilters = {}) =>
+        send<{ actions: GliaActionWire[]; total: number }>(
+          r.post('/glia/actions/search').send(filters)
+        ),
+      get: (id: string) => send<{ action: GliaActionWire }>(r.get(`/glia/actions/${id}`)),
+      decide: (id: string, decision: GliaUserDecisionWire, note?: string) =>
+        send<{ action: GliaActionWire; transition: GliaTransitionResultWire }>(
+          r.post(`/glia/actions/${id}/decide`).send({ decision, ...(note ? { note } : {}) })
+        ),
+      execute: (id: string) =>
+        send<{ action: GliaActionWire }>(r.post(`/glia/actions/${id}/execute`).send({})),
+      revert: (id: string) =>
+        send<{
+          action: GliaActionWire;
+          transition: GliaTransitionResultWire;
+          revertResult: GliaRevertResultWire;
+        }>(r.post(`/glia/actions/${id}/revert`).send({})),
+      history: (filters: GliaActionFilters = {}) =>
+        send<{ actions: GliaActionWire[]; total: number }>(
+          r.post('/glia/actions/history').send(filters)
+        ),
+      trustStateGet: (actionType: GliaActionTypeWire) =>
+        send<{ state: GliaTrustStateWire }>(r.get(`/glia/trust-state/${actionType}`)),
+      trustStateList: () => send<{ states: GliaTrustStateWire[] }>(r.get('/glia/trust-state')),
+      digest: (input: GliaDigestInput = {}) =>
+        send<{ report: GliaDigestReportWire; delivery: GliaDigestDeliveryWire }>(
+          r.post('/glia/digest').send(input)
         ),
     },
   };
