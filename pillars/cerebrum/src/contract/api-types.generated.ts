@@ -3,6 +3,109 @@
  * Do not edit by hand — regenerate via `pnpm -F @pops/cerebrum generate:api-types`.
  */
 export interface paths {
+  '/ego/chat': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run a chat turn: retrieve context, call the LLM, persist turns. */
+    post: operations['ego.chat'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ego/conversations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new conversation. */
+    post: operations['ego.createConversation'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ego/conversations/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** List conversations (paginated, optional title search). */
+    post: operations['ego.listConversations'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ego/conversations/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a conversation with all its messages. */
+    get: operations['ego.getConversation'];
+    put?: never;
+    post?: never;
+    /** Delete a conversation (cascades messages + context). */
+    delete: operations['ego.deleteConversation'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ego/conversations/{id}/context': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Return the current context state (scopes, app context, engrams). */
+    get: operations['ego.getActiveContext'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ego/conversations/{id}/scopes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Replace the active scopes for a conversation. */
+    post: operations['ego.setScopes'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/emit/generate': {
     parameters: {
       query?: never;
@@ -328,6 +431,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/glia/orphans': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active engrams with no inbound links. */
+    get: operations['workers.getOrphans'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/scores/quality': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Compute the quality score for a single engram. */
+    post: operations['workers.getQualityScore'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/scores/staleness': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Compute the staleness score for a single engram. */
+    post: operations['workers.getStalenessScore'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/glia/trust-state': {
     parameters: {
       query?: never;
@@ -356,6 +510,74 @@ export interface paths {
     get: operations['glia.trustState.get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/workers/audit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run the auditor worker (quality, contradiction, coverage-gap). */
+    post: operations['workers.runAuditor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/workers/consolidate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run the consolidator worker (similar-engram merge proposals). */
+    post: operations['workers.runConsolidator'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/workers/link': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run the linker worker (cross-reference proposals). */
+    post: operations['workers.runLinker'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/glia/workers/prune': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run the pruner worker (staleness + orphan archival proposals). */
+    post: operations['workers.runPruner'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1038,6 +1260,359 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'ego.chat': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          appContext?: {
+            app: string;
+            entityId?: string;
+            entityType?: string;
+            route?: string;
+          };
+          /** @enum {string} */
+          channel?: 'shell' | 'moltbot' | 'mcp' | 'cli';
+          conversationId?: string;
+          knownScopes?: string[];
+          message: string;
+          scopes?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            conversationId: string;
+            response: {
+              citations: unknown;
+              content: string;
+              conversationId: string;
+              createdAt: string;
+              id: string;
+              role: string;
+              tokensIn: number | null;
+              tokensOut: number | null;
+              toolCalls: unknown;
+            };
+            retrievedEngrams: {
+              engramId: string;
+              relevanceScore: number;
+            }[];
+            scopeNegotiation: {
+              changed: boolean;
+              reason: string | null;
+              scopes: string[];
+              secretNotice: string | null;
+            } | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ego.createConversation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          appContext?: unknown;
+          model: string;
+          scopes?: string[];
+          title?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            conversation: {
+              activeScopes: string[];
+              appContext: unknown;
+              createdAt: string;
+              id: string;
+              model: string;
+              title: string | null;
+              updatedAt: string;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ego.listConversations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          limit?: number;
+          offset?: number;
+          search?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            conversations: {
+              activeScopes: string[];
+              appContext: unknown;
+              createdAt: string;
+              id: string;
+              model: string;
+              title: string | null;
+              updatedAt: string;
+            }[];
+            total: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ego.getConversation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            conversation: {
+              activeScopes: string[];
+              appContext: unknown;
+              createdAt: string;
+              id: string;
+              model: string;
+              title: string | null;
+              updatedAt: string;
+            };
+            messages: {
+              citations: unknown;
+              content: string;
+              conversationId: string;
+              createdAt: string;
+              id: string;
+              role: string;
+              tokensIn: number | null;
+              tokensOut: number | null;
+              toolCalls: unknown;
+            }[];
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ego.deleteConversation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            success: true;
+          };
+        };
+      };
+    };
+  };
+  'ego.getActiveContext': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            appContext: unknown;
+            engrams: {
+              engramId: string;
+              loadedAt: string;
+              relevanceScore: number | null;
+            }[];
+            scopes: string[];
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ego.setScopes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          scopes: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            scopes: string[];
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'emit.generate': {
     parameters: {
       query?: never;
@@ -2536,6 +3111,138 @@ export interface operations {
       };
     };
   };
+  'workers.getOrphans': {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engrams: {
+              created: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              status: string;
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'workers.getQualityScore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          engramId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            factors: {
+              completeness: number;
+              linkDensity: number;
+              specificity: number;
+              templateFit: number;
+            };
+            score: number;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'workers.getStalenessScore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          engramId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            factors: {
+              daysSinceModified: number;
+              daysSinceReferenced: number;
+              inboundLinkCount: number;
+              queryHitCount: number;
+            };
+            score: number;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'glia.trustState.list': {
     parameters: {
       query?: never;
@@ -2614,6 +3321,186 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'workers.runAuditor': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          dryRun?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            actions: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              id: string;
+              payload: {
+                [key: string]: unknown;
+              };
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              /** @enum {string} */
+              status: 'proposed' | 'executed' | 'error';
+            }[];
+            processed: number;
+            skipped: number;
+          };
+        };
+      };
+    };
+  };
+  'workers.runConsolidator': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          dryRun?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            actions: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              id: string;
+              payload: {
+                [key: string]: unknown;
+              };
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              /** @enum {string} */
+              status: 'proposed' | 'executed' | 'error';
+            }[];
+            processed: number;
+            skipped: number;
+          };
+        };
+      };
+    };
+  };
+  'workers.runLinker': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          dryRun?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            actions: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              id: string;
+              payload: {
+                [key: string]: unknown;
+              };
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              /** @enum {string} */
+              status: 'proposed' | 'executed' | 'error';
+            }[];
+            processed: number;
+            skipped: number;
+          };
+        };
+      };
+    };
+  };
+  'workers.runPruner': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          dryRun?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            actions: {
+              /** @enum {string} */
+              actionType: 'prune' | 'consolidate' | 'link' | 'audit';
+              affectedIds: string[];
+              createdAt: string;
+              id: string;
+              payload: {
+                [key: string]: unknown;
+              };
+              /** @enum {string} */
+              phase: 'propose' | 'act_report' | 'silent';
+              rationale: string;
+              /** @enum {string} */
+              status: 'proposed' | 'executed' | 'error';
+            }[];
+            processed: number;
+            skipped: number;
           };
         };
       };

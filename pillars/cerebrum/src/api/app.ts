@@ -15,7 +15,9 @@ import express, { type Express, type Request, type Response } from 'express';
 
 import { cerebrumContract } from '../contract/rest.js';
 import { type CerebrumApiDeps, makeRequestHandler } from './handlers.js';
+import { AnthropicEgoLlm } from './modules/ego/llm.js';
 import { AnthropicQueryLlm, AnthropicQueryStreamLlm } from './modules/query/llm.js';
+import { makeEgoStreamRouter } from './rest/ego-stream.js';
 import { makeCerebrumRestHandlers } from './rest/handlers.js';
 import { makeQueryStreamHandler } from './rest/query-stream-route.js';
 
@@ -39,6 +41,21 @@ export function createCerebrumApiApp(deps: CerebrumApiDeps): Express {
   app.get('/pillars', (_req: Request, res: Response) => {
     res.json(handlers.pillars());
   });
+
+  // The ego SSE route (`text/event-stream`) can't be modelled in ts-rest, so it
+  // mounts as a plain Express route BEFORE createExpressEndpoints.
+  app.use(
+    makeEgoStreamRouter({
+      db: deps.cerebrumDb.db,
+      raw: deps.cerebrumDb.raw,
+      vecAvailable: deps.cerebrumDb.vecAvailable,
+      engramRoot: deps.engramRoot,
+      templates: deps.templateRegistry,
+      llm: deps.egoLlm ?? new AnthropicEgoLlm(),
+      peers: deps.peerClients,
+      embeddingClient: deps.embeddingClient,
+    })
+  );
 
   // SSE: ts-rest can't model an event stream, so the query stream route is a
   // plain Express handler mounted ahead of the generated endpoints.
