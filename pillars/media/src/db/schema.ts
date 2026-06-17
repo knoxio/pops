@@ -20,6 +20,7 @@ export { plexSettings } from './schema/plex-settings.js';
 export { rotationCandidates } from './schema/rotation-candidates.js';
 export { rotationExclusions } from './schema/rotation-exclusions.js';
 export { rotationLog } from './schema/rotation-log.js';
+export { rotationSettings } from './schema/rotation-settings.js';
 export { rotationSources } from './schema/rotation-sources.js';
 export { seasons } from './schema/seasons.js';
 export { shelfImpressions } from './schema/shelf-impressions.js';
