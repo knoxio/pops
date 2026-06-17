@@ -9,6 +9,7 @@ import { initServer } from '@ts-rest/express';
 
 import { mediaContract } from '../../contract/rest.js';
 import { type OpenedMediaDb } from '../../db/index.js';
+import { makeLibraryHandlers } from './library-handlers.js';
 import { makeMoviesHandlers } from './movies-handlers.js';
 import { makeShelfImpressionsHandlers } from './shelf-impressions-handlers.js';
 import { makeTvShowsHandlers } from './tv-shows-handlers.js';
@@ -24,6 +25,7 @@ export function makeMediaRestHandlers(deps: {
   return server.router(mediaContract, {
     movies: makeMoviesHandlers(db),
     tvShows: makeTvShowsHandlers(db),
+    library: makeLibraryHandlers(db),
     watchlist: makeWatchlistHandlers(db),
     watchHistory: makeWatchHistoryHandlers(db),
     shelfImpressions: makeShelfImpressionsHandlers(db),

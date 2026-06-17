@@ -128,6 +128,382 @@
         "tags": ["tvShows"]
       }
     },
+    "/library": {
+      "get": {
+        "operationId": "library.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "default": "all",
+              "enum": ["all", "movie", "tv"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": true,
+            "schema": {
+              "default": "title",
+              "enum": ["title", "dateAdded", "releaseDate", "rating"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "genre",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": true,
+            "schema": {
+              "default": 1,
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": true,
+            "schema": {
+              "default": 24,
+              "exclusiveMinimum": true,
+              "maximum": 96,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "cdnPosterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "genres": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": ["movie", "tv"],
+                            "type": "string"
+                          },
+                          "voteAverage": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "year": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "title",
+                          "year",
+                          "posterUrl",
+                          "cdnPosterUrl",
+                          "genres",
+                          "voteAverage",
+                          "createdAt",
+                          "releaseDate"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "pagination": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "pageSize": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages", "hasMore"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "pagination"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List the library (movies + TV shows) with filter / sort / pagination",
+        "tags": ["library"]
+      }
+    },
+    "/library/genres": {
+      "get": {
+        "operationId": "library.genres",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List the distinct genres across the library",
+        "tags": ["library"]
+      }
+    },
+    "/library/quick-pick": {
+      "get": {
+        "operationId": "library.quickPick",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "count",
+            "required": true,
+            "schema": {
+              "default": 3,
+              "exclusiveMinimum": true,
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "backdropUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "budget": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "genres": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "imdbId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "logoPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "logoUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "originalLanguage": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "originalTitle": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "overview": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterOverridePath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "revenue": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "rotationExpiresAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "rotationStatus": {
+                            "enum": ["leaving", "protected"],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "runtime": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "status": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "tagline": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "voteAverage": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tmdbId",
+                          "imdbId",
+                          "title",
+                          "originalTitle",
+                          "overview",
+                          "tagline",
+                          "releaseDate",
+                          "runtime",
+                          "status",
+                          "originalLanguage",
+                          "budget",
+                          "revenue",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "backdropUrl",
+                          "logoPath",
+                          "logoUrl",
+                          "posterOverridePath",
+                          "voteAverage",
+                          "voteCount",
+                          "genres",
+                          "createdAt",
+                          "updatedAt",
+                          "rotationStatus",
+                          "rotationExpiresAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Random unwatched movies to surface as a quick pick",
+        "tags": ["library"]
+      }
+    },
     "/movies": {
       "get": {
         "operationId": "movies.list",

@@ -20,6 +20,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/library': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the library (movies + TV shows) with filter / sort / pagination */
+    get: operations['library.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/library/genres': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the distinct genres across the library */
+    get: operations['library.genres'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/library/quick-pick': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Random unwatched movies to surface as a quick pick */
+    get: operations['library.quickPick'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/movies': {
     parameters: {
       query?: never;
@@ -465,6 +516,129 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'library.list': {
+    parameters: {
+      query: {
+        type: 'all' | 'movie' | 'tv';
+        sort: 'title' | 'dateAdded' | 'releaseDate' | 'rating';
+        search?: string;
+        genre?: string;
+        page: number;
+        pageSize: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              cdnPosterUrl: string | null;
+              createdAt: string;
+              genres: string[];
+              id: number;
+              posterUrl: string | null;
+              releaseDate: string | null;
+              title: string;
+              /** @enum {string} */
+              type: 'movie' | 'tv';
+              voteAverage: number | null;
+              year: number | null;
+            }[];
+            pagination: {
+              hasMore: boolean;
+              page: number;
+              pageSize: number;
+              total: number;
+              totalPages: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'library.genres': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: string[];
+          };
+        };
+      };
+    };
+  };
+  'library.quickPick': {
+    parameters: {
+      query: {
+        count: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              backdropPath: string | null;
+              backdropUrl: string | null;
+              budget: number | null;
+              createdAt: string;
+              genres: string[];
+              id: number;
+              imdbId: string | null;
+              logoPath: string | null;
+              logoUrl: string | null;
+              originalLanguage: string | null;
+              originalTitle: string | null;
+              overview: string | null;
+              posterOverridePath: string | null;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string | null;
+              revenue: number | null;
+              rotationExpiresAt: string | null;
+              /** @enum {string|null} */
+              rotationStatus: 'leaving' | 'protected' | null;
+              runtime: number | null;
+              status: string | null;
+              tagline: string | null;
+              title: string;
+              tmdbId: number;
+              updatedAt: string;
+              voteAverage: number | null;
+              voteCount: number | null;
+            }[];
           };
         };
       };

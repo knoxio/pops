@@ -11,6 +11,7 @@
  */
 import { initContract } from '@ts-rest/core';
 
+import { mediaLibraryContract } from './rest-library.js';
 import { mediaMoviesContract } from './rest-movies.js';
 import { mediaShelfImpressionsContract } from './rest-shelf-impressions.js';
 import { mediaTvShowsContract } from './rest-tv-shows.js';
@@ -23,6 +24,7 @@ export const mediaContract = c.router(
   {
     movies: mediaMoviesContract,
     tvShows: mediaTvShowsContract,
+    library: mediaLibraryContract,
     watchlist: mediaWatchlistContract,
     watchHistory: mediaWatchHistoryContract,
     shelfImpressions: mediaShelfImpressionsContract,
