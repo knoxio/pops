@@ -49,3 +49,88 @@ export const templateSchema = templateSummarySchema.extend({
   body: z.string(),
 });
 export type TemplateWire = z.infer<typeof templateSchema>;
+
+/**
+ * Reflex wire schemas (PRD-089). Reflexes are declarative trigger/action rules
+ * defined in `reflexes.toml`; the pillar exposes management reads + toggles +
+ * a dry-run test + an append-only execution history.
+ */
+export const reflexTriggerTypeSchema = z.enum(['event', 'threshold', 'schedule']);
+export type ReflexTriggerTypeWire = z.infer<typeof reflexTriggerTypeSchema>;
+
+export const reflexExecutionStatusSchema = z.enum([
+  'triggered',
+  'executing',
+  'completed',
+  'failed',
+]);
+export type ReflexExecutionStatusWire = z.infer<typeof reflexExecutionStatusSchema>;
+
+const reflexEventTriggerSchema = z.object({
+  type: z.literal('event'),
+  event: z.enum(['engram.created', 'engram.modified', 'engram.archived', 'engram.linked']),
+  conditions: z
+    .object({
+      type: z.string().optional(),
+      scopes: z.array(z.string()).optional(),
+      source: z.string().optional(),
+    })
+    .optional(),
+});
+
+const reflexThresholdTriggerSchema = z.object({
+  type: z.literal('threshold'),
+  metric: z.enum(['similar_count', 'staleness_max', 'topic_frequency']),
+  value: z.number(),
+  scopes: z.array(z.string()).optional(),
+});
+
+const reflexScheduleTriggerSchema = z.object({
+  type: z.literal('schedule'),
+  cron: z.string(),
+});
+
+export const reflexTriggerSchema = z.discriminatedUnion('type', [
+  reflexEventTriggerSchema,
+  reflexThresholdTriggerSchema,
+  reflexScheduleTriggerSchema,
+]);
+
+export const reflexActionSchema = z.object({
+  type: z.enum(['ingest', 'emit', 'glia']),
+  verb: z.string(),
+  template: z.string().optional(),
+  scopes: z.array(z.string()).optional(),
+  target: z.string().optional(),
+});
+
+export const reflexDefinitionSchema = z.object({
+  name: z.string().min(1),
+  description: z.string(),
+  enabled: z.boolean(),
+  trigger: reflexTriggerSchema,
+  action: reflexActionSchema,
+});
+
+/** A reflex enriched with runtime status (last fire, next fire, count). */
+export const reflexWithStatusSchema = reflexDefinitionSchema.extend({
+  lastExecutionAt: z.string().nullable(),
+  nextFireTime: z.string().nullable(),
+  executionCount: z.number().int(),
+});
+export type ReflexWithStatusWire = z.infer<typeof reflexWithStatusSchema>;
+
+/** One row of the append-only reflex execution log. */
+export const reflexExecutionSchema = z.object({
+  id: z.string(),
+  reflexName: z.string(),
+  triggerType: reflexTriggerTypeSchema,
+  triggerData: z.record(z.string(), z.unknown()).nullable(),
+  actionType: z.enum(['ingest', 'emit', 'glia']),
+  actionVerb: z.string(),
+  status: reflexExecutionStatusSchema,
+  result: z.record(z.string(), z.unknown()).nullable(),
+  triggeredAt: z.string(),
+  completedAt: z.string().nullable(),
+});
+export type ReflexExecutionWire = z.infer<typeof reflexExecutionSchema>;

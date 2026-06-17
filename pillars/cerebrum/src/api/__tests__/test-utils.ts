@@ -8,11 +8,21 @@ import { fileURLToPath } from 'node:url';
 
 import supertest from 'supertest';
 
+import { buildReflexService } from '../modules/reflex/instance.js';
 import { TemplateRegistry } from '../modules/templates/registry.js';
 
 import type { Express } from 'express';
 
-import type { TemplateSummaryWire, TemplateWire } from '../../contract/rest-schemas.js';
+import type {
+  ReflexExecutionStatusWire,
+  ReflexExecutionWire,
+  ReflexTriggerTypeWire,
+  ReflexWithStatusWire,
+  TemplateSummaryWire,
+  TemplateWire,
+} from '../../contract/rest-schemas.js';
+import type { CerebrumDb } from '../../db/index.js';
+import type { ReflexService } from '../modules/reflex/reflex-service.js';
 
 /** Bundled engram-template fixtures shipped with the pillar. */
 export const TEST_TEMPLATES_DIR = resolve(
@@ -25,6 +35,15 @@ export const TEST_TEMPLATES_DIR = resolve(
 
 export function makeTemplateRegistry(): TemplateRegistry {
   return new TemplateRegistry(TEST_TEMPLATES_DIR);
+}
+
+/**
+ * Build a {@link ReflexService} pointed at a test-controlled TOML path with
+ * the chokidar watcher disabled. Pass a path to a fixture, or a path to a
+ * non-existent file to exercise the empty-reflex-set boot.
+ */
+export function makeReflexService(db: CerebrumDb, configPath: string): ReflexService {
+  return buildReflexService({ db, configPath, watch: false });
 }
 
 export class HttpError extends Error {
@@ -48,12 +67,40 @@ async function send<T>(req: supertest.Test): Promise<T> {
   throw new HttpError(res.status, res.body);
 }
 
+export interface ReflexHistoryFilters {
+  name?: string;
+  triggerType?: ReflexTriggerTypeWire;
+  status?: ReflexExecutionStatusWire;
+  limit?: number;
+  offset?: number;
+}
+
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
     templates: {
       list: () => send<{ templates: TemplateSummaryWire[] }>(r.get('/templates')),
       get: (name: string) => send<{ template: TemplateWire }>(r.get(`/templates/${name}`)),
+    },
+    reflex: {
+      list: (timezone?: string) =>
+        send<{ reflexes: ReflexWithStatusWire[] }>(
+          r.get('/reflex').query(timezone ? { timezone } : {})
+        ),
+      get: (name: string) =>
+        send<{ reflex: ReflexWithStatusWire; history: ReflexExecutionWire[] }>(
+          r.get(`/reflex/${name}`)
+        ),
+      test: (name: string) =>
+        send<{ result: ReflexExecutionWire | null }>(r.post(`/reflex/${name}/test`).send({})),
+      enable: (name: string) =>
+        send<{ success: boolean }>(r.post(`/reflex/${name}/enable`).send({})),
+      disable: (name: string) =>
+        send<{ success: boolean }>(r.post(`/reflex/${name}/disable`).send({})),
+      history: (filters: ReflexHistoryFilters = {}) =>
+        send<{ executions: ReflexExecutionWire[]; total: number }>(
+          r.post('/reflex/history').send(filters)
+        ),
     },
   };
 }

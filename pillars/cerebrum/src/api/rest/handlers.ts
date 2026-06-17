@@ -8,6 +8,7 @@
 import { initServer } from '@ts-rest/express';
 
 import { cerebrumContract } from '../../contract/rest.js';
+import { makeReflexHandlers } from './reflex-handlers.js';
 import { makeTemplatesHandlers } from './templates-handlers.js';
 
 import type { CerebrumApiDeps } from '../handlers.js';
@@ -19,5 +20,6 @@ export function makeCerebrumRestHandlers(
 ): ReturnType<typeof server.router<typeof cerebrumContract>> {
   return server.router(cerebrumContract, {
     templates: makeTemplatesHandlers(deps.templateRegistry),
+    reflex: makeReflexHandlers(deps.reflexService),
   });
 }

@@ -3,6 +3,108 @@
  * Do not edit by hand — regenerate via `pnpm -F @pops/cerebrum generate:api-types`.
  */
 export interface paths {
+  '/reflex': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List reflexes enriched with runtime status. */
+    get: operations['reflex.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reflex/history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Query the append-only reflex execution log (filtered + paginated). */
+    post: operations['reflex.history'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reflex/{name}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single reflex with its recent execution history. */
+    get: operations['reflex.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reflex/{name}/disable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Disable a reflex (rewrites the TOML config). */
+    post: operations['reflex.disable'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reflex/{name}/enable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Enable a reflex (rewrites the TOML config). */
+    post: operations['reflex.enable'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reflex/{name}/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dry-run a reflex, logging a completed test execution. */
+    post: operations['reflex.test'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/templates': {
     parameters: {
       query?: never;
@@ -49,6 +151,372 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'reflex.list': {
+    parameters: {
+      query?: {
+        timezone?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            reflexes: {
+              action: {
+                scopes?: string[];
+                target?: string;
+                template?: string;
+                /** @enum {string} */
+                type: 'ingest' | 'emit' | 'glia';
+                verb: string;
+              };
+              description: string;
+              enabled: boolean;
+              executionCount: number;
+              lastExecutionAt: string | null;
+              name: string;
+              nextFireTime: string | null;
+              trigger:
+                | {
+                    conditions?: {
+                      scopes?: string[];
+                      source?: string;
+                      type?: string;
+                    };
+                    /** @enum {string} */
+                    event:
+                      | 'engram.created'
+                      | 'engram.modified'
+                      | 'engram.archived'
+                      | 'engram.linked';
+                    /** @enum {string} */
+                    type: 'event';
+                  }
+                | {
+                    /** @enum {string} */
+                    metric: 'similar_count' | 'staleness_max' | 'topic_frequency';
+                    scopes?: string[];
+                    /** @enum {string} */
+                    type: 'threshold';
+                    value: number;
+                  }
+                | {
+                    cron: string;
+                    /** @enum {string} */
+                    type: 'schedule';
+                  };
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'reflex.history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          limit?: number;
+          name?: string;
+          offset?: number;
+          /** @enum {string} */
+          status?: 'triggered' | 'executing' | 'completed' | 'failed';
+          /** @enum {string} */
+          triggerType?: 'event' | 'threshold' | 'schedule';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            executions: {
+              /** @enum {string} */
+              actionType: 'ingest' | 'emit' | 'glia';
+              actionVerb: string;
+              completedAt: string | null;
+              id: string;
+              reflexName: string;
+              result: {
+                [key: string]: unknown;
+              } | null;
+              /** @enum {string} */
+              status: 'triggered' | 'executing' | 'completed' | 'failed';
+              triggerData: {
+                [key: string]: unknown;
+              } | null;
+              /** @enum {string} */
+              triggerType: 'event' | 'threshold' | 'schedule';
+              triggeredAt: string;
+            }[];
+            total: number;
+          };
+        };
+      };
+    };
+  };
+  'reflex.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            history: {
+              /** @enum {string} */
+              actionType: 'ingest' | 'emit' | 'glia';
+              actionVerb: string;
+              completedAt: string | null;
+              id: string;
+              reflexName: string;
+              result: {
+                [key: string]: unknown;
+              } | null;
+              /** @enum {string} */
+              status: 'triggered' | 'executing' | 'completed' | 'failed';
+              triggerData: {
+                [key: string]: unknown;
+              } | null;
+              /** @enum {string} */
+              triggerType: 'event' | 'threshold' | 'schedule';
+              triggeredAt: string;
+            }[];
+            reflex: {
+              action: {
+                scopes?: string[];
+                target?: string;
+                template?: string;
+                /** @enum {string} */
+                type: 'ingest' | 'emit' | 'glia';
+                verb: string;
+              };
+              description: string;
+              enabled: boolean;
+              executionCount: number;
+              lastExecutionAt: string | null;
+              name: string;
+              nextFireTime: string | null;
+              trigger:
+                | {
+                    conditions?: {
+                      scopes?: string[];
+                      source?: string;
+                      type?: string;
+                    };
+                    /** @enum {string} */
+                    event:
+                      | 'engram.created'
+                      | 'engram.modified'
+                      | 'engram.archived'
+                      | 'engram.linked';
+                    /** @enum {string} */
+                    type: 'event';
+                  }
+                | {
+                    /** @enum {string} */
+                    metric: 'similar_count' | 'staleness_max' | 'topic_frequency';
+                    scopes?: string[];
+                    /** @enum {string} */
+                    type: 'threshold';
+                    value: number;
+                  }
+                | {
+                    cron: string;
+                    /** @enum {string} */
+                    type: 'schedule';
+                  };
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'reflex.disable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            success: boolean;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'reflex.enable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            success: boolean;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'reflex.test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        name: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            result: {
+              /** @enum {string} */
+              actionType: 'ingest' | 'emit' | 'glia';
+              actionVerb: string;
+              completedAt: string | null;
+              id: string;
+              reflexName: string;
+              result: {
+                [key: string]: unknown;
+              } | null;
+              /** @enum {string} */
+              status: 'triggered' | 'executing' | 'completed' | 'failed';
+              triggerData: {
+                [key: string]: unknown;
+              } | null;
+              /** @enum {string} */
+              triggerType: 'event' | 'threshold' | 'schedule';
+              triggeredAt: string;
+            } | null;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'templates.list': {
     parameters: {
       query?: never;
