@@ -45,6 +45,8 @@ export * as moviesService from './services/movies.js';
 
 export * as shelfImpressionsService from './services/shelf-impressions.js';
 
+export * as plexSettingsService from './services/plex-settings.js';
+
 export type { DismissedDiscoverRow } from './services/dismissed-discover.js';
 
 export * as dismissedDiscoverService from './services/dismissed-discover.js';

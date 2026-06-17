@@ -12,6 +12,7 @@ import { type OpenedMediaDb } from '../../db/index.js';
 import { makeArrHandlers } from './arr-handlers.js';
 import { makeLibraryHandlers } from './library-handlers.js';
 import { makeMoviesHandlers } from './movies-handlers.js';
+import { makePlexHandlers } from './plex-handlers.js';
 import { makeShelfImpressionsHandlers } from './shelf-impressions-handlers.js';
 import { makeTvShowsHandlers } from './tv-shows-handlers.js';
 import { makeWatchHistoryHandlers } from './watch-history-handlers.js';
@@ -31,5 +32,6 @@ export function makeMediaRestHandlers(deps: {
     watchHistory: makeWatchHistoryHandlers(db),
     shelfImpressions: makeShelfImpressionsHandlers(db),
     arr: makeArrHandlers(db),
+    plex: makePlexHandlers(db),
   });
 }

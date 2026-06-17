@@ -92,6 +92,13 @@
       "when": 1798000001000,
       "tag": "0033_sync_logs_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1798000002000,
+      "tag": "0034_plex_settings_baseline",
+      "breakpoints": true
     }
   ]
 }

@@ -286,5 +286,35 @@ export function makeClient(app: Express) {
           r.post('/arr/sonarr/test-saved').send({})
         ),
     },
+    plex: {
+      testConnection: () =>
+        send<{ data: { connected: boolean; error?: string } }>(r.get('/plex/test-connection')),
+      getLibraries: () =>
+        send<{
+          data: { key: string; title: string; type: string }[];
+        }>(r.get('/plex/libraries')),
+      getPlexUrl: () => send<{ data: string | null }>(r.get('/plex/url')),
+      setUrl: (url: string) => send<{ message: string }>(r.post('/plex/url').send({ url })),
+      getPlexUsername: () => send<{ data: string | null }>(r.get('/plex/username')),
+      getAuthPin: () =>
+        send<{ data: { id: number; code: string; clientId: string } }>(
+          r.post('/plex/auth/pin').send({})
+        ),
+      checkAuthPin: (id: number) =>
+        send<{ data: { connected: boolean; username?: string | null; expired?: boolean } }>(
+          r.post('/plex/auth/pin/check').send({ id })
+        ),
+      disconnect: () => send<{ message: string }>(r.post('/plex/disconnect').send({})),
+      getSyncStatus: () =>
+        send<{
+          data: { configured: boolean; hasUrl: boolean; hasToken: boolean; connected: boolean };
+        }>(r.get('/plex/sync-status')),
+      getSectionIds: () =>
+        send<{ data: { movieSectionId: string | null; tvSectionId: string | null } }>(
+          r.get('/plex/section-ids')
+        ),
+      saveSectionIds: (body: { movieSectionId?: string; tvSectionId?: string }) =>
+        send<{ message: string }>(r.post('/plex/section-ids').send(body)),
+    },
   };
 }
