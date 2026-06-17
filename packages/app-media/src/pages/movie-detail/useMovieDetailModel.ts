@@ -1,7 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useSetPageContext } from '@pops/navigation';
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsGetStaleness, moviesGet, watchHistoryList } from '../../media-api/index.js';
 
 interface Movie {
   id: number;
@@ -33,7 +36,7 @@ interface MovieGetResponse {
 interface WatchHistoryListResponse {
   data: Array<{
     id: number;
-    mediaType: 'movie' | 'tv_show';
+    mediaType: string;
     mediaId: number;
     watchedAt: string;
     completed: number;
@@ -46,24 +49,24 @@ interface StalenessResponse {
 
 function useMovieQueries(movieId: number) {
   const enabled = !Number.isNaN(movieId);
-  const { data, isLoading, error } = usePillarQuery<MovieGetResponse>(
-    'media',
-    ['movies', 'get'],
-    { id: movieId },
-    { enabled }
-  );
-  const { data: watchHistoryData } = usePillarQuery<WatchHistoryListResponse>(
-    'media',
-    ['watchHistory', 'list'],
-    { mediaType: 'movie', mediaId: movieId },
-    { enabled }
-  );
-  const { data: stalenessData } = usePillarQuery<StalenessResponse>(
-    'media',
-    ['comparisons', 'getStaleness'],
-    { mediaType: 'movie', mediaId: movieId },
-    { enabled }
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['media', 'movies', 'get', { id: movieId }],
+    queryFn: async (): Promise<MovieGetResponse> =>
+      unwrap(await moviesGet({ path: { id: movieId } })),
+    enabled,
+  });
+  const { data: watchHistoryData } = useQuery({
+    queryKey: ['media', 'watchHistory', 'list', { mediaType: 'movie', mediaId: movieId }],
+    queryFn: async (): Promise<WatchHistoryListResponse> =>
+      unwrap(await watchHistoryList({ query: { mediaType: 'movie', mediaId: movieId } })),
+    enabled,
+  });
+  const { data: stalenessData } = useQuery({
+    queryKey: ['media', 'comparisons', 'getStaleness', { mediaType: 'movie', mediaId: movieId }],
+    queryFn: async (): Promise<StalenessResponse> =>
+      unwrap(await comparisonsGetStaleness({ query: { mediaType: 'movie', mediaId: movieId } })),
+    enabled,
+  });
   return { data, isLoading, error, watchHistoryData, stalenessData };
 }
 
