@@ -22,7 +22,12 @@ import {
   type TrustPhase,
 } from '../../db/index.js';
 import { createCerebrumApiApp } from '../app.js';
-import { makeClient, makeTemplateRegistry, makeReflexService } from './test-utils.js';
+import {
+  makeClient,
+  makeEmptyPeerClients,
+  makeReflexService,
+  makeTemplateRegistry,
+} from './test-utils.js';
 
 let tmpDir: string;
 let cerebrumDb: OpenedCerebrumDb;
@@ -48,6 +53,7 @@ function client() {
       gliaConfigPath: join(tmpDir, '.config', 'glia.toml'),
       version: '0.0.1-test',
       selfBaseUrl: 'http://localhost:3007',
+      peerClients: makeEmptyPeerClients(),
     })
   );
 }

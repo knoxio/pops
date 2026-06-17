@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openCerebrumDb, plexusService, type OpenedCerebrumDb } from '../../db/index.js';
 import { createCerebrumApiApp } from '../app.js';
-import { makeClient, makeTemplateRegistry } from './test-utils.js';
+import { makeClient, makeEmptyPeerClients, makeTemplateRegistry } from './test-utils.js';
 
 let tmpDir: string;
 let cerebrumDb: OpenedCerebrumDb;
@@ -37,6 +37,7 @@ function client() {
       templateRegistry: makeTemplateRegistry(),
       version: '0.0.1-test',
       selfBaseUrl: 'http://localhost:3007',
+      peerClients: makeEmptyPeerClients(),
     })
   );
 }

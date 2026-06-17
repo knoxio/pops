@@ -22,6 +22,8 @@ import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
 import { buildCerebrumManifest } from './manifest.js';
 import { resolveEngramRoot } from './modules/engrams/instance.js';
 import { getReflexService } from './modules/reflex/instance.js';
+import { resolveEmbeddingClientFromEnv } from './modules/retrieval/embedding-client.js';
+import { resolvePeerClientsFromEnv } from './modules/retrieval/peer-clients.js';
 import { TemplateRegistry } from './modules/templates/registry.js';
 import { parseBareOrigin } from './pillars/env.js';
 
@@ -68,6 +70,8 @@ const app = createCerebrumApiApp({
   reflexService,
   version,
   selfBaseUrl,
+  peerClients: resolvePeerClientsFromEnv(),
+  embeddingClient: resolveEmbeddingClientFromEnv(),
 });
 
 let pillarHandle: PillarBootstrapHandle | undefined;

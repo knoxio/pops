@@ -22,7 +22,13 @@ import {
   type OpenedCerebrumDb,
 } from '../../db/index.js';
 import { createCerebrumApiApp } from '../app.js';
-import { HttpError, makeClient, makeReflexService, makeTemplateRegistry } from './test-utils.js';
+import {
+  HttpError,
+  makeClient,
+  makeEmptyPeerClients,
+  makeReflexService,
+  makeTemplateRegistry,
+} from './test-utils.js';
 
 interface SeedNudge {
   id: string;
@@ -98,6 +104,7 @@ function client() {
       reflexService: makeReflexService(cerebrumDb.db, join(tmpDir, 'reflexes.toml')),
       version: '0.0.1-test',
       selfBaseUrl: 'http://localhost:3007',
+      peerClients: makeEmptyPeerClients(),
     })
   );
 }
