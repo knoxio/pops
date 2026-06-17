@@ -382,6 +382,40 @@ services:
       lists-api:
         condition: service_healthy
 
+  # Cerebrum pillar worker (ADR-026). Consumes the `pops-embeddings`
+  # (dense-vector index) + `pops-curation` (engram enrichment) queues the
+  # cerebrum pillar produces into. Same image the cerebrum-api ships, with
+  # the worker entrypoint as the command. Built from the pillar Dockerfile.
+  cerebrum-worker:
+    build:
+      context: ..
+      dockerfile: pillars/cerebrum/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-cerebrum-worker
+    restart: unless-stopped
+    command: ['node', 'dist/worker/index.js']
+    networks:
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+      - cerebrum-engrams-data:/data/cerebrum/engrams
+    environment:
+      NODE_ENV: production
+      REDIS_HOST: pops-redis
+      REDIS_PORT: '6379'
+      CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
+      CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EMBEDDING_API_URL: ${EMBEDDING_API_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+    depends_on:
+      pops-redis:
+        condition: service_healthy
+
   # ── FRONTEND ─────────────────────────────────────────────────────
   pops-shell:
     build:
@@ -657,6 +691,8 @@ volumes:
     name: pops-paperless-consume
   paperless-redis:
     name: pops-paperless-redis
+  cerebrum-engrams-data:
+    name: pops-cerebrum-engrams-data
 
 secrets:
   notion_api_token:

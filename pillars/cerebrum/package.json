@@ -29,6 +29,7 @@
     "build": "tsx scripts/verify-manifest.ts && tsc && cp -R src/api/modules/templates/defaults dist/api/modules/templates/ && tsx scripts/generate-openapi.ts && tsx scripts/generate-api-types.ts",
     "dev": "tsx watch --clear-screen=false src/api/server.ts",
     "start": "node dist/api/server.js",
+    "start:worker": "node dist/worker/index.js",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
