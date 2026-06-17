@@ -14,6 +14,7 @@ import type { EgoLlm } from './modules/ego/llm.js';
 import type { GenerationLlm } from './modules/emit/llm.js';
 import type { IngestLlm } from './modules/ingest/llm.js';
 import type { CurationQueueAccessor } from './modules/ingest/pipeline.js';
+import type { ContradictionAnalyzer } from './modules/nudges/contradiction-analyzer.js';
 import type { QueryLlm, QueryStreamLlm } from './modules/query/llm.js';
 import type { ReflexService } from './modules/reflex/reflex-service.js';
 import type { EmbeddingClient } from './modules/retrieval/embedding-client.js';
@@ -57,6 +58,12 @@ export interface CerebrumApiDeps {
    * get the noop path).
    */
   auditorContradictionDetector?: ContradictionDetector;
+  /**
+   * Contradiction analyzer for the nudges pattern detector (`nudges.scan`).
+   * Optional — defaults to an Anthropic-backed haiku client. Tests inject an
+   * offline fake (or omit it to get the noop path, surfacing no contradictions).
+   */
+  nudgeContradictionAnalyzer?: ContradictionAnalyzer;
   /**
    * Accessor for the `pops-curation` BullMQ queue used by ingest
    * quick-capture / retry-enrichment. Optional — defaults to the lazy
