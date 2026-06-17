@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router';
 
 import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
 
+import { isNotFoundError } from '../media-api-helpers.js';
 import { TvShowDetailContent } from './tv-show-detail/TvShowDetailContent';
 import { TvShowDetailSkeleton } from './tv-show-detail/TvShowDetailSkeleton';
 import { TvShowHero } from './tv-show-detail/TvShowHero';
@@ -18,8 +19,8 @@ function InvalidIdView() {
   );
 }
 
-function ErrorView({ error }: { error: { data?: { code?: string } | null; message: string } }) {
-  const is404 = error.data?.code === 'NOT_FOUND';
+function ErrorView({ error }: { error: Error }) {
+  const is404 = isNotFoundError(error);
   return (
     <div className="p-6">
       <Alert variant="destructive">

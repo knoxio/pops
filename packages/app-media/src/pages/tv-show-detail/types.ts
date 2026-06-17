@@ -20,3 +20,5 @@ export interface SonarrSeriesData {
   sonarrId?: number | null;
   seasons?: { seasonNumber: number; monitored: boolean }[];
 }
+
+export type ProgressEnvelope = { data: ProgressData | null };

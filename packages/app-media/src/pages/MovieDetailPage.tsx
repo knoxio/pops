@@ -1,8 +1,8 @@
 import { Link, useParams } from 'react-router';
 
-import { isNotFound } from '@pops/pillar-sdk/client';
 import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
 
+import { isNotFoundError } from '../media-api-helpers.js';
 import { MovieDetailContent } from './movie-detail/MovieDetailContent';
 import { MovieDetailSkeleton } from './movie-detail/MovieDetailSkeleton';
 import { MovieHero } from './movie-detail/MovieHero';
@@ -20,7 +20,7 @@ function InvalidIdView() {
 }
 
 function ErrorView({ error }: { error: unknown }) {
-  const is404 = isNotFound(error);
+  const is404 = isNotFoundError(error);
   const message = error instanceof Error ? error.message : String(error);
   return (
     <div className="p-6">
