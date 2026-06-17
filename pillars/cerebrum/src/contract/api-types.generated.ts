@@ -277,6 +277,142 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/ingest/classify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Classify content into a known engram type. */
+    post: operations['ingest.classify'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/enrichment-status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Poll the async enrichment state of an engram. */
+    post: operations['ingest.enrichmentStatus'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/extract-entities': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Extract named entities + tags + referenced dates from content. */
+    post: operations['ingest.extractEntities'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/infer-scopes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Infer scopes for content (explicit → rules → LLM → fallback). */
+    post: operations['ingest.inferScopes'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dry-run the ingestion pipeline without writing an engram. */
+    post: operations['ingest.preview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/quick-capture': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Store a raw capture and enqueue async enrichment. */
+    post: operations['ingest.quickCapture'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/retry-enrichment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Re-enqueue the classifyEngram job for an engram. */
+    post: operations['ingest.retryEnrichment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/ingest/submit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run the full ingestion pipeline and write an engram. */
+    post: operations['ingest.submit'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/nudges/contradictions': {
     parameters: {
       query?: never;
@@ -1871,6 +2007,469 @@ export interface operations {
               revertedCount: number;
               updatedAt: string;
             };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.classify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          body: string;
+          title?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            confidence: number;
+            suggestedTags: string[];
+            template: string | null;
+            type: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.enrichmentStatus': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          engramId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            enriched: boolean;
+            scopeSuggestions: {
+              canonical: string;
+              confidence: number;
+              original: string;
+              reason: string;
+            }[];
+            scopes: string[];
+            tags: string[];
+            template: string | null;
+            type: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.extractEntities': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          body: string;
+          existingTags?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            entities: {
+              confidence: number;
+              normalised: string;
+              /** @enum {string} */
+              type: 'person' | 'project' | 'date' | 'topic' | 'organisation';
+              value: string;
+            }[];
+            referencedDates: string[];
+            tags: string[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.inferScopes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          body: string;
+          explicitScopes?: string[];
+          knownScopes?: string[];
+          source?: string;
+          tags?: string[];
+          type: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            confidence: number;
+            scopes: string[];
+            /** @enum {string} */
+            source: 'explicit' | 'rules' | 'llm' | 'fallback';
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          body: string;
+          customFields?: {
+            [key: string]: unknown;
+          };
+          scopes?: string[];
+          source?: string;
+          tags?: string[];
+          template?: string;
+          title?: string;
+          type?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            classification: {
+              confidence: number;
+              suggestedTags: string[];
+              template: string | null;
+              type: string;
+            } | null;
+            entities: {
+              confidence: number;
+              normalised: string;
+              /** @enum {string} */
+              type: 'person' | 'project' | 'date' | 'topic' | 'organisation';
+              value: string;
+            }[];
+            normalisedBody: string;
+            referencedDates: string[];
+            scopeInference: {
+              confidence: number;
+              scopes: string[];
+              /** @enum {string} */
+              source: 'explicit' | 'rules' | 'llm' | 'fallback';
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.quickCapture': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          scopes?: string[];
+          source?: string;
+          text: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            id: string;
+            path: string;
+            requeued: boolean;
+            scopes: string[];
+            type: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.retryEnrichment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          engramId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            engramId: string;
+            requeued: boolean;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'ingest.submit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          body: string;
+          customFields?: {
+            [key: string]: unknown;
+          };
+          scopes?: string[];
+          source?: string;
+          tags?: string[];
+          template?: string;
+          title?: string;
+          type?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            classification: {
+              confidence: number;
+              suggestedTags: string[];
+              template: string | null;
+              type: string;
+            } | null;
+            engram: {
+              contentHash: string;
+              created: string;
+              customFields: {
+                [key: string]: unknown;
+              };
+              filePath: string;
+              id: string;
+              links: string[];
+              modified: string;
+              scopes: string[];
+              source: string;
+              /** @enum {string} */
+              status: 'active' | 'archived' | 'consolidated' | 'stale';
+              tags: string[];
+              template: string | null;
+              title: string;
+              type: string;
+              wordCount: number;
+            };
+            entities: {
+              confidence: number;
+              normalised: string;
+              /** @enum {string} */
+              type: 'person' | 'project' | 'date' | 'topic' | 'organisation';
+              value: string;
+            }[];
+            scopeInference: {
+              confidence: number;
+              scopes: string[];
+              /** @enum {string} */
+              source: 'explicit' | 'rules' | 'llm' | 'fallback';
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
           };
         };
       };

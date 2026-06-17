@@ -21,6 +21,8 @@ import { createCerebrumApiApp } from './app.js';
 import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
 import { buildCerebrumManifest } from './manifest.js';
 import { resolveEngramRoot } from './modules/engrams/instance.js';
+import { AnthropicIngestLlm } from './modules/ingest/llm.js';
+import { closeCerebrumIngestQueue, getCurationQueue } from './modules/ingest/queue.js';
 import { getReflexService } from './modules/reflex/instance.js';
 import { TemplateRegistry } from './modules/templates/registry.js';
 import { parseBareOrigin } from './pillars/env.js';
@@ -66,6 +68,8 @@ const app = createCerebrumApiApp({
   templateRegistry,
   engramRoot,
   reflexService,
+  ingestLlm: new AnthropicIngestLlm(),
+  curationQueue: getCurationQueue,
   version,
   selfBaseUrl,
 });
@@ -87,11 +91,13 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[cerebrum-api] Shutting down (${signal})`);
-  void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
-    server.close(() => {
-      cerebrumDb.raw.close();
+  void (pillarHandle?.stop() ?? Promise.resolve())
+    .then(() => closeCerebrumIngestQueue())
+    .finally(() => {
+      server.close(() => {
+        cerebrumDb.raw.close();
+      });
     });
-  });
 }
 
 process.on('SIGTERM', shutdown);

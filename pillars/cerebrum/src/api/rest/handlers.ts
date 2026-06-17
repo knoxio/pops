@@ -9,8 +9,11 @@ import { initServer } from '@ts-rest/express';
 
 import { cerebrumContract } from '../../contract/rest.js';
 import { resolveGliaConfigPath } from '../modules/glia/instance.js';
+import { AnthropicIngestLlm } from '../modules/ingest/llm.js';
+import { getCurationQueue } from '../modules/ingest/queue.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
 import { makeGliaHandlers } from './glia-handlers.js';
+import { makeIngestHandlers } from './ingest-handlers.js';
 import { makeNudgesHandlers } from './nudges-handlers.js';
 import { makePlexusHandlers } from './plexus-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
@@ -44,5 +47,12 @@ export function makeCerebrumRestHandlers(
       configPath: deps.gliaConfigPath ?? resolveGliaConfigPath(),
     }),
     nudges: makeNudgesHandlers(deps.cerebrumDb.db),
+    ingest: makeIngestHandlers({
+      db: deps.cerebrumDb.db,
+      engramRoot: deps.engramRoot,
+      templates: deps.templateRegistry,
+      llm: deps.ingestLlm ?? new AnthropicIngestLlm(),
+      curationQueue: deps.curationQueue ?? getCurationQueue,
+    }),
   });
 }

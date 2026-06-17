@@ -2845,6 +2845,1042 @@
         "tags": ["glia", "trustState"]
       }
     },
+    "/ingest/classify": {
+      "post": {
+        "operationId": "ingest.classify",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "body": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "title": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["body"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "suggestedTags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "template": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "confidence", "template", "suggestedTags"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Classify content into a known engram type.",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/enrichment-status": {
+      "post": {
+        "operationId": "ingest.enrichmentStatus",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "engramId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["engramId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "enriched": {
+                      "type": "boolean"
+                    },
+                    "scopeSuggestions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "canonical": {
+                            "type": "string"
+                          },
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "original": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["original", "canonical", "confidence", "reason"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "template": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "enriched",
+                    "type",
+                    "template",
+                    "scopes",
+                    "tags",
+                    "scopeSuggestions"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Poll the async enrichment state of an engram.",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/extract-entities": {
+      "post": {
+        "operationId": "ingest.extractEntities",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "body": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "existingTags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["body"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "entities": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "normalised": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": ["person", "project", "date", "topic", "organisation"],
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["type", "value", "normalised", "confidence"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "referencedDates": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["entities", "tags", "referencedDates"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Extract named entities + tags + referenced dates from content.",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/infer-scopes": {
+      "post": {
+        "operationId": "ingest.inferScopes",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "body": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "explicitScopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "knownScopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "source": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["body", "type"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "source": {
+                      "enum": ["explicit", "rules", "llm", "fallback"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["scopes", "source", "confidence"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Infer scopes for content (explicit → rules → LLM → fallback).",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/preview": {
+      "post": {
+        "operationId": "ingest.preview",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "body": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "customFields": {
+                    "additionalProperties": {},
+                    "type": "object"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "source": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "template": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "title": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["body"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "classification": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "confidence": {
+                          "type": "number"
+                        },
+                        "suggestedTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "template": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["type", "confidence", "template", "suggestedTags"],
+                      "type": "object"
+                    },
+                    "entities": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "normalised": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": ["person", "project", "date", "topic", "organisation"],
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["type", "value", "normalised", "confidence"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "normalisedBody": {
+                      "type": "string"
+                    },
+                    "referencedDates": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "scopeInference": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "confidence": {
+                          "type": "number"
+                        },
+                        "scopes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "source": {
+                          "enum": ["explicit", "rules", "llm", "fallback"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["scopes", "source", "confidence"],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "normalisedBody",
+                    "classification",
+                    "entities",
+                    "referencedDates",
+                    "scopeInference"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Dry-run the ingestion pipeline without writing an engram.",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/quick-capture": {
+      "post": {
+        "operationId": "ingest.quickCapture",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "source": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "text": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["text"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "requeued": {
+                      "type": "boolean"
+                    },
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "path", "type", "scopes", "requeued"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Store a raw capture and enqueue async enrichment.",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/retry-enrichment": {
+      "post": {
+        "operationId": "ingest.retryEnrichment",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "engramId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["engramId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "engramId": {
+                      "type": "string"
+                    },
+                    "requeued": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["engramId", "requeued"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Re-enqueue the classifyEngram job for an engram.",
+        "tags": ["ingest"]
+      }
+    },
+    "/ingest/submit": {
+      "post": {
+        "operationId": "ingest.submit",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "body": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "customFields": {
+                    "additionalProperties": {},
+                    "type": "object"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "source": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "template": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "title": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["body"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "classification": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "confidence": {
+                          "type": "number"
+                        },
+                        "suggestedTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "template": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["type", "confidence", "template", "suggestedTags"],
+                      "type": "object"
+                    },
+                    "engram": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "contentHash": {
+                          "type": "string"
+                        },
+                        "created": {
+                          "type": "string"
+                        },
+                        "customFields": {
+                          "additionalProperties": {},
+                          "type": "object"
+                        },
+                        "filePath": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "links": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "modified": {
+                          "type": "string"
+                        },
+                        "scopes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["active", "archived", "consolidated", "stale"],
+                          "type": "string"
+                        },
+                        "tags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "template": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "wordCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "scopes",
+                        "tags",
+                        "links",
+                        "created",
+                        "modified",
+                        "source",
+                        "status",
+                        "template",
+                        "title",
+                        "filePath",
+                        "contentHash",
+                        "wordCount",
+                        "customFields"
+                      ],
+                      "type": "object"
+                    },
+                    "entities": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "confidence": {
+                            "type": "number"
+                          },
+                          "normalised": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": ["person", "project", "date", "topic", "organisation"],
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["type", "value", "normalised", "confidence"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "scopeInference": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "confidence": {
+                          "type": "number"
+                        },
+                        "scopes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "source": {
+                          "enum": ["explicit", "rules", "llm", "fallback"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["scopes", "source", "confidence"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["engram", "classification", "entities", "scopeInference"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Run the full ingestion pipeline and write an engram.",
+        "tags": ["ingest"]
+      }
+    },
     "/nudges/contradictions": {
       "post": {
         "operationId": "nudges.contradictions",
