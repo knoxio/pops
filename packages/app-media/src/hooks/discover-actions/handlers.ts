@@ -1,7 +1,9 @@
+import { type QueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { watchlistStatus } from '../../media-api/index.js';
 
 import type { DiscoverActionResult } from '../useDiscoverCardActions';
 import type { useDiscoverMutations } from './discoverMutations';
@@ -9,17 +11,15 @@ import type { usePendingSet } from './usePendingSet';
 
 type Mutations = ReturnType<typeof useDiscoverMutations>;
 type Pending = ReturnType<typeof usePendingSet>;
-type PillarUtils = UsePillarUtilsResult;
-
-interface WatchlistStatusResponse {
-  onWatchlist: boolean;
-  entryId: number | null;
-}
 
 interface AddDeps {
   mutations: Mutations;
-  utils: PillarUtils;
+  queryClient: QueryClient;
   pending: Pending;
+}
+
+function invalidateWatchlist(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: ['media', 'watchlist', 'list'] });
 }
 
 export function useAddToLibrary({ mutations, pending }: AddDeps) {
@@ -42,7 +42,7 @@ export function useAddToLibrary({ mutations, pending }: AddDeps) {
   );
 }
 
-export function useAddToWatchlist({ mutations, utils, pending }: AddDeps) {
+export function useAddToWatchlist({ mutations, queryClient, pending }: AddDeps) {
   return useCallback(
     async (tmdbId: number): Promise<DiscoverActionResult> => {
       pending.add(tmdbId);
@@ -54,7 +54,7 @@ export function useAddToWatchlist({ mutations, utils, pending }: AddDeps) {
         });
         if (wlResult.created) toast.success(`Added "${libResult.data.title}" to watchlist`);
         else toast.info(`"${libResult.data.title}" is already on watchlist`);
-        void utils.invalidate(['watchlist', 'list']);
+        void invalidateWatchlist(queryClient);
         return { ok: true, inLibrary: true, onWatchlist: true };
       } catch {
         toast.error('Failed to add to watchlist');
@@ -63,27 +63,26 @@ export function useAddToWatchlist({ mutations, utils, pending }: AddDeps) {
         pending.remove(tmdbId);
       }
     },
-    [mutations, utils, pending]
+    [mutations, queryClient, pending]
   );
 }
 
-export function useRemoveFromWatchlist({ mutations, utils, pending }: AddDeps) {
+export function useRemoveFromWatchlist({ mutations, queryClient, pending }: AddDeps) {
   return useCallback(
     async (tmdbId: number): Promise<DiscoverActionResult> => {
       pending.add(tmdbId);
       try {
         const libResult = await mutations.addMovieMutation.mutateAsync({ tmdbId });
-        const status = await utils.fetchQuery<WatchlistStatusResponse>(['watchlist', 'status'], {
-          mediaType: 'movie',
-          mediaId: libResult.data.id,
-        });
+        const status = unwrap(
+          await watchlistStatus({ query: { mediaType: 'movie', mediaId: libResult.data.id } })
+        );
         if (!status.onWatchlist || status.entryId == null) {
           toast.info(`"${libResult.data.title}" is not on your watchlist`);
           return { ok: true, inLibrary: true, onWatchlist: false };
         }
         await mutations.removeWatchlistMutation.mutateAsync({ id: status.entryId });
         toast.success(`Removed "${libResult.data.title}" from watchlist`);
-        void utils.invalidate(['watchlist', 'list']);
+        void invalidateWatchlist(queryClient);
         return { ok: true, inLibrary: true, onWatchlist: false };
       } catch {
         toast.error('Failed to remove from watchlist');
@@ -92,11 +91,11 @@ export function useRemoveFromWatchlist({ mutations, utils, pending }: AddDeps) {
         pending.remove(tmdbId);
       }
     },
-    [mutations, utils, pending]
+    [mutations, queryClient, pending]
   );
 }
 
-export function useMarkWatched({ mutations, utils, pending }: AddDeps) {
+export function useMarkWatched({ mutations, queryClient, pending }: AddDeps) {
   return useCallback(
     async (tmdbId: number): Promise<DiscoverActionResult> => {
       pending.add(tmdbId);
@@ -105,10 +104,12 @@ export function useMarkWatched({ mutations, utils, pending }: AddDeps) {
         const watchResult = await mutations.logWatchMutation.mutateAsync({
           mediaType: 'movie',
           mediaId: libResult.data.id,
+          completed: 1,
+          source: 'manual',
         });
         toast.success(`Marked "${libResult.data.title}" as watched`);
         if (watchResult.watchlistRemoved) {
-          void utils.invalidate(['watchlist', 'list']);
+          void invalidateWatchlist(queryClient);
         }
         return {
           ok: true,
@@ -123,11 +124,11 @@ export function useMarkWatched({ mutations, utils, pending }: AddDeps) {
         pending.remove(tmdbId);
       }
     },
-    [mutations, utils, pending]
+    [mutations, queryClient, pending]
   );
 }
 
-export function useMarkRewatched({ mutations, utils, pending }: AddDeps) {
+export function useMarkRewatched({ mutations, pending }: AddDeps) {
   return useCallback(
     async (tmdbId: number): Promise<DiscoverActionResult> => {
       pending.add(tmdbId);
@@ -136,6 +137,8 @@ export function useMarkRewatched({ mutations, utils, pending }: AddDeps) {
         await mutations.logWatchMutation.mutateAsync({
           mediaType: 'movie',
           mediaId: libResult.data.id,
+          completed: 1,
+          source: 'manual',
         });
         toast.success(`Logged rewatch of "${libResult.data.title}"`);
         return { ok: true, inLibrary: true, isWatched: true };
@@ -146,18 +149,18 @@ export function useMarkRewatched({ mutations, utils, pending }: AddDeps) {
         pending.remove(tmdbId);
       }
     },
-    [mutations, utils, pending]
+    [mutations, pending]
   );
 }
 
 export function useNotInterested({
   mutations,
-  utils,
+  queryClient,
   dismissing,
   optimistic,
 }: {
   mutations: Mutations;
-  utils: PillarUtils;
+  queryClient: QueryClient;
   dismissing: Pending;
   optimistic: Pending;
 }) {
@@ -167,7 +170,7 @@ export function useNotInterested({
       dismissing.add(tmdbId);
       try {
         await mutations.dismissMutation.mutateAsync({ tmdbId });
-        void utils.invalidate(['discovery', 'getDismissed']);
+        void queryClient.invalidateQueries({ queryKey: ['media', 'discovery', 'getDismissed'] });
         return { ok: true };
       } catch {
         optimistic.remove(tmdbId);
@@ -177,6 +180,6 @@ export function useNotInterested({
         dismissing.remove(tmdbId);
       }
     },
-    [mutations, utils, dismissing, optimistic]
+    [mutations, queryClient, dismissing, optimistic]
   );
 }

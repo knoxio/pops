@@ -4,9 +4,11 @@
  * Wraps the submitTierList pillar mutation with cache invalidation
  * and title enrichment for the summary display.
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../media-api-helpers.js';
+import { comparisonsSubmitTierList } from '../media-api/index.js';
 
 export type Tier = 'S' | 'A' | 'B' | 'C' | 'D';
 
@@ -51,28 +53,27 @@ interface SubmitTierListResponse {
 
 export function useTierListSubmit({ movieTitles, onSuccess }: UseTierListSubmitOptions) {
   const [result, setResult] = useState<TierListResult | null>(null);
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
 
-  const mutation = usePillarMutation<SubmitTierListInput, SubmitTierListResponse>(
-    'media',
-    ['comparisons', 'submitTierList'],
-    {
-      onSuccess: (response) => {
-        const enriched: TierListResult = {
-          comparisonsRecorded: response.data.comparisonsRecorded,
-          scoreChanges: response.data.scoreChanges.map((sc) => ({
-            ...sc,
-            title: movieTitles.get(sc.movieId) ?? `Movie #${sc.movieId}`,
-          })),
-        };
-        setResult(enriched);
-        void utils.invalidate(['comparisons', 'getTierListMovies']);
-        void utils.invalidate(['comparisons', 'listAll']);
-        void utils.invalidate(['comparisons', 'scores']);
-        onSuccess?.(enriched);
-      },
-    }
-  );
+  const mutation = useMutation<SubmitTierListResponse, Error, SubmitTierListInput>({
+    mutationFn: async (input) => unwrap(await comparisonsSubmitTierList({ body: input })),
+    onSuccess: (response) => {
+      const enriched: TierListResult = {
+        comparisonsRecorded: response.data.comparisonsRecorded,
+        scoreChanges: response.data.scoreChanges.map((sc) => ({
+          ...sc,
+          title: movieTitles.get(sc.movieId) ?? `Movie #${sc.movieId}`,
+        })),
+      };
+      setResult(enriched);
+      void queryClient.invalidateQueries({
+        queryKey: ['media', 'comparisons', 'getTierListMovies'],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['media', 'comparisons', 'listAll'] });
+      void queryClient.invalidateQueries({ queryKey: ['media', 'comparisons', 'scores'] });
+      onSuccess?.(enriched);
+    },
+  });
 
   const submit = useCallback(
     (dimensionId: number, placements: TierPlacement[]) => {

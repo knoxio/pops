@@ -4,10 +4,22 @@
  * Starts a job via mutation (returns immediately), polls for progress,
  * and auto-restores running jobs on mount (survives page navigation).
  */
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+import { unwrap } from '../media-api-helpers.js';
+import {
+  plexGetActiveSyncJobs,
+  plexGetLastSyncResults,
+  plexGetSyncJobStatus,
+  plexStartSyncJob,
+} from '../media-api/index.js';
+
+import type { PlexStartSyncJobData } from '../media-api/types.gen.js';
+
+type StartSyncJobBody = NonNullable<PlexStartSyncJobData['body']>;
+type WireJobType = StartSyncJobBody['jobType'];
 
 type SyncJobType =
   | 'plexSyncMovies'
@@ -16,6 +28,17 @@ type SyncJobType =
   | 'plexSyncWatchHistory'
   | 'plexSyncDiscoverWatches';
 
+const WIRE_JOB_TYPES: readonly WireJobType[] = [
+  'plexSyncMovies',
+  'plexSyncTvShows',
+  'plexSyncWatchlist',
+  'plexSyncWatchHistory',
+];
+
+function isWireJobType(jobType: SyncJobType): jobType is WireJobType {
+  return (WIRE_JOB_TYPES as readonly string[]).includes(jobType);
+}
+
 interface SyncJobProgress {
   processed: number;
   total: number;
@@ -23,7 +46,7 @@ interface SyncJobProgress {
 
 interface SyncJob {
   id: string;
-  jobType: SyncJobType;
+  jobType: string;
   status: 'running' | 'completed' | 'failed';
   startedAt: string;
   completedAt: string | null;
@@ -45,13 +68,6 @@ interface ActiveJobsResult {
 
 interface SyncJobStatusResult {
   data: SyncJob;
-}
-
-interface StartSyncJobInput {
-  jobType: SyncJobType;
-  sectionId?: string;
-  movieSectionId?: string;
-  tvSectionId?: string;
 }
 
 interface StartSyncJobResult {
@@ -98,15 +114,12 @@ function useRestoreActiveJob(
   setRestoredJob: (j: SyncJob) => void
 ) {
   const restoredRef = useRef(false);
-  const activeJobs = usePillarQuery<ActiveJobsResult>(
-    'media',
-    ['plex', 'getActiveSyncJobs'],
-    undefined,
-    {
-      enabled: !jobId && !restoredRef.current,
-      refetchOnWindowFocus: false,
-    }
-  );
+  const activeJobs = useQuery<ActiveJobsResult>({
+    queryKey: ['media', 'plex', 'getActiveSyncJobs'],
+    queryFn: async () => unwrap(await plexGetActiveSyncJobs()),
+    enabled: !jobId && !restoredRef.current,
+    refetchOnWindowFocus: false,
+  });
   const isRestoring = !restoredRef.current && !jobId && activeJobs.isLoading;
 
   useEffect(() => {
@@ -129,18 +142,15 @@ function useStatusPolling(
   restoredJob: SyncJob | null,
   clearRestored: () => void
 ) {
-  const statusQuery = usePillarQuery<SyncJobStatusResult>(
-    'media',
-    ['plex', 'getSyncJobStatus'],
-    { jobId: jobId ?? '' },
-    {
-      enabled: !!jobId,
-      refetchInterval: (query) => {
-        const status = query.state.data?.data?.status;
-        return status === 'running' ? 1500 : false;
-      },
-    }
-  );
+  const statusQuery = useQuery<SyncJobStatusResult>({
+    queryKey: ['media', 'plex', 'getSyncJobStatus', jobId],
+    queryFn: async () => unwrap(await plexGetSyncJobStatus({ path: { jobId: jobId ?? '' } })),
+    enabled: !!jobId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.data?.status;
+      return status === 'running' ? 1500 : false;
+    },
+  });
 
   useEffect(() => {
     if (statusQuery.data?.data && restoredJob) {
@@ -192,26 +202,27 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
   const { isRestoring } = useRestoreActiveJob(jobType, jobId, setJobId, setRestoredJob);
   const statusQuery = useStatusPolling(jobId, restoredJob, () => setRestoredJob(null));
 
-  const startMutation = usePillarMutation<StartSyncJobInput, StartSyncJobResult>(
-    'media',
-    ['plex', 'startSyncJob'],
-    {
-      onSuccess: (res) => {
-        setJobId(res.data.jobId);
-      },
-      onError: (err) => {
-        toast.error(`Failed to start ${label}: ${err.message}`);
-      },
-    }
-  );
+  const startMutation = useMutation<StartSyncJobResult, Error, StartSyncJobBody>({
+    mutationFn: async (body) => unwrap(await plexStartSyncJob({ body })),
+    onSuccess: (res) => {
+      setJobId(res.data.jobId);
+    },
+    onError: (err) => {
+      toast.error(`Failed to start ${label}: ${err.message}`);
+    },
+  });
 
   useCompletionToast(label, jobId, statusQuery.data?.data);
 
   const start = useCallback(
     (params?: SyncJobParams) => {
+      if (!isWireJobType(jobType)) {
+        toast.error(`${label} is not supported`);
+        return;
+      }
       startMutation.mutate({ jobType, ...params });
     },
-    [jobType, startMutation]
+    [jobType, label, startMutation]
   );
 
   const job = statusQuery.data?.data ?? restoredJob;
@@ -228,10 +239,9 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
 
 /** Hook to get "last synced" data for all sync types. */
 export function useLastSyncResults(): Record<string, SyncJob | null> {
-  const query = usePillarQuery<LastSyncResultsResult>(
-    'media',
-    ['plex', 'getLastSyncResults'],
-    undefined
-  );
+  const query = useQuery<LastSyncResultsResult>({
+    queryKey: ['media', 'plex', 'getLastSyncResults'],
+    queryFn: async () => unwrap(await plexGetLastSyncResults()),
+  });
   return query.data?.data ?? {};
 }
