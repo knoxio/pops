@@ -2,12 +2,13 @@
  * `inbox.*` sub-router — recipe-ingest triage (PRD-134/135/136/138). Pure
  * DB reads/writes. Mutations + inspector return the service's discriminated
  * `{ ok, ... }` result on 200. List endpoints are POST-with-body (array
- * filters + cursor). `getForReview.review` is projected as `unknown` (deep
- * aggregate; consumers import the rich type from the api layer directly).
+ * filters + cursor). `getForReview.review` is fully modelled in
+ * `rest-inbox-review-schemas.ts` so `api-types` describes the wire shape.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
+import { InspectorReviewViewSchema } from './rest-inbox-review-schemas.js';
 import {
   ApproveResult,
   DraftSort,
@@ -111,7 +112,7 @@ export const foodInboxContract = c.router({
     query: z.object({ sourceId: QueryPositiveInt }),
     responses: {
       200: z.discriminatedUnion('ok', [
-        z.object({ ok: z.literal(true), review: z.unknown() }),
+        z.object({ ok: z.literal(true), review: InspectorReviewViewSchema }),
         z.object({ ok: z.literal(false), reason: z.literal('SourceNotFound') }),
       ]),
       ...ERR_RESPONSES,

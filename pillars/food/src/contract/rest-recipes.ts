@@ -1,14 +1,19 @@
 /**
  * `recipes.*` sub-router — PRD-119 recipe CRUD + draft lifecycle. The DSL
  * compile result and the `getForRendering` aggregate are deep, renderer-
- * owned shapes; they are projected as `unknown` in OpenAPI (consumers
- * import the rich type from the api layer, as the inbox inspector does).
+ * owned shapes; they are fully modelled in `rest-recipe-render-schemas.ts`
+ * so `api-types` describes the wire shape end-to-end.
  *
  * send-to-list + hero-image are separate slices (4c / 4b).
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
+import {
+  CompileResultSchema,
+  RecipeVersionWithCompiledDataSchema,
+  SourceSpanSchema,
+} from './rest-recipe-render-schemas.js';
 import { ERR_RESPONSES, NonEmptyString, PathPositiveInt } from './rest-schemas.js';
 
 const c = initContract();
@@ -52,7 +57,7 @@ const RecipeDraftSummarySchema = z.object({
 const ProposedSlugRowSchema = z.object({
   slug: z.string(),
   suggestedKind: z.enum(['ingredient', 'recipe', 'prep_state']).nullable(),
-  fromLoc: z.unknown(),
+  fromLoc: SourceSpanSchema,
   createdAt: z.string(),
 });
 
@@ -94,7 +99,7 @@ export const foodRecipesContract = c.router({
         slug: z.string(),
         recipeId: z.number().int(),
         versionId: z.number().int(),
-        compile: z.unknown(),
+        compile: CompileResultSchema,
       }),
       ...ERR_RESPONSES,
     },
@@ -105,7 +110,7 @@ export const foodRecipesContract = c.router({
     path: '/recipes/:slug',
     pathParams: z.object({ slug: NonEmptyString }),
     query: z.object({ versionNo: z.coerce.number().int().positive().optional() }),
-    responses: { 200: z.unknown(), ...ERR_RESPONSES },
+    responses: { 200: RecipeVersionWithCompiledDataSchema, ...ERR_RESPONSES },
     summary: 'Get a recipe version assembled for rendering',
   },
   listDrafts: {
@@ -139,7 +144,7 @@ export const foodRecipesContract = c.router({
     path: '/recipes/versions/:versionId',
     pathParams: z.object({ versionId: PathPositiveInt }),
     body: z.object({ dsl: NonEmptyString }),
-    responses: { 200: z.object({ compile: z.unknown() }), ...ERR_RESPONSES },
+    responses: { 200: z.object({ compile: CompileResultSchema }), ...ERR_RESPONSES },
     summary: 'Save + compile a draft version',
   },
   promote: {
