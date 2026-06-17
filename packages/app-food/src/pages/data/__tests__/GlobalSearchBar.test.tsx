@@ -76,9 +76,11 @@ describe('PRD-122-D — GlobalSearchBar', () => {
   });
 
   it('clicking an ingredient result navigates to /food/data/ingredients?focus=<slug>', async () => {
-    slugsSearchMock.mockResolvedValue({ data: {
+    slugsSearchMock.mockResolvedValue({
+      data: {
         items: [{ slug: 'butter', kind: 'ingredient', targetId: 100, name: 'Butter' }],
-      } });
+      },
+    });
     const { router } = renderInRouter('/food/data/ingredients');
     await userEvent.type(screen.getByPlaceholderText(/search ingredients/i), 'but');
     const option = await screen.findByRole('option', { name: /butter/i });
@@ -88,9 +90,11 @@ describe('PRD-122-D — GlobalSearchBar', () => {
   });
 
   it('clicking a prep_state result navigates to /food/data/prep-states', async () => {
-    slugsSearchMock.mockResolvedValue({ data: {
+    slugsSearchMock.mockResolvedValue({
+      data: {
         items: [{ slug: 'diced', kind: 'prep_state', targetId: 5, name: 'Diced' }],
-      } });
+      },
+    });
     const { router } = renderInRouter('/food/data/ingredients');
     await userEvent.type(screen.getByPlaceholderText(/search ingredients/i), 'dic');
     const option = await screen.findByRole('option', { name: /diced/i });
@@ -100,9 +104,11 @@ describe('PRD-122-D — GlobalSearchBar', () => {
   });
 
   it('recipe results are shown with a badge but disabled (no recipe tab yet)', async () => {
-    slugsSearchMock.mockResolvedValue({ data: {
+    slugsSearchMock.mockResolvedValue({
+      data: {
         items: [{ slug: 'weeknight-pasta', kind: 'recipe', targetId: 1, name: 'Weeknight Pasta' }],
-      } });
+      },
+    });
     renderInRouter('/food/data/ingredients');
     await userEvent.type(screen.getByPlaceholderText(/search ingredients/i), 'weeknight');
     const option = await screen.findByRole('option', { name: /weeknight pasta/i });

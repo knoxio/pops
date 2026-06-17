@@ -33,7 +33,12 @@ substitutionsGraphViewMock.mockImplementation(async () => ({
 
 import { SubGraphPage } from '../SubGraphPage';
 
-function lastGraphQuery(): { scope?: string; contextTag?: string; search?: string; recipeId?: number } {
+function lastGraphQuery(): {
+  scope?: string;
+  contextTag?: string;
+  search?: string;
+  recipeId?: number;
+} {
   const call = substitutionsGraphViewMock.mock.lastCall;
   return (call?.[0]?.query ?? {}) as {
     scope?: string;

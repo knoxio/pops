@@ -9,7 +9,6 @@ import {
   substitutionsListHydrated,
   substitutionsUpdate,
 } from '../../../food-api/index.js';
-
 import { mapMutationError } from './mapSubstitutionsError';
 import {
   EMPTY_FILTERS,

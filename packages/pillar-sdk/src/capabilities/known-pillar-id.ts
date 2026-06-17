@@ -35,7 +35,7 @@ export type KnownPillarId = (typeof PILLARS)[number];
  * any new pillar id added to {@link PILLARS} forces a deliberate choice
  * about its transport).
  */
-export const TRPC_PILLARS = ['core', 'media', 'cerebrum', 'food'] as const;
+export const TRPC_PILLARS = ['core', 'media', 'cerebrum'] as const;
 
 export type TrpcPillarId = (typeof TRPC_PILLARS)[number];
 

@@ -29,7 +29,9 @@ export interface UseInspectorOptions {
  * panes consume; the field comes straight from `unknown`, so this is a
  * single narrowing assertion, not a double-cast.
  */
-function toInspectorResult(raw: { ok: true; review: unknown } | { ok: false; reason: string }): InspectorResult {
+function toInspectorResult(
+  raw: { ok: true; review: unknown } | { ok: false; reason: string }
+): InspectorResult {
   if (!raw.ok) return { ok: false, reason: 'SourceNotFound' };
   return { ok: true, review: raw.review as InspectorReviewView };
 }
@@ -38,7 +40,8 @@ export function useInspector({ sourceId }: UseInspectorOptions) {
   const qc = useQueryClient();
   const query = useQuery({
     queryKey: ['food', 'inbox', 'getForReview', { sourceId }],
-    queryFn: async () => toInspectorResult(unwrap(await inboxGetForReview({ query: { sourceId } }))),
+    queryFn: async () =>
+      toInspectorResult(unwrap(await inboxGetForReview({ query: { sourceId } }))),
     refetchInterval: (q) => {
       const data = q.state.data;
       if (data === undefined || !data.ok) return false;

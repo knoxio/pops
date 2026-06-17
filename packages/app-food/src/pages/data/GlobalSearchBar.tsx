@@ -106,7 +106,8 @@ export function GlobalSearchBar() {
   const searchInput = { query: debounced, limit: 8 };
   const searchQuery = useQuery({
     queryKey: ['food', 'slugs', 'search', searchInput],
-    queryFn: async (): Promise<SlugSearchOutput> => unwrap(await slugsSearch({ query: searchInput })),
+    queryFn: async (): Promise<SlugSearchOutput> =>
+      unwrap(await slugsSearch({ query: searchInput })),
     enabled,
   });
   const items = useMemo<readonly SearchItem[]>(

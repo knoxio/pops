@@ -14,8 +14,9 @@ import { unwrap } from '../../food-api-helpers.js';
 import { inboxFailedErrorCodes, inboxListFailed, ingestRetry } from '../../food-api/index.js';
 import { type FailedFiltersState } from './FailedFilters.js';
 
-import type { InboxListFailedResponses } from '../../food-api/types.gen.js';
 import type { IngestSourceKind } from '@pops/app-food-db';
+
+import type { InboxListFailedResponses } from '../../food-api/types.gen.js';
 
 type ListFailedOutput = InboxListFailedResponses[200];
 

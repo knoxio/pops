@@ -1,8 +1,7 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
-
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@pops/ui';
 

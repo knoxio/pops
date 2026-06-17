@@ -1,18 +1,16 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
  * Local form/mutation state for the AddPlanEntryModal — extracted so
  * the modal stays under the per-function line cap.
  */
 import { useState } from 'react';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../food-api-helpers.js';
+import { planAddEntry, recipesList } from '../../food-api/index.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { PlanAddEntryData } from '../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-
-type RecipesListOutput = inferRouterOutputs<AppRouter>['food']['recipes']['list'];
-type PlanAddEntryInput = inferRouterInputs<AppRouter>['food']['plan']['addEntry'];
-type PlanAddEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['addEntry'];
+type PlanAddEntryInput = NonNullable<PlanAddEntryData['body']>;
 
 interface Opts {
   date: string;
@@ -66,30 +64,27 @@ function useAddFormState(): FormState {
 
 export function useAddPlanEntry({ date, slot, isOpen, onAdded, onClose }: Opts) {
   const f = useAddFormState();
-  const utils = usePillarUtils('food');
-  const recipesQuery = usePillarQuery<RecipesListOutput>(
-    'food',
-    ['recipes', 'list'],
-    { search: f.search || undefined, includeArchived: false, limit: 25 },
-    { enabled: isOpen }
-  );
-  const addEntry = usePillarMutation<PlanAddEntryInput, PlanAddEntryOutput>(
-    'food',
-    ['plan', 'addEntry'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          void utils.invalidate(['plan', 'weekView']);
-          if (onAdded) onAdded(res.id);
-          f.reset();
-          onClose();
-          return;
-        }
-        f.setError(`Could not add: ${res.reason}`);
-      },
-      onError: (err) => f.setError(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const recipesListInput = { search: f.search || undefined, includeArchived: false, limit: 25 };
+  const recipesQuery = useQuery({
+    queryKey: ['food', 'recipes', 'list', recipesListInput],
+    queryFn: async () => unwrap(await recipesList({ body: recipesListInput })),
+    enabled: isOpen,
+  });
+  const addEntry = useMutation({
+    mutationFn: async (input: PlanAddEntryInput) => unwrap(await planAddEntry({ body: input })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        void queryClient.invalidateQueries({ queryKey: ['food', 'plan', 'weekView'] });
+        if (onAdded) onAdded(res.id);
+        f.reset();
+        onClose();
+        return;
+      }
+      f.setError(`Could not add: ${res.reason}`);
+    },
+    onError: (err: Error) => f.setError(err.message),
+  });
   const submit = () => {
     if (f.recipeId === null) return;
     addEntry.mutate({

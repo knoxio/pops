@@ -10,7 +10,6 @@ import { Button, Checkbox, Label, TextInput } from '@pops/ui';
 
 import { unwrap } from '../../../food-api-helpers.js';
 import { conversionsListWeights, ingredientsList } from '../../../food-api/index.js';
-
 import { type IngredientOption } from './CreateWeightDialog';
 import { useWeightMutations } from './useWeightMutations';
 import { buildIngredientLookup, useWeightRowViews } from './useWeightRowViews';

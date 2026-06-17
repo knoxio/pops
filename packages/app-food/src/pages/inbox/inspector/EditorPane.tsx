@@ -18,9 +18,9 @@ import { toast } from 'sonner';
 
 import { Button } from '@pops/ui';
 
+import { DslEditor } from '../../../components/DslEditor.js';
 import { unwrap } from '../../../food-api-helpers.js';
 import { recipesSaveDraft } from '../../../food-api/index.js';
-import { DslEditor } from '../../../components/DslEditor.js';
 import { InspectorRenderer } from './InspectorRenderer.js';
 
 import type { CompileResult, InspectorDraftView } from '@pops/app-food-db';

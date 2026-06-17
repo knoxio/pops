@@ -1,8 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
-
-import { useQuery } from '@tanstack/react-query';
 
 import { isNotFoundError, unwrap } from '../../food-api-helpers.js';
 import { recipesListDrafts } from '../../food-api/index.js';

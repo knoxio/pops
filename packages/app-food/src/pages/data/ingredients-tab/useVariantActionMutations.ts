@@ -49,7 +49,14 @@ export function useVariantActionMutations({ onFormSuccess, onDeleteSuccess }: Ar
     onError: (err: Error) => setFormError(mapVariantMutationError(err, t)),
   });
   const update = useMutation({
-    mutationFn: async ({ id, slug, name, defaultUnit, packageSizeG, notes }: UpdateVariantInput) => {
+    mutationFn: async ({
+      id,
+      slug,
+      name,
+      defaultUnit,
+      packageSizeG,
+      notes,
+    }: UpdateVariantInput) => {
       const body: UpdateBody = { slug, name, defaultUnit, packageSizeG, notes };
       return unwrap(await variantsUpdate({ path: { id }, body }));
     },
@@ -60,7 +67,8 @@ export function useVariantActionMutations({ onFormSuccess, onDeleteSuccess }: Ar
     onError: (err: Error) => setFormError(mapVariantMutationError(err, t)),
   });
   const deleteMutation = useMutation({
-    mutationFn: async ({ id }: DeleteVariantInput) => unwrap(await variantsDelete({ path: { id } })),
+    mutationFn: async ({ id }: DeleteVariantInput) =>
+      unwrap(await variantsDelete({ path: { id } })),
     onSuccess: async () => {
       await invalidate();
       onDeleteSuccess();

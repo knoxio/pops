@@ -1,19 +1,12 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 /**
  * Edit-sheet mutation wiring for `PlanEntryEditSheet` — extracted so
  * the sheet component fits within the per-function line cap.
  */
 import { useState } from 'react';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type PlanUpdateEntryInput = inferRouterInputs<AppRouter>['food']['plan']['updateEntry'];
-type PlanUpdateEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['updateEntry'];
-type PlanDeleteEntryInput = inferRouterInputs<AppRouter>['food']['plan']['deleteEntry'];
-type PlanDeleteEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['deleteEntry'];
+import { unwrap } from '../../food-api-helpers.js';
+import { planDeleteEntry, planUpdateEntry } from '../../food-api/index.js';
 
 interface Opts {
   entryId: number;
@@ -22,51 +15,46 @@ interface Opts {
 }
 
 export function usePlanEntryEdit({ entryId, onSaved, onDeleted }: Opts) {
-  const utils = usePillarUtils('food');
-  const invalidate = () => void utils.invalidate(['plan', 'weekView']);
+  const queryClient = useQueryClient();
+  const invalidate = () =>
+    void queryClient.invalidateQueries({ queryKey: ['food', 'plan', 'weekView'] });
   const [error, setError] = useState<string | null>(null);
 
-  const updateEntry = usePillarMutation<PlanUpdateEntryInput, PlanUpdateEntryOutput>(
-    'food',
-    ['plan', 'updateEntry'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          invalidate();
-          onSaved();
-        } else {
-          setError(`Could not save: ${res.reason}`);
-        }
-      },
-      onError: (err) => setError(err.message),
-    }
-  );
+  const updateEntry = useMutation({
+    mutationFn: async (input: { plannedServings: number; notes: string | null }) =>
+      unwrap(await planUpdateEntry({ path: { id: entryId }, body: input })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        invalidate();
+        onSaved();
+      } else {
+        setError(`Could not save: ${res.reason}`);
+      }
+    },
+    onError: (err: Error) => setError(err.message),
+  });
 
-  const deleteEntry = usePillarMutation<PlanDeleteEntryInput, PlanDeleteEntryOutput>(
-    'food',
-    ['plan', 'deleteEntry'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          invalidate();
-          onDeleted();
-        } else {
-          setError(`Could not delete: ${res.reason}`);
-        }
-      },
-      onError: (err) => setError(err.message),
-    }
-  );
+  const deleteEntry = useMutation({
+    mutationFn: async () => unwrap(await planDeleteEntry({ path: { id: entryId } })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        invalidate();
+        onDeleted();
+      } else {
+        setError(`Could not delete: ${res.reason}`);
+      }
+    },
+    onError: (err: Error) => setError(err.message),
+  });
 
   const save = (plannedServings: number, notes: string) => {
     updateEntry.mutate({
-      id: entryId,
       plannedServings,
       notes: notes.trim() === '' ? null : notes.trim(),
     });
   };
 
-  const remove = () => deleteEntry.mutate({ id: entryId });
+  const remove = () => deleteEntry.mutate();
 
   return {
     save,

@@ -7,10 +7,7 @@ import { Label, useDebouncedValue } from '@pops/ui';
 import { unwrap } from '../../../food-api-helpers.js';
 import { ingredientsGet, slugsSearch } from '../../../food-api/index.js';
 
-import type {
-  IngredientsGetResponses,
-  SlugsSearchResponses,
-} from '../../../food-api/types.gen.js';
+import type { IngredientsGetResponses, SlugsSearchResponses } from '../../../food-api/types.gen.js';
 
 type SlugSearchOutput = SlugsSearchResponses[200];
 type IngredientsGetOutput = IngredientsGetResponses[200];

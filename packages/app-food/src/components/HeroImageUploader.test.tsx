@@ -1,49 +1,23 @@
 /**
  * PRD-124 — HeroImageUploader RTL suite.
  *
- * Mocks the tRPC mutation hooks so the component can be exercised in
- * isolation. Toast errors are observed via `sonner.toast` mock.
+ * Mocks the generated food SDK so the upload + remove mutations can be
+ * exercised in isolation. Toast errors are observed via `sonner.toast`
+ * mock. The component drives the mutations through React Query, so each
+ * render is wrapped in a `QueryClientProvider`.
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const uploadMutate = vi.fn();
-const removeMutate = vi.fn();
-const uploadHooks = {
-  isPending: false,
-  onSuccess: null as null | ((res: unknown) => void),
-  onError: null as null | ((err: { message: string }) => void),
-};
-const removeHooks = {
-  isPending: false,
-  onSuccess: null as null | (() => void),
-  onError: null as null | ((err: { message: string }) => void),
-};
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: {
-      onSuccess?: typeof uploadHooks.onSuccess & typeof removeHooks.onSuccess;
-      onError?: typeof uploadHooks.onError & typeof removeHooks.onError;
-    }
-  ) => {
-    const key = path.join('.');
-    if (key === 'heroImage.upload') {
-      uploadHooks.onSuccess = opts.onSuccess ?? null;
-      uploadHooks.onError = opts.onError ?? null;
-      return { mutate: uploadMutate, isPending: uploadHooks.isPending };
-    }
-    if (key === 'heroImage.remove') {
-      removeHooks.onSuccess = opts.onSuccess ?? null;
-      removeHooks.onError = opts.onError ?? null;
-      return { mutate: removeMutate, isPending: removeHooks.isPending };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
+const sdk = vi.hoisted(() => ({
+  heroImageUpload: vi.fn(),
+  heroImageRemove: vi.fn(),
 }));
+
+vi.mock('../food-api/index.js', () => sdk);
 
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
@@ -59,15 +33,46 @@ import { HeroImageUploader } from './HeroImageUploader';
 const onUploaded = vi.fn();
 const onRemoved = vi.fn();
 
+function uploadSuccess(heroImagePath: string) {
+  return {
+    data: {
+      data: { heroImagePath, height: 1, width: 1, sizeBytes: 1 },
+      message: 'ok',
+    },
+  };
+}
+
+function renderUploader(overrides: Partial<Parameters<typeof HeroImageUploader>[0]> = {}) {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  function Wrapper({ children }: { children: ReactElement }): ReactElement {
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  }
+  return render(
+    <HeroImageUploader
+      recipeId={1}
+      currentPath={null}
+      onUploaded={onUploaded}
+      onRemoved={onRemoved}
+      {...overrides}
+    />,
+    { wrapper: Wrapper }
+  );
+}
+
 beforeEach(() => {
-  uploadMutate.mockReset();
-  removeMutate.mockReset();
+  sdk.heroImageUpload.mockReset();
+  sdk.heroImageRemove.mockReset();
+  sdk.heroImageUpload.mockResolvedValue(uploadSuccess('1/hero.jpg'));
+  sdk.heroImageRemove.mockResolvedValue({ data: { ok: true } });
   toastSuccess.mockReset();
   toastError.mockReset();
   onUploaded.mockReset();
   onRemoved.mockReset();
-  uploadHooks.isPending = false;
-  removeHooks.isPending = false;
 });
 
 afterEach(() => {
@@ -77,139 +82,81 @@ afterEach(() => {
 describe('HeroImageUploader', () => {
   describe('when no hero is set', () => {
     it('renders the drop-zone with prompt + size hint', () => {
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader();
       expect(screen.getByText(/drop an image/i)).toBeInTheDocument();
       expect(screen.getByText(/JPG, PNG, or WebP/i)).toBeInTheDocument();
     });
 
     it('uploads a valid image on file selection', async () => {
-      render(
-        <HeroImageUploader
-          recipeId={42}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader({ recipeId: 42 });
       const input = screen.getByTestId('hero-image-uploader-input') as HTMLInputElement;
       const file = new File([new Uint8Array([1, 2, 3, 4])], 'shot.jpg', { type: 'image/jpeg' });
       await userEvent.upload(input, file);
-      await waitFor(() => expect(uploadMutate).toHaveBeenCalledTimes(1));
-      const args = uploadMutate.mock.calls[0]?.[0] as {
-        recipeId: number;
-        mimeType: string;
-        contentBase64: string;
+      await waitFor(() => expect(sdk.heroImageUpload).toHaveBeenCalledTimes(1));
+      const call = sdk.heroImageUpload.mock.calls[0]?.[0] as {
+        path: { recipeId: number };
+        body: { mimeType: string; contentBase64: string };
       };
-      expect(args.recipeId).toBe(42);
-      expect(args.mimeType).toBe('image/jpeg');
-      expect(args.contentBase64.length).toBeGreaterThan(0);
+      expect(call.path.recipeId).toBe(42);
+      expect(call.body.mimeType).toBe('image/jpeg');
+      expect(call.body.contentBase64.length).toBeGreaterThan(0);
     });
 
     it('rejects an unsupported mime type without invoking the mutation', async () => {
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader();
       const input = screen.getByTestId('hero-image-uploader-input') as HTMLInputElement;
       const file = new File(['x'], 'shot.gif', { type: 'image/gif' });
       // Bypass userEvent.upload's `accept` filter so the change handler still
       // runs — we want to assert the in-component validator rejects it.
       fireEvent.change(input, { target: { files: [file] } });
       await waitFor(() => expect(toastError).toHaveBeenCalled());
-      expect(uploadMutate).not.toHaveBeenCalled();
+      expect(sdk.heroImageUpload).not.toHaveBeenCalled();
     });
 
     it('rejects an oversize file', async () => {
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-          maxBytes={4}
-        />
-      );
+      renderUploader({ maxBytes: 4 });
       const input = screen.getByTestId('hero-image-uploader-input') as HTMLInputElement;
       const file = new File([new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])], 'big.jpg', {
         type: 'image/jpeg',
       });
       await userEvent.upload(input, file);
-      expect(uploadMutate).not.toHaveBeenCalled();
+      expect(sdk.heroImageUpload).not.toHaveBeenCalled();
       expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/limit/i));
     });
 
     it('accepts a file via drag-drop', async () => {
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader();
       const dropZone = screen.getByRole('button');
       const file = new File([new Uint8Array([1, 2, 3, 4])], 'drop.png', { type: 'image/png' });
       fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
-      await waitFor(() => expect(uploadMutate).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(sdk.heroImageUpload).toHaveBeenCalledTimes(1));
     });
 
     it('fires onUploaded + success toast when the mutation resolves', async () => {
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader();
       const input = screen.getByTestId('hero-image-uploader-input') as HTMLInputElement;
       const file = new File([new Uint8Array([1, 2, 3, 4])], 'ok.jpg', { type: 'image/jpeg' });
       await userEvent.upload(input, file);
-      await waitFor(() => expect(uploadMutate).toHaveBeenCalled());
-      uploadHooks.onSuccess?.({ data: { heroImagePath: '1/hero.jpg' } });
-      expect(onUploaded).toHaveBeenCalledWith('1/hero.jpg');
+      await waitFor(() => expect(onUploaded).toHaveBeenCalledWith('1/hero.jpg'));
       expect(toastSuccess).toHaveBeenCalled();
     });
 
     it('surfaces server errors via toast', async () => {
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      sdk.heroImageUpload.mockResolvedValue({
+        error: { message: 'boom' },
+        response: { status: 500 },
+      });
+      renderUploader();
       const input = screen.getByTestId('hero-image-uploader-input') as HTMLInputElement;
       const file = new File([new Uint8Array([1, 2, 3, 4])], 'ok.jpg', { type: 'image/jpeg' });
       await userEvent.upload(input, file);
-      await waitFor(() => expect(uploadMutate).toHaveBeenCalled());
-      uploadHooks.onError?.({ message: 'boom' });
-      expect(toastError).toHaveBeenCalledWith('boom');
+      await waitFor(() => expect(toastError).toHaveBeenCalledWith('boom'));
     });
   });
 
   describe('when a hero is set', () => {
     it('renders the current image with replace + remove actions', () => {
-      render(
-        <HeroImageUploader
-          recipeId={7}
-          currentPath="7/hero.png"
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader({ recipeId: 7, currentPath: '7/hero.png' });
       const img = screen.getByRole('img', { name: /recipe hero image/i }) as HTMLImageElement;
       // The renderer picks card-size when available.
       expect(img.getAttribute('src')).toBe('/api/food/recipes/7/hero-card.webp');
@@ -218,59 +165,41 @@ describe('HeroImageUploader', () => {
     });
 
     it('falls back to the original on card-thumb 404', () => {
-      render(
-        <HeroImageUploader
-          recipeId={7}
-          currentPath="7/hero.png"
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader({ recipeId: 7, currentPath: '7/hero.png' });
       const img = screen.getByRole('img', { name: /recipe hero image/i }) as HTMLImageElement;
       fireEvent.error(img);
       expect(img.getAttribute('src')).toBe('/api/food/recipes/7/hero.png');
     });
 
     it('calls the remove mutation when Remove is clicked', async () => {
-      render(
-        <HeroImageUploader
-          recipeId={11}
-          currentPath="11/hero.jpg"
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader({ recipeId: 11, currentPath: '11/hero.jpg' });
       await userEvent.click(screen.getByRole('button', { name: /remove/i }));
-      expect(removeMutate).toHaveBeenCalledWith({ recipeId: 11 });
-      removeHooks.onSuccess?.();
-      expect(onRemoved).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(sdk.heroImageRemove).toHaveBeenCalledTimes(1));
+      const call = sdk.heroImageRemove.mock.calls[0]?.[0] as { path: { recipeId: number } };
+      expect(call.path.recipeId).toBe(11);
+      await waitFor(() => expect(onRemoved).toHaveBeenCalledTimes(1));
       expect(toastSuccess).toHaveBeenCalled();
     });
   });
 
   describe('progress + accessibility', () => {
-    it('shows the uploading state while the mutation is in flight', () => {
-      uploadHooks.isPending = true;
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
+    it('shows the uploading state while the mutation is in flight', async () => {
+      let resolveUpload: ((value: unknown) => void) | undefined;
+      sdk.heroImageUpload.mockReturnValue(
+        new Promise((res) => {
+          resolveUpload = res;
+        })
       );
-      expect(screen.getByText(/uploading/i)).toBeInTheDocument();
+      renderUploader();
+      const input = screen.getByTestId('hero-image-uploader-input') as HTMLInputElement;
+      const file = new File([new Uint8Array([1, 2, 3, 4])], 'ok.jpg', { type: 'image/jpeg' });
+      await userEvent.upload(input, file);
+      await waitFor(() => expect(screen.getByText(/uploading/i)).toBeInTheDocument());
+      resolveUpload?.(uploadSuccess('1/hero.jpg'));
     });
 
     it('exposes the drop-zone as a button for keyboard activation', () => {
-      render(
-        <HeroImageUploader
-          recipeId={1}
-          currentPath={null}
-          onUploaded={onUploaded}
-          onRemoved={onRemoved}
-        />
-      );
+      renderUploader();
       expect(screen.getByRole('button')).toBeInTheDocument();
     });
   });

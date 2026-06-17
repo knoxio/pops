@@ -162,8 +162,22 @@ describe('PRD-119-B — RecipeDetailPage', () => {
     recipesListDraftsMock.mockResolvedValue({
       data: {
         drafts: [
-          { versionId: 1, versionNo: 1, title: 'a', compileStatus: 'compiled', createdAt: 'x', preview: '' },
-          { versionId: 2, versionNo: 2, title: 'b', compileStatus: 'compiled', createdAt: 'x', preview: '' },
+          {
+            versionId: 1,
+            versionNo: 1,
+            title: 'a',
+            compileStatus: 'compiled',
+            createdAt: 'x',
+            preview: '',
+          },
+          {
+            versionId: 2,
+            versionNo: 2,
+            title: 'b',
+            compileStatus: 'compiled',
+            createdAt: 'x',
+            preview: '',
+          },
         ],
       },
     });

@@ -20,14 +20,12 @@ import { useTranslation } from 'react-i18next';
 
 import { unwrap } from '../../../food-api-helpers.js';
 import { substitutionsGraphView } from '../../../food-api/index.js';
-
 import { distinctContextTags, findNodeBySlug } from './helpers';
 import { SubGraphBody } from './SubGraphBody';
 import { SubGraphHeader } from './SubGraphHeader';
 import { useSubGraphState } from './useSubGraphState';
 
 import type { SubstitutionsGraphViewResponses } from '../../../food-api/types.gen.js';
-
 import type { ForceGraphInternalProps } from './ForceGraphCanvas';
 import type { SubGraphView } from './types';
 

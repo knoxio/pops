@@ -17,10 +17,11 @@ import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { unwrap } from '../../../food-api-helpers.js';
 import { sendToListPrepare } from '../../../food-api/index.js';
 
-import type { SendToListPrepareResponses } from '../../../food-api/types.gen.js';
 import type { inferRouterOutputs } from '@trpc/server';
 
 import type { AppRouter } from '@pops/api';
+
+import type { SendToListPrepareResponses } from '../../../food-api/types.gen.js';
 
 export type PrepareOutput = SendToListPrepareResponses[200];
 type ListsListOutput = inferRouterOutputs<AppRouter>['lists']['list']['list'];

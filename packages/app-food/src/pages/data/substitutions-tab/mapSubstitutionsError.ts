@@ -1,6 +1,6 @@
-import type { TFunction } from 'i18next';
-
 import { FoodApiError } from '../../../food-api-helpers.js';
+
+import type { TFunction } from 'i18next';
 
 export function mapMutationError(err: unknown, t: TFunction): string {
   if (err instanceof FoodApiError) {

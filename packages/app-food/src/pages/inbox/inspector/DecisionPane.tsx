@@ -191,8 +191,7 @@ function RerunPipelineButton({
   // until the user reloads. Bumping `onRequeued` invalidates the query
   // (Copilot R1).
   const mutation = useMutation({
-    mutationFn: async (input: { sourceId: number }) =>
-      unwrap(await ingestRetry({ body: input })),
+    mutationFn: async (input: { sourceId: number }) => unwrap(await ingestRetry({ body: input })),
     onSuccess: () => {
       toast.success(t('inbox.inspector.decision.rerun.success'));
       onRequeued();

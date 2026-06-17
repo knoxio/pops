@@ -97,7 +97,9 @@ describe('PRD-119-C — RecipeNewPage', () => {
     await user.click(screen.getByRole('button', { name: /save draft/i }));
     await waitFor(() =>
       expect(recipesCreateMock).toHaveBeenCalledWith(
-        expect.objectContaining({ body: expect.objectContaining({ dsl: expect.stringContaining('pancakes') }) })
+        expect.objectContaining({
+          body: expect.objectContaining({ dsl: expect.stringContaining('pancakes') }),
+        })
       )
     );
   });

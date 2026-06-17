@@ -1,8 +1,7 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
-
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@pops/ui';
 
@@ -60,8 +59,7 @@ function useDraftRowMutations(
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const promoteMutation = useMutation({
-    mutationFn: async (versionId: number) =>
-      unwrap(await recipesPromote({ path: { versionId } })),
+    mutationFn: async (versionId: number) => unwrap(await recipesPromote({ path: { versionId } })),
     onSuccess: (res) => {
       if (res.ok) {
         toast.success(t('recipes.drafts.row.promoted'));

@@ -1,13 +1,11 @@
-import { useMemo } from 'react';
-
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import { unwrap } from '../../food-api-helpers.js';
 import { recipesList } from '../../food-api/index.js';
 
-import type { RecipeListFilterState, RecipeType } from './recipe-list-types.js';
-
 import type { RecipesListData } from '../../food-api/types.gen.js';
+import type { RecipeListFilterState, RecipeType } from './recipe-list-types.js';
 
 type RecipeListBody = NonNullable<RecipesListData['body']>;
 

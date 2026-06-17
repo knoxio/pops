@@ -10,9 +10,9 @@ import { useQuery } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { RecipeRenderer } from '../../../components/RecipeRenderer.js';
 import { unwrap } from '../../../food-api-helpers.js';
 import { recipesGetForRendering } from '../../../food-api/index.js';
-import { RecipeRenderer } from '../../../components/RecipeRenderer.js';
 
 import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
 
@@ -47,7 +47,9 @@ function RendererBody({ slug, versionNo, t }: BodyProps): ReactElement {
       // The renderer endpoint serves the joined payload as an opaque blob
       // (`unknown` in the generated SDK); narrow it from `unknown` to the
       // renderer's view type — a single narrowing assertion.
-      unwrap(await recipesGetForRendering({ path: { slug }, query: { versionNo } })) as RecipeVersionWithCompiledData,
+      unwrap(
+        await recipesGetForRendering({ path: { slug }, query: { versionNo } })
+      ) as RecipeVersionWithCompiledData,
   });
   if (query.isLoading) {
     return <p className="text-sm text-muted-foreground">{t('inbox.inspector.renderer.loading')}</p>;

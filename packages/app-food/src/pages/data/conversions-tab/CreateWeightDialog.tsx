@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
 import { unwrap } from '../../../food-api-helpers.js';
 import { ingredientsGet } from '../../../food-api/index.js';
-
 import { DialogActions, FormError } from './dialog-helpers';
 import { NumberFieldRow, SelectFieldRow, TextareaFieldRow, TextFieldRow } from './form-fields';
 
@@ -40,8 +39,7 @@ const INITIAL: FormState = {
 function useVariantsFor(ingredientId: number | null) {
   return useQuery({
     queryKey: ['food', 'ingredients', 'get', ingredientId],
-    queryFn: async () =>
-      unwrap(await ingredientsGet({ path: { idOrSlug: String(ingredientId) } })),
+    queryFn: async () => unwrap(await ingredientsGet({ path: { idOrSlug: String(ingredientId) } })),
     enabled: ingredientId !== null,
   });
 }

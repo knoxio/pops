@@ -32,8 +32,7 @@ export function ApproveDialog({
   const { t } = useTranslation('food');
   const navigate = useNavigate();
   const mutation = useMutation({
-    mutationFn: async (input: { versionId: number }) =>
-      unwrap(await inboxApprove({ body: input })),
+    mutationFn: async (input: { versionId: number }) => unwrap(await inboxApprove({ body: input })),
     onSuccess: (res) => {
       if (res.ok) {
         toast.success(t('inbox.inspector.decision.approve.success'));

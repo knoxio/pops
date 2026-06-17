@@ -98,7 +98,9 @@ function preparedWith(payload = preparePayload): void {
   sendToListPrepareMock.mockResolvedValue({ data: payload });
 }
 
-function withLists(items: { id: number; name: string; itemCount: number; lastUpdatedAt: string }[]) {
+function withLists(
+  items: { id: number; name: string; itemCount: number; lastUpdatedAt: string }[]
+) {
   return { isLoading: false, data: { items }, error: null, refetch: vi.fn() };
 }
 
@@ -115,7 +117,12 @@ afterEach(() => {
 describe('SendToListModal — render + state', () => {
   it('shows the loading copy until both queries resolve', () => {
     sendToListPrepareMock.mockReturnValue(new Promise(() => {}));
-    mockListsList.mockReturnValue({ isLoading: true, data: undefined, error: null, refetch: vi.fn() });
+    mockListsList.mockReturnValue({
+      isLoading: true,
+      data: undefined,
+      error: null,
+      refetch: vi.fn(),
+    });
     render(
       <Wrapper>
         <SendToListModal open versionId={11} onOpenChange={vi.fn()} onSuccess={vi.fn()} />
@@ -200,7 +207,9 @@ describe('SendToListModal — submit + result', () => {
   it('sends to an existing list when the user picks one', async () => {
     preparedWith();
     mockListsList.mockReturnValue(
-      withLists([{ id: 7, name: 'Weekly', itemCount: 3, lastUpdatedAt: '2026-06-01T00:00:00.000Z' }])
+      withLists([
+        { id: 7, name: 'Weekly', itemCount: 3, lastUpdatedAt: '2026-06-01T00:00:00.000Z' },
+      ])
     );
     sendToListSendMock.mockResolvedValue({
       data: { ok: true, listId: 7, addedCount: 2, mergedCount: 0 },
@@ -224,7 +233,9 @@ describe('SendToListModal — submit + result', () => {
   it('disables Send until an existing list is picked', async () => {
     preparedWith();
     mockListsList.mockReturnValue(
-      withLists([{ id: 7, name: 'Weekly', itemCount: 3, lastUpdatedAt: '2026-06-01T00:00:00.000Z' }])
+      withLists([
+        { id: 7, name: 'Weekly', itemCount: 3, lastUpdatedAt: '2026-06-01T00:00:00.000Z' },
+      ])
     );
     render(
       <Wrapper>
@@ -237,7 +248,9 @@ describe('SendToListModal — submit + result', () => {
   it('renders the already-sent badge for matching shopping lists', async () => {
     preparedWith({ ...preparePayload, alreadySentToListIds: [7] });
     mockListsList.mockReturnValue(
-      withLists([{ id: 7, name: 'Weekly', itemCount: 3, lastUpdatedAt: '2026-06-01T00:00:00.000Z' }])
+      withLists([
+        { id: 7, name: 'Weekly', itemCount: 3, lastUpdatedAt: '2026-06-01T00:00:00.000Z' },
+      ])
     );
     render(
       <Wrapper>

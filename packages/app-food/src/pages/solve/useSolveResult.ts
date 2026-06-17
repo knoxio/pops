@@ -6,13 +6,10 @@
  * `document.visibilityState !== 'visible'` so a backgrounded tab
  * doesn't burn solver budget.
  */
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type CanICookOutput = inferRouterOutputs<AppRouter>['food']['solver']['canICook'];
+import { unwrap } from '../../food-api-helpers.js';
+import { solverCanICook } from '../../food-api/index.js';
 
 const POLL_INTERVAL_MS = 60_000;
 
@@ -50,7 +47,9 @@ export function useSolveResult({ filters }: UseSolveResultArgs) {
     tags: filters.tags.length === 0 ? undefined : [...filters.tags],
     maxMinutes: filters.maxMinutes ?? undefined,
   };
-  const query = usePillarQuery<CanICookOutput>('food', ['solver', 'canICook'], input, {
+  const query = useQuery({
+    queryKey: ['food', 'solver', 'canICook', input],
+    queryFn: async () => unwrap(await solverCanICook({ body: input })),
     refetchInterval: POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
   });

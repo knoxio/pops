@@ -1,19 +1,18 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
  * State + mutation hook for `AdjustQtyModal` — splits the React side
  * so the modal stays under the `max-lines-per-function` budget.
  */
 import { useEffect, useState } from 'react';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../food-api-helpers.js';
+import { batchesAdjustQty, batchesGet } from '../../food-api/index.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
 import type { BatchAdjustReason } from '@pops/app-food-db';
 
-type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];
-type BatchesAdjustQtyInput = inferRouterInputs<AppRouter>['food']['batches']['adjustQty'];
-type BatchesAdjustQtyOutput = inferRouterOutputs<AppRouter>['food']['batches']['adjustQty'];
+import type { BatchesAdjustQtyData } from '../../food-api/types.gen.js';
+
+type BatchesAdjustQtyInput = NonNullable<BatchesAdjustQtyData['body']> & { id: number };
 
 interface UseAdjustQtyArgs {
   batchId: number | null;
@@ -22,13 +21,12 @@ interface UseAdjustQtyArgs {
 }
 
 export function useAdjustQtyState({ batchId, isOpen, onClose }: UseAdjustQtyArgs) {
-  const utils = usePillarUtils('food');
-  const detail = usePillarQuery<BatchesGetOutput>(
-    'food',
-    ['batches', 'get'],
-    { id: batchId ?? 0 },
-    { enabled: isOpen && batchId !== null }
-  );
+  const queryClient = useQueryClient();
+  const detail = useQuery({
+    queryKey: ['food', 'batches', 'get', { id: batchId ?? 0 }],
+    queryFn: async () => unwrap(await batchesGet({ path: { id: batchId ?? 0 } })).data,
+    enabled: isOpen && batchId !== null,
+  });
   const [delta, setDelta] = useState('');
   const [reason, setReason] = useState<BatchAdjustReason>('spoiled');
   const [error, setError] = useState<string | null>(null);
@@ -41,21 +39,21 @@ export function useAdjustQtyState({ batchId, isOpen, onClose }: UseAdjustQtyArgs
     }
   }, [isOpen]);
 
-  const adjustMutation = usePillarMutation<BatchesAdjustQtyInput, BatchesAdjustQtyOutput>(
-    'food',
-    ['batches', 'adjustQty'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          void utils.invalidate(['fridge', 'view']);
-          onClose();
-        } else {
-          setError(reasonToMessage(res.reason));
-        }
-      },
-      onError: (err) => setError(err.message),
-    }
-  );
+  const adjustMutation = useMutation({
+    mutationFn: async ({ id, ...body }: BatchesAdjustQtyInput) =>
+      unwrap(await batchesAdjustQty({ path: { id }, body })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        onClose();
+      } else {
+        setError(reasonToMessage(res.reason));
+      }
+    },
+    onError: (err: Error) => setError(err.message),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['food', 'fridge'] });
+    },
+  });
 
   return {
     detail,

@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 /**
  * Relocate batch modal — PRD-147.
  *
@@ -7,19 +8,17 @@
  */
 import { useEffect, useState, type ReactElement } from 'react';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@pops/ui';
 
+import { unwrap } from '../../food-api-helpers.js';
+import { batchesGet, batchesRelocate } from '../../food-api/index.js';
 import { FormError } from './form-controls.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
 import type { BatchLocation } from '@pops/app-food-db';
 
-type BatchesGetOutput = inferRouterOutputs<AppRouter>['food']['batches']['get'];
-type BatchesRelocateInput = inferRouterInputs<AppRouter>['food']['batches']['relocate'];
-type BatchesRelocateOutput = inferRouterOutputs<AppRouter>['food']['batches']['relocate'];
+import type { BatchesRelocateData } from '../../food-api/types.gen.js';
+
+type BatchesRelocateInput = NonNullable<BatchesRelocateData['body']> & { id: number };
 
 const LOCATIONS: { value: BatchLocation; label: string }[] = [
   { value: 'pantry', label: 'Pantry' },
@@ -38,22 +37,22 @@ function useRelocateMutation(args: {
   onClose: () => void;
   setError: (msg: string | null) => void;
 }) {
-  const utils = usePillarUtils('food');
-  return usePillarMutation<BatchesRelocateInput, BatchesRelocateOutput>(
-    'food',
-    ['batches', 'relocate'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          void utils.invalidate(['fridge', 'view']);
-          args.onClose();
-        } else {
-          args.setError(res.reason);
-        }
-      },
-      onError: (err) => args.setError(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...body }: BatchesRelocateInput) =>
+      unwrap(await batchesRelocate({ path: { id }, body })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        args.onClose();
+      } else {
+        args.setError(res.reason);
+      }
+    },
+    onError: (err: Error) => args.setError(err.message),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['food', 'fridge'] });
+    },
+  });
 }
 
 export function RelocateBatchModal({
@@ -61,12 +60,11 @@ export function RelocateBatchModal({
   isOpen,
   onClose,
 }: RelocateBatchModalProps): ReactElement {
-  const detail = usePillarQuery<BatchesGetOutput>(
-    'food',
-    ['batches', 'get'],
-    { id: batchId ?? 0 },
-    { enabled: isOpen && batchId !== null }
-  );
+  const detail = useQuery({
+    queryKey: ['food', 'batches', 'get', { id: batchId ?? 0 }],
+    queryFn: async () => unwrap(await batchesGet({ path: { id: batchId ?? 0 } })).data,
+    enabled: isOpen && batchId !== null,
+  });
   const [location, setLocation] = useState<BatchLocation>('fridge');
   const [error, setError] = useState<string | null>(null);
 
