@@ -17,6 +17,7 @@ import { makeIngestHandlers } from './ingest-handlers.js';
 import { makeNudgesHandlers } from './nudges-handlers.js';
 import { makePlexusHandlers } from './plexus-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
+import { makeRetrievalHandlers } from './retrieval-handlers.js';
 import { makeScopesHandlers } from './scopes-handlers.js';
 import { makeTagsHandlers } from './tags-handlers.js';
 import { makeTemplatesHandlers } from './templates-handlers.js';
@@ -53,6 +54,13 @@ export function makeCerebrumRestHandlers(
       templates: deps.templateRegistry,
       llm: deps.ingestLlm ?? new AnthropicIngestLlm(),
       curationQueue: deps.curationQueue ?? getCurationQueue,
+    }),
+    retrieval: makeRetrievalHandlers({
+      db: deps.cerebrumDb.db,
+      raw: deps.cerebrumDb.raw,
+      vecAvailable: deps.cerebrumDb.vecAvailable,
+      peers: deps.peerClients,
+      embeddingClient: deps.embeddingClient,
     }),
   });
 }

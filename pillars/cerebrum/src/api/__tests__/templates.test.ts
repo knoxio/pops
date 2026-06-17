@@ -12,7 +12,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openCerebrumDb, type OpenedCerebrumDb } from '../../db/index.js';
 import { createCerebrumApiApp } from '../app.js';
-import { makeClient, makeReflexService, makeTemplateRegistry } from './test-utils.js';
+import {
+  makeClient,
+  makeEmptyPeerClients,
+  makeReflexService,
+  makeTemplateRegistry,
+} from './test-utils.js';
 
 let tmpDir: string;
 let cerebrumDb: OpenedCerebrumDb;
@@ -35,6 +40,7 @@ function client() {
       reflexService: makeReflexService(cerebrumDb.db, join(tmpDir, 'reflexes.toml')),
       version: '0.0.1-test',
       selfBaseUrl: 'http://localhost:3007',
+      peerClients: makeEmptyPeerClients(),
     })
   );
 }

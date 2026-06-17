@@ -42,6 +42,13 @@ import type {
   NudgeWire,
 } from '../../contract/rest-nudges.js';
 import type {
+  RetrievalFiltersWire,
+  RetrievalModeWire,
+  RetrievalResultWire,
+  RetrievalStatsWire,
+  SourceAttributionWire,
+} from '../../contract/rest-retrieval-schemas.js';
+import type {
   EngramWire,
   PlexusAdapterWire,
   PlexusFilterDefinitionWire,
@@ -61,6 +68,7 @@ import type {
 import type { CerebrumDb } from '../../db/index.js';
 import type { IngestLlm, IngestLlmRequest } from '../modules/ingest/llm.js';
 import type { ReflexService } from '../modules/reflex/reflex-service.js';
+import type { PeerClients } from '../modules/retrieval/peer-clients.js';
 
 /**
  * Offline {@link IngestLlm} stub. Tests pass a per-operation responder map
@@ -96,6 +104,15 @@ export function makeTemplateRegistry(): TemplateRegistry {
  */
 export function makeReflexService(db: CerebrumDb, configPath: string): ReflexService {
   return buildReflexService({ db, configPath, watch: false });
+}
+
+/**
+ * Empty peer-client set — no cross-pillar enrichment. The default for tests
+ * that don't exercise the `retrieval` cross-pillar path; pass a partial fake
+ * to {@link createCerebrumApiApp} where enrichment is under test.
+ */
+export function makeEmptyPeerClients(): PeerClients {
+  return {};
 }
 
 export class HttpError extends Error {
@@ -215,6 +232,30 @@ export interface IngestQuickCaptureInput {
   text: string;
   source?: string;
   scopes?: string[];
+}
+
+export interface RetrievalSearchBody {
+  query?: string;
+  mode?: RetrievalModeWire;
+  filters?: RetrievalFiltersWire;
+  limit?: number;
+  threshold?: number;
+  offset?: number;
+}
+
+export interface RetrievalContextBody {
+  query: string;
+  filters?: RetrievalFiltersWire;
+  tokenBudget?: number;
+  includeMetadata?: boolean;
+  maxResults?: number;
+}
+
+export interface RetrievalSimilarBody {
+  engramId: string;
+  limit?: number;
+  threshold?: number;
+  filters?: RetrievalFiltersWire;
 }
 
 export function makeClient(app: Express) {
@@ -370,6 +411,22 @@ export function makeClient(app: Express) {
         send<IngestRetryEnrichmentResponseWire>(
           r.post('/ingest/retry-enrichment').send({ engramId })
         ),
+    },
+    retrieval: {
+      search: (body: RetrievalSearchBody = {}) =>
+        send<{ results: RetrievalResultWire[]; meta: { total: number; mode: RetrievalModeWire } }>(
+          r.post('/retrieval/search').send(body)
+        ),
+      context: (body: RetrievalContextBody) =>
+        send<{
+          context: string;
+          sources: SourceAttributionWire[];
+          truncated: boolean;
+          tokenEstimate: number;
+        }>(r.post('/retrieval/context').send(body)),
+      similar: (body: RetrievalSimilarBody) =>
+        send<{ results: RetrievalResultWire[] }>(r.post('/retrieval/similar').send(body)),
+      stats: () => send<RetrievalStatsWire>(r.get('/retrieval/stats')),
     },
   };
 }

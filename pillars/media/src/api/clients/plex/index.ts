@@ -38,3 +38,11 @@ export {
 } from './auth.js';
 
 export { encryptToken, decryptToken, getEncryptionKey } from './crypto.js';
+
+export {
+  fetchPlexFriends,
+  fetchFriendWatchlist,
+  type FriendWatchlistInput,
+  type FriendWatchlistMovie,
+  type PlexFriend,
+} from './friends.js';

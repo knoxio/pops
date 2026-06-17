@@ -336,6 +336,121 @@ export function makeClient(app: Express) {
         send<{ data: SyncLogEntry[] }>(r.get('/plex/scheduler/sync-logs').query(query)),
     },
     comparisons: makeComparisonsClient(r),
+    rotation: makeRotationClient(r),
+  };
+}
+
+interface CandidateListItemWire {
+  id: number;
+  sourceId: number;
+  tmdbId: number;
+  title: string;
+  year: number | null;
+  rating: number | null;
+  posterPath: string | null;
+  status: string;
+  discoveredAt: string;
+  sourceName: string | null;
+  sourcePriority: number | null;
+}
+
+interface CandidateStatusWire {
+  inQueue: boolean;
+  candidateId: number | null;
+  candidateStatus: string | null;
+  isExcluded: boolean;
+}
+
+interface ExclusionWire {
+  id: number;
+  tmdbId: number;
+  title: string;
+  reason: string | null;
+  excludedAt: string;
+}
+
+interface SourceWire {
+  id: number;
+  type: string;
+  name: string;
+  priority: number;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  lastSyncedAt: string | null;
+  syncIntervalHours: number;
+  createdAt: string;
+  candidateCount?: number;
+}
+
+interface SyncResultWire {
+  sourceId: number;
+  sourceType: string;
+  candidatesFetched: number;
+  candidatesInserted: number;
+  candidatesSkipped: number;
+}
+
+interface PlexFriendWire {
+  id: number;
+  uuid: string;
+  title: string;
+  username: string;
+  thumb: string | null;
+  restricted: boolean;
+  home: boolean;
+}
+
+interface RotationSettingsWire {
+  enabled: string;
+  cronExpression: string;
+  targetFreeGb: string;
+  leavingDays: string;
+  dailyAdditions: string;
+  avgMovieGb: string;
+  protectedDays: string;
+}
+
+function makeRotationClient(r: ReturnType<typeof supertest>) {
+  return {
+    addToQueue: (body: Record<string, unknown>) =>
+      send<{ message: string }>(r.post('/rotation/candidates').send(body)),
+    listCandidates: (query: Record<string, unknown> = {}) =>
+      send<{ data: { items: CandidateListItemWire[]; total: number } }>(
+        r.get('/rotation/candidates').query(query)
+      ),
+    getCandidateStatus: (tmdbId: number) =>
+      send<{ data: CandidateStatusWire }>(r.get(`/rotation/candidates/status/${tmdbId}`)),
+    removeFromQueue: (tmdbId: number) =>
+      send<{ data: { success: boolean } }>(r.delete(`/rotation/candidates/${tmdbId}`)),
+    downloadCandidate: (candidateId: number) =>
+      send<{ data: { success: boolean; alreadyInRadarr: boolean } }>(
+        r.post(`/rotation/candidates/${candidateId}/download`).send({})
+      ),
+    addExclusion: (body: Record<string, unknown>) =>
+      send<{ message: string }>(r.post('/rotation/exclusions').send(body)),
+    getExclusion: (tmdbId: number) =>
+      send<{ data: ExclusionWire | null }>(r.get(`/rotation/exclusions/${tmdbId}`)),
+    removeExclusion: (tmdbId: number) =>
+      send<{ data: { success: boolean } }>(r.delete(`/rotation/exclusions/${tmdbId}`)),
+    sourceTypes: () => send<{ data: { types: string[] } }>(r.get('/rotation/source-types')),
+    listPlexFriends: () =>
+      send<{ data: { friends: PlexFriendWire[]; error: string | null } }>(
+        r.get('/rotation/plex-friends')
+      ),
+    listSources: () => send<{ data: SourceWire[] }>(r.get('/rotation/sources')),
+    createSource: (body: Record<string, unknown>) =>
+      send<{ data: SourceWire }>(r.post('/rotation/sources').send(body)),
+    updateSource: (id: number, body: Record<string, unknown>) =>
+      send<{ data: SourceWire }>(r.patch(`/rotation/sources/${id}`).send(body)),
+    deleteSource: (id: number) =>
+      send<{ data: { success: boolean } }>(r.delete(`/rotation/sources/${id}`)),
+    syncSource: (id: number) =>
+      send<{ data: SyncResultWire }>(r.post(`/rotation/sources/${id}/sync`).send({})),
+    getSettings: () => send<{ data: RotationSettingsWire }>(r.get('/rotation/settings')),
+    saveSettings: (body: Record<string, unknown>) =>
+      send<{ data: { success: boolean; updated: number } }>(
+        r.post('/rotation/settings').send(body)
+      ),
   };
 }
 

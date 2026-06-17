@@ -105,3 +105,63 @@ export class WatchHistoryConflictError extends Error {
     this.watchedAt = watchedAt;
   }
 }
+
+export class RotationCandidateNotFoundError extends Error {
+  override readonly name = 'RotationCandidateNotFoundError' as const;
+  readonly id: number;
+
+  constructor(id: number) {
+    super(`Rotation candidate '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class RotationCandidateNotPendingError extends Error {
+  override readonly name = 'RotationCandidateNotPendingError' as const;
+  readonly id: number;
+  readonly status: string;
+
+  constructor(id: number, status: string) {
+    super(`Rotation candidate '${id}' is already processed (status: ${status})`);
+    this.id = id;
+    this.status = status;
+  }
+}
+
+export class RotationSourceNotFoundError extends Error {
+  override readonly name = 'RotationSourceNotFoundError' as const;
+  readonly id: number;
+
+  constructor(id: number) {
+    super(`Rotation source '${id}' not found`);
+    this.id = id;
+  }
+}
+
+export class RotationSourceDisabledError extends Error {
+  override readonly name = 'RotationSourceDisabledError' as const;
+  readonly id: number;
+
+  constructor(id: number, name: string) {
+    super(`Rotation source '${id}' (${name}) is disabled`);
+    this.id = id;
+  }
+}
+
+export class RotationManualSourceProtectedError extends Error {
+  override readonly name = 'RotationManualSourceProtectedError' as const;
+
+  constructor() {
+    super('The manual rotation source cannot be deleted');
+  }
+}
+
+export class RotationMovieExcludedError extends Error {
+  override readonly name = 'RotationMovieExcludedError' as const;
+  readonly tmdbId: number;
+
+  constructor(tmdbId: number) {
+    super(`Movie with tmdbId ${tmdbId} is excluded from rotation`);
+    this.tmdbId = tmdbId;
+  }
+}

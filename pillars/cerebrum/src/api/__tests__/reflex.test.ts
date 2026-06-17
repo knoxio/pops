@@ -14,7 +14,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openCerebrumDb, reflexExecutions, type OpenedCerebrumDb } from '../../db/index.js';
 import { createCerebrumApiApp } from '../app.js';
-import { makeClient, makeReflexService, makeTemplateRegistry } from './test-utils.js';
+import {
+  makeClient,
+  makeEmptyPeerClients,
+  makeReflexService,
+  makeTemplateRegistry,
+} from './test-utils.js';
 
 const FIXTURE_TOML = `
 [[reflex]]
@@ -65,6 +70,7 @@ function clientWith(toml: string | null) {
       reflexService: makeReflexService(cerebrumDb.db, configPath),
       version: '0.0.1-test',
       selfBaseUrl: 'http://localhost:3007',
+      peerClients: makeEmptyPeerClients(),
     })
   );
 }

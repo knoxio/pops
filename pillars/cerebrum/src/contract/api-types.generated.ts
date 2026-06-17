@@ -686,6 +686,74 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/retrieval/context': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Assemble a token-budgeted context window for LLM consumption. */
+    post: operations['retrieval.context'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/retrieval/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Unified search — semantic | structured | hybrid (default). */
+    post: operations['retrieval.search'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/retrieval/similar': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Find engrams similar to a given engram by its existing vector. */
+    post: operations['retrieval.similar'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/retrieval/stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Retrieval layer health and coverage counts. */
+    get: operations['retrieval.stats'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/scopes': {
     parameters: {
       query?: never;
@@ -3349,6 +3417,263 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'retrieval.context': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          filters?: {
+            customFields?: {
+              [key: string]: unknown;
+            };
+            dateRange?: {
+              from?: string;
+              to?: string;
+            };
+            includeSecret?: boolean;
+            scopes?: string[];
+            sourceTypes?: string[];
+            status?: string[];
+            tags?: string[];
+            types?: string[];
+          };
+          /** @default true */
+          includeMetadata: boolean;
+          /** @default 20 */
+          maxResults: number;
+          query: string;
+          /** @default 4096 */
+          tokenBudget: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            context: string;
+            sources: {
+              chunkRange?: number[];
+              relevanceScore: number;
+              sourceId: string;
+              sourceType: string;
+              title: string;
+            }[];
+            tokenEstimate: number;
+            truncated: boolean;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'retrieval.search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          filters?: {
+            customFields?: {
+              [key: string]: unknown;
+            };
+            dateRange?: {
+              from?: string;
+              to?: string;
+            };
+            includeSecret?: boolean;
+            scopes?: string[];
+            sourceTypes?: string[];
+            status?: string[];
+            tags?: string[];
+            types?: string[];
+          };
+          /** @default 20 */
+          limit: number;
+          /**
+           * @default hybrid
+           * @enum {string}
+           */
+          mode: 'semantic' | 'structured' | 'hybrid';
+          /** @default 0 */
+          offset: number;
+          query?: string;
+          /** @default 0.8 */
+          threshold: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            meta: {
+              /** @enum {string} */
+              mode: 'semantic' | 'structured' | 'hybrid';
+              total: number;
+            };
+            results: {
+              contentPreview: string;
+              distance?: number;
+              /** @enum {string} */
+              matchType: 'semantic' | 'structured' | 'both';
+              metadata: {
+                [key: string]: unknown;
+              };
+              score: number;
+              sourceId: string;
+              sourceType: string;
+              title: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'retrieval.similar': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          engramId: string;
+          filters?: {
+            customFields?: {
+              [key: string]: unknown;
+            };
+            dateRange?: {
+              from?: string;
+              to?: string;
+            };
+            includeSecret?: boolean;
+            scopes?: string[];
+            sourceTypes?: string[];
+            status?: string[];
+            tags?: string[];
+            types?: string[];
+          };
+          /** @default 20 */
+          limit: number;
+          /** @default 0.8 */
+          threshold: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            results: {
+              contentPreview: string;
+              distance?: number;
+              /** @enum {string} */
+              matchType: 'semantic' | 'structured' | 'both';
+              metadata: {
+                [key: string]: unknown;
+              };
+              score: number;
+              sourceId: string;
+              sourceType: string;
+              title: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'retrieval.stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            embedded: number;
+            indexed: number;
+            lastUpdated: string | null;
+            sourceTypes: {
+              [key: string]: number;
+            };
           };
         };
       };

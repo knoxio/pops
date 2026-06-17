@@ -5813,6 +5813,616 @@
         "tags": ["reflex"]
       }
     },
+    "/retrieval/context": {
+      "post": {
+        "operationId": "retrieval.context",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "filters": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "customFields": {
+                        "additionalProperties": {},
+                        "type": "object"
+                      },
+                      "dateRange": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "from": {
+                            "type": "string"
+                          },
+                          "to": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "includeSecret": {
+                        "type": "boolean"
+                      },
+                      "scopes": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "sourceTypes": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "status": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "types": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "includeMetadata": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "maxResults": {
+                    "default": 20,
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "query": {
+                    "type": "string"
+                  },
+                  "tokenBudget": {
+                    "default": 4096,
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["query", "tokenBudget", "includeMetadata", "maxResults"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "context": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "chunkRange": {
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "type": "array"
+                          },
+                          "relevanceScore": {
+                            "type": "number"
+                          },
+                          "sourceId": {
+                            "type": "string"
+                          },
+                          "sourceType": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["sourceType", "sourceId", "title", "relevanceScore"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "tokenEstimate": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["context", "sources", "truncated", "tokenEstimate"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Assemble a token-budgeted context window for LLM consumption.",
+        "tags": ["retrieval"]
+      }
+    },
+    "/retrieval/search": {
+      "post": {
+        "operationId": "retrieval.search",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "filters": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "customFields": {
+                        "additionalProperties": {},
+                        "type": "object"
+                      },
+                      "dateRange": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "from": {
+                            "type": "string"
+                          },
+                          "to": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "includeSecret": {
+                        "type": "boolean"
+                      },
+                      "scopes": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "sourceTypes": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "status": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "types": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "limit": {
+                    "default": 20,
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "mode": {
+                    "default": "hybrid",
+                    "enum": ["semantic", "structured", "hybrid"],
+                    "type": "string"
+                  },
+                  "offset": {
+                    "default": 0,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "query": {
+                    "type": "string"
+                  },
+                  "threshold": {
+                    "default": 0.8,
+                    "maximum": 2,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": ["mode", "limit", "threshold", "offset"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "mode": {
+                          "enum": ["semantic", "structured", "hybrid"],
+                          "type": "string"
+                        },
+                        "total": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["total", "mode"],
+                      "type": "object"
+                    },
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contentPreview": {
+                            "type": "string"
+                          },
+                          "distance": {
+                            "type": "number"
+                          },
+                          "matchType": {
+                            "enum": ["semantic", "structured", "both"],
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "sourceId": {
+                            "type": "string"
+                          },
+                          "sourceType": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "sourceType",
+                          "sourceId",
+                          "title",
+                          "contentPreview",
+                          "score",
+                          "matchType",
+                          "metadata"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["results", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Unified search — semantic | structured | hybrid (default).",
+        "tags": ["retrieval"]
+      }
+    },
+    "/retrieval/similar": {
+      "post": {
+        "operationId": "retrieval.similar",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "engramId": {
+                    "type": "string"
+                  },
+                  "filters": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "customFields": {
+                        "additionalProperties": {},
+                        "type": "object"
+                      },
+                      "dateRange": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "from": {
+                            "type": "string"
+                          },
+                          "to": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "includeSecret": {
+                        "type": "boolean"
+                      },
+                      "scopes": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "sourceTypes": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "status": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "types": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "limit": {
+                    "default": 20,
+                    "exclusiveMinimum": true,
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "threshold": {
+                    "default": 0.8,
+                    "maximum": 2,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": ["engramId", "limit", "threshold"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "contentPreview": {
+                            "type": "string"
+                          },
+                          "distance": {
+                            "type": "number"
+                          },
+                          "matchType": {
+                            "enum": ["semantic", "structured", "both"],
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "sourceId": {
+                            "type": "string"
+                          },
+                          "sourceType": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "sourceType",
+                          "sourceId",
+                          "title",
+                          "contentPreview",
+                          "score",
+                          "matchType",
+                          "metadata"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["results"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Find engrams similar to a given engram by its existing vector.",
+        "tags": ["retrieval"]
+      }
+    },
+    "/retrieval/stats": {
+      "get": {
+        "operationId": "retrieval.stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "embedded": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "indexed": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "lastUpdated": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sourceTypes": {
+                      "additionalProperties": {
+                        "maximum": 9007199254740991,
+                        "minimum": -9007199254740991,
+                        "type": "integer"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["indexed", "embedded", "sourceTypes", "lastUpdated"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Retrieval layer health and coverage counts.",
+        "tags": ["retrieval"]
+      }
+    },
     "/scopes": {
       "get": {
         "operationId": "scopes.list",

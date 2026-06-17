@@ -24,6 +24,8 @@ import { resolveEngramRoot } from './modules/engrams/instance.js';
 import { AnthropicIngestLlm } from './modules/ingest/llm.js';
 import { closeCerebrumIngestQueue, getCurationQueue } from './modules/ingest/queue.js';
 import { getReflexService } from './modules/reflex/instance.js';
+import { resolveEmbeddingClientFromEnv } from './modules/retrieval/embedding-client.js';
+import { resolvePeerClientsFromEnv } from './modules/retrieval/peer-clients.js';
 import { TemplateRegistry } from './modules/templates/registry.js';
 import { parseBareOrigin } from './pillars/env.js';
 
@@ -72,6 +74,8 @@ const app = createCerebrumApiApp({
   curationQueue: getCurationQueue,
   version,
   selfBaseUrl,
+  peerClients: resolvePeerClientsFromEnv(),
+  embeddingClient: resolveEmbeddingClientFromEnv(),
 });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
