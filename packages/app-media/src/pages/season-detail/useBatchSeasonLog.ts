@@ -1,9 +1,9 @@
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
-import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { watchHistoryBatchLog } from '../../media-api/index.js';
 
 interface UseBatchSeasonLogArgs {
   showId: number;
@@ -47,6 +47,20 @@ type BatchLogContext = {
 
 const LIST_INPUT = { mediaType: 'episode' as const, limit: 500 };
 
+const PROGRESS_KEY = (showId: number) =>
+  ['media', 'watchHistory', 'progress', { tvShowId: showId }] as const;
+const LIST_KEY = ['media', 'watchHistory', 'list', LIST_INPUT] as const;
+
+function writeCache<TData>(
+  queryClient: QueryClient,
+  key: readonly unknown[],
+  updater: (previous: TData | undefined) => TData | undefined
+): TData | undefined {
+  const previous = queryClient.getQueryData<TData>(key);
+  queryClient.setQueryData<TData>(key, updater(previous));
+  return previous;
+}
+
 function buildProgressUpdater(seasonNum: number) {
   return (envelope: ProgressEnvelope | undefined): ProgressEnvelope | undefined => {
     if (!envelope?.data) return envelope;
@@ -88,21 +102,21 @@ function buildListUpdater(episodes: Array<{ id: number }>) {
 }
 
 function applyOptimistic(
-  utils: UsePillarUtilsResult,
+  queryClient: QueryClient,
   showId: number,
   seasonNum: number,
   episodes: Array<{ id: number }>
 ): BatchLogContext {
-  const previousProgress = utils.setData<ProgressEnvelope>(
-    ['watchHistory', 'progress'],
-    { tvShowId: showId },
+  const previousProgress = writeCache<ProgressEnvelope>(
+    queryClient,
+    PROGRESS_KEY(showId),
     buildProgressUpdater(seasonNum)
   );
   let previousList: WatchHistoryEnvelope | undefined;
   if (episodes.length > 0) {
-    previousList = utils.setData<WatchHistoryEnvelope>(
-      ['watchHistory', 'list'],
-      LIST_INPUT,
+    previousList = writeCache<WatchHistoryEnvelope>(
+      queryClient,
+      LIST_KEY,
       buildListUpdater(episodes)
     );
   }
@@ -110,48 +124,56 @@ function applyOptimistic(
 }
 
 function rollbackOptimistic(
-  utils: UsePillarUtilsResult,
+  queryClient: QueryClient,
   showId: number,
   context: BatchLogContext | undefined
 ) {
   if (!context) return;
   if (context.previousProgress !== undefined) {
-    utils.setData<ProgressEnvelope | undefined>(
-      ['watchHistory', 'progress'],
-      { tvShowId: showId },
+    writeCache<ProgressEnvelope | undefined>(
+      queryClient,
+      PROGRESS_KEY(showId),
       () => context.previousProgress
     );
   }
   if (context.previousList !== undefined) {
-    utils.setData<WatchHistoryEnvelope | undefined>(
-      ['watchHistory', 'list'],
-      LIST_INPUT,
-      () => context.previousList
-    );
+    writeCache<WatchHistoryEnvelope | undefined>(queryClient, LIST_KEY, () => context.previousList);
   }
 }
 
-export function useBatchSeasonLog({ showId, seasonNum, season, episodes }: UseBatchSeasonLogArgs) {
-  const utils = usePillarUtils('media');
+interface BatchLogInput {
+  mediaType: 'season';
+  mediaId: number;
+}
 
-  const batchLogMutation = usePillarMutation<
-    { mediaType: 'season'; mediaId: number },
+export function useBatchSeasonLog({ showId, seasonNum, season, episodes }: UseBatchSeasonLogArgs) {
+  const queryClient = useQueryClient();
+
+  const batchLogMutation = useMutation<
     { data: { logged: number } },
+    Error,
+    BatchLogInput,
     BatchLogContext
-  >('media', ['watchHistory', 'batchLog'], {
-    onMutate: () => applyOptimistic(utils, showId, seasonNum, episodes),
+  >({
+    mutationFn: async (variables) =>
+      unwrap(
+        await watchHistoryBatchLog({
+          body: { mediaType: variables.mediaType, mediaId: variables.mediaId, completed: 1 },
+        })
+      ),
+    onMutate: () => applyOptimistic(queryClient, showId, seasonNum, episodes),
     onSuccess: (result) => {
       toast.success(
         `Marked ${result.data.logged} episode${result.data.logged !== 1 ? 's' : ''} as watched`
       );
     },
     onError: (err, _vars, context) => {
-      rollbackOptimistic(utils, showId, context);
+      rollbackOptimistic(queryClient, showId, context);
       toast.error(`Failed to mark season: ${err.message}`);
     },
     onSettled: () => {
-      void utils.invalidate(['watchHistory']);
-      void utils.invalidate(['tvShows', 'listSeasons']);
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchHistory'] });
+      void queryClient.invalidateQueries({ queryKey: ['media', 'tvShows', 'listSeasons'] });
     },
   });
 

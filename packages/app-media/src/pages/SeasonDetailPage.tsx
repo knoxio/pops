@@ -1,9 +1,9 @@
 import { Link, useParams } from 'react-router';
 
-import { isNotFound as isPillarNotFound } from '@pops/pillar-sdk/client';
 import { PageHeader, Skeleton } from '@pops/ui';
 
 import { EpisodeList } from '../components/EpisodeList';
+import { isNotFoundError } from '../media-api-helpers.js';
 import {
   InvalidParamsError,
   SeasonNotFoundError,
@@ -68,7 +68,7 @@ export function SeasonDetailPage() {
   if (Number.isNaN(showId) || Number.isNaN(seasonNum)) return <InvalidParamsError />;
   if (m.showLoading || m.seasonsLoading) return <SeasonDetailSkeleton />;
   if (m.showError) {
-    const is404 = isPillarNotFound(m.showError);
+    const is404 = isNotFoundError(m.showError);
     return <ShowError is404={is404} message={m.showError.message} />;
   }
 
