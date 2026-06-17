@@ -8,8 +8,7 @@ import { useEffect, useState } from 'react';
 import { unwrap } from '../../food-api-helpers.js';
 import { batchesAdjustQty, batchesGet } from '../../food-api/index.js';
 
-import type { BatchAdjustReason } from '@pops/app-food-db';
-
+import type { BatchAdjustReason } from '../../food-api-shared-types.js';
 import type { BatchesAdjustQtyData } from '../../food-api/types.gen.js';
 
 type BatchesAdjustQtyInput = NonNullable<BatchesAdjustQtyData['body']> & { id: number };

@@ -17,7 +17,7 @@ import { useIngredientActions } from './useIngredientActions';
 import { useIngredientsTab } from './useIngredientsTab';
 import { useVariantActions } from './useVariantActions';
 
-import type { IngredientRow } from '@pops/app-food-db';
+import type { IngredientRow } from './ingredient-wire-types.js';
 
 function findParentRow(
   selectedRow: IngredientRow | null,

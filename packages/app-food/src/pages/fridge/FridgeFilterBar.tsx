@@ -8,8 +8,7 @@ import { type ReactElement } from 'react';
 
 import { Input } from '@pops/ui';
 
-import type { BatchLocation } from '@pops/app-food-db';
-
+import type { BatchLocation } from '../../food-api-shared-types.js';
 import type { FridgeFilterState } from './useFridgeView.js';
 
 const LOCATION_LABELS: Record<BatchLocation, string> = {

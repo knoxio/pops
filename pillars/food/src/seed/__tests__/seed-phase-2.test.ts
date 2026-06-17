@@ -26,19 +26,20 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
-  type FoodDb,
   ingredientWeights,
   recipeLines,
   recipeVersionProposedSlugs,
   recipeVersions,
   recipes,
   unitConversions,
-} from '@pops/app-food-db';
-import { compileRecipeVersion } from '@pops/app-food-db';
-import { detectRecipeCycle } from '@pops/app-food-db';
-import { parseRecipeDsl } from '@pops/app-food-db';
-import { resolveRecipeAst } from '@pops/app-food-db';
-import { seedFood, type SeedFoodSummary } from '@pops/app-food-db/seed';
+} from '../../db/schema.js';
+import { compileRecipeVersion } from '../../dsl/compile.js';
+import { detectRecipeCycle } from '../../dsl/cycle.js';
+import { parseRecipeDsl } from '../../dsl/parser.js';
+import { resolveRecipeAst } from '../../dsl/resolver.js';
+import { seedFood, type SeedFoodSummary } from '../index.js';
+
+import type { FoodDb } from '../../db/services/internal.js';
 
 const MIGRATIONS = [
   '0058_high_sentinel.sql',
@@ -59,7 +60,10 @@ const MIGRATIONS = [
   // PRD-151 — ingredient_tags + namespace expression index.
   '0070_prd_151_ingredient_tags.sql',
 ].map((name) =>
-  readFileSync(join(__dirname, '../../../../apps/pops-api/src/db/drizzle-migrations', name), 'utf8')
+  readFileSync(
+    join(__dirname, '../../../../../apps/pops-api/src/db/drizzle-migrations', name),
+    'utf8'
+  )
 );
 
 function freshDb(): { db: FoodDb; raw: Database.Database } {
@@ -94,7 +98,7 @@ describe('PRD-113 phase-2 — seed + compile smoke', () => {
   // package's parallel vitest pool.
   beforeAll(() => {
     ({ db, raw } = freshDb());
-    summary = seedFood(db, db, { compileRecipeVersion });
+    summary = seedFood(db, { compileRecipeVersion });
   });
 
   describe('summary + counts', () => {

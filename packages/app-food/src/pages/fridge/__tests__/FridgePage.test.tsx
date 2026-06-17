@@ -17,7 +17,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-import type { FridgeView } from '@pops/app-food-db';
+import type { FridgeViewResponses } from '../../../food-api/types.gen.js';
+
+type FridgeView = FridgeViewResponses[200];
 
 const fridgeViewMock = vi.hoisted(() => vi.fn());
 const fridgeRecipesUsingBatchMock = vi.hoisted(() => vi.fn());

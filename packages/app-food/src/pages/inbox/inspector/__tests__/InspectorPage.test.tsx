@@ -25,7 +25,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-import type { InspectorResult } from '@pops/app-food-db';
+import type { InspectorResult } from '../inspector-wire-types.js';
 
 // Capture the latest props passed into DslEditor so the cursor-move test can
 // assert. Returning a dummy element keeps the rest of the page rendering.

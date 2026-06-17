@@ -14,8 +14,7 @@ import { unwrap } from '../../food-api-helpers.js';
 import { batchesGet, batchesRelocate } from '../../food-api/index.js';
 import { FormError } from './form-controls.js';
 
-import type { BatchLocation } from '@pops/app-food-db';
-
+import type { BatchLocation } from '../../food-api-shared-types.js';
 import type { BatchesRelocateData } from '../../food-api/types.gen.js';
 
 type BatchesRelocateInput = NonNullable<BatchesRelocateData['body']> & { id: number };

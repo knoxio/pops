@@ -14,7 +14,7 @@ import { RecipeRenderer } from '../../../components/RecipeRenderer.js';
 import { unwrap } from '../../../food-api-helpers.js';
 import { recipesGetForRendering } from '../../../food-api/index.js';
 
-import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
+import type { RecipeVersionWithCompiledData } from '../../../components/recipe-render-types.js';
 
 interface Props {
   slug: string;

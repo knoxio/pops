@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@pops/ui';
 
-import type { IngredientVariantRow } from '@pops/app-food-db';
+import type { IngredientVariantRow } from './ingredient-wire-types.js';
 
 interface Props {
   variant: IngredientVariantRow;

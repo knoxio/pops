@@ -8,8 +8,11 @@ import { TimerButton } from './TimerButton';
 
 import type { ComponentProps } from 'react';
 
-import type { ResolvedStepBody, ResolvedStepBodyPart } from '@pops/app-food-db';
-import type { RecipeLineWithResolved } from '@pops/app-food-db';
+import type {
+  RecipeLineWithResolved,
+  ResolvedStepBody,
+  ResolvedStepBodyPart,
+} from './recipe-render-types.js';
 
 /**
  * Two-pass step-body render:

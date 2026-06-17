@@ -1,4 +1,4 @@
-import type { SubstitutionScope } from '@pops/app-food-db';
+import type { SubstitutionScope } from '../../../food-api-shared-types.js';
 
 export type SubstitutionEndpointKind = 'ingredient' | 'variant';
 

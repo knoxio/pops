@@ -4,7 +4,7 @@
  * line cap. Operates on a snapshot of entries + the active/over drag
  * payload and returns the mutation the grid should fire.
  */
-import type { WirePlanEntryRow } from '@pops/app-food-db';
+import type { WirePlanEntryRow } from './plan-wire-types.js';
 
 export type GridDndAction =
   | { kind: 'move'; id: number; date: string; slot: string }

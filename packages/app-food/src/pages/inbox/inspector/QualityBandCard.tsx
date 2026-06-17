@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 import { QualityBandBadge } from '../QualityBandBadge.js';
 
-import type { QualityResult } from '@pops/app-food-db';
+import type { QualityResult } from './inspector-wire-types.js';
 
 interface Props {
   quality: QualityResult;

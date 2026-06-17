@@ -23,7 +23,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-import type { InboxDraftRow } from '@pops/app-food-db';
+import type { InboxListResponses } from '../../../food-api/types.gen.js';
+
+type InboxDraftRow = InboxListResponses[200]['items'][number];
 
 const inboxListMock = vi.hoisted(() => vi.fn());
 

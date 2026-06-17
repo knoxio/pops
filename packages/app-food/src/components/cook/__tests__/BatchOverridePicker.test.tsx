@@ -18,7 +18,7 @@ import userEvent from '@testing-library/user-event';
 import { type ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { BatchForConsumeRow } from '@pops/app-food-db';
+import type { BatchForConsumeRow } from '../cook-resolution-types.js';
 
 const sdk = vi.hoisted(() => ({
   batchesSearchForConsume: vi.fn(),

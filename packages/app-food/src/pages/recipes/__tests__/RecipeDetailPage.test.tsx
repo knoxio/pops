@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
+import type { RecipeVersionWithCompiledData } from '../../../components/recipe-render-types.js';
 
 const recipesGetForRenderingMock = vi.hoisted(() => vi.fn());
 const recipesListDraftsMock = vi.hoisted(() => vi.fn());

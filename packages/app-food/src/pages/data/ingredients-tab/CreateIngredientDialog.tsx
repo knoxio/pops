@@ -12,7 +12,7 @@ import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle 
 
 import { SelectRow, TextFieldRow } from './IngredientFormFields';
 
-import type { IngredientRow } from '@pops/app-food-db';
+import type { IngredientRow } from './ingredient-wire-types.js';
 
 type Unit = 'g' | 'ml' | 'count';
 

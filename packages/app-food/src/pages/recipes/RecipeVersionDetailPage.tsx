@@ -8,7 +8,7 @@ import { RecipeRenderer } from '../../components/RecipeRenderer.js';
 import { unwrap } from '../../food-api-helpers.js';
 import { recipesRestoreVersion } from '../../food-api/index.js';
 
-import type { RecipeVersionWithCompiledData } from '@pops/app-food-db';
+import type { RecipeVersionWithCompiledData } from '../../components/recipe-render-types.js';
 
 type RecipeVersionRow = RecipeVersionWithCompiledData['version'];
 import { RecipeScaleProvider, useRecipeScale } from './RecipeScaleProvider.js';

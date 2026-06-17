@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 import { useCookResolution } from '../useCookResolution.js';
 
-import type { LineConsumeNeed, LineShortfall } from '@pops/app-food-db';
+import type { LineConsumeNeed, LineShortfall } from '../cook-resolution-types.js';
 
 function makeNeed(over: Partial<LineConsumeNeed> = {}): LineConsumeNeed {
   return {

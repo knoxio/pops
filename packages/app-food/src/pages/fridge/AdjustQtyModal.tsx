@@ -14,7 +14,10 @@ import { FieldRow, FormError } from './form-controls.js';
 import { formatQty } from './format.js';
 import { parseDelta, useAdjustQtyState } from './useAdjustQtyState.js';
 
-import type { BatchAdjustReason, BatchDetail } from '@pops/app-food-db';
+import type { BatchAdjustReason } from '../../food-api-shared-types.js';
+import type { BatchesGetResponses } from '../../food-api/types.gen.js';
+
+type BatchDetail = BatchesGetResponses[200]['data'];
 
 const REASONS: { value: BatchAdjustReason; label: string }[] = [
   { value: 'spoiled', label: 'Spoiled' },

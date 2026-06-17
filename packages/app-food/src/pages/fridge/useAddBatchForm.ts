@@ -17,8 +17,11 @@ import {
 } from '../../food-api/index.js';
 import { toIsoFromDateInput } from './form-controls.js';
 
-import type { BatchLocation, BatchUnit, ManualBatchSourceType } from '@pops/app-food-db';
-
+import type {
+  BatchLocation,
+  BatchUnit,
+  ManualBatchSourceType,
+} from '../../food-api-shared-types.js';
 import type { BatchesCreateData } from '../../food-api/types.gen.js';
 
 type BatchesCreateInput = NonNullable<BatchesCreateData['body']>;

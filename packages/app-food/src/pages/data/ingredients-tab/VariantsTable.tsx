@@ -15,7 +15,7 @@ import { Button } from '@pops/ui';
 
 import type { TFunction } from 'i18next';
 
-import type { IngredientVariantRow } from '@pops/app-food-db';
+import type { IngredientVariantRow } from './ingredient-wire-types.js';
 
 interface Props {
   variants: readonly IngredientVariantRow[];

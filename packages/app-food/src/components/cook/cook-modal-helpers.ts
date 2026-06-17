@@ -1,3 +1,4 @@
+import type { MarkCookedInput } from './cook-modal-types.js';
 /**
  * State helpers for `CookModal` — PRD-144.
  *
@@ -12,9 +13,7 @@ import type {
   CookYieldDefault,
   LineConsumeNeed,
   LineResolution,
-} from '@pops/app-food-db';
-
-import type { MarkCookedInput } from './cook-modal-types.js';
+} from './cook-resolution-types.js';
 
 export interface CookFormState {
   scaleFactor: string;

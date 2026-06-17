@@ -4,6 +4,7 @@
   "private": true,
   "files": [
     "dist/contract/**",
+    "dist/dsl/**",
     "openapi/food.openapi.json"
   ],
   "type": "module",
@@ -26,6 +27,10 @@
       "types": "./dist/contract/queue/index.d.ts",
       "default": "./dist/contract/queue/index.js"
     },
+    "./dsl": {
+      "types": "./dist/dsl/public.d.ts",
+      "default": "./dist/dsl/public.js"
+    },
     "./openapi": "./openapi/food.openapi.json",
     "./package.json": "./package.json"
   },
@@ -35,6 +40,7 @@
     "dev:worker": "tsx watch --clear-screen=false src/worker/worker.ts",
     "start:api": "node dist/api/server.js",
     "start:worker": "node dist/worker/worker.js",
+    "db:seed:food": "tsx scripts/db-seed-food.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

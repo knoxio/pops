@@ -15,11 +15,13 @@ import {
   ALL_BANDS,
   ALL_INGEST_KINDS,
   ALL_PARTIAL_REASONS,
+  type DraftSort,
   type DraftsFiltersState,
 } from './drafts-filters.js';
 
-import type { DraftSort, IngestSourceKind, QualityBand } from '@pops/app-food-db';
-import type { PartialReason } from '@pops/food-contracts';
+import type { PartialReason } from '@pops/food/queue';
+
+import type { IngestSourceKind, QualityBand } from '../../food-api-shared-types.js';
 
 interface Props {
   value: DraftsFiltersState;

@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { unwrap } from '../../../food-api-helpers.js';
 import { ingredientsBlockers, ingredientsRecipeRefs } from '../../../food-api/index.js';
 
-import type { DeleteBlockerSummary, IngredientRow } from '@pops/app-food-db';
+import type { DeleteBlockerSummary, IngredientRow } from './ingredient-wire-types.js';
 
 interface BlockerQueryArgs {
   ingredient: IngredientRow | null;

@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button, TextInput } from '@pops/ui';
 
-import type { HydratedEndpoint, HydratedSubstitutionView } from '@pops/app-food-db';
-
+import type { HydratedEndpoint, HydratedSubstitutionView } from './substitution-wire-types.js';
 import type { UpdateSubstitutionFormInput } from './types';
 
 interface EditState {

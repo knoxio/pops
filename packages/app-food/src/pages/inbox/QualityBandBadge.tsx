@@ -9,7 +9,10 @@
  */
 import { type ReactElement } from 'react';
 
-import type { QualityBand, QualitySignal } from '@pops/app-food-db';
+import type { QualityBand } from '../../food-api-shared-types.js';
+import type { InboxListResponses } from '../../food-api/types.gen.js';
+
+type QualitySignal = InboxListResponses[200]['items'][number]['topSignals'][number];
 
 interface Props {
   band: QualityBand;

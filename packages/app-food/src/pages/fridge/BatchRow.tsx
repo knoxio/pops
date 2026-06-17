@@ -14,7 +14,10 @@ import { formatExpiry, formatQty, urgencyFor } from './format.js';
 
 import type { ReactElement } from 'react';
 
-import type { FridgeBatchRow as FridgeBatchRowData } from '@pops/app-food-db';
+import type { FridgeViewResponses } from '../../food-api/types.gen.js';
+
+type FridgeBatchRowData =
+  FridgeViewResponses[200]['sections'][number]['ingredients'][number]['batches'][number];
 
 export type BatchAction = 'edit' | 'relocate' | 'adjust' | 'cook' | 'delete';
 

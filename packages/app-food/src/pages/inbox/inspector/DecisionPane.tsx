@@ -27,7 +27,7 @@ import type {
   InspectorDraftView,
   InspectorProposedSlugRow,
   InspectorReviewView,
-} from '@pops/app-food-db';
+} from './inspector-wire-types.js';
 
 interface Props {
   review: InspectorReviewView;

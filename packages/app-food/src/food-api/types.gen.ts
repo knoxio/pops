@@ -1725,7 +1725,108 @@ export type InboxGetForReviewResponses = {
   200:
     | {
         ok: true;
-        review: unknown;
+        review: {
+          draft: {
+            bodyDsl: string;
+            compileError: {
+              errorCount: number;
+              errors: Array<{
+                code: string;
+                loc?: {
+                  endCol: number;
+                  endLine: number;
+                  startCol: number;
+                  startLine: number;
+                };
+                message: string;
+              }>;
+              phase: 'parse' | 'resolve' | 'cycle' | 'materialise';
+              proposedSlugsCount: number;
+            } | null;
+            compileStatus: 'uncompiled' | 'compiled' | 'failed';
+            compiledAt: string | null;
+            creations: Array<{
+              createdAt: string;
+              defaultUnit: 'g' | 'ml' | 'count';
+              kind: 'ingredient' | 'variant';
+              parentIngredientSlug: string | null;
+              slug: string;
+            }>;
+            proposedSlugs: Array<{
+              createdAt: string;
+              fromLoc: {
+                endCol: number;
+                endLine: number;
+                startCol: number;
+                startLine: number;
+              };
+              slug: string;
+              suggestedKind: 'ingredient' | 'recipe' | 'prep_state';
+            }>;
+            quality: {
+              band: 'clean' | 'minor' | 'attention' | 'blocked';
+              score: number;
+              signals: Array<{
+                code: string;
+                detail?: string;
+                weight: number;
+              }>;
+            };
+            recipeArchivedAt: string | null;
+            recipeSlug: string;
+            rejection: {
+              note: string | null;
+              reason:
+                | 'wrong-recipe'
+                | 'low-quality-extraction'
+                | 'duplicate'
+                | 'not-a-recipe'
+                | 'other';
+              rejectedAt: string;
+            } | null;
+            status: 'draft' | 'current' | 'archived';
+            title: string | null;
+            versionId: number;
+            versionNo: number;
+          } | null;
+          source: {
+            archivedAt: string | null;
+            attempts: number;
+            caption: string | null;
+            errorCode: string | null;
+            errorMessage: string | null;
+            extractorVersion: string;
+            id: number;
+            inferenceLogs: Array<{
+              cached: boolean;
+              costUsd: number;
+              createdAt: string;
+              inputTokens: number;
+              latencyMs: number;
+              model: string;
+              operation: string;
+              outputTokens: number;
+              provider: string;
+              status: string;
+            }>;
+            ingestedAt: string;
+            kind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+            meta: {
+              [key: string]: unknown;
+            } | null;
+            partialReason?:
+              | 'auth-dead'
+              | 'rate-limited'
+              | 'stt-failed'
+              | 'vision-failed'
+              | 'caption-only-fallback'
+              | 'empty-extraction';
+            reviewedAt: string | null;
+            state: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
+            totalCostUsd: number;
+            url: string | null;
+          };
+        };
       }
     | {
         ok: false;
@@ -3105,7 +3206,29 @@ export type RecipesCreateResponses = {
    * 201
    */
   201: {
-    compile: unknown;
+    compile:
+      | {
+          creationCount: number;
+          lineCount: number;
+          ok: true;
+          stepCount: number;
+        }
+      | {
+          readonly errors: Array<{
+            cause?: string;
+            code: string;
+            loc?: {
+              endCol: number;
+              endLine: number;
+              startCol: number;
+              startLine: number;
+            };
+            message: string;
+            slug?: string;
+          }>;
+          ok: false;
+          phase: 'parse' | 'resolve' | 'cycle' | 'materialise';
+        };
     recipeId: number;
     slug: string;
     versionId: number;
@@ -3215,7 +3338,29 @@ export type RecipesSaveDraftResponses = {
    * 200
    */
   200: {
-    compile: unknown;
+    compile:
+      | {
+          creationCount: number;
+          lineCount: number;
+          ok: true;
+          stepCount: number;
+        }
+      | {
+          readonly errors: Array<{
+            cause?: string;
+            code: string;
+            loc?: {
+              endCol: number;
+              endLine: number;
+              startCol: number;
+              startLine: number;
+            };
+            message: string;
+            slug?: string;
+          }>;
+          ok: false;
+          phase: 'parse' | 'resolve' | 'cycle' | 'materialise';
+        };
   };
 };
 
@@ -3294,7 +3439,12 @@ export type RecipesListProposedSlugsResponses = {
   200: {
     items: Array<{
       createdAt: string;
-      fromLoc: unknown;
+      fromLoc: {
+        endCol: number;
+        endLine: number;
+        startCol: number;
+        startLine: number;
+      };
       slug: string;
       suggestedKind: 'ingredient' | 'recipe' | 'prep_state';
     }>;
@@ -3633,8 +3783,114 @@ export type RecipesGetForRenderingResponses = {
   /**
    * 200
    */
-  200: unknown;
+  200: {
+    lines: Array<{
+      canonicalUnit: 'g' | 'ml' | 'count';
+      id: number;
+      ingredientId: number;
+      ingredientName: string;
+      ingredientSlug: string;
+      isRecipeRef: boolean;
+      notes: string | null;
+      optional: boolean;
+      originalQty: number;
+      originalText: string;
+      originalUnit: string;
+      position: number;
+      prepStateId: number | null;
+      prepStateName: string | null;
+      prepStateSlug: string | null;
+      qtyCount: number | null;
+      qtyG: number | null;
+      qtyMl: number | null;
+      recipeRefId: number | null;
+      recipeRefSlug: string | null;
+      recipeRefTitle: string | null;
+      variantId: number | null;
+      variantName: string | null;
+      variantSlug: string | null;
+    }>;
+    recipe: {
+      archivedAt: string | null;
+      createdAt: string;
+      currentVersionId: number | null;
+      heroImagePath: string | null;
+      id: number;
+      recipeType:
+        | 'plate'
+        | 'component'
+        | 'technique'
+        | 'sauce'
+        | 'dressing'
+        | 'drink'
+        | 'condiment';
+      slug: string;
+    };
+    steps: Array<{
+      bodyMd: string;
+      bodyResolvedJson: string;
+      durationMinutes: number | null;
+      id: number;
+      position: number;
+      recipeVersionId: number;
+      temperatureUnit: 'c' | 'f' | 'gas';
+      temperatureValue: number | null;
+    }>;
+    tags: Array<string>;
+    version: {
+      bodyDsl: string;
+      compileError: string | null;
+      compileStatus: 'uncompiled' | 'compiled' | 'failed';
+      compiledAt: string | null;
+      cookMinutes: number | null;
+      createdAt: string;
+      id: number;
+      prepMinutes: number | null;
+      recipeId: number;
+      servings: number | null;
+      sourceId: number | null;
+      status: 'draft' | 'current' | 'archived';
+      summary: string | null;
+      title: string;
+      versionNo: number;
+      yieldIngredientId: number | null;
+      yieldPrepStateId: number | null;
+      yieldQty: number | null;
+      yieldUnit: string | null;
+      yieldVariantId: number | null;
+    };
+    yieldIngredient: {
+      createdAt: string;
+      defaultUnit: 'g' | 'ml' | 'count';
+      densityGPerMl: number | null;
+      id: number;
+      name: string;
+      notes: string | null;
+      parentId: number | null;
+      slug: string;
+    } | null;
+    yieldPrepState: {
+      id: number;
+      name: string;
+      slug: string;
+    } | null;
+    yieldVariant: {
+      createdAt: string;
+      defaultShelfLifeDaysFreezer: number | null;
+      defaultShelfLifeDaysFridge: number | null;
+      defaultUnit: 'g' | 'ml' | 'count';
+      id: number;
+      ingredientId: number;
+      name: string;
+      notes: string | null;
+      packageSizeG: number | null;
+      slug: string;
+    } | null;
+  };
 };
+
+export type RecipesGetForRenderingResponse =
+  RecipesGetForRenderingResponses[keyof RecipesGetForRenderingResponses];
 
 export type RecipesArchiveRecipeData = {
   /**

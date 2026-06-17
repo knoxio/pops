@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ConsumePreviewPanel } from '../ConsumePreviewPanel.js';
 
-import type { LineConsumeNeed, LineResolution } from '@pops/app-food-db';
+import type { LineConsumeNeed, LineResolution } from '../cook-resolution-types.js';
 
 function makeNeed(lineIndex: number, name: string): LineConsumeNeed {
   return {

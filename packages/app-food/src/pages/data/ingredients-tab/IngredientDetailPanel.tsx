@@ -15,7 +15,7 @@ import { IngredientTagsEditor } from './IngredientTagsEditor';
 import { RecipeRefsSection } from './RecipeRefsSection';
 import { VariantsTable } from './VariantsTable';
 
-import type { IngredientRow, IngredientVariantRow } from '@pops/app-food-db';
+import type { IngredientRow, IngredientVariantRow } from './ingredient-wire-types.js';
 
 interface ActionsApi {
   onRename: () => void;

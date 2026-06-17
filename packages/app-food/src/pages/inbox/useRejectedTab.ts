@@ -14,8 +14,7 @@ import { unwrap } from '../../food-api-helpers.js';
 import { inboxListRejected, inboxUnreject } from '../../food-api/index.js';
 import { type RejectedFiltersState } from './RejectedFilters.js';
 
-import type { IngestSourceKind, RejectionReason } from '@pops/app-food-db';
-
+import type { IngestSourceKind, RejectionReason } from '../../food-api-shared-types.js';
 import type { InboxListRejectedResponses } from '../../food-api/types.gen.js';
 
 type ListRejectedOutput = InboxListRejectedResponses[200];

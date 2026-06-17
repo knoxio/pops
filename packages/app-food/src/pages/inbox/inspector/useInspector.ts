@@ -15,7 +15,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrap } from '../../../food-api-helpers.js';
 import { inboxGetForReview } from '../../../food-api/index.js';
 
-import type { InspectorResult, InspectorReviewView } from '@pops/app-food-db';
+import type { InspectorResult, InspectorReviewView } from './inspector-wire-types.js';
 
 const POLL_INTERVAL_MS = 60_000;
 

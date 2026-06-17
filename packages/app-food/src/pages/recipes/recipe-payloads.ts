@@ -1,3 +1,4 @@
+import type { RecipeVersionWithCompiledData } from '../../components/recipe-render-types.js';
 /**
  * Narrowing helpers for the recipe SDK endpoints whose OpenAPI schema
  * degrades to `unknown`.
@@ -9,7 +10,9 @@
  * via type predicates on the discriminating fields, so call sites stay
  * type-safe without an `as` cast.
  */
-import type { CompileResult, RecipeVersionWithCompiledData } from '@pops/app-food-db';
+import type { RecipesSaveDraftResponses } from '../../food-api/types.gen.js';
+
+type CompileResult = RecipesSaveDraftResponses[200]['compile'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

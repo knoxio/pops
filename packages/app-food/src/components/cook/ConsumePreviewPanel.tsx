@@ -16,7 +16,7 @@ import { formatQty, formatUnit } from './cook-format.js';
 
 import type { ReactNode } from 'react';
 
-import type { LineConsumeNeed, LineResolution } from '@pops/app-food-db';
+import type { LineConsumeNeed, LineResolution } from './cook-resolution-types.js';
 
 const COLLAPSED_LIMIT = 5;
 

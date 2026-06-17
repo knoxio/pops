@@ -6,7 +6,7 @@
  * plain digits; otherwise two decimals with trailing zeros trimmed).
  * No thousands separator — matches the existing convention.
  */
-import type { BatchUnit } from '@pops/app-food-db';
+import type { BatchUnit } from '../../food-api-shared-types.js';
 
 export function formatQty(qty: number): string {
   if (Number.isInteger(qty)) return String(qty);

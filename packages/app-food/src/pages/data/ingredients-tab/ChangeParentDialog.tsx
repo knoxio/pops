@@ -11,7 +11,7 @@ import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle 
 
 import { SelectRow } from './IngredientFormFields';
 
-import type { IngredientRow } from '@pops/app-food-db';
+import type { IngredientRow } from './ingredient-wire-types.js';
 
 interface Props {
   open: boolean;

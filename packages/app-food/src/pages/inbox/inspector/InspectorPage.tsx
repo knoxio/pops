@@ -21,7 +21,7 @@ import { EditorPane } from './EditorPane.js';
 import { ProvenancePane } from './ProvenancePane.js';
 import { useInspector } from './useInspector.js';
 
-import type { InspectorProposedSlugRow, InspectorReviewView } from '@pops/app-food-db';
+import type { InspectorProposedSlugRow, InspectorReviewView } from './inspector-wire-types.js';
 
 export function InspectorPage(): ReactElement {
   const { t } = useTranslation('food');

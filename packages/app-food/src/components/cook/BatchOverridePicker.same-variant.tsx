@@ -11,7 +11,7 @@ import { formatExpiryDate, formatQty, formatUnit } from './cook-format.js';
 
 import type { ReactNode } from 'react';
 
-import type { BatchForConsumeRow } from '@pops/app-food-db';
+import type { BatchForConsumeRow } from './cook-resolution-types.js';
 
 export interface SameVariantSectionProps {
   batches: readonly BatchForConsumeRow[];
