@@ -14,6 +14,13 @@ import { TemplateRegistry } from '../modules/templates/registry.js';
 import type { Express } from 'express';
 
 import type {
+  ConversationMessageWire,
+  ConversationWire,
+  EgoChatBodyWire,
+  EgoChatResponseWire,
+  GetActiveContextResponseWire,
+} from '../../contract/rest-ego-schemas.js';
+import type {
   GliaActionTypeWire,
   GliaActionStatusWire,
   GliaActionWire,
@@ -65,10 +72,18 @@ import type {
   TemplateSummaryWire,
   TemplateWire,
 } from '../../contract/rest-schemas.js';
+import type {
+  OrphansResponseWire,
+  QualityResultWire,
+  StalenessResultWire,
+  WorkerRunResultWire,
+} from '../../contract/rest-workers-schemas.js';
 import type { CerebrumDb } from '../../db/index.js';
+import type { EgoLlm, EgoStreamEvent } from '../modules/ego/llm.js';
 import type { IngestLlm, IngestLlmRequest } from '../modules/ingest/llm.js';
 import type { ReflexService } from '../modules/reflex/reflex-service.js';
 import type { PeerClients } from '../modules/retrieval/peer-clients.js';
+import type { ContradictionDetector } from '../modules/workers/auditor.js';
 
 /**
  * Offline {@link IngestLlm} stub. Tests pass a per-operation responder map
@@ -82,6 +97,36 @@ export function makeFakeIngestLlm(
     modelFor: () => 'fake-haiku',
     complete: (req) => Promise.resolve(responders[req.operation]?.(req) ?? null),
   };
+}
+
+/**
+ * Offline {@link EgoLlm} stub. `reply` is the canned chat content; `stream`
+ * splits it into per-word tokens (so SSE tests see multiple `token` frames
+ * then a `done`). Never reaches a real API.
+ */
+export function makeFakeEgoLlm(reply = 'Canned ego reply.'): EgoLlm {
+  return {
+    model: () => 'fake-sonnet',
+    chat: () => Promise.resolve({ content: reply, tokensIn: 7, tokensOut: 11 }),
+    summarise: () => Promise.resolve('Canned summary.'),
+    async *stream(): AsyncGenerator<EgoStreamEvent> {
+      const words = reply.split(' ');
+      for (const word of words) {
+        yield { type: 'token', text: `${word} ` };
+      }
+      yield { type: 'done', fullText: reply, tokensIn: 7, tokensOut: 11 };
+    },
+  };
+}
+
+/**
+ * Offline {@link ContradictionDetector} stub for the auditor worker. Returns
+ * `conflict` for every pair when set, else null (no contradiction).
+ */
+export function makeFakeContradictionDetector(
+  conflict: string | null = null
+): ContradictionDetector {
+  return { detectContradiction: () => Promise.resolve(conflict) };
 }
 
 /** Bundled engram-template fixtures shipped with the pillar. */
@@ -427,6 +472,42 @@ export function makeClient(app: Express) {
       similar: (body: RetrievalSimilarBody) =>
         send<{ results: RetrievalResultWire[] }>(r.post('/retrieval/similar').send(body)),
       stats: () => send<RetrievalStatsWire>(r.get('/retrieval/stats')),
+    },
+    ego: {
+      chat: (body: EgoChatBodyWire) => send<EgoChatResponseWire>(r.post('/ego/chat').send(body)),
+      createConversation: (body: { model: string; title?: string; scopes?: string[] }) =>
+        send<{ conversation: ConversationWire }>(r.post('/ego/conversations').send(body)),
+      listConversations: (body: { limit?: number; offset?: number; search?: string } = {}) =>
+        send<{ conversations: ConversationWire[]; total: number }>(
+          r.post('/ego/conversations/search').send(body)
+        ),
+      getConversation: (id: string) =>
+        send<{ conversation: ConversationWire; messages: ConversationMessageWire[] }>(
+          r.get(`/ego/conversations/${id}`)
+        ),
+      deleteConversation: (id: string) =>
+        send<{ success: true }>(r.delete(`/ego/conversations/${id}`)),
+      setScopes: (id: string, scopes: string[]) =>
+        send<{ scopes: string[] }>(r.post(`/ego/conversations/${id}/scopes`).send({ scopes })),
+      getActiveContext: (id: string) =>
+        send<GetActiveContextResponseWire>(r.get(`/ego/conversations/${id}/context`)),
+      stream: (body: EgoChatBodyWire) => r.post('/ego/chat/stream').send(body),
+    },
+    workers: {
+      runPruner: (dryRun?: boolean) =>
+        send<WorkerRunResultWire>(r.post('/glia/workers/prune').send({ dryRun })),
+      runConsolidator: (dryRun?: boolean) =>
+        send<WorkerRunResultWire>(r.post('/glia/workers/consolidate').send({ dryRun })),
+      runLinker: (dryRun?: boolean) =>
+        send<WorkerRunResultWire>(r.post('/glia/workers/link').send({ dryRun })),
+      runAuditor: (dryRun?: boolean) =>
+        send<WorkerRunResultWire>(r.post('/glia/workers/audit').send({ dryRun })),
+      getStalenessScore: (engramId: string) =>
+        send<StalenessResultWire>(r.post('/glia/scores/staleness').send({ engramId })),
+      getQualityScore: (engramId: string) =>
+        send<QualityResultWire>(r.post('/glia/scores/quality').send({ engramId })),
+      getOrphans: (limit?: number) =>
+        send<OrphansResponseWire>(r.get('/glia/orphans').query(limit ? { limit } : {})),
     },
   };
 }

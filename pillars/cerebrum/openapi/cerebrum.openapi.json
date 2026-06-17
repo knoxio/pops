@@ -9,6 +9,809 @@
   },
   "openapi": "3.0.2",
   "paths": {
+    "/ego/chat": {
+      "post": {
+        "operationId": "ego.chat",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "appContext": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "app": {
+                        "type": "string"
+                      },
+                      "entityId": {
+                        "type": "string"
+                      },
+                      "entityType": {
+                        "type": "string"
+                      },
+                      "route": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["app"],
+                    "type": "object"
+                  },
+                  "channel": {
+                    "enum": ["shell", "moltbot", "mcp", "cli"],
+                    "type": "string"
+                  },
+                  "conversationId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "knownScopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "message": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["message"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "conversationId": {
+                      "type": "string"
+                    },
+                    "response": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "citations": {
+                          "nullable": true
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "conversationId": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "tokensIn": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "tokensOut": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "toolCalls": {
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "conversationId",
+                        "role",
+                        "content",
+                        "citations",
+                        "toolCalls",
+                        "tokensIn",
+                        "tokensOut",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "retrievedEngrams": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "engramId": {
+                            "type": "string"
+                          },
+                          "relevanceScore": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["engramId", "relevanceScore"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "scopeNegotiation": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "changed": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "scopes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "secretNotice": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["scopes", "changed", "reason", "secretNotice"],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "conversationId",
+                    "response",
+                    "retrievedEngrams",
+                    "scopeNegotiation"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Run a chat turn: retrieve context, call the LLM, persist turns.",
+        "tags": ["ego"]
+      }
+    },
+    "/ego/conversations": {
+      "post": {
+        "operationId": "ego.createConversation",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "appContext": {},
+                  "model": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["model"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "conversation": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "activeScopes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "appContext": {
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "activeScopes",
+                        "appContext",
+                        "model",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["conversation"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Create a new conversation.",
+        "tags": ["ego"]
+      }
+    },
+    "/ego/conversations/search": {
+      "post": {
+        "operationId": "ego.listConversations",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 200,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "offset": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "search": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "conversations": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "activeScopes": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "appContext": {
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "activeScopes",
+                          "appContext",
+                          "model",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["conversations", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "List conversations (paginated, optional title search).",
+        "tags": ["ego"]
+      }
+    },
+    "/ego/conversations/{id}": {
+      "delete": {
+        "operationId": "ego.deleteConversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Delete a conversation (cascades messages + context).",
+        "tags": ["ego"]
+      },
+      "get": {
+        "operationId": "ego.getConversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "conversation": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "activeScopes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "appContext": {
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "activeScopes",
+                        "appContext",
+                        "model",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "messages": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "citations": {
+                            "nullable": true
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "conversationId": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "tokensIn": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "tokensOut": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "toolCalls": {
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "conversationId",
+                          "role",
+                          "content",
+                          "citations",
+                          "toolCalls",
+                          "tokensIn",
+                          "tokensOut",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["conversation", "messages"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Get a conversation with all its messages.",
+        "tags": ["ego"]
+      }
+    },
+    "/ego/conversations/{id}/context": {
+      "get": {
+        "operationId": "ego.getActiveContext",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "appContext": {
+                      "nullable": true
+                    },
+                    "engrams": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "engramId": {
+                            "type": "string"
+                          },
+                          "loadedAt": {
+                            "type": "string"
+                          },
+                          "relevanceScore": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": ["engramId", "relevanceScore", "loadedAt"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["scopes", "appContext", "engrams"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Return the current context state (scopes, app context, engrams).",
+        "tags": ["ego"]
+      }
+    },
+    "/ego/conversations/{id}/scopes": {
+      "post": {
+        "operationId": "ego.setScopes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "scopes": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["scopes"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["scopes"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Replace the active scopes for a conversation.",
+        "tags": ["ego"]
+      }
+    },
     "/engrams": {
       "post": {
         "operationId": "engrams.create",
@@ -2651,6 +3454,287 @@
         "tags": ["glia"]
       }
     },
+    "/glia/orphans": {
+      "get": {
+        "operationId": "workers.getOrphans",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 200,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "engrams": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "created": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "links": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "modified": {
+                            "type": "string"
+                          },
+                          "scopes": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "template": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "wordCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "title",
+                          "scopes",
+                          "tags",
+                          "links",
+                          "status",
+                          "created",
+                          "modified",
+                          "template",
+                          "wordCount"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["engrams"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List active engrams with no inbound links.",
+        "tags": ["workers"]
+      }
+    },
+    "/glia/scores/quality": {
+      "post": {
+        "operationId": "workers.getQualityScore",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "engramId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["engramId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "factors": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "completeness": {
+                          "type": "number"
+                        },
+                        "linkDensity": {
+                          "type": "number"
+                        },
+                        "specificity": {
+                          "type": "number"
+                        },
+                        "templateFit": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["completeness", "specificity", "templateFit", "linkDensity"],
+                      "type": "object"
+                    },
+                    "score": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["score", "factors"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Compute the quality score for a single engram.",
+        "tags": ["workers"]
+      }
+    },
+    "/glia/scores/staleness": {
+      "post": {
+        "operationId": "workers.getStalenessScore",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "engramId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["engramId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "factors": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "daysSinceModified": {
+                          "type": "number"
+                        },
+                        "daysSinceReferenced": {
+                          "type": "number"
+                        },
+                        "inboundLinkCount": {
+                          "type": "number"
+                        },
+                        "queryHitCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "daysSinceModified",
+                        "daysSinceReferenced",
+                        "inboundLinkCount",
+                        "queryHitCount"
+                      ],
+                      "type": "object"
+                    },
+                    "score": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["score", "factors"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Compute the staleness score for a single engram.",
+        "tags": ["workers"]
+      }
+    },
     "/glia/trust-state": {
       "get": {
         "operationId": "glia.trustState.list",
@@ -2843,6 +3927,406 @@
         },
         "summary": "Get trust state for a single action type.",
         "tags": ["glia", "trustState"]
+      }
+    },
+    "/glia/workers/audit": {
+      "post": {
+        "operationId": "workers.runAuditor",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "actions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["prune", "consolidate", "link", "audit"],
+                            "type": "string"
+                          },
+                          "affectedIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "payload": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          "phase": {
+                            "enum": ["propose", "act_report", "silent"],
+                            "type": "string"
+                          },
+                          "rationale": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["proposed", "executed", "error"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "actionType",
+                          "affectedIds",
+                          "rationale",
+                          "payload",
+                          "phase",
+                          "status",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "processed": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["actions", "processed", "skipped"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Run the auditor worker (quality, contradiction, coverage-gap).",
+        "tags": ["workers"]
+      }
+    },
+    "/glia/workers/consolidate": {
+      "post": {
+        "operationId": "workers.runConsolidator",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "actions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["prune", "consolidate", "link", "audit"],
+                            "type": "string"
+                          },
+                          "affectedIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "payload": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          "phase": {
+                            "enum": ["propose", "act_report", "silent"],
+                            "type": "string"
+                          },
+                          "rationale": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["proposed", "executed", "error"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "actionType",
+                          "affectedIds",
+                          "rationale",
+                          "payload",
+                          "phase",
+                          "status",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "processed": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["actions", "processed", "skipped"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Run the consolidator worker (similar-engram merge proposals).",
+        "tags": ["workers"]
+      }
+    },
+    "/glia/workers/link": {
+      "post": {
+        "operationId": "workers.runLinker",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "actions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["prune", "consolidate", "link", "audit"],
+                            "type": "string"
+                          },
+                          "affectedIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "payload": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          "phase": {
+                            "enum": ["propose", "act_report", "silent"],
+                            "type": "string"
+                          },
+                          "rationale": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["proposed", "executed", "error"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "actionType",
+                          "affectedIds",
+                          "rationale",
+                          "payload",
+                          "phase",
+                          "status",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "processed": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["actions", "processed", "skipped"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Run the linker worker (cross-reference proposals).",
+        "tags": ["workers"]
+      }
+    },
+    "/glia/workers/prune": {
+      "post": {
+        "operationId": "workers.runPruner",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dryRun": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "actions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["prune", "consolidate", "link", "audit"],
+                            "type": "string"
+                          },
+                          "affectedIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "payload": {
+                            "additionalProperties": {},
+                            "type": "object"
+                          },
+                          "phase": {
+                            "enum": ["propose", "act_report", "silent"],
+                            "type": "string"
+                          },
+                          "rationale": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["proposed", "executed", "error"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "actionType",
+                          "affectedIds",
+                          "rationale",
+                          "payload",
+                          "phase",
+                          "status",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "processed": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["actions", "processed", "skipped"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Run the pruner worker (staleness + orphan archival proposals).",
+        "tags": ["workers"]
       }
     },
     "/ingest/classify": {

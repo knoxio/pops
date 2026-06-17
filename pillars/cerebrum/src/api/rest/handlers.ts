@@ -8,9 +8,12 @@
 import { initServer } from '@ts-rest/express';
 
 import { cerebrumContract } from '../../contract/rest.js';
+import { AnthropicEgoLlm } from '../modules/ego/llm.js';
 import { resolveGliaConfigPath } from '../modules/glia/instance.js';
 import { AnthropicIngestLlm } from '../modules/ingest/llm.js';
 import { getCurationQueue } from '../modules/ingest/queue.js';
+import { AnthropicContradictionDetector } from '../modules/workers/llm.js';
+import { makeEgoHandlers } from './ego-handlers.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
 import { makeGliaHandlers } from './glia-handlers.js';
 import { makeIngestHandlers } from './ingest-handlers.js';
@@ -21,6 +24,7 @@ import { makeRetrievalHandlers } from './retrieval-handlers.js';
 import { makeScopesHandlers } from './scopes-handlers.js';
 import { makeTagsHandlers } from './tags-handlers.js';
 import { makeTemplatesHandlers } from './templates-handlers.js';
+import { makeWorkersHandlers } from './workers-handlers.js';
 
 import type { CerebrumApiDeps } from '../handlers.js';
 
@@ -61,6 +65,27 @@ export function makeCerebrumRestHandlers(
       vecAvailable: deps.cerebrumDb.vecAvailable,
       peers: deps.peerClients,
       embeddingClient: deps.embeddingClient,
+    }),
+    ego: makeEgoHandlers({
+      db: deps.cerebrumDb.db,
+      raw: deps.cerebrumDb.raw,
+      vecAvailable: deps.cerebrumDb.vecAvailable,
+      engramRoot: deps.engramRoot,
+      templates: deps.templateRegistry,
+      llm: deps.egoLlm ?? new AnthropicEgoLlm(),
+      peers: deps.peerClients,
+      embeddingClient: deps.embeddingClient,
+    }),
+    workers: makeWorkersHandlers({
+      db: deps.cerebrumDb.db,
+      raw: deps.cerebrumDb.raw,
+      vecAvailable: deps.cerebrumDb.vecAvailable,
+      engramRoot: deps.engramRoot,
+      templates: deps.templateRegistry,
+      peers: deps.peerClients,
+      embeddingClient: deps.embeddingClient,
+      contradictionDetector:
+        deps.auditorContradictionDetector ?? new AnthropicContradictionDetector(),
     }),
   });
 }

@@ -10,12 +10,14 @@ import { getPillarRegistry } from './pillars/registry.js';
 import type { PillarRegistryEntry } from '@pops/types';
 
 import type { OpenedCerebrumDb } from '../db/index.js';
+import type { EgoLlm } from './modules/ego/llm.js';
 import type { IngestLlm } from './modules/ingest/llm.js';
 import type { CurationQueueAccessor } from './modules/ingest/pipeline.js';
 import type { ReflexService } from './modules/reflex/reflex-service.js';
 import type { EmbeddingClient } from './modules/retrieval/embedding-client.js';
 import type { PeerClients } from './modules/retrieval/peer-clients.js';
 import type { TemplateRegistry } from './modules/templates/registry.js';
+import type { ContradictionDetector } from './modules/workers/auditor.js';
 
 export interface CerebrumApiDeps {
   /** Open handle to the cerebrum pillar's SQLite (sqlite-vec loaded). */
@@ -41,6 +43,18 @@ export interface CerebrumApiDeps {
    * hardcoded haiku models). Tests inject an offline fake.
    */
   ingestLlm?: IngestLlm;
+  /**
+   * LLM port driving ego chat + streaming + history summarisation. Optional —
+   * defaults to an Anthropic-backed client (`ANTHROPIC_API_KEY`,
+   * `claude-sonnet-4-6` / `CEREBRUM_EGO_MODEL`). Tests inject an offline fake.
+   */
+  egoLlm?: EgoLlm;
+  /**
+   * Contradiction detector for the auditor worker. Optional — defaults to an
+   * Anthropic-backed haiku client. Tests inject an offline fake (or omit it to
+   * get the noop path).
+   */
+  auditorContradictionDetector?: ContradictionDetector;
   /**
    * Accessor for the `pops-curation` BullMQ queue used by ingest
    * quick-capture / retry-enrichment. Optional — defaults to the lazy
