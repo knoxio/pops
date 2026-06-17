@@ -94,9 +94,11 @@ describe('generate-nginx-conf', () => {
     });
 
     it('each pillar block includes the shared _pillar-proxy.conf partial', () => {
-      const includes = rendered.match(/include \/etc\/nginx\/snippets\/_pillar-proxy\.conf;/g);
-      expect(includes).not.toBeNull();
-      expect(includes ?? []).toHaveLength(PILLARS.length);
+      const perPillarIncludes = rendered.match(
+        /proxy_pass \$trpc_\w+_upstream;\n\s*include \/etc\/nginx\/snippets\/_pillar-proxy\.conf;/g
+      );
+      expect(perPillarIncludes).not.toBeNull();
+      expect(perPillarIncludes ?? []).toHaveLength(PILLARS.length);
     });
 
     it('keeps the legacy /trpc fallback proxying to pops-api', () => {
