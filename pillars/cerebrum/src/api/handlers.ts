@@ -11,6 +11,8 @@ import type { PillarRegistryEntry } from '@pops/types';
 
 import type { OpenedCerebrumDb } from '../db/index.js';
 import type { ReflexService } from './modules/reflex/reflex-service.js';
+import type { EmbeddingClient } from './modules/retrieval/embedding-client.js';
+import type { PeerClients } from './modules/retrieval/peer-clients.js';
 import type { TemplateRegistry } from './modules/templates/registry.js';
 
 export interface CerebrumApiDeps {
@@ -39,6 +41,19 @@ export interface CerebrumApiDeps {
    * special-case the host pillar.
    */
   selfBaseUrl: string;
+  /**
+   * Cross-pillar enrichment clients for `retrieval` semantic-search metadata
+   * resolution. Built from `POPS_PILLARS` in `server.ts`; tests inject fakes.
+   * A peer absent from the registry yields an `undefined` client for that
+   * source type (enrichment skipped, not a crash).
+   */
+  peerClients: PeerClients;
+  /**
+   * Optional query-embedding client for `retrieval` semantic search. Absent
+   * (no `EMBEDDING_API_KEY`) → semantic search returns no results and hybrid
+   * degrades to BM25-only.
+   */
+  embeddingClient?: EmbeddingClient;
 }
 
 export interface HealthResponse {

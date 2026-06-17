@@ -17,6 +17,7 @@ import { cerebrumGliaContract } from './rest-glia.js';
 import { cerebrumNudgesContract } from './rest-nudges.js';
 import { cerebrumPlexusContract } from './rest-plexus.js';
 import { cerebrumReflexContract } from './rest-reflex.js';
+import { cerebrumRetrievalContract } from './rest-retrieval.js';
 import { cerebrumScopesContract } from './rest-scopes.js';
 import { cerebrumTagsContract } from './rest-tags.js';
 import { cerebrumTemplatesContract } from './rest-templates.js';
@@ -33,6 +34,7 @@ export const cerebrumContract = c.router(
     tags: cerebrumTagsContract,
     glia: cerebrumGliaContract,
     nudges: cerebrumNudgesContract,
+    retrieval: cerebrumRetrievalContract,
   },
   {
     pathPrefix: '',
