@@ -4,7 +4,7 @@
  * Encapsulates add-to-library, watchlist, watched, rewatch, and dismiss mutations
  * so they can be reused across the discover page and dynamic shelf sections.
  */
-import { usePillarUtils } from '@pops/pillar-sdk/react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useDiscoverMutations } from './discover-actions/discoverMutations';
 import {
@@ -53,7 +53,7 @@ export interface DiscoverCardActions {
 }
 
 export function useDiscoverCardActions(): DiscoverCardActions {
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
   const mutations = useDiscoverMutations();
 
   const addingToLibrary = usePendingSet();
@@ -72,15 +72,15 @@ export function useDiscoverCardActions(): DiscoverCardActions {
     markingRewatched: markingRewatched.set,
     dismissing: dismissing.set,
     optimisticDismissed: optimistic.set,
-    onAddToLibrary: useAddToLibrary({ mutations, utils, pending: addingToLibrary }),
-    onAddToWatchlist: useAddToWatchlist({ mutations, utils, pending: addingToWatchlist }),
+    onAddToLibrary: useAddToLibrary({ mutations, queryClient, pending: addingToLibrary }),
+    onAddToWatchlist: useAddToWatchlist({ mutations, queryClient, pending: addingToWatchlist }),
     onRemoveFromWatchlist: useRemoveFromWatchlist({
       mutations,
-      utils,
+      queryClient,
       pending: removingFromWatchlist,
     }),
-    onMarkWatched: useMarkWatched({ mutations, utils, pending: markingWatched }),
-    onMarkRewatched: useMarkRewatched({ mutations, utils, pending: markingRewatched }),
-    onNotInterested: useNotInterested({ mutations, utils, dismissing, optimistic }),
+    onMarkWatched: useMarkWatched({ mutations, queryClient, pending: markingWatched }),
+    onMarkRewatched: useMarkRewatched({ mutations, queryClient, pending: markingRewatched }),
+    onNotInterested: useNotInterested({ mutations, queryClient, dismissing, optimistic }),
   };
 }

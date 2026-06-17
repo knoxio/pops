@@ -1,61 +1,50 @@
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { useMutation } from '@tanstack/react-query';
 
-interface AddMovieInput {
-  tmdbId: number;
-}
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  discoveryDismiss,
+  libraryAddMovie,
+  watchHistoryLog,
+  watchlistAdd,
+  watchlistRemove,
+} from '../../media-api/index.js';
 
-interface AddMovieResult {
-  created: boolean;
-  data: { id: number; title: string };
-}
+import type {
+  DiscoveryDismissData,
+  LibraryAddMovieData,
+  LibraryAddMovieResponses,
+  WatchHistoryLogData,
+  WatchHistoryLogResponses,
+  WatchlistAddData,
+  WatchlistAddResponses,
+  WatchlistRemoveData,
+} from '../../media-api/types.gen.js';
 
-interface AddWatchlistInput {
-  mediaType: 'movie';
-  mediaId: number;
-}
-
-interface AddWatchlistResult {
-  created: boolean;
-}
-
-interface RemoveWatchlistInput {
-  id: number;
-}
-
-interface LogWatchInput {
-  mediaType: 'movie';
-  mediaId: number;
-}
-
-interface LogWatchResult {
-  watchlistRemoved: boolean;
-}
-
-interface DismissInput {
-  tmdbId: number;
-}
+type AddMovieInput = NonNullable<LibraryAddMovieData['body']>;
+type AddMovieResult = LibraryAddMovieResponses[200];
+type AddWatchlistInput = NonNullable<WatchlistAddData['body']>;
+type AddWatchlistResult = WatchlistAddResponses[201];
+type RemoveWatchlistInput = WatchlistRemoveData['path'];
+type LogWatchInput = NonNullable<WatchHistoryLogData['body']>;
+type LogWatchResult = WatchHistoryLogResponses[201];
+type DismissInput = NonNullable<DiscoveryDismissData['body']>;
 
 export function useDiscoverMutations() {
-  const addMovieMutation = usePillarMutation<AddMovieInput, AddMovieResult>('media', [
-    'library',
-    'addMovie',
-  ]);
-  const addWatchlistMutation = usePillarMutation<AddWatchlistInput, AddWatchlistResult>('media', [
-    'watchlist',
-    'add',
-  ]);
-  const removeWatchlistMutation = usePillarMutation<RemoveWatchlistInput, unknown>('media', [
-    'watchlist',
-    'remove',
-  ]);
-  const logWatchMutation = usePillarMutation<LogWatchInput, LogWatchResult>('media', [
-    'watchHistory',
-    'log',
-  ]);
-  const dismissMutation = usePillarMutation<DismissInput, unknown>('media', [
-    'discovery',
-    'dismiss',
-  ]);
+  const addMovieMutation = useMutation<AddMovieResult, Error, AddMovieInput>({
+    mutationFn: async (body) => unwrap(await libraryAddMovie({ body })),
+  });
+  const addWatchlistMutation = useMutation<AddWatchlistResult, Error, AddWatchlistInput>({
+    mutationFn: async (body) => unwrap(await watchlistAdd({ body })),
+  });
+  const removeWatchlistMutation = useMutation<unknown, Error, RemoveWatchlistInput>({
+    mutationFn: async (path) => unwrap(await watchlistRemove({ path })),
+  });
+  const logWatchMutation = useMutation<LogWatchResult, Error, LogWatchInput>({
+    mutationFn: async (body) => unwrap(await watchHistoryLog({ body })),
+  });
+  const dismissMutation = useMutation<unknown, Error, DismissInput>({
+    mutationFn: async (body) => unwrap(await discoveryDismiss({ body })),
+  });
   return {
     addMovieMutation,
     addWatchlistMutation,
