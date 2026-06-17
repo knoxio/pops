@@ -29,6 +29,7 @@ export function toQuickCaptureShape(submitResponse: SubmitResponse): QuickCaptur
     path: submitResponse.engram.filePath,
     type: submitResponse.engram.type,
     scopes: [],
+    requeued: false,
   };
 }
 

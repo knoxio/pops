@@ -2,9 +2,9 @@
  * Trust state panel — shows the current graduation phase per action
  * type with running counts of approvals/rejections/reverts.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Badge,
   Button,
@@ -17,6 +17,8 @@ import {
   TableRow,
 } from '@pops/ui';
 
+import { gliaTrustStateList } from '../../cerebrum-api';
+import { unwrap } from '../../cerebrum-api-helpers';
 import { extractMessage } from '../../utils/errors';
 import { TOUCH_TARGET_MIN_HEIGHT } from '../../utils/touchTarget';
 
@@ -39,7 +41,7 @@ function TrustRow({ state }: { state: GliaTrustState }) {
 interface TrustBodyProps {
   query: {
     isLoading: boolean;
-    error: { message: string } | null;
+    error: unknown;
     refetch: () => Promise<unknown>;
   };
   states: GliaTrustState[];
@@ -87,17 +89,12 @@ function TrustBody({ query, states }: TrustBodyProps) {
   );
 }
 
-interface TrustStateListResult {
-  states: GliaTrustState[];
-}
-
 export function TrustStatePanel() {
   const { t } = useTranslation('cerebrum');
-  const query = usePillarQuery<TrustStateListResult>(
-    'cerebrum',
-    ['glia', 'trustState', 'list'],
-    undefined
-  );
+  const query = useQuery({
+    queryKey: ['cerebrum', 'glia', 'trustState', 'list'],
+    queryFn: async () => unwrap(await gliaTrustStateList()),
+  });
   const states: GliaTrustState[] = query.data?.states ?? [];
 
   return (

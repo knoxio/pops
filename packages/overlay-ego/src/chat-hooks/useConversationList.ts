@@ -1,40 +1,31 @@
 /**
  * Sub-hook: conversation list data and search.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { egoListConversations } from '../ego-api';
+import { unwrap } from '../ego-api-helpers';
 
 import type { ConversationSummary } from './types';
-
-/** Shape returned by ego.conversations.list query. */
-interface ConversationListItem {
-  id: string;
-  title: string | null;
-  activeScopes: string[];
-  appContext: unknown;
-  model: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export function useConversationList() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const query = trpc.ego.conversations.list.useQuery(
-    { search: searchQuery || undefined },
-    { staleTime: 30_000 }
-  );
+  const body = { search: searchQuery || undefined };
+  const query = useQuery({
+    queryKey: ['ego', 'conversations', 'list', body],
+    queryFn: async () => unwrap(await egoListConversations({ body })),
+    staleTime: 30_000,
+  });
 
   const conversations: ConversationSummary[] = useMemo(
     () =>
-      ((query.data?.conversations as ConversationListItem[] | undefined) ?? []).map(
-        (c: ConversationListItem) => ({
-          id: c.id,
-          title: c.title,
-          updatedAt: c.updatedAt,
-        })
-      ),
+      (query.data?.conversations ?? []).map((c) => ({
+        id: c.id,
+        title: c.title,
+        updatedAt: c.updatedAt,
+      })),
     [query.data]
   );
 

@@ -6,12 +6,12 @@
  * sync mutations are wired to the existing
  * `cerebrum.plexus.adapters.{healthCheck,sync}` endpoints.
  */
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Plug } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Badge,
   Button,
@@ -26,6 +26,8 @@ import {
   TableRow,
 } from '@pops/ui';
 
+import { plexusAdaptersHealthCheck, plexusAdaptersList, plexusAdaptersSync } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import { formatTimestamp, statusBadgeVariant, statusKey } from '../plexus/format';
 import { extractMessage } from '../utils/errors';
 import { TOUCH_TARGET_MIN_HEIGHT } from '../utils/touchTarget';
@@ -123,26 +125,22 @@ interface AdapterMutations {
 
 function useAdapterMutations(): AdapterMutations {
   const { t } = useTranslation('cerebrum');
-  const healthMutation = usePillarMutation<{ adapterId: string }, unknown>(
-    'cerebrum',
-    ['plexus', 'adapters', 'healthCheck'],
-    {
-      onSuccess: () => {
-        toast.success(t('plexus.list.healthSuccess'));
-      },
-      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-    }
-  );
-  const syncMutation = usePillarMutation<{ adapterId: string }, unknown>(
-    'cerebrum',
-    ['plexus', 'adapters', 'sync'],
-    {
-      onSuccess: () => {
-        toast.success(t('plexus.list.syncSuccess'));
-      },
-      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-    }
-  );
+  const healthMutation = useMutation({
+    mutationFn: async ({ adapterId }: { adapterId: string }) =>
+      unwrap(await plexusAdaptersHealthCheck({ path: { adapterId } })),
+    onSuccess: () => {
+      toast.success(t('plexus.list.healthSuccess'));
+    },
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
+  });
+  const syncMutation = useMutation({
+    mutationFn: async ({ adapterId }: { adapterId: string }) =>
+      unwrap(await plexusAdaptersSync({ path: { adapterId } })),
+    onSuccess: () => {
+      toast.success(t('plexus.list.syncSuccess'));
+    },
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
+  });
   return {
     isPending: healthMutation.isPending || syncMutation.isPending,
     onHealth: (id) => healthMutation.mutate({ adapterId: id }),
@@ -153,7 +151,7 @@ function useAdapterMutations(): AdapterMutations {
 interface ListBodyProps {
   list: {
     isLoading: boolean;
-    error: { message: string } | null;
+    error: unknown;
     refetch: () => Promise<unknown>;
   };
   adapters: PlexusAdapter[];
@@ -203,11 +201,10 @@ function PlexusListBody({ list, adapters, mutations }: ListBodyProps) {
 
 export function PlexusListPage() {
   const { t } = useTranslation('cerebrum');
-  const list = usePillarQuery<{ adapters: PlexusAdapter[] }>(
-    'cerebrum',
-    ['plexus', 'adapters', 'list'],
-    undefined
-  );
+  const list = useQuery({
+    queryKey: ['cerebrum', 'plexus', 'adapters', 'list'],
+    queryFn: async () => unwrap(await plexusAdaptersList()),
+  });
   const mutations = useAdapterMutations();
   const adapters = list.data?.adapters ?? [];
   return (

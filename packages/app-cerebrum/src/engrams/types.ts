@@ -1,12 +1,11 @@
 /**
  * Public types for the Engrams browser surface.
  *
- * These mirror the server-side `Engram` shape returned by
- * `cerebrum.engrams.list` / `.get`. Re-declaring them here (rather than
- * importing from the API package) keeps the cerebrum frontend package
- * boundary clean per PRD-097 — frontend packages must not import from
- * the API source tree.
+ * The `Engram` shape is projected directly from the generated cerebrum
+ * REST client (`src/cerebrum-api/`) so the FE stays in lockstep with the
+ * pillar's wire contract. Filter/draft types stay hand-authored.
  */
+import type { EngramsListResponses } from '../cerebrum-api/types.gen.js';
 
 export const ENGRAM_STATUSES = ['active', 'archived', 'consolidated', 'stale'] as const;
 export type EngramStatus = (typeof ENGRAM_STATUSES)[number];
@@ -17,26 +16,10 @@ export type EngramSourceFixed = (typeof ENGRAM_SOURCES)[number];
 export type EngramSource = EngramSourceFixed | `plexus:${string}`;
 
 /**
- * An engram summary as returned from `cerebrum.engrams.list`. The detail
- * view augments this with the body string from `cerebrum.engrams.get`.
+ * An engram summary as returned from `POST /engrams/search`. The detail
+ * view augments this with the body string from `GET /engrams/{id}`.
  */
-export interface Engram {
-  id: string;
-  type: string;
-  scopes: string[];
-  tags: string[];
-  links: string[];
-  created: string;
-  modified: string;
-  source: EngramSource;
-  status: EngramStatus;
-  template: string | null;
-  title: string;
-  filePath: string;
-  contentHash: string;
-  wordCount: number;
-  customFields: Record<string, unknown>;
-}
+export type Engram = EngramsListResponses[200]['engrams'][number];
 
 /** Filter state for the list/search view. Empty arrays/strings mean "no filter". */
 export interface EngramListFilters {

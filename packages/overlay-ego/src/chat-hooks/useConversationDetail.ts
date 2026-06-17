@@ -1,48 +1,42 @@
 /**
  * Sub-hook: selected conversation detail (messages + metadata).
  */
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { trpc } from '@pops/api-client';
+import { egoGetConversation } from '../ego-api';
+import { unwrap } from '../ego-api-helpers';
 
 import type { ChatMessage } from './types';
 
-/** Shape returned by ego.conversations.get — conversation record. */
-interface ConversationRecord {
-  activeScopes: string[];
-}
-
-/** Shape returned by ego.conversations.get — message record. */
-interface MessageRecord {
-  id: string;
-  conversationId: string;
-  role: string;
-  content: string;
-  citations: string[] | null;
-  createdAt: string;
+function toCitations(raw: unknown): string[] | null {
+  if (!Array.isArray(raw)) return null;
+  return raw.filter((v): v is string => typeof v === 'string');
 }
 
 export function useConversationDetail(conversationId: string | null) {
-  const query = trpc.ego.conversations.get.useQuery(
-    { id: conversationId ?? '' },
-    { enabled: conversationId !== null, staleTime: 10_000 }
-  );
+  const query = useQuery({
+    queryKey: ['ego', 'conversations', 'get', { id: conversationId }],
+    queryFn: async () => unwrap(await egoGetConversation({ path: { id: conversationId ?? '' } })),
+    enabled: conversationId !== null,
+    staleTime: 10_000,
+  });
 
   const messages: ChatMessage[] = useMemo(
     () =>
-      ((query.data?.messages as MessageRecord[] | undefined) ?? []).map((m: MessageRecord) => ({
+      (query.data?.messages ?? []).map((m) => ({
         id: m.id,
         conversationId: m.conversationId,
         role: m.role,
         content: m.content,
-        citations: m.citations,
+        citations: toCitations(m.citations),
         createdAt: m.createdAt,
       })),
     [query.data]
   );
 
   const activeScopes: string[] = useMemo(
-    () => (query.data?.conversation as ConversationRecord | undefined)?.activeScopes ?? [],
+    () => query.data?.conversation.activeScopes ?? [],
     [query.data]
   );
 

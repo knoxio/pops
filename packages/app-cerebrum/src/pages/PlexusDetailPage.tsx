@@ -5,13 +5,20 @@
  * and exposes the same health-check + sync actions as the list page.
  * Config display is read-only — editing config lives in `plexus.toml`.
  */
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import { Badge, Button, PageHeader, Skeleton } from '@pops/ui';
 
+import {
+  plexusAdaptersGet,
+  plexusAdaptersHealthCheck,
+  plexusAdaptersSync,
+  plexusFiltersList,
+} from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import { formatTimestamp, statusBadgeVariant, statusKey } from '../plexus/format';
 import { extractMessage } from '../utils/errors';
 import { TOUCH_TARGET_MIN_HEIGHT } from '../utils/touchTarget';
@@ -27,30 +34,24 @@ interface DetailMutations {
 
 function useDetailMutations(adapterId: string): DetailMutations {
   const { t } = useTranslation('cerebrum');
-  const healthMutation = usePillarMutation<{ adapterId: string }, unknown>(
-    'cerebrum',
-    ['plexus', 'adapters', 'healthCheck'],
-    {
-      onSuccess: () => {
-        toast.success(t('plexus.list.healthSuccess'));
-      },
-      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-    }
-  );
-  const syncMutation = usePillarMutation<{ adapterId: string }, unknown>(
-    'cerebrum',
-    ['plexus', 'adapters', 'sync'],
-    {
-      onSuccess: () => {
-        toast.success(t('plexus.list.syncSuccess'));
-      },
-      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-    }
-  );
+  const healthMutation = useMutation({
+    mutationFn: async () => unwrap(await plexusAdaptersHealthCheck({ path: { adapterId } })),
+    onSuccess: () => {
+      toast.success(t('plexus.list.healthSuccess'));
+    },
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
+  });
+  const syncMutation = useMutation({
+    mutationFn: async () => unwrap(await plexusAdaptersSync({ path: { adapterId } })),
+    onSuccess: () => {
+      toast.success(t('plexus.list.syncSuccess'));
+    },
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
+  });
   return {
     isPending: healthMutation.isPending || syncMutation.isPending,
-    onHealth: () => healthMutation.mutate({ adapterId }),
-    onSync: () => syncMutation.mutate({ adapterId }),
+    onHealth: () => healthMutation.mutate(),
+    onSync: () => syncMutation.mutate(),
   };
 }
 
@@ -122,18 +123,17 @@ export function PlexusDetailPage() {
   const { t } = useTranslation('cerebrum');
   const params = useParams<{ adapterId: string }>();
   const adapterId = params.adapterId ?? '';
-  const detail = usePillarQuery<{ adapter: PlexusAdapter | null }>(
-    'cerebrum',
-    ['plexus', 'adapters', 'get'],
-    { adapterId },
-    { enabled: adapterId.length > 0 }
-  );
-  const filtersQuery = usePillarQuery<{ filters: PlexusFilter[] }>(
-    'cerebrum',
-    ['plexus', 'filters', 'list'],
-    { adapterId },
-    { enabled: adapterId.length > 0 }
-  );
+  const detail = useQuery({
+    queryKey: ['cerebrum', 'plexus', 'adapters', 'get', { adapterId }],
+    queryFn: async () => unwrap(await plexusAdaptersGet({ path: { adapterId } })),
+    enabled: adapterId.length > 0,
+    retry: false,
+  });
+  const filtersQuery = useQuery({
+    queryKey: ['cerebrum', 'plexus', 'filters', 'list', { adapterId }],
+    queryFn: async () => unwrap(await plexusFiltersList({ path: { adapterId } })),
+    enabled: adapterId.length > 0,
+  });
   const mutations = useDetailMutations(adapterId);
 
   if (detail.isLoading) {

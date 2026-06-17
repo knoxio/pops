@@ -1,8 +1,8 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
 import {
   Button,
   EmptyState,
@@ -15,6 +15,8 @@ import {
   TableRow,
 } from '@pops/ui';
 
+import { reflexDisable, reflexEnable, reflexList, reflexTest } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import { extractMessage } from '../utils/errors';
 import { TOUCH_TARGET_MIN_HEIGHT } from '../utils/touchTarget';
 import { ReflexRow } from './reflex-list/ReflexRow';
@@ -62,30 +64,28 @@ interface ReflexListMutations {
 
 function useReflexListMutations(): ReflexListMutations {
   const { t } = useTranslation('cerebrum');
-  const enableMutation = usePillarMutation<{ name: string }, unknown>(
-    'cerebrum',
-    ['reflex', 'enable'],
-    {
-      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-    }
-  );
-  const disableMutation = usePillarMutation<{ name: string }, unknown>(
-    'cerebrum',
-    ['reflex', 'disable'],
-    {
-      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-    }
-  );
-  const testMutation = usePillarMutation<{ name: string }, unknown>(
-    'cerebrum',
-    ['reflex', 'test'],
-    {
-      onSuccess: () => {
-        toast.success(t('reflex.list.fireSuccess'));
-      },
-      onError: (err) => toast.error(extractMessage(err, t('errors.unknown'))),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['cerebrum', 'reflex'] });
+  const enableMutation = useMutation({
+    mutationFn: async ({ name }: { name: string }) =>
+      unwrap(await reflexEnable({ path: { name } })),
+    onSuccess: invalidate,
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
+  });
+  const disableMutation = useMutation({
+    mutationFn: async ({ name }: { name: string }) =>
+      unwrap(await reflexDisable({ path: { name } })),
+    onSuccess: invalidate,
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
+  });
+  const testMutation = useMutation({
+    mutationFn: async ({ name }: { name: string }) => unwrap(await reflexTest({ path: { name } })),
+    onSuccess: () => {
+      toast.success(t('reflex.list.fireSuccess'));
+      invalidate();
+    },
+    onError: (err: Error) => toast.error(extractMessage(err, t('errors.unknown'))),
+  });
   return {
     isPending: enableMutation.isPending || disableMutation.isPending || testMutation.isPending,
     onToggle: (name, next) =>
@@ -97,7 +97,7 @@ function useReflexListMutations(): ReflexListMutations {
 interface ReflexListBodyProps {
   list: {
     isLoading: boolean;
-    error: { message: string } | null;
+    error: unknown;
     refetch: () => Promise<unknown>;
   };
   reflexes: ReflexWithStatus[];
@@ -147,13 +147,12 @@ function ReflexListBody({ list, reflexes, mutations }: ReflexListBodyProps) {
 
 export function ReflexListPage() {
   const { t } = useTranslation('cerebrum');
-  const list = usePillarQuery<{ reflexes: ReflexWithStatus[] }>(
-    'cerebrum',
-    ['reflex', 'list'],
-    undefined
-  );
+  const list = useQuery({
+    queryKey: ['cerebrum', 'reflex', 'list'],
+    queryFn: async () => unwrap(await reflexList()),
+  });
   const mutations = useReflexListMutations();
-  const reflexes = list.data?.reflexes ?? [];
+  const reflexes: ReflexWithStatus[] = list.data?.reflexes ?? [];
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-6xl">

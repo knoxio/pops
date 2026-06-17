@@ -1,41 +1,40 @@
 /**
  * NudgesPage — notification panel for cerebrum nudges (#2244).
  *
- * Displays pending nudges with dismiss/act actions. Fetched via
- * the existing nudges.list tRPC endpoint.
+ * Displays pending nudges with dismiss/act actions, fetched from
+ * `POST /nudges/search` on the cerebrum REST surface.
  */
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { ButtonPrimitive } from '@pops/ui';
 
+import { nudgesAct, nudgesDismiss, nudgesList } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import { ContradictionsPanel } from '../components/ContradictionsPanel';
 import { NudgeCard } from '../components/NudgeCard';
 
-interface NudgeSummary {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  priority: string;
-  action: { label: string } | null;
-}
-
-interface NudgeListResult {
-  nudges: NudgeSummary[];
-  total: number;
+function useNudgeMutations() {
+  const queryClient = useQueryClient();
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['cerebrum', 'nudges'] });
+  const dismissMutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) => unwrap(await nudgesDismiss({ path: { id } })),
+    onSuccess: invalidate,
+  });
+  const actMutation = useMutation({
+    mutationFn: async ({ id }: { id: string }) => unwrap(await nudgesAct({ path: { id } })),
+    onSuccess: invalidate,
+  });
+  return { dismissMutation, actMutation };
 }
 
 export function NudgesPage() {
-  const { data, isLoading, isError, error, refetch } = usePillarQuery<NudgeListResult>(
-    'cerebrum',
-    ['nudges', 'list'],
-    { status: 'pending', limit: 50 }
-  );
+  const nudgesInput = { status: 'pending', limit: 50 } as const;
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['cerebrum', 'nudges', 'list', nudgesInput],
+    queryFn: async () => unwrap(await nudgesList({ body: nudgesInput })),
+  });
 
-  const dismissMutation = usePillarMutation<{ id: string }, unknown>('cerebrum', [
-    'nudges',
-    'dismiss',
-  ]);
-  const actMutation = usePillarMutation<{ id: string }, unknown>('cerebrum', ['nudges', 'act']);
+  const { dismissMutation, actMutation } = useNudgeMutations();
 
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Loading nudges...</div>;

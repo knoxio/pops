@@ -22,25 +22,13 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const mockEmitMutate = vi.fn();
-let emitPending = false;
-let emitCallbacks: { onSuccess?: (data: unknown) => void; onError?: (err: unknown) => void } = {};
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarMutation: (_pillarId: string, path: readonly string[], cb: typeof emitCallbacks) => {
-    const key = path.join('.');
-    if (key === 'emit.generate') {
-      emitCallbacks = cb;
-      return {
-        mutate: (...args: unknown[]) => mockEmitMutate(...args),
-        isPending: emitPending,
-        error: null,
-      };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
+const sdk = vi.hoisted(() => ({
+  emitGenerate: vi.fn(),
 }));
 
+vi.mock('../cerebrum-api', () => sdk);
+
+import { withQueryClient } from '../test-utils';
 import { QueryPage } from './QueryPage';
 
 const STORAGE_KEY = 'pops.cerebrum.query-history';
@@ -71,16 +59,17 @@ const fetchMock = vi.fn();
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <QueryPage />
-    </MemoryRouter>
+    withQueryClient(
+      <MemoryRouter>
+        <QueryPage />
+      </MemoryRouter>
+    )
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  emitPending = false;
-  emitCallbacks = {};
+  sdk.emitGenerate.mockResolvedValue({ data: { document: { title: 'Saved doc' } } });
   window.localStorage.clear();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -318,16 +307,15 @@ describe('QueryPage', () => {
       expect(screen.getByTestId('query-answer')).toBeInTheDocument();
     });
     await userEvent.click(screen.getByTestId('query-save-document'));
-    expect(mockEmitMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mode: 'report',
-        query: 'topic q',
-        scopes: ['work.engineering'],
+    await waitFor(() =>
+      expect(sdk.emitGenerate).toHaveBeenCalledWith({
+        body: expect.objectContaining({
+          mode: 'report',
+          query: 'topic q',
+          scopes: ['work.engineering'],
+        }),
       })
     );
-    act(() => {
-      emitCallbacks.onSuccess?.({ document: { title: 'Saved doc' } });
-    });
-    expect(toastSuccessMock).toHaveBeenCalled();
+    await waitFor(() => expect(toastSuccessMock).toHaveBeenCalled());
   });
 });

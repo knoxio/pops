@@ -2,74 +2,62 @@
  * Smoke tests for ContradictionsPanel (PRD-084 US-03, #2580).
  *
  * Verifies the panel renders the conflict summary, both excerpts, and the
- * source-engram links returned by `cerebrum.nudges.contradictions`.
+ * source-engram links returned by `POST /nudges/contradictions`. The panel
+ * drives the generated cerebrum SDK through React Query, so the SDK module
+ * is mocked and renders are wrapped in a `QueryClientProvider`.
  */
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-interface ContradictionsResult {
-  contradictions: Array<{
-    id: string;
-    createdAt: string;
-    status: string;
-    priority: string;
-    title: string;
-    engramA: string;
-    engramB: string;
-    excerptA: string;
-    excerptB: string;
-    conflict: string;
-  }>;
-  total: number;
-}
+import { withQueryClient } from '../test-utils';
 
-let queryResult: { data: ContradictionsResult | undefined; isLoading: boolean; isError: boolean } =
-  {
-    data: undefined,
-    isLoading: false,
-    isError: false,
-  };
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: () => queryResult,
+const sdk = vi.hoisted(() => ({
+  nudgesContradictions: vi.fn(),
 }));
+
+vi.mock('../cerebrum-api', () => sdk);
 
 import { ContradictionsPanel } from './ContradictionsPanel';
 
 function renderPanel() {
   return render(
-    <MemoryRouter>
-      <ContradictionsPanel />
-    </MemoryRouter>
+    withQueryClient(
+      <MemoryRouter>
+        <ContradictionsPanel />
+      </MemoryRouter>
+    )
   );
 }
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('ContradictionsPanel', () => {
   it('renders a loading state while the query is in flight', () => {
-    queryResult = { data: undefined, isLoading: true, isError: false };
+    sdk.nudgesContradictions.mockReturnValue(new Promise(() => undefined));
     renderPanel();
     expect(screen.getByTestId('contradictions-loading')).toBeInTheDocument();
   });
 
-  it('renders an error state when the query fails', () => {
-    queryResult = { data: undefined, isLoading: false, isError: true };
+  it('renders an error state when the query fails', async () => {
+    sdk.nudgesContradictions.mockResolvedValue({
+      error: { message: 'boom' },
+      response: { status: 500 },
+    });
     renderPanel();
-    expect(screen.getByTestId('contradictions-error')).toBeInTheDocument();
+    expect(await screen.findByTestId('contradictions-error')).toBeInTheDocument();
   });
 
-  it('renders the empty state when there are no contradictions', () => {
-    queryResult = {
-      data: { contradictions: [], total: 0 },
-      isLoading: false,
-      isError: false,
-    };
+  it('renders the empty state when there are no contradictions', async () => {
+    sdk.nudgesContradictions.mockResolvedValue({ data: { contradictions: [], total: 0 } });
     renderPanel();
-    expect(screen.getByTestId('contradictions-empty')).toBeInTheDocument();
+    expect(await screen.findByTestId('contradictions-empty')).toBeInTheDocument();
   });
 
-  it('renders excerpts from both sides and links to the source engrams', () => {
-    queryResult = {
+  it('renders excerpts from both sides and links to the source engrams', async () => {
+    sdk.nudgesContradictions.mockResolvedValue({
       data: {
         contradictions: [
           {
@@ -87,13 +75,11 @@ describe('ContradictionsPanel', () => {
         ],
         total: 1,
       },
-      isLoading: false,
-      isError: false,
-    };
+    });
 
     renderPanel();
 
-    expect(screen.getByText('A allows Friday deploys, B forbids them.')).toBeInTheDocument();
+    expect(await screen.findByText('A allows Friday deploys, B forbids them.')).toBeInTheDocument();
     expect(screen.getByText('Friday deploys are fine.')).toBeInTheDocument();
     expect(screen.getByText('Never deploy on Fridays.')).toBeInTheDocument();
 

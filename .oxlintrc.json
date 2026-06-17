@@ -356,7 +356,12 @@
       }
     },
     {
-      "files": ["packages/app-*/src/**/*.gen.ts", "packages/app-*/src/*-api/**/*.{ts,tsx}"],
+      "files": [
+        "packages/app-*/src/**/*.gen.ts",
+        "packages/app-*/src/*-api/**/*.{ts,tsx}",
+        "packages/overlay-*/src/**/*.gen.ts",
+        "packages/overlay-*/src/*-api/**/*.{ts,tsx}"
+      ],
       "rules": {
         "max-lines": "off",
         "max-lines-per-function": "off",
@@ -369,7 +374,8 @@
         "typescript/no-misused-spread": "off",
         "typescript/no-floating-promises": "off",
         "typescript/explicit-module-boundary-types": "off",
-        "typescript/explicit-function-return-type": "off"
+        "typescript/explicit-function-return-type": "off",
+        "unicorn/no-array-sort": "off"
       }
     },
     {

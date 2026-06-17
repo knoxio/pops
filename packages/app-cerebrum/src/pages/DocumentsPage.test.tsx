@@ -1,7 +1,9 @@
-import { act, render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { withQueryClient } from '../test-utils';
 
 const toastErrorMock = vi.fn();
 const toastSuccessMock = vi.fn();
@@ -12,49 +14,47 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const mockGenerateMutate = vi.fn();
-const mockPreviewCall = vi.fn();
-let generatePending = false;
-let generateCallbacks: { onSuccess?: (data: unknown) => void; onError?: (err: unknown) => void } =
-  {};
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarMutation: (_pillarId: string, path: readonly string[], cb: typeof generateCallbacks) => {
-    const key = path.join('.');
-    if (key === 'emit.generate') {
-      generateCallbacks = cb;
-      return {
-        mutate: (...args: unknown[]) => mockGenerateMutate(...args),
-        isPending: generatePending,
-        error: null,
-      };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
+const sdk = vi.hoisted(() => ({
+  emitGenerate: vi.fn(),
+  emitPreview: vi.fn(),
 }));
 
-vi.mock('../lib/pillar-call', () => ({
-  usePillarCall: () => async (_pillarId: string, _path: readonly string[], input: unknown) => {
-    const value = await mockPreviewCall(input);
-    return { kind: 'ok', value };
-  },
-}));
+vi.mock('../cerebrum-api', () => sdk);
 
 import { DocumentsPage } from './DocumentsPage';
 
+const GENERATED_DOCUMENT = {
+  title: 'Report on agents',
+  body: '# Findings',
+  mode: 'report',
+  sources: [
+    { id: 'eng_1', type: 'engram', title: 'Source', excerpt: 'x', relevance: 1, scope: 'work' },
+  ],
+  audienceScope: 'work.*',
+  dateRange: null,
+  metadata: {
+    sourceCount: 1,
+    dateRange: null,
+    scopeCoverage: ['work'],
+    mode: 'report',
+    truncated: false,
+  },
+};
+
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <DocumentsPage />
-    </MemoryRouter>
+    withQueryClient(
+      <MemoryRouter>
+        <DocumentsPage />
+      </MemoryRouter>
+    )
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  generatePending = false;
-  generateCallbacks = {};
-  mockPreviewCall.mockResolvedValue({ sources: [], outline: 'outline' });
+  sdk.emitPreview.mockResolvedValue({ data: { sources: [], outline: 'outline' } });
+  sdk.emitGenerate.mockResolvedValue({ data: { document: GENERATED_DOCUMENT, notice: undefined } });
 });
 
 describe('DocumentsPage', () => {
@@ -68,7 +68,7 @@ describe('DocumentsPage', () => {
   it('rejects report mode without a query and surfaces a toast', async () => {
     renderPage();
     await userEvent.click(screen.getByRole('button', { name: /^generate$/i }));
-    expect(mockGenerateMutate).not.toHaveBeenCalled();
+    expect(sdk.emitGenerate).not.toHaveBeenCalled();
     expect(toastErrorMock).toHaveBeenCalledWith('Query is required for report mode.');
   });
 
@@ -76,58 +76,38 @@ describe('DocumentsPage', () => {
     renderPage();
     await userEvent.type(screen.getByLabelText('Query'), 'agents');
     await userEvent.click(screen.getByRole('button', { name: /preview/i }));
-    expect(mockPreviewCall).toHaveBeenCalledWith({ mode: 'report', query: 'agents' });
+    await waitFor(() =>
+      expect(sdk.emitPreview).toHaveBeenCalledWith({ body: { mode: 'report', query: 'agents' } })
+    );
   });
 
-  it('renders the generated document when the mutation succeeds', () => {
+  it('renders the generated document when the mutation succeeds', async () => {
     renderPage();
-    act(() => {
-      generateCallbacks.onSuccess?.({
-        document: {
-          title: 'Report on agents',
-          body: '# Findings',
-          mode: 'report',
-          sources: [
-            {
-              id: 'eng_1',
-              type: 'engram',
-              title: 'Source',
-              excerpt: 'x',
-              relevance: 1,
-              scope: 'work',
-            },
-          ],
-          audienceScope: 'work.*',
-          dateRange: null,
-          metadata: {
-            sourceCount: 1,
-            dateRange: null,
-            scopeCoverage: ['work'],
-            mode: 'report',
-            truncated: false,
-          },
-        },
-        notice: undefined,
-      });
-    });
-    expect(screen.getByTestId('documents-result')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Query'), 'agents');
+    await userEvent.click(screen.getByRole('button', { name: /^generate$/i }));
+    expect(await screen.findByTestId('documents-result')).toBeInTheDocument();
     expect(screen.getByText('Report on agents')).toBeInTheDocument();
   });
 
-  it('surfaces a notice when generation returns no document', () => {
-    renderPage();
-    act(() => {
-      generateCallbacks.onSuccess?.({ document: null, notice: 'No matching sources.' });
+  it('surfaces a notice when generation returns no document', async () => {
+    sdk.emitGenerate.mockResolvedValue({
+      data: { document: null, notice: 'No matching sources.' },
     });
-    expect(screen.getByTestId('documents-result-notice')).toBeInTheDocument();
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Query'), 'agents');
+    await userEvent.click(screen.getByRole('button', { name: /^generate$/i }));
+    expect(await screen.findByTestId('documents-result-notice')).toBeInTheDocument();
   });
 
-  it('surfaces an error toast when generation fails', () => {
-    renderPage();
-    act(() => {
-      generateCallbacks.onError?.(new Error('Generation failed'));
+  it('surfaces an error toast when generation fails', async () => {
+    sdk.emitGenerate.mockResolvedValue({
+      error: { message: 'Generation failed' },
+      response: { status: 500 },
     });
-    expect(toastErrorMock).toHaveBeenCalledWith('Generation failed');
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Query'), 'agents');
+    await userEvent.click(screen.getByRole('button', { name: /^generate$/i }));
+    await waitFor(() => expect(toastErrorMock).toHaveBeenCalledWith('Generation failed'));
     expect(screen.getByTestId('documents-result-empty')).toBeInTheDocument();
   });
 });

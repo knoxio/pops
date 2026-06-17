@@ -1,37 +1,22 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockListQuery = vi.fn();
-const mockEnableMutate = vi.fn();
-const mockDisableMutate = vi.fn();
-const mockTestMutate = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'reflex.list') return mockListQuery(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'reflex.enable') {
-      return { mutate: mockEnableMutate, isPending: false, error: null };
-    }
-    if (key === 'reflex.disable') {
-      return { mutate: mockDisableMutate, isPending: false, error: null };
-    }
-    if (key === 'reflex.test') {
-      return { mutate: mockTestMutate, isPending: false, error: null };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-}));
-
-import { ReflexListPage } from './ReflexListPage';
+import { withQueryClient } from '../test-utils';
 
 import type { ReflexWithStatus } from '../reflex/types';
+
+const sdk = vi.hoisted(() => ({
+  reflexList: vi.fn(),
+  reflexEnable: vi.fn(),
+  reflexDisable: vi.fn(),
+  reflexTest: vi.fn(),
+}));
+
+vi.mock('../cerebrum-api', () => sdk);
+
+import { ReflexListPage } from './ReflexListPage';
 
 function buildReflex(overrides: Partial<ReflexWithStatus> = {}): ReflexWithStatus {
   return {
@@ -49,94 +34,79 @@ function buildReflex(overrides: Partial<ReflexWithStatus> = {}): ReflexWithStatu
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <ReflexListPage />
-    </MemoryRouter>
+    withQueryClient(
+      <MemoryRouter>
+        <ReflexListPage />
+      </MemoryRouter>
+    )
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sdk.reflexEnable.mockResolvedValue({ data: { ok: true } });
+  sdk.reflexDisable.mockResolvedValue({ data: { ok: true } });
+  sdk.reflexTest.mockResolvedValue({ data: { ok: true } });
 });
 
 describe('ReflexListPage', () => {
   it('renders the loading skeleton while the list query is in flight', () => {
-    mockListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      refetch: vi.fn(),
-    });
+    sdk.reflexList.mockReturnValue(new Promise(() => undefined));
     renderPage();
     expect(screen.getByTestId('reflex-loading')).toBeInTheDocument();
   });
 
-  it('renders the empty state when no reflexes are configured', () => {
-    mockListQuery.mockReturnValue({
-      data: { reflexes: [] },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
+  it('renders the empty state when no reflexes are configured', async () => {
+    sdk.reflexList.mockResolvedValue({ data: { reflexes: [] } });
     renderPage();
-    expect(screen.getByText('No reflexes configured')).toBeInTheDocument();
+    expect(await screen.findByText('No reflexes configured')).toBeInTheDocument();
   });
 
   it('renders an error state with retry when the query fails', async () => {
-    const refetch = vi.fn();
-    mockListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: { message: 'boom' },
-      refetch,
-    });
+    sdk.reflexList.mockResolvedValue({ error: { message: 'boom' }, response: { status: 500 } });
     renderPage();
-    expect(screen.getByTestId('reflex-error')).toBeInTheDocument();
+    expect(await screen.findByTestId('reflex-error')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /retry/i }));
-    expect(refetch).toHaveBeenCalled();
+    await waitFor(() => expect(sdk.reflexList).toHaveBeenCalledTimes(2));
   });
 
   it('lists reflex rows and fires the test mutation on demand', async () => {
-    mockListQuery.mockReturnValue({
+    sdk.reflexList.mockResolvedValue({
       data: {
         reflexes: [buildReflex(), buildReflex({ name: 'nightly-summary', enabled: false })],
       },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
     });
     renderPage();
-    expect(screen.getAllByTestId('reflex-row')).toHaveLength(2);
+    expect(await screen.findAllByTestId('reflex-row')).toHaveLength(2);
     const targetRow = screen.getByText('consolidate-notes').closest('[data-testid="reflex-row"]');
-    expect(targetRow).toBeTruthy();
     if (!(targetRow instanceof HTMLElement)) {
       throw new Error('Expected reflex-row for consolidate-notes');
     }
     await userEvent.click(within(targetRow).getByRole('button', { name: /fire/i }));
-    expect(mockTestMutate).toHaveBeenCalledWith({ name: 'consolidate-notes' });
+    await waitFor(() =>
+      expect(sdk.reflexTest).toHaveBeenCalledWith({ path: { name: 'consolidate-notes' } })
+    );
   });
 
   it('toggles enable and disable mutations from the row switch', async () => {
-    mockListQuery.mockReturnValue({
+    sdk.reflexList.mockResolvedValue({
       data: {
         reflexes: [
           buildReflex({ name: 'a', enabled: true }),
           buildReflex({ name: 'b', enabled: false }),
         ],
       },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
     });
     renderPage();
+    await screen.findByText('a');
     const rowA = screen.getByText('a').closest('[data-testid="reflex-row"]');
     const rowB = screen.getByText('b').closest('[data-testid="reflex-row"]');
     if (!(rowA instanceof HTMLElement) || !(rowB instanceof HTMLElement)) {
       throw new Error('Expected reflex-row elements for a and b');
     }
     await userEvent.click(within(rowA).getByRole('switch'));
-    expect(mockDisableMutate).toHaveBeenCalledWith({ name: 'a' });
+    await waitFor(() => expect(sdk.reflexDisable).toHaveBeenCalledWith({ path: { name: 'a' } }));
     await userEvent.click(within(rowB).getByRole('switch'));
-    expect(mockEnableMutate).toHaveBeenCalledWith({ name: 'b' });
+    await waitFor(() => expect(sdk.reflexEnable).toHaveBeenCalledWith({ path: { name: 'b' } }));
   });
 });
