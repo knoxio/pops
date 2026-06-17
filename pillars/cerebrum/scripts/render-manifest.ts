@@ -28,7 +28,6 @@ import type { Engram } from './types/engram.js';
 import type { Nudge } from './types/nudge.js';
 import type { Scope } from './types/scope.js';
 import type { CerebrumError } from './errors.js';
-import type { CerebrumRouter } from './router.js';
 
 export interface CerebrumContract {
   readonly pillar: 'cerebrum';
@@ -39,7 +38,6 @@ export interface CerebrumContract {
     readonly scope: Scope;
   };
   readonly errors: CerebrumError;
-  readonly router: CerebrumRouter;
 }
 `;
 }
