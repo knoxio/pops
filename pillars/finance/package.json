@@ -33,6 +33,7 @@
     "generate:api-types": "tsx scripts/generate-api-types.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
     "@pops/core-db": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",

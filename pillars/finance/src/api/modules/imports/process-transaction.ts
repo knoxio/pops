@@ -1,14 +1,17 @@
 /**
  * Single-transaction classification: correction rules → transfer heuristic →
- * entity matcher → AI fallback (stubbed in F1) → no-match.
+ * entity matcher → AI fallback → no-match.
  *
  * Ported from the monolith `lib/process-transaction.ts`, db-injected. The AI
- * stage calls the `ai-stub` categorizer, which returns `{ result: null }` while
- * the categorizer is disabled — so with AI off the no-match reason is always
- * `'No entity match found'` and the AI counters stay zero.
+ * stage calls `categorizeWithAi`; when the categorizer is disabled (the
+ * default) it returns `{ result: null }` so the no-match reason is
+ * `'No entity match found'` and the AI counters stay zero. An
+ * `AiCategorizationError` (enabled but key/API failure) degrades to an
+ * uncertain row with reason `'AI categorization unavailable'`.
  */
 import { type FinanceDb } from '../../../db/index.js';
-import { categorizeWithAi } from './ai-stub.js';
+import { AiCategorizationError } from './ai-categorizer-error.js';
+import { categorizeWithAi } from './ai-categorizer.js';
 import { applyLearnedCorrection } from './apply-learned-correction.js';
 import { matchEntity } from './entity-matcher.js';
 import {
@@ -65,11 +68,17 @@ async function tryAiCategorization(
   context: ProcessContext,
   counters: AiCounters
 ): Promise<AiCategorizationResult | null> {
-  const { result, usage } = await categorizeWithAi(
-    transaction.rawRow,
-    context.importBatchId,
-    context.knownTags
-  );
+  let call: Awaited<ReturnType<typeof categorizeWithAi>>;
+  try {
+    call = await categorizeWithAi(transaction.rawRow, context.importBatchId, context.knownTags);
+  } catch (err) {
+    if (err instanceof AiCategorizationError) {
+      counters.aiError = true;
+      return null;
+    }
+    throw err;
+  }
+  const { result, usage } = call;
   if (usage) {
     counters.aiApiCalls++;
     counters.totalInputTokens += usage.inputTokens;
