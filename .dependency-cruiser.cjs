@@ -66,6 +66,14 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/(app-food-db|food-db|food-contract|food-contracts|food-api)(/|$)' },
     },
+    {
+      name: 'no-dead-finance-pkgs',
+      severity: 'error',
+      comment:
+        'The `@pops/app-finance-db`, `@pops/finance-db`, `@pops/finance-contract`, and `@pops/finance-api` packages are retired — finance collapsed into `pillars/finance/`. Consumers go through `@pops/finance` (contract types + api-types + openapi) and the finance REST API for cross-pillar calls.',
+      from: { path: '.*' },
+      to: { path: '^@pops/(app-finance-db|finance-db|finance-contract|finance-api)(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {
