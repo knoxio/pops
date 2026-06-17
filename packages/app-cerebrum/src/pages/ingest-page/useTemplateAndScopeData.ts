@@ -2,10 +2,11 @@
  * Sub-hook: fetches templates and scopes, stabilises references
  * with useRef to avoid memo/callback dependency churn.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useRef } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { scopesList, tagsList, templatesList } from '../../cerebrum-api';
+import { unwrap } from '../../cerebrum-api-helpers';
 import { ENGRAM_TYPE_LABELS, ENGRAM_TYPES } from './types';
 
 import type { ScopeEntry, TagEntry, TemplateSummary } from './types';
@@ -16,17 +17,18 @@ const TYPE_OPTIONS = ENGRAM_TYPES.map((typeName) => ({
 }));
 
 export function useTemplateAndScopeData() {
-  const templatesQuery = usePillarQuery<{ templates: TemplateSummary[] }>(
-    'cerebrum',
-    ['templates', 'list'],
-    undefined
-  );
-  const scopesQuery = usePillarQuery<{ scopes: ScopeEntry[] }>(
-    'cerebrum',
-    ['scopes', 'list'],
-    undefined
-  );
-  const tagsQuery = usePillarQuery<{ tags: TagEntry[] }>('cerebrum', ['tags', 'list'], undefined);
+  const templatesQuery = useQuery({
+    queryKey: ['cerebrum', 'templates', 'list'],
+    queryFn: async () => unwrap(await templatesList()),
+  });
+  const scopesQuery = useQuery({
+    queryKey: ['cerebrum', 'scopes', 'list'],
+    queryFn: async () => unwrap(await scopesList({ query: {} })),
+  });
+  const tagsQuery = useQuery({
+    queryKey: ['cerebrum', 'tags', 'list'],
+    queryFn: async () => unwrap(await tagsList()),
+  });
 
   const templatesRef = useRef<TemplateSummary[]>([]);
   const rawTemplates = templatesQuery.data?.templates;

@@ -8,9 +8,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate:cerebrum-client": "openapi-ts && oxfmt --write src/cerebrum-api"
   },
   "dependencies": {
+    "@hey-api/client-fetch": "^0.13.1",
     "@pops/navigation": "workspace:*",
     "@pops/overlay-ego": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
@@ -27,6 +29,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.98.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

@@ -1,5 +1,9 @@
-import type { UsePillarMutationResult } from '@pops/pillar-sdk/react';
+import type { UseMutationResult } from '@tanstack/react-query';
 
+import type {
+  IngestQuickCaptureResponses,
+  IngestSubmitResponses,
+} from '../../cerebrum-api/types.gen';
 import type { BulkSegmentOutcome } from './types';
 
 export interface QuickCapturePayload {
@@ -8,12 +12,7 @@ export interface QuickCapturePayload {
   scopes?: string[];
 }
 
-export interface QuickCaptureResponse {
-  id: string;
-  path: string;
-  type: string;
-  scopes: string[];
-}
+export type QuickCaptureResponse = IngestQuickCaptureResponses[200];
 
 export interface SubmitPayload {
   body: string;
@@ -26,15 +25,14 @@ export interface SubmitPayload {
   customFields?: Record<string, unknown>;
 }
 
-export interface SubmitResponse {
-  engram: { id: string; filePath: string; type: string };
-}
+export type SubmitResponse = IngestSubmitResponses[200];
 
-export type QuickCaptureMutation = UsePillarMutationResult<
-  QuickCapturePayload,
-  QuickCaptureResponse
+export type QuickCaptureMutation = UseMutationResult<
+  QuickCaptureResponse,
+  Error,
+  QuickCapturePayload
 >;
-export type SubmitMutation = UsePillarMutationResult<SubmitPayload, SubmitResponse>;
+export type SubmitMutation = UseMutationResult<SubmitResponse, Error, SubmitPayload>;
 export type SetBulkResults = (
   next: BulkSegmentOutcome[] | ((prev: BulkSegmentOutcome[] | null) => BulkSegmentOutcome[] | null)
 ) => void;

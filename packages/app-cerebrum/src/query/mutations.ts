@@ -7,12 +7,13 @@
  * `useSaveDocumentMutation` is a thin wrapper around the existing tRPC
  * `cerebrum.emit.generate` mutation for "save as document".
  */
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { emitGenerate } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 import { extractMessage } from '../utils/errors';
 import { streamQuery } from './query-stream-client';
 
@@ -180,19 +181,17 @@ interface SaveResult {
 
 export function useSaveDocumentMutation(unknownErrorMessage: string) {
   const { t } = useTranslation('cerebrum');
-  return usePillarMutation<SaveDocumentRequest, SaveResult | undefined>(
-    'cerebrum',
-    ['emit', 'generate'],
-    {
-      onSuccess: (result) => {
-        const title = result?.document?.title;
-        if (title) {
-          toast.success(t('query.saveDocument.success', { title }));
-          return;
-        }
-        toast.success(result?.notice ?? t('query.saveDocument.empty'));
-      },
-      onError: (err) => toast.error(extractMessage(err, unknownErrorMessage)),
-    }
-  );
+  return useMutation({
+    mutationFn: async (request: SaveDocumentRequest): Promise<SaveResult | undefined> =>
+      unwrap(await emitGenerate({ body: request })),
+    onSuccess: (result) => {
+      const title = result?.document?.title;
+      if (title) {
+        toast.success(t('query.saveDocument.success', { title }));
+        return;
+      }
+      toast.success(result?.notice ?? t('query.saveDocument.empty'));
+    },
+    onError: (err: Error) => toast.error(extractMessage(err, unknownErrorMessage)),
+  });
 }

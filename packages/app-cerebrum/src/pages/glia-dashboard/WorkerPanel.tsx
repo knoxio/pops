@@ -5,13 +5,20 @@
  * consolidator, linker, auditor) with a single run-with-dry-run
  * checkbox each. Mirrors `cerebrum.glia.run{Pruner,Consolidator,Linker,Auditor}`.
  */
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button, Checkbox } from '@pops/ui';
 
+import {
+  workersRunAuditor,
+  workersRunConsolidator,
+  workersRunLinker,
+  workersRunPruner,
+} from '../../cerebrum-api';
+import { unwrap } from '../../cerebrum-api-helpers';
 import { extractMessage } from '../../utils/errors';
 import { TOUCH_TARGET_MIN_HEIGHT } from '../../utils/touchTarget';
 
@@ -30,35 +37,35 @@ function useSharedCallbacks() {
 }
 
 function usePrunerMutation(): WorkerMutationState {
-  return usePillarMutation<{ dryRun: boolean }, unknown>(
-    'cerebrum',
-    ['glia', 'runPruner'],
-    useSharedCallbacks()
-  );
+  return useMutation({
+    mutationFn: async (input: { dryRun: boolean }) =>
+      unwrap(await workersRunPruner({ body: input })),
+    ...useSharedCallbacks(),
+  });
 }
 
 function useConsolidatorMutation(): WorkerMutationState {
-  return usePillarMutation<{ dryRun: boolean }, unknown>(
-    'cerebrum',
-    ['glia', 'runConsolidator'],
-    useSharedCallbacks()
-  );
+  return useMutation({
+    mutationFn: async (input: { dryRun: boolean }) =>
+      unwrap(await workersRunConsolidator({ body: input })),
+    ...useSharedCallbacks(),
+  });
 }
 
 function useLinkerMutation(): WorkerMutationState {
-  return usePillarMutation<{ dryRun: boolean }, unknown>(
-    'cerebrum',
-    ['glia', 'runLinker'],
-    useSharedCallbacks()
-  );
+  return useMutation({
+    mutationFn: async (input: { dryRun: boolean }) =>
+      unwrap(await workersRunLinker({ body: input })),
+    ...useSharedCallbacks(),
+  });
 }
 
 function useAuditorMutation(): WorkerMutationState {
-  return usePillarMutation<{ dryRun: boolean }, unknown>(
-    'cerebrum',
-    ['glia', 'runAuditor'],
-    useSharedCallbacks()
-  );
+  return useMutation({
+    mutationFn: async (input: { dryRun: boolean }) =>
+      unwrap(await workersRunAuditor({ body: input })),
+    ...useSharedCallbacks(),
+  });
 }
 
 interface WorkerRowProps {

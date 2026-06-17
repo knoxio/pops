@@ -2,16 +2,39 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── tRPC mock ────────────────────────────────────────────────────────
+import { withQueryClient } from '../test-utils';
 
-const mockTemplatesQuery = vi.fn();
-const mockScopesQuery = vi.fn();
-const mockTagsQuery = vi.fn();
-const mockSubmitMutate = vi.fn();
-const mockQuickCaptureMutate = vi.fn();
+const CAPTURE_RESPONSE = {
+  id: 'eng_20260514_1700_capture',
+  path: 'capture/eng_20260514_1700_capture.md',
+  type: 'capture',
+  requeued: false,
+  scopes: ['personal.captures'],
+};
 
-const submitOnSuccess: { current: ((data: unknown) => void) | null } = { current: null };
-const captureOnSuccess: { current: ((data: unknown) => void) | null } = { current: null };
+const SUBMIT_RESPONSE = {
+  engram: {
+    id: 'eng_20260514_1700_advanced',
+    filePath: '/cerebrum/engrams/advanced.md',
+    type: 'note',
+  },
+  classification: null,
+  entities: [],
+  scopeInference: { scopes: [], source: 'fallback', confidence: 0 },
+};
+
+const sdk = vi.hoisted(() => ({
+  templatesList: vi.fn(),
+  scopesList: vi.fn(),
+  tagsList: vi.fn(),
+  ingestEnrichmentStatus: vi.fn(),
+  ingestRetryEnrichment: vi.fn(),
+  ingestSubmit: vi.fn(),
+  ingestQuickCapture: vi.fn(),
+  engramsUpdate: vi.fn(),
+}));
+
+vi.mock('../cerebrum-api', () => sdk);
 
 vi.mock('sonner', () => ({
   toast: Object.assign(vi.fn(), { error: vi.fn() }),
@@ -24,79 +47,6 @@ vi.mock('react-router', () => ({
     const React = require('react');
     return React.createElement('a', { href: to }, children);
   },
-}));
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'templates.list') return mockTemplatesQuery(input);
-    if (key === 'scopes.list') return mockScopesQuery(input);
-    if (key === 'tags.list') return mockTagsQuery(input);
-    if (key === 'ingest.enrichmentStatus') {
-      return { data: undefined, isLoading: false, error: null, refetch: vi.fn() };
-    }
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: { onSuccess?: (data: unknown) => void; onError?: unknown }
-  ) => {
-    const key = path.join('.');
-    if (key === 'engrams.update') {
-      return { mutate: vi.fn(), isPending: false, error: null };
-    }
-    if (key === 'ingest.retryEnrichment') {
-      return { mutate: vi.fn(), isPending: false, error: null };
-    }
-    if (key === 'ingest.submit') {
-      submitOnSuccess.current = opts?.onSuccess ?? null;
-      return {
-        mutate: (...args: unknown[]) => {
-          mockSubmitMutate(...args);
-          submitOnSuccess.current?.({
-            engram: {
-              id: 'eng_20260514_1700_advanced',
-              filePath: '/cerebrum/engrams/advanced.md',
-              type: 'note',
-            },
-            classification: null,
-            entities: [],
-            scopeInference: { scopes: [], source: 'fallback', confidence: 0 },
-          });
-        },
-        isPending: false,
-        error: null,
-      };
-    }
-    if (key === 'ingest.quickCapture') {
-      captureOnSuccess.current = opts?.onSuccess ?? null;
-      const response = {
-        id: 'eng_20260514_1700_capture',
-        path: 'capture/eng_20260514_1700_capture.md',
-        type: 'capture',
-        scopes: ['personal.captures'],
-      };
-      return {
-        mutate: (...args: unknown[]) => {
-          mockQuickCaptureMutate(...args);
-          captureOnSuccess.current?.(response);
-        },
-        mutateAsync: async (...args: unknown[]) => {
-          mockQuickCaptureMutate(...args);
-          captureOnSuccess.current?.(response);
-          return response;
-        },
-        isPending: false,
-        error: null,
-      };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: vi.fn().mockResolvedValue(undefined),
-    setData: vi.fn(),
-  }),
 }));
 
 // ── UI mock ──────────────────────────────────────────────────────────
@@ -216,15 +166,20 @@ const mockScopes = [
 ];
 
 function setupDefaultMocks() {
-  mockTemplatesQuery.mockReturnValue({ data: { templates: mockTemplates }, isLoading: false });
-  mockScopesQuery.mockReturnValue({ data: { scopes: mockScopes }, isLoading: false });
-  mockTagsQuery.mockReturnValue({ data: { tags: [] }, isLoading: false });
+  sdk.templatesList.mockResolvedValue({ data: { templates: mockTemplates } });
+  sdk.scopesList.mockResolvedValue({ data: { scopes: mockScopes } });
+  sdk.tagsList.mockResolvedValue({ data: { tags: [] } });
+  sdk.ingestEnrichmentStatus.mockReturnValue(new Promise(() => undefined));
+  sdk.ingestSubmit.mockResolvedValue({ data: SUBMIT_RESPONSE });
+  sdk.ingestQuickCapture.mockResolvedValue({ data: CAPTURE_RESPONSE });
+}
+
+function renderPage() {
+  return render(withQueryClient(<IngestPage />));
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  submitOnSuccess.current = null;
-  captureOnSuccess.current = null;
   setupDefaultMocks();
 });
 
@@ -232,36 +187,36 @@ beforeEach(() => {
 
 describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
   it('renders page header with capture-first description', () => {
-    render(<IngestPage />);
+    renderPage();
     expect(screen.getByRole('heading', { name: 'Capture' })).toBeInTheDocument();
   });
 
   it('shows body, title, and scope inputs as primary affordances', () => {
-    render(<IngestPage />);
+    renderPage();
     expect(screen.getByLabelText('Body')).toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toBeInTheDocument();
     expect(screen.getByLabelText('Scope input')).toBeInTheDocument();
   });
 
-  it('hides type selector behind the Advanced disclosure', () => {
-    render(<IngestPage />);
+  it('hides type selector behind the Advanced disclosure', async () => {
+    renderPage();
     // The Advanced summary is visible as a clickable element
     expect(screen.getByText('Advanced')).toBeInTheDocument();
     // The type selector exists in the DOM (inside <details>) but won't be
     // 'visible' to the user until expanded — assert it's there as a sanity
     // check on wiring rather than asserting on visibility.
-    expect(screen.getByRole('combobox', { name: /select type/i })).toBeInTheDocument();
+    expect(await screen.findByRole('combobox', { name: /select type/i })).toBeInTheDocument();
   });
 
   it('disables the capture button when body is empty', () => {
-    render(<IngestPage />);
+    renderPage();
     const button = screen.getByRole('button', { name: /capture/i });
     expect(button).toBeDisabled();
   });
 
   it('calls quickCapture (not submit) when the user only fills body and scope', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
 
     const body = screen.getByLabelText('Body');
     await user.type(body, 'A quick thought');
@@ -272,31 +227,31 @@ describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
     const button = screen.getByRole('button', { name: /capture/i });
     await user.click(button);
 
-    expect(mockQuickCaptureMutate).toHaveBeenCalledWith({
-      text: 'A quick thought',
-      source: 'manual',
-      scopes: ['work.karbon'],
-    });
-    expect(mockSubmitMutate).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(sdk.ingestQuickCapture).toHaveBeenCalledWith({
+        body: { text: 'A quick thought', source: 'manual', scopes: ['work.karbon'] },
+      })
+    );
+    expect(sdk.ingestSubmit).not.toHaveBeenCalled();
   });
 
   it('omits scopes from quickCapture when none are provided', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
 
     await user.type(screen.getByLabelText('Body'), 'Bare thought');
     await user.click(screen.getByRole('button', { name: /capture/i }));
 
-    expect(mockQuickCaptureMutate).toHaveBeenCalledWith({
-      text: 'Bare thought',
-      source: 'manual',
-      scopes: undefined,
-    });
+    await waitFor(() =>
+      expect(sdk.ingestQuickCapture).toHaveBeenCalledWith({
+        body: { text: 'Bare thought', source: 'manual', scopes: undefined },
+      })
+    );
   });
 
   it('routes through submit when an Advanced field is touched', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
 
     await user.type(screen.getByLabelText('Body'), 'A decision I made');
 
@@ -307,30 +262,32 @@ describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
     const submit = screen.getByRole('button', { name: /submit engram/i });
     await user.click(submit);
 
-    expect(mockSubmitMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        body: 'A decision I made',
-        type: 'decision',
-        source: 'manual',
+    await waitFor(() =>
+      expect(sdk.ingestSubmit).toHaveBeenCalledWith({
+        body: expect.objectContaining({
+          body: 'A decision I made',
+          type: 'decision',
+          source: 'manual',
+        }),
       })
     );
-    expect(mockQuickCaptureMutate).not.toHaveBeenCalled();
+    expect(sdk.ingestQuickCapture).not.toHaveBeenCalled();
   });
 
   it('Cmd+Enter from the body editor submits', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
 
     const body = screen.getByLabelText('Body');
     await user.type(body, 'Quick note');
     await user.type(body, '{Meta>}{Enter}{/Meta}');
 
-    expect(mockQuickCaptureMutate).toHaveBeenCalled();
+    await waitFor(() => expect(sdk.ingestQuickCapture).toHaveBeenCalled());
   });
 
   it('Esc from a non-empty body clears it', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
 
     const body = screen.getByLabelText('Body') as HTMLTextAreaElement;
     await user.type(body, 'Drafted then discarded');
@@ -341,7 +298,7 @@ describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
 
   it('Esc shows an Undo toast that restores the cleared body', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
 
     const body = screen.getByLabelText('Body') as HTMLTextAreaElement;
     await user.type(body, 'Worth saving after all');
@@ -361,19 +318,19 @@ describe('IngestPage — capture-first surface (PRD-081 US-01)', () => {
 
   it('shows the result view after a successful capture', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
 
     await user.type(screen.getByLabelText('Body'), 'Captured');
     await user.click(screen.getByRole('button', { name: /capture/i }));
 
-    expect(screen.getByText('eng_20260514_1700_capture')).toBeInTheDocument();
+    expect(await screen.findByText('eng_20260514_1700_capture')).toBeInTheDocument();
   });
 });
 
 describe('IngestPage — bulk paste (PRD-081 US-08)', () => {
   it('flips the submit button to a count when the body contains separators', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
     // userEvent.type doesn't insert raw newlines easily; use fireEvent shape
     // by typing one segment, manually inserting separator + extra segments via paste.
     const body = screen.getByLabelText('Body') as HTMLTextAreaElement;
@@ -384,27 +341,23 @@ describe('IngestPage — bulk paste (PRD-081 US-08)', () => {
 
   it('submits one quickCapture per segment when bulk is detected', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
     const body = screen.getByLabelText('Body');
     await user.click(body);
     await user.paste('one\n---\ntwo');
     await user.click(screen.getByRole('button', { name: /capture 2 entries/i }));
-    expect(mockQuickCaptureMutate).toHaveBeenCalledTimes(2);
-    expect(mockQuickCaptureMutate).toHaveBeenNthCalledWith(1, {
-      text: 'one',
-      source: 'manual',
-      scopes: undefined,
+    await waitFor(() => expect(sdk.ingestQuickCapture).toHaveBeenCalledTimes(2));
+    expect(sdk.ingestQuickCapture).toHaveBeenNthCalledWith(1, {
+      body: { text: 'one', source: 'manual', scopes: undefined },
     });
-    expect(mockQuickCaptureMutate).toHaveBeenNthCalledWith(2, {
-      text: 'two',
-      source: 'manual',
-      scopes: undefined,
+    expect(sdk.ingestQuickCapture).toHaveBeenNthCalledWith(2, {
+      body: { text: 'two', source: 'manual', scopes: undefined },
     });
   });
 
   it('renders a per-segment result list after a bulk capture', async () => {
     const user = userEvent.setup();
-    render(<IngestPage />);
+    renderPage();
     const body = screen.getByLabelText('Body');
     await user.click(body);
     await user.paste('alpha\n---\nbeta');

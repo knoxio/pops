@@ -7,9 +7,11 @@
  * each side, and links back to the two source engrams. Minimal styling —
  * matches the neighbouring NudgesPage list.
  */
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { nudgesContradictions } from '../cerebrum-api';
+import { unwrap } from '../cerebrum-api-helpers';
 
 interface ContradictionRow {
   id: string;
@@ -63,17 +65,12 @@ function ContradictionCard({ row }: { row: ContradictionRow }) {
   );
 }
 
-interface ContradictionsResult {
-  contradictions: ContradictionRow[];
-  total: number;
-}
-
 export function ContradictionsPanel() {
-  const { data, isLoading, isError } = usePillarQuery<ContradictionsResult>(
-    'cerebrum',
-    ['nudges', 'contradictions'],
-    { limit: 50 }
-  );
+  const input = { limit: 50 };
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['cerebrum', 'nudges', 'contradictions', input],
+    queryFn: async () => unwrap(await nudgesContradictions({ body: input })),
+  });
 
   if (isLoading) {
     return (

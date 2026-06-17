@@ -74,7 +74,7 @@ export default defineConfig({
       // existing endpoints keep answering. Once per-pillar APIs run as
       // separate processes the rewrite goes away and each prefix targets
       // its own upstream.
-      '^/trpc-(core|media|cerebrum)': {
+      '^/trpc-(core|media)': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (urlPath: string) => urlPath.replace(/^\/trpc-[^/]+/, '/trpc'),
@@ -103,6 +103,22 @@ export default defineConfig({
         target: 'http://localhost:3005',
         changeOrigin: true,
         rewrite: (urlPath: string) => urlPath.replace(/^\/food-api/, ''),
+      },
+      '/cerebrum-api': {
+        target: 'http://localhost:3007',
+        changeOrigin: true,
+        rewrite: (urlPath: string) => urlPath.replace(/^\/cerebrum-api/, ''),
+      },
+      // SSE streaming endpoints (ego chat + cerebrum query) live on the
+      // cerebrum pillar. These MUST precede the bare `/api` rule below,
+      // which otherwise sends every `/api/*` request to core-api (3000).
+      '/api/ego': {
+        target: 'http://localhost:3007',
+        changeOrigin: true,
+      },
+      '/api/cerebrum': {
+        target: 'http://localhost:3007',
+        changeOrigin: true,
       },
       '/media/images': {
         target: 'http://localhost:3000',
