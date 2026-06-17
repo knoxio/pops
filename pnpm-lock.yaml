@@ -1072,15 +1072,9 @@ importers:
       '@lezer/lr':
         specifier: ^1.4.10
         version: 1.4.10
-      '@pops/api':
-        specifier: workspace:*
-        version: link:../../apps/pops-api
       '@pops/food':
         specifier: workspace:*
         version: link:../../pillars/food
-      '@pops/pillar-sdk':
-        specifier: workspace:*
-        version: link:../pillar-sdk
       '@pops/types':
         specifier: workspace:*
         version: link:../types

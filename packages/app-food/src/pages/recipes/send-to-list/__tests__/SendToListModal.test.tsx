@@ -1,9 +1,9 @@
 /**
  * PRD-142 — RTL coverage for the send-to-list modal.
  *
- * Mocks the food Hey API SDK (prepare + send) and `@pops/pillar-sdk` (the
- * cross-pillar `lists.list.list` read, still served by the lists pillar) so
- * all three calls are controllable per test. Covers the modal contract: the
+ * Mocks the food Hey API SDK (prepare + send) and the lists Hey API SDK
+ * (the cross-pillar `GET /lists` read) so all three calls are controllable
+ * per test. Covers the modal contract: the
  * preview, picker (existing vs new), submit-disabled rules, success +
  * error paths, and the close-mid-flight non-cancellation behaviour.
  */
@@ -55,12 +55,8 @@ vi.mock('../../../../food-api/index.js', () => ({
   sendToListSend: sendToListSendMock,
 }));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (pillarId: string, path: readonly string[], input: unknown, opts: unknown) => {
-    const key = `${pillarId}.${path.join('.')}`;
-    if (key === 'lists.list.list') return mockListsList(input, opts);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
+vi.mock('../../../../lists-api/index.js', () => ({
+  listListAggregate: mockListsList,
 }));
 
 import { SendToListModal } from '../SendToListModal.js';
@@ -101,7 +97,7 @@ function preparedWith(payload = preparePayload): void {
 function withLists(
   items: { id: number; name: string; itemCount: number; lastUpdatedAt: string }[]
 ) {
-  return { isLoading: false, data: { items }, error: null, refetch: vi.fn() };
+  return { data: { items } };
 }
 
 beforeEach(() => {
@@ -117,12 +113,7 @@ afterEach(() => {
 describe('SendToListModal — render + state', () => {
   it('shows the loading copy until both queries resolve', () => {
     sendToListPrepareMock.mockReturnValue(new Promise(() => {}));
-    mockListsList.mockReturnValue({
-      isLoading: true,
-      data: undefined,
-      error: null,
-      refetch: vi.fn(),
-    });
+    mockListsList.mockReturnValue(new Promise(() => {}));
     render(
       <Wrapper>
         <SendToListModal open versionId={11} onOpenChange={vi.fn()} onSuccess={vi.fn()} />
