@@ -19,6 +19,7 @@ import type { ReflexService } from './modules/reflex/reflex-service.js';
 import type { EmbeddingClient } from './modules/retrieval/embedding-client.js';
 import type { PeerClients } from './modules/retrieval/peer-clients.js';
 import type { TemplateRegistry } from './modules/templates/registry.js';
+import type { EmbeddingsQueueAccessor } from './modules/thalamus/queue.js';
 import type { ContradictionDetector } from './modules/workers/auditor.js';
 
 export interface CerebrumApiDeps {
@@ -64,6 +65,14 @@ export interface CerebrumApiDeps {
    * `() => null` accessor to exercise the no-Redis path.
    */
   curationQueue?: CurationQueueAccessor;
+  /**
+   * Accessor for the `pops-embeddings` BullMQ queue used by the thalamus index
+   * procs (`reindex --force` / `reindexSources`). Optional — defaults to the
+   * lazy `getEmbeddingsQueue()` singleton (returns `null` without Redis). Tests
+   * pass a `() => null` accessor to exercise the no-Redis path
+   * (`pendingCount: null`, `enqueued: 0`).
+   */
+  embeddingsQueue?: EmbeddingsQueueAccessor;
   /** Semver of the build, surfaced on the health response. */
   version: string;
   /**

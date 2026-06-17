@@ -16,11 +16,13 @@ import { resolveGliaConfigPath } from '../modules/glia/instance.js';
 import { AnthropicIngestLlm } from '../modules/ingest/llm.js';
 import { getCurationQueue } from '../modules/ingest/queue.js';
 import { AnthropicQueryLlm, AnthropicQueryStreamLlm } from '../modules/query/llm.js';
+import { getEmbeddingsQueue } from '../modules/thalamus/queue.js';
 import { AnthropicContradictionDetector } from '../modules/workers/llm.js';
 import { makeEgoHandlers } from './ego-handlers.js';
 import { makeEmitHandlers } from './emit-handlers.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
 import { makeGliaHandlers } from './glia-handlers.js';
+import { makeIndexHandlers } from './index-handlers.js';
 import { makeIngestHandlers } from './ingest-handlers.js';
 import { makeNudgesHandlers } from './nudges-handlers.js';
 import { makePlexusHandlers } from './plexus-handlers.js';
@@ -65,6 +67,11 @@ export function makeCerebrumRestHandlers(
       ...engramDeps,
       llm: deps.ingestLlm ?? new AnthropicIngestLlm(),
       curationQueue: deps.curationQueue ?? getCurationQueue,
+    }),
+    index: makeIndexHandlers({
+      ...engramDeps,
+      peers: deps.peerClients,
+      queueAccessor: deps.embeddingsQueue ?? getEmbeddingsQueue,
     }),
     emit: makeEmitHandlers({ ...base, llm: deps.emitLlm ?? new AnthropicGenerationLlm() }),
     query: makeQueryHandlers({
