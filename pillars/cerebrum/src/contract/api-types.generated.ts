@@ -3,6 +3,109 @@
  * Do not edit by hand — regenerate via `pnpm -F @pops/cerebrum generate:api-types`.
  */
 export interface paths {
+  '/plexus/adapters': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List every registered plexus adapter. */
+    get: operations['plexus.adapters.list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plexus/adapters/{adapterId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single plexus adapter by id. */
+    get: operations['plexus.adapters.get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plexus/adapters/{adapterId}/filters': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the ingestion filters for an adapter. */
+    get: operations['plexus.filters.list'];
+    put?: never;
+    /** Atomically replace the ingestion filters for an adapter. */
+    post: operations['plexus.filters.set'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plexus/adapters/{adapterId}/health-check': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run an on-demand health check against an adapter. */
+    post: operations['plexus.adapters.healthCheck'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plexus/adapters/{adapterId}/sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger a manual ingestion cycle for an adapter. */
+    post: operations['plexus.adapters.sync'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plexus/adapters/{adapterId}/unregister': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Shut down and remove an adapter. */
+    post: operations['plexus.adapters.unregister'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/templates': {
     parameters: {
       query?: never;
@@ -49,6 +152,287 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'plexus.adapters.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            adapters: {
+              config: {
+                [key: string]: unknown;
+              } | null;
+              createdAt: string;
+              emittedCount: number;
+              id: string;
+              ingestedCount: number;
+              lastError: string | null;
+              lastHealth: string | null;
+              name: string;
+              /** @enum {string} */
+              status: 'registered' | 'initializing' | 'healthy' | 'degraded' | 'error' | 'shutdown';
+              updatedAt: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'plexus.adapters.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        adapterId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            adapter: {
+              config: {
+                [key: string]: unknown;
+              } | null;
+              createdAt: string;
+              emittedCount: number;
+              id: string;
+              ingestedCount: number;
+              lastError: string | null;
+              lastHealth: string | null;
+              name: string;
+              /** @enum {string} */
+              status: 'registered' | 'initializing' | 'healthy' | 'degraded' | 'error' | 'shutdown';
+              updatedAt: string;
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'plexus.filters.list': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        adapterId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            filters: {
+              adapterId: string;
+              enabled: boolean;
+              field: string;
+              /** @enum {string} */
+              filterType: 'include' | 'exclude';
+              id: string;
+              pattern: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  'plexus.filters.set': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        adapterId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          filters: {
+            enabled?: boolean;
+            field: string;
+            /** @enum {string} */
+            filterType: 'include' | 'exclude';
+            pattern: string;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            filters: {
+              adapterId: string;
+              enabled: boolean;
+              field: string;
+              /** @enum {string} */
+              filterType: 'include' | 'exclude';
+              id: string;
+              pattern: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'plexus.adapters.healthCheck': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        adapterId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            error?: string;
+            lastCheck: string;
+            /** @enum {string} */
+            status: 'registered' | 'initializing' | 'healthy' | 'degraded' | 'error' | 'shutdown';
+          };
+        };
+      };
+    };
+  };
+  'plexus.adapters.sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        adapterId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            filtered: number;
+            ingested: number;
+          };
+        };
+      };
+    };
+  };
+  'plexus.adapters.unregister': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        adapterId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            success: boolean;
+          };
+        };
+      };
+    };
+  };
   'templates.list': {
     parameters: {
       query?: never;
