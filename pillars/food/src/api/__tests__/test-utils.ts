@@ -254,9 +254,32 @@ interface CreateWeightBody {
   notes?: string;
 }
 
+interface LogInferenceBody {
+  operation: string;
+  contextId: string;
+  provider: 'claude';
+  model: string;
+  promptVersion: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  latencyMs: number;
+  status: 'success' | 'error';
+  cached: boolean;
+  errorMessage?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
+    ai: {
+      logInference: (body: LogInferenceBody, token?: string) => {
+        const req = r.post('/ai/log-inference');
+        if (token !== undefined) req.set('x-pops-internal-token', token);
+        return send<{ ok: true }>(req.send(body));
+      },
+    },
     conversions: {
       listUnits: (query: { search?: string; seededOnly?: boolean } = {}) =>
         send<{ items: UnitConversion[] }>(r.get('/conversions/units').query(query)),

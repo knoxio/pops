@@ -3,6 +3,23 @@
  * Do not edit by hand — regenerate via `pnpm -F @pops/food generate:api-types`.
  */
 export interface paths {
+  '/ai/log-inference': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Record a food AI inference (internal; worker → ai_inference_log) */
+    post: operations['ai.logInference'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/aliases': {
     parameters: {
       query?: never;
@@ -1207,6 +1224,58 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'ai.logInference': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          cached: boolean;
+          contextId: string;
+          costUsd: number;
+          errorMessage?: string;
+          inputTokens: number;
+          latencyMs: number;
+          metadata?: {
+            [key: string]: unknown;
+          };
+          model: string;
+          /** @enum {string} */
+          operation:
+            | 'recipe-extract-web-llm'
+            | 'recipe-extract-ig-vision'
+            | 'recipe-extract-ig-text-fallback'
+            | 'recipe-extract-screenshot'
+            | 'recipe-extract-text';
+          outputTokens: number;
+          promptVersion: string;
+          /** @enum {string} */
+          provider: 'claude';
+          /** @enum {string} */
+          status: 'success' | 'error';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            ok: true;
+          };
+        };
+      };
+    };
+  };
   'aliases.list': {
     parameters: {
       query?: {

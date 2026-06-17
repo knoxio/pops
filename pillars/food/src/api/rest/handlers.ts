@@ -14,6 +14,7 @@ import {
   type ListsClient,
   resolveListsBaseUrl,
 } from '../modules/recipes/send-to-list/lists-client.js';
+import { makeAiHandlers } from './ai-handlers.js';
 import { makeAliasesHandlers } from './aliases-handlers.js';
 import { makeBatchesHandlers } from './batches-handlers.js';
 import { makeConversionsHandlers } from './conversions-handlers.js';
@@ -45,6 +46,7 @@ export function makeFoodRestHandlers(
   const resolveListsClient = (): ListsClient =>
     deps.listsClient ?? (realClient ??= createListsHttpClient(resolveListsBaseUrl()));
   return server.router(foodContract, {
+    ai: makeAiHandlers(db),
     aliases: makeAliasesHandlers(db),
     batches: makeBatchesHandlers(db),
     conversions: makeConversionsHandlers(db),
