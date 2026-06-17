@@ -253,3 +253,5 @@ export function deleteMovie(db: MediaDb, id: number): void {
   const result = db.delete(movies).where(eq(movies.id, id)).run();
   if (result.changes === 0) throw new MovieNotFoundError(id);
 }
+
+export { setRotationStatus, type RotationStatus } from './movies-rotation.js';

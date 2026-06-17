@@ -37,6 +37,7 @@ export type {
   MovieFilters,
   MovieListResult,
   MovieRow,
+  RotationStatus,
   UpdateMovieInput,
 } from './services/movies.js';
 

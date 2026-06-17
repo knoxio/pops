@@ -188,5 +188,103 @@ export function makeClient(app: Express) {
         ),
       cleanup: () => send<{ ok: true }>(r.post('/shelf-impressions/cleanup').send({})),
     },
+    arr: {
+      config: () =>
+        send<{ data: { radarrConfigured: boolean; sonarrConfigured: boolean } }>(
+          r.get('/arr/config')
+        ),
+      settings: () =>
+        send<{
+          data: {
+            radarrUrl: string;
+            radarrConfigured: boolean;
+            sonarrUrl: string;
+            sonarrConfigured: boolean;
+          };
+        }>(r.get('/arr/settings')),
+      queue: () => send<{ data: Record<string, unknown>[] }>(r.get('/arr/queue')),
+      radarrQualityProfiles: () =>
+        send<{ data: { id: number; name: string }[] }>(r.get('/arr/radarr/quality-profiles')),
+      radarrRootFolders: () =>
+        send<{ data: { id: number; path: string; freeSpace: number }[] }>(
+          r.get('/arr/radarr/root-folders')
+        ),
+      checkMovie: (tmdbId: number) =>
+        send<{ data: { exists: boolean; radarrId?: number; monitored?: boolean } }>(
+          r.get(`/arr/radarr/movies/${tmdbId}/check`)
+        ),
+      movieStatus: (tmdbId: number) =>
+        send<{ data: { status: string; label: string; progress?: number } }>(
+          r.get(`/arr/radarr/movies/${tmdbId}/status`)
+        ),
+      addMovie: (body: Record<string, unknown>) =>
+        send<{ data: Record<string, unknown> }>(r.post('/arr/radarr/movies').send(body)),
+      updateRadarrMonitoring: (radarrId: number, monitored: boolean) =>
+        send<{ data: Record<string, unknown> }>(
+          r.patch(`/arr/radarr/movies/${radarrId}/monitoring`).send({ monitored })
+        ),
+      triggerRadarrSearch: (radarrId: number) =>
+        send<{ data: Record<string, unknown> }>(
+          r.post(`/arr/radarr/movies/${radarrId}/search`).send({})
+        ),
+      testRadarr: (body: { url: string; apiKey: string }) =>
+        send<{ data: Record<string, unknown>; message?: string }>(
+          r.post('/arr/radarr/test').send(body)
+        ),
+      testRadarrSaved: () =>
+        send<{ data: Record<string, unknown>; message?: string }>(
+          r.post('/arr/radarr/test-saved').send({})
+        ),
+      downloadAndProtect: (body: { tmdbId: number; title: string; year: number }) =>
+        send<{ data: { alreadyInRadarr: boolean } }>(
+          r.post('/arr/radarr/download-and-protect').send(body)
+        ),
+      sonarrQualityProfiles: () =>
+        send<{ data: { id: number; name: string }[] }>(r.get('/arr/sonarr/quality-profiles')),
+      sonarrLanguageProfiles: () =>
+        send<{ data: { id: number; name: string }[] }>(r.get('/arr/sonarr/language-profiles')),
+      calendar: (query: { start: string; end: string }) =>
+        send<{ data: Record<string, unknown>[] }>(r.get('/arr/sonarr/calendar').query(query)),
+      checkSeries: (tvdbId: number) =>
+        send<{ data: { exists: boolean; sonarrId?: number } }>(
+          r.get(`/arr/sonarr/series/${tvdbId}/check`)
+        ),
+      showStatus: (tvdbId: number) =>
+        send<{ data: { status: string; label: string } }>(
+          r.get(`/arr/sonarr/series/${tvdbId}/status`)
+        ),
+      seriesEpisodes: (sonarrId: number, query: { seasonNumber?: number } = {}) =>
+        send<{ data: Record<string, unknown>[] }>(
+          r.get(`/arr/sonarr/series/${sonarrId}/episodes`).query(query)
+        ),
+      addSeries: (body: Record<string, unknown>) =>
+        send<{ data: Record<string, unknown> }>(r.post('/arr/sonarr/series').send(body)),
+      updateSeriesMonitoring: (sonarrId: number, monitored: boolean) =>
+        send<{ data: Record<string, unknown> }>(
+          r.patch(`/arr/sonarr/series/${sonarrId}/monitoring`).send({ monitored })
+        ),
+      updateSeasonMonitoring: (sonarrId: number, seasonNumber: number, monitored: boolean) =>
+        send<{ message: string }>(
+          r.patch(`/arr/sonarr/series/${sonarrId}/seasons/${seasonNumber}/monitoring`).send({
+            monitored,
+          })
+        ),
+      updateEpisodeMonitoring: (episodeIds: number[], monitored: boolean) =>
+        send<{ message: string }>(
+          r.patch('/arr/sonarr/episodes/monitoring').send({ episodeIds, monitored })
+        ),
+      triggerSeriesSearch: (sonarrId: number, seasonNumber?: number) =>
+        send<{ data: Record<string, unknown> }>(
+          r.post(`/arr/sonarr/series/${sonarrId}/search`).send({ seasonNumber })
+        ),
+      testSonarr: (body: { url: string; apiKey: string }) =>
+        send<{ data: Record<string, unknown>; message?: string }>(
+          r.post('/arr/sonarr/test').send(body)
+        ),
+      testSonarrSaved: () =>
+        send<{ data: Record<string, unknown>; message?: string }>(
+          r.post('/arr/sonarr/test-saved').send({})
+        ),
+    },
   };
 }
