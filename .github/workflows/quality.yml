@@ -78,4 +78,9 @@ jobs:
       # monolith `modules/cerebrum` (still hosting the worker runtime, retired
       # in Phase E-2) and the `cerebrum-db`/`cerebrum-contract` packages are
       # excluded too.
-      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts,apps/pops-api/src/modules/food/**,apps/pops-api/src/routes/food/**,apps/pops-api/src/modules/cerebrum/**,packages/cerebrum-db/**,packages/cerebrum-contract/**" --reporters "console" --exitCode 0 .
+      #
+      # The media migration tombstones follow the same rule: the pillar
+      # (`pillars/media`) is the single source of truth; the soon-deleted
+      # monolith `modules/media` and `routes/media` copies are excluded so the
+      # in-flight slices aren't double-penalised for code already lifted.
+      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts,apps/pops-api/src/modules/food/**,apps/pops-api/src/routes/food/**,apps/pops-api/src/modules/cerebrum/**,packages/cerebrum-db/**,packages/cerebrum-contract/**,apps/pops-api/src/modules/media/**,apps/pops-api/src/routes/media/**" --reporters "console" --exitCode 0 .
