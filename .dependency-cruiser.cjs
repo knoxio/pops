@@ -74,6 +74,14 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/(app-finance-db|finance-db|finance-contract|finance-api)(/|$)' },
     },
+    {
+      name: 'no-dead-cerebrum-pkgs',
+      severity: 'error',
+      comment:
+        'Cerebrum has collapsed into `pillars/cerebrum/` — `@pops/cerebrum-db`, `@pops/cerebrum-contract`, and `@pops/cerebrum-api` are the retirement tombstone (deleted once the pops-api cerebrum module + pops-cerebrum-api are gone). No new code may import them; consumers go through `@pops/cerebrum` (contract types + api-types + openapi) and the cerebrum REST API for cross-pillar calls. Existing pops-api cerebrum-module imports are grandfathered in the known-violations baseline until they are removed.',
+      from: { path: '.*' },
+      to: { path: '^@pops/(cerebrum-db|cerebrum-contract|cerebrum-api)(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {
