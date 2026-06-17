@@ -25,6 +25,16 @@ import type {
   GliaUserDecisionWire,
 } from '../../contract/rest-glia-schemas.js';
 import type {
+  ClassificationResultWire,
+  IngestEnrichmentStatusResponseWire,
+  IngestExtractEntitiesResponseWire,
+  IngestPreviewResponseWire,
+  IngestQuickCaptureResponseWire,
+  IngestRetryEnrichmentResponseWire,
+  IngestSubmitResponseWire,
+  ScopeInferenceResultWire,
+} from '../../contract/rest-ingest-schemas.js';
+import type {
   NudgeContradictionWire,
   NudgePriorityWire,
   NudgeStatusWire,
@@ -56,8 +66,23 @@ import type {
   TemplateWire,
 } from '../../contract/rest-schemas.js';
 import type { CerebrumDb } from '../../db/index.js';
+import type { IngestLlm, IngestLlmRequest } from '../modules/ingest/llm.js';
 import type { ReflexService } from '../modules/reflex/reflex-service.js';
 import type { PeerClients } from '../modules/retrieval/peer-clients.js';
+
+/**
+ * Offline {@link IngestLlm} stub. Tests pass a per-operation responder map
+ * keyed by the {@link IngestLlmRequest.operation} label; an unmapped operation
+ * resolves to `null` (the stage falls back, never reaching a real API).
+ */
+export function makeFakeIngestLlm(
+  responders: Partial<Record<string, (req: IngestLlmRequest) => string | null>> = {}
+): IngestLlm {
+  return {
+    modelFor: () => 'fake-haiku',
+    complete: (req) => Promise.resolve(responders[req.operation]?.(req) ?? null),
+  };
+}
 
 /** Bundled engram-template fixtures shipped with the pillar. */
 export const TEST_TEMPLATES_DIR = resolve(
@@ -181,6 +206,32 @@ export interface ListContradictionsFilters {
   status?: NudgeStatusWire | null;
   limit?: number;
   offset?: number;
+}
+
+export interface IngestSubmitInput {
+  body: string;
+  title?: string;
+  type?: string;
+  scopes?: string[];
+  tags?: string[];
+  template?: string;
+  source?: string;
+  customFields?: Record<string, unknown>;
+}
+
+export interface IngestInferScopesInput {
+  body: string;
+  type: string;
+  tags?: string[];
+  source?: string;
+  explicitScopes?: string[];
+  knownScopes?: string[];
+}
+
+export interface IngestQuickCaptureInput {
+  text: string;
+  source?: string;
+  scopes?: string[];
 }
 
 export interface RetrievalSearchBody {
@@ -331,6 +382,34 @@ export function makeClient(app: Express) {
       digest: (input: GliaDigestInput = {}) =>
         send<{ report: GliaDigestReportWire; delivery: GliaDigestDeliveryWire }>(
           r.post('/glia/digest').send(input)
+        ),
+    },
+    ingest: {
+      submit: (body: IngestSubmitInput) =>
+        send<IngestSubmitResponseWire>(r.post('/ingest/submit').send(body)),
+      preview: (body: IngestSubmitInput) =>
+        send<IngestPreviewResponseWire>(r.post('/ingest/preview').send(body)),
+      classify: (body: string, title?: string) =>
+        send<ClassificationResultWire>(
+          r.post('/ingest/classify').send({ body, ...(title ? { title } : {}) })
+        ),
+      extractEntities: (body: string, existingTags?: string[]) =>
+        send<IngestExtractEntitiesResponseWire>(
+          r
+            .post('/ingest/extract-entities')
+            .send({ body, ...(existingTags ? { existingTags } : {}) })
+        ),
+      inferScopes: (input: IngestInferScopesInput) =>
+        send<ScopeInferenceResultWire>(r.post('/ingest/infer-scopes').send(input)),
+      quickCapture: (input: IngestQuickCaptureInput) =>
+        send<IngestQuickCaptureResponseWire>(r.post('/ingest/quick-capture').send(input)),
+      enrichmentStatus: (engramId: string) =>
+        send<IngestEnrichmentStatusResponseWire>(
+          r.post('/ingest/enrichment-status').send({ engramId })
+        ),
+      retryEnrichment: (engramId: string) =>
+        send<IngestRetryEnrichmentResponseWire>(
+          r.post('/ingest/retry-enrichment').send({ engramId })
         ),
     },
     retrieval: {

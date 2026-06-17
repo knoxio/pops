@@ -2016,6 +2016,9 @@ importers:
 
   pillars/cerebrum:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.104.1
+        version: 0.104.1(zod@4.4.3)
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
@@ -2037,6 +2040,9 @@ importers:
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
+      bullmq:
+        specifier: ^5.78.0
+        version: 5.78.0
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
@@ -2055,6 +2061,9 @@ importers:
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
+      ioredis:
+        specifier: 5.11.0
+        version: 5.11.0
       js-yaml:
         specifier: ^4.2.0
         version: 4.2.0

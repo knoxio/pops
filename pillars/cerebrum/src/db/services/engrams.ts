@@ -20,7 +20,7 @@
  * resolves the singleton or transaction handle. Mirrors the `nudge-log.ts`
  * db-arg pattern in this package.
  */
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { engramIndex, engramLinks, engramScopes, engramTags } from '../schema.js';
 import { bucket, dedupe, indexRowFromDrizzle, parseCustomFields } from './engrams-helpers.js';
@@ -39,6 +39,20 @@ export function findIndexRow(db: CerebrumDb, id: string): IndexRow | null {
 
 export function existsEngram(db: CerebrumDb, id: string): boolean {
   return findIndexRow(db, id) !== null;
+}
+
+/**
+ * Find the id of an active engram whose body hash matches `bodyHash`, if any.
+ * Powers ingest deduplication — a re-submission of identical normalised
+ * content resolves to the existing engram instead of writing a duplicate.
+ */
+export function findActiveIdByBodyHash(db: CerebrumDb, bodyHash: string): string | null {
+  const [row] = db
+    .select({ id: engramIndex.id })
+    .from(engramIndex)
+    .where(and(eq(engramIndex.bodyHash, bodyHash), eq(engramIndex.status, 'active')))
+    .all();
+  return row?.id ?? null;
 }
 
 /**

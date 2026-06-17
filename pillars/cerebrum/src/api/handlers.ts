@@ -10,6 +10,8 @@ import { getPillarRegistry } from './pillars/registry.js';
 import type { PillarRegistryEntry } from '@pops/types';
 
 import type { OpenedCerebrumDb } from '../db/index.js';
+import type { IngestLlm } from './modules/ingest/llm.js';
+import type { CurationQueueAccessor } from './modules/ingest/pipeline.js';
 import type { ReflexService } from './modules/reflex/reflex-service.js';
 import type { EmbeddingClient } from './modules/retrieval/embedding-client.js';
 import type { PeerClients } from './modules/retrieval/peer-clients.js';
@@ -33,6 +35,19 @@ export interface CerebrumApiDeps {
    * a missing file → hardcoded ADR-021 defaults). Tests pin it to a fixture.
    */
   gliaConfigPath?: string;
+  /**
+   * LLM port driving the ingest classifier / entity-extractor / scope-inference
+   * stages. Optional — defaults to an Anthropic-backed client (`ANTHROPIC_API_KEY`,
+   * hardcoded haiku models). Tests inject an offline fake.
+   */
+  ingestLlm?: IngestLlm;
+  /**
+   * Accessor for the `pops-curation` BullMQ queue used by ingest
+   * quick-capture / retry-enrichment. Optional — defaults to the lazy
+   * `getCurationQueue()` singleton (returns `null` without Redis). Tests pass a
+   * `() => null` accessor to exercise the no-Redis path.
+   */
+  curationQueue?: CurationQueueAccessor;
   /** Semver of the build, surfaced on the health response. */
   version: string;
   /**
