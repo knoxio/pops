@@ -1,0 +1,222 @@
+{
+  "components": {
+    "schemas": {}
+  },
+  "info": {
+    "description": "OpenAPI projection of the cerebrum pillar's REST contract. Authored as a ts-rest contract (src/contract/rest.ts); consumed directly by polyglot clients and via openapi-typescript by TS consumers.",
+    "title": "@pops/cerebrum",
+    "version": "0.1.0"
+  },
+  "openapi": "3.0.2",
+  "paths": {
+    "/templates": {
+      "get": {
+        "operationId": "templates.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "templates": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "custom_fields": {
+                            "additionalProperties": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "description": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "enum": [
+                                    "string",
+                                    "number",
+                                    "boolean",
+                                    "string[]",
+                                    "number[]",
+                                    "boolean[]"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["type", "description"],
+                              "type": "object"
+                            },
+                            "type": "object"
+                          },
+                          "default_scopes": {
+                            "items": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "description": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "name": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "required_fields": {
+                            "items": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "suggested_sections": {
+                            "items": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": ["name", "description"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["templates"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List the available engram templates (bodies stripped).",
+        "tags": ["templates"]
+      }
+    },
+    "/templates/{name}": {
+      "get": {
+        "operationId": "templates.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "template": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "body": {
+                          "type": "string"
+                        },
+                        "custom_fields": {
+                          "additionalProperties": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "description": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "type": {
+                                "enum": [
+                                  "string",
+                                  "number",
+                                  "boolean",
+                                  "string[]",
+                                  "number[]",
+                                  "boolean[]"
+                                ],
+                                "type": "string"
+                              }
+                            },
+                            "required": ["type", "description"],
+                            "type": "object"
+                          },
+                          "type": "object"
+                        },
+                        "default_scopes": {
+                          "items": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "description": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "name": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "required_fields": {
+                          "items": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "suggested_sections": {
+                          "items": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": ["name", "description", "body"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["template"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Get a single engram template by name, including its body.",
+        "tags": ["templates"]
+      }
+    }
+  }
+}

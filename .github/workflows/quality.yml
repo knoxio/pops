@@ -72,4 +72,11 @@ jobs:
       # single source of truth) and is deleted in Phase E. Counting the
       # tombstone as the "original" of the lifted code double-penalises the
       # migration, so it's excluded from the duplication scan.
-      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts,apps/pops-api/src/modules/food/**,apps/pops-api/src/routes/food/**" --reporters "console" --exitCode 0 .
+      #
+      # The cerebrum migration tombstones follow the same rule: the pillar
+      # (`pillars/cerebrum`) is the single source of truth; the originals it
+      # was lifted/cloned from — the monolith `modules/cerebrum` + the
+      # `routes/{cerebrum,ego}` SSE routes, the predecessor `pops-cerebrum-api`
+      # app, and the `cerebrum-db`/`cerebrum-contract` packages — are all
+      # retired in Phase C/E, so they're excluded too.
+      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts,apps/pops-api/src/modules/food/**,apps/pops-api/src/routes/food/**,apps/pops-api/src/modules/cerebrum/**,apps/pops-api/src/routes/cerebrum/**,apps/pops-api/src/routes/ego/**,apps/pops-cerebrum-api/**,packages/cerebrum-db/**,packages/cerebrum-contract/**" --reporters "console" --exitCode 0 .
