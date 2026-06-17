@@ -335,5 +335,163 @@ export function makeClient(app: Express) {
       getSyncLogs: (query: { limit?: number } = {}) =>
         send<{ data: SyncLogEntry[] }>(r.get('/plex/scheduler/sync-logs').query(query)),
     },
+    comparisons: makeComparisonsClient(r),
+  };
+}
+
+interface DimensionWire {
+  id: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  sortOrder: number;
+  weight: number;
+  createdAt: string;
+}
+
+interface ComparisonWire {
+  id: number;
+  dimensionId: number;
+  mediaAType: string;
+  mediaAId: number;
+  mediaBType: string;
+  mediaBId: number;
+  winnerType: string;
+  winnerId: number;
+  drawTier: string | null;
+  source: string | null;
+  deltaA: number | null;
+  deltaB: number | null;
+  comparedAt: string;
+}
+
+interface MediaScoreWire {
+  id: number;
+  mediaType: string;
+  mediaId: number;
+  dimensionId: number;
+  score: number;
+  comparisonCount: number;
+  confidence: number;
+  excluded: boolean;
+  updatedAt: string;
+}
+
+interface RankedEntryWire {
+  rank: number;
+  mediaType: string;
+  mediaId: number;
+  title: string;
+  year: number | null;
+  posterUrl: string | null;
+  score: number;
+  comparisonCount: number;
+  confidence: number;
+}
+
+interface PairMovieWire {
+  id: number;
+  title: string;
+  posterPath: string | null;
+  posterUrl: string | null;
+}
+
+interface SmartPairWire {
+  movieA: PairMovieWire;
+  movieB: PairMovieWire;
+  dimensionId: number;
+}
+
+interface TierListMovieWire {
+  id: number;
+  title: string;
+  posterUrl: string | null;
+  score: number;
+  comparisonCount: number;
+  tierOverride: string | null;
+}
+
+interface ScoreChangeWire {
+  movieId: number;
+  oldScore: number;
+  newScore: number;
+}
+
+type MediaTypeWire = 'movie' | 'tv_show';
+
+function makeComparisonsClient(r: ReturnType<typeof supertest>) {
+  return {
+    listDimensions: () => send<{ data: DimensionWire[] }>(r.get('/comparison-dimensions')),
+    createDimension: (body: Record<string, unknown>) =>
+      send<{ data: DimensionWire; message: string }>(r.post('/comparison-dimensions').send(body)),
+    updateDimension: (id: number, body: Record<string, unknown>) =>
+      send<{ data: DimensionWire; message: string }>(
+        r.patch(`/comparison-dimensions/${id}`).send(body)
+      ),
+    record: (body: Record<string, unknown>) =>
+      send<{ data: ComparisonWire; message: string }>(r.post('/comparisons').send(body)),
+    listForMedia: (query: Record<string, unknown>) =>
+      send<{ data: ComparisonWire[]; pagination: Pagination }>(
+        r.get('/comparisons/for-media').query(query)
+      ),
+    listAll: (query: Record<string, unknown> = {}) =>
+      send<{ data: ComparisonWire[]; pagination: Pagination }>(r.get('/comparisons').query(query)),
+    delete: (id: number) => send<{ message: string }>(r.delete(`/comparisons/${id}`)),
+    blacklistMovie: (body: { mediaType: MediaTypeWire; mediaId: number }) =>
+      send<{
+        data: {
+          blacklistedCount: number;
+          comparisonsDeleted: number;
+          dimensionsRecalculated: number;
+        };
+        message: string;
+      }>(r.post('/comparisons/blacklist-movie').send(body)),
+    batchRecord: (body: Record<string, unknown>) =>
+      send<{ data: { count: number; skipped: number }; message: string }>(
+        r.post('/comparisons/batch').send(body)
+      ),
+    recordSkip: (body: Record<string, unknown>) =>
+      send<{ data: { skipUntil: number }; message: string }>(
+        r.post('/comparisons/skip').send(body)
+      ),
+    recalcAll: () =>
+      send<{ data: { dimensionsRecalculated: number }; message: string }>(
+        r.post('/comparisons/recalc-all').send({})
+      ),
+    getSmartPair: (query: { dimensionId?: number } = {}) =>
+      send<{ data: SmartPairWire | null; reason: 'insufficient_watched_movies' | null }>(
+        r.get('/comparisons/smart-pair').query(query)
+      ),
+    scores: (query: { mediaType: MediaTypeWire; mediaId: number; dimensionId?: number }) =>
+      send<{ data: MediaScoreWire[] }>(r.get('/comparison-scores').query(query)),
+    rankings: (query: Record<string, unknown> = {}) =>
+      send<{ data: RankedEntryWire[]; pagination: Pagination }>(
+        r.get('/comparison-rankings').query(query)
+      ),
+    excludeFromDimension: (body: {
+      mediaType: MediaTypeWire;
+      mediaId: number;
+      dimensionId: number;
+    }) => send<{ comparisonsDeleted: number }>(r.post('/comparison-scores/exclude').send(body)),
+    includeInDimension: (body: {
+      mediaType: MediaTypeWire;
+      mediaId: number;
+      dimensionId: number;
+    }) => send<{ message: string }>(r.post('/comparison-scores/include').send(body)),
+    markStale: (body: { mediaType: MediaTypeWire; mediaId: number }) =>
+      send<{ data: { staleness: number } }>(r.post('/comparison-staleness/mark').send(body)),
+    getStaleness: (query: { mediaType: MediaTypeWire; mediaId: number }) =>
+      send<{ data: { staleness: number } }>(r.get('/comparison-staleness').query(query)),
+    getTierListMovies: (dimensionId: number) =>
+      send<{ data: TierListMovieWire[] }>(r.get(`/tier-list/${dimensionId}`)),
+    submitTierList: (body: Record<string, unknown>) =>
+      send<{
+        data: {
+          comparisonsRecorded: number;
+          skipped: number;
+          scoreChanges: ScoreChangeWire[];
+        };
+        message: string;
+      }>(r.post('/tier-list').send(body)),
   };
 }

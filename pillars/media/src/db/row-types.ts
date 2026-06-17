@@ -31,6 +31,7 @@ import type {
   shelfImpressions,
   syncJobResults,
   syncLogs,
+  tierOverrides,
   tvShows,
   watchHistory,
 } from './schema.js';
@@ -67,6 +68,9 @@ export type ComparisonSkipCooloffInsert = InferInsertModel<typeof comparisonSkip
 
 export type ComparisonStalenessRow = InferSelectModel<typeof comparisonStaleness>;
 export type ComparisonStalenessInsert = InferInsertModel<typeof comparisonStaleness>;
+
+export type TierOverrideRow = InferSelectModel<typeof tierOverrides>;
+export type TierOverrideInsert = InferInsertModel<typeof tierOverrides>;
 
 export type ShelfImpressionRow = InferSelectModel<typeof shelfImpressions>;
 export type ShelfImpressionInsert = InferInsertModel<typeof shelfImpressions>;

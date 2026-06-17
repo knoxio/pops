@@ -35,6 +35,17 @@ export function getEnvInt(name: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+/**
+ * Read a floating-point env var, falling back to `fallback` when the value is
+ * unset, empty, or not a finite number.
+ */
+export function getEnvFloat(name: string, fallback: number): number {
+  const raw = getEnv(name);
+  if (raw === undefined) return fallback;
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 /** Default location for the local media-image cache. */
 const DEFAULT_MEDIA_IMAGES_DIR = './data/media/images';
 

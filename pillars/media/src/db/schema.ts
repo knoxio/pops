@@ -25,5 +25,6 @@ export { seasons } from './schema/seasons.js';
 export { shelfImpressions } from './schema/shelf-impressions.js';
 export { syncJobResults } from './schema/sync-job-results.js';
 export { syncLogs } from './schema/sync-logs.js';
+export { tierOverrides } from './schema/tier-overrides.js';
 export { tvShows } from './schema/tv-shows.js';
 export { watchHistory } from './schema/watch-history.js';
