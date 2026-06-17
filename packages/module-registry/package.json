@@ -30,7 +30,7 @@
     "@pops/food": "workspace:*",
     "@pops/inventory": "workspace:*",
     "@pops/lists": "workspace:*",
-    "@pops/media-contract": "workspace:*",
+    "@pops/media": "workspace:*",
     "@types/node": "^25.9.3",
     "@vitest/coverage-v8": "^4.1.8",
     "tsx": "^4.22.4",

@@ -81,7 +81,6 @@
     "@pops/cerebrum-db": "workspace:*",
     "@pops/core-contract": "workspace:*",
     "@pops/core-db": "workspace:*",
-    "@pops/media-db": "workspace:*",
     "@pops/module-registry": "workspace:*",
     "@pops/pillar-sdk": "workspace:*",
     "@pops/types": "workspace:*",
