@@ -15,6 +15,8 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 
 import { openFinanceDb } from '../db/index.js';
 import { createFinanceApiApp } from './app.js';
+import { createPillarOwnerUriLookup } from './cron/pillar-lookup.js';
+import { startReconcileCrossPillarWorker } from './cron/reconcile-cross-pillar.js';
 import { resolveFinanceSqlitePath } from './finance-sqlite-path.js';
 import { buildFinanceManifest } from './manifest.js';
 import { parseBareOrigin } from './pillars/env.js';
@@ -51,6 +53,17 @@ const selfBaseUrl = resolveSelfBaseUrl();
 const financeDb = openFinanceDb(resolveFinanceSqlitePath());
 const app = createFinanceApiApp({ financeDb, version, selfBaseUrl });
 
+// Nightly cross-pillar URI reconciliation (PRD-251 US-03). Reads peer
+// pillars over HTTP via the pillar SDK proxy — no compile-time coupling.
+const reconcileHandle = startReconcileCrossPillarWorker({
+  db: financeDb.db,
+  lookupOwnerUri: createPillarOwnerUriLookup(),
+  logger: {
+    info: (msg, meta) => console.warn(`[finance-api] ${msg}`, meta ?? {}),
+    warn: (msg, meta) => console.warn(`[finance-api] ${msg}`, meta ?? {}),
+  },
+});
+
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
@@ -68,6 +81,7 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[finance-api] Shutting down (${signal})`);
+  reconcileHandle.stop();
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       financeDb.raw.close();

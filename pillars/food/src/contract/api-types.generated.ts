@@ -283,6 +283,40 @@ export interface paths {
     patch: operations['conversions.updateWeight'];
     trace?: never;
   };
+  '/cook/mark-cooked': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Record a cook event in one transaction */
+    post: operations['cook.markCooked'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/cook/prepare': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Pre-flight data for the cook modal */
+    post: operations['cook.prepareCook'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/fridge/recipes-using-batch': {
     parameters: {
       query?: never;
@@ -2772,6 +2806,179 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'cook.markCooked': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          consumptionOverrides?: (
+            | {
+                batchId: number;
+                consumeQty: number;
+                /** @enum {string} */
+                kind: 'batch-override';
+                lineIndex: number;
+                substitutionEdgeId?: number;
+                /** @enum {string} */
+                unit: 'g' | 'ml' | 'count';
+              }
+            | {
+                externalQty: number;
+                /** @enum {string} */
+                externalUnit: 'g' | 'ml' | 'count';
+                /** @enum {string} */
+                kind: 'external';
+                lineIndex: number;
+              }
+            | {
+                batchId: number;
+                consumeQty: number;
+                externalQty: number;
+                /** @enum {string} */
+                kind: 'partial';
+                lineIndex: number;
+                substitutionEdgeId?: number;
+                /** @enum {string} */
+                unit: 'g' | 'ml' | 'count';
+              }
+          )[];
+          notes?: string;
+          planEntryId?: number;
+          rating?: number;
+          recipeVersionId: number;
+          scaleFactor: number;
+          yield?: {
+            /** Format: date-time */
+            expiresAt?: string;
+            /** @enum {string} */
+            location: 'pantry' | 'fridge' | 'freezer' | 'other';
+            notes?: string;
+            qty: number;
+            /** @enum {string} */
+            unit: 'g' | 'ml' | 'count';
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | {
+                /** @enum {boolean} */
+                ok: true;
+                recipeRunId: number;
+                yieldedBatchId: number | null;
+              }
+            | {
+                /** @enum {boolean} */
+                ok: false;
+                /** @enum {string} */
+                reason:
+                  | 'RecipeVersionNotFound'
+                  | 'RecipeNotCompiled'
+                  | 'PlanEntryNotFound'
+                  | 'PlanEntryAlreadyCooked'
+                  | 'YieldRequired'
+                  | 'YieldForbidden'
+                  | 'BadScaleFactor'
+                  | 'BadYieldQty'
+                  | 'BadRating'
+                  | 'BadExpiry'
+                  | 'ShortfallUnresolved'
+                  | 'SubstitutionEdgeInvalid';
+                shortfalls?: {
+                  available: number;
+                  needed: number;
+                  prepStateId: number | null;
+                  /** @enum {string} */
+                  unit: 'g' | 'ml' | 'count';
+                  variantId: number;
+                }[];
+              };
+        };
+      };
+    };
+  };
+  'cook.prepareCook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          planEntryId?: number;
+          recipeVersionId: number;
+          scaleFactor: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            alreadyCooked: boolean;
+            consumeNeeds: {
+              /** @enum {string} */
+              canonicalUnit: 'g' | 'ml' | 'count';
+              ingredientId: number;
+              ingredientName: string;
+              lineIndex: number;
+              optional: boolean;
+              prepStateId: number | null;
+              prepStateLabel: string | null;
+              qty: number;
+              variantId: number;
+              variantName: string;
+            }[];
+            defaultScaleFactor: number;
+            recipeSlug: string;
+            recipeTitle: string;
+            versionNo: number;
+            yieldDefault: {
+              prepStateLabel: string | null;
+              qty: number;
+              shelfLifeFreezerDays: number | null;
+              shelfLifeFridgeDays: number | null;
+              /** @enum {string} */
+              unit: 'g' | 'ml' | 'count';
+              variantName: string | null;
+            } | null;
+            yieldsBatch: boolean;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            message: string;
           };
         };
       };

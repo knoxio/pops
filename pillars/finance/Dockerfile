@@ -19,7 +19,6 @@ COPY pillars/finance/package.json ./pillars/finance/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/core-db/package.json ./packages/core-db/
-COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
@@ -42,11 +41,6 @@ COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/core-db/tsconfig.json ./packages/core-db/tsconfig.json
-
-COPY packages/finance-contract/src ./packages/finance-contract/src
-COPY packages/finance-contract/scripts ./packages/finance-contract/scripts
-COPY packages/finance-contract/openapi ./packages/finance-contract/openapi
-COPY packages/finance-contract/tsconfig.json ./packages/finance-contract/tsconfig.json
 
 COPY packages/media-contract/src ./packages/media-contract/src
 COPY packages/media-contract/scripts ./packages/media-contract/scripts

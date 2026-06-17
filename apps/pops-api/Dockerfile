@@ -11,8 +11,6 @@ COPY packages/module-registry/package.json ./packages/module-registry/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-food-db/package.json ./packages/app-food-db/
 COPY packages/core-db/package.json ./packages/core-db/
-COPY packages/finance-db/package.json ./packages/finance-db/
-COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/media-contract/package.json ./packages/media-contract/
@@ -38,9 +36,6 @@ COPY packages/app-food-db/tsconfig.json ./packages/app-food-db/
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/tsconfig.json ./packages/core-db/
 COPY packages/core-db/migrations ./packages/core-db/migrations
-COPY packages/finance-db/src ./packages/finance-db/src
-COPY packages/finance-db/tsconfig.json ./packages/finance-db/
-COPY packages/finance-db/migrations ./packages/finance-db/migrations
 COPY packages/media-db/src ./packages/media-db/src
 COPY packages/media-db/tsconfig.json ./packages/media-db/
 COPY packages/media-db/migrations ./packages/media-db/migrations
@@ -49,7 +44,6 @@ COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
-COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/media-contract/ ./packages/media-contract/
@@ -69,8 +63,6 @@ WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
 WORKDIR /app/packages/core-db
 RUN pnpm build
-WORKDIR /app/packages/finance-db
-RUN pnpm build
 WORKDIR /app/packages/types
 RUN pnpm build
 WORKDIR /app/packages/module-registry
@@ -78,8 +70,6 @@ RUN pnpm build
 WORKDIR /app/packages/food-contracts
 RUN pnpm build
 WORKDIR /app/packages/app-food-db
-RUN pnpm build
-WORKDIR /app/packages/finance-contract
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-contract
 RUN pnpm build
@@ -123,9 +113,6 @@ COPY --from=builder /app/packages/app-food-db/package.json ./node_modules/@pops/
 COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
 COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
 COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations
-COPY --from=builder /app/packages/finance-db/dist ./node_modules/@pops/finance-db/dist
-COPY --from=builder /app/packages/finance-db/package.json ./node_modules/@pops/finance-db/
-COPY --from=builder /app/packages/finance-db/migrations ./node_modules/@pops/finance-db/migrations
 COPY --from=builder /app/packages/media-db/dist ./node_modules/@pops/media-db/dist
 COPY --from=builder /app/packages/media-db/package.json ./node_modules/@pops/media-db/
 COPY --from=builder /app/packages/media-db/migrations ./node_modules/@pops/media-db/migrations

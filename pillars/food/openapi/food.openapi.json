@@ -3134,6 +3134,489 @@
         "tags": ["conversions"]
       }
     },
+    "/cook/mark-cooked": {
+      "post": {
+        "operationId": "cook.markCooked",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "consumptionOverrides": {
+                    "items": {
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "batchId": {
+                              "exclusiveMinimum": true,
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "consumeQty": {
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "kind": {
+                              "enum": ["batch-override"],
+                              "type": "string"
+                            },
+                            "lineIndex": {
+                              "exclusiveMinimum": true,
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "substitutionEdgeId": {
+                              "exclusiveMinimum": true,
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "unit": {
+                              "enum": ["g", "ml", "count"],
+                              "type": "string"
+                            }
+                          },
+                          "required": ["lineIndex", "kind", "batchId", "consumeQty", "unit"],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "externalQty": {
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "externalUnit": {
+                              "enum": ["g", "ml", "count"],
+                              "type": "string"
+                            },
+                            "kind": {
+                              "enum": ["external"],
+                              "type": "string"
+                            },
+                            "lineIndex": {
+                              "exclusiveMinimum": true,
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            }
+                          },
+                          "required": ["lineIndex", "kind", "externalQty", "externalUnit"],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "batchId": {
+                              "exclusiveMinimum": true,
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "consumeQty": {
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "externalQty": {
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "kind": {
+                              "enum": ["partial"],
+                              "type": "string"
+                            },
+                            "lineIndex": {
+                              "exclusiveMinimum": true,
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "substitutionEdgeId": {
+                              "exclusiveMinimum": true,
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "unit": {
+                              "enum": ["g", "ml", "count"],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "lineIndex",
+                            "kind",
+                            "batchId",
+                            "consumeQty",
+                            "externalQty",
+                            "unit"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "type": "array"
+                  },
+                  "notes": {
+                    "maxLength": 1000,
+                    "type": "string"
+                  },
+                  "planEntryId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "rating": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "recipeVersionId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "scaleFactor": {
+                    "type": "number"
+                  },
+                  "yield": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "expiresAt": {
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                        "type": "string"
+                      },
+                      "location": {
+                        "enum": ["pantry", "fridge", "freezer", "other"],
+                        "type": "string"
+                      },
+                      "notes": {
+                        "maxLength": 1000,
+                        "type": "string"
+                      },
+                      "qty": {
+                        "type": "number"
+                      },
+                      "unit": {
+                        "enum": ["g", "ml", "count"],
+                        "type": "string"
+                      }
+                    },
+                    "required": ["qty", "unit", "location"],
+                    "type": "object"
+                  }
+                },
+                "required": ["recipeVersionId", "scaleFactor"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [true],
+                          "type": "boolean"
+                        },
+                        "recipeRunId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "yieldedBatchId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["ok", "recipeRunId", "yieldedBatchId"],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "enum": [false],
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "enum": [
+                            "RecipeVersionNotFound",
+                            "RecipeNotCompiled",
+                            "PlanEntryNotFound",
+                            "PlanEntryAlreadyCooked",
+                            "YieldRequired",
+                            "YieldForbidden",
+                            "BadScaleFactor",
+                            "BadYieldQty",
+                            "BadRating",
+                            "BadExpiry",
+                            "ShortfallUnresolved",
+                            "SubstitutionEdgeInvalid"
+                          ],
+                          "type": "string"
+                        },
+                        "shortfalls": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "available": {
+                                "type": "number"
+                              },
+                              "needed": {
+                                "type": "number"
+                              },
+                              "prepStateId": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "nullable": true,
+                                "type": "integer"
+                              },
+                              "unit": {
+                                "enum": ["g", "ml", "count"],
+                                "type": "string"
+                              },
+                              "variantId": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              }
+                            },
+                            "required": ["variantId", "prepStateId", "needed", "available", "unit"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": ["ok", "reason"],
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Record a cook event in one transaction",
+        "tags": ["cook"]
+      }
+    },
+    "/cook/prepare": {
+      "post": {
+        "operationId": "cook.prepareCook",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "planEntryId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "recipeVersionId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "scaleFactor": {
+                    "type": "number"
+                  }
+                },
+                "required": ["recipeVersionId", "scaleFactor"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "alreadyCooked": {
+                      "type": "boolean"
+                    },
+                    "consumeNeeds": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "canonicalUnit": {
+                            "enum": ["g", "ml", "count"],
+                            "type": "string"
+                          },
+                          "ingredientId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "ingredientName": {
+                            "type": "string"
+                          },
+                          "lineIndex": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "optional": {
+                            "type": "boolean"
+                          },
+                          "prepStateId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "prepStateLabel": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "qty": {
+                            "type": "number"
+                          },
+                          "variantId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "variantName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "lineIndex",
+                          "ingredientId",
+                          "ingredientName",
+                          "variantId",
+                          "variantName",
+                          "prepStateId",
+                          "prepStateLabel",
+                          "qty",
+                          "canonicalUnit",
+                          "optional"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "defaultScaleFactor": {
+                      "type": "number"
+                    },
+                    "recipeSlug": {
+                      "type": "string"
+                    },
+                    "recipeTitle": {
+                      "type": "string"
+                    },
+                    "versionNo": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "yieldDefault": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "prepStateLabel": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "qty": {
+                          "type": "number"
+                        },
+                        "shelfLifeFreezerDays": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "shelfLifeFridgeDays": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "unit": {
+                          "enum": ["g", "ml", "count"],
+                          "type": "string"
+                        },
+                        "variantName": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "qty",
+                        "unit",
+                        "variantName",
+                        "prepStateLabel",
+                        "shelfLifeFridgeDays",
+                        "shelfLifeFreezerDays"
+                      ],
+                      "type": "object"
+                    },
+                    "yieldsBatch": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "recipeTitle",
+                    "recipeSlug",
+                    "versionNo",
+                    "defaultScaleFactor",
+                    "yieldsBatch",
+                    "yieldDefault",
+                    "consumeNeeds",
+                    "alreadyCooked"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Pre-flight data for the cook modal",
+        "tags": ["cook"]
+      }
+    },
     "/fridge/recipes-using-batch": {
       "get": {
         "operationId": "fridge.recipesUsingBatch",
