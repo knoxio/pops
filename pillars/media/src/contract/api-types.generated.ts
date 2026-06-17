@@ -703,6 +703,74 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/plex/scheduler/start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Arm the periodic Plex sync scheduler (fires one tick immediately) */
+    post: operations['plex.startScheduler'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plex/scheduler/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the scheduler run state + last-sync stats */
+    get: operations['plex.getSchedulerStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plex/scheduler/stop': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Stop the periodic Plex sync scheduler */
+    post: operations['plex.stopScheduler'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/plex/scheduler/sync-logs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List recent periodic-sync log entries (newest first) */
+    get: operations['plex.getSyncLogs'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/plex/section-ids': {
     parameters: {
       query?: never;
@@ -4323,6 +4391,219 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'plex.startScheduler': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          intervalMs?: number;
+          movieSectionId?: string;
+          tvSectionId?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              intervalMs: number;
+              isRunning: boolean;
+              lastSyncAt: string | null;
+              lastSyncError: string | null;
+              moviesSynced: number;
+              nextSyncAt: string | null;
+              tvShowsSynced: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'plex.getSchedulerStatus': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              intervalMs: number;
+              isRunning: boolean;
+              lastSyncAt: string | null;
+              lastSyncError: string | null;
+              moviesSynced: number;
+              nextSyncAt: string | null;
+              tvShowsSynced: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'plex.stopScheduler': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              intervalMs: number;
+              isRunning: boolean;
+              lastSyncAt: string | null;
+              lastSyncError: string | null;
+              moviesSynced: number;
+              nextSyncAt: string | null;
+              tvShowsSynced: number;
+            };
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'plex.getSyncLogs': {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              durationMs: number | null;
+              errors: string[] | null;
+              id: number;
+              moviesSynced: number;
+              syncedAt: string;
+              tvShowsSynced: number;
+            }[];
           };
         };
       };

@@ -15,6 +15,7 @@ import { bootstrapPillar, type PillarBootstrapHandle } from '@pops/pillar-sdk/bo
 
 import { openMediaDb } from '../db/index.js';
 import { createMediaApiApp } from './app.js';
+import { plexScheduler } from './cron/plex-scheduler.js';
 import { buildMediaManifest } from './manifest.js';
 import { resolveMediaSqlitePath } from './media-sqlite-path.js';
 import { parseBareOrigin } from './pillars/env.js';
@@ -51,6 +52,24 @@ const selfBaseUrl = resolveSelfBaseUrl();
 const mediaDb = openMediaDb(resolveMediaSqlitePath());
 const app = createMediaApiApp({ mediaDb, version, selfBaseUrl });
 
+// Periodic Plex sync scheduler (slice 9c). When PLEX_SCHEDULER_ENABLED is
+// set, force-start with the PLEX_SCHEDULER_INTERVAL_MS interval; otherwise
+// auto-resume from the persisted `plex_scheduler_enabled` flag in
+// plex_settings. The controller is a module-level singleton so the REST
+// start/stop handlers drive the same timer.
+function resolveSchedulerIntervalMs(): number | undefined {
+  const raw = process.env['PLEX_SCHEDULER_INTERVAL_MS'];
+  if (raw === undefined || raw === '') return undefined;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+if (process.env['PLEX_SCHEDULER_ENABLED'] === 'true') {
+  plexScheduler.start({ db: mediaDb.db, intervalMs: resolveSchedulerIntervalMs() });
+} else {
+  plexScheduler.resumeIfEnabled(mediaDb.db);
+}
+
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
   pillarHandle = await bootstrapPillar({
@@ -68,6 +87,7 @@ function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
   console.warn(`[media-api] Shutting down (${signal})`);
+  plexScheduler.stop();
   void (pillarHandle?.stop() ?? Promise.resolve()).finally(() => {
     server.close(() => {
       mediaDb.raw.close();

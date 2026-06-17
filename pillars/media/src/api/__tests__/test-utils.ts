@@ -10,7 +10,8 @@ import supertest from 'supertest';
 
 import type { Express } from 'express';
 
-import type { SyncJob } from '../../db/index.js';
+import type { SyncJob, SyncLogEntry } from '../../db/index.js';
+import type { PlexSchedulerStatus as SchedulerStatus } from '../cron/plex-scheduler.js';
 import type { LibraryItem } from '../modules/library-types.js';
 import type { Movie } from '../modules/movie-types.js';
 import type { Episode, Season, TvShow } from '../modules/tv-show-types.js';
@@ -326,6 +327,13 @@ export function makeClient(app: Express) {
       getActiveSyncJobs: () => send<{ data: SyncJob[] }>(r.get('/plex/sync/active')),
       getLastSyncResults: () =>
         send<{ data: Record<string, SyncJob | null> }>(r.get('/plex/sync/last')),
+      startScheduler: (
+        body: { intervalMs?: number; movieSectionId?: string; tvSectionId?: string } = {}
+      ) => send<{ data: SchedulerStatus }>(r.post('/plex/scheduler/start').send(body)),
+      stopScheduler: () => send<{ data: SchedulerStatus }>(r.post('/plex/scheduler/stop').send({})),
+      getSchedulerStatus: () => send<{ data: SchedulerStatus }>(r.get('/plex/scheduler/status')),
+      getSyncLogs: (query: { limit?: number } = {}) =>
+        send<{ data: SyncLogEntry[] }>(r.get('/plex/scheduler/sync-logs').query(query)),
     },
   };
 }

@@ -137,6 +137,10 @@ export type {
 
 export * as syncJobResultsService from './services/sync-job-results.js';
 
+export type { SyncLogEntry, WriteSyncLogInput } from './services/sync-logs.js';
+
+export * as syncLogsService from './services/sync-logs.js';
+
 export * as watchlistService from './services/watchlist.js';
 
 export {
