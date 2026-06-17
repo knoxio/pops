@@ -6895,6 +6895,144 @@
         "tags": ["plex"]
       }
     },
+    "/plex/sync": {
+      "post": {
+        "operationId": "plex.startSyncJob",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "jobType": {
+                    "enum": [
+                      "plexSyncMovies",
+                      "plexSyncTvShows",
+                      "plexSyncWatchlist",
+                      "plexSyncWatchHistory"
+                    ],
+                    "type": "string"
+                  },
+                  "movieSectionId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "sectionId": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tvSectionId": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["jobType"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "jobId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["jobId"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Start an on-demand Plex sync job (runs async in-process)",
+        "tags": ["plex"]
+      }
+    },
     "/plex/sync-status": {
       "get": {
         "operationId": "plex.getSyncStatus",
@@ -6935,6 +7073,332 @@
           }
         },
         "summary": "Connection-config snapshot (configured / hasUrl / hasToken)",
+        "tags": ["plex"]
+      }
+    },
+    "/plex/sync/active": {
+      "get": {
+        "operationId": "plex.getActiveSyncJobs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "completedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "durationMs": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "error": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "jobType": {
+                            "type": "string"
+                          },
+                          "progress": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "processed": {
+                                "type": "number"
+                              },
+                              "total": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["processed", "total"],
+                            "type": "object"
+                          },
+                          "result": {},
+                          "startedAt": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["running", "completed", "failed"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "jobType",
+                          "status",
+                          "startedAt",
+                          "completedAt",
+                          "durationMs",
+                          "progress",
+                          "result",
+                          "error"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List currently-running sync jobs",
+        "tags": ["plex"]
+      }
+    },
+    "/plex/sync/last": {
+      "get": {
+        "operationId": "plex.getLastSyncResults",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": {
+                        "additionalProperties": false,
+                        "nullable": true,
+                        "properties": {
+                          "completedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "durationMs": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "error": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "jobType": {
+                            "type": "string"
+                          },
+                          "progress": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "processed": {
+                                "type": "number"
+                              },
+                              "total": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["processed", "total"],
+                            "type": "object"
+                          },
+                          "result": {},
+                          "startedAt": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["running", "completed", "failed"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "jobType",
+                          "status",
+                          "startedAt",
+                          "completedAt",
+                          "durationMs",
+                          "progress",
+                          "result",
+                          "error"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Most recent completed result per sync job type",
+        "tags": ["plex"]
+      }
+    },
+    "/plex/sync/{jobId}": {
+      "get": {
+        "operationId": "plex.getSyncJobStatus",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "completedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMs": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "error": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "jobType": {
+                          "type": "string"
+                        },
+                        "progress": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "processed": {
+                              "type": "number"
+                            },
+                            "total": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["processed", "total"],
+                          "type": "object"
+                        },
+                        "result": {},
+                        "startedAt": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["running", "completed", "failed"],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "jobType",
+                        "status",
+                        "startedAt",
+                        "completedAt",
+                        "durationMs",
+                        "progress",
+                        "result",
+                        "error"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Poll a sync job by id (404 if unknown)",
         "tags": ["plex"]
       }
     },

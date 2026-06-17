@@ -11,13 +11,15 @@
  * inventory / finance / food).
  *
  * The `/media/images` byte route (served from `MEDIA_IMAGES_DIR`) is mounted
- * by a later slice; it is intentionally NOT part of the ts-rest contract.
+ * after the contract endpoints; it is intentionally NOT part of the ts-rest
+ * contract, so it contributes no OpenAPI paths.
  */
 import { createExpressEndpoints } from '@ts-rest/express';
 import express, { type Express, type Request, type Response } from 'express';
 
 import { mediaContract } from '../contract/rest.js';
 import { type MediaApiDeps, makeRequestHandler } from './handlers.js';
+import { createImagesRouter } from './images/router.js';
 import { makeMediaRestHandlers } from './rest/handlers.js';
 
 /**
@@ -43,6 +45,8 @@ export function createMediaApiApp(deps: MediaApiDeps): Express {
   });
 
   createExpressEndpoints(mediaContract, makeMediaRestHandlers(deps), app);
+
+  app.use(createImagesRouter({ mediaDb: deps.mediaDb.db }));
 
   return app;
 }

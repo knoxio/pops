@@ -14,6 +14,11 @@ import { TemplateRegistry } from '../modules/templates/registry.js';
 import type { Express } from 'express';
 
 import type {
+  PlexusAdapterWire,
+  PlexusFilterDefinitionWire,
+  PlexusFilterWire,
+  PlexusHealthResultWire,
+  PlexusSyncResultWire,
   ReflexExecutionStatusWire,
   ReflexExecutionWire,
   ReflexTriggerTypeWire,
@@ -76,7 +81,7 @@ export interface ReflexHistoryFilters {
 }
 
 export function makeClient(app: Express) {
-  const r = supertest(app);
+  const r = supertest.agent(app);
   return {
     templates: {
       list: () => send<{ templates: TemplateSummaryWire[] }>(r.get('/templates')),
@@ -100,6 +105,23 @@ export function makeClient(app: Express) {
       history: (filters: ReflexHistoryFilters = {}) =>
         send<{ executions: ReflexExecutionWire[]; total: number }>(
           r.post('/reflex/history').send(filters)
+        ),
+    },
+    plexus: {
+      listAdapters: () => send<{ adapters: PlexusAdapterWire[] }>(r.get('/plexus/adapters')),
+      getAdapter: (adapterId: string) =>
+        send<{ adapter: PlexusAdapterWire }>(r.get(`/plexus/adapters/${adapterId}`)),
+      healthCheck: (adapterId: string) =>
+        send<PlexusHealthResultWire>(r.post(`/plexus/adapters/${adapterId}/health-check`).send({})),
+      sync: (adapterId: string) =>
+        send<PlexusSyncResultWire>(r.post(`/plexus/adapters/${adapterId}/sync`).send({})),
+      unregister: (adapterId: string) =>
+        send<{ success: boolean }>(r.post(`/plexus/adapters/${adapterId}/unregister`).send({})),
+      listFilters: (adapterId: string) =>
+        send<{ filters: PlexusFilterWire[] }>(r.get(`/plexus/adapters/${adapterId}/filters`)),
+      setFilters: (adapterId: string, filters: PlexusFilterDefinitionWire[]) =>
+        send<{ filters: PlexusFilterWire[] }>(
+          r.post(`/plexus/adapters/${adapterId}/filters`).send({ filters })
         ),
     },
   };

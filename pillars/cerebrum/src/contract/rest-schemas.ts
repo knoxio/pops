@@ -134,3 +134,63 @@ export const reflexExecutionSchema = z.object({
   completedAt: z.string().nullable(),
 });
 export type ReflexExecutionWire = z.infer<typeof reflexExecutionSchema>;
+const PLEXUS_ADAPTER_STATUSES = [
+  'registered',
+  'initializing',
+  'healthy',
+  'degraded',
+  'error',
+  'shutdown',
+] as const;
+
+const PLEXUS_FILTER_TYPES = ['include', 'exclude'] as const;
+
+/** A registered plexus adapter row (config envelope passed through opaque). */
+export const plexusAdapterSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  status: z.enum(PLEXUS_ADAPTER_STATUSES),
+  config: z.record(z.string(), z.unknown()).nullable(),
+  lastHealth: z.string().nullable(),
+  lastError: z.string().nullable(),
+  ingestedCount: z.number().int(),
+  emittedCount: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type PlexusAdapterWire = z.infer<typeof plexusAdapterSchema>;
+
+/** A persisted per-adapter ingestion filter. */
+export const plexusFilterSchema = z.object({
+  id: z.string().min(1),
+  adapterId: z.string().min(1),
+  filterType: z.enum(PLEXUS_FILTER_TYPES),
+  field: z.string().min(1),
+  pattern: z.string().min(1),
+  enabled: z.boolean(),
+});
+export type PlexusFilterWire = z.infer<typeof plexusFilterSchema>;
+
+/** A filter definition supplied by the caller (id generated server-side). */
+export const plexusFilterDefinitionSchema = z.object({
+  filterType: z.enum(PLEXUS_FILTER_TYPES),
+  field: z.string().min(1),
+  pattern: z.string().min(1),
+  enabled: z.boolean().optional(),
+});
+export type PlexusFilterDefinitionWire = z.infer<typeof plexusFilterDefinitionSchema>;
+
+/** Result of a manual health-check run against an adapter. */
+export const plexusHealthResultSchema = z.object({
+  status: z.enum(PLEXUS_ADAPTER_STATUSES),
+  lastCheck: z.string(),
+  error: z.string().optional(),
+});
+export type PlexusHealthResultWire = z.infer<typeof plexusHealthResultSchema>;
+
+/** Result of a manual sync run against an adapter. */
+export const plexusSyncResultSchema = z.object({
+  ingested: z.number().int(),
+  filtered: z.number().int(),
+});
+export type PlexusSyncResultWire = z.infer<typeof plexusSyncResultSchema>;

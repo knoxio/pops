@@ -9,6 +9,621 @@
   },
   "openapi": "3.0.2",
   "paths": {
+    "/plexus/adapters": {
+      "get": {
+        "operationId": "plexus.adapters.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "adapters": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "config": {
+                            "additionalProperties": {},
+                            "nullable": true,
+                            "type": "object"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "emittedCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "id": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "ingestedCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "lastError": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastHealth": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": [
+                              "registered",
+                              "initializing",
+                              "healthy",
+                              "degraded",
+                              "error",
+                              "shutdown"
+                            ],
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "status",
+                          "config",
+                          "lastHealth",
+                          "lastError",
+                          "ingestedCount",
+                          "emittedCount",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["adapters"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List every registered plexus adapter.",
+        "tags": ["plexus", "adapters"]
+      }
+    },
+    "/plexus/adapters/{adapterId}": {
+      "get": {
+        "operationId": "plexus.adapters.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "adapter": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "config": {
+                          "additionalProperties": {},
+                          "nullable": true,
+                          "type": "object"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "emittedCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "ingestedCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "lastError": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastHealth": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "registered",
+                            "initializing",
+                            "healthy",
+                            "degraded",
+                            "error",
+                            "shutdown"
+                          ],
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "status",
+                        "config",
+                        "lastHealth",
+                        "lastError",
+                        "ingestedCount",
+                        "emittedCount",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["adapter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Get a single plexus adapter by id.",
+        "tags": ["plexus", "adapters"]
+      }
+    },
+    "/plexus/adapters/{adapterId}/filters": {
+      "get": {
+        "operationId": "plexus.filters.list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "filters": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "adapterId": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "filterType": {
+                            "enum": ["include", "exclude"],
+                            "type": "string"
+                          },
+                          "id": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "pattern": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "adapterId",
+                          "filterType",
+                          "field",
+                          "pattern",
+                          "enabled"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["filters"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List the ingestion filters for an adapter.",
+        "tags": ["plexus", "filters"]
+      },
+      "post": {
+        "operationId": "plexus.filters.set",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "filters": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "field": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "filterType": {
+                          "enum": ["include", "exclude"],
+                          "type": "string"
+                        },
+                        "pattern": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["filterType", "field", "pattern"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["filters"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "filters": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "adapterId": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "field": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "filterType": {
+                            "enum": ["include", "exclude"],
+                            "type": "string"
+                          },
+                          "id": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "pattern": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "adapterId",
+                          "filterType",
+                          "field",
+                          "pattern",
+                          "enabled"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["filters"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Atomically replace the ingestion filters for an adapter.",
+        "tags": ["plexus", "filters"]
+      }
+    },
+    "/plexus/adapters/{adapterId}/health-check": {
+      "post": {
+        "operationId": "plexus.adapters.healthCheck",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "lastCheck": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "registered",
+                        "initializing",
+                        "healthy",
+                        "degraded",
+                        "error",
+                        "shutdown"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["status", "lastCheck"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Run an on-demand health check against an adapter.",
+        "tags": ["plexus", "adapters"]
+      }
+    },
+    "/plexus/adapters/{adapterId}/sync": {
+      "post": {
+        "operationId": "plexus.adapters.sync",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "filtered": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "ingested": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["ingested", "filtered"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Trigger a manual ingestion cycle for an adapter.",
+        "tags": ["plexus", "adapters"]
+      }
+    },
+    "/plexus/adapters/{adapterId}/unregister": {
+      "post": {
+        "operationId": "plexus.adapters.unregister",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Shut down and remove an adapter.",
+        "tags": ["plexus", "adapters"]
+      }
+    },
     "/reflex": {
       "get": {
         "operationId": "reflex.list",

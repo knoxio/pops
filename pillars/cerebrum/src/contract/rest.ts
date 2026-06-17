@@ -12,6 +12,7 @@
  */
 import { initContract } from '@ts-rest/core';
 
+import { cerebrumPlexusContract } from './rest-plexus.js';
 import { cerebrumReflexContract } from './rest-reflex.js';
 import { cerebrumTemplatesContract } from './rest-templates.js';
 
@@ -21,6 +22,7 @@ export const cerebrumContract = c.router(
   {
     templates: cerebrumTemplatesContract,
     reflex: cerebrumReflexContract,
+    plexus: cerebrumPlexusContract,
   },
   {
     pathPrefix: '',

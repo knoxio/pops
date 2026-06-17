@@ -10,6 +10,7 @@ import supertest from 'supertest';
 
 import type { Express } from 'express';
 
+import type { SyncJob } from '../../db/index.js';
 import type { LibraryItem } from '../modules/library-types.js';
 import type { Movie } from '../modules/movie-types.js';
 import type { Episode, Season, TvShow } from '../modules/tv-show-types.js';
@@ -315,6 +316,16 @@ export function makeClient(app: Express) {
         ),
       saveSectionIds: (body: { movieSectionId?: string; tvSectionId?: string }) =>
         send<{ message: string }>(r.post('/plex/section-ids').send(body)),
+      startSyncJob: (body: {
+        jobType: string;
+        sectionId?: string;
+        movieSectionId?: string;
+        tvSectionId?: string;
+      }) => send<{ data: { jobId: string } }>(r.post('/plex/sync').send(body)),
+      getSyncJobStatus: (jobId: string) => send<{ data: SyncJob }>(r.get(`/plex/sync/${jobId}`)),
+      getActiveSyncJobs: () => send<{ data: SyncJob[] }>(r.get('/plex/sync/active')),
+      getLastSyncResults: () =>
+        send<{ data: Record<string, SyncJob | null> }>(r.get('/plex/sync/last')),
     },
   };
 }

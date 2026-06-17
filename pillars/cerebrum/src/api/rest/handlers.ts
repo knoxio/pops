@@ -8,6 +8,7 @@
 import { initServer } from '@ts-rest/express';
 
 import { cerebrumContract } from '../../contract/rest.js';
+import { makePlexusHandlers } from './plexus-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
 import { makeTemplatesHandlers } from './templates-handlers.js';
 
@@ -21,5 +22,6 @@ export function makeCerebrumRestHandlers(
   return server.router(cerebrumContract, {
     templates: makeTemplatesHandlers(deps.templateRegistry),
     reflex: makeReflexHandlers(deps.reflexService),
+    plexus: makePlexusHandlers(deps.cerebrumDb.db),
   });
 }
