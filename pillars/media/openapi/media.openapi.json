@@ -7674,9 +7674,81 @@
                   "additionalProperties": false,
                   "properties": {
                     "data": {
-                      "enum": [null],
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "inLibrary": {
+                            "type": "boolean"
+                          },
+                          "isWatched": {
+                            "type": "boolean"
+                          },
+                          "onWatchlist": {
+                            "type": "boolean"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "popularity",
+                          "inLibrary",
+                          "isWatched",
+                          "onWatchlist"
+                        ],
+                        "type": "object"
+                      },
                       "nullable": true,
-                      "type": "string"
+                      "type": "array"
                     }
                   },
                   "required": ["data"],
@@ -7687,7 +7759,7 @@
             "description": "200"
           }
         },
-        "summary": "Trending from Plex Discover (STUB: always null until the client lands)",
+        "summary": "Trending from Plex Discover (null when Plex is not connected)",
         "tags": ["discovery"]
       }
     },

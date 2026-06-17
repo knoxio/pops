@@ -7,9 +7,8 @@
  * The TMDB client is resolved here via its env-configured factory and injected
  * into the orchestration as `{ db, tmdbClient }`.
  *
- * `trendingPlex` is a STUB returning `{ data: null }` — the monolith already
- * returned null when Plex was unavailable, and the Plex Discover client is not
- * ported yet (wave-3 follow-up).
+ * `trendingPlex` resolves the Plex token from `plex_settings` and returns the
+ * Plex Discover trending feed, or `{ data: null }` when Plex is not connected.
  */
 import {
   type MediaDb,
@@ -24,6 +23,7 @@ import { parseContextPages } from '../modules/discovery/context-pages.js';
 import { getContextPicks } from '../modules/discovery/context-picks.js';
 import { type DiscoveryDeps } from '../modules/discovery/deps.js';
 import { getGenreSpotlight, getGenreSpotlightPage } from '../modules/discovery/genre-spotlight.js';
+import { getTrendingFromPlex } from '../modules/discovery/plex-trending.js';
 import { toMovieQuickPick } from '../modules/discovery/quick-pick.js';
 import { getWatchlistRecommendations } from '../modules/discovery/recommendations.js';
 import { getTrending } from '../modules/discovery/trending.js';
@@ -38,6 +38,7 @@ type Req = ServerInferRequest<typeof mediaDiscoveryContract>;
 const DEFAULT_QUICK_PICK = 3;
 const DEFAULT_TRENDING_WINDOW = 'week' as const;
 const DEFAULT_TRENDING_PAGE = 1;
+const DEFAULT_TRENDING_PLEX_LIMIT = 20;
 const DEFAULT_SAMPLE_SIZE = 3;
 
 function deps(db: MediaDb): DiscoveryDeps {
@@ -98,7 +99,11 @@ export function makeDiscoveryHandlers(db: MediaDb) {
         ),
       })),
 
-    trendingPlex: () => runHttp(() => ({ status: 200 as const, body: { data: null } })),
+    trendingPlex: ({ query }: Req['trendingPlex']) =>
+      runHttp(async () => ({
+        status: 200 as const,
+        body: { data: await getTrendingFromPlex(db, query.limit ?? DEFAULT_TRENDING_PLEX_LIMIT) },
+      })),
 
     watchlistRecommendations: () =>
       runHttp(async () => ({

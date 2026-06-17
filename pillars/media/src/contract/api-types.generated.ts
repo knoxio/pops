@@ -964,7 +964,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Trending from Plex Discover (STUB: always null until the client lands) */
+    /** Trending from Plex Discover (null when Plex is not connected) */
     get: operations['discovery.trendingPlex'];
     put?: never;
     post?: never;
@@ -5953,8 +5953,25 @@ export interface operations {
         };
         content: {
           'application/json': {
-            /** @enum {string|null} */
-            data: null;
+            data:
+              | {
+                  backdropPath: string | null;
+                  genreIds: number[];
+                  inLibrary: boolean;
+                  isWatched: boolean;
+                  onWatchlist: boolean;
+                  overview: string;
+                  popularity: number;
+                  posterPath: string | null;
+                  posterUrl: string | null;
+                  releaseDate: string;
+                  rotationExpiresAt?: string;
+                  title: string;
+                  tmdbId: number;
+                  voteAverage: number;
+                  voteCount: number;
+                }[]
+              | null;
           };
         };
       };

@@ -464,7 +464,7 @@ function makeDiscoveryClient(r: ReturnType<typeof supertest>) {
         r.get('/discovery/trending').query(query)
       ),
     trendingPlex: (query: { limit?: number } = {}) =>
-      send<{ data: null }>(r.get('/discovery/trending-plex').query(query)),
+      send<{ data: DiscoverResultWire[] | null }>(r.get('/discovery/trending-plex').query(query)),
     watchlistRecommendations: () =>
       send<{ results: ScoredDiscoverResultWire[]; sourceMovies: string[] }>(
         r.get('/discovery/watchlist-recommendations')

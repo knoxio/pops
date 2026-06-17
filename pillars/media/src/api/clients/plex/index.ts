@@ -39,6 +39,8 @@ export {
 
 export { encryptToken, decryptToken, getEncryptionKey } from './crypto.js';
 
+export { getTrending as getPlexDiscoverTrending } from './discover.js';
+
 export {
   fetchPlexFriends,
   fetchFriendWatchlist,
