@@ -958,6 +958,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/nudges/configure': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Update the in-process nudge detection thresholds. */
+    post: operations['nudges.configure'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/nudges/contradictions': {
     parameters: {
       query?: never;
@@ -969,6 +986,23 @@ export interface paths {
     put?: never;
     /** List contradiction-pattern nudges with structured evidence. */
     post: operations['nudges.contradictions'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/nudges/scan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run the nudge detectors over the active engram corpus. */
+    post: operations['nudges.scan'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1003,6 +1037,23 @@ export interface paths {
     get: operations['nudges.get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/nudges/{id}/act': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Act on a pending nudge — execute its suggested action. */
+    post: operations['nudges.act'];
     delete?: never;
     options?: never;
     head?: never;
@@ -4757,6 +4808,40 @@ export interface operations {
       };
     };
   };
+  'nudges.configure': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          consolidationMinCluster?: number;
+          consolidationSimilarity?: number;
+          maxPendingNudges?: number;
+          nudgeCooldownHours?: number;
+          patternMinOccurrences?: number;
+          stalenessDays?: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            success: boolean;
+          };
+        };
+      };
+    };
+  };
   'nudges.contradictions': {
     parameters: {
       query?: never;
@@ -4798,6 +4883,36 @@ export interface operations {
               title: string;
             }[];
             total: number;
+          };
+        };
+      };
+    };
+  };
+  'nudges.scan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          type?: 'consolidation' | 'staleness' | 'pattern' | 'insight';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            created: number;
           };
         };
       };
@@ -4908,6 +5023,86 @@ export interface operations {
       };
       /** @description 404 */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'nudges.act': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            result: {
+              nudge: {
+                actedAt: string | null;
+                action: {
+                  label: string;
+                  params: {
+                    [key: string]: unknown;
+                  };
+                  /** @enum {string} */
+                  type: 'consolidate' | 'archive' | 'review' | 'link';
+                } | null;
+                body: string;
+                createdAt: string;
+                engramIds: string[];
+                expiresAt: string | null;
+                id: string;
+                /** @enum {string} */
+                priority: 'low' | 'medium' | 'high';
+                /** @enum {string} */
+                status: 'pending' | 'dismissed' | 'acted' | 'expired';
+                title: string;
+                /** @enum {string} */
+                type: 'consolidation' | 'staleness' | 'pattern' | 'insight';
+              } | null;
+              success: boolean;
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
         headers: {
           [name: string]: unknown;
         };

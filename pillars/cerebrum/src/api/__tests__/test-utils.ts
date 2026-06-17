@@ -60,6 +60,7 @@ import type {
   ScopeInferenceResultWire,
 } from '../../contract/rest-ingest-schemas.js';
 import type {
+  NudgeConfigureWire,
   NudgeContradictionWire,
   NudgePriorityWire,
   NudgeStatusWire,
@@ -105,6 +106,8 @@ import type { CerebrumDb } from '../../db/index.js';
 import type { EgoLlm, EgoStreamEvent } from '../modules/ego/llm.js';
 import type { GenerationLlm } from '../modules/emit/llm.js';
 import type { IngestLlm, IngestLlmRequest } from '../modules/ingest/llm.js';
+import type { ContradictionAnalyzer } from '../modules/nudges/contradiction-analyzer.js';
+import type { ContradictionEvidence } from '../modules/nudges/types.js';
 import type { QueryLlm, QueryStreamChunk, QueryStreamLlm } from '../modules/query/llm.js';
 import type { ReflexService } from '../modules/reflex/reflex-service.js';
 import type { PeerClients } from '../modules/retrieval/peer-clients.js';
@@ -152,6 +155,26 @@ export function makeFakeContradictionDetector(
   conflict: string | null = null
 ): ContradictionDetector {
   return { detectContradiction: () => Promise.resolve(conflict) };
+}
+
+/**
+ * Offline {@link ContradictionAnalyzer} stub for the nudges pattern detector.
+ * The responder receives both engram ids + bodies and returns structured
+ * evidence (or null for no contradiction); the default surfaces nothing. Never
+ * reaches a real API.
+ */
+export function makeFakeContradictionAnalyzer(
+  responder: (
+    engramA: string,
+    bodyA: string,
+    engramB: string,
+    bodyB: string
+  ) => ContradictionEvidence | null = () => null
+): ContradictionAnalyzer {
+  return {
+    analyze: (engramA, bodyA, engramB, bodyB) =>
+      Promise.resolve(responder(engramA, bodyA, engramB, bodyB)),
+  };
 }
 
 /**
@@ -550,6 +573,14 @@ export function makeClient(app: Express) {
         send<{ contradictions: NudgeContradictionWire[]; total: number }>(
           r.post('/nudges/contradictions').send(filters)
         ),
+      scan: (body: { type?: NudgeTypeWire } = {}) =>
+        send<{ created: number }>(r.post('/nudges/scan').send(body)),
+      act: (id: string) =>
+        send<{ result: { success: boolean; nudge: NudgeWire | null } }>(
+          r.post(`/nudges/${id}/act`).send({})
+        ),
+      configure: (body: NudgeConfigureWire) =>
+        send<{ success: boolean }>(r.post('/nudges/configure').send(body)),
     },
     plexus: {
       listAdapters: () => send<{ adapters: PlexusAdapterWire[] }>(r.get('/plexus/adapters')),
