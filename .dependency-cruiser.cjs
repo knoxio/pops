@@ -58,6 +58,14 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/(app-inventory-db|inventory-db|inventory-contract|inventory-api)(/|$)' },
     },
+    {
+      name: 'no-dead-food-pkgs',
+      severity: 'error',
+      comment:
+        'Food has collapsed into `pillars/food/` — `@pops/app-food-db`, `@pops/food-db`, `@pops/food-contract`, `@pops/food-contracts`, and `@pops/food-api` are the retirement tombstone (deleted once the pops-api food module is gone). No new code may import them; consumers go through `@pops/food` (contract types + api-types + openapi) and the food REST API for cross-pillar calls. Existing pops-api food-module imports are grandfathered in the known-violations baseline until they are removed.',
+      from: { path: '.*' },
+      to: { path: '^@pops/(app-food-db|food-db|food-contract|food-contracts|food-api)(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {
