@@ -34,3 +34,15 @@ export function getEnvInt(name: string, fallback: number): number {
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
+
+/** Default location for the local media-image cache. */
+const DEFAULT_MEDIA_IMAGES_DIR = './data/media/images';
+
+/**
+ * Root directory the media-image cache reads from and writes to. The byte
+ * route serving `/media/images/...` and the image-cache downloader must agree
+ * on this path, so both resolve it through here.
+ */
+export function getMediaImagesDir(): string {
+  return getEnv('MEDIA_IMAGES_DIR') ?? DEFAULT_MEDIA_IMAGES_DIR;
+}

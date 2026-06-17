@@ -1,4 +1,4 @@
-import { getEnv } from '../env.js';
+import { getEnv, getMediaImagesDir } from '../env.js';
 import { TmdbClient } from './client.js';
 import { ImageCacheService } from './image-cache.js';
 import { TokenBucketRateLimiter } from './rate-limiter.js';
@@ -26,15 +26,12 @@ export function getTmdbClient(): TmdbClient {
   return new TmdbClient(apiToken, tmdbRateLimiter);
 }
 
-const DEFAULT_IMAGES_DIR = './data/media/images';
-
 /** Lazy singleton for the image cache service. */
 let imageCache: ImageCacheService | null = null;
 
 export function getImageCache(): ImageCacheService {
   if (!imageCache) {
-    const dir = getEnv('MEDIA_IMAGES_DIR') ?? DEFAULT_IMAGES_DIR;
-    imageCache = new ImageCacheService(dir, tmdbRateLimiter);
+    imageCache = new ImageCacheService(getMediaImagesDir(), tmdbRateLimiter);
   }
   return imageCache;
 }
