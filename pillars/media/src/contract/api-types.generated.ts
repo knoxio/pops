@@ -1834,6 +1834,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/search/movies': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Search movies via TMDB */
+    get: operations['search.movies'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/search/tv-shows': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Search TV shows via TheTVDB */
+    get: operations['search.tvShows'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/seasons/{id}': {
     parameters: {
       query?: never;
@@ -9539,6 +9573,134 @@ export interface operations {
       };
       /** @description 409 */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'search.movies': {
+    parameters: {
+      query: {
+        query: string;
+        page?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            page: number;
+            results: {
+              backdropPath: string | null;
+              genreIds: number[];
+              originalLanguage: string;
+              originalTitle: string;
+              overview: string;
+              popularity: number;
+              posterPath: string | null;
+              releaseDate: string;
+              title: string;
+              tmdbId: number;
+              voteAverage: number;
+              voteCount: number;
+            }[];
+            totalPages: number;
+            totalResults: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 502 */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'search.tvShows': {
+    parameters: {
+      query: {
+        query: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            results: {
+              firstAirDate: string | null;
+              genres: string[];
+              name: string;
+              originalLanguage: string | null;
+              originalName: string | null;
+              overview: string | null;
+              posterPath: string | null;
+              status: string | null;
+              tvdbId: number;
+              year: string | null;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 502 */
+      502: {
         headers: {
           [name: string]: unknown;
         };
