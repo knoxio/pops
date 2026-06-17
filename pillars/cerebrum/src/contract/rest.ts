@@ -16,6 +16,7 @@ import { cerebrumEgoContract } from './rest-ego.js';
 import { cerebrumEmitContract } from './rest-emit.js';
 import { cerebrumEngramsContract } from './rest-engrams.js';
 import { cerebrumGliaContract } from './rest-glia.js';
+import { cerebrumIndexContract } from './rest-index.js';
 import { cerebrumIngestContract } from './rest-ingest.js';
 import { cerebrumNudgesContract } from './rest-nudges.js';
 import { cerebrumPlexusContract } from './rest-plexus.js';
@@ -40,6 +41,7 @@ export const cerebrumContract = c.router(
     glia: cerebrumGliaContract,
     nudges: cerebrumNudgesContract,
     ingest: cerebrumIngestContract,
+    index: cerebrumIndexContract,
     retrieval: cerebrumRetrievalContract,
     ego: cerebrumEgoContract,
     workers: cerebrumWorkersContract,

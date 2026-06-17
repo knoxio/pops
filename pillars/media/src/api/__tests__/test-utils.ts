@@ -337,6 +337,171 @@ export function makeClient(app: Express) {
     },
     comparisons: makeComparisonsClient(r),
     rotation: makeRotationClient(r),
+    discovery: makeDiscoveryClient(r),
+    search: makeSearchClient(r),
+  };
+}
+
+interface MovieSearchResultWire {
+  tmdbId: number;
+  title: string;
+  posterPath: string | null;
+  voteAverage: number;
+}
+
+interface TvShowSearchResultWire {
+  tvdbId: number;
+  name: string;
+  year: string | null;
+}
+
+function makeSearchClient(r: ReturnType<typeof supertest>) {
+  return {
+    movies: (query: { query: string; page?: number }) =>
+      send<{
+        results: MovieSearchResultWire[];
+        totalResults: number;
+        totalPages: number;
+        page: number;
+      }>(r.get('/search/movies').query(query)),
+    tvShows: (query: { query: string }) =>
+      send<{ results: TvShowSearchResultWire[] }>(r.get('/search/tv-shows').query(query)),
+  };
+}
+
+interface DiscoverResultWire {
+  tmdbId: number;
+  title: string;
+  overview: string;
+  releaseDate: string;
+  posterPath: string | null;
+  posterUrl: string | null;
+  backdropPath: string | null;
+  voteAverage: number;
+  voteCount: number;
+  genreIds: number[];
+  popularity: number;
+  inLibrary: boolean;
+  isWatched: boolean;
+  onWatchlist: boolean;
+  rotationExpiresAt?: string;
+}
+
+interface ScoredDiscoverResultWire extends DiscoverResultWire {
+  matchPercentage: number;
+  matchReason: string;
+}
+
+interface PreferenceProfileWire {
+  genreAffinities: {
+    genre: string;
+    avgScore: number;
+    movieCount: number;
+    totalComparisons: number;
+  }[];
+  dimensionWeights: {
+    dimensionId: number;
+    name: string;
+    comparisonCount: number;
+    avgScore: number;
+  }[];
+  genreDistribution: { genre: string; watchCount: number; percentage: number }[];
+  totalMoviesWatched: number;
+  totalComparisons: number;
+}
+
+interface QuickPickMovieWire {
+  id: number;
+  tmdbId: number;
+  title: string;
+  releaseDate: string | null;
+  posterPath: string | null;
+  posterUrl: string | null;
+  backdropPath: string | null;
+  overview: string | null;
+  voteAverage: number | null;
+  genres: string;
+  runtime: number | null;
+}
+
+interface RewatchSuggestionWire {
+  id: number;
+  tmdbId: number;
+  title: string;
+  posterUrl: string | null;
+  eloScore: number | null;
+  score: number;
+  inLibrary: true;
+}
+
+interface AssembledShelfWire {
+  shelfId: string;
+  title: string;
+  subtitle: string | null;
+  emoji: string | null;
+  pinned: boolean;
+  items: DiscoverResultWire[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
+function makeDiscoveryClient(r: ReturnType<typeof supertest>) {
+  return {
+    getDismissed: () => send<{ data: number[] }>(r.get('/discovery/dismissed')),
+    dismiss: (tmdbId: number) =>
+      send<{ message: string }>(r.post('/discovery/dismiss').send({ tmdbId })),
+    undismiss: (tmdbId: number) =>
+      send<{ message: string }>(r.post('/discovery/undismiss').send({ tmdbId })),
+    profile: () => send<{ data: PreferenceProfileWire }>(r.get('/discovery/profile')),
+    quickPick: (query: { count?: number } = {}) =>
+      send<{ data: QuickPickMovieWire[] }>(r.get('/discovery/quick-pick').query(query)),
+    rewatchSuggestions: () =>
+      send<{ data: RewatchSuggestionWire[] }>(r.get('/discovery/rewatch-suggestions')),
+    fromYourServer: () =>
+      send<{ results: ScoredDiscoverResultWire[] }>(r.get('/discovery/from-your-server')),
+    trending: (query: { timeWindow?: string; page?: number } = {}) =>
+      send<{ results: DiscoverResultWire[]; totalResults: number; page: number }>(
+        r.get('/discovery/trending').query(query)
+      ),
+    trendingPlex: (query: { limit?: number } = {}) =>
+      send<{ data: null }>(r.get('/discovery/trending-plex').query(query)),
+    watchlistRecommendations: () =>
+      send<{ results: ScoredDiscoverResultWire[]; sourceMovies: string[] }>(
+        r.get('/discovery/watchlist-recommendations')
+      ),
+    recommendations: (query: { sampleSize?: number } = {}) =>
+      send<{
+        results: ScoredDiscoverResultWire[];
+        sourceMovies: string[];
+        totalComparisons: number;
+      }>(r.get('/discovery/recommendations').query(query)),
+    contextPicks: (query: { pages?: string } = {}) =>
+      send<{
+        collections: { id: string; title: string; emoji: string; results: DiscoverResultWire[] }[];
+      }>(r.get('/discovery/context-picks').query(query)),
+    genreSpotlight: () =>
+      send<{
+        genres: {
+          genreId: number;
+          genreName: string;
+          results: ScoredDiscoverResultWire[];
+          totalPages: number;
+        }[];
+      }>(r.get('/discovery/genre-spotlight')),
+    genreSpotlightPage: (query: { genreId: number; page: number }) =>
+      send<{
+        genreId: number;
+        genreName: string;
+        results: ScoredDiscoverResultWire[];
+        page: number;
+        totalPages: number;
+      }>(r.get('/discovery/genre-spotlight/page').query(query)),
+    assembleSession: () =>
+      send<{ shelves: AssembledShelfWire[] }>(r.post('/discovery/session').send({})),
+    getShelfPage: (shelfId: string, query: { limit?: number; offset?: number } = {}) =>
+      send<{ items: DiscoverResultWire[]; hasMore: boolean; totalCount: number | null }>(
+        r.get(`/discovery/shelves/${encodeURIComponent(shelfId)}`).query(query)
+      ),
   };
 }
 

@@ -113,6 +113,21 @@ export type { DismissedDiscoverRow } from './services/dismissed-discover.js';
 export * as dismissedDiscoverService from './services/dismissed-discover.js';
 
 export type {
+  DimensionWeight,
+  DiscoverResult,
+  GenreAffinity,
+  GenreDistribution,
+  PreferenceProfile,
+  QuickPickMovie,
+  RewatchSuggestion,
+  ScoredDiscoverResult,
+} from './services/discovery/index.js';
+
+export { TMDB_GENRE_MAP } from './services/discovery/index.js';
+
+export * as discoveryService from './services/discovery/index.js';
+
+export type {
   LibraryListInput,
   LibraryListResult,
   LibraryRawRow,

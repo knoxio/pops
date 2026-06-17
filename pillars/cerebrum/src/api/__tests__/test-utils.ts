@@ -38,6 +38,12 @@ import type {
   GliaUserDecisionWire,
 } from '../../contract/rest-glia-schemas.js';
 import type {
+  IndexReconcileResponseWire,
+  IndexReindexResponseWire,
+  IndexReindexSourcesResponseWire,
+  IndexStatusResponseWire,
+} from '../../contract/rest-index-schemas.js';
+import type {
   ClassificationResultWire,
   IngestEnrichmentStatusResponseWire,
   IngestExtractEntitiesResponseWire,
@@ -620,6 +626,17 @@ export function makeClient(app: Express) {
         send<IngestRetryEnrichmentResponseWire>(
           r.post('/ingest/retry-enrichment').send({ engramId })
         ),
+    },
+    index: {
+      status: () => send<IndexStatusResponseWire>(r.get('/index/status')),
+      reindex: (force?: boolean) =>
+        send<IndexReindexResponseWire>(r.post('/index/reindex').send({ force })),
+      reindexSources: (sourceTypes?: string[]) =>
+        send<IndexReindexSourcesResponseWire>(
+          r.post('/index/reindex-sources').send(sourceTypes ? { sourceTypes } : {})
+        ),
+      reconcile: (dryRun?: boolean) =>
+        send<IndexReconcileResponseWire>(r.post('/index/reconcile').send({ dryRun })),
     },
     retrieval: {
       search: (body: RetrievalSearchBody = {}) =>

@@ -30,6 +30,8 @@ import { getReflexService } from './modules/reflex/instance.js';
 import { resolveEmbeddingClientFromEnv } from './modules/retrieval/embedding-client.js';
 import { resolvePeerClientsFromEnv } from './modules/retrieval/peer-clients.js';
 import { TemplateRegistry } from './modules/templates/registry.js';
+import { startThalamusWatcher, stopThalamusWatcher } from './modules/thalamus/instance.js';
+import { closeCerebrumEmbeddingsQueue, getEmbeddingsQueue } from './modules/thalamus/queue.js';
 import { AnthropicContradictionDetector } from './modules/workers/llm.js';
 import { parseBareOrigin } from './pillars/env.js';
 
@@ -78,6 +80,7 @@ const app = createCerebrumApiApp({
   egoLlm: new AnthropicEgoLlm(),
   auditorContradictionDetector: new AnthropicContradictionDetector(),
   curationQueue: getCurationQueue,
+  embeddingsQueue: getEmbeddingsQueue,
   version,
   selfBaseUrl,
   peerClients: resolvePeerClientsFromEnv(),
@@ -86,6 +89,8 @@ const app = createCerebrumApiApp({
   queryLlm: new AnthropicQueryLlm(),
   queryStreamLlm: new AnthropicQueryStreamLlm(),
 });
+
+startThalamusWatcher({ db: cerebrumDb.db, engramRoot, queueAccessor: getEmbeddingsQueue });
 
 let pillarHandle: PillarBootstrapHandle | undefined;
 if (process.env['POPS_REGISTRY_ENABLED'] === 'true') {
@@ -105,7 +110,9 @@ function shutdown(signal: NodeJS.Signals): void {
   shuttingDown = true;
   console.warn(`[cerebrum-api] Shutting down (${signal})`);
   void (pillarHandle?.stop() ?? Promise.resolve())
+    .then(() => stopThalamusWatcher())
     .then(() => closeCerebrumIngestQueue())
+    .then(() => closeCerebrumEmbeddingsQueue())
     .finally(() => {
       server.close(() => {
         cerebrumDb.raw.close();
