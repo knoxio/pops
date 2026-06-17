@@ -1,37 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockStartMutate = vi.fn();
-const mockGetActive = vi.fn();
-const mockGetStatus = vi.fn();
-let capturedStartOpts: Record<string, (...args: unknown[]) => unknown> = {};
+const { plexGetActiveSyncJobsMock, plexGetSyncJobStatusMock, plexStartSyncJobMock } = vi.hoisted(
+  () => ({
+    plexGetActiveSyncJobsMock: vi.fn(),
+    plexGetSyncJobStatusMock: vi.fn(),
+    plexStartSyncJobMock: vi.fn(),
+  })
+);
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (
-    _pillarId: string,
-    path: readonly string[],
-    input: unknown,
-    opts?: Record<string, unknown>
-  ) => {
-    const key = path.join('.');
-    if (key === 'plex.getActiveSyncJobs') return mockGetActive(input, opts);
-    if (key === 'plex.getSyncJobStatus') return mockGetStatus(input, opts);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: Record<string, (...args: unknown[]) => unknown>
-  ) => {
-    const key = path.join('.');
-    if (key === 'plex.startSyncJob') {
-      capturedStartOpts = opts;
-      return { mutate: mockStartMutate, isPending: false };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
+vi.mock('../../media-api/index.js', () => ({
+  plexGetActiveSyncJobs: (...args: unknown[]) => plexGetActiveSyncJobsMock(...args),
+  plexGetSyncJobStatus: (...args: unknown[]) => plexGetSyncJobStatusMock(...args),
+  plexStartSyncJob: (...args: unknown[]) => plexStartSyncJobMock(...args),
 }));
 
 const mockToastSuccess = vi.fn();
@@ -45,6 +28,10 @@ vi.mock('sonner', () => ({
 
 import { WatchlistPlexSyncButton } from './WatchlistPlexSyncButton';
 
+function ok<T>(data: T) {
+  return { data, error: undefined };
+}
+
 function renderButton() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -55,76 +42,88 @@ function renderButton() {
 }
 
 function setupIdle(): void {
-  mockGetActive.mockReturnValue({ data: { data: [] }, isLoading: false });
-  mockGetStatus.mockReturnValue({ data: undefined, isLoading: false });
+  plexGetActiveSyncJobsMock.mockResolvedValue(ok({ data: [] }));
+  plexGetSyncJobStatusMock.mockResolvedValue(ok({ data: undefined }));
 }
 
 function setupRunning(): void {
-  mockGetActive.mockReturnValue({ data: { data: [] }, isLoading: false });
-  mockGetStatus.mockReturnValue({
-    data: {
-      data: {
-        id: 'job-1',
-        jobType: 'plexSyncWatchlist',
-        status: 'running',
-        startedAt: '2026-04-26T00:00:00Z',
-        completedAt: null,
-        durationMs: null,
-        progress: { processed: 1, total: 10 },
-        result: null,
-        error: null,
-      },
-    },
-    isLoading: false,
-  });
+  plexGetActiveSyncJobsMock.mockResolvedValue(
+    ok({
+      data: [
+        {
+          id: 'job-1',
+          jobType: 'plexSyncWatchlist',
+          status: 'running',
+          startedAt: '2026-04-26T00:00:00Z',
+          completedAt: null,
+          durationMs: null,
+          progress: { processed: 1, total: 10 },
+          result: null,
+          error: null,
+        },
+      ],
+    })
+  );
+  plexGetSyncJobStatusMock.mockResolvedValue(ok({ data: undefined }));
 }
 
 describe('WatchlistPlexSyncButton', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    capturedStartOpts = {};
+    plexStartSyncJobMock.mockResolvedValue(ok({ data: { jobId: 'job-1' } }));
   });
 
-  it('renders the sync button with label "Sync with Plex" when idle', () => {
+  it('renders the sync button with label "Sync with Plex" when idle', async () => {
     setupIdle();
     renderButton();
     const button = screen.getByTestId('watchlist-plex-sync-button');
     expect(button).toBeInTheDocument();
+    await waitFor(() => expect(button).not.toBeDisabled());
     expect(button).toHaveTextContent('Sync with Plex');
-    expect(button).not.toBeDisabled();
   });
 
-  it('exposes an aria-label for assistive tech', () => {
+  it('exposes an aria-label for assistive tech', async () => {
     setupIdle();
     renderButton();
     expect(screen.getByRole('button', { name: 'Sync watchlist with Plex' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId('watchlist-plex-sync-button')).not.toBeDisabled()
+    );
   });
 
-  it('triggers a plexSyncWatchlist mutation when clicked', () => {
+  it('triggers a plexSyncWatchlist mutation when clicked', async () => {
     setupIdle();
     renderButton();
-    fireEvent.click(screen.getByTestId('watchlist-plex-sync-button'));
-    expect(mockStartMutate).toHaveBeenCalledTimes(1);
-    expect(mockStartMutate).toHaveBeenCalledWith({ jobType: 'plexSyncWatchlist' });
+    const button = screen.getByTestId('watchlist-plex-sync-button');
+    await waitFor(() => expect(button).not.toBeDisabled());
+    fireEvent.click(button);
+    await waitFor(() => expect(plexStartSyncJobMock).toHaveBeenCalledTimes(1));
+    expect(plexStartSyncJobMock).toHaveBeenCalledWith({ body: { jobType: 'plexSyncWatchlist' } });
   });
 
-  it('disables the button and swaps copy to "Syncing…" while a job is running', () => {
+  it('disables the button and swaps copy to "Syncing…" while a job is running', async () => {
     setupRunning();
     renderButton();
     const button = screen.getByTestId('watchlist-plex-sync-button');
-    expect(button).toBeDisabled();
+    await waitFor(() => expect(button).toBeDisabled());
     expect(button).toHaveTextContent('Syncing…');
   });
 
-  it('surfaces the start mutation error path via the hook (error toast)', () => {
+  it('surfaces the start mutation error path via the hook (error toast)', async () => {
     setupIdle();
+    plexStartSyncJobMock.mockResolvedValue({
+      data: undefined,
+      error: { message: 'queue down' },
+      response: { status: 503 } as Response,
+    });
     renderButton();
-    const onError = capturedStartOpts.onError;
-    expect(typeof onError).toBe('function');
-    if (typeof onError !== 'function') return;
-    onError({ message: 'queue down' });
-    expect(mockToastError).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to start Watchlist sync')
+    const button = screen.getByTestId('watchlist-plex-sync-button');
+    await waitFor(() => expect(button).not.toBeDisabled());
+    fireEvent.click(button);
+    await waitFor(() =>
+      expect(mockToastError).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to start Watchlist sync')
+      )
     );
   });
 });
