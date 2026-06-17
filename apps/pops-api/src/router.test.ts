@@ -26,7 +26,6 @@ import { manifest as cerebrumEgoManifest } from './modules/cerebrum/ego/index.js
 import { manifest as cerebrumManifest } from './modules/cerebrum/index.js';
 import { manifest as coreManifest } from './modules/core/index.js';
 import { manifest as financeManifest } from './modules/finance/index.js';
-import { manifest as foodManifest } from './modules/food/index.js';
 import {
   __resetInstalledManifestsOverride,
   __setInstalledManifestsOverride,
@@ -71,7 +70,6 @@ describe('PRD-101 US-03 root router composition', () => {
       inventoryManifest.id,
       cerebrumManifest.id,
       cerebrumEgoManifest.id,
-      foodManifest.id,
       // PRD-140 fills `listsRouter` with the lists CRUD procedures, so the
       // `lists` top-level id appears under `appRouter` now.
       listsManifest.id,
@@ -136,7 +134,6 @@ describe('PRD-101 US-03 AppRouter type narrowing (compile-time)', () => {
     const allowed = new Set([
       coreManifest.id,
       financeManifest.id,
-      foodManifest.id,
       mediaManifest.id,
       inventoryManifest.id,
       cerebrumManifest.id,

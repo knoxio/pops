@@ -9,7 +9,6 @@ on:
       - "packages/db-types/**"
       - "packages/finance-contract/**"
       - "packages/finance-db/**"
-      - "packages/food-db/**"
       - "packages/inventory-db/**"
       - "pillars/lists/db/**"
       - "packages/media-db/**"
@@ -26,7 +25,6 @@ on:
       - "packages/db-types/**"
       - "packages/finance-contract/**"
       - "packages/finance-db/**"
-      - "packages/food-db/**"
       - "packages/inventory-db/**"
       - "pillars/lists/db/**"
       - "packages/media-db/**"
@@ -54,7 +52,6 @@ jobs:
               - 'packages/db-types/**'
               - 'packages/finance-contract/**'
               - 'packages/finance-db/**'
-              - 'packages/food-db/**'
               - 'packages/inventory-db/**'
               - 'pillars/lists/db/**'
               - 'packages/media-db/**'

@@ -4,7 +4,6 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { closeDb, setCoreDb, setDb } from '../db.js';
 import { setCerebrumDb } from '../db/cerebrum-handle.js';
 import { setFinanceDb } from '../db/finance-handle.js';
-import { setFoodDb } from '../db/food-handle.js';
 import { setInventoryDb } from '../db/inventory-handle.js';
 import { setListsDb } from '../db/lists-handle.js';
 import { setMediaDb } from '../db/media-db-handle.js';
@@ -1522,14 +1521,6 @@ export function setupTestContext() {
     // sqlite-vec; vector consumers that need it inject their own handle.
     setCerebrumDb({ db: drizzle(db), raw: db, vecAvailable: false });
 
-    // Same for the food pillar handle (phase 2 PR 2): the handle is
-    // opened at boot but no router has cut over yet. The injection is
-    // forward-looking — once PR 3 routes prep_states (and subsequent
-    // slices) through getFoodDrizzle() the fixture will already be
-    // pointed at the in-memory DB and won't try to open
-    // `data/food.db` mid-suite.
-    setFoodDb({ db: drizzle(db), raw: db });
-
     // Same for the lists pillar handle (phase 2 PR 3): every lists
     // module read + write now resolves getListsDrizzle(), so the test
     // fixture has to surface its tables (lists, list_items) on the
@@ -1551,7 +1542,6 @@ export function setupTestContext() {
     setInventoryDb(null);
     setMediaDb(null);
     setCerebrumDb(null);
-    setFoodDb(null);
     setListsDb(null);
     closeDb();
   }

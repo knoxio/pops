@@ -11,7 +11,6 @@ import { createPreMigrationBackup, isFreshDatabase } from './db/backup.js';
 import { closeCerebrumDb } from './db/cerebrum-handle.js';
 import { resolveCoreSqlitePath } from './db/core-sqlite-path.js';
 import { closeFinanceDb } from './db/finance-handle.js';
-import { closeFoodDb } from './db/food-handle.js';
 import { closeInventoryDb } from './db/inventory-handle.js';
 import { KNOWN_PILLARS } from './db/known-pillars.js';
 import { closeListsDb } from './db/lists-handle.js';
@@ -243,7 +242,6 @@ export function closeDb(): void {
   closeInventoryDb();
   closeMediaDb();
   closeCerebrumDb();
-  closeFoodDb();
   closeListsDb();
 }
 

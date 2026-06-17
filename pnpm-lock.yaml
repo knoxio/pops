@@ -69,9 +69,6 @@ importers:
       '@pops/core-db':
         specifier: workspace:*
         version: link:../../packages/core-db
-      '@pops/food':
-        specifier: workspace:*
-        version: link:../../pillars/food
       '@pops/media-contract':
         specifier: workspace:*
         version: link:../../packages/media-contract
