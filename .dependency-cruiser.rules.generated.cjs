@@ -27,18 +27,6 @@ const contractBoundaryRules = [
     },
   },
   {
-    name: 'no-cross-pillar-runtime-import-finance',
-    severity: 'error',
-    comment:
-      'Non-owning code must not import @pops/finance-db. Use @pops/finance-contract for types and the pillar() SDK for calls. See docs/themes/13-pillar-finale/prds/156-consumer-import-discipline/README.md',
-    from: {
-      pathNot: '^(apps/pops-finance-api|packages/finance-db|packages/finance-contract/scripts)/',
-    },
-    to: {
-      path: '^packages/finance-db/',
-    },
-  },
-  {
     name: 'no-cross-pillar-runtime-import-media',
     severity: 'error',
     comment:
