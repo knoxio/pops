@@ -14,6 +14,7 @@ on:
       - "pillars/finance/openapi/**"
       - "pillars/food/openapi/**"
       - "pillars/cerebrum/openapi/**"
+      - "pillars/media/openapi/**"
       - "packages/db-types/**"
       - "packages/inventory-db/**"
       - "pillars/lists/db/**"
@@ -35,6 +36,7 @@ on:
       - "pillars/finance/openapi/**"
       - "pillars/food/openapi/**"
       - "pillars/cerebrum/openapi/**"
+      - "pillars/media/openapi/**"
       - "packages/db-types/**"
       - "packages/inventory-db/**"
       - "pillars/lists/db/**"
@@ -69,6 +71,7 @@ jobs:
               - 'pillars/finance/openapi/**'
               - 'pillars/food/openapi/**'
               - 'pillars/cerebrum/openapi/**'
+              - 'pillars/media/openapi/**'
               - 'pillars/lists/db/**'
               - 'pillars/lists/contract/**'
               - 'packages/navigation/**'
