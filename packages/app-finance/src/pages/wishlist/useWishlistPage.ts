@@ -1,10 +1,16 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../finance-api-helpers.js';
+import {
+  wishlistCreate,
+  wishlistDelete,
+  wishlistList,
+  wishlistUpdate,
+} from '../../finance-api/index.js';
 import {
   DEFAULT_WISHLIST_VALUES,
   WishlistItemSchema,
@@ -12,19 +18,11 @@ import {
   type WishlistItem,
 } from './types';
 
-interface WishlistListResult {
-  data: WishlistItem[];
-  pagination: { total: number };
-}
+import type { WishlistCreateData } from '../../finance-api/types.gen.js';
 
-interface CreateWishlistInput {
-  item: string;
-  targetAmount: number | null;
-  saved: number | null;
-  priority: WishlistFormValues['priority'];
-  url: string | null;
-  notes: string | null;
-}
+const WISHLIST_LIST_INPUT = { limit: 100 } as const;
+
+type CreateWishlistInput = NonNullable<WishlistCreateData['body']>;
 interface UpdateWishlistInput {
   id: string;
   data: CreateWishlistInput;
@@ -40,40 +38,39 @@ interface MutationDeps {
 }
 
 function useWishlistMutations(deps: MutationDeps) {
-  const createMutation = usePillarMutation<CreateWishlistInput, unknown>(
-    'finance',
-    ['wishlist', 'create'],
-    {
-      onSuccess: () => {
-        toast.success('Item added to wishlist');
-        deps.setIsDialogOpen(false);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const updateMutation = usePillarMutation<UpdateWishlistInput, unknown>(
-    'finance',
-    ['wishlist', 'update'],
-    {
-      onSuccess: () => {
-        toast.success('Item updated');
-        deps.setIsDialogOpen(false);
-        deps.setEditingItem(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const deleteMutation = usePillarMutation<DeleteWishlistInput, unknown>(
-    'finance',
-    ['wishlist', 'delete'],
-    {
-      onSuccess: () => {
-        toast.success('Item removed');
-        deps.setDeletingId(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['finance', 'wishlist'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (input: CreateWishlistInput) => unwrap(await wishlistCreate({ body: input })),
+    onSuccess: () => {
+      toast.success('Item added to wishlist');
+      deps.setIsDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateWishlistInput) =>
+      unwrap(await wishlistUpdate({ path: { id: input.id }, body: input.data })),
+    onSuccess: () => {
+      toast.success('Item updated');
+      deps.setIsDialogOpen(false);
+      deps.setEditingItem(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (input: DeleteWishlistInput) =>
+      unwrap(await wishlistDelete({ path: { id: input.id } })),
+    onSuccess: () => {
+      toast.success('Item removed');
+      deps.setDeletingId(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
   return { createMutation, updateMutation, deleteMutation };
 }
 
@@ -110,7 +107,10 @@ export function useWishlistPage() {
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const query = usePillarQuery<WishlistListResult>('finance', ['wishlist', 'list'], { limit: 100 });
+  const query = useQuery({
+    queryKey: ['finance', 'wishlist', 'list', WISHLIST_LIST_INPUT],
+    queryFn: async () => unwrap(await wishlistList({ query: WISHLIST_LIST_INPUT })),
+  });
   const { createMutation, updateMutation, deleteMutation } = useWishlistMutations({
     setIsDialogOpen,
     setEditingItem,
@@ -137,7 +137,7 @@ export function useWishlistPage() {
       item: values.item,
       targetAmount: values.targetAmount ?? null,
       saved: values.saved ?? null,
-      priority: values.priority,
+      priority: values.priority ?? undefined,
       url: values.url === '' ? null : (values.url ?? null),
       notes: values.notes === '' ? null : (values.notes ?? null),
     };

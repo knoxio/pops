@@ -1,22 +1,16 @@
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { ErrorAlert, PageHeader } from '@pops/ui';
 
+import { unwrap } from '../finance-api-helpers.js';
+import { budgetsList, transactionsList } from '../finance-api/index.js';
 import { ActiveBudgets } from './dashboard/ActiveBudgets';
 import { RecentTransactions } from './dashboard/RecentTransactions';
 import { computeStats, StatsGrid } from './dashboard/StatsGrid';
 
-import type { Budget } from '@pops/api/modules/finance/budgets/types';
-import type { Transaction } from '@pops/api/modules/finance/transactions/types';
-
-interface TransactionsListResult {
-  data: Transaction[];
-  pagination: { total: number };
-}
-interface BudgetsListResult {
-  data: Budget[];
-}
+const TRANSACTIONS_LIST_INPUT = { limit: 10 } as const;
+const BUDGETS_LIST_INPUT = { limit: 5 } as const;
 
 export function DashboardPage() {
   const { t } = useTranslation('finance');
@@ -24,12 +18,14 @@ export function DashboardPage() {
     data: transactions,
     isLoading: transactionsLoading,
     error: transactionsError,
-  } = usePillarQuery<TransactionsListResult>('finance', ['transactions', 'list'], { limit: 10 });
-  const { data: budgets, isLoading: budgetsLoading } = usePillarQuery<BudgetsListResult>(
-    'finance',
-    ['budgets', 'list'],
-    { limit: 5 }
-  );
+  } = useQuery({
+    queryKey: ['finance', 'transactions', 'list', TRANSACTIONS_LIST_INPUT],
+    queryFn: async () => unwrap(await transactionsList({ query: TRANSACTIONS_LIST_INPUT })),
+  });
+  const { data: budgets, isLoading: budgetsLoading } = useQuery({
+    queryKey: ['finance', 'budgets', 'list', BUDGETS_LIST_INPUT],
+    queryFn: async () => unwrap(await budgetsList({ query: BUDGETS_LIST_INPUT })),
+  });
 
   const stats = computeStats(transactions?.data, transactions?.pagination.total);
 

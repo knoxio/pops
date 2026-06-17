@@ -1,12 +1,13 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useSetPageContext } from '@pops/navigation';
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Alert, Button, DataTable, PageHeader, Skeleton } from '@pops/ui';
 
-import { usePillarCall } from '../lib/pillar-call';
+import { unwrap } from '../finance-api-helpers.js';
+import { transactionsSuggestTags, transactionsUpdate } from '../finance-api/index.js';
 import { buildColumns, buildTransactionFilters, type Transaction } from './transactions/columns';
 import { DeleteTransactionDialog } from './transactions/DeleteTransactionDialog';
 import { TransactionFormDialog } from './transactions/TransactionFormDialog';
@@ -87,16 +88,14 @@ interface UpdateInput {
   id: string;
   data: { tags: string[] };
 }
-interface SuggestTagsResult {
-  tags: string[];
-}
 
 function useTagHandlers() {
-  const pillarCall = usePillarCall();
-  const updateMutation = usePillarMutation<UpdateInput, unknown>('finance', [
-    'transactions',
-    'update',
-  ]);
+  const queryClient = useQueryClient();
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateInput) =>
+      unwrap(await transactionsUpdate({ path: { id: input.id }, body: input.data })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['finance', 'transactions'] }),
+  });
   const onTagSave = useCallback(
     (transactionId: string, _entityId: string | null, _description: string) =>
       async (tags: string[]) => {
@@ -106,15 +105,18 @@ function useTagHandlers() {
   );
   const onTagSuggest = useCallback(
     (description: string, entityId: string | null) => async () => {
-      const result = await pillarCall<SuggestTagsResult>(
-        'finance',
-        ['transactions', 'suggestTags'],
-        { description, entityId: entityId ?? null }
-      );
-      if (result.kind !== 'ok') return [];
-      return result.value.tags;
+      try {
+        const result = unwrap(
+          await transactionsSuggestTags({
+            query: { description, ...(entityId !== null && { entityId }) },
+          })
+        );
+        return result.tags;
+      } catch {
+        return [];
+      }
     },
-    [pillarCall]
+    []
   );
   return { onTagSave, onTagSuggest };
 }

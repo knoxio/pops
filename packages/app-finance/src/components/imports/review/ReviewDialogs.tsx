@@ -1,27 +1,21 @@
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import {
+  importsReevaluateWithPendingRules,
+  type ImportsReevaluateWithPendingRulesData,
+} from '../../../finance-api/index.js';
+import { toRestCorrectionChangeSet } from '../../../lib/rest-changeset';
 import { useImportStore } from '../../../store/importStore';
 import { CorrectionProposalDialog } from '../CorrectionProposalDialog';
 import { EntityCreateDialog } from '../EntityCreateDialog';
-
-import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
-import type { ProcessImportOutput } from '@pops/api/modules/finance/imports';
 
 import type { useBulkAssignment } from '../hooks/useBulkAssignment';
 import type { useProposalGeneration } from '../hooks/useProposalGeneration';
 import type { useTransactionReview } from '../hooks/useTransactionReview';
 
-interface ReevaluateInput {
-  sessionId: string;
-  minConfidence: number;
-  pendingChangeSets: Array<{ changeSet: ChangeSet }>;
-}
-interface ReevaluateResponse {
-  result: ProcessImportOutput;
-  affectedCount: number;
-}
+type ReevaluateInput = NonNullable<ImportsReevaluateWithPendingRulesData['body']>;
 
 interface BrowseDialogProps {
   open: boolean;
@@ -39,17 +33,19 @@ function BrowseDialog({
   setLocalTransactions,
 }: BrowseDialogProps) {
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
-  const reevaluateMutation = usePillarMutation<ReevaluateInput, ReevaluateResponse>('finance', [
-    'imports',
-    'reevaluateWithPendingRules',
-  ]);
+  const reevaluateMutation = useMutation({
+    mutationFn: async (vars: ReevaluateInput) =>
+      unwrap(await importsReevaluateWithPendingRules({ body: vars })),
+  });
   const onClose = (hadChanges: boolean) => {
     if (!hadChanges || !sessionId || pendingChangeSets.length === 0) return;
     reevaluateMutation.mutate(
       {
         sessionId,
         minConfidence: 0.7,
-        pendingChangeSets: pendingChangeSets.map((pcs) => ({ changeSet: pcs.changeSet })),
+        pendingChangeSets: pendingChangeSets.map((pcs) => ({
+          changeSet: toRestCorrectionChangeSet(pcs.changeSet),
+        })),
       },
       {
         onSuccess: ({ result, affectedCount }) => {

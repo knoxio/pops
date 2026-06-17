@@ -1,23 +1,17 @@
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import {
+  importsReevaluateWithPendingRules,
+  type ImportsReevaluateWithPendingRulesData,
+} from '../../../finance-api/index.js';
+import { toRestCorrectionChangeSet } from '../../../lib/rest-changeset';
 import { groupTransactionsByEntity } from '../../../lib/transaction-utils';
 import { useImportStore } from '../../../store/importStore';
 
-import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
-import type { ProcessImportOutput } from '@pops/api/modules/finance/imports';
-
-interface ReevaluateInput {
-  sessionId: string;
-  minConfidence: number;
-  pendingChangeSets: Array<{ changeSet: ChangeSet }>;
-}
-interface ReevaluateResponse {
-  result: ProcessImportOutput;
-  affectedCount: number;
-}
+type ReevaluateInput = NonNullable<ImportsReevaluateWithPendingRulesData['body']>;
 
 export type ViewMode = 'list' | 'grouped';
 
@@ -51,10 +45,10 @@ function useReevalOnChangeSets(
   sessionId: string | null
 ) {
   const prevChangeSetsRef = useRef(pendingChangeSets);
-  const reevaluateMutation = usePillarMutation<ReevaluateInput, ReevaluateResponse>('finance', [
-    'imports',
-    'reevaluateWithPendingRules',
-  ]);
+  const reevaluateMutation = useMutation({
+    mutationFn: async (vars: ReevaluateInput) =>
+      unwrap(await importsReevaluateWithPendingRules({ body: vars })),
+  });
   useEffect(() => {
     if (prevChangeSetsRef.current === pendingChangeSets) return;
     prevChangeSetsRef.current = pendingChangeSets;
@@ -64,7 +58,9 @@ function useReevalOnChangeSets(
       {
         sessionId,
         minConfidence: 0.7,
-        pendingChangeSets: pendingChangeSets.map((pcs) => ({ changeSet: pcs.changeSet })),
+        pendingChangeSets: pendingChangeSets.map((pcs) => ({
+          changeSet: toRestCorrectionChangeSet(pcs.changeSet),
+        })),
       },
       {
         onSuccess: ({ result }) => {

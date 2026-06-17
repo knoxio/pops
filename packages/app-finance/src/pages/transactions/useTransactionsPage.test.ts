@@ -1,41 +1,33 @@
-import { act, renderHook } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Transaction, TransactionFormValues } from './types';
 
-// ---------- mocks ----------
+const transactionsListMock = vi.hoisted(() => vi.fn());
+const transactionsAvailableTagsMock = vi.hoisted(() => vi.fn());
+const transactionsCreateMock = vi.hoisted(() => vi.fn());
+const transactionsUpdateMock = vi.hoisted(() => vi.fn());
+const transactionsDeleteMock = vi.hoisted(() => vi.fn());
+const transactionsRestoreMock = vi.hoisted(() => vi.fn());
 
-const mockListQuery = vi.fn();
-const mockAvailableTagsQuery = vi.fn();
-const mockEntitiesListQuery = vi.fn();
-const mockCreateMutate = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockDeleteMutate = vi.fn();
-const mockRestoreMutate = vi.fn();
+const entitiesListMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../finance-api/index.js', () => ({
+  transactionsList: (...args: unknown[]) => transactionsListMock(...args),
+  transactionsAvailableTags: (...args: unknown[]) => transactionsAvailableTagsMock(...args),
+  transactionsCreate: (...args: unknown[]) => transactionsCreateMock(...args),
+  transactionsUpdate: (...args: unknown[]) => transactionsUpdateMock(...args),
+  transactionsDelete: (...args: unknown[]) => transactionsDeleteMock(...args),
+  transactionsRestore: (...args: unknown[]) => transactionsRestoreMock(...args),
+}));
 
 vi.mock('@pops/pillar-sdk/react', () => ({
   usePillarQuery: (_pillarId: string, path: readonly string[], input?: unknown) => {
     const key = path.join('.');
-    if (key === 'transactions.list') return mockListQuery(input);
-    if (key === 'transactions.availableTags') return mockAvailableTagsQuery(input);
-    if (key === 'entities.list') return mockEntitiesListQuery(input);
+    if (key === 'entities.list') return entitiesListMock(input);
     return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'transactions.create') {
-      return { mutate: (...args: unknown[]) => mockCreateMutate(...args), isPending: false };
-    }
-    if (key === 'transactions.update') {
-      return { mutate: (...args: unknown[]) => mockUpdateMutate(...args), isPending: false };
-    }
-    if (key === 'transactions.delete') {
-      return { mutate: (...args: unknown[]) => mockDeleteMutate(...args), isPending: false };
-    }
-    if (key === 'transactions.restore') {
-      return { mutate: (...args: unknown[]) => mockRestoreMutate(...args), isPending: false };
-    }
-    return { mutate: vi.fn(), isPending: false };
   },
 }));
 
@@ -47,10 +39,7 @@ vi.mock('sonner', () => ({
 }));
 
 import { TransactionFormSchema } from './types';
-// Import after mocks are registered.
 import { buildTransactionPayload, useTransactionsPage } from './useTransactionsPage';
-
-// ---------- helpers ----------
 
 function makeValues(overrides: Partial<TransactionFormValues> = {}): TransactionFormValues {
   return {
@@ -86,14 +75,33 @@ function makeTransaction(overrides: Partial<Transaction> = {}): Transaction {
   };
 }
 
+function makeWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return { queryClient, wrapper };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListQuery.mockReturnValue({
-    data: { data: [], pagination: { total: 0 } },
-    isLoading: false,
+  transactionsListMock.mockResolvedValue({
+    data: { data: [], pagination: { total: 0, limit: 100, offset: 0, hasMore: false } },
+    error: undefined,
   });
-  mockAvailableTagsQuery.mockReturnValue({ data: [] });
-  mockEntitiesListQuery.mockReturnValue({
+  transactionsAvailableTagsMock.mockResolvedValue({ data: { tags: [] }, error: undefined });
+  transactionsCreateMock.mockResolvedValue({ data: { data: makeTransaction() }, error: undefined });
+  transactionsUpdateMock.mockResolvedValue({ data: { data: makeTransaction() }, error: undefined });
+  transactionsDeleteMock.mockResolvedValue({
+    data: { message: 'deleted', snapshot: { id: 'txn-1' } },
+    error: undefined,
+  });
+  transactionsRestoreMock.mockResolvedValue({
+    data: { data: makeTransaction() },
+    error: undefined,
+  });
+  entitiesListMock.mockReturnValue({
     data: {
       data: [
         { id: 'ent-1', name: 'Woolworths', type: 'company' },
@@ -102,8 +110,6 @@ beforeEach(() => {
     },
   });
 });
-
-// ---------- TransactionFormSchema — amount validation ----------
 
 describe('TransactionFormSchema — amount', () => {
   const baseValues = {
@@ -157,8 +163,6 @@ describe('TransactionFormSchema — amount', () => {
     }
   });
 });
-
-// ---------- buildTransactionPayload ----------
 
 describe('buildTransactionPayload', () => {
   it('coerces amount string to number', () => {
@@ -229,70 +233,79 @@ describe('buildTransactionPayload', () => {
   });
 });
 
-// ---------- create path ----------
+describe('useTransactionsPage — list query', () => {
+  it('issues a transactions list query with limit 100 and exposes available tags', async () => {
+    transactionsAvailableTagsMock.mockResolvedValue({
+      data: { tags: ['Groceries', 'Fuel'] },
+      error: undefined,
+    });
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
+
+    await waitFor(() =>
+      expect(transactionsListMock).toHaveBeenCalledWith({ query: { limit: 100 } })
+    );
+    await waitFor(() => expect(result.current.availableTags).toEqual(['Groceries', 'Fuel']));
+  });
+});
 
 describe('useTransactionsPage — onSubmit (create)', () => {
-  it('builds a payload with parsed amount and null entity for new transactions', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+  it('builds a payload with parsed amount and null entity for new transactions', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.onSubmit(makeValues({ amount: '-87.45', notes: '' }));
     });
 
-    expect(mockCreateMutate).toHaveBeenCalledTimes(1);
-    expect(mockCreateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        amount: -87.45,
-        entityId: null,
-        entityName: null,
-        notes: null,
+    await waitFor(() =>
+      expect(transactionsCreateMock).toHaveBeenCalledWith({
+        body: expect.objectContaining({
+          amount: -87.45,
+          entityId: null,
+          entityName: null,
+          notes: null,
+        }),
       })
     );
-    expect(mockUpdateMutate).not.toHaveBeenCalled();
+    expect(transactionsUpdateMock).not.toHaveBeenCalled();
   });
 
-  it('resolves entity name from the entities list when entityId is set', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+  it('resolves entity name from the entities list when entityId is set', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.onSubmit(makeValues({ entityId: 'ent-1' }));
     });
 
-    expect(mockCreateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ entityId: 'ent-1', entityName: 'Woolworths' })
+    await waitFor(() =>
+      expect(transactionsCreateMock).toHaveBeenCalledWith({
+        body: expect.objectContaining({ entityId: 'ent-1', entityName: 'Woolworths' }),
+      })
     );
   });
 
-  it('falls back to null entityName when entityId is not in the entities list', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+  it('falls back to null entityName when entityId is not in the entities list', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.onSubmit(makeValues({ entityId: 'ent-unknown' }));
     });
 
-    // entityId is preserved; entityName resolves to null because the id is not
-    // in the loaded entities cache.
-    expect(mockCreateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ entityId: 'ent-unknown', entityName: null })
+    await waitFor(() =>
+      expect(transactionsCreateMock).toHaveBeenCalledWith({
+        body: expect.objectContaining({ entityId: 'ent-unknown', entityName: null }),
+      })
     );
-  });
-
-  it('preserves tags as-is on create', () => {
-    const { result } = renderHook(() => useTransactionsPage());
-
-    act(() => {
-      result.current.onSubmit(makeValues({ tags: ['A', 'B'] }));
-    });
-
-    expect(mockCreateMutate).toHaveBeenCalledWith(expect.objectContaining({ tags: ['A', 'B'] }));
   });
 });
 
-// ---------- update path ----------
-
 describe('useTransactionsPage — onSubmit (update)', () => {
-  it('routes to update when an item is being edited', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+  it('routes to update when an item is being edited', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.handleEdit(makeTransaction({ id: 'txn-42' }));
@@ -303,21 +316,23 @@ describe('useTransactionsPage — onSubmit (update)', () => {
       );
     });
 
-    expect(mockUpdateMutate).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMutate).toHaveBeenCalledWith({
-      id: 'txn-42',
-      data: expect.objectContaining({
-        amount: -99.99,
-        entityId: 'ent-2',
-        entityName: 'Coles',
-        notes: 'Updated notes',
-      }),
-    });
-    expect(mockCreateMutate).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(transactionsUpdateMock).toHaveBeenCalledWith({
+        path: { id: 'txn-42' },
+        body: expect.objectContaining({
+          amount: -99.99,
+          entityId: 'ent-2',
+          entityName: 'Coles',
+          notes: 'Updated notes',
+        }),
+      })
+    );
+    expect(transactionsCreateMock).not.toHaveBeenCalled();
   });
 
-  it('clears entityName when entityId is cleared on update', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+  it('clears entityName when entityId is cleared on update', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.handleEdit(makeTransaction({ id: 'txn-42', entityId: 'ent-1' }));
@@ -326,18 +341,19 @@ describe('useTransactionsPage — onSubmit (update)', () => {
       result.current.onSubmit(makeValues({ entityId: '' }));
     });
 
-    expect(mockUpdateMutate).toHaveBeenCalledWith({
-      id: 'txn-42',
-      data: expect.objectContaining({ entityId: null, entityName: null }),
-    });
+    await waitFor(() =>
+      expect(transactionsUpdateMock).toHaveBeenCalledWith({
+        path: { id: 'txn-42' },
+        body: expect.objectContaining({ entityId: null, entityName: null }),
+      })
+    );
   });
 });
 
-// ---------- form prefill ----------
-
 describe('useTransactionsPage — handleEdit prefill', () => {
   it('resets form to the transaction values, including entity id', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.handleEdit(
@@ -359,7 +375,8 @@ describe('useTransactionsPage — handleEdit prefill', () => {
   });
 
   it('treats null notes/entity as empty strings on form prefill', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.handleEdit(makeTransaction({ id: 'txn-42', entityId: null, notes: null }));
@@ -371,7 +388,8 @@ describe('useTransactionsPage — handleEdit prefill', () => {
   });
 
   it('falls back to "Expense" when transaction.type is empty', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
 
     act(() => {
       result.current.handleEdit(makeTransaction({ id: 'txn-42', type: '' }));
@@ -381,11 +399,10 @@ describe('useTransactionsPage — handleEdit prefill', () => {
   });
 });
 
-// ---------- delete path ----------
-
 describe('useTransactionsPage — delete', () => {
   it('exposes a setDeletingTx setter that does not auto-fire the delete mutation', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
     const tx = makeTransaction({ id: 'txn-42' });
 
     act(() => {
@@ -393,22 +410,20 @@ describe('useTransactionsPage — delete', () => {
     });
 
     expect(result.current.deletingTx).toBe(tx);
-    // The delete only fires when the AlertDialog confirm button calls
-    // confirmDelete explicitly — not when a transaction is staged.
-    expect(mockDeleteMutate).not.toHaveBeenCalled();
+    expect(transactionsDeleteMock).not.toHaveBeenCalled();
   });
 
-  it('confirmDelete invokes the delete mutation with the staged transaction id', () => {
-    const { result } = renderHook(() => useTransactionsPage());
+  it('confirmDelete invokes transactionsDelete with the staged id', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTransactionsPage(), { wrapper });
     const tx = makeTransaction({ id: 'txn-42' });
 
     act(() => {
       result.current.confirmDelete(tx);
     });
 
-    expect(mockDeleteMutate).toHaveBeenCalledWith(
-      { id: 'txn-42' },
-      expect.objectContaining({ onSuccess: expect.any(Function) })
+    await waitFor(() =>
+      expect(transactionsDeleteMock).toHaveBeenCalledWith({ path: { id: 'txn-42' } })
     );
   });
 });

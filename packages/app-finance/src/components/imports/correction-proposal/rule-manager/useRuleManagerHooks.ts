@@ -1,14 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../../finance-api-helpers.js';
+import { transactionsDescriptionsForPreview } from '../../../../finance-api/index.js';
 import { useImportStore } from '../../../../store/importStore';
-
-interface DescriptionsForPreviewResult {
-  data: Array<{ description: string; checksum: string }>;
-  total: number;
-  truncated: boolean;
-}
 import { type PreviewView } from '../../CorrectionProposalDialogPanels';
 import { useLocalOps } from '../../hooks/useLocalOps';
 import { usePreviewEffects } from '../../hooks/usePreviewEffects';
@@ -49,15 +44,12 @@ export function useRuleManagerHooks(props: RuleManagerInputs) {
     proposeData: undefined,
   });
   const dialogState = useDialogState(open);
-  const dbTxnsQuery = usePillarQuery<DescriptionsForPreviewResult>(
-    'finance',
-    ['transactions', 'listDescriptionsForPreview'],
-    undefined,
-    {
-      enabled: open,
-      staleTime: 60_000,
-    }
-  );
+  const dbTxnsQuery = useQuery({
+    queryKey: ['finance', 'transactions', 'descriptionsForPreview'],
+    queryFn: async () => unwrap(await transactionsDescriptionsForPreview()),
+    enabled: open,
+    staleTime: 60_000,
+  });
   const previewHook = usePreviewEffects(
     {
       open,

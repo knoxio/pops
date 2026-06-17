@@ -1,24 +1,23 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../finance-api-helpers.js';
+import {
+  budgetsCreate,
+  budgetsDelete,
+  budgetsList,
+  budgetsUpdate,
+} from '../../finance-api/index.js';
 import { type Budget, BudgetFormSchema, type BudgetFormValues, DEFAULT_FORM_VALUES } from './types';
 
-interface BudgetsListResult {
-  data: Budget[];
-  pagination: { total: number };
-}
+import type { BudgetsCreateData } from '../../finance-api/types.gen.js';
 
-interface CreateBudgetInput {
-  category: string;
-  period: string | null;
-  amount: number | null;
-  active: boolean;
-  notes: string | null;
-}
+const BUDGETS_LIST_INPUT = { limit: 100 } as const;
+
+type CreateBudgetInput = NonNullable<BudgetsCreateData['body']>;
 interface UpdateBudgetInput {
   id: string;
   data: CreateBudgetInput;
@@ -34,40 +33,39 @@ interface UseBudgetMutationsArgs {
 }
 
 function useBudgetMutations(args: UseBudgetMutationsArgs) {
-  const createMutation = usePillarMutation<CreateBudgetInput, unknown>(
-    'finance',
-    ['budgets', 'create'],
-    {
-      onSuccess: () => {
-        toast.success('Budget created');
-        args.setIsDialogOpen(false);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const updateMutation = usePillarMutation<UpdateBudgetInput, unknown>(
-    'finance',
-    ['budgets', 'update'],
-    {
-      onSuccess: () => {
-        toast.success('Budget updated');
-        args.setIsDialogOpen(false);
-        args.setEditingBudget(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const deleteMutation = usePillarMutation<DeleteBudgetInput, unknown>(
-    'finance',
-    ['budgets', 'delete'],
-    {
-      onSuccess: () => {
-        toast.success('Budget deleted');
-        args.setDeletingId(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['finance', 'budgets'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (input: CreateBudgetInput) => unwrap(await budgetsCreate({ body: input })),
+    onSuccess: () => {
+      toast.success('Budget created');
+      args.setIsDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateBudgetInput) =>
+      unwrap(await budgetsUpdate({ path: { id: input.id }, body: input.data })),
+    onSuccess: () => {
+      toast.success('Budget updated');
+      args.setIsDialogOpen(false);
+      args.setEditingBudget(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (input: DeleteBudgetInput) =>
+      unwrap(await budgetsDelete({ path: { id: input.id } })),
+    onSuccess: () => {
+      toast.success('Budget deleted');
+      args.setDeletingId(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
   return { createMutation, updateMutation, deleteMutation };
 }
 
@@ -79,7 +77,7 @@ function buildSubmitHandler(
   return (values: BudgetFormValues) => {
     const payload: CreateBudgetInput = {
       category: values.category,
-      period: values.period || null,
+      period: values.period === '' ? undefined : values.period,
       amount: values.amount ? Number(values.amount) : null,
       active: values.active,
       notes: values.notes || null,
@@ -94,7 +92,10 @@ export function useBudgetsPage() {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const query = usePillarQuery<BudgetsListResult>('finance', ['budgets', 'list'], { limit: 100 });
+  const query = useQuery({
+    queryKey: ['finance', 'budgets', 'list', BUDGETS_LIST_INPUT],
+    queryFn: async () => unwrap(await budgetsList({ query: BUDGETS_LIST_INPUT })),
+  });
   const { createMutation, updateMutation, deleteMutation } = useBudgetMutations({
     setIsDialogOpen,
     setEditingBudget,

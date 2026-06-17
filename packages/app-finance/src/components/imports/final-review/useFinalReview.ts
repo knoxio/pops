@@ -1,15 +1,18 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
-import { buildCommitPayload, type CommitPayload } from '../../../lib/commit-payload';
+import { unwrap } from '../../../finance-api-helpers.js';
+import {
+  importsCommitImport,
+  type ImportsCommitImportData,
+  type ImportsCommitImportResponses,
+} from '../../../finance-api/index.js';
+import { buildCommitPayload } from '../../../lib/commit-payload';
+import { toRestCorrectionChangeSet } from '../../../lib/rest-changeset';
 import { useImportStore } from '../../../store/importStore';
 
-import type { CommitResult } from '@pops/api/modules/finance/imports';
-
-interface CommitResponse {
-  data: CommitResult;
-}
+type CommitResponse = ImportsCommitImportResponses[200];
+type CommitBody = NonNullable<ImportsCommitImportData['body']>;
 
 function useStoreSlice() {
   return {
@@ -64,30 +67,32 @@ export function useFinalReview() {
   const slice = useStoreSlice();
   const counts = useDerivedCounts(slice);
   const [commitError, setCommitError] = useState<string | null>(null);
-  const commitMutation = usePillarMutation<CommitPayload, CommitResponse>(
-    'finance',
-    ['imports', 'commitImport'],
-    {
-      onSuccess: (response) => {
-        slice.setCommitResult(response.data);
-        setCommitError(null);
-        // SummaryStep owns the post-commit UI; auto-advance there instead of
-        // showing an inline panel + manual Continue click.
-        slice.nextStep();
-      },
-      onError: (err) => setCommitError(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const commitMutation = useMutation({
+    mutationFn: async (vars: CommitBody): Promise<CommitResponse> =>
+      unwrap(await importsCommitImport({ body: vars })),
+    onSuccess: (response) => {
+      slice.setCommitResult(response.data);
+      setCommitError(null);
+      // SummaryStep owns the post-commit UI; auto-advance there instead of
+      // showing an inline panel + manual Continue click.
+      slice.nextStep();
+    },
+    onError: (err: Error) => setCommitError(err.message),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['finance', 'imports'] }),
+  });
   const handleCommit = () => {
     setCommitError(null);
-    commitMutation.mutate(
-      buildCommitPayload(
-        slice.pendingEntities,
-        slice.pendingChangeSets,
-        slice.pendingTagRuleChangeSets,
-        slice.confirmedTransactions
-      )
+    const payload = buildCommitPayload(
+      slice.pendingEntities,
+      slice.pendingChangeSets,
+      slice.pendingTagRuleChangeSets,
+      slice.confirmedTransactions
     );
+    commitMutation.mutate({
+      ...payload,
+      changeSets: payload.changeSets.map(toRestCorrectionChangeSet),
+    });
   };
   return {
     pendingEntities: slice.pendingEntities,

@@ -46,7 +46,6 @@ function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise
  */
 const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {
   core: '/trpc-core',
-  finance: '/trpc-finance',
   media: '/trpc-media',
   cerebrum: '/trpc-cerebrum',
   food: '/trpc-food',

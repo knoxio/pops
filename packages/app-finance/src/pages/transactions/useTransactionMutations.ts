@@ -1,10 +1,24 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../finance-api-helpers.js';
+import {
+  transactionsCreate,
+  transactionsDelete,
+  transactionsRestore,
+  transactionsUpdate,
+} from '../../finance-api/index.js';
 import { type Transaction } from './types';
 
-import type { TransactionSnapshot } from '@pops/api/modules/finance/transactions/types';
+import type {
+  TransactionsCreateData,
+  TransactionsDeleteResponses,
+  TransactionsUpdateData,
+} from '../../finance-api/types.gen.js';
+
+type CreateInput = NonNullable<TransactionsCreateData['body']>;
+type UpdateData = NonNullable<TransactionsUpdateData['body']>;
+type TransactionSnapshot = TransactionsDeleteResponses[200]['snapshot'];
 
 export interface MutationDeps {
   setIsDialogOpen: (v: boolean) => void;
@@ -12,81 +26,63 @@ export interface MutationDeps {
   setDeletingTx: (t: Transaction | null) => void;
 }
 
-interface CreateInput {
-  description: string;
-  account: string;
-  amount: number;
-  date: string;
-  type: string;
-  tags: string[];
-  entityId: string | null;
-  entityName: string | null;
-  notes: string | null;
-}
 interface UpdateInput {
   id: string;
-  data: Partial<CreateInput>;
+  data: UpdateData;
 }
 interface DeleteInput {
   id: string;
 }
-interface MutationResponse {
-  data?: Transaction;
-  message?: string;
-}
-interface DeleteResponse {
-  message: string;
-  snapshot: TransactionSnapshot;
-}
 
 function useCreateUpdateMutations(deps: MutationDeps) {
-  const createMutation = usePillarMutation<CreateInput, MutationResponse>(
-    'finance',
-    ['transactions', 'create'],
-    {
-      onSuccess: () => {
-        toast.success('Transaction created');
-        deps.setIsDialogOpen(false);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
-  const updateMutation = usePillarMutation<UpdateInput, MutationResponse>(
-    'finance',
-    ['transactions', 'update'],
-    {
-      onSuccess: () => {
-        toast.success('Transaction updated');
-        deps.setIsDialogOpen(false);
-        deps.setEditingTransaction(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['finance', 'transactions'] });
+
+  const createMutation = useMutation({
+    mutationFn: async (input: CreateInput) => unwrap(await transactionsCreate({ body: input })),
+    onSuccess: () => {
+      toast.success('Transaction created');
+      deps.setIsDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
+  const updateMutation = useMutation({
+    mutationFn: async (input: UpdateInput) =>
+      unwrap(await transactionsUpdate({ path: { id: input.id }, body: input.data })),
+    onSuccess: () => {
+      toast.success('Transaction updated');
+      deps.setIsDialogOpen(false);
+      deps.setEditingTransaction(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
   return { createMutation, updateMutation };
 }
 
 function useRestoreDeleteMutations(deps: MutationDeps) {
-  const restoreMutation = usePillarMutation<TransactionSnapshot, MutationResponse>(
-    'finance',
-    ['transactions', 'restore'],
-    {
-      onSuccess: () => {
-        toast.success('Transaction restored');
-      },
-      onError: (err) => toast.error(`Failed to restore transaction: ${err.message}`),
-    }
-  );
-  const deleteMutation = usePillarMutation<DeleteInput, DeleteResponse>(
-    'finance',
-    ['transactions', 'delete'],
-    {
-      onSuccess: () => {
-        deps.setDeletingTx(null);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['finance', 'transactions'] });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (snapshot: TransactionSnapshot) =>
+      unwrap(await transactionsRestore({ body: snapshot })),
+    onSuccess: () => {
+      toast.success('Transaction restored');
+    },
+    onError: (err: Error) => toast.error(`Failed to restore transaction: ${err.message}`),
+    onSettled: invalidate,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (input: DeleteInput) =>
+      unwrap(await transactionsDelete({ path: { id: input.id } })),
+    onSuccess: () => {
+      deps.setDeletingTx(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+    onSettled: invalidate,
+  });
   return { restoreMutation, deleteMutation };
 }
 
