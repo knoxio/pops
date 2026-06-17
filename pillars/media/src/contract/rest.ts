@@ -12,6 +12,7 @@
 import { initContract } from '@ts-rest/core';
 
 import { mediaArrContract } from './rest-arr.js';
+import { mediaComparisonsContract } from './rest-comparisons.js';
 import { mediaLibraryContract } from './rest-library.js';
 import { mediaMoviesContract } from './rest-movies.js';
 import { mediaPlexContract } from './rest-plex.js';
@@ -32,6 +33,7 @@ export const mediaContract = c.router(
     shelfImpressions: mediaShelfImpressionsContract,
     arr: mediaArrContract,
     plex: mediaPlexContract,
+    comparisons: mediaComparisonsContract,
   },
   {
     pathPrefix: '',

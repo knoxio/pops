@@ -10,6 +10,7 @@ import { initServer } from '@ts-rest/express';
 import { mediaContract } from '../../contract/rest.js';
 import { type OpenedMediaDb } from '../../db/index.js';
 import { makeArrHandlers } from './arr-handlers.js';
+import { makeComparisonsHandlers } from './comparisons-handlers.js';
 import { makeLibraryHandlers } from './library-handlers.js';
 import { makeMoviesHandlers } from './movies-handlers.js';
 import { makePlexHandlers } from './plex-handlers.js';
@@ -33,5 +34,6 @@ export function makeMediaRestHandlers(deps: {
     shelfImpressions: makeShelfImpressionsHandlers(db),
     arr: makeArrHandlers(db),
     plex: makePlexHandlers(db),
+    comparisons: makeComparisonsHandlers(db),
   });
 }

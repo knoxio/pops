@@ -152,3 +152,44 @@ export {
   type WatchlistFilters,
   type WatchlistListResult,
 } from './services/watchlist.js';
+
+export {
+  ComparisonNotFoundError,
+  DimensionConflictError,
+  DimensionNotFoundError,
+  InactiveDimensionError,
+  InvalidWinnerError,
+  MediaScoreNotFoundError,
+} from './services/comparisons/index.js';
+
+export type {
+  BatchComparisonItem,
+  BatchRecordResult,
+  BlacklistMovieResult,
+  Comparison,
+  ComparisonSource,
+  CreateDimensionInput,
+  Dimension,
+  DrawTier,
+  MediaScore,
+  MediaType as ComparisonMediaType,
+  RandomPair,
+  RankedMediaEntry,
+  RecordComparisonInput,
+  SmartPairResult,
+  SubmitTierListInput,
+  SubmitTierListResult,
+  Tier,
+  TierListMovie,
+  TierPlacement,
+  UpdateDimensionInput,
+} from './services/comparisons/index.js';
+
+export * as comparisonsService from './services/comparisons/index.js';
+
+/**
+ * Reset comparison staleness for a media item (delete the row → fresh, 1.0).
+ * Exported standalone so the watch-history log/batchLog paths can call it on
+ * a (re)watch — a follow-up wires that up. Mirrors `comparisonsService.resetStaleness`.
+ */
+export { resetStaleness } from './services/comparisons/staleness.js';
