@@ -1,5 +1,12 @@
-import { usePillarMutation } from '@pops/pillar-sdk/react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  libraryAddMovie,
+  libraryAddTvShow,
+  watchHistoryLog,
+  watchlistAdd,
+} from '../../media-api/index.js';
 import {
   makeKey,
   useAddMovieHandler,
@@ -10,34 +17,51 @@ import {
 } from './useSearchAddHandlers';
 import { useSearchAddState } from './useSearchAddState';
 
-interface AddMovieInput {
-  tmdbId: number;
-}
+function useSearchAddMutations() {
+  const queryClient = useQueryClient();
 
-interface AddMovieResponse {
-  data: { id: number; title: string };
-  created: boolean;
-  message?: string;
-}
+  const addMovieMutation = useMutation({
+    mutationFn: async (input: { tmdbId: number }) =>
+      unwrap(await libraryAddMovie({ body: { tmdbId: input.tmdbId } })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['media', 'movies'] });
+    },
+  });
 
-interface AddTvShowInput {
-  tvdbId: number;
-}
+  const addTvShowMutation = useMutation({
+    mutationFn: async (input: { tvdbId: number }) =>
+      unwrap(await libraryAddTvShow({ body: { tvdbId: input.tvdbId } })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['media', 'tvShows'] });
+    },
+  });
 
-interface AddTvShowResponse {
-  data: { show: { id: number; name: string } };
-  created: boolean;
-  message?: string;
-}
+  const watchlistAddMutation = useMutation({
+    mutationFn: async (input: { mediaType: 'movie'; mediaId: number }) =>
+      unwrap(await watchlistAdd({ body: { mediaType: input.mediaType, mediaId: input.mediaId } })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist'] });
+    },
+  });
 
-interface WatchlistAddInput {
-  mediaType: 'movie';
-  mediaId: number;
-}
+  const watchHistoryLogMutation = useMutation({
+    mutationFn: async (input: { mediaType: 'movie'; mediaId: number }) =>
+      unwrap(
+        await watchHistoryLog({
+          body: {
+            mediaType: input.mediaType,
+            mediaId: input.mediaId,
+            completed: 1,
+            source: 'manual',
+          },
+        })
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchHistory'] });
+    },
+  });
 
-interface WatchHistoryLogInput {
-  mediaType: 'movie';
-  mediaId: number;
+  return { addMovieMutation, addTvShowMutation, watchlistAddMutation, watchHistoryLogMutation };
 }
 
 /**
@@ -47,30 +71,7 @@ interface WatchHistoryLogInput {
  */
 export function useSearchAddActions() {
   const state = useSearchAddState();
-  const addMovieMutation = usePillarMutation<AddMovieInput, AddMovieResponse>('media', [
-    'library',
-    'addMovie',
-  ]);
-  const addTvShowMutation = usePillarMutation<AddTvShowInput, AddTvShowResponse>('media', [
-    'library',
-    'addTvShow',
-  ]);
-  const watchlistAddMutation = usePillarMutation<WatchlistAddInput, unknown>('media', [
-    'watchlist',
-    'add',
-  ]);
-  const watchHistoryLogMutation = usePillarMutation<WatchHistoryLogInput, unknown>('media', [
-    'watchHistory',
-    'log',
-  ]);
-
-  const handlerArgs = {
-    state,
-    addMovieMutation,
-    addTvShowMutation,
-    watchlistAddMutation,
-    watchHistoryLogMutation,
-  };
+  const handlerArgs = { state, ...useSearchAddMutations() };
 
   return {
     addingIds: state.addingIds,
