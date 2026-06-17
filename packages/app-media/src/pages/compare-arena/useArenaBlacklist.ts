@@ -1,15 +1,13 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../media-api-helpers.js';
+import { comparisonsBlacklistMovie, comparisonsListForMedia } from '../../media-api/index.js';
 
 interface UseArenaBlacklistArgs {
   resolveTitle: (mediaId: number) => string;
   onAfterAction: () => void;
-}
-
-interface ComparisonsListResult {
-  pagination?: { total: number };
 }
 
 interface BlacklistInput {
@@ -22,29 +20,33 @@ interface BlacklistInput {
  * the target movie, comparison-count lookup, and the destructive mutation.
  */
 export function useArenaBlacklist({ resolveTitle, onAfterAction }: UseArenaBlacklistArgs) {
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
   const [target, setTarget] = useState<{ id: number; title: string } | null>(null);
 
-  const { data: blacklistComparisonData } = usePillarQuery<ComparisonsListResult>(
-    'media',
-    ['comparisons', 'listForMedia'],
-    { mediaType: 'movie', mediaId: target?.id ?? 0, limit: 1 },
-    { enabled: target !== null }
-  );
+  const listForMediaInput = {
+    mediaType: 'movie' as const,
+    mediaId: target?.id ?? 0,
+    limit: 1,
+  };
+  const { data: blacklistComparisonData } = useQuery({
+    queryKey: ['media', 'comparisons', 'listForMedia', listForMediaInput],
+    queryFn: async () => unwrap(await comparisonsListForMedia({ query: listForMediaInput })),
+    enabled: target !== null,
+  });
   const comparisonsToPurge = blacklistComparisonData?.pagination?.total ?? null;
 
-  const blacklistMutation = usePillarMutation<BlacklistInput, unknown>(
-    'media',
-    ['comparisons', 'blacklistMovie'],
-    {
-      onSuccess: (_data, variables) => {
-        toast.success(`${resolveTitle(variables.mediaId)} marked as not watched`);
-        setTarget(null);
-        onAfterAction();
-        void utils.invalidate(['comparisons', 'getSmartPair']);
-      },
-    }
-  );
+  const blacklistMutation = useMutation({
+    mutationFn: async (variables: BlacklistInput) =>
+      unwrap(await comparisonsBlacklistMovie({ body: variables })),
+    onSuccess: (_data, variables) => {
+      toast.success(`${resolveTitle(variables.mediaId)} marked as not watched`);
+      setTarget(null);
+      onAfterAction();
+      void queryClient.invalidateQueries({
+        queryKey: ['media', 'comparisons', 'getSmartPair'],
+      });
+    },
+  });
 
   const open = useCallback((movie: { id: number; title: string }) => {
     setTarget(movie);
