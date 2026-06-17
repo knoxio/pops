@@ -1,4 +1,6 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,17 +14,17 @@ const dndHandlers = vi.hoisted(() => ({
 }));
 
 vi.mock('@dnd-kit/core', async () => {
-  const { createElement, Fragment } = await import('react');
+  const { createElement: ce, Fragment } = await import('react');
   return {
     DndContext: ({
       children,
       onDragEnd,
     }: {
-      children: unknown;
+      children: ReactNode;
       onDragEnd?: (e: unknown) => void;
     }) => {
       dndHandlers.onDragEnd = onDragEnd as typeof dndHandlers.onDragEnd;
-      return createElement(Fragment, null, children as any);
+      return ce(Fragment, null, children);
     },
     DragOverlay: () => null,
     closestCenter: 'closestCenter',
@@ -35,7 +37,7 @@ vi.mock('@dnd-kit/core', async () => {
 });
 
 vi.mock('@dnd-kit/sortable', async () => {
-  const { createElement, Fragment } = await import('react');
+  const { createElement: ce, Fragment } = await import('react');
   return {
     useSortable: () => ({
       attributes: {},
@@ -45,8 +47,7 @@ vi.mock('@dnd-kit/sortable', async () => {
       transition: undefined,
       isDragging: false,
     }),
-    SortableContext: ({ children }: { children: unknown }) =>
-      createElement(Fragment, null, children as any),
+    SortableContext: ({ children }: { children: ReactNode }) => ce(Fragment, null, children),
     horizontalListSortingStrategy: 'horizontal',
   };
 });
@@ -55,37 +56,22 @@ vi.mock('@dnd-kit/utilities', () => ({
   CSS: { Transform: { toString: () => '' } },
 }));
 
-const mockDimensionsQuery = vi.fn();
-const mockTierListQuery = vi.fn();
-const mockRefetch = vi.fn();
-const mockMutate = vi.fn();
+const mockListDimensions = vi.fn();
+const mockGetTierListMovies = vi.fn();
 const mockCreateDimension = vi.fn();
+const mockSubmitTierList = vi.fn();
+const mockMarkStale = vi.fn();
+const mockExcludeFromDimension = vi.fn();
+const mockBlacklistMovie = vi.fn();
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts?: unknown) => {
-    const key = path.join('.');
-    if (key === 'comparisons.listDimensions') return mockDimensionsQuery(input);
-    if (key === 'comparisons.getTierListMovies') {
-      const result = mockTierListQuery(input, opts ?? {});
-      return { ...result, refetch: mockRefetch, isFetching: false };
-    }
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'comparisons.submitTierList') {
-      return { mutate: mockMutate, isPending: false, error: null };
-    }
-    if (key === 'comparisons.createDimension') {
-      return { mutate: mockCreateDimension, isPending: false, error: null };
-    }
-    return { mutate: vi.fn(), isPending: false, error: null };
-  },
-  usePillarUtils: () => ({
-    setData: vi.fn(),
-    invalidate: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+vi.mock('../media-api/index.js', () => ({
+  comparisonsListDimensions: () => mockListDimensions(),
+  comparisonsGetTierListMovies: (opts: unknown) => mockGetTierListMovies(opts),
+  comparisonsCreateDimension: (opts: unknown) => mockCreateDimension(opts),
+  comparisonsSubmitTierList: (opts: unknown) => mockSubmitTierList(opts),
+  comparisonsMarkStale: (opts: unknown) => mockMarkStale(opts),
+  comparisonsExcludeFromDimension: (opts: unknown) => mockExcludeFromDimension(opts),
+  comparisonsBlacklistMovie: (opts: unknown) => mockBlacklistMovie(opts),
 }));
 
 import { TierListPage } from './TierListPage';
@@ -121,60 +107,67 @@ const movies = [
 ];
 
 function renderPage() {
-  return render(
-    <MemoryRouter>
-      <TierListPage />
-    </MemoryRouter>
-  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client }, createElement(MemoryRouter, null, children));
+  return render(<TierListPage />, { wrapper });
 }
 
-function setupPage() {
-  mockDimensionsQuery.mockReturnValue({
-    data: { data: [dim1, dim2] },
-    isLoading: false,
-  });
-  mockTierListQuery.mockReturnValue({
-    data: { data: movies },
-    isLoading: false,
-    error: null,
-  });
+function setupPage(dimensions = [dim1, dim2], tierMovies = movies) {
+  mockListDimensions.mockResolvedValue({ data: { data: dimensions } });
+  mockGetTierListMovies.mockResolvedValue({ data: { data: tierMovies } });
 }
 
 describe('TierListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCreateDimension.mockResolvedValue({ data: { data: { id: 99 }, message: 'ok' } });
+    mockSubmitTierList.mockResolvedValue({
+      data: { data: { comparisonsRecorded: 1, scoreChanges: [] } },
+    });
+    mockMarkStale.mockResolvedValue({ data: { data: { staleness: 0.5 } } });
+    mockExcludeFromDimension.mockResolvedValue({ data: { comparisonsDeleted: 0 } });
+    mockBlacklistMovie.mockResolvedValue({
+      data: {
+        data: { blacklistedCount: 1, comparisonsDeleted: 0, dimensionsRecalculated: 0 },
+        message: 'ok',
+      },
+    });
   });
 
-  it('renders dimension chips with first auto-selected', () => {
+  it('renders dimension chips with first auto-selected', async () => {
     setupPage();
     renderPage();
 
+    await waitFor(() => expect(screen.getAllByRole('tab').length).toBe(2));
     const tabs = screen.getAllByRole('tab');
-    expect(tabs.length).toBe(2);
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
     expect(tabs[1]?.getAttribute('aria-selected')).toBe('false');
   });
 
-  it('renders movie cards in unranked pool', () => {
+  it('renders movie cards in unranked pool', async () => {
     setupPage();
     renderPage();
 
-    expect(screen.getByText('The Matrix')).toBeTruthy();
+    expect(await screen.findByText('The Matrix')).toBeTruthy();
     expect(screen.getByText('Inception')).toBeTruthy();
     expect(screen.getByText('Interstellar')).toBeTruthy();
   });
 
-  it('displays unranked count', () => {
+  it('displays unranked count', async () => {
     setupPage();
     renderPage();
 
-    expect(screen.getByText('Unranked (3)')).toBeTruthy();
+    expect(await screen.findByText('Unranked (3)')).toBeTruthy();
   });
 
-  it('switching dimension changes selected chip', () => {
+  it('switching dimension changes selected chip', async () => {
     setupPage();
     renderPage();
 
+    await waitFor(() => expect(screen.getAllByRole('tab').length).toBe(2));
     const tabs = screen.getAllByRole('tab');
     fireEvent.click(tabs[1]!);
 
@@ -182,55 +175,45 @@ describe('TierListPage', () => {
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('false');
   });
 
-  it('switching dimension reloads movies with new dimensionId', () => {
+  it('switching dimension reloads movies with new dimensionId', async () => {
     setupPage();
     renderPage();
 
-    // First call is for dim1 (auto-selected)
-    expect(mockTierListQuery).toHaveBeenCalledWith({ dimensionId: 1 }, expect.any(Object));
+    await waitFor(() =>
+      expect(mockGetTierListMovies).toHaveBeenCalledWith({ path: { dimensionId: 1 } })
+    );
 
     const tabs = screen.getAllByRole('tab');
     fireEvent.click(tabs[1]!);
 
-    // After clicking dim2, should query with dimensionId: 2
-    expect(mockTierListQuery).toHaveBeenCalledWith({ dimensionId: 2 }, expect.any(Object));
+    await waitFor(() =>
+      expect(mockGetTierListMovies).toHaveBeenCalledWith({ path: { dimensionId: 2 } })
+    );
   });
 
-  it('refresh button calls refetch', () => {
+  it('refresh button calls refetch', async () => {
     setupPage();
     renderPage();
 
+    await screen.findByText('The Matrix');
+    mockGetTierListMovies.mockClear();
+
     fireEvent.click(screen.getByLabelText('Refresh movie pool'));
 
-    expect(mockRefetch).toHaveBeenCalled();
+    await waitFor(() => expect(mockGetTierListMovies).toHaveBeenCalled());
   });
 
-  it('shows empty state when no movies available', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [dim1] },
-      isLoading: false,
-    });
-    mockTierListQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-      error: null,
-    });
-
+  it('shows empty state when no movies available', async () => {
+    setupPage([dim1], []);
     renderPage();
 
-    expect(screen.getByText(/No eligible movies/)).toBeTruthy();
+    expect(await screen.findByText(/No eligible movies/)).toBeTruthy();
   });
 
   it('shows loading skeletons when data is loading', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    });
-    mockTierListQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-    });
+    // Never-resolving promises keep the queries in their loading state.
+    mockListDimensions.mockReturnValue(new Promise(() => {}));
+    mockGetTierListMovies.mockReturnValue(new Promise(() => {}));
 
     renderPage();
 
@@ -238,37 +221,36 @@ describe('TierListPage', () => {
     expect(screen.queryByText('Tier List')).toBeTruthy();
   });
 
-  it('submit button is disabled when fewer than 2 movies placed', () => {
+  it('submit button is disabled when fewer than 2 movies placed', async () => {
     setupPage();
     renderPage();
 
-    const submitBtn = screen.getByRole('button', { name: /Submit Tier List/i });
+    const submitBtn = await screen.findByRole('button', { name: /Submit Tier List/i });
     expect(submitBtn).toBeDisabled();
   });
 
-  it('drag-drop: movie moves from pool to tier row', () => {
+  it('drag-drop: movie moves from pool to tier row', async () => {
     setupPage();
     renderPage();
 
-    // Simulate drag-end: movie id 10 (The Matrix, mapped to mediaId 10) dropped on tier S
+    await screen.findByText('The Matrix');
+
     act(() => {
       dndHandlers.onDragEnd?.({ active: { id: '10' }, over: { id: 'S' } });
     });
 
-    // Movie should now be in tier S — unranked count drops from 3 to 2
     expect(screen.getByText('Unranked (2)')).toBeTruthy();
   });
 
-  it('drag-drop: movie moves between tiers (reposition)', () => {
+  it('drag-drop: movie moves between tiers (reposition)', async () => {
     setupPage();
     renderPage();
 
-    // Drop into tier S
+    await screen.findByText('The Matrix');
+
     act(() => {
       dndHandlers.onDragEnd?.({ active: { id: '10' }, over: { id: 'S' } });
     });
-
-    // Move from S to A — still only 1 placed (not duplicated)
     act(() => {
       dndHandlers.onDragEnd?.({ active: { id: '10' }, over: { id: 'A' } });
     });
@@ -276,26 +258,28 @@ describe('TierListPage', () => {
     expect(screen.getByText('Unranked (2)')).toBeTruthy();
   });
 
-  it('drag-drop: movie removed from tier back to unranked pool', () => {
+  it('drag-drop: movie removed from tier back to unranked pool', async () => {
     setupPage();
     renderPage();
 
-    // Place in tier S
+    await screen.findByText('The Matrix');
+
     act(() => {
       dndHandlers.onDragEnd?.({ active: { id: '10' }, over: { id: 'S' } });
     });
     expect(screen.getByText('Unranked (2)')).toBeTruthy();
 
-    // Return to unranked pool
     act(() => {
       dndHandlers.onDragEnd?.({ active: { id: '10' }, over: { id: 'unranked' } });
     });
     expect(screen.getByText('Unranked (3)')).toBeTruthy();
   });
 
-  it('submit button enables when 2+ movies placed and calls mutate', () => {
+  it('submit button enables when 2+ movies placed and calls mutate', async () => {
     setupPage();
     renderPage();
+
+    await screen.findByText('The Matrix');
 
     act(() => {
       dndHandlers.onDragEnd?.({ active: { id: '10' }, over: { id: 'S' } });
@@ -308,57 +292,44 @@ describe('TierListPage', () => {
     expect(submitBtn).not.toBeDisabled();
 
     fireEvent.click(submitBtn);
-    expect(mockMutate).toHaveBeenCalledWith({
-      dimensionId: 1,
-      placements: expect.arrayContaining([
-        { movieId: 10, tier: 'S' },
-        { movieId: 20, tier: 'A' },
-      ]),
-    });
+
+    await waitFor(() =>
+      expect(mockSubmitTierList).toHaveBeenCalledWith({
+        body: {
+          dimensionId: 1,
+          placements: expect.arrayContaining([
+            { movieId: 10, tier: 'S' },
+            { movieId: 20, tier: 'A' },
+          ]),
+        },
+      })
+    );
   });
 
-  it('empty-state CTA opens the create dimension dialog', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-    });
-    mockTierListQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-      error: null,
-    });
-
+  it('empty-state CTA opens the create dimension dialog', async () => {
+    setupPage([], []);
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /Create dimension/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Create dimension/i }));
 
     // DialogTitle becomes visible — Radix renders into a portal under document.body.
     expect(screen.getByRole('heading', { name: 'New dimension' })).toBeTruthy();
   });
 
-  it('header "+ New" button is visible when dimensions exist', () => {
+  it('header "+ New" button is visible when dimensions exist', async () => {
     setupPage();
     renderPage();
 
     // Distinct from the empty-state "Create dimension" button — header CTA is
     // a small "New" button with the same plus icon.
-    expect(screen.getByRole('button', { name: /^\s*New\s*$/i })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^\s*New\s*$/i })).toBeTruthy();
   });
 
-  it('submitting the create dimension form fires the createDimension mutation', () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-    });
-    mockTierListQuery.mockReturnValue({
-      data: { data: [] },
-      isLoading: false,
-      error: null,
-    });
-
+  it('submitting the create dimension form fires the createDimension mutation', async () => {
+    setupPage([], []);
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /Create dimension/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Create dimension/i }));
 
     const nameInput = screen.getByPlaceholderText(/e\.g\. Cinematography/i);
     fireEvent.change(nameInput, { target: { value: ' Soundtrack ' } });
@@ -372,10 +343,16 @@ describe('TierListPage', () => {
     // dialog footer submit. Click the last one (the dialog's).
     fireEvent.click(submitButtons[submitButtons.length - 1]!);
 
-    expect(mockCreateDimension).toHaveBeenCalledWith({
-      name: 'Soundtrack',
-      description: 'How the music holds up',
-      active: true,
-    });
+    await waitFor(() =>
+      expect(mockCreateDimension).toHaveBeenCalledWith({
+        body: {
+          name: 'Soundtrack',
+          description: 'How the music holds up',
+          active: true,
+          sortOrder: 0,
+          weight: 1.0,
+        },
+      })
+    );
   });
 });

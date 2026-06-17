@@ -1,11 +1,16 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
 import { type Tier, type TierMovie } from '../../components/TierListBoard';
 import { useTierListSubmit } from '../../hooks/useTierListSubmit';
+import { unwrap } from '../../media-api-helpers.js';
+import {
+  comparisonsCreateDimension,
+  comparisonsGetTierListMovies,
+  comparisonsListDimensions,
+} from '../../media-api/index.js';
 import { useTierListMutations } from './useTierListMutations';
 
 interface CreateDimensionInput {
@@ -13,43 +18,13 @@ interface CreateDimensionInput {
   description: string | null;
 }
 
-interface DimensionRow {
-  id: number;
-  name: string;
-  description: string | null;
-  active: boolean;
-  sortOrder: number;
-}
-
-interface ListDimensionsResponse {
-  data: DimensionRow[];
-}
-
-interface TierMovieRow {
-  id: number;
-  title: string;
-  posterUrl: string | null;
-  score: number;
-  comparisonCount: number;
-  tierOverride: string | null;
-}
-
-interface TierListMoviesResponse {
-  data: TierMovieRow[];
-}
-
-interface CreateDimensionResponse {
-  data: { id: number };
-}
-
 function useDimensionsAndMovies() {
   const [selectedDimension, setSelectedDimension] = useState<number | null>(null);
 
-  const { data: dimensionsData, isLoading: dimsLoading } = usePillarQuery<ListDimensionsResponse>(
-    'media',
-    ['comparisons', 'listDimensions'],
-    undefined
-  );
+  const { data: dimensionsData, isLoading: dimsLoading } = useQuery({
+    queryKey: ['media', 'comparisons', 'listDimensions'],
+    queryFn: async () => unwrap(await comparisonsListDimensions()),
+  });
 
   const activeDimensions = useMemo(
     () => (dimensionsData?.data ?? []).filter((d) => d.active),
@@ -58,12 +33,15 @@ function useDimensionsAndMovies() {
 
   const effectiveDimension = selectedDimension ?? activeDimensions[0]?.id ?? null;
 
-  const tierMoviesQuery = usePillarQuery<TierListMoviesResponse>(
-    'media',
-    ['comparisons', 'getTierListMovies'],
-    { dimensionId: effectiveDimension ?? 0 },
-    { enabled: effectiveDimension != null, staleTime: Infinity }
-  );
+  const tierMoviesQuery = useQuery({
+    queryKey: ['media', 'comparisons', 'getTierListMovies', { dimensionId: effectiveDimension }],
+    queryFn: async () =>
+      unwrap(
+        await comparisonsGetTierListMovies({ path: { dimensionId: effectiveDimension ?? 0 } })
+      ),
+    enabled: effectiveDimension != null,
+    staleTime: Infinity,
+  });
 
   const movies: TierMovie[] = useMemo(
     () =>
@@ -90,12 +68,6 @@ function useDimensionsAndMovies() {
   };
 }
 
-interface CreateDimensionMutationInput {
-  name: string;
-  description: string | null;
-  active: boolean;
-}
-
 /**
  * Wires the `createDimension` mutation, dialog open state, and post-create
  * book-keeping. On success: invalidate `listDimensions`, select the new
@@ -105,15 +77,20 @@ function useCreateDimension(args: {
   setSelectedDimension: (id: number) => void;
   setDialogOpen: (open: boolean) => void;
 }) {
-  const utils = usePillarUtils('media');
-  const createDimensionMutation = usePillarMutation<
-    CreateDimensionMutationInput,
-    CreateDimensionResponse
-  >('media', ['comparisons', 'createDimension'], {
+  const queryClient = useQueryClient();
+  const createDimensionMutation = useMutation({
+    mutationFn: async (input: { name: string; description: string | null; active: boolean }) =>
+      unwrap(
+        await comparisonsCreateDimension({
+          body: { ...input, sortOrder: 0, weight: 1.0 },
+        })
+      ),
     onSuccess: (result) => {
-      void utils.invalidate(['comparisons', 'listDimensions']);
-      const newId = result?.data?.id;
-      if (typeof newId === 'number') args.setSelectedDimension(newId);
+      void queryClient.invalidateQueries({
+        queryKey: ['media', 'comparisons', 'listDimensions'],
+      });
+      const newId = result.data.id;
+      args.setSelectedDimension(newId);
       args.setDialogOpen(false);
       toast.success('Dimension created');
     },
