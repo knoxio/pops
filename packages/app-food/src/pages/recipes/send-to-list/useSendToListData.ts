@@ -2,30 +2,34 @@
  * Combined data hook for the send-to-list modal — PRD-142.
  *
  * Fetches the preview (`recipes.sendToList.prepare`) from the food SDK and
- * the available shopping lists (`lists.list.list`) in parallel; the modal
- * renders once both resolve. Both queries are scoped to enabled=open so the
- * modal pays nothing while closed.
+ * the available shopping lists (`GET /lists`) from the lists SDK in
+ * parallel; the modal renders once both resolve. Both queries are scoped
+ * to enabled=open so the modal pays nothing while closed.
  *
- * NOTE: the shopping-list read still goes through `usePillarQuery('lists',
- * …)`. `lists` is a separate pillar/SDK and app-food has no lists client,
- * so that cross-pillar call is out of scope for the food Hey API rewire.
+ * The shopping-list read is a cross-pillar call to the lists pillar through
+ * app-food's generated lists client (wire contract only — no monolith).
  */
 import { useQuery } from '@tanstack/react-query';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
 import { unwrap } from '../../../food-api-helpers.js';
 import { sendToListPrepare } from '../../../food-api/index.js';
-
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
+import { unwrapLists } from '../../../lists-api-helpers.js';
+import { listListAggregate } from '../../../lists-api/index.js';
 
 import type { SendToListPrepareResponses } from '../../../food-api/types.gen.js';
+import type {
+  ListListAggregateData,
+  ListListAggregateResponses,
+} from '../../../lists-api/types.gen.js';
 
 export type PrepareOutput = SendToListPrepareResponses[200];
-type ListsListOutput = inferRouterOutputs<AppRouter>['lists']['list']['list'];
-export type ShoppingList = ListsListOutput['items'][number];
+export type ShoppingList = ListListAggregateResponses[200]['items'][number];
+
+const LISTS_QUERY: NonNullable<ListListAggregateData['query']> = {
+  kinds: ['shopping'],
+  includeArchived: false,
+  sort: 'updated',
+};
 
 export interface SendToListDataState {
   preview: PrepareOutput | undefined;
@@ -48,12 +52,11 @@ export function useSendToListData({ versionId, scaleFactor, enabled }: Args): Se
       unwrap(await sendToListPrepare({ path: { versionId }, query: { scaleFactor } })),
     enabled,
   });
-  const lists = usePillarQuery<ListsListOutput>(
-    'lists',
-    ['list', 'list'],
-    { kinds: ['shopping'], includeArchived: false, sort: 'updated' },
-    { enabled }
-  );
+  const lists = useQuery({
+    queryKey: ['lists', 'list', 'listAggregate', LISTS_QUERY],
+    queryFn: async () => unwrapLists(await listListAggregate({ query: LISTS_QUERY })),
+    enabled,
+  });
   return {
     preview: prepare.data,
     shoppingLists: lists.data?.items ?? [],
