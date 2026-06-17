@@ -28,7 +28,7 @@ const DB_PATH = process.env.SQLITE_PATH ?? './data/pops.db';
 
 if (!existsSync(DB_PATH)) {
   console.error(`❌ Database not found at ${DB_PATH}`);
-  console.log("💡 Run 'mise db:init' to create the database first");
+  console.warn("💡 Run 'mise db:init' to create the database first");
   process.exit(1);
 }
 
@@ -67,7 +67,7 @@ const db = new BetterSqlite3(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('busy_timeout = 5000');
 
-console.log(`🌱 Seeding food fixtures at ${DB_PATH}...\n`);
+console.warn(`🌱 Seeding food fixtures at ${DB_PATH}...\n`);
 
 db.pragma('foreign_keys = OFF');
 try {
@@ -80,12 +80,12 @@ try {
     // seed DB ends up with materialised recipe_lines / recipe_steps and
     // every recipe's v1 promoted to `current`.
     const summary = seedFood(drizzleDb, { compileRecipeVersion });
-    console.log('\n✅ Food seed complete\n');
-    console.log('📊 Counts:');
+    console.warn('\n✅ Food seed complete\n');
+    console.warn('📊 Counts:');
     const printRow = (label: string, value: number): void => {
       // Pad to one space past the widest label so values line up regardless
       // of which counters are present in the summary.
-      console.log(`  ${`${label}:`.padEnd(21)}${value}`);
+      console.warn(`  ${`${label}:`.padEnd(21)}${value}`);
     };
     printRow('prep_states', summary.prepStates);
     printRow('ingredients', summary.ingredients);
