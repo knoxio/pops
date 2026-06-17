@@ -304,9 +304,103 @@ type WorkerCompleteResult =
   | { ok: true; draftRecipeId: number; compileStatus: 'compiled' | 'failed' | 'uncompiled' }
   | { ok: false; reason: string };
 
+interface PrepareCookBody {
+  recipeVersionId: number;
+  scaleFactor: number;
+  planEntryId?: number;
+}
+
+type CookUnit = 'g' | 'ml' | 'count';
+type CookLocation = 'pantry' | 'fridge' | 'freezer' | 'other';
+
+interface CookYieldBody {
+  qty: number;
+  unit: CookUnit;
+  location: CookLocation;
+  expiresAt?: string;
+  notes?: string;
+}
+
+type ConsumptionOverrideBody =
+  | {
+      lineIndex: number;
+      kind: 'batch-override';
+      batchId: number;
+      consumeQty: number;
+      unit: CookUnit;
+      substitutionEdgeId?: number;
+    }
+  | { lineIndex: number; kind: 'external'; externalQty: number; externalUnit: CookUnit }
+  | {
+      lineIndex: number;
+      kind: 'partial';
+      batchId: number;
+      consumeQty: number;
+      externalQty: number;
+      unit: CookUnit;
+      substitutionEdgeId?: number;
+    };
+
+interface MarkCookedBody {
+  recipeVersionId: number;
+  scaleFactor: number;
+  planEntryId?: number;
+  yield?: CookYieldBody;
+  rating?: number;
+  notes?: string;
+  consumptionOverrides?: ConsumptionOverrideBody[];
+}
+
+interface CookPreparation {
+  recipeTitle: string;
+  recipeSlug: string;
+  versionNo: number;
+  defaultScaleFactor: number;
+  yieldsBatch: boolean;
+  yieldDefault: {
+    qty: number;
+    unit: CookUnit;
+    variantName: string | null;
+    prepStateLabel: string | null;
+    shelfLifeFridgeDays: number | null;
+    shelfLifeFreezerDays: number | null;
+  } | null;
+  consumeNeeds: {
+    lineIndex: number;
+    ingredientId: number;
+    ingredientName: string;
+    variantId: number;
+    variantName: string;
+    prepStateId: number | null;
+    prepStateLabel: string | null;
+    qty: number;
+    canonicalUnit: CookUnit;
+    optional: boolean;
+  }[];
+  alreadyCooked: boolean;
+}
+
+interface CookShortfall {
+  variantId: number;
+  prepStateId: number | null;
+  needed: number;
+  available: number;
+  unit: CookUnit;
+}
+
+type MarkCookedResult =
+  | { ok: true; recipeRunId: number; yieldedBatchId: number | null }
+  | { ok: false; reason: string; shortfalls?: CookShortfall[] };
+
 export function makeClient(app: Express) {
   const r = supertest(app);
   return {
+    cook: {
+      prepareCook: (body: PrepareCookBody) =>
+        send<CookPreparation>(r.post('/cook/prepare').send(body)),
+      markCooked: (body: MarkCookedBody) =>
+        send<MarkCookedResult>(r.post('/cook/mark-cooked').send(body)),
+    },
     ingest: {
       start: (body: IngestStartBody) => send<IngestStartResult>(r.post('/ingest/start').send(body)),
       status: (sourceId: number) =>
