@@ -11,6 +11,7 @@ on:
       - "packages/*-contract/**"
       - "pillars/lists/contract/**"
       - "pillars/inventory/openapi/**"
+      - "pillars/finance/openapi/**"
       - "packages/db-types/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
@@ -30,6 +31,7 @@ on:
       - "packages/*-contract/**"
       - "pillars/lists/contract/**"
       - "pillars/inventory/openapi/**"
+      - "pillars/finance/openapi/**"
       - "packages/db-types/**"
       - "packages/food-db/**"
       - "packages/inventory-db/**"
@@ -63,6 +65,7 @@ jobs:
               - 'packages/db-types/**'
               - 'packages/food-db/**'
               - 'packages/inventory-db/**'
+              - 'pillars/finance/openapi/**'
               - 'pillars/lists/db/**'
               - 'pillars/lists/contract/**'
               - 'packages/navigation/**'

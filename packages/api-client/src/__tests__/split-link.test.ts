@@ -70,14 +70,18 @@ function dispatch(link: TRPCLink<AppRouter>, op: Operation): void {
 }
 
 describe('pillarOfPath', () => {
-  it('returns the namespace when it is a known pillar', () => {
-    expect(pillarOfPath('finance.wishlist.list')).toBe('finance');
+  it('returns the namespace when it is a known tRPC pillar', () => {
+    expect(pillarOfPath('food.recipes.list')).toBe('food');
     expect(pillarOfPath('media.movies.get')).toBe('media');
     expect(pillarOfPath('core.health')).toBe('core');
   });
 
   it('returns null for unprefixed paths', () => {
     expect(pillarOfPath('health')).toBeNull();
+  });
+
+  it('returns null for finance paths now that finance left tRPC', () => {
+    expect(pillarOfPath('finance.wishlist.list')).toBeNull();
   });
 
   it('returns null for paths prefixed with a non-pillar namespace', () => {
@@ -91,12 +95,12 @@ describe('pillarOfPath', () => {
 });
 
 describe('createPillarSplitLink', () => {
-  it('routes finance.* operations to the finance URL', () => {
+  it('routes finance.* operations to the legacy URL now that finance left tRPC', () => {
     const { link, records } = buildRecordingHarness();
 
     dispatch(link, makeOp('finance.wishlist.list', 1));
 
-    expect(records).toEqual([{ url: PILLAR_TRPC_URLS.finance, path: 'finance.wishlist.list' }]);
+    expect(records).toEqual([{ url: LEGACY_TRPC_URL, path: 'finance.wishlist.list' }]);
   });
 
   it('routes media.* operations to the media URL', () => {
@@ -107,15 +111,15 @@ describe('createPillarSplitLink', () => {
     expect(records).toEqual([{ url: PILLAR_TRPC_URLS.media, path: 'media.movies.get' }]);
   });
 
-  it('routes a mix of core and finance ops to two distinct URLs', () => {
+  it('routes a mix of core and food ops to two distinct URLs', () => {
     const { link, records } = buildRecordingHarness();
 
     dispatch(link, makeOp('core.foo', 1));
-    dispatch(link, makeOp('finance.bar', 2));
+    dispatch(link, makeOp('food.bar', 2));
 
     expect(records).toEqual([
       { url: PILLAR_TRPC_URLS.core, path: 'core.foo' },
-      { url: PILLAR_TRPC_URLS.finance, path: 'finance.bar' },
+      { url: PILLAR_TRPC_URLS.food, path: 'food.bar' },
     ]);
     const urls = new Set(records.map((r) => r.url));
     expect(urls.size).toBe(2);
@@ -157,7 +161,7 @@ describe('createPillarSplitLink', () => {
     const link = createPillarSplitLink({
       pillarUrls: {
         ...PILLAR_TRPC_URLS,
-        finance: 'http://finance-api:3004/trpc',
+        food: 'http://food-api:3005/trpc',
       },
       legacyUrl: 'http://legacy:3000/trpc',
       linkFor:
@@ -171,11 +175,11 @@ describe('createPillarSplitLink', () => {
           }),
     });
 
-    dispatch(link, makeOp('finance.x', 1));
+    dispatch(link, makeOp('food.x', 1));
     dispatch(link, makeOp('unknown.y', 2));
 
     expect(records).toEqual([
-      { url: 'http://finance-api:3004/trpc', path: 'finance.x' },
+      { url: 'http://food-api:3005/trpc', path: 'food.x' },
       { url: 'http://legacy:3000/trpc', path: 'unknown.y' },
     ]);
   });

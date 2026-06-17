@@ -1,34 +1,20 @@
-import { act, renderHook } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { WishlistFormValues, WishlistItem } from './types';
 
-// ---------- mocks ----------
+const wishlistListMock = vi.hoisted(() => vi.fn());
+const wishlistCreateMock = vi.hoisted(() => vi.fn());
+const wishlistUpdateMock = vi.hoisted(() => vi.fn());
+const wishlistDeleteMock = vi.hoisted(() => vi.fn());
 
-const mockListQuery = vi.fn();
-const mockCreateMutate = vi.fn();
-const mockUpdateMutate = vi.fn();
-const mockDeleteMutate = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input?: unknown) => {
-    const key = path.join('.');
-    if (key === 'wishlist.list') return mockListQuery(input);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'wishlist.create') {
-      return { mutate: (...args: unknown[]) => mockCreateMutate(...args), isPending: false };
-    }
-    if (key === 'wishlist.update') {
-      return { mutate: (...args: unknown[]) => mockUpdateMutate(...args), isPending: false };
-    }
-    if (key === 'wishlist.delete') {
-      return { mutate: (...args: unknown[]) => mockDeleteMutate(...args), isPending: false };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
+vi.mock('../../finance-api/index.js', () => ({
+  wishlistList: (...args: unknown[]) => wishlistListMock(...args),
+  wishlistCreate: (...args: unknown[]) => wishlistCreateMock(...args),
+  wishlistUpdate: (...args: unknown[]) => wishlistUpdateMock(...args),
+  wishlistDelete: (...args: unknown[]) => wishlistDeleteMock(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -38,10 +24,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
-// Import after mocks are registered.
 import { useWishlistPage } from './useWishlistPage';
-
-// ---------- helpers ----------
 
 function makeValues(overrides: Partial<WishlistFormValues> = {}): WishlistFormValues {
   return {
@@ -70,60 +53,96 @@ function makeItem(overrides: Partial<WishlistItem> = {}): WishlistItem {
   };
 }
 
+function makeWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  return { queryClient, wrapper };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockListQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
+  wishlistListMock.mockResolvedValue({
+    data: { data: [], pagination: { total: 0, limit: 100, offset: 0, hasMore: false } },
+    error: undefined,
+  });
+  wishlistCreateMock.mockResolvedValue({ data: { data: makeItem() }, error: undefined });
+  wishlistUpdateMock.mockResolvedValue({ data: { data: makeItem() }, error: undefined });
+  wishlistDeleteMock.mockResolvedValue({ data: { success: true }, error: undefined });
 });
 
-// ---------- create path ----------
+describe('useWishlistPage — list query', () => {
+  it('issues a wishlist list query with limit 100', async () => {
+    const { wrapper } = makeWrapper();
+    renderHook(() => useWishlistPage(), { wrapper });
+    await waitFor(() => expect(wishlistListMock).toHaveBeenCalledWith({ query: { limit: 100 } }));
+  });
+
+  it('exposes the unwrapped list payload', async () => {
+    const item = makeItem({ id: 'wish-99' });
+    wishlistListMock.mockResolvedValue({
+      data: { data: [item], pagination: { total: 1, limit: 100, offset: 0, hasMore: false } },
+      error: undefined,
+    });
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
+    await waitFor(() => expect(result.current.query.data?.data).toHaveLength(1));
+    expect(result.current.query.data?.pagination.total).toBe(1);
+  });
+});
 
 describe('useWishlistPage — onSubmit (create)', () => {
-  it('coerces empty string url to null before sending', () => {
-    const { result } = renderHook(() => useWishlistPage());
+  it('coerces empty string url to null before sending', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
 
     act(() => {
       result.current.onSubmit(makeValues({ url: '' }));
     });
 
-    expect(mockCreateMutate).toHaveBeenCalledTimes(1);
-    expect(mockCreateMutate).toHaveBeenCalledWith(expect.objectContaining({ url: null }));
-    expect(mockUpdateMutate).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(wishlistCreateMock).toHaveBeenCalledWith({
+        body: expect.objectContaining({ url: null }),
+      })
+    );
+    expect(wishlistUpdateMock).not.toHaveBeenCalled();
   });
 
-  it('coerces empty string notes to null before sending', () => {
-    const { result } = renderHook(() => useWishlistPage());
+  it('coerces empty string notes to null before sending', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
 
     act(() => {
       result.current.onSubmit(makeValues({ notes: '' }));
     });
 
-    expect(mockCreateMutate).toHaveBeenCalledWith(expect.objectContaining({ notes: null }));
+    await waitFor(() =>
+      expect(wishlistCreateMock).toHaveBeenCalledWith({
+        body: expect.objectContaining({ notes: null }),
+      })
+    );
   });
 
-  it('passes a valid url through unchanged', () => {
-    const { result } = renderHook(() => useWishlistPage());
+  it('passes a valid url through unchanged', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
 
     act(() => {
       result.current.onSubmit(makeValues({ url: 'https://example.com' }));
     });
 
-    expect(mockCreateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'https://example.com' })
+    await waitFor(() =>
+      expect(wishlistCreateMock).toHaveBeenCalledWith({
+        body: expect.objectContaining({ url: 'https://example.com' }),
+      })
     );
   });
 
-  it('passes non-empty notes through unchanged', () => {
-    const { result } = renderHook(() => useWishlistPage());
-
-    act(() => {
-      result.current.onSubmit(makeValues({ notes: 'Some notes' }));
-    });
-
-    expect(mockCreateMutate).toHaveBeenCalledWith(expect.objectContaining({ notes: 'Some notes' }));
-  });
-
-  it('preserves all other field values when coercing', () => {
-    const { result } = renderHook(() => useWishlistPage());
+  it('preserves all other field values when coercing', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
 
     act(() => {
       result.current.onSubmit(
@@ -138,32 +157,25 @@ describe('useWishlistPage — onSubmit (create)', () => {
       );
     });
 
-    expect(mockCreateMutate).toHaveBeenCalledWith({
-      item: 'New Camera',
-      targetAmount: 1500,
-      saved: 300,
-      priority: 'One Day',
-      url: null,
-      notes: null,
-    });
-  });
-
-  it('coerces null/undefined url to null (defensive)', () => {
-    const { result } = renderHook(() => useWishlistPage());
-
-    act(() => {
-      result.current.onSubmit(makeValues({ url: null }));
-    });
-
-    expect(mockCreateMutate).toHaveBeenCalledWith(expect.objectContaining({ url: null }));
+    await waitFor(() =>
+      expect(wishlistCreateMock).toHaveBeenCalledWith({
+        body: {
+          item: 'New Camera',
+          targetAmount: 1500,
+          saved: 300,
+          priority: 'One Day',
+          url: null,
+          notes: null,
+        },
+      })
+    );
   });
 });
 
-// ---------- update path ----------
-
 describe('useWishlistPage — onSubmit (update)', () => {
-  it('coerces empty url to null when updating an existing item', () => {
-    const { result } = renderHook(() => useWishlistPage());
+  it('coerces empty url to null when updating an existing item', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
 
     act(() => {
       result.current.handleEdit(makeItem({ id: 'wish-42' }));
@@ -172,16 +184,18 @@ describe('useWishlistPage — onSubmit (update)', () => {
       result.current.onSubmit(makeValues({ url: '', notes: '' }));
     });
 
-    expect(mockUpdateMutate).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMutate).toHaveBeenCalledWith({
-      id: 'wish-42',
-      data: expect.objectContaining({ url: null, notes: null }),
-    });
-    expect(mockCreateMutate).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(wishlistUpdateMock).toHaveBeenCalledWith({
+        path: { id: 'wish-42' },
+        body: expect.objectContaining({ url: null, notes: null }),
+      })
+    );
+    expect(wishlistCreateMock).not.toHaveBeenCalled();
   });
 
-  it('passes a valid url through unchanged on update', () => {
-    const { result } = renderHook(() => useWishlistPage());
+  it('passes a valid url through unchanged on update', async () => {
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
 
     act(() => {
       result.current.handleEdit(makeItem({ id: 'wish-42' }));
@@ -190,9 +204,30 @@ describe('useWishlistPage — onSubmit (update)', () => {
       result.current.onSubmit(makeValues({ url: 'https://example.com/item' }));
     });
 
-    expect(mockUpdateMutate).toHaveBeenCalledWith({
-      id: 'wish-42',
-      data: expect.objectContaining({ url: 'https://example.com/item' }),
+    await waitFor(() =>
+      expect(wishlistUpdateMock).toHaveBeenCalledWith({
+        path: { id: 'wish-42' },
+        body: expect.objectContaining({ url: 'https://example.com/item' }),
+      })
+    );
+  });
+});
+
+describe('useWishlistPage — delete', () => {
+  it('invokes wishlistDelete with the row id and invalidates the list', async () => {
+    const { queryClient, wrapper } = makeWrapper();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const { result } = renderHook(() => useWishlistPage(), { wrapper });
+
+    act(() => {
+      result.current.deleteMutation.mutate({ id: 'wish-7' });
     });
+
+    await waitFor(() =>
+      expect(wishlistDeleteMock).toHaveBeenCalledWith({ path: { id: 'wish-7' } })
+    );
+    await waitFor(() =>
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['finance', 'wishlist'] })
+    );
   });
 });

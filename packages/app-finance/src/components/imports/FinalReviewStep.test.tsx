@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { type ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Store mock state ---
@@ -14,27 +16,12 @@ vi.mock('../../store/importStore', () => ({
     selector ? selector(storeState) : storeState,
 }));
 
-// --- tRPC mock ---
+// --- finance SDK mock ---
 
-const mockMutate = vi.fn();
-let mutationCallbacks: {
-  onSuccess?: (data: unknown) => void;
-  onError?: (err: unknown) => void;
-} = {};
-let mockIsPending = false;
+const { mockCommitImport } = vi.hoisted(() => ({ mockCommitImport: vi.fn() }));
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: typeof mutationCallbacks
-  ) => {
-    if (path.join('.') === 'imports.commitImport') {
-      mutationCallbacks = opts ?? {};
-      return { mutate: mockMutate, isPending: mockIsPending };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
+vi.mock('../../finance-api/index.js', () => ({
+  importsCommitImport: (...args: unknown[]) => mockCommitImport(...args),
 }));
 
 vi.mock('../../lib/commit-payload', () => ({
@@ -59,6 +46,17 @@ import { FinalReviewStep } from './FinalReviewStep';
 
 // --- Helpers ---
 
+function renderStep(): ReactElement {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return (
+    <QueryClientProvider client={queryClient}>
+      <FinalReviewStep />
+    </QueryClientProvider>
+  );
+}
+
 function makeStoreState(overrides: Partial<typeof storeState> = {}) {
   return {
     pendingEntities: [],
@@ -82,19 +80,22 @@ function makeStoreState(overrides: Partial<typeof storeState> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   storeState = makeStoreState();
-  mockIsPending = false;
+  mockCommitImport.mockResolvedValue({
+    data: { data: {}, message: 'ok' },
+    error: undefined,
+  });
 });
 
 // --- Tests ---
 
 describe('FinalReviewStep', () => {
   it('renders empty state when no pending changes', () => {
-    render(<FinalReviewStep />);
+    render(renderStep());
     expect(screen.getByText('No pending changes to review.')).toBeDefined();
   });
 
   it('hides sections with zero items', () => {
-    render(<FinalReviewStep />);
+    render(renderStep());
     expect(screen.queryByText('New Entities')).toBeNull();
     expect(screen.queryByText('Classification Rule Changes')).toBeNull();
     expect(screen.queryByText('Transactions to Import')).toBeNull();
@@ -108,7 +109,7 @@ describe('FinalReviewStep', () => {
         { tempId: 'temp:entity:2', name: 'Coles', type: 'company' },
       ],
     });
-    render(<FinalReviewStep />);
+    render(renderStep());
     expect(screen.getByText('Woolworths')).toBeDefined();
     expect(screen.getByText('Coles')).toBeDefined();
     expect(screen.getByText('(2)')).toBeDefined();
@@ -130,7 +131,7 @@ describe('FinalReviewStep', () => {
         },
       ],
     });
-    render(<FinalReviewStep />);
+    render(renderStep());
     expect(screen.getByText('Add')).toBeDefined();
     expect(screen.getByText('Edit')).toBeDefined();
     expect(screen.getByText('Disable')).toBeDefined();
@@ -149,7 +150,7 @@ describe('FinalReviewStep', () => {
         skipped: [],
       },
     });
-    render(<FinalReviewStep />);
+    render(renderStep());
     expect(screen.getByText('Matched:')).toBeDefined();
     expect(screen.getByText('Corrected:')).toBeDefined();
     expect(screen.getByText('Manual:')).toBeDefined();
@@ -166,7 +167,7 @@ describe('FinalReviewStep', () => {
         { id: 't3' },
       ],
     });
-    render(<FinalReviewStep />);
+    render(renderStep());
     expect(screen.getByText(/3 tags will be applied across 2 transactions/)).toBeDefined();
   });
 
@@ -177,7 +178,7 @@ describe('FinalReviewStep', () => {
       type: 'company',
     }));
     storeState = makeStoreState({ pendingEntities: manyEntities });
-    render(<FinalReviewStep />);
+    render(renderStep());
     // Section header visible but items not rendered (collapsed)
     expect(screen.getByText('(12)')).toBeDefined();
     expect(screen.queryByText('Entity 0')).toBeNull();
@@ -190,31 +191,34 @@ describe('FinalReviewStep', () => {
       type: 'company',
     }));
     storeState = makeStoreState({ pendingEntities: manyEntities });
-    render(<FinalReviewStep />);
+    render(renderStep());
     // Click section header to expand
     fireEvent.click(screen.getByText('New Entities').closest('button')!);
     expect(screen.getByText('Entity 0')).toBeDefined();
   });
 
   it("shows 'Approve & Commit All' button instead of 'Continue to Import'", () => {
-    render(<FinalReviewStep />);
+    render(renderStep());
     expect(screen.getByText('Approve & Commit All')).toBeDefined();
     expect(screen.queryByText('Continue to Import')).toBeNull();
   });
 
-  it('calls commitImport mutation on Approve & Commit All click', () => {
+  it('calls importsCommitImport with the built payload on Approve & Commit All click', async () => {
     storeState = makeStoreState({
       confirmedTransactions: [{ id: 't1', checksum: 'abc' }],
     });
-    render(<FinalReviewStep />);
+    render(renderStep());
     fireEvent.click(screen.getByText('Approve & Commit All'));
-    expect(mockMutate).toHaveBeenCalledOnce();
+    await waitFor(() =>
+      expect(mockCommitImport).toHaveBeenCalledWith({
+        body: expect.objectContaining({
+          transactions: [{ id: 't1', checksum: 'abc' }],
+        }),
+      })
+    );
   });
 
   it('auto-advances to Summary on successful commit', async () => {
-    render(<FinalReviewStep />);
-    fireEvent.click(screen.getByText('Approve & Commit All'));
-
     const resultData = {
       entitiesCreated: 2,
       rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
@@ -224,7 +228,12 @@ describe('FinalReviewStep', () => {
       failedDetails: [],
       retroactiveReclassifications: 3,
     };
-    mutationCallbacks.onSuccess?.({ data: resultData });
+    mockCommitImport.mockResolvedValue({
+      data: { data: resultData, message: 'done' },
+      error: undefined,
+    });
+    render(renderStep());
+    fireEvent.click(screen.getByText('Approve & Commit All'));
 
     await waitFor(() => {
       expect(mockSetCommitResult).toHaveBeenCalledWith(resultData);
@@ -233,10 +242,13 @@ describe('FinalReviewStep', () => {
   });
 
   it('shows error message on commit failure', async () => {
-    render(<FinalReviewStep />);
+    mockCommitImport.mockResolvedValue({
+      data: undefined,
+      error: { message: 'Database constraint violated' },
+      response: { status: 409 } as Response,
+    });
+    render(renderStep());
     fireEvent.click(screen.getByText('Approve & Commit All'));
-
-    mutationCallbacks.onError?.({ message: 'Database constraint violated' });
 
     await waitFor(() => {
       expect(screen.getByText('Commit failed')).toBeDefined();
@@ -245,10 +257,13 @@ describe('FinalReviewStep', () => {
   });
 
   it('does not advance to Summary when the commit fails', async () => {
-    render(<FinalReviewStep />);
+    mockCommitImport.mockResolvedValue({
+      data: undefined,
+      error: { message: 'boom' },
+      response: { status: 500 } as Response,
+    });
+    render(renderStep());
     fireEvent.click(screen.getByText('Approve & Commit All'));
-
-    mutationCallbacks.onError?.({ message: 'boom' });
 
     await waitFor(() => {
       expect(screen.getByText('Commit failed')).toBeDefined();
@@ -256,15 +271,21 @@ describe('FinalReviewStep', () => {
     expect(mockNextStep).not.toHaveBeenCalled();
   });
 
-  it('disables Back button during commit', () => {
-    mockIsPending = true;
-    render(<FinalReviewStep />);
-    const backButton = screen.getByText('Back');
-    expect(backButton.closest('button')?.disabled).toBe(true);
+  it('disables Back button during commit', async () => {
+    let resolveCommit: (v: unknown) => void = () => undefined;
+    mockCommitImport.mockReturnValue(
+      new Promise((resolve) => {
+        resolveCommit = resolve;
+      })
+    );
+    render(renderStep());
+    fireEvent.click(screen.getByText('Approve & Commit All'));
+    await waitFor(() => expect(screen.getByText('Back').closest('button')?.disabled).toBe(true));
+    resolveCommit({ data: { data: {}, message: 'ok' }, error: undefined });
   });
 
   it('calls prevStep on Back click', () => {
-    render(<FinalReviewStep />);
+    render(renderStep());
     fireEvent.click(screen.getByText('Back'));
     expect(mockPrevStep).toHaveBeenCalledOnce();
   });

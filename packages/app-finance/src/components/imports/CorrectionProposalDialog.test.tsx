@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { type ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -33,6 +35,16 @@ const mockListQuery = vi.fn();
 const mockReviseMutateAsync = vi.fn();
 const mockAddPendingChangeSet = vi.fn();
 
+const { mockDescriptionsForPreview } = vi.hoisted(() => ({
+  mockDescriptionsForPreview: vi.fn(),
+}));
+
+// Finance-served transaction descriptions preview moved to the generated REST
+// SDK; everything else here is still core-served via the pillar-sdk.
+vi.mock('../../finance-api/index.js', () => ({
+  transactionsDescriptionsForPreview: (...args: unknown[]) => mockDescriptionsForPreview(...args),
+}));
+
 let rejectOnSuccess: (() => void) | undefined;
 
 vi.mock('../../store/importStore', () => ({
@@ -56,9 +68,6 @@ vi.mock('@pops/pillar-sdk/react', () => ({
     }
     if (key === 'corrections.list') return mockListQuery(...args);
     if (key === 'corrections.listMerged') return mockListQuery(...args);
-    if (key === 'transactions.listDescriptionsForPreview') {
-      return { data: { data: [], total: 0, truncated: false }, isLoading: false };
-    }
     return { data: undefined };
   },
   usePillarMutation: (
@@ -446,12 +455,25 @@ function renderDialog(overrides: Partial<Parameters<typeof CorrectionProposalDia
     onApproved: vi.fn(),
     ...overrides,
   };
-  const utils = render(<CorrectionProposalDialog {...props} />);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const tree: ReactElement = (
+    <QueryClientProvider client={queryClient}>
+      <CorrectionProposalDialog {...props} />
+    </QueryClientProvider>
+  );
+  const utils = render(tree);
   return { ...utils, props };
 }
 
 beforeEach(() => {
   mockProposeData = null;
+  mockDescriptionsForPreview.mockReset();
+  mockDescriptionsForPreview.mockResolvedValue({
+    data: { data: [], total: 0, truncated: false },
+    error: undefined,
+  });
   mockPreviewMutateAsync.mockReset();
   mockPreviewMutateAsync.mockResolvedValue({ diffs: [], summary: EMPTY_SUMMARY });
   mockAddPendingChangeSet.mockReset();

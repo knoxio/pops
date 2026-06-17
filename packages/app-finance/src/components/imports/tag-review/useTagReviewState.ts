@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import { transactionsAvailableTags } from '../../../finance-api/index.js';
 import { useImportStore } from '../../../store/importStore';
 import { groupByEntity } from './tagReviewUtils';
 import {
@@ -75,11 +76,11 @@ function useLocalTagsSync(confirmedTransactions: ConfirmedTransaction[]): LocalT
 }
 
 function useAvailableTags(localTags: Record<string, string[]>): string[] {
-  const { data: serverTags } = usePillarQuery<string[]>(
-    'finance',
-    ['transactions', 'availableTags'],
-    undefined
-  );
+  const { data } = useQuery({
+    queryKey: ['finance', 'transactions', 'availableTags'],
+    queryFn: async () => unwrap(await transactionsAvailableTags()),
+  });
+  const serverTags = data?.tags;
   return useMemo(() => {
     const local = Object.values(localTags).flat();
     return [...new Set([...(serverTags ?? []), ...local])].toSorted();

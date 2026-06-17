@@ -1,21 +1,19 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { type ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TagRuleProposalDialog } from './TagRuleProposalDialog';
 
 // ---------------------------------------------------------------------------
-// Hoisted mocks (referenced inside vi.mock factories)
+// Hoisted finance SDK mocks (referenced inside vi.mock factories)
 // ---------------------------------------------------------------------------
 
-const { mockRejectMutate, mockApplyMutateAsync, mockInvalidate } = vi.hoisted(() => ({
-  mockRejectMutate: vi.fn(),
-  mockApplyMutateAsync: vi.fn(),
-  mockInvalidate: vi.fn(),
+const { mockPropose, mockApply, mockReject } = vi.hoisted(() => ({
+  mockPropose: vi.fn(),
+  mockApply: vi.fn(),
+  mockReject: vi.fn(),
 }));
-
-// ---------------------------------------------------------------------------
-// Mock trpc
-// ---------------------------------------------------------------------------
 
 type ProposeData = {
   changeSet: { source?: string; reason?: string; ops: Array<Record<string, unknown>> };
@@ -26,57 +24,10 @@ type ProposeData = {
   };
 } | null;
 
-let mockProposeData: ProposeData = null;
-let mockRejectOnSuccess:
-  | ((data: { message: string; followUpProposal: ProposeData }) => void)
-  | undefined;
-let _mockRejectOnError: ((err: Error) => void) | undefined;
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'tagRules.proposeTagRuleChangeSet') {
-      return {
-        data: mockProposeData,
-        isLoading: false,
-        isError: false,
-        error: null,
-      };
-    }
-    return { data: undefined };
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: {
-      onSuccess?: (data: { message: string; followUpProposal: ProposeData }) => void;
-      onError?: (err: Error) => void;
-    }
-  ) => {
-    const key = path.join('.');
-    if (key === 'tagRules.applyTagRuleChangeSet') {
-      return {
-        mutateAsync: mockApplyMutateAsync,
-        isPending: false,
-      };
-    }
-    if (key === 'tagRules.rejectTagRuleChangeSet') {
-      mockRejectOnSuccess = opts?.onSuccess;
-      _mockRejectOnError = opts?.onError;
-      return {
-        mutate: (...args: unknown[]) => {
-          mockRejectMutate(...args);
-        },
-        isPending: false,
-      };
-    }
-    return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    invalidate: mockInvalidate,
-    setData: vi.fn(),
-    fetchQuery: vi.fn(),
-  }),
+vi.mock('../../finance-api/index.js', () => ({
+  tagRulesPropose: (...args: unknown[]) => mockPropose(...args),
+  tagRulesApply: (...args: unknown[]) => mockApply(...args),
+  tagRulesReject: (...args: unknown[]) => mockReject(...args),
 }));
 
 vi.mock('sonner', () => ({
@@ -130,15 +81,24 @@ const baseProposal: ProposeData = {
   },
 };
 
+function withClient(node: ReactElement): ReactElement {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return <QueryClientProvider client={queryClient}>{node}</QueryClientProvider>;
+}
+
 function renderDialog(onOpenChange = vi.fn(), onApplied = vi.fn()) {
   return render(
-    <TagRuleProposalDialog
-      open={true}
-      onOpenChange={onOpenChange}
-      signal={signal}
-      previewTransactions={[{ checksum: 't1', description: 'WOOLWORTHS 1234', entityId: null }]}
-      onApplied={onApplied}
-    />
+    withClient(
+      <TagRuleProposalDialog
+        open={true}
+        onOpenChange={onOpenChange}
+        signal={signal}
+        previewTransactions={[{ checksum: 't1', description: 'WOOLWORTHS 1234', entityId: null }]}
+        onApplied={onApplied}
+      />
+    )
   );
 }
 
@@ -148,29 +108,39 @@ function renderDialog(onOpenChange = vi.fn(), onApplied = vi.fn()) {
 
 describe('TagRuleProposalDialog', () => {
   beforeEach(() => {
-    mockProposeData = baseProposal;
-    mockRejectOnSuccess = undefined;
-    _mockRejectOnError = undefined;
-    mockRejectMutate.mockReset();
-    mockApplyMutateAsync.mockReset();
-    mockInvalidate.mockReset();
+    mockPropose.mockReset();
+    mockApply.mockReset();
+    mockReject.mockReset();
+    mockPropose.mockResolvedValue({ data: baseProposal, error: undefined });
+    mockApply.mockResolvedValue({ data: { rules: [] }, error: undefined });
+    mockReject.mockResolvedValue({
+      data: { message: 'Tag rule ChangeSet rejected', followUpProposal: null },
+      error: undefined,
+    });
   });
 
-  it('renders the proposal rationale', () => {
+  it('issues the propose query and renders the proposal rationale', async () => {
     renderDialog();
-    expect(screen.getByText(/contains:WOOLWORTHS/i)).toBeDefined();
+    expect(await screen.findByText(/contains:WOOLWORTHS/i)).toBeDefined();
+    expect(mockPropose).toHaveBeenCalledWith({
+      body: expect.objectContaining({
+        signal: expect.objectContaining({ descriptionPattern: 'WOOLWORTHS', tags: ['Groceries'] }),
+      }),
+    });
   });
 
   it('shows the reject feedback textarea after clicking "Reject…"', async () => {
     renderDialog();
+    await screen.findByText(/contains:WOOLWORTHS/i);
     fireEvent.click(screen.getByRole('button', { name: /reject/i }));
     await waitFor(() => {
       expect(screen.getByLabelText(/feedback/i)).toBeDefined();
     });
   });
 
-  it('calls rejectTagRuleChangeSet with the changeSet, feedback, and signal on confirm', async () => {
+  it('calls tagRulesReject with the changeSet, feedback, and signal on confirm', async () => {
     renderDialog();
+    await screen.findByText(/contains:WOOLWORTHS/i);
     fireEvent.click(screen.getByRole('button', { name: /reject/i }));
 
     const textarea = await screen.findByLabelText(/feedback/i);
@@ -178,24 +148,26 @@ describe('TagRuleProposalDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /confirm reject/i }));
 
-    expect(mockRejectMutate).toHaveBeenCalledOnce();
-    const callArg = mockRejectMutate.mock.calls[0][0] as Record<string, unknown>;
-    expect(callArg.feedback).toBe('Too broad');
-    expect(callArg.signal).toBeDefined();
-    expect(callArg.transactions).toBeDefined();
+    await waitFor(() => expect(mockReject).toHaveBeenCalledOnce());
+    const callArg = mockReject.mock.calls[0][0] as { body: Record<string, unknown> };
+    expect(callArg.body.feedback).toBe('Too broad');
+    expect(callArg.body.signal).toBeDefined();
+    expect(callArg.body.transactions).toBeDefined();
   });
 
   it('closes the dialog when rejection returns no followUpProposal', async () => {
     const onOpenChange = vi.fn();
+    mockReject.mockResolvedValue({
+      data: { message: 'Tag rule ChangeSet rejected', followUpProposal: null },
+      error: undefined,
+    });
     renderDialog(onOpenChange);
+    await screen.findByText(/contains:WOOLWORTHS/i);
 
     fireEvent.click(screen.getByRole('button', { name: /reject/i }));
     const textarea = await screen.findByLabelText(/feedback/i);
     fireEvent.change(textarea, { target: { value: 'Dismiss it' } });
     fireEvent.click(screen.getByRole('button', { name: /confirm reject/i }));
-
-    // Simulate the mutation succeeding with no follow-up.
-    mockRejectOnSuccess?.({ message: 'Tag rule ChangeSet rejected', followUpProposal: null });
 
     await waitFor(() => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -204,13 +176,6 @@ describe('TagRuleProposalDialog', () => {
 
   it('shows revised proposal banner when rejection returns a followUpProposal', async () => {
     const onOpenChange = vi.fn();
-    renderDialog(onOpenChange);
-
-    fireEvent.click(screen.getByRole('button', { name: /reject/i }));
-    const textarea = await screen.findByLabelText(/feedback/i);
-    fireEvent.change(textarea, { target: { value: 'Use exact match' } });
-    fireEvent.click(screen.getByRole('button', { name: /confirm reject/i }));
-
     const followUpProposal: ProposeData = {
       ...baseProposal,
       rationale:
@@ -220,37 +185,43 @@ describe('TagRuleProposalDialog', () => {
         reason: 'Revised tag rule incorporating rejection feedback: Use exact match',
       },
     };
-
-    // Simulate the mutation succeeding with a follow-up.
-    mockRejectOnSuccess?.({
-      message: 'Tag rule ChangeSet rejected',
-      followUpProposal,
+    mockReject.mockResolvedValue({
+      data: { message: 'Tag rule ChangeSet rejected', followUpProposal },
+      error: undefined,
     });
+    renderDialog(onOpenChange);
+    await screen.findByText(/contains:WOOLWORTHS/i);
+
+    fireEvent.click(screen.getByRole('button', { name: /reject/i }));
+    const textarea = await screen.findByLabelText(/feedback/i);
+    fireEvent.change(textarea, { target: { value: 'Use exact match' } });
+    fireEvent.click(screen.getByRole('button', { name: /confirm reject/i }));
 
     await waitFor(() => {
-      // The dialog must NOT close.
-      expect(onOpenChange).not.toHaveBeenCalledWith(false);
       // The revised-proposal banner must appear.
       expect(screen.getByText(/revised proposal based on your feedback/i)).toBeDefined();
     });
+    // The dialog must NOT close.
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
   it('does not close the dialog when a follow-up proposal is shown', async () => {
     const onOpenChange = vi.fn();
+    mockReject.mockResolvedValue({
+      data: { message: 'Tag rule ChangeSet rejected', followUpProposal: baseProposal },
+      error: undefined,
+    });
     renderDialog(onOpenChange);
+    await screen.findByText(/contains:WOOLWORTHS/i);
 
     fireEvent.click(screen.getByRole('button', { name: /reject/i }));
     const textarea = await screen.findByLabelText(/feedback/i);
     fireEvent.change(textarea, { target: { value: 'Some feedback' } });
     fireEvent.click(screen.getByRole('button', { name: /confirm reject/i }));
 
-    mockRejectOnSuccess?.({
-      message: 'Tag rule ChangeSet rejected',
-      followUpProposal: baseProposal,
-    });
-
-    await waitFor(() => {
-      expect(onOpenChange).not.toHaveBeenCalledWith(false);
-    });
+    await waitFor(() =>
+      expect(screen.getByText(/revised proposal based on your feedback/i)).toBeDefined()
+    );
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 });

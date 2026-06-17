@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../finance-api-helpers.js';
+import { tagRulesPropose } from '../../../finance-api/index.js';
 import {
   collectNewTagNames,
   parseTags,
@@ -9,21 +10,6 @@ import {
   type TagRuleProposalDialogProps,
 } from './types';
 import { useTagRuleMutations } from './useTagRuleMutations';
-
-const DISABLED_INPUT = {
-  signal: {
-    descriptionPattern: '_',
-    matchType: 'exact' as const,
-    entityId: null as string | null,
-    tags: ['_'],
-  },
-  transactions: [] as Array<{
-    transactionId: string;
-    description: string;
-    entityId: string | null;
-  }>,
-  maxPreviewItems: 200,
-};
 
 interface FormState {
   pattern: string;
@@ -133,12 +119,16 @@ export function useTagRuleProposal(props: TagRuleProposalDialogProps) {
       }),
     [props.signal, props.previewTransactions, form.pattern, form.matchType, form.tagsText]
   );
-  const proposeQuery = usePillarQuery<ProposeOutput>(
-    'core',
-    ['tagRules', 'proposeTagRuleChangeSet'],
-    proposeInput ?? DISABLED_INPUT,
-    { enabled: Boolean(props.open && proposeInput), staleTime: 0, retry: false }
-  );
+  const proposeQuery = useQuery({
+    queryKey: ['finance', 'tagRules', 'propose', proposeInput],
+    queryFn: async (): Promise<ProposeOutput> => {
+      if (!proposeInput) throw new Error('tag rule propose input missing');
+      return unwrap(await tagRulesPropose({ body: proposeInput }));
+    },
+    enabled: Boolean(props.open && proposeInput),
+    staleTime: 0,
+    retry: false,
+  });
   const proposal: ProposeOutput | undefined = form.followUpProposal ?? proposeQuery.data;
   useResetOnOpen(props, form);
   useSyncAcceptedTags(proposal, form.setAcceptedNewTags);
