@@ -1180,6 +1180,152 @@ export type ConversionsUpdateWeightResponses = {
 export type ConversionsUpdateWeightResponse =
   ConversionsUpdateWeightResponses[keyof ConversionsUpdateWeightResponses];
 
+export type CookMarkCookedData = {
+  /**
+   * Body
+   */
+  body?: {
+    consumptionOverrides?: Array<
+      | {
+          batchId: number;
+          consumeQty: number;
+          kind: 'batch-override';
+          lineIndex: number;
+          substitutionEdgeId?: number;
+          unit: 'g' | 'ml' | 'count';
+        }
+      | {
+          externalQty: number;
+          externalUnit: 'g' | 'ml' | 'count';
+          kind: 'external';
+          lineIndex: number;
+        }
+      | {
+          batchId: number;
+          consumeQty: number;
+          externalQty: number;
+          kind: 'partial';
+          lineIndex: number;
+          substitutionEdgeId?: number;
+          unit: 'g' | 'ml' | 'count';
+        }
+    >;
+    notes?: string;
+    planEntryId?: number;
+    rating?: number;
+    recipeVersionId: number;
+    scaleFactor: number;
+    yield?: {
+      expiresAt?: string;
+      location: 'pantry' | 'fridge' | 'freezer' | 'other';
+      notes?: string;
+      qty: number;
+      unit: 'g' | 'ml' | 'count';
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/cook/mark-cooked';
+};
+
+export type CookMarkCookedResponses = {
+  /**
+   * 200
+   */
+  200:
+    | {
+        ok: true;
+        recipeRunId: number;
+        yieldedBatchId: number | null;
+      }
+    | {
+        ok: false;
+        reason:
+          | 'RecipeVersionNotFound'
+          | 'RecipeNotCompiled'
+          | 'PlanEntryNotFound'
+          | 'PlanEntryAlreadyCooked'
+          | 'YieldRequired'
+          | 'YieldForbidden'
+          | 'BadScaleFactor'
+          | 'BadYieldQty'
+          | 'BadRating'
+          | 'BadExpiry'
+          | 'ShortfallUnresolved'
+          | 'SubstitutionEdgeInvalid';
+        shortfalls?: Array<{
+          available: number;
+          needed: number;
+          prepStateId: number | null;
+          unit: 'g' | 'ml' | 'count';
+          variantId: number;
+        }>;
+      };
+};
+
+export type CookMarkCookedResponse = CookMarkCookedResponses[keyof CookMarkCookedResponses];
+
+export type CookPrepareCookData = {
+  /**
+   * Body
+   */
+  body?: {
+    planEntryId?: number;
+    recipeVersionId: number;
+    scaleFactor: number;
+  };
+  path?: never;
+  query?: never;
+  url: '/cook/prepare';
+};
+
+export type CookPrepareCookErrors = {
+  /**
+   * 404
+   */
+  404: {
+    message: string;
+  };
+};
+
+export type CookPrepareCookError = CookPrepareCookErrors[keyof CookPrepareCookErrors];
+
+export type CookPrepareCookResponses = {
+  /**
+   * 200
+   */
+  200: {
+    alreadyCooked: boolean;
+    consumeNeeds: Array<{
+      canonicalUnit: 'g' | 'ml' | 'count';
+      ingredientId: number;
+      ingredientName: string;
+      lineIndex: number;
+      optional: boolean;
+      prepStateId: number | null;
+      prepStateLabel: string | null;
+      qty: number;
+      variantId: number;
+      variantName: string;
+    }>;
+    defaultScaleFactor: number;
+    recipeSlug: string;
+    recipeTitle: string;
+    versionNo: number;
+    yieldDefault: {
+      prepStateLabel: string | null;
+      qty: number;
+      shelfLifeFreezerDays: number | null;
+      shelfLifeFridgeDays: number | null;
+      unit: 'g' | 'ml' | 'count';
+      variantName: string | null;
+    } | null;
+    yieldsBatch: boolean;
+  };
+};
+
+export type CookPrepareCookResponse = CookPrepareCookResponses[keyof CookPrepareCookResponses];
+
 export type FridgeRecipesUsingBatchData = {
   body?: never;
   path?: never;

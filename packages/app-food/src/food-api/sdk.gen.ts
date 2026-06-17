@@ -64,6 +64,11 @@ import type {
   ConversionsUpdateWeightData,
   ConversionsUpdateWeightErrors,
   ConversionsUpdateWeightResponses,
+  CookMarkCookedData,
+  CookMarkCookedResponses,
+  CookPrepareCookData,
+  CookPrepareCookErrors,
+  CookPrepareCookResponses,
   FridgeRecipesUsingBatchData,
   FridgeRecipesUsingBatchResponses,
   FridgeViewData,
@@ -617,6 +622,36 @@ export const conversionsUpdateWeight = <ThrowOnError extends boolean = false>(
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
+    },
+  });
+
+/**
+ * Record a cook event in one transaction
+ */
+export const cookMarkCooked = <ThrowOnError extends boolean = false>(
+  options?: Options<CookMarkCookedData, ThrowOnError>
+): RequestResult<CookMarkCookedResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<CookMarkCookedResponses, unknown, ThrowOnError>({
+    url: '/cook/mark-cooked',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
+ * Pre-flight data for the cook modal
+ */
+export const cookPrepareCook = <ThrowOnError extends boolean = false>(
+  options?: Options<CookPrepareCookData, ThrowOnError>
+): RequestResult<CookPrepareCookResponses, CookPrepareCookErrors, ThrowOnError> =>
+  (options?.client ?? client).post<CookPrepareCookResponses, CookPrepareCookErrors, ThrowOnError>({
+    url: '/cook/prepare',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
     },
   });
 
