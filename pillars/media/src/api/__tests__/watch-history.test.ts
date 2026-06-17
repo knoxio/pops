@@ -7,10 +7,8 @@
  * with no episodes), log with watchlist auto-removal (movie + fully-watched
  * show), batch-log season/show expansion with aired-only filtering and
  * already-watched skipping, delete, the 404 mapping, and contract-boundary
- * 400s.
- *
- * The comparison-staleness reset is deferred (comparisons not yet resident in
- * the pillar), so it is intentionally NOT asserted here.
+ * 400s. Also asserts the comparison-staleness reset on completion (movie →
+ * itself, episode → parent show; not reset when `completed = 0`).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -18,7 +16,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { openMediaDb, type OpenedMediaDb } from '../../db/index.js';
+import { comparisonsService, openMediaDb, type OpenedMediaDb } from '../../db/index.js';
 import { createMediaApiApp } from '../app.js';
 import { makeClient } from './test-utils.js';
 
@@ -362,5 +360,73 @@ describe('watch-history — batch log', () => {
       watchedAt: '2024-10-05T10:00:00.000Z',
     });
     expect(data).toEqual({ logged: 0, skipped: 0 });
+  });
+});
+
+describe('watch-history — comparison staleness reset', () => {
+  it('resets a movie to fresh (1.0) once it is logged as completed', async () => {
+    const movie = await makeMovie();
+    comparisonsService.markStale(mediaDb.db, 'movie', movie.id);
+    expect(comparisonsService.getStaleness(mediaDb.db, 'movie', movie.id)).toBeLessThan(1);
+
+    await client().watchHistory.log({
+      mediaType: 'movie',
+      mediaId: movie.id,
+      watchedAt: '2024-11-01T10:00:00.000Z',
+      completed: 1,
+    });
+
+    expect(comparisonsService.getStaleness(mediaDb.db, 'movie', movie.id)).toBe(1.0);
+  });
+
+  it('resets the parent show (not the episode) when an episode is logged as completed', async () => {
+    const show = await makeShow();
+    const s1 = await makeSeason(show.id, 1);
+    const e1 = await makeEpisode(s1.id, 1, { airDate: PAST });
+
+    comparisonsService.markStale(mediaDb.db, 'tv_show', show.id);
+    comparisonsService.markStale(mediaDb.db, 'episode', e1.id);
+    expect(comparisonsService.getStaleness(mediaDb.db, 'tv_show', show.id)).toBeLessThan(1);
+
+    await client().watchHistory.log({
+      mediaType: 'episode',
+      mediaId: e1.id,
+      watchedAt: '2024-11-02T10:00:00.000Z',
+      completed: 1,
+    });
+
+    expect(comparisonsService.getStaleness(mediaDb.db, 'tv_show', show.id)).toBe(1.0);
+    expect(comparisonsService.getStaleness(mediaDb.db, 'episode', e1.id)).toBeLessThan(1);
+  });
+
+  it('does NOT reset staleness when the watch is logged with completed = 0', async () => {
+    const movie = await makeMovie();
+    const stale = comparisonsService.markStale(mediaDb.db, 'movie', movie.id);
+
+    await client().watchHistory.log({
+      mediaType: 'movie',
+      mediaId: movie.id,
+      watchedAt: '2024-11-03T10:00:00.000Z',
+      completed: 0,
+    });
+
+    expect(comparisonsService.getStaleness(mediaDb.db, 'movie', movie.id)).toBe(stale);
+  });
+
+  it('resets the parent show staleness once after a batch log', async () => {
+    const show = await makeShow();
+    const s1 = await makeSeason(show.id, 1);
+    await makeEpisode(s1.id, 1, { airDate: PAST });
+    await makeEpisode(s1.id, 2, { airDate: PAST });
+    comparisonsService.markStale(mediaDb.db, 'tv_show', show.id);
+    expect(comparisonsService.getStaleness(mediaDb.db, 'tv_show', show.id)).toBeLessThan(1);
+
+    await client().watchHistory.batchLog({
+      mediaType: 'show',
+      mediaId: show.id,
+      watchedAt: '2024-11-04T10:00:00.000Z',
+    });
+
+    expect(comparisonsService.getStaleness(mediaDb.db, 'tv_show', show.id)).toBe(1.0);
   });
 });

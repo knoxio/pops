@@ -6,18 +6,15 @@
  *
  * "Aired" means `air_date` is non-null and `<= today` (UTC date). Episodes
  * already completed (when `completed = 1`) and blacklisted episodes for the
- * same `watchedAt` are skipped. On a fully-watched show the watchlist row is
- * deleted and priorities resequenced. The whole thing runs in one
+ * same `watchedAt` are skipped. On a successful batch the parent show's
+ * comparison staleness is reset once; on a fully-watched show the watchlist
+ * row is deleted and priorities resequenced. The whole thing runs in one
  * `db.transaction(...)`.
- *
- * NOTE: the monolith also called `resetStaleness('tv_show', …)` (the
- * comparisons domain) on a successful batch. Comparisons is not resident in
- * this pillar yet — that side effect is deferred until the comparisons domain
- * is ported (wave 3). Everything else is preserved.
  */
 import { and, countDistinct, eq, inArray, isNotNull, lte } from 'drizzle-orm';
 
 import { episodes, mediaWatchlist, seasons, watchHistory } from '../schema.js';
+import { resetStaleness } from './comparisons/staleness.js';
 import { resequencePriorities } from './watchlist.js';
 
 import type { MediaDb } from './internal.js';
@@ -157,6 +154,7 @@ function maybeRemoveCompletedShowFromWatchlist(tx: Tx, tvShowId: number): void {
 function handleShowSideEffects(tx: Tx, input: BatchLogWatchInput): void {
   const tvShowId = resolveTvShowId(tx, input);
   if (tvShowId === undefined) return;
+  resetStaleness(tx, 'tv_show', tvShowId);
   maybeRemoveCompletedShowFromWatchlist(tx, tvShowId);
 }
 
