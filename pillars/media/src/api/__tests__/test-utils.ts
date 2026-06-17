@@ -11,6 +11,7 @@ import supertest from 'supertest';
 import type { Express } from 'express';
 
 import type { Movie } from '../modules/movie-types.js';
+import type { Episode, Season, TvShow } from '../modules/tv-show-types.js';
 import type { WatchlistEntry } from '../modules/watchlist-types.js';
 
 export class HttpError extends Error {
@@ -66,6 +67,28 @@ export function makeClient(app: Express) {
       update: (id: number, data: Record<string, unknown>) =>
         send<{ data: Movie; message: string }>(r.patch(`/movies/${id}`).send(data)),
       delete: (id: number) => send<{ message: string }>(r.delete(`/movies/${id}`)),
+    },
+    tvShows: {
+      list: (query: { search?: string; status?: string; limit?: number; offset?: number } = {}) =>
+        send<{ data: TvShow[]; pagination: Pagination }>(r.get('/tv-shows').query(query)),
+      get: (id: number) => send<{ data: TvShow }>(r.get(`/tv-shows/${id}`)),
+      create: (body: Record<string, unknown>) =>
+        send<{ data: TvShow; message: string }>(r.post('/tv-shows').send(body)),
+      update: (id: number, data: Record<string, unknown>) =>
+        send<{ data: TvShow; message: string }>(r.patch(`/tv-shows/${id}`).send(data)),
+      delete: (id: number) => send<{ message: string }>(r.delete(`/tv-shows/${id}`)),
+      listSeasons: (tvShowId: number) =>
+        send<{ data: Season[]; total: number }>(r.get(`/tv-shows/${tvShowId}/seasons`)),
+      createSeason: (tvShowId: number, body: Record<string, unknown>) =>
+        send<{ data: Season; message: string }>(r.post(`/tv-shows/${tvShowId}/seasons`).send(body)),
+      deleteSeason: (id: number) => send<{ message: string }>(r.delete(`/seasons/${id}`)),
+      listEpisodes: (seasonId: number) =>
+        send<{ data: Episode[]; total: number }>(r.get(`/seasons/${seasonId}/episodes`)),
+      createEpisode: (seasonId: number, body: Record<string, unknown>) =>
+        send<{ data: Episode; message: string }>(
+          r.post(`/seasons/${seasonId}/episodes`).send(body)
+        ),
+      deleteEpisode: (id: number) => send<{ message: string }>(r.delete(`/episodes/${id}`)),
     },
     watchlist: {
       list: (query: WatchlistQuery = {}) =>

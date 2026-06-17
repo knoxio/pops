@@ -9,6 +9,125 @@
   },
   "openapi": "3.0.2",
   "paths": {
+    "/episodes/{id}": {
+      "delete": {
+        "operationId": "tvShows.deleteEpisode",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Delete an episode",
+        "tags": ["tvShows"]
+      }
+    },
     "/movies": {
       "get": {
         "operationId": "movies.list",
@@ -1278,6 +1397,507 @@
         "tags": ["movies"]
       }
     },
+    "/seasons/{id}": {
+      "delete": {
+        "operationId": "tvShows.deleteSeason",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Delete a season",
+        "tags": ["tvShows"]
+      }
+    },
+    "/seasons/{seasonId}/episodes": {
+      "get": {
+        "operationId": "tvShows.listEpisodes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "airDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "episodeNumber": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "name": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "overview": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "runtime": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "seasonId": {
+                            "type": "number"
+                          },
+                          "stillPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "tvdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "seasonId",
+                          "tvdbId",
+                          "episodeNumber",
+                          "name",
+                          "overview",
+                          "airDate",
+                          "stillPath",
+                          "voteAverage",
+                          "runtime",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["data", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "List the episodes of a season",
+        "tags": ["tvShows"]
+      },
+      "post": {
+        "operationId": "tvShows.createEpisode",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "airDate": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "episodeNumber": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "name": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "overview": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "runtime": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "stillPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "tvdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "voteAverage": {
+                    "nullable": true,
+                    "type": "number"
+                  }
+                },
+                "required": ["tvdbId", "episodeNumber"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "airDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "episodeNumber": {
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "name": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "overview": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "runtime": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "seasonId": {
+                          "type": "number"
+                        },
+                        "stillPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tvdbId": {
+                          "type": "number"
+                        },
+                        "voteAverage": {
+                          "nullable": true,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "seasonId",
+                        "tvdbId",
+                        "episodeNumber",
+                        "name",
+                        "overview",
+                        "airDate",
+                        "stillPath",
+                        "voteAverage",
+                        "runtime",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "201"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create an episode under a season",
+        "tags": ["tvShows"]
+      }
+    },
     "/shelf-impressions": {
       "post": {
         "operationId": "shelfImpressions.record",
@@ -1565,6 +2185,1617 @@
         },
         "summary": "List per-shelf impression counts within the recent window",
         "tags": ["shelfImpressions"]
+      }
+    },
+    "/tv-shows": {
+      "get": {
+        "operationId": "tvShows.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "backdropUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "episodeRunTime": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "firstAirDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genres": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "lastAirDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "logoPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "logoUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "networks": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "numberOfEpisodes": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "numberOfSeasons": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "originalLanguage": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "originalName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "overview": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterOverridePath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "status": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "tvdbId": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "voteAverage": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tvdbId",
+                          "name",
+                          "originalName",
+                          "overview",
+                          "firstAirDate",
+                          "lastAirDate",
+                          "status",
+                          "originalLanguage",
+                          "numberOfSeasons",
+                          "numberOfEpisodes",
+                          "episodeRunTime",
+                          "posterPath",
+                          "posterUrl",
+                          "backdropPath",
+                          "backdropUrl",
+                          "logoPath",
+                          "logoUrl",
+                          "posterOverridePath",
+                          "voteAverage",
+                          "voteCount",
+                          "genres",
+                          "networks",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "pagination": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["total", "limit", "offset", "hasMore"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "pagination"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List TV shows with optional search / status filters and pagination",
+        "tags": ["tvShows"]
+      },
+      "post": {
+        "operationId": "tvShows.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "backdropPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "episodeRunTime": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "firstAirDate": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "genres": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "lastAirDate": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "logoPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "networks": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "numberOfEpisodes": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "numberOfSeasons": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "originalLanguage": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "originalName": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "overview": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "posterOverridePath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "posterPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "tvdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "voteAverage": {
+                    "nullable": true,
+                    "type": "number"
+                  },
+                  "voteCount": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "required": ["tvdbId", "name"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "backdropPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "backdropUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "episodeRunTime": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "firstAirDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "genres": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "lastAirDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "networks": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "numberOfEpisodes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "numberOfSeasons": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "originalLanguage": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "originalName": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "overview": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterOverridePath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tvdbId": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "voteAverage": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "voteCount": {
+                          "nullable": true,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tvdbId",
+                        "name",
+                        "originalName",
+                        "overview",
+                        "firstAirDate",
+                        "lastAirDate",
+                        "status",
+                        "originalLanguage",
+                        "numberOfSeasons",
+                        "numberOfEpisodes",
+                        "episodeRunTime",
+                        "posterPath",
+                        "posterUrl",
+                        "backdropPath",
+                        "backdropUrl",
+                        "logoPath",
+                        "logoUrl",
+                        "posterOverridePath",
+                        "voteAverage",
+                        "voteCount",
+                        "genres",
+                        "networks",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "201"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create a TV show",
+        "tags": ["tvShows"]
+      }
+    },
+    "/tv-shows/{id}": {
+      "delete": {
+        "operationId": "tvShows.delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Delete a TV show",
+        "tags": ["tvShows"]
+      },
+      "get": {
+        "operationId": "tvShows.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "backdropPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "backdropUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "episodeRunTime": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "firstAirDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "genres": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "lastAirDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "networks": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "numberOfEpisodes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "numberOfSeasons": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "originalLanguage": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "originalName": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "overview": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterOverridePath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tvdbId": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "voteAverage": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "voteCount": {
+                          "nullable": true,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tvdbId",
+                        "name",
+                        "originalName",
+                        "overview",
+                        "firstAirDate",
+                        "lastAirDate",
+                        "status",
+                        "originalLanguage",
+                        "numberOfSeasons",
+                        "numberOfEpisodes",
+                        "episodeRunTime",
+                        "posterPath",
+                        "posterUrl",
+                        "backdropPath",
+                        "backdropUrl",
+                        "logoPath",
+                        "logoUrl",
+                        "posterOverridePath",
+                        "voteAverage",
+                        "voteCount",
+                        "genres",
+                        "networks",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Get a single TV show by id",
+        "tags": ["tvShows"]
+      },
+      "patch": {
+        "operationId": "tvShows.update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "backdropPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "episodeRunTime": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "firstAirDate": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "genres": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "lastAirDate": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "logoPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "networks": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "numberOfEpisodes": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "numberOfSeasons": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "originalLanguage": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "originalName": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "overview": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "posterOverridePath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "posterPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "tvdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "voteAverage": {
+                    "nullable": true,
+                    "type": "number"
+                  },
+                  "voteCount": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "backdropPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "backdropUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "episodeRunTime": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "firstAirDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "genres": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "lastAirDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "networks": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "numberOfEpisodes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "numberOfSeasons": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "originalLanguage": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "originalName": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "overview": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterOverridePath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tvdbId": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "voteAverage": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "voteCount": {
+                          "nullable": true,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tvdbId",
+                        "name",
+                        "originalName",
+                        "overview",
+                        "firstAirDate",
+                        "lastAirDate",
+                        "status",
+                        "originalLanguage",
+                        "numberOfSeasons",
+                        "numberOfEpisodes",
+                        "episodeRunTime",
+                        "posterPath",
+                        "posterUrl",
+                        "backdropPath",
+                        "backdropUrl",
+                        "logoPath",
+                        "logoUrl",
+                        "posterOverridePath",
+                        "voteAverage",
+                        "voteCount",
+                        "genres",
+                        "networks",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Update a TV show",
+        "tags": ["tvShows"]
+      }
+    },
+    "/tv-shows/{tvShowId}/seasons": {
+      "get": {
+        "operationId": "tvShows.listSeasons",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tvShowId",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "airDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "episodeCount": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "name": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "overview": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterUrl": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "seasonNumber": {
+                            "type": "number"
+                          },
+                          "tvShowId": {
+                            "type": "number"
+                          },
+                          "tvdbId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tvShowId",
+                          "tvdbId",
+                          "seasonNumber",
+                          "name",
+                          "overview",
+                          "posterPath",
+                          "posterUrl",
+                          "airDate",
+                          "episodeCount",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["data", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "List the seasons of a TV show",
+        "tags": ["tvShows"]
+      },
+      "post": {
+        "operationId": "tvShows.createSeason",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tvShowId",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "airDate": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "episodeCount": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "name": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "overview": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "posterPath": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "seasonNumber": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "tvdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["tvdbId", "seasonNumber"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "airDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "episodeCount": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "name": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "overview": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "seasonNumber": {
+                          "type": "number"
+                        },
+                        "tvShowId": {
+                          "type": "number"
+                        },
+                        "tvdbId": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tvShowId",
+                        "tvdbId",
+                        "seasonNumber",
+                        "name",
+                        "overview",
+                        "posterPath",
+                        "posterUrl",
+                        "airDate",
+                        "episodeCount",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "201"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Create a season under a TV show",
+        "tags": ["tvShows"]
       }
     },
     "/watchlist": {
