@@ -16,6 +16,7 @@ export { episodes } from './schema/episodes.js';
 export { mediaScores } from './schema/media-scores.js';
 export { mediaWatchlist } from './schema/media-watchlist.js';
 export { movies } from './schema/movies.js';
+export { plexSettings } from './schema/plex-settings.js';
 export { rotationCandidates } from './schema/rotation-candidates.js';
 export { rotationExclusions } from './schema/rotation-exclusions.js';
 export { rotationLog } from './schema/rotation-log.js';
