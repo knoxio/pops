@@ -338,6 +338,34 @@ export function makeClient(app: Express) {
     comparisons: makeComparisonsClient(r),
     rotation: makeRotationClient(r),
     discovery: makeDiscoveryClient(r),
+    search: makeSearchClient(r),
+  };
+}
+
+interface MovieSearchResultWire {
+  tmdbId: number;
+  title: string;
+  posterPath: string | null;
+  voteAverage: number;
+}
+
+interface TvShowSearchResultWire {
+  tvdbId: number;
+  name: string;
+  year: string | null;
+}
+
+function makeSearchClient(r: ReturnType<typeof supertest>) {
+  return {
+    movies: (query: { query: string; page?: number }) =>
+      send<{
+        results: MovieSearchResultWire[];
+        totalResults: number;
+        totalPages: number;
+        page: number;
+      }>(r.get('/search/movies').query(query)),
+    tvShows: (query: { query: string }) =>
+      send<{ results: TvShowSearchResultWire[] }>(r.get('/search/tv-shows').query(query)),
   };
 }
 

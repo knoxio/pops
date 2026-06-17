@@ -44,3 +44,14 @@ export class ConflictError extends HttpError {
     this.name = 'ConflictError';
   }
 }
+
+/**
+ * An upstream metadata provider (TMDB / TheTVDB) failed. Maps to 502 so the
+ * FE can tell a dependency outage apart from a 4xx caller error.
+ */
+export class BadGatewayError extends HttpError {
+  constructor(message: string) {
+    super(502, message, undefined, 'common.upstreamError');
+    this.name = 'BadGatewayError';
+  }
+}

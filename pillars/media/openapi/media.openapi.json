@@ -15555,6 +15555,312 @@
         "tags": ["rotation"]
       }
     },
+    "/search/movies": {
+      "get": {
+        "operationId": "search.movies",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "exclusiveMinimum": true,
+              "maximum": 500,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "page": {
+                      "type": "number"
+                    },
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "backdropPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genreIds": {
+                            "items": {
+                              "type": "number"
+                            },
+                            "type": "array"
+                          },
+                          "originalLanguage": {
+                            "type": "string"
+                          },
+                          "originalTitle": {
+                            "type": "string"
+                          },
+                          "overview": {
+                            "type": "string"
+                          },
+                          "popularity": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "releaseDate": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          },
+                          "voteAverage": {
+                            "type": "number"
+                          },
+                          "voteCount": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "tmdbId",
+                          "title",
+                          "originalTitle",
+                          "overview",
+                          "releaseDate",
+                          "posterPath",
+                          "backdropPath",
+                          "voteAverage",
+                          "voteCount",
+                          "genreIds",
+                          "originalLanguage",
+                          "popularity"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    },
+                    "totalResults": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["results", "totalResults", "totalPages", "page"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "502"
+          }
+        },
+        "summary": "Search movies via TMDB",
+        "tags": ["search"]
+      }
+    },
+    "/search/tv-shows": {
+      "get": {
+        "operationId": "search.tvShows",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "results": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "firstAirDate": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "genres": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "originalLanguage": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "originalName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "overview": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "status": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "tvdbId": {
+                            "type": "number"
+                          },
+                          "year": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "tvdbId",
+                          "name",
+                          "originalName",
+                          "overview",
+                          "firstAirDate",
+                          "status",
+                          "posterPath",
+                          "genres",
+                          "originalLanguage",
+                          "year"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["results"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "502"
+          }
+        },
+        "summary": "Search TV shows via TheTVDB",
+        "tags": ["search"]
+      }
+    },
     "/seasons/{id}": {
       "delete": {
         "operationId": "tvShows.deleteSeason",

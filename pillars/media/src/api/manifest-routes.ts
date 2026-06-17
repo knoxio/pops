@@ -66,6 +66,8 @@ export const MEDIA_ROUTES: ManifestPayload['routes'] = {
     'media.rotation.listPlexFriends',
     'media.rotation.listSources',
     'media.rotation.getSettings',
+    'media.search.movies',
+    'media.search.tvShows',
     'media.discovery.getDismissed',
     'media.discovery.profile',
     'media.discovery.quickPick',
