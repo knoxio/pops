@@ -10,6 +10,7 @@ import { getPillarRegistry } from './pillars/registry.js';
 import type { PillarRegistryEntry } from '@pops/types';
 
 import type { OpenedCerebrumDb } from '../db/index.js';
+import type { ReflexService } from './modules/reflex/reflex-service.js';
 import type { TemplateRegistry } from './modules/templates/registry.js';
 
 export interface CerebrumApiDeps {
@@ -22,6 +23,8 @@ export interface CerebrumApiDeps {
    * regenerable cache of it). Resolved from `CEREBRUM_ENGRAMS_DIR` at boot.
    */
   engramRoot: string;
+  /** TOML-driven reflex registry + execution-log accessor (PRD-089). */
+  reflexService: ReflexService;
   /** Semver of the build, surfaced on the health response. */
   version: string;
   /**

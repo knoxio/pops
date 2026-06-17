@@ -2026,6 +2026,840 @@
         "tags": ["plexus", "adapters"]
       }
     },
+    "/reflex": {
+      "get": {
+        "operationId": "reflex.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "timezone",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "reflexes": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "action": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "scopes": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "target": {
+                                "type": "string"
+                              },
+                              "template": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "enum": ["ingest", "emit", "glia"],
+                                "type": "string"
+                              },
+                              "verb": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["type", "verb"],
+                            "type": "object"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "executionCount": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "lastExecutionAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "nextFireTime": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "trigger": {
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "conditions": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "scopes": {
+                                        "items": {
+                                          "type": "string"
+                                        },
+                                        "type": "array"
+                                      },
+                                      "source": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "type": "object"
+                                  },
+                                  "event": {
+                                    "enum": [
+                                      "engram.created",
+                                      "engram.modified",
+                                      "engram.archived",
+                                      "engram.linked"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "type": {
+                                    "enum": ["event"],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["type", "event"],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "metric": {
+                                    "enum": ["similar_count", "staleness_max", "topic_frequency"],
+                                    "type": "string"
+                                  },
+                                  "scopes": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "type": {
+                                    "enum": ["threshold"],
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["type", "metric", "value"],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "cron": {
+                                    "type": "string"
+                                  },
+                                  "type": {
+                                    "enum": ["schedule"],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["type", "cron"],
+                                "type": "object"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "description",
+                          "enabled",
+                          "trigger",
+                          "action",
+                          "lastExecutionAt",
+                          "nextFireTime",
+                          "executionCount"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["reflexes"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "List reflexes enriched with runtime status.",
+        "tags": ["reflex"]
+      }
+    },
+    "/reflex/history": {
+      "post": {
+        "operationId": "reflex.history",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "limit": {
+                    "exclusiveMinimum": true,
+                    "maximum": 200,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "offset": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": ["triggered", "executing", "completed", "failed"],
+                    "type": "string"
+                  },
+                  "triggerType": {
+                    "enum": ["event", "threshold", "schedule"],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "executions": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["ingest", "emit", "glia"],
+                            "type": "string"
+                          },
+                          "actionVerb": {
+                            "type": "string"
+                          },
+                          "completedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "reflexName": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "additionalProperties": {},
+                            "nullable": true,
+                            "type": "object"
+                          },
+                          "status": {
+                            "enum": ["triggered", "executing", "completed", "failed"],
+                            "type": "string"
+                          },
+                          "triggerData": {
+                            "additionalProperties": {},
+                            "nullable": true,
+                            "type": "object"
+                          },
+                          "triggerType": {
+                            "enum": ["event", "threshold", "schedule"],
+                            "type": "string"
+                          },
+                          "triggeredAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "reflexName",
+                          "triggerType",
+                          "triggerData",
+                          "actionType",
+                          "actionVerb",
+                          "status",
+                          "result",
+                          "triggeredAt",
+                          "completedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["executions", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Query the append-only reflex execution log (filtered + paginated).",
+        "tags": ["reflex"]
+      }
+    },
+    "/reflex/{name}": {
+      "get": {
+        "operationId": "reflex.get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "history": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "actionType": {
+                            "enum": ["ingest", "emit", "glia"],
+                            "type": "string"
+                          },
+                          "actionVerb": {
+                            "type": "string"
+                          },
+                          "completedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "reflexName": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "additionalProperties": {},
+                            "nullable": true,
+                            "type": "object"
+                          },
+                          "status": {
+                            "enum": ["triggered", "executing", "completed", "failed"],
+                            "type": "string"
+                          },
+                          "triggerData": {
+                            "additionalProperties": {},
+                            "nullable": true,
+                            "type": "object"
+                          },
+                          "triggerType": {
+                            "enum": ["event", "threshold", "schedule"],
+                            "type": "string"
+                          },
+                          "triggeredAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "reflexName",
+                          "triggerType",
+                          "triggerData",
+                          "actionType",
+                          "actionVerb",
+                          "status",
+                          "result",
+                          "triggeredAt",
+                          "completedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "reflex": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "action": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "scopes": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "target": {
+                              "type": "string"
+                            },
+                            "template": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "enum": ["ingest", "emit", "glia"],
+                              "type": "string"
+                            },
+                            "verb": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["type", "verb"],
+                          "type": "object"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "executionCount": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "lastExecutionAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "nextFireTime": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "trigger": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "conditions": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "scopes": {
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "type": "array"
+                                    },
+                                    "source": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "event": {
+                                  "enum": [
+                                    "engram.created",
+                                    "engram.modified",
+                                    "engram.archived",
+                                    "engram.linked"
+                                  ],
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "enum": ["event"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["type", "event"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "metric": {
+                                  "enum": ["similar_count", "staleness_max", "topic_frequency"],
+                                  "type": "string"
+                                },
+                                "scopes": {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "type": {
+                                  "enum": ["threshold"],
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["type", "metric", "value"],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "cron": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "enum": ["schedule"],
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["type", "cron"],
+                              "type": "object"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "description",
+                        "enabled",
+                        "trigger",
+                        "action",
+                        "lastExecutionAt",
+                        "nextFireTime",
+                        "executionCount"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["reflex", "history"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Get a single reflex with its recent execution history.",
+        "tags": ["reflex"]
+      }
+    },
+    "/reflex/{name}/disable": {
+      "post": {
+        "operationId": "reflex.disable",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Disable a reflex (rewrites the TOML config).",
+        "tags": ["reflex"]
+      }
+    },
+    "/reflex/{name}/enable": {
+      "post": {
+        "operationId": "reflex.enable",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Enable a reflex (rewrites the TOML config).",
+        "tags": ["reflex"]
+      }
+    },
+    "/reflex/{name}/test": {
+      "post": {
+        "operationId": "reflex.test",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "result": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "actionType": {
+                          "enum": ["ingest", "emit", "glia"],
+                          "type": "string"
+                        },
+                        "actionVerb": {
+                          "type": "string"
+                        },
+                        "completedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "reflexName": {
+                          "type": "string"
+                        },
+                        "result": {
+                          "additionalProperties": {},
+                          "nullable": true,
+                          "type": "object"
+                        },
+                        "status": {
+                          "enum": ["triggered", "executing", "completed", "failed"],
+                          "type": "string"
+                        },
+                        "triggerData": {
+                          "additionalProperties": {},
+                          "nullable": true,
+                          "type": "object"
+                        },
+                        "triggerType": {
+                          "enum": ["event", "threshold", "schedule"],
+                          "type": "string"
+                        },
+                        "triggeredAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "reflexName",
+                        "triggerType",
+                        "triggerData",
+                        "actionType",
+                        "actionVerb",
+                        "status",
+                        "result",
+                        "triggeredAt",
+                        "completedAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["result"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          }
+        },
+        "summary": "Dry-run a reflex, logging a completed test execution.",
+        "tags": ["reflex"]
+      }
+    },
     "/scopes": {
       "get": {
         "operationId": "scopes.list",
