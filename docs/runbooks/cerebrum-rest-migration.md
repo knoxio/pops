@@ -19,14 +19,14 @@ cerebrum-specific risks below before slicing.
 Cerebrum is in a **scattered, partially-extracted** state — like finance, it
 already has a predecessor `apps/pops-cerebrum-api`, but no `pillars/cerebrum/` yet.
 
-| Where                                       | What                                                                                                                                            |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/cerebrum-db`                      | ✅ schema + services (engrams, conversations, nudges, glia, plexus, reflex, debrief, embeddings)                                               |
-| `packages/cerebrum-contract`               | ✅ settings manifests (`cerebrumManifest`, `egoManifest`) + zod schemas/types; `./router` is still an **opaque `AnyTRPCRouter`** (PRD-155)     |
-| `apps/pops-cerebrum-api/src/modules/`       | partial: only `nudges`, `embeddings`, `debrief` flipped to the `cerebrum.db` handle (Phase-5 minimal dispatcher)                              |
-| `apps/pops-api/src/modules/cerebrum/**`     | ❌ the rest — ~94 procs across 13 domains, ~28k LOC, 11 routers + ~41 support files                                                            |
-| `apps/pops-api/src/routes/{cerebrum,ego}/`  | ❌ **two SSE Express routes**: `cerebrum/query-stream.ts`, `ego/chat-stream.ts`                                                                |
-| `pillars/cerebrum/`                          | ❌ does not exist                                                                                                                              |
+| Where                                      | What                                                                                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/cerebrum-db`                     | ✅ schema + services (engrams, conversations, nudges, glia, plexus, reflex, debrief, embeddings)                                           |
+| `packages/cerebrum-contract`               | ✅ settings manifests (`cerebrumManifest`, `egoManifest`) + zod schemas/types; `./router` is still an **opaque `AnyTRPCRouter`** (PRD-155) |
+| `apps/pops-cerebrum-api/src/modules/`      | partial: only `nudges`, `embeddings`, `debrief` flipped to the `cerebrum.db` handle (Phase-5 minimal dispatcher)                           |
+| `apps/pops-api/src/modules/cerebrum/**`    | ❌ the rest — ~94 procs across 13 domains, ~28k LOC, 11 routers + ~41 support files                                                        |
+| `apps/pops-api/src/routes/{cerebrum,ego}/` | ❌ **two SSE Express routes**: `cerebrum/query-stream.ts`, `ego/chat-stream.ts`                                                            |
+| `pillars/cerebrum/`                        | ❌ does not exist                                                                                                                          |
 
 Surface to move/migrate:
 
@@ -88,7 +88,7 @@ only). These are Phase-1/Phase-E loose ends to close during this migration.
 ## Decisions (confirmed)
 
 - **Target = new `pillars/cerebrum/`** (the `@pops/cerebrum` package: `src/{db,
-  contract,api,worker?}`, health/`pillars` probes, manifest, Dockerfile,
+contract,api,worker?}`, health/`pillars` probes, manifest, Dockerfile,
   `cerebrum-quality.yml`). Consolidate `packages/cerebrum-db` → `src/db`,
   `packages/cerebrum-contract` → `src/contract`, **both** handler sets
   (`apps/pops-cerebrum-api/src/modules/*` + `apps/pops-api/src/modules/cerebrum/*`)
@@ -181,12 +181,12 @@ Cerebrum-specifics:
   dispatcher → `ctx.user`); gate the identity domains, leave the rest on docker-net
   trust. This replaces tRPC's `protectedProcedure`.
 - **Embeddings/retrieval**: the contract exposes `retrieval.search/context/similar/
-  stats`; the kNN + enrichment run server-side. Keep the no-vectors degradation path.
+stats`; the kNN + enrichment run server-side. Keep the no-vectors degradation path.
 
 ## Phase B — Generic primitives
 
 Likely skip (as inventory/food/finance did). The candidate is the **cross-pillar
-enrichment read** the *other* direction — but that's cerebrum *consuming* peers via
+enrichment read** the _other_ direction — but that's cerebrum _consuming_ peers via
 their SDKs, not exposing a generic. If a consumer needs a generic cerebrum primitive
 (e.g. a generic `retrieval` or `engram-search` for another pillar), add it then.
 
@@ -229,11 +229,11 @@ Cerebrum-specifics:
   / `inferRouter*<AppRouter>['cerebrum'|'ego']` elsewhere → repoint onto the cerebrum
   SDK (like food's send-to-list lists read).
 - **Host wiring**: `apps/pops-api/src/db/{cerebrum-handle,backfill-cerebrum-from-shared}.ts`
-  + the `index.ts`/`db.ts` boot calls — remove when the monolith cerebrum module is
-  gone (food Phase-E precedent). Finish the **`embeddings_vec` + `nudge_log`**
-  ownership move to `cerebrum.db` so the shared backfill can retire.
+  - the `index.ts`/`db.ts` boot calls — remove when the monolith cerebrum module is
+    gone (food Phase-E precedent). Finish the **`embeddings_vec` + `nudge_log`**
+    ownership move to `cerebrum.db` so the shared backfill can retire.
 - Delete the monolith `apps/pops-api/src/modules/cerebrum/**` + `routes/{cerebrum,ego}`
-  + the `known-routers` `cerebrum`/`ego` entries.
+  - the `known-routers` `cerebrum`/`ego` entries.
 
 ## Order of PRs
 
