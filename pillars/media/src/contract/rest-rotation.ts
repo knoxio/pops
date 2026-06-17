@@ -4,9 +4,9 @@
  * runtime-tunable settings.
  *
  * Ported from the monolith `media.rotation.*` tRPC routers (candidates,
- * exclusions, sources, config). The scheduler / rotation-cycle / leaving
- * lifecycle / disk-space / rotation-log reads are deferred to slice 11b and
- * are NOT declared here.
+ * exclusions, sources, config) + the scheduler procedures (slice 11b, spread
+ * from `rest-rotation-scheduler.ts`: status / toggle / runNow / cancelLeaving /
+ * leaving / lastCycle / diskSpace / log / log-stats).
  *
  * Config is repointed off `core/settings` onto the pillar-owned
  * `rotation_settings` kv table. Route order matters: literal sub-paths are
@@ -16,6 +16,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
+import { rotationSchedulerRoutes } from './rest-rotation-scheduler.js';
 import {
   AddExclusionBody,
   AddToQueueBody,
@@ -166,4 +167,6 @@ export const mediaRotationContract = c.router({
     responses: { 200: z.object({ data: SaveSettingsResultSchema }), ...ERR_RESPONSES },
     summary: 'Save rotation settings',
   },
+
+  ...rotationSchedulerRoutes,
 });

@@ -21,6 +21,12 @@ import type {
   GetActiveContextResponseWire,
 } from '../../contract/rest-ego-schemas.js';
 import type {
+  EmitSourceCitationWire,
+  GeneratedDocumentWire,
+  GenerationGroupByWire,
+  GenerationModeWire,
+} from '../../contract/rest-emit-schemas.js';
+import type {
   GliaActionTypeWire,
   GliaActionStatusWire,
   GliaActionWire,
@@ -48,6 +54,11 @@ import type {
   NudgeTypeWire,
   NudgeWire,
 } from '../../contract/rest-nudges.js';
+import type {
+  QueryConfidenceWire,
+  QueryDomainWire,
+  QuerySourceCitationWire,
+} from '../../contract/rest-query-schemas.js';
 import type {
   RetrievalFiltersWire,
   RetrievalModeWire,
@@ -80,7 +91,9 @@ import type {
 } from '../../contract/rest-workers-schemas.js';
 import type { CerebrumDb } from '../../db/index.js';
 import type { EgoLlm, EgoStreamEvent } from '../modules/ego/llm.js';
+import type { GenerationLlm } from '../modules/emit/llm.js';
 import type { IngestLlm, IngestLlmRequest } from '../modules/ingest/llm.js';
+import type { QueryLlm, QueryStreamChunk, QueryStreamLlm } from '../modules/query/llm.js';
 import type { ReflexService } from '../modules/reflex/reflex-service.js';
 import type { PeerClients } from '../modules/retrieval/peer-clients.js';
 import type { ContradictionDetector } from '../modules/workers/auditor.js';
@@ -127,6 +140,50 @@ export function makeFakeContradictionDetector(
   conflict: string | null = null
 ): ContradictionDetector {
   return { detectContradiction: () => Promise.resolve(conflict) };
+}
+
+/**
+ * Offline {@link GenerationLlm} stub for the `emit` slice. The responder
+ * receives the system prompt + user message and returns canned document text;
+ * the default echoes a fixed string. Never reaches a real API.
+ */
+export function makeFakeGenerationLlm(
+  responder: (systemPrompt: string, userMessage: string) => string = () => '# Generated\n\nbody'
+): GenerationLlm {
+  return {
+    generate: (systemPrompt, userMessage) => Promise.resolve(responder(systemPrompt, userMessage)),
+  };
+}
+
+/**
+ * Offline one-shot {@link QueryLlm} stub for `query.ask`. The responder returns
+ * the canned answer text; the default is a fixed string. Never reaches a real
+ * API.
+ */
+export function makeFakeQueryLlm(
+  responder: (systemPrompt: string, question: string) => string = () => 'A canned answer.'
+): QueryLlm {
+  return {
+    complete: (systemPrompt, question) => Promise.resolve(responder(systemPrompt, question)),
+  };
+}
+
+/**
+ * Offline streaming {@link QueryStreamLlm} stub for the SSE route. Yields each
+ * supplied token as a `delta`, then a `final` carrying the given usage counts.
+ * Never reaches a real API.
+ */
+export function makeFakeQueryStreamLlm(
+  tokens: string[] = ['Canned ', 'streamed ', 'answer.'],
+  usage: { tokensIn: number; tokensOut: number } = { tokensIn: 0, tokensOut: 0 }
+): QueryStreamLlm {
+  async function* stream(): AsyncGenerator<QueryStreamChunk> {
+    for (const text of tokens) {
+      yield { kind: 'delta', text };
+    }
+    yield { kind: 'final', tokensIn: usage.tokensIn, tokensOut: usage.tokensOut };
+  }
+  return { stream };
 }
 
 /** Bundled engram-template fixtures shipped with the pillar. */
@@ -302,6 +359,82 @@ export interface RetrievalSimilarBody {
   threshold?: number;
   filters?: RetrievalFiltersWire;
 }
+
+export interface EmitGenerateInput {
+  mode: GenerationModeWire;
+  query?: string;
+  dateRange?: { from: string; to: string };
+  scopes?: string[];
+  audienceScope?: string;
+  includeSecret?: boolean;
+  types?: string[];
+  tags?: string[];
+  format?: 'markdown' | 'plain';
+  groupBy?: GenerationGroupByWire;
+}
+
+export interface EmitReportInput {
+  query: string;
+  scopes?: string[];
+  audienceScope?: string;
+  includeSecret?: boolean;
+  types?: string[];
+  tags?: string[];
+}
+
+export interface EmitSummaryInput {
+  dateRange: { from: string; to: string };
+  query?: string;
+  scopes?: string[];
+  audienceScope?: string;
+  includeSecret?: boolean;
+  types?: string[];
+  tags?: string[];
+}
+
+export interface EmitTimelineInput {
+  query?: string;
+  dateRange?: { from: string; to: string };
+  scopes?: string[];
+  audienceScope?: string;
+  includeSecret?: boolean;
+  types?: string[];
+  tags?: string[];
+  groupBy?: GenerationGroupByWire;
+}
+
+export interface QueryAskInput {
+  question: string;
+  scopes?: string[];
+  includeSecret?: boolean;
+  maxSources?: number;
+  domains?: QueryDomainWire[];
+}
+
+export interface QueryRetrieveInput {
+  question: string;
+  scopes?: string[];
+  includeSecret?: boolean;
+  maxSources?: number;
+}
+
+type EmitDocumentResponse = {
+  document: GeneratedDocumentWire | null;
+  notice?: string;
+};
+
+type QueryAskResponse = {
+  answer: string;
+  sources: QuerySourceCitationWire[];
+  scopes: string[];
+  confidence: QueryConfidenceWire;
+};
+
+type QueryExplainResponse = {
+  scopeInference: { scopes: string[]; source: 'explicit' | 'inferred' | 'default' };
+  retrievalPlan: { filters: RetrievalFiltersWire; maxSources: number; threshold: number };
+  secretNotice: string | null;
+};
 
 export function makeClient(app: Express) {
   const r = supertest.agent(app);
@@ -508,6 +641,27 @@ export function makeClient(app: Express) {
         send<QualityResultWire>(r.post('/glia/scores/quality').send({ engramId })),
       getOrphans: (limit?: number) =>
         send<OrphansResponseWire>(r.get('/glia/orphans').query(limit ? { limit } : {})),
+    },
+    emit: {
+      generate: (body: EmitGenerateInput) =>
+        send<EmitDocumentResponse>(r.post('/emit/generate').send(body)),
+      generateReport: (body: EmitReportInput) =>
+        send<EmitDocumentResponse>(r.post('/emit/report').send(body)),
+      generateSummary: (body: EmitSummaryInput) =>
+        send<EmitDocumentResponse>(r.post('/emit/summary').send(body)),
+      generateTimeline: (body: EmitTimelineInput) =>
+        send<EmitDocumentResponse>(r.post('/emit/timeline').send(body)),
+      preview: (body: EmitGenerateInput) =>
+        send<{ sources: EmitSourceCitationWire[]; outline: string }>(
+          r.post('/emit/preview').send(body)
+        ),
+    },
+    query: {
+      ask: (body: QueryAskInput) => send<QueryAskResponse>(r.post('/query/ask').send(body)),
+      retrieve: (body: QueryRetrieveInput) =>
+        send<{ sources: QuerySourceCitationWire[] }>(r.post('/query/retrieve').send(body)),
+      explain: (question: string) =>
+        send<QueryExplainResponse>(r.post('/query/explain').send({ question })),
     },
   };
 }

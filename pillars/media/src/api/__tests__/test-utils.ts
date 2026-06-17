@@ -410,6 +410,55 @@ interface RotationSettingsWire {
   protectedDays: string;
 }
 
+interface RotationSchedulerStatusWire {
+  isRunning: boolean;
+  isCycleRunning: boolean;
+  intervalMs: number;
+  cronExpression: string;
+  lastCycleAt: string | null;
+  lastCycleError: string | null;
+  nextRunAt: string | null;
+}
+
+interface RotationLogRowWire {
+  id: number;
+  executedAt: string;
+  moviesMarkedLeaving: number;
+  moviesRemoved: number;
+  moviesAdded: number;
+  removalsFailed: number;
+  freeSpaceGb: number;
+  targetFreeGb: number;
+  skippedReason: string | null;
+  details: string | null;
+}
+
+interface CycleResultWire {
+  moviesMarkedLeaving: number;
+  moviesRemoved: number;
+  moviesAdded: number;
+  removalsFailed: number;
+  freeSpaceGb: number;
+  targetFreeGb: number;
+  skippedReason: string | null;
+}
+
+interface LeavingMovieWire {
+  id: number;
+  tmdbId: number;
+  title: string;
+  posterPath: string | null;
+  rotationExpiresAt: string | null;
+  rotationMarkedAt: string | null;
+}
+
+interface RadarrDiskWire {
+  path: string;
+  label: string;
+  freeSpace: number;
+  totalSpace: number;
+}
+
 function makeRotationClient(r: ReturnType<typeof supertest>) {
   return {
     addToQueue: (body: Record<string, unknown>) =>
@@ -450,6 +499,34 @@ function makeRotationClient(r: ReturnType<typeof supertest>) {
     saveSettings: (body: Record<string, unknown>) =>
       send<{ data: { success: boolean; updated: number } }>(
         r.post('/rotation/settings').send(body)
+      ),
+    schedulerStatus: () =>
+      send<{ data: RotationSchedulerStatusWire }>(r.get('/rotation/scheduler/status')),
+    schedulerToggle: (body: { enabled: boolean; cronExpression?: string }) =>
+      send<{ data: RotationSchedulerStatusWire }>(r.post('/rotation/scheduler/toggle').send(body)),
+    schedulerRunNow: () =>
+      send<{ data: { success: boolean; result: CycleResultWire | null } }>(
+        r.post('/rotation/scheduler/run-now').send({})
+      ),
+    schedulerLeavingMovies: () =>
+      send<{ data: LeavingMovieWire[] }>(r.get('/rotation/scheduler/leaving')),
+    schedulerCancelLeaving: (movieId: number) =>
+      send<{ data: { success: boolean; message: string } }>(
+        r.post(`/rotation/scheduler/leaving/${movieId}/cancel`).send({})
+      ),
+    schedulerLastCycleLog: () =>
+      send<{ data: RotationLogRowWire | null }>(r.get('/rotation/scheduler/last-cycle')),
+    schedulerDiskSpace: () =>
+      send<{ data: { available: boolean; disks: RadarrDiskWire[] } }>(
+        r.get('/rotation/scheduler/disk-space')
+      ),
+    listRotationLog: (query: { limit?: number; offset?: number } = {}) =>
+      send<{ data: { items: RotationLogRowWire[]; total: number } }>(
+        r.get('/rotation/scheduler/log').query(query)
+      ),
+    rotationLogStats: () =>
+      send<{ data: { totalRotated: number; avgPerDay: number; streak: number } }>(
+        r.get('/rotation/scheduler/log-stats')
       ),
   };
 }

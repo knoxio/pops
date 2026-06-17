@@ -812,6 +812,1072 @@
         "tags": ["ego"]
       }
     },
+    "/emit/generate": {
+      "post": {
+        "operationId": "emit.generate",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "audienceScope": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "dateRange": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "from": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "to": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": ["from", "to"],
+                    "type": "object"
+                  },
+                  "format": {
+                    "enum": ["markdown", "plain"],
+                    "type": "string"
+                  },
+                  "groupBy": {
+                    "enum": ["type", "month", "quarter"],
+                    "type": "string"
+                  },
+                  "includeSecret": {
+                    "type": "boolean"
+                  },
+                  "mode": {
+                    "enum": ["report", "summary", "timeline"],
+                    "type": "string"
+                  },
+                  "query": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "types": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["mode"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "document": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "audienceScope": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "dateRange": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "from": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "to": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": ["from", "to"],
+                          "type": "object"
+                        },
+                        "metadata": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "dateRange": {
+                              "additionalProperties": false,
+                              "nullable": true,
+                              "properties": {
+                                "from": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "to": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["from", "to"],
+                              "type": "object"
+                            },
+                            "mode": {
+                              "enum": ["report", "summary", "timeline"],
+                              "type": "string"
+                            },
+                            "scopeCoverage": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "sourceCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "truncated": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "sourceCount",
+                            "dateRange",
+                            "scopeCoverage",
+                            "mode",
+                            "truncated"
+                          ],
+                          "type": "object"
+                        },
+                        "mode": {
+                          "enum": ["report", "summary", "timeline"],
+                          "type": "string"
+                        },
+                        "sources": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "excerpt": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "relevance": {
+                                "type": "number"
+                              },
+                              "scope": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "type", "title", "excerpt", "relevance", "scope"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "body",
+                        "mode",
+                        "sources",
+                        "audienceScope",
+                        "dateRange",
+                        "metadata"
+                      ],
+                      "type": "object"
+                    },
+                    "notice": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["document"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Run the full document-generation pipeline for any mode.",
+        "tags": ["emit"]
+      }
+    },
+    "/emit/preview": {
+      "post": {
+        "operationId": "emit.preview",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "audienceScope": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "dateRange": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "from": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "to": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": ["from", "to"],
+                    "type": "object"
+                  },
+                  "format": {
+                    "enum": ["markdown", "plain"],
+                    "type": "string"
+                  },
+                  "groupBy": {
+                    "enum": ["type", "month", "quarter"],
+                    "type": "string"
+                  },
+                  "includeSecret": {
+                    "type": "boolean"
+                  },
+                  "mode": {
+                    "enum": ["report", "summary", "timeline"],
+                    "type": "string"
+                  },
+                  "query": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "types": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["mode"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "outline": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "excerpt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "relevance": {
+                            "type": "number"
+                          },
+                          "scope": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "type", "title", "excerpt", "relevance", "scope"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["sources", "outline"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Dry-run the pipeline: return sources + an outline without synthesis.",
+        "tags": ["emit"]
+      }
+    },
+    "/emit/report": {
+      "post": {
+        "operationId": "emit.generateReport",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "audienceScope": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "includeSecret": {
+                    "type": "boolean"
+                  },
+                  "query": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "types": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["query"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "document": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "audienceScope": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "dateRange": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "from": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "to": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": ["from", "to"],
+                          "type": "object"
+                        },
+                        "metadata": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "dateRange": {
+                              "additionalProperties": false,
+                              "nullable": true,
+                              "properties": {
+                                "from": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "to": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["from", "to"],
+                              "type": "object"
+                            },
+                            "mode": {
+                              "enum": ["report", "summary", "timeline"],
+                              "type": "string"
+                            },
+                            "scopeCoverage": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "sourceCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "truncated": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "sourceCount",
+                            "dateRange",
+                            "scopeCoverage",
+                            "mode",
+                            "truncated"
+                          ],
+                          "type": "object"
+                        },
+                        "mode": {
+                          "enum": ["report", "summary", "timeline"],
+                          "type": "string"
+                        },
+                        "sources": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "excerpt": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "relevance": {
+                                "type": "number"
+                              },
+                              "scope": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "type", "title", "excerpt", "relevance", "scope"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "body",
+                        "mode",
+                        "sources",
+                        "audienceScope",
+                        "dateRange",
+                        "metadata"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["document"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Generate a structured report from a query.",
+        "tags": ["emit"]
+      }
+    },
+    "/emit/summary": {
+      "post": {
+        "operationId": "emit.generateSummary",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "audienceScope": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "dateRange": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "from": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "to": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": ["from", "to"],
+                    "type": "object"
+                  },
+                  "includeSecret": {
+                    "type": "boolean"
+                  },
+                  "query": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "types": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["dateRange"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "document": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "audienceScope": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "dateRange": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "from": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "to": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": ["from", "to"],
+                          "type": "object"
+                        },
+                        "metadata": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "dateRange": {
+                              "additionalProperties": false,
+                              "nullable": true,
+                              "properties": {
+                                "from": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "to": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["from", "to"],
+                              "type": "object"
+                            },
+                            "mode": {
+                              "enum": ["report", "summary", "timeline"],
+                              "type": "string"
+                            },
+                            "scopeCoverage": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "sourceCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "truncated": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "sourceCount",
+                            "dateRange",
+                            "scopeCoverage",
+                            "mode",
+                            "truncated"
+                          ],
+                          "type": "object"
+                        },
+                        "mode": {
+                          "enum": ["report", "summary", "timeline"],
+                          "type": "string"
+                        },
+                        "sources": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "excerpt": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "relevance": {
+                                "type": "number"
+                              },
+                              "scope": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "type", "title", "excerpt", "relevance", "scope"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "body",
+                        "mode",
+                        "sources",
+                        "audienceScope",
+                        "dateRange",
+                        "metadata"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["document"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Generate a summary digest over a date range.",
+        "tags": ["emit"]
+      }
+    },
+    "/emit/timeline": {
+      "post": {
+        "operationId": "emit.generateTimeline",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "audienceScope": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "dateRange": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "from": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "to": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": ["from", "to"],
+                    "type": "object"
+                  },
+                  "groupBy": {
+                    "enum": ["type", "month", "quarter"],
+                    "type": "string"
+                  },
+                  "includeSecret": {
+                    "type": "boolean"
+                  },
+                  "query": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "types": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "document": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "audienceScope": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "dateRange": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "from": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "to": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": ["from", "to"],
+                          "type": "object"
+                        },
+                        "metadata": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "dateRange": {
+                              "additionalProperties": false,
+                              "nullable": true,
+                              "properties": {
+                                "from": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "to": {
+                                  "minLength": 1,
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["from", "to"],
+                              "type": "object"
+                            },
+                            "mode": {
+                              "enum": ["report", "summary", "timeline"],
+                              "type": "string"
+                            },
+                            "scopeCoverage": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "sourceCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "truncated": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "sourceCount",
+                            "dateRange",
+                            "scopeCoverage",
+                            "mode",
+                            "truncated"
+                          ],
+                          "type": "object"
+                        },
+                        "mode": {
+                          "enum": ["report", "summary", "timeline"],
+                          "type": "string"
+                        },
+                        "sources": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "excerpt": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "relevance": {
+                                "type": "number"
+                              },
+                              "scope": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "type", "title", "excerpt", "relevance", "scope"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "body",
+                        "mode",
+                        "sources",
+                        "audienceScope",
+                        "dateRange",
+                        "metadata"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["document"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Generate a chronological timeline from dated engrams.",
+        "tags": ["emit"]
+      }
+    },
     "/engrams": {
       "post": {
         "operationId": "engrams.create",
@@ -6461,6 +7527,400 @@
         },
         "summary": "Shut down and remove an adapter.",
         "tags": ["plexus", "adapters"]
+      }
+    },
+    "/query/ask": {
+      "post": {
+        "operationId": "query.ask",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "domains": {
+                    "items": {
+                      "enum": ["engrams", "transactions", "media", "inventory"],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "includeSecret": {
+                    "type": "boolean"
+                  },
+                  "maxSources": {
+                    "exclusiveMinimum": true,
+                    "maximum": 50,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "question": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["question"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "answer": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "enum": ["high", "medium", "low"],
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "sources": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "excerpt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "relevance": {
+                            "type": "number"
+                          },
+                          "scope": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "type", "title", "excerpt", "relevance", "scope"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["answer", "sources", "scopes", "confidence"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Full NL Q&A: scope inference → retrieval → LLM → citation parsing.",
+        "tags": ["query"]
+      }
+    },
+    "/query/explain": {
+      "post": {
+        "operationId": "query.explain",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "question": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["question"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "retrievalPlan": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "filters": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "customFields": {
+                              "additionalProperties": {},
+                              "type": "object"
+                            },
+                            "dateRange": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "from": {
+                                  "type": "string"
+                                },
+                                "to": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "includeSecret": {
+                              "type": "boolean"
+                            },
+                            "scopes": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "sourceTypes": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "status": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "tags": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "types": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "maxSources": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "threshold": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["filters", "maxSources", "threshold"],
+                      "type": "object"
+                    },
+                    "scopeInference": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "scopes": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "source": {
+                          "enum": ["explicit", "inferred", "default"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["scopes", "source"],
+                      "type": "object"
+                    },
+                    "secretNotice": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": ["scopeInference", "retrievalPlan", "secretNotice"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Debug: show scope inference + retrieval plan without executing.",
+        "tags": ["query"]
+      }
+    },
+    "/query/retrieve": {
+      "post": {
+        "operationId": "query.retrieve",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "includeSecret": {
+                    "type": "boolean"
+                  },
+                  "maxSources": {
+                    "exclusiveMinimum": true,
+                    "maximum": 50,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "question": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["question"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "sources": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "excerpt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "relevance": {
+                            "type": "number"
+                          },
+                          "scope": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "type", "title", "excerpt", "relevance", "scope"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["sources"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          }
+        },
+        "summary": "Retrieval-only — returns sources without calling the LLM.",
+        "tags": ["query"]
       }
     },
     "/reflex": {

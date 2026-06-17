@@ -106,6 +106,91 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/emit/generate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run the full document-generation pipeline for any mode. */
+    post: operations['emit.generate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/emit/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dry-run the pipeline: return sources + an outline without synthesis. */
+    post: operations['emit.preview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/emit/report': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a structured report from a query. */
+    post: operations['emit.generateReport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/emit/summary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a summary digest over a date range. */
+    post: operations['emit.generateSummary'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/emit/timeline': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a chronological timeline from dated engrams. */
+    post: operations['emit.generateTimeline'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/engrams': {
     parameters: {
       query?: never;
@@ -806,6 +891,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/query/ask': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Full NL Q&A: scope inference → retrieval → LLM → citation parsing. */
+    post: operations['query.ask'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/query/explain': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Debug: show scope inference + retrieval plan without executing. */
+    post: operations['query.explain'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/query/retrieve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Retrieval-only — returns sources without calling the LLM. */
+    post: operations['query.retrieve'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/reflex': {
     parameters: {
       query?: never;
@@ -1464,6 +1600,396 @@ export interface operations {
       };
       /** @description 404 */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'emit.generate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          audienceScope?: string;
+          dateRange?: {
+            from: string;
+            to: string;
+          };
+          /** @enum {string} */
+          format?: 'markdown' | 'plain';
+          /** @enum {string} */
+          groupBy?: 'type' | 'month' | 'quarter';
+          includeSecret?: boolean;
+          /** @enum {string} */
+          mode: 'report' | 'summary' | 'timeline';
+          query?: string;
+          scopes?: string[];
+          tags?: string[];
+          types?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            document: {
+              audienceScope: string;
+              body: string;
+              dateRange: {
+                from: string;
+                to: string;
+              } | null;
+              metadata: {
+                dateRange: {
+                  from: string;
+                  to: string;
+                } | null;
+                /** @enum {string} */
+                mode: 'report' | 'summary' | 'timeline';
+                scopeCoverage: string[];
+                sourceCount: number;
+                truncated: boolean;
+              };
+              /** @enum {string} */
+              mode: 'report' | 'summary' | 'timeline';
+              sources: {
+                excerpt: string;
+                id: string;
+                relevance: number;
+                scope: string;
+                title: string;
+                type: string;
+              }[];
+              title: string;
+            } | null;
+            notice?: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'emit.preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          audienceScope?: string;
+          dateRange?: {
+            from: string;
+            to: string;
+          };
+          /** @enum {string} */
+          format?: 'markdown' | 'plain';
+          /** @enum {string} */
+          groupBy?: 'type' | 'month' | 'quarter';
+          includeSecret?: boolean;
+          /** @enum {string} */
+          mode: 'report' | 'summary' | 'timeline';
+          query?: string;
+          scopes?: string[];
+          tags?: string[];
+          types?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            outline: string;
+            sources: {
+              excerpt: string;
+              id: string;
+              relevance: number;
+              scope: string;
+              title: string;
+              type: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'emit.generateReport': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          audienceScope?: string;
+          includeSecret?: boolean;
+          query: string;
+          scopes?: string[];
+          tags?: string[];
+          types?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            document: {
+              audienceScope: string;
+              body: string;
+              dateRange: {
+                from: string;
+                to: string;
+              } | null;
+              metadata: {
+                dateRange: {
+                  from: string;
+                  to: string;
+                } | null;
+                /** @enum {string} */
+                mode: 'report' | 'summary' | 'timeline';
+                scopeCoverage: string[];
+                sourceCount: number;
+                truncated: boolean;
+              };
+              /** @enum {string} */
+              mode: 'report' | 'summary' | 'timeline';
+              sources: {
+                excerpt: string;
+                id: string;
+                relevance: number;
+                scope: string;
+                title: string;
+                type: string;
+              }[];
+              title: string;
+            } | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'emit.generateSummary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          audienceScope?: string;
+          dateRange: {
+            from: string;
+            to: string;
+          };
+          includeSecret?: boolean;
+          query?: string;
+          scopes?: string[];
+          tags?: string[];
+          types?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            document: {
+              audienceScope: string;
+              body: string;
+              dateRange: {
+                from: string;
+                to: string;
+              } | null;
+              metadata: {
+                dateRange: {
+                  from: string;
+                  to: string;
+                } | null;
+                /** @enum {string} */
+                mode: 'report' | 'summary' | 'timeline';
+                scopeCoverage: string[];
+                sourceCount: number;
+                truncated: boolean;
+              };
+              /** @enum {string} */
+              mode: 'report' | 'summary' | 'timeline';
+              sources: {
+                excerpt: string;
+                id: string;
+                relevance: number;
+                scope: string;
+                title: string;
+                type: string;
+              }[];
+              title: string;
+            } | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'emit.generateTimeline': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          audienceScope?: string;
+          dateRange?: {
+            from: string;
+            to: string;
+          };
+          /** @enum {string} */
+          groupBy?: 'type' | 'month' | 'quarter';
+          includeSecret?: boolean;
+          query?: string;
+          scopes?: string[];
+          tags?: string[];
+          types?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            document: {
+              audienceScope: string;
+              body: string;
+              dateRange: {
+                from: string;
+                to: string;
+              } | null;
+              metadata: {
+                dateRange: {
+                  from: string;
+                  to: string;
+                } | null;
+                /** @enum {string} */
+                mode: 'report' | 'summary' | 'timeline';
+                scopeCoverage: string[];
+                sourceCount: number;
+                truncated: boolean;
+              };
+              /** @enum {string} */
+              mode: 'report' | 'summary' | 'timeline';
+              sources: {
+                excerpt: string;
+                id: string;
+                relevance: number;
+                scope: string;
+                title: string;
+                type: string;
+              }[];
+              title: string;
+            } | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
         headers: {
           [name: string]: unknown;
         };
@@ -3938,6 +4464,181 @@ export interface operations {
         content: {
           'application/json': {
             success: boolean;
+          };
+        };
+      };
+    };
+  };
+  'query.ask': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          domains?: ('engrams' | 'transactions' | 'media' | 'inventory')[];
+          includeSecret?: boolean;
+          maxSources?: number;
+          question: string;
+          scopes?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            answer: string;
+            /** @enum {string} */
+            confidence: 'high' | 'medium' | 'low';
+            scopes: string[];
+            sources: {
+              excerpt: string;
+              id: string;
+              relevance: number;
+              scope: string;
+              title: string;
+              type: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'query.explain': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          question: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            retrievalPlan: {
+              filters: {
+                customFields?: {
+                  [key: string]: unknown;
+                };
+                dateRange?: {
+                  from?: string;
+                  to?: string;
+                };
+                includeSecret?: boolean;
+                scopes?: string[];
+                sourceTypes?: string[];
+                status?: string[];
+                tags?: string[];
+                types?: string[];
+              };
+              maxSources: number;
+              threshold: number;
+            };
+            scopeInference: {
+              scopes: string[];
+              /** @enum {string} */
+              source: 'explicit' | 'inferred' | 'default';
+            };
+            secretNotice: string | null;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'query.retrieve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          includeSecret?: boolean;
+          maxSources?: number;
+          question: string;
+          scopes?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            sources: {
+              excerpt: string;
+              id: string;
+              relevance: number;
+              scope: string;
+              title: string;
+              type: string;
+            }[];
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
           };
         };
       };

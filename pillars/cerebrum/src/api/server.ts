@@ -21,9 +21,11 @@ import { createCerebrumApiApp } from './app.js';
 import { resolveCerebrumSqlitePath } from './cerebrum-sqlite-path.js';
 import { buildCerebrumManifest } from './manifest.js';
 import { AnthropicEgoLlm } from './modules/ego/llm.js';
+import { AnthropicGenerationLlm } from './modules/emit/llm.js';
 import { resolveEngramRoot } from './modules/engrams/instance.js';
 import { AnthropicIngestLlm } from './modules/ingest/llm.js';
 import { closeCerebrumIngestQueue, getCurationQueue } from './modules/ingest/queue.js';
+import { AnthropicQueryLlm, AnthropicQueryStreamLlm } from './modules/query/llm.js';
 import { getReflexService } from './modules/reflex/instance.js';
 import { resolveEmbeddingClientFromEnv } from './modules/retrieval/embedding-client.js';
 import { resolvePeerClientsFromEnv } from './modules/retrieval/peer-clients.js';
@@ -80,6 +82,9 @@ const app = createCerebrumApiApp({
   selfBaseUrl,
   peerClients: resolvePeerClientsFromEnv(),
   embeddingClient: resolveEmbeddingClientFromEnv(),
+  emitLlm: new AnthropicGenerationLlm(),
+  queryLlm: new AnthropicQueryLlm(),
+  queryStreamLlm: new AnthropicQueryStreamLlm(),
 });
 
 let pillarHandle: PillarBootstrapHandle | undefined;

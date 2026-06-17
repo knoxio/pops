@@ -13,11 +13,13 @@
 import { initContract } from '@ts-rest/core';
 
 import { cerebrumEgoContract } from './rest-ego.js';
+import { cerebrumEmitContract } from './rest-emit.js';
 import { cerebrumEngramsContract } from './rest-engrams.js';
 import { cerebrumGliaContract } from './rest-glia.js';
 import { cerebrumIngestContract } from './rest-ingest.js';
 import { cerebrumNudgesContract } from './rest-nudges.js';
 import { cerebrumPlexusContract } from './rest-plexus.js';
+import { cerebrumQueryContract } from './rest-query.js';
 import { cerebrumReflexContract } from './rest-reflex.js';
 import { cerebrumRetrievalContract } from './rest-retrieval.js';
 import { cerebrumScopesContract } from './rest-scopes.js';
@@ -41,6 +43,8 @@ export const cerebrumContract = c.router(
     retrieval: cerebrumRetrievalContract,
     ego: cerebrumEgoContract,
     workers: cerebrumWorkersContract,
+    emit: cerebrumEmitContract,
+    query: cerebrumQueryContract,
   },
   {
     pathPrefix: '',

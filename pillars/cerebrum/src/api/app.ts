@@ -16,8 +16,10 @@ import express, { type Express, type Request, type Response } from 'express';
 import { cerebrumContract } from '../contract/rest.js';
 import { type CerebrumApiDeps, makeRequestHandler } from './handlers.js';
 import { AnthropicEgoLlm } from './modules/ego/llm.js';
+import { AnthropicQueryLlm, AnthropicQueryStreamLlm } from './modules/query/llm.js';
 import { makeEgoStreamRouter } from './rest/ego-stream.js';
 import { makeCerebrumRestHandlers } from './rest/handlers.js';
+import { makeQueryStreamHandler } from './rest/query-stream-route.js';
 
 /**
  * JSON body cap. Ingest/emit payloads and (later) chat bodies can be large;
@@ -52,6 +54,21 @@ export function createCerebrumApiApp(deps: CerebrumApiDeps): Express {
       llm: deps.egoLlm ?? new AnthropicEgoLlm(),
       peers: deps.peerClients,
       embeddingClient: deps.embeddingClient,
+    })
+  );
+
+  // SSE: ts-rest can't model an event stream, so the query stream route is a
+  // plain Express handler mounted ahead of the generated endpoints.
+  app.post(
+    '/query/stream',
+    makeQueryStreamHandler({
+      db: deps.cerebrumDb.db,
+      raw: deps.cerebrumDb.raw,
+      vecAvailable: deps.cerebrumDb.vecAvailable,
+      peers: deps.peerClients,
+      embeddingClient: deps.embeddingClient,
+      llm: deps.queryLlm ?? new AnthropicQueryLlm(),
+      streamLlm: deps.queryStreamLlm ?? new AnthropicQueryStreamLlm(),
     })
   );
 

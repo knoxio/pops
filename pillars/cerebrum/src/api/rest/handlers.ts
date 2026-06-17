@@ -9,16 +9,20 @@ import { initServer } from '@ts-rest/express';
 
 import { cerebrumContract } from '../../contract/rest.js';
 import { AnthropicEgoLlm } from '../modules/ego/llm.js';
+import { AnthropicGenerationLlm } from '../modules/emit/llm.js';
 import { resolveGliaConfigPath } from '../modules/glia/instance.js';
 import { AnthropicIngestLlm } from '../modules/ingest/llm.js';
 import { getCurationQueue } from '../modules/ingest/queue.js';
+import { AnthropicQueryLlm, AnthropicQueryStreamLlm } from '../modules/query/llm.js';
 import { AnthropicContradictionDetector } from '../modules/workers/llm.js';
 import { makeEgoHandlers } from './ego-handlers.js';
+import { makeEmitHandlers } from './emit-handlers.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
 import { makeGliaHandlers } from './glia-handlers.js';
 import { makeIngestHandlers } from './ingest-handlers.js';
 import { makeNudgesHandlers } from './nudges-handlers.js';
 import { makePlexusHandlers } from './plexus-handlers.js';
+import { makeQueryHandlers } from './query-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
 import { makeRetrievalHandlers } from './retrieval-handlers.js';
 import { makeScopesHandlers } from './scopes-handlers.js';
@@ -86,6 +90,23 @@ export function makeCerebrumRestHandlers(
       embeddingClient: deps.embeddingClient,
       contradictionDetector:
         deps.auditorContradictionDetector ?? new AnthropicContradictionDetector(),
+    }),
+    emit: makeEmitHandlers({
+      db: deps.cerebrumDb.db,
+      raw: deps.cerebrumDb.raw,
+      vecAvailable: deps.cerebrumDb.vecAvailable,
+      peers: deps.peerClients,
+      embeddingClient: deps.embeddingClient,
+      llm: deps.emitLlm ?? new AnthropicGenerationLlm(),
+    }),
+    query: makeQueryHandlers({
+      db: deps.cerebrumDb.db,
+      raw: deps.cerebrumDb.raw,
+      vecAvailable: deps.cerebrumDb.vecAvailable,
+      peers: deps.peerClients,
+      embeddingClient: deps.embeddingClient,
+      llm: deps.queryLlm ?? new AnthropicQueryLlm(),
+      streamLlm: deps.queryStreamLlm ?? new AnthropicQueryStreamLlm(),
     }),
   });
 }
