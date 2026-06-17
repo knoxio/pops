@@ -422,6 +422,43 @@ services:
       timeout: 5s
       retries: 3
 
+  # Cerebrum pillar worker (ADR-026). Consumes the `pops-embeddings`
+  # (dense-vector index) + `pops-curation` (engram enrichment) queues the
+  # cerebrum pillar produces into. Runs the SAME image the cerebrum-api
+  # ships, swapping the command to the worker entrypoint. Built from the
+  # pillar Dockerfile because cerebrum has no published image yet.
+  cerebrum-worker:
+    build:
+      context: ..
+      dockerfile: pillars/cerebrum/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-cerebrum-worker
+    restart: unless-stopped
+    command: ['node', 'dist/worker/index.js']
+    networks:
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+      - cerebrum-engrams-data:/data/cerebrum/engrams
+    environment:
+      NODE_ENV: production
+      REDIS_HOST: pops-redis
+      REDIS_PORT: '6379'
+      CEREBRUM_SQLITE_PATH: /data/sqlite/cerebrum.db
+      CEREBRUM_ENGRAMS_DIR: /data/cerebrum/engrams
+      # The pillar LLM + embedding clients read these straight from the
+      # process env (no /run/secrets convention), so surface them here.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EMBEDDING_API_URL: ${EMBEDDING_API_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
+      POPS_PILLARS: ${POPS_PILLARS:-core:http://core-api:3001,inventory:http://inventory-api:3002,media:http://media-api:3003,finance:http://finance-api:3004,food:http://food-api:3005,lists:http://lists-api:3006}
+    depends_on:
+      pops-redis:
+        condition: service_healthy
+
   # ── FRONTEND ─────────────────────────────────────────────────────
   pops-shell:
     image: ghcr.io/knoxio/pops-shell:${POPS_IMAGE_TAG:-main}
@@ -656,6 +693,8 @@ volumes:
     name: pops-paperless-redis
   food-ingest-data:
     name: pops-food-ingest-data
+  cerebrum-engrams-data:
+    name: pops-cerebrum-engrams-data
 
 secrets:
   notion_api_token:
