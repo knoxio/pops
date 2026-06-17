@@ -1,40 +1,17 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WatchlistToggle } from './WatchlistToggle';
+const watchlistStatusMock = vi.hoisted(() => vi.fn());
+const watchlistAddMock = vi.hoisted(() => vi.fn());
+const watchlistRemoveMock = vi.hoisted(() => vi.fn());
 
-type MutationOpts = Record<string, (...args: unknown[]) => unknown>;
-
-let addMutationOpts: MutationOpts = {};
-let removeMutationOpts: MutationOpts = {};
-const mockAddMutate = vi.fn();
-const mockRemoveMutate = vi.fn();
-const mockInvalidate = vi.fn();
-const mockSetData = vi.fn();
-const mockStatusQuery = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    if (path.join('.') === 'watchlist.status') return mockStatusQuery(input);
-    return { data: undefined, isLoading: false };
-  },
-  usePillarMutation: (_pillarId: string, path: readonly string[], opts: MutationOpts) => {
-    const key = path.join('.');
-    if (key === 'watchlist.add') {
-      addMutationOpts = opts;
-      return { mutate: mockAddMutate, isPending: false };
-    }
-    if (key === 'watchlist.remove') {
-      removeMutationOpts = opts;
-      return { mutate: mockRemoveMutate, isPending: false };
-    }
-    return { mutate: vi.fn(), isPending: false };
-  },
-  usePillarUtils: () => ({
-    setData: mockSetData,
-    invalidate: mockInvalidate,
-  }),
+vi.mock('../media-api/index.js', () => ({
+  watchlistStatus: (...args: unknown[]) => watchlistStatusMock(...args),
+  watchlistAdd: (...args: unknown[]) => watchlistAddMock(...args),
+  watchlistRemove: (...args: unknown[]) => watchlistRemoveMock(...args),
 }));
 
 const mockToastSuccess = vi.fn();
@@ -48,25 +25,36 @@ vi.mock('sonner', () => ({
   },
 }));
 
-function setupNotOnWatchlist() {
-  mockStatusQuery.mockReturnValue({
-    data: { onWatchlist: false, entryId: null },
-    isLoading: false,
+import { WatchlistToggle } from './WatchlistToggle';
+
+type WatchlistStatus = { onWatchlist: boolean; entryId: number | null };
+
+function statusResult(data: WatchlistStatus) {
+  return { data, error: undefined };
+}
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+}
+
+function renderToggle(
+  props: { mediaType: 'movie' | 'tv'; mediaId: number },
+  queryClient = makeQueryClient()
+) {
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+  const view = render(<WatchlistToggle {...props} />, { wrapper });
+  return { ...view, queryClient };
+}
+
+function setupNotOnWatchlist() {
+  watchlistStatusMock.mockResolvedValue(statusResult({ onWatchlist: false, entryId: null }));
 }
 
 function setupOnWatchlist() {
-  mockStatusQuery.mockReturnValue({
-    data: { onWatchlist: true, entryId: 42 },
-    isLoading: false,
-  });
-}
-
-function setupLoading() {
-  mockStatusQuery.mockReturnValue({
-    data: undefined,
-    isLoading: true,
-  });
+  watchlistStatusMock.mockResolvedValue(statusResult({ onWatchlist: true, entryId: 42 }));
 }
 
 afterEach(() => {
@@ -75,205 +63,201 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  addMutationOpts = {};
-  removeMutationOpts = {};
+  watchlistStatusMock.mockResolvedValue(statusResult({ onWatchlist: false, entryId: null }));
+  watchlistAddMock.mockResolvedValue({
+    data: { created: true, message: 'ok', data: { id: 1 } },
+    error: undefined,
+  });
+  watchlistRemoveMock.mockResolvedValue({ data: { message: 'ok' }, error: undefined });
 });
 
 describe('WatchlistToggle', () => {
   describe('initial state', () => {
     it('shows loading button while checking watchlist', () => {
-      setupLoading();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      watchlistStatusMock.mockReturnValue(new Promise(() => {}));
+      renderToggle({ mediaType: 'movie', mediaId: 550 });
 
       expect(screen.getByLabelText('Checking watchlist status')).toBeInTheDocument();
     });
 
-    it("shows 'Add to Watchlist' when not on watchlist", () => {
+    it("shows 'Add to Watchlist' when not on watchlist", async () => {
       setupNotOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      expect(screen.getByText('Add to Watchlist')).toBeInTheDocument();
+      expect(await screen.findByText('Add to Watchlist')).toBeInTheDocument();
       expect(screen.getByLabelText('Add to watchlist')).toBeInTheDocument();
     });
 
-    it("shows 'On Watchlist' when on watchlist", () => {
+    it("shows 'On Watchlist' when on watchlist", async () => {
       setupOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      expect(screen.getByText('On Watchlist')).toBeInTheDocument();
+      expect(await screen.findByText('On Watchlist')).toBeInTheDocument();
       expect(screen.getByLabelText('Remove from watchlist')).toBeInTheDocument();
     });
   });
 
-  describe('optimistic add', () => {
-    it('calls addMutation.mutate on click when not on watchlist', async () => {
+  describe('add', () => {
+    it('calls watchlistAdd on click when not on watchlist', async () => {
       setupNotOnWatchlist();
       const user = userEvent.setup();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      await user.click(screen.getByRole('button', { name: 'Add to watchlist' }));
+      await user.click(await screen.findByRole('button', { name: 'Add to watchlist' }));
 
-      expect(mockAddMutate).toHaveBeenCalledWith({ mediaType: 'movie', mediaId: 550 });
-    });
-
-    it('onMutate writes optimistic state via utils.setData and returns previous snapshot', () => {
-      setupNotOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
-
-      const previousData = { onWatchlist: false, entryId: null };
-      mockSetData.mockReturnValueOnce(previousData);
-
-      const context = addMutationOpts.onMutate!();
-
-      expect(mockSetData).toHaveBeenCalledWith(
-        ['watchlist', 'status'],
-        { mediaType: 'movie', mediaId: 550 },
-        expect.any(Function)
+      await waitFor(() =>
+        expect(watchlistAddMock).toHaveBeenCalledWith({
+          body: { mediaType: 'movie', mediaId: 550 },
+        })
       );
-      expect(context).toEqual({ previous: previousData });
-
-      const updater = mockSetData.mock.calls[0]![2] as (prev: unknown) => { onWatchlist: boolean };
-      expect(updater(previousData).onWatchlist).toBe(true);
     });
 
-    it('onSuccess shows success toast', () => {
+    it('optimistically flips the status before the request resolves', async () => {
       setupNotOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      let resolveAdd: ((value: unknown) => void) | undefined;
+      watchlistAddMock.mockReturnValue(
+        new Promise((resolve) => {
+          resolveAdd = resolve;
+        })
+      );
+      const user = userEvent.setup();
+      const { queryClient } = renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      addMutationOpts.onSuccess!();
+      await user.click(await screen.findByRole('button', { name: 'Add to watchlist' }));
 
-      expect(mockToastSuccess).toHaveBeenCalledWith('Added to watchlist');
+      await waitFor(() =>
+        expect(
+          queryClient.getQueryData<WatchlistStatus>([
+            'media',
+            'watchlist',
+            'status',
+            { mediaType: 'movie', mediaId: 550 },
+          ])
+        ).toEqual({ onWatchlist: true, entryId: -1 })
+      );
+      resolveAdd?.({ data: { created: true, message: 'ok', data: { id: 1 } }, error: undefined });
     });
 
-    it('onError rolls back cache via setData and shows error toast', () => {
+    it('shows a success toast when the add resolves', async () => {
       setupNotOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      const user = userEvent.setup();
+      renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      const previous = { onWatchlist: false, entryId: null };
-      addMutationOpts.onError!({ message: 'Server error' }, {}, { previous });
+      await user.click(await screen.findByRole('button', { name: 'Add to watchlist' }));
 
-      const rollbackCall = mockSetData.mock.calls.at(-1)!;
-      expect(rollbackCall[0]).toEqual(['watchlist', 'status']);
-      expect(rollbackCall[1]).toEqual({ mediaType: 'movie', mediaId: 550 });
-      const rollbackUpdater = rollbackCall[2] as (prev: unknown) => unknown;
-      expect(rollbackUpdater(undefined)).toEqual(previous);
-      expect(mockToastError).toHaveBeenCalledWith('Failed to add: Server error');
+      await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('Added to watchlist'));
     });
 
-    it('onError without a context skips rollback and still toasts error', () => {
+    it('rolls back the optimistic status and toasts on error', async () => {
       setupNotOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      watchlistAddMock.mockResolvedValue({
+        data: undefined,
+        error: { message: 'Server error' },
+        response: { status: 500 },
+      });
+      const user = userEvent.setup();
+      const { queryClient } = renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      addMutationOpts.onError!({ message: 'Boom' }, {}, undefined);
+      await user.click(await screen.findByRole('button', { name: 'Add to watchlist' }));
 
-      expect(mockSetData).not.toHaveBeenCalled();
-      expect(mockToastError).toHaveBeenCalledWith('Failed to add: Boom');
-    });
-
-    it('onSettled invalidates the watchlist.status router slice', () => {
-      setupNotOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
-
-      addMutationOpts.onSettled!();
-
-      expect(mockInvalidate).toHaveBeenCalledWith(['watchlist', 'status']);
+      await waitFor(() =>
+        expect(mockToastError).toHaveBeenCalledWith('Failed to add: Server error')
+      );
+      expect(
+        queryClient.getQueryData<WatchlistStatus>([
+          'media',
+          'watchlist',
+          'status',
+          { mediaType: 'movie', mediaId: 550 },
+        ])
+      ).toEqual({ onWatchlist: false, entryId: null });
+      expect(mockToastInfo).not.toHaveBeenCalled();
     });
   });
 
-  describe('optimistic remove', () => {
-    it('calls removeMutation.mutate on click when on watchlist', async () => {
+  describe('remove', () => {
+    it('calls watchlistRemove with the entry id on click when on watchlist', async () => {
       setupOnWatchlist();
       const user = userEvent.setup();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      await user.click(screen.getByRole('button', { name: 'Remove from watchlist' }));
+      await user.click(await screen.findByRole('button', { name: 'Remove from watchlist' }));
 
-      expect(mockRemoveMutate).toHaveBeenCalledWith({ id: 42 });
+      await waitFor(() => expect(watchlistRemoveMock).toHaveBeenCalledWith({ path: { id: 42 } }));
     });
 
-    it('onMutate writes cleared status via setData and returns previous snapshot', () => {
+    it('optimistically clears the status before the request resolves', async () => {
       setupOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
-
-      const previousData = { onWatchlist: true, entryId: 42 };
-      mockSetData.mockReturnValueOnce(previousData);
-
-      const context = removeMutationOpts.onMutate!();
-
-      expect(mockSetData).toHaveBeenCalledWith(
-        ['watchlist', 'status'],
-        { mediaType: 'movie', mediaId: 550 },
-        expect.any(Function)
+      let resolveRemove: ((value: unknown) => void) | undefined;
+      watchlistRemoveMock.mockReturnValue(
+        new Promise((resolve) => {
+          resolveRemove = resolve;
+        })
       );
-      expect(context).toEqual({ previous: previousData });
+      const user = userEvent.setup();
+      const { queryClient } = renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      const updater = mockSetData.mock.calls[0]![2] as (prev: unknown) => {
-        onWatchlist: boolean;
-        entryId: number | null;
-      };
-      const result = updater(previousData);
-      expect(result.onWatchlist).toBe(false);
-      expect(result.entryId).toBeNull();
+      await user.click(await screen.findByRole('button', { name: 'Remove from watchlist' }));
+
+      await waitFor(() =>
+        expect(
+          queryClient.getQueryData<WatchlistStatus>([
+            'media',
+            'watchlist',
+            'status',
+            { mediaType: 'movie', mediaId: 550 },
+          ])
+        ).toEqual({ onWatchlist: false, entryId: null })
+      );
+      resolveRemove?.({ data: { message: 'ok' }, error: undefined });
     });
 
-    it('onSuccess shows success toast', () => {
+    it('shows a success toast when the remove resolves', async () => {
       setupOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      const user = userEvent.setup();
+      renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      removeMutationOpts.onSuccess!();
+      await user.click(await screen.findByRole('button', { name: 'Remove from watchlist' }));
 
-      expect(mockToastSuccess).toHaveBeenCalledWith('Removed from watchlist');
+      await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('Removed from watchlist'));
     });
 
-    it('onError rolls back cache and shows error toast', () => {
+    it('rolls back the optimistic status and toasts on error', async () => {
       setupOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      watchlistRemoveMock.mockResolvedValue({
+        data: undefined,
+        error: { message: 'Network error' },
+        response: { status: 500 },
+      });
+      const user = userEvent.setup();
+      const { queryClient } = renderToggle({ mediaType: 'movie', mediaId: 550 });
 
-      const previous = { onWatchlist: true, entryId: 42 };
-      removeMutationOpts.onError!({ message: 'Network error' }, {}, { previous });
+      await user.click(await screen.findByRole('button', { name: 'Remove from watchlist' }));
 
-      const rollbackCall = mockSetData.mock.calls.at(-1)!;
-      expect(rollbackCall[0]).toEqual(['watchlist', 'status']);
-      expect(rollbackCall[1]).toEqual({ mediaType: 'movie', mediaId: 550 });
-      const rollbackUpdater = rollbackCall[2] as (prev: unknown) => unknown;
-      expect(rollbackUpdater(undefined)).toEqual(previous);
-      expect(mockToastError).toHaveBeenCalledWith('Failed to remove: Network error');
-    });
-
-    it('onSettled invalidates the watchlist.status router slice', () => {
-      setupOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
-
-      removeMutationOpts.onSettled!();
-
-      expect(mockInvalidate).toHaveBeenCalledWith(['watchlist', 'status']);
+      await waitFor(() =>
+        expect(mockToastError).toHaveBeenCalledWith('Failed to remove: Network error')
+      );
+      expect(
+        queryClient.getQueryData<WatchlistStatus>([
+          'media',
+          'watchlist',
+          'status',
+          { mediaType: 'movie', mediaId: 550 },
+        ])
+      ).toEqual({ onWatchlist: true, entryId: 42 });
     });
   });
 
   describe('media type conversion', () => {
-    it("converts 'tv' to 'tv_show' for API calls", () => {
-      mockStatusQuery.mockReturnValue({
-        data: { onWatchlist: false, entryId: null },
-        isLoading: false,
-      });
-      render(<WatchlistToggle mediaType="tv" mediaId={100} />);
-
-      expect(mockStatusQuery).toHaveBeenCalledWith({ mediaType: 'tv_show', mediaId: 100 });
-    });
-  });
-
-  describe('info toast', () => {
-    it('does not surface info toast (CONFLICT branch removed in SDK migration)', () => {
+    it("converts 'tv' to 'tv_show' for the status query", async () => {
       setupNotOnWatchlist();
-      render(<WatchlistToggle mediaType="movie" mediaId={550} />);
+      renderToggle({ mediaType: 'tv', mediaId: 100 });
 
-      addMutationOpts.onError!(
-        { message: 'Conflict' },
-        {},
-        { previous: { onWatchlist: false, entryId: null } }
+      await waitFor(() =>
+        expect(watchlistStatusMock).toHaveBeenCalledWith({
+          query: { mediaType: 'tv_show', mediaId: 100 },
+        })
       );
-
-      expect(mockToastInfo).not.toHaveBeenCalled();
     });
   });
 });
