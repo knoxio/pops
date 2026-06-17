@@ -11814,6 +11814,843 @@
         "tags": ["rotation"]
       }
     },
+    "/rotation/scheduler/disk-space": {
+      "get": {
+        "operationId": "rotation.schedulerDiskSpace",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "disks": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "freeSpace": {
+                                "type": "number"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "path": {
+                                "type": "string"
+                              },
+                              "totalSpace": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["path", "label", "freeSpace", "totalSpace"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": ["available", "disks"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Radarr disk space (degrades to available:false when unreachable)",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/last-cycle": {
+      "get": {
+        "operationId": "rotation.schedulerLastCycleLog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "details": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "executedAt": {
+                          "type": "string"
+                        },
+                        "freeSpaceGb": {
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "moviesAdded": {
+                          "type": "number"
+                        },
+                        "moviesMarkedLeaving": {
+                          "type": "number"
+                        },
+                        "moviesRemoved": {
+                          "type": "number"
+                        },
+                        "removalsFailed": {
+                          "type": "number"
+                        },
+                        "skippedReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "targetFreeGb": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "executedAt",
+                        "moviesMarkedLeaving",
+                        "moviesRemoved",
+                        "moviesAdded",
+                        "removalsFailed",
+                        "freeSpaceGb",
+                        "targetFreeGb",
+                        "skippedReason",
+                        "details"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Read the most recent rotation cycle log entry",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/leaving": {
+      "get": {
+        "operationId": "rotation.schedulerLeavingMovies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "posterPath": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "rotationExpiresAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "rotationMarkedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "tmdbId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tmdbId",
+                          "title",
+                          "posterPath",
+                          "rotationExpiresAt",
+                          "rotationMarkedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Movies currently in the 'leaving' state, soonest expiry first",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/leaving/{movieId}/cancel": {
+      "post": {
+        "operationId": "rotation.schedulerCancelLeaving",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movieId",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        },
+                        "success": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["success", "message"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Clear a movie's 'leaving' status",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/log": {
+      "get": {
+        "operationId": "rotation.listRotationLog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "details": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "executedAt": {
+                                "type": "string"
+                              },
+                              "freeSpaceGb": {
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "number"
+                              },
+                              "moviesAdded": {
+                                "type": "number"
+                              },
+                              "moviesMarkedLeaving": {
+                                "type": "number"
+                              },
+                              "moviesRemoved": {
+                                "type": "number"
+                              },
+                              "removalsFailed": {
+                                "type": "number"
+                              },
+                              "skippedReason": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "targetFreeGb": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "executedAt",
+                              "moviesMarkedLeaving",
+                              "moviesRemoved",
+                              "moviesAdded",
+                              "removalsFailed",
+                              "freeSpaceGb",
+                              "targetFreeGb",
+                              "skippedReason",
+                              "details"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["items", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Paginated rotation log entries, newest first",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/log-stats": {
+      "get": {
+        "operationId": "rotation.rotationLogStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "avgPerDay": {
+                          "type": "number"
+                        },
+                        "streak": {
+                          "type": "number"
+                        },
+                        "totalRotated": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["totalRotated", "avgPerDay", "streak"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Summary statistics for the rotation log page",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/run-now": {
+      "post": {
+        "operationId": "rotation.schedulerRunNow",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "result": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "freeSpaceGb": {
+                              "type": "number"
+                            },
+                            "moviesAdded": {
+                              "type": "number"
+                            },
+                            "moviesMarkedLeaving": {
+                              "type": "number"
+                            },
+                            "moviesRemoved": {
+                              "type": "number"
+                            },
+                            "removalsFailed": {
+                              "type": "number"
+                            },
+                            "skippedReason": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "targetFreeGb": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "moviesMarkedLeaving",
+                            "moviesRemoved",
+                            "moviesAdded",
+                            "removalsFailed",
+                            "freeSpaceGb",
+                            "targetFreeGb",
+                            "skippedReason"
+                          ],
+                          "type": "object"
+                        },
+                        "success": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["success", "result"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Trigger one rotation cycle immediately",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/status": {
+      "get": {
+        "operationId": "rotation.schedulerStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "cronExpression": {
+                          "type": "string"
+                        },
+                        "intervalMs": {
+                          "type": "number"
+                        },
+                        "isCycleRunning": {
+                          "type": "boolean"
+                        },
+                        "isRunning": {
+                          "type": "boolean"
+                        },
+                        "lastCycleAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastCycleError": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "nextRunAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "isRunning",
+                        "isCycleRunning",
+                        "intervalMs",
+                        "cronExpression",
+                        "lastCycleAt",
+                        "lastCycleError",
+                        "nextRunAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          }
+        },
+        "summary": "Read the rotation scheduler run state + last-cycle stats",
+        "tags": ["rotation"]
+      }
+    },
+    "/rotation/scheduler/toggle": {
+      "post": {
+        "operationId": "rotation.schedulerToggle",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "cronExpression": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["enabled"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "cronExpression": {
+                          "type": "string"
+                        },
+                        "intervalMs": {
+                          "type": "number"
+                        },
+                        "isCycleRunning": {
+                          "type": "boolean"
+                        },
+                        "isRunning": {
+                          "type": "boolean"
+                        },
+                        "lastCycleAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastCycleError": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "nextRunAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "isRunning",
+                        "isCycleRunning",
+                        "intervalMs",
+                        "cronExpression",
+                        "lastCycleAt",
+                        "lastCycleError",
+                        "nextRunAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Start or stop the rotation scheduler (persists the enabled flag)",
+        "tags": ["rotation"]
+      }
+    },
     "/rotation/settings": {
       "get": {
         "operationId": "rotation.getSettings",

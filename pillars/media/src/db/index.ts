@@ -84,6 +84,30 @@ export * as rotationSourcesService from './services/rotation/sources.js';
 
 export * as rotationSettingsService from './services/rotation/settings.js';
 
+export type {
+  ListRotationLogResult,
+  RotationCycleLog,
+  RotationFailedMovieRef,
+  RotationLogRow,
+  RotationLogStats,
+  RotationMovieRef,
+} from './services/rotation/rotation-log.js';
+
+export * as rotationLogService from './services/rotation/rotation-log.js';
+
+export type { SelectedCandidate } from './services/rotation/selection-policy.js';
+
+export * as rotationSelectionService from './services/rotation/selection-policy.js';
+
+export type {
+  EligibleMovie,
+  ExpiredMovie,
+  LeavingMovie,
+  MovieSizeMap,
+} from './services/rotation/removal-queries.js';
+
+export * as rotationRemovalQueries from './services/rotation/removal-queries.js';
+
 export type { DismissedDiscoverRow } from './services/dismissed-discover.js';
 
 export * as dismissedDiscoverService from './services/dismissed-discover.js';
