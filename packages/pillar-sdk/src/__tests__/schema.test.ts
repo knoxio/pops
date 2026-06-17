@@ -86,7 +86,9 @@ describe('ManifestPayloadSchema', () => {
 
   describe('contract package regex', () => {
     it.each([
-      '@pops/finance',
+      // `@pops/finance` (bare collapsed-pillar name) is VALID — finance
+      // collapsed into `pillars/finance/` and its manifest declares
+      // `contract.package: '@pops/finance'`.
       '@pops/finance-contract-v2',
       '@other/finance-contract',
       'pops/finance-contract',

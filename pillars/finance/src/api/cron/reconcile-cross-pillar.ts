@@ -24,7 +24,7 @@
  * tests don't have to spin up an HTTP transport — production wires the
  * pillar SDK proxy at boot time; tests wire a stub.
  */
-import { type FinanceDb, crossPillarService } from '@pops/finance-db';
+import { crossPillarService, type FinanceDb } from '../../db/index.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

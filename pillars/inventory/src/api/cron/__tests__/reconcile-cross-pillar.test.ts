@@ -28,7 +28,8 @@ import {
 } from '../reconcile-cross-pillar.js';
 
 import type { CoreRouter } from '@pops/core-contract';
-import type { FinanceRouter } from '@pops/finance-contract';
+
+import type { FinanceRouter } from '../reconcile-cross-pillar.js';
 
 let tmpDir: string;
 let inventoryDb: OpenedInventoryDb;

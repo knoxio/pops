@@ -980,435 +980,6 @@
   },
   {
     "type": "dependency",
-    "from": "apps/pops-api/src/db/finance-handle.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/cerebrum/retrieval/semantic-search-metadata.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/cerebrum/thalamus/cross-source.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/handlers/ai-revise.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/handlers/apply-corrections.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/handlers/changeset-impact.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/handlers/compute-changeset.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/handlers/pattern-match.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/handlers/preview-matches.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/handlers/query-helpers.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/lib/tag-loader.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/corrections/types-base.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/entities/service.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/tag-rules/preview.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/tag-rules/router.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/tag-rules/service.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/tag-rules/tag-rules.test.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/budgets/budgets.test.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/budgets/router.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/budgets/search-adapter.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/budgets/types.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/imports.e2e.test.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/lib/deduplication.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/lib/entity-lookup.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/lib/reclassify-existing.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/lib/tag-management.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/lib/transaction-persistence.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/service.test.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/imports/service.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/tag-suggester/index.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/transactions/router.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/transactions/search-adapter.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/transactions/transactions.test.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/transactions/types.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "type-only", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/uri-handler.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/wishlist/router.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/wishlist/search-adapter.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/wishlist/types.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/finance/wishlist/wishlist.test.ts",
-    "to": "packages/finance-db/dist/index.d.ts",
-    "unresolvedTo": "@pops/finance-db",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-pillar-runtime-import-finance"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "apps/pops-api/src/db/backfill-media-from-shared.ts",
     "to": "packages/media-db/dist/index.d.ts",
     "unresolvedTo": "@pops/media-db",
@@ -2494,6 +2065,446 @@
     "rule": {
       "severity": "error",
       "name": "no-cross-pillar-runtime-import-media"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/db/finance-handle.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/cerebrum/retrieval/semantic-search-metadata.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/cerebrum/thalamus/cross-source.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/ai-revise.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/apply-corrections.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/changeset-impact.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/compute-changeset.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/pattern-match.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/preview-matches.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/handlers/query-helpers.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/lib/tag-loader.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/corrections/types-base.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/entities/service.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/tag-rules/preview.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/tag-rules/router.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/tag-rules/service.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/tag-rules/tag-rules.test.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/budgets/budgets.test.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/budgets/router.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/budgets/search-adapter.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/budgets/types.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/imports.e2e.test.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/lib/deduplication.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/lib/entity-lookup.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/lib/reclassify-existing.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/lib/tag-management.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/lib/transaction-persistence.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/service.test.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/imports/service.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/index.ts",
+    "to": "@pops/finance-contract/settings",
+    "unresolvedTo": "@pops/finance-contract/settings",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/tag-suggester/index.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/transactions/router.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/transactions/search-adapter.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/transactions/transactions.test.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/transactions/types.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/uri-handler.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/wishlist/router.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/wishlist/search-adapter.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/wishlist/types.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/finance/wishlist/wishlist.test.ts",
+    "to": "@pops/finance-db",
+    "unresolvedTo": "@pops/finance-db",
+    "dependencyTypes": ["unknown"],
+    "rule": {
+      "severity": "error",
+      "name": "no-dead-finance-pkgs"
     }
   },
   {
