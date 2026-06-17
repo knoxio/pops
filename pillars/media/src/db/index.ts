@@ -126,6 +126,17 @@ export type { BatchLogResult, BatchLogWatchInput } from './services/watch-histor
 
 export * as watchHistoryBatchService from './services/watch-history-batch.js';
 
+export type {
+  InsertSyncJobInput,
+  SyncJob,
+  SyncJobProgress,
+  SyncJobResultRow,
+  SyncJobStatus,
+  UpdateSyncJobInput,
+} from './services/sync-job-results.js';
+
+export * as syncJobResultsService from './services/sync-job-results.js';
+
 export * as watchlistService from './services/watchlist.js';
 
 export {
