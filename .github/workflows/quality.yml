@@ -67,4 +67,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts" --reporters "console" --exitCode 0 .
+      # `apps/pops-api/src/{modules,routes}/food` is the food-pillar migration
+      # tombstone: every file there has been lifted into `pillars/food` (the
+      # single source of truth) and is deleted in Phase E. Counting the
+      # tombstone as the "original" of the lifted code double-penalises the
+      # migration, so it's excluded from the duplication scan.
+      - run: npx jscpd@^4 --threshold 5 --min-lines 8 --min-tokens 70 --ignore "**/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/dist/**,**/node_modules/**,**/*.snap,**/*.d.ts,**/generated.ts,**/db/schema.ts,**/db/seeder.ts,apps/pops-api/src/modules/food/**,apps/pops-api/src/routes/food/**" --reporters "console" --exitCode 0 .
