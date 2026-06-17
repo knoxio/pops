@@ -1,56 +1,121 @@
-name: Media Quality
+name: Media Pillar Quality
+
+# Comprehensive standalone quality gate for the collapsed media pillar.
+# Runs typecheck, test, lint, format, build, OpenAPI generation, and
+# Docker build for the media pillar in isolation. Triggered ONLY by
+# changes that touch the pillar or its transitive @pops/* deps + the
+# repo-wide tsconfig/lockfile surface.
+#
+# Bubble-of-happiness rule: this workflow is the one that MUST stay green
+# for the media pillar. Other workflows may be red while the rest of the
+# codebase still imports the legacy @pops/media-* package names — that's
+# deliberate and will be resolved as each consumer migrates to
+# `@pops/media`.
 
 on:
   push:
     branches: [main]
     paths:
-      - "packages/api-client/**"
-      - "packages/app-media/**"
-      - "packages/db-types/**"
-      - "packages/media-contract/**"
+      - "pillars/media/**"
       - "packages/pillar-sdk/**"
-      - "packages/ui/**"
+      - "packages/types/**"
+      - "packages/cerebrum-contract/**"
+      - "packages/core-contract/**"
+      - "packages/core-db/**"
+      - "packages/media-contract/**"
+      - "packages/media-db/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
       - ".github/workflows/media-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
   pull_request:
     paths:
-      - "packages/api-client/**"
-      - "packages/app-media/**"
-      - "packages/db-types/**"
-      - "packages/media-contract/**"
+      - "pillars/media/**"
       - "packages/pillar-sdk/**"
-      - "packages/ui/**"
+      - "packages/types/**"
+      - "packages/cerebrum-contract/**"
+      - "packages/core-contract/**"
+      - "packages/core-db/**"
+      - "packages/media-contract/**"
+      - "packages/media-db/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.base.json"
+      - ".oxfmtrc.json"
       - ".github/workflows/media-quality.yml"
-      - ".github/workflows/_pkg-check.yml"
+
+concurrency:
+  group: media-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Detect changes
+  quality:
+    name: Media pillar — typecheck + test + lint + format + build
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    outputs:
-      relevant: ${{ steps.filter.outputs.relevant }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            relevant:
-              - 'packages/api-client/**'
-              - 'packages/app-media/**'
-              - 'packages/db-types/**'
-              - 'packages/media-contract/**'
-              - 'packages/pillar-sdk/**'
-              - 'packages/ui/**'
-              - '.github/workflows/media-quality.yml'
-              - '.github/workflows/_pkg-check.yml'
 
-  quality:
-    needs: [changes]
-    if: always()
-    uses: ./.github/workflows/_pkg-check.yml
-    with:
-      package-path: packages/app-media
-      needs-db-build: true
-      skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install (subgraph only)
+        run: pnpm install --frozen-lockfile --filter "@pops/media..."
+
+      - name: Format check
+        run: pnpm exec oxfmt --check pillars/media/
+
+      - name: Lint
+        run: pnpm exec oxlint pillars/media/src
+
+      - name: Build transitive deps
+        run: pnpm --filter "@pops/media^..." build
+
+      - name: Typecheck
+        run: pnpm --filter @pops/media typecheck
+
+      - name: Build pillar
+        run: pnpm --filter @pops/media build
+
+      - name: Verify OpenAPI snapshot is up to date
+        run: |
+          pnpm --filter @pops/media generate:openapi
+          git diff --exit-code pillars/media/openapi/media.openapi.json
+
+      - name: Verify api-types.generated.ts is up to date
+        run: |
+          pnpm --filter @pops/media generate:api-types
+          git diff --exit-code pillars/media/src/contract/api-types.generated.ts
+
+      - name: Test
+        run: pnpm --filter @pops/media test
+
+  docker:
+    name: Media pillar — Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build pillar image (builder stage only — fast feedback)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/media/Dockerfile
+          target: builder
+          push: false
+
+      - name: Build pillar image (full)
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: pillars/media/Dockerfile
+          push: false
+          tags: pops-media:${{ github.sha }}
