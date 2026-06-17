@@ -69,6 +69,16 @@ export const ExclusionSchema = z.object({
   excludedAt: z.string(),
 });
 
+export const ListExclusionsQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+
+export const ListExclusionsResultSchema = z.object({
+  items: z.array(ExclusionSchema),
+  total: z.number(),
+});
+
 export const SourceSchema = z.object({
   id: z.number(),
   type: z.string(),
