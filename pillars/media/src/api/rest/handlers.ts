@@ -14,6 +14,7 @@ import { makeComparisonsHandlers } from './comparisons-handlers.js';
 import { makeLibraryHandlers } from './library-handlers.js';
 import { makeMoviesHandlers } from './movies-handlers.js';
 import { makePlexHandlers } from './plex-handlers.js';
+import { makeRotationHandlers } from './rotation-handlers.js';
 import { makeShelfImpressionsHandlers } from './shelf-impressions-handlers.js';
 import { makeTvShowsHandlers } from './tv-shows-handlers.js';
 import { makeWatchHistoryHandlers } from './watch-history-handlers.js';
@@ -35,5 +36,6 @@ export function makeMediaRestHandlers(deps: {
     arr: makeArrHandlers(db),
     plex: makePlexHandlers(db),
     comparisons: makeComparisonsHandlers(db),
+    rotation: makeRotationHandlers(db),
   });
 }

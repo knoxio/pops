@@ -23,6 +23,12 @@ export {
   EpisodeNotFoundError,
   MovieConflictError,
   MovieNotFoundError,
+  RotationCandidateNotFoundError,
+  RotationCandidateNotPendingError,
+  RotationManualSourceProtectedError,
+  RotationMovieExcludedError,
+  RotationSourceDisabledError,
+  RotationSourceNotFoundError,
   SeasonConflictError,
   SeasonNotFoundError,
   TvShowConflictError,
@@ -46,6 +52,37 @@ export * as moviesService from './services/movies.js';
 export * as shelfImpressionsService from './services/shelf-impressions.js';
 
 export * as plexSettingsService from './services/plex-settings.js';
+
+export type {
+  AddToQueueInput,
+  CandidateListRow,
+  CandidateStatus,
+  CandidateStatusResult,
+  ListCandidatesInput,
+  ListCandidatesResult,
+  RotationCandidateRow,
+} from './services/rotation/candidates.js';
+
+export * as rotationCandidatesService from './services/rotation/candidates.js';
+
+export type { FetchedCandidate } from './services/rotation/candidate-sync.js';
+
+export * as rotationCandidateSyncService from './services/rotation/candidate-sync.js';
+
+export type { AddExclusionInput, RotationExclusionRow } from './services/rotation/exclusions.js';
+
+export * as rotationExclusionsService from './services/rotation/exclusions.js';
+
+export type {
+  CreateSourceInput,
+  RotationSourceRow,
+  SourceWithCount,
+  UpdateSourceInput,
+} from './services/rotation/sources.js';
+
+export * as rotationSourcesService from './services/rotation/sources.js';
+
+export * as rotationSettingsService from './services/rotation/settings.js';
 
 export type { DismissedDiscoverRow } from './services/dismissed-discover.js';
 
