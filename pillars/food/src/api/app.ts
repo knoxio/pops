@@ -11,7 +11,7 @@
  * lists/inventory).
  */
 import { createExpressEndpoints } from '@ts-rest/express';
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
 import { foodContract } from '../contract/rest.js';
 import { type FoodApiDeps, makeRequestHandler } from './handlers.js';
@@ -25,10 +25,31 @@ import { makeFoodRestHandlers } from './rest/handlers.js';
  */
 const JSON_BODY_LIMIT = '20mb';
 
+/**
+ * Endpoints the food worker calls back on — gated by the shared internal
+ * token. Everything else trusts the docker network (the dispatcher in front
+ * authenticates user traffic).
+ */
+const INTERNAL_PATHS = new Set(['/ai/log-inference', '/ingest/worker-complete']);
+
+function requireInternalToken(req: Request, res: Response, next: NextFunction): void {
+  if (!INTERNAL_PATHS.has(req.path)) {
+    next();
+    return;
+  }
+  const expected = process.env['POPS_API_INTERNAL_TOKEN'];
+  if (expected === undefined || req.headers['x-pops-internal-token'] !== expected) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+  next();
+}
+
 export function createFoodApiApp(deps: FoodApiDeps): Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
+  app.use(requireInternalToken);
 
   // Build the handler shape once at factory time so static deps don't
   // get re-allocated on every request.
