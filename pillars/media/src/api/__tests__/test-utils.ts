@@ -106,6 +106,28 @@ export function makeClient(app: Express) {
       genres: () => send<{ data: string[] }>(r.get('/library/genres')),
       quickPick: (query: { count?: number } = {}) =>
         send<{ data: Movie[] }>(r.get('/library/quick-pick').query(query)),
+      addMovie: (tmdbId: number) =>
+        send<{ data: Movie; created: boolean; message: string }>(
+          r.post('/library/movies').send({ tmdbId })
+        ),
+      refreshMovie: (id: number, body: { redownloadImages?: boolean } = {}) =>
+        send<{ data: Movie; message: string }>(r.patch(`/library/movies/${id}`).send(body)),
+      addTvShow: (tvdbId: number) =>
+        send<{ data: { show: TvShow; seasons: Season[] }; created: boolean; message: string }>(
+          r.post('/library/tv-shows').send({ tvdbId })
+        ),
+      refreshTvShow: (
+        id: number,
+        body: { redownloadImages?: boolean; refreshEpisodes?: boolean } = {}
+      ) =>
+        send<{
+          data: { show: TvShow; seasons: Season[] };
+          episodesAdded: number;
+          episodesUpdated: number;
+          seasonsAdded: number;
+          seasonsUpdated: number;
+          message: string;
+        }>(r.patch(`/library/tv-shows/${id}`).send(body)),
     },
     watchlist: {
       list: (query: WatchlistQuery = {}) =>

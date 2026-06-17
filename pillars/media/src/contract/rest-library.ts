@@ -1,17 +1,29 @@
 /**
- * `library.*` sub-router — the combined movies + TV-shows library grid.
+ * `library.*` sub-router — the combined movies + TV-shows library grid plus
+ * the add/refresh ingestion mutations.
  *
- * Read-only slice: list (paginated, page-based), genres, and quick-pick. The
- * add/refresh mutations stay in the monolith until the TMDB/TheTVDB clients
- * land in the pillar (wave 2). Wire shapes mirror the legacy
- * `media.library.list|genres|quickPick`.
+ * Reads: list (paginated, page-based), genres, and quick-pick. Mutations:
+ * addMovie / refreshMovie (TMDB) and addTvShow / refreshTvShow (TheTVDB).
+ * Wire shapes mirror the legacy `media.library.*` tRPC procedures.
  */
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 
 import { MovieSchema } from './rest-movies.js';
+import { ERR_RESPONSES, IdParam } from './rest-schemas.js';
+import { SeasonSchema, TvShowSchema } from './rest-tv-shows-schemas.js';
 
 const c = initContract();
+
+const AddMovieBody = z.object({ tmdbId: z.number().int().positive() });
+const RefreshMovieBody = z.object({ redownloadImages: z.boolean().optional().default(false) });
+const AddTvShowBody = z.object({ tvdbId: z.number().int().positive() });
+const RefreshTvShowBody = z.object({
+  redownloadImages: z.boolean().optional().default(false),
+  refreshEpisodes: z.boolean().optional().default(true),
+});
+
+const TvShowWithSeasons = z.object({ show: TvShowSchema, seasons: z.array(SeasonSchema) });
 
 const LibraryItemSchema = z.object({
   id: z.number(),
@@ -70,5 +82,51 @@ export const mediaLibraryContract = c.router({
     query: QuickPickQuery,
     responses: { 200: z.object({ data: z.array(MovieSchema) }) },
     summary: 'Random unwatched movies to surface as a quick pick',
+  },
+  addMovie: {
+    method: 'POST',
+    path: '/library/movies',
+    body: AddMovieBody,
+    responses: {
+      200: z.object({ data: MovieSchema, created: z.boolean(), message: z.string() }),
+      ...ERR_RESPONSES,
+    },
+    summary: 'Add a movie to the library by TMDB id (idempotent)',
+  },
+  refreshMovie: {
+    method: 'PATCH',
+    path: '/library/movies/:id',
+    pathParams: z.object({ id: IdParam }),
+    body: RefreshMovieBody,
+    responses: { 200: z.object({ data: MovieSchema, message: z.string() }), ...ERR_RESPONSES },
+    summary: 'Refresh a library movie from TMDB',
+  },
+  addTvShow: {
+    method: 'POST',
+    path: '/library/tv-shows',
+    body: AddTvShowBody,
+    responses: {
+      200: z.object({ data: TvShowWithSeasons, created: z.boolean(), message: z.string() }),
+      ...ERR_RESPONSES,
+    },
+    summary: 'Add a TV show to the library by TheTVDB id (idempotent)',
+  },
+  refreshTvShow: {
+    method: 'PATCH',
+    path: '/library/tv-shows/:id',
+    pathParams: z.object({ id: IdParam }),
+    body: RefreshTvShowBody,
+    responses: {
+      200: z.object({
+        data: TvShowWithSeasons,
+        episodesAdded: z.number(),
+        episodesUpdated: z.number(),
+        seasonsAdded: z.number(),
+        seasonsUpdated: z.number(),
+        message: z.string(),
+      }),
+      ...ERR_RESPONSES,
+    },
+    summary: 'Refresh a library TV show from TheTVDB',
   },
 });

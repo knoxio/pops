@@ -4,10 +4,10 @@
  * Lifted from the pops-api monolith `tv-shows/episodes-service.ts` and
  * converted to the pillar's `(db, …)` arg-passing + db-domain-error pattern.
  */
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, count, eq } from 'drizzle-orm';
 
 import { EpisodeConflictError, EpisodeNotFoundError } from '../errors.js';
-import { episodes } from '../schema.js';
+import { episodes, seasons } from '../schema.js';
 import { getSeason } from './seasons.js';
 
 import type { EpisodeRow } from '../row-types.js';
@@ -100,4 +100,59 @@ export function createEpisode(db: MediaDb, input: CreateEpisodeInput): EpisodeRo
 export function deleteEpisode(db: MediaDb, id: number): void {
   getEpisode(db, id);
   db.delete(episodes).where(eq(episodes.id, id)).run();
+}
+
+export interface UpsertEpisodeInput {
+  seasonId: number;
+  tvdbId: number;
+  episodeNumber: number;
+  name?: string | null;
+  overview?: string | null;
+  airDate?: string | null;
+  runtime?: number | null;
+}
+
+/**
+ * Upsert an episode keyed by `tvdbId` — insert when new, patch when existing.
+ * Returns whether a new row was inserted. Used by the TheTVDB refresh
+ * orchestration; unlike {@link createEpisode} it does not throw on conflict.
+ */
+export function upsertEpisodeByTvdbId(db: MediaDb, input: UpsertEpisodeInput): { added: boolean } {
+  const existing = db.select().from(episodes).where(eq(episodes.tvdbId, input.tvdbId)).get();
+  if (existing) {
+    db.update(episodes)
+      .set({
+        name: input.name ?? null,
+        overview: input.overview ?? null,
+        airDate: input.airDate ?? null,
+        runtime: input.runtime ?? null,
+        episodeNumber: input.episodeNumber,
+      })
+      .where(eq(episodes.id, existing.id))
+      .run();
+    return { added: false };
+  }
+  db.insert(episodes)
+    .values({
+      seasonId: input.seasonId,
+      tvdbId: input.tvdbId,
+      episodeNumber: input.episodeNumber,
+      name: input.name ?? null,
+      overview: input.overview ?? null,
+      airDate: input.airDate ?? null,
+      runtime: input.runtime ?? null,
+    })
+    .run();
+  return { added: true };
+}
+
+/** Count every episode belonging to a TV show (across all its seasons). */
+export function countShowEpisodes(db: MediaDb, tvShowId: number): number {
+  const row = db
+    .select({ total: count() })
+    .from(episodes)
+    .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+    .where(eq(seasons.tvShowId, tvShowId))
+    .get();
+  return row?.total ?? 0;
 }

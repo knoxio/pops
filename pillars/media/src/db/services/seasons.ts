@@ -98,3 +98,61 @@ export function deleteSeason(db: MediaDb, id: number): void {
   getSeason(db, id);
   db.delete(seasons).where(eq(seasons.id, id)).run();
 }
+
+export interface UpsertSeasonInput {
+  tvShowId: number;
+  tvdbId: number;
+  seasonNumber: number;
+  name?: string | null;
+  overview?: string | null;
+  posterPath?: string | null;
+  episodeCount?: number | null;
+}
+
+export interface UpsertSeasonResult {
+  seasonId: number;
+  added: boolean;
+}
+
+/**
+ * Upsert a season keyed by `tvdbId` — insert when new, patch when existing.
+ * `episodeCount` is only written when non-null (the refresh path computes it
+ * later from fetched episodes). Used by the TheTVDB refresh orchestration.
+ */
+export function upsertSeasonByTvdbId(db: MediaDb, input: UpsertSeasonInput): UpsertSeasonResult {
+  const existing = db.select().from(seasons).where(eq(seasons.tvdbId, input.tvdbId)).get();
+  const episodeCount = input.episodeCount ?? null;
+
+  if (existing) {
+    db.update(seasons)
+      .set({
+        name: input.name ?? null,
+        overview: input.overview ?? null,
+        posterPath: input.posterPath ?? null,
+        ...(episodeCount != null ? { episodeCount } : {}),
+      })
+      .where(eq(seasons.id, existing.id))
+      .run();
+    return { seasonId: existing.id, added: false };
+  }
+
+  const result = db
+    .insert(seasons)
+    .values({
+      tvShowId: input.tvShowId,
+      tvdbId: input.tvdbId,
+      seasonNumber: input.seasonNumber,
+      name: input.name ?? null,
+      overview: input.overview ?? null,
+      posterPath: input.posterPath ?? null,
+      episodeCount,
+    })
+    .run();
+  return { seasonId: Number(result.lastInsertRowid), added: true };
+}
+
+/** Set a season's cached episode count. No-op when `episodeCount <= 0`. */
+export function setSeasonEpisodeCount(db: MediaDb, seasonId: number, episodeCount: number): void {
+  if (episodeCount <= 0) return;
+  db.update(seasons).set({ episodeCount }).where(eq(seasons.id, seasonId)).run();
+}

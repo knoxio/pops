@@ -54,6 +54,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/library/movies': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a movie to the library by TMDB id (idempotent) */
+    post: operations['library.addMovie'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/library/movies/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Refresh a library movie from TMDB */
+    patch: operations['library.refreshMovie'];
+    trace?: never;
+  };
   '/library/quick-pick': {
     parameters: {
       query?: never;
@@ -69,6 +103,40 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  '/library/tv-shows': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a TV show to the library by TheTVDB id (idempotent) */
+    post: operations['library.addTvShow'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/library/tv-shows/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Refresh a library TV show from TheTVDB */
+    patch: operations['library.refreshTvShow'];
     trace?: never;
   };
   '/movies': {
@@ -591,6 +659,206 @@ export interface operations {
       };
     };
   };
+  'library.addMovie': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          tmdbId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            created: boolean;
+            data: {
+              backdropPath: string | null;
+              backdropUrl: string | null;
+              budget: number | null;
+              createdAt: string;
+              genres: string[];
+              id: number;
+              imdbId: string | null;
+              logoPath: string | null;
+              logoUrl: string | null;
+              originalLanguage: string | null;
+              originalTitle: string | null;
+              overview: string | null;
+              posterOverridePath: string | null;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string | null;
+              revenue: number | null;
+              rotationExpiresAt: string | null;
+              /** @enum {string|null} */
+              rotationStatus: 'leaving' | 'protected' | null;
+              runtime: number | null;
+              status: string | null;
+              tagline: string | null;
+              title: string;
+              tmdbId: number;
+              updatedAt: string;
+              voteAverage: number | null;
+              voteCount: number | null;
+            };
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'library.refreshMovie': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @default false */
+          redownloadImages: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              backdropPath: string | null;
+              backdropUrl: string | null;
+              budget: number | null;
+              createdAt: string;
+              genres: string[];
+              id: number;
+              imdbId: string | null;
+              logoPath: string | null;
+              logoUrl: string | null;
+              originalLanguage: string | null;
+              originalTitle: string | null;
+              overview: string | null;
+              posterOverridePath: string | null;
+              posterPath: string | null;
+              posterUrl: string | null;
+              releaseDate: string | null;
+              revenue: number | null;
+              rotationExpiresAt: string | null;
+              /** @enum {string|null} */
+              rotationStatus: 'leaving' | 'protected' | null;
+              runtime: number | null;
+              status: string | null;
+              tagline: string | null;
+              title: string;
+              tmdbId: number;
+              updatedAt: string;
+              voteAverage: number | null;
+              voteCount: number | null;
+            };
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'library.quickPick': {
     parameters: {
       query: {
@@ -639,6 +907,236 @@ export interface operations {
               voteAverage: number | null;
               voteCount: number | null;
             }[];
+          };
+        };
+      };
+    };
+  };
+  'library.addTvShow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          tvdbId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            created: boolean;
+            data: {
+              seasons: {
+                airDate: string | null;
+                createdAt: string;
+                episodeCount: number | null;
+                id: number;
+                name: string | null;
+                overview: string | null;
+                posterPath: string | null;
+                posterUrl: string | null;
+                seasonNumber: number;
+                tvShowId: number;
+                tvdbId: number;
+              }[];
+              show: {
+                backdropPath: string | null;
+                backdropUrl: string | null;
+                createdAt: string;
+                episodeRunTime: number | null;
+                firstAirDate: string | null;
+                genres: string[];
+                id: number;
+                lastAirDate: string | null;
+                logoPath: string | null;
+                logoUrl: string | null;
+                name: string;
+                networks: string[];
+                numberOfEpisodes: number | null;
+                numberOfSeasons: number | null;
+                originalLanguage: string | null;
+                originalName: string | null;
+                overview: string | null;
+                posterOverridePath: string | null;
+                posterPath: string | null;
+                posterUrl: string | null;
+                status: string | null;
+                tvdbId: number;
+                updatedAt: string;
+                voteAverage: number | null;
+                voteCount: number | null;
+              };
+            };
+            message: string;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'library.refreshTvShow': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @default false */
+          redownloadImages: boolean;
+          /** @default true */
+          refreshEpisodes: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              seasons: {
+                airDate: string | null;
+                createdAt: string;
+                episodeCount: number | null;
+                id: number;
+                name: string | null;
+                overview: string | null;
+                posterPath: string | null;
+                posterUrl: string | null;
+                seasonNumber: number;
+                tvShowId: number;
+                tvdbId: number;
+              }[];
+              show: {
+                backdropPath: string | null;
+                backdropUrl: string | null;
+                createdAt: string;
+                episodeRunTime: number | null;
+                firstAirDate: string | null;
+                genres: string[];
+                id: number;
+                lastAirDate: string | null;
+                logoPath: string | null;
+                logoUrl: string | null;
+                name: string;
+                networks: string[];
+                numberOfEpisodes: number | null;
+                numberOfSeasons: number | null;
+                originalLanguage: string | null;
+                originalName: string | null;
+                overview: string | null;
+                posterOverridePath: string | null;
+                posterPath: string | null;
+                posterUrl: string | null;
+                status: string | null;
+                tvdbId: number;
+                updatedAt: string;
+                voteAverage: number | null;
+                voteCount: number | null;
+              };
+            };
+            episodesAdded: number;
+            episodesUpdated: number;
+            message: string;
+            seasonsAdded: number;
+            seasonsUpdated: number;
+          };
+        };
+      };
+      /** @description 400 */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+      /** @description 409 */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
           };
         };
       };

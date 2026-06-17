@@ -323,6 +323,532 @@
         "tags": ["library"]
       }
     },
+    "/library/movies": {
+      "post": {
+        "operationId": "library.addMovie",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "tmdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["tmdbId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "created": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "backdropPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "backdropUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "budget": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "genres": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "imdbId": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "originalLanguage": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "originalTitle": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "overview": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterOverridePath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "releaseDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "revenue": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "rotationExpiresAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "rotationStatus": {
+                          "enum": ["leaving", "protected"],
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "runtime": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "status": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tagline": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "tmdbId": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "voteAverage": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "voteCount": {
+                          "nullable": true,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tmdbId",
+                        "imdbId",
+                        "title",
+                        "originalTitle",
+                        "overview",
+                        "tagline",
+                        "releaseDate",
+                        "runtime",
+                        "status",
+                        "originalLanguage",
+                        "budget",
+                        "revenue",
+                        "posterPath",
+                        "posterUrl",
+                        "backdropPath",
+                        "backdropUrl",
+                        "logoPath",
+                        "logoUrl",
+                        "posterOverridePath",
+                        "voteAverage",
+                        "voteCount",
+                        "genres",
+                        "createdAt",
+                        "updatedAt",
+                        "rotationStatus",
+                        "rotationExpiresAt"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "created", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Add a movie to the library by TMDB id (idempotent)",
+        "tags": ["library"]
+      }
+    },
+    "/library/movies/{id}": {
+      "patch": {
+        "operationId": "library.refreshMovie",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "redownloadImages": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["redownloadImages"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "backdropPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "backdropUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "budget": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "genres": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "imdbId": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "originalLanguage": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "originalTitle": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "overview": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterOverridePath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterPath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "posterUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "releaseDate": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "revenue": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "rotationExpiresAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "rotationStatus": {
+                          "enum": ["leaving", "protected"],
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "runtime": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "status": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "tagline": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "tmdbId": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "voteAverage": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "voteCount": {
+                          "nullable": true,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tmdbId",
+                        "imdbId",
+                        "title",
+                        "originalTitle",
+                        "overview",
+                        "tagline",
+                        "releaseDate",
+                        "runtime",
+                        "status",
+                        "originalLanguage",
+                        "budget",
+                        "revenue",
+                        "posterPath",
+                        "posterUrl",
+                        "backdropPath",
+                        "backdropUrl",
+                        "logoPath",
+                        "logoUrl",
+                        "posterOverridePath",
+                        "voteAverage",
+                        "voteCount",
+                        "genres",
+                        "createdAt",
+                        "updatedAt",
+                        "rotationStatus",
+                        "rotationExpiresAt"
+                      ],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Refresh a library movie from TMDB",
+        "tags": ["library"]
+      }
+    },
     "/library/quick-pick": {
       "get": {
         "operationId": "library.quickPick",
@@ -501,6 +1027,673 @@
           }
         },
         "summary": "Random unwatched movies to surface as a quick pick",
+        "tags": ["library"]
+      }
+    },
+    "/library/tv-shows": {
+      "post": {
+        "operationId": "library.addTvShow",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "tvdbId": {
+                    "exclusiveMinimum": true,
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["tvdbId"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "created": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "seasons": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "airDate": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "episodeCount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "number"
+                              },
+                              "name": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "overview": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "posterPath": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "posterUrl": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "seasonNumber": {
+                                "type": "number"
+                              },
+                              "tvShowId": {
+                                "type": "number"
+                              },
+                              "tvdbId": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "tvShowId",
+                              "tvdbId",
+                              "seasonNumber",
+                              "name",
+                              "overview",
+                              "posterPath",
+                              "posterUrl",
+                              "airDate",
+                              "episodeCount",
+                              "createdAt"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "show": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "backdropPath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "backdropUrl": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            },
+                            "episodeRunTime": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "firstAirDate": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "genres": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "id": {
+                              "type": "number"
+                            },
+                            "lastAirDate": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "logoPath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "logoUrl": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "networks": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "numberOfEpisodes": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "numberOfSeasons": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "originalLanguage": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "originalName": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "overview": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "posterOverridePath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "posterPath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "posterUrl": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "status": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "tvdbId": {
+                              "type": "number"
+                            },
+                            "updatedAt": {
+                              "type": "string"
+                            },
+                            "voteAverage": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "voteCount": {
+                              "nullable": true,
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "tvdbId",
+                            "name",
+                            "originalName",
+                            "overview",
+                            "firstAirDate",
+                            "lastAirDate",
+                            "status",
+                            "originalLanguage",
+                            "numberOfSeasons",
+                            "numberOfEpisodes",
+                            "episodeRunTime",
+                            "posterPath",
+                            "posterUrl",
+                            "backdropPath",
+                            "backdropUrl",
+                            "logoPath",
+                            "logoUrl",
+                            "posterOverridePath",
+                            "voteAverage",
+                            "voteCount",
+                            "genres",
+                            "networks",
+                            "createdAt",
+                            "updatedAt"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": ["show", "seasons"],
+                      "type": "object"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["data", "created", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Add a TV show to the library by TheTVDB id (idempotent)",
+        "tags": ["library"]
+      }
+    },
+    "/library/tv-shows/{id}": {
+      "patch": {
+        "operationId": "library.refreshTvShow",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "redownloadImages": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "refreshEpisodes": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["redownloadImages", "refreshEpisodes"],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Body"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "seasons": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "airDate": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "episodeCount": {
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "number"
+                              },
+                              "name": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "overview": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "posterPath": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "posterUrl": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "seasonNumber": {
+                                "type": "number"
+                              },
+                              "tvShowId": {
+                                "type": "number"
+                              },
+                              "tvdbId": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "tvShowId",
+                              "tvdbId",
+                              "seasonNumber",
+                              "name",
+                              "overview",
+                              "posterPath",
+                              "posterUrl",
+                              "airDate",
+                              "episodeCount",
+                              "createdAt"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "show": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "backdropPath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "backdropUrl": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "createdAt": {
+                              "type": "string"
+                            },
+                            "episodeRunTime": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "firstAirDate": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "genres": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "id": {
+                              "type": "number"
+                            },
+                            "lastAirDate": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "logoPath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "logoUrl": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "networks": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "numberOfEpisodes": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "numberOfSeasons": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "originalLanguage": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "originalName": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "overview": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "posterOverridePath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "posterPath": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "posterUrl": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "status": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "tvdbId": {
+                              "type": "number"
+                            },
+                            "updatedAt": {
+                              "type": "string"
+                            },
+                            "voteAverage": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "voteCount": {
+                              "nullable": true,
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "tvdbId",
+                            "name",
+                            "originalName",
+                            "overview",
+                            "firstAirDate",
+                            "lastAirDate",
+                            "status",
+                            "originalLanguage",
+                            "numberOfSeasons",
+                            "numberOfEpisodes",
+                            "episodeRunTime",
+                            "posterPath",
+                            "posterUrl",
+                            "backdropPath",
+                            "backdropUrl",
+                            "logoPath",
+                            "logoUrl",
+                            "posterOverridePath",
+                            "voteAverage",
+                            "voteCount",
+                            "genres",
+                            "networks",
+                            "createdAt",
+                            "updatedAt"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": ["show", "seasons"],
+                      "type": "object"
+                    },
+                    "episodesAdded": {
+                      "type": "number"
+                    },
+                    "episodesUpdated": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "seasonsAdded": {
+                      "type": "number"
+                    },
+                    "seasonsUpdated": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "episodesAdded",
+                    "episodesUpdated",
+                    "seasonsAdded",
+                    "seasonsUpdated",
+                    "message"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "200"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "400"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "404"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "409"
+          }
+        },
+        "summary": "Refresh a library TV show from TheTVDB",
         "tags": ["library"]
       }
     },
