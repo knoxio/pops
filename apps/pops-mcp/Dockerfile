@@ -17,11 +17,9 @@ COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
-COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/food-contract/package.json ./packages/food-contract/
 COPY packages/lists-contract/package.json ./packages/lists-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
-COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/food-contracts/package.json ./packages/food-contracts/
 COPY packages/inventory-db/package.json ./packages/inventory-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
@@ -51,9 +49,6 @@ COPY packages/core-db/migrations ./packages/core-db/migrations
 COPY packages/finance-db/src ./packages/finance-db/src
 COPY packages/finance-db/tsconfig.json ./packages/finance-db/
 COPY packages/finance-db/migrations ./packages/finance-db/migrations
-COPY packages/media-db/src ./packages/media-db/src
-COPY packages/media-db/tsconfig.json ./packages/media-db/
-COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/food-contracts/src ./packages/food-contracts/src
 COPY packages/food-contracts/tsconfig.json ./packages/food-contracts/
 COPY packages/inventory-db/src ./packages/inventory-db/src
@@ -72,7 +67,6 @@ COPY packages/finance-contract/ ./packages/finance-contract/
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
 COPY packages/inventory-contract/ ./packages/inventory-contract/
-COPY packages/media-contract/ ./packages/media-contract/
 COPY packages/food-contract/ ./packages/food-contract/
 COPY packages/lists-contract/ ./packages/lists-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
@@ -92,8 +86,6 @@ COPY apps/pops-mcp/src ./apps/pops-mcp/src
 # After PRD-245 US-08 db-types is a leaf constants package — its build
 # order vs the pillars no longer matters; kept here for stable layer cache.
 
-WORKDIR /app/packages/media-db
-RUN pnpm build
 WORKDIR /app/packages/inventory-db
 RUN pnpm build
 WORKDIR /app/packages/app-lists-db
@@ -125,8 +117,6 @@ RUN pnpm build
 WORKDIR /app/packages/core-contract
 RUN pnpm build
 WORKDIR /app/packages/inventory-contract
-RUN pnpm build
-WORKDIR /app/packages/media-contract
 RUN pnpm build
 WORKDIR /app/packages/food-contract
 RUN pnpm build

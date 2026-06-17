@@ -18,8 +18,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 COPY pillars/inventory/package.json ./pillars/inventory/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
-COPY packages/media-contract/package.json ./packages/media-contract/
-COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
 
@@ -38,15 +36,6 @@ COPY packages/core-contract/src ./packages/core-contract/src
 COPY packages/core-contract/scripts ./packages/core-contract/scripts
 COPY packages/core-contract/openapi ./packages/core-contract/openapi
 COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
-# @pops/media-contract
-COPY packages/media-contract/src ./packages/media-contract/src
-COPY packages/media-contract/scripts ./packages/media-contract/scripts
-COPY packages/media-contract/openapi ./packages/media-contract/openapi
-COPY packages/media-contract/tsconfig.json ./packages/media-contract/tsconfig.json
-# @pops/media-db
-COPY packages/media-db/src ./packages/media-db/src
-COPY packages/media-db/migrations ./packages/media-db/migrations
-COPY packages/media-db/tsconfig.json ./packages/media-db/tsconfig.json
 # @pops/pillar-sdk
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json

@@ -21,8 +21,6 @@ COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/finance-contract/package.json ./packages/finance-contract/
 COPY packages/inventory-contract/package.json ./packages/inventory-contract/
-COPY packages/media-contract/package.json ./packages/media-contract/
-COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
 COPY packages/wire-conformance/package.json ./packages/wire-conformance/
@@ -59,15 +57,6 @@ COPY packages/inventory-contract/src ./packages/inventory-contract/src
 COPY packages/inventory-contract/scripts ./packages/inventory-contract/scripts
 COPY packages/inventory-contract/openapi ./packages/inventory-contract/openapi
 COPY packages/inventory-contract/tsconfig.json ./packages/inventory-contract/tsconfig.json
-# @pops/media-contract
-COPY packages/media-contract/src ./packages/media-contract/src
-COPY packages/media-contract/scripts ./packages/media-contract/scripts
-COPY packages/media-contract/openapi ./packages/media-contract/openapi
-COPY packages/media-contract/tsconfig.json ./packages/media-contract/tsconfig.json
-# @pops/media-db
-COPY packages/media-db/src ./packages/media-db/src
-COPY packages/media-db/migrations ./packages/media-db/migrations
-COPY packages/media-db/tsconfig.json ./packages/media-db/tsconfig.json
 # @pops/pillar-sdk
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json
