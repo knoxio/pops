@@ -44,9 +44,7 @@
  * and answers `405 METHOD_NOT_SUPPORTED`. A test-only `fetch` impl
  * rewrites POSTs against the known query-shaped paths into GETs with
  * the input encoded as `?input=…`. The tRPC envelope is identical on
- * both verbs, so the SDK reads `{ result: { data } }` either way. The
- * same workaround is used by
- * `apps/pops-cerebrum-api/src/__tests__/embeddings-sdk-itest.test.ts`.
+ * both verbs, so the SDK reads `{ result: { data } }` either way.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';

@@ -22,8 +22,6 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { manifest as cerebrumEgoManifest } from './modules/cerebrum/ego/index.js';
-import { manifest as cerebrumManifest } from './modules/cerebrum/index.js';
 import { manifest as coreManifest } from './modules/core/index.js';
 import { manifest as financeManifest } from './modules/finance/index.js';
 import {
@@ -68,8 +66,6 @@ describe('PRD-101 US-03 root router composition', () => {
       financeManifest.id,
       mediaManifest.id,
       inventoryManifest.id,
-      cerebrumManifest.id,
-      cerebrumEgoManifest.id,
       // PRD-140 fills `listsRouter` with the lists CRUD procedures, so the
       // `lists` top-level id appears under `appRouter` now.
       listsManifest.id,
@@ -136,8 +132,6 @@ describe('PRD-101 US-03 AppRouter type narrowing (compile-time)', () => {
       financeManifest.id,
       mediaManifest.id,
       inventoryManifest.id,
-      cerebrumManifest.id,
-      cerebrumEgoManifest.id,
       listsManifest.id,
     ]);
     for (const path of routerKeys()) {
@@ -162,7 +156,7 @@ describe('PRD-101 US-03 reduced-install appRouter composition', () => {
     vi.resetModules();
   });
 
-  it('finance-only install set produces an appRouter without media/inventory/cerebrum/ego', async () => {
+  it('finance-only install set produces an appRouter without media/inventory', async () => {
     vi.resetModules();
     vi.doMock('./modules/installed-modules.js', async () => {
       // Re-export everything from the real module, then override
@@ -185,8 +179,6 @@ describe('PRD-101 US-03 reduced-install appRouter composition', () => {
     expect(tops.has(financeManifest.id)).toBe(true);
     expect(tops.has(mediaManifest.id)).toBe(false);
     expect(tops.has(inventoryManifest.id)).toBe(false);
-    expect(tops.has(cerebrumManifest.id)).toBe(false);
-    expect(tops.has(cerebrumEgoManifest.id)).toBe(false);
   });
 
   it('AppRouter type narrows to nested routers for installed module ids only', async () => {
