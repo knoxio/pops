@@ -1,28 +1,42 @@
-import { render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockRankingsQuery = vi.fn();
 const mockDimensionsQuery = vi.fn();
+const mockComparisonsRankings = vi.fn();
 
 vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
+  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
     const key = path.join('.');
-    if (key === 'comparisons.rankings') return mockRankingsQuery(input);
     if (key === 'comparisons.listDimensions') return mockDimensionsQuery();
     return { data: undefined, isLoading: false };
   },
 }));
 
+vi.mock('../media-api/index.js', () => ({
+  comparisonsRankings: (opts: unknown) => mockComparisonsRankings(opts),
+}));
+
 import { RankingsPage } from './RankingsPage';
 
 function renderPage(initialRoute = '/media/rankings') {
-  return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <RankingsPage />
-    </MemoryRouter>
-  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(
+      QueryClientProvider,
+      { client },
+      createElement(MemoryRouter, { initialEntries: [initialRoute] }, children)
+    );
+  return render(<RankingsPage />, { wrapper });
+}
+
+function rankingsResult(data: unknown[], pagination: Record<string, number | boolean>) {
+  return { data: { data, pagination } };
 }
 
 const rankedEntries = [
@@ -74,14 +88,9 @@ function setupDefaults() {
     data: { data: dimensions },
     isLoading: false,
   });
-  mockRankingsQuery.mockReturnValue({
-    data: {
-      data: rankedEntries,
-      pagination: { total: 2, limit: 25, offset: 0, hasMore: false },
-    },
-    isLoading: false,
-    error: null,
-  });
+  mockComparisonsRankings.mockResolvedValue(
+    rankingsResult(rankedEntries, { total: 2, limit: 25, offset: 0, hasMore: false })
+  );
 }
 
 beforeEach(() => {
@@ -90,9 +99,9 @@ beforeEach(() => {
 });
 
 describe('RankingsPage', () => {
-  it('renders the page heading', () => {
+  it('renders the page heading', async () => {
     renderPage();
-    expect(screen.getByRole('heading', { name: 'Rankings' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Rankings' })).toBeInTheDocument();
   });
 
   it('shows loading skeleton when dimensions are loading', () => {
@@ -101,9 +110,9 @@ describe('RankingsPage', () => {
     expect(screen.queryByRole('list', { name: 'Rankings' })).not.toBeInTheDocument();
   });
 
-  it('renders ranked items in order', () => {
+  it('renders ranked items in order', async () => {
     renderPage();
-    const list = screen.getByRole('list', { name: 'Rankings' });
+    const list = await screen.findByRole('list', { name: 'Rankings' });
     const items = within(list).getAllByText(/Movie/);
     expect(items.length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Alpha Movie')).toBeInTheDocument();
@@ -124,42 +133,36 @@ describe('RankingsPage', () => {
     const storyTab = screen.getByRole('tab', { name: 'Story' });
     await user.click(storyTab);
 
-    // After clicking Story, the rankings query should have been called with dimensionId: 1
-    expect(mockRankingsQuery).toHaveBeenCalledWith(expect.objectContaining({ dimensionId: 1 }));
+    await waitFor(() =>
+      expect(mockComparisonsRankings).toHaveBeenCalledWith(
+        expect.objectContaining({ query: expect.objectContaining({ dimensionId: 1 }) })
+      )
+    );
   });
 
-  it('shows empty state when no rankings', () => {
-    mockRankingsQuery.mockReturnValue({
-      data: {
-        data: [],
-        pagination: { total: 0, limit: 25, offset: 0, hasMore: false },
-      },
-      isLoading: false,
-      error: null,
-    });
+  it('shows empty state when no rankings', async () => {
+    mockComparisonsRankings.mockResolvedValue(
+      rankingsResult([], { total: 0, limit: 25, offset: 0, hasMore: false })
+    );
 
     renderPage();
-    expect(screen.getByText(/No rankings yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/No rankings yet/)).toBeInTheDocument();
   });
 
-  it('shows error alert on query failure', () => {
-    mockRankingsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error('fail'),
-    });
+  it('shows error alert on query failure', async () => {
+    mockComparisonsRankings.mockResolvedValue({ error: { message: 'fail' } });
 
     renderPage();
-    expect(screen.getByText('Failed to load rankings.')).toBeInTheDocument();
+    expect(await screen.findByText('Failed to load rankings.')).toBeInTheDocument();
   });
 
-  it('renders score and match count', () => {
+  it('renders score and match count', async () => {
     renderPage();
-    expect(screen.getByText('1532')).toBeInTheDocument();
+    expect(await screen.findByText('1532')).toBeInTheDocument();
     expect(screen.getAllByText('5 matches')).toHaveLength(2);
   });
 
-  it('shows pagination when total exceeds page size', () => {
+  it('shows pagination when total exceeds page size', async () => {
     const manyEntries = Array.from({ length: 25 }, (_, i) => ({
       rank: i + 1,
       mediaType: 'movie',
@@ -172,17 +175,12 @@ describe('RankingsPage', () => {
       confidence: 0.5,
     }));
 
-    mockRankingsQuery.mockReturnValue({
-      data: {
-        data: manyEntries,
-        pagination: { total: 30, limit: 25, offset: 0, hasMore: true },
-      },
-      isLoading: false,
-      error: null,
-    });
+    mockComparisonsRankings.mockResolvedValue(
+      rankingsResult(manyEntries, { total: 30, limit: 25, offset: 0, hasMore: true })
+    );
 
     renderPage();
-    expect(screen.getByText(/Showing 1–25 of 30/)).toBeInTheDocument();
+    expect(await screen.findByText(/Showing 1–25 of 30/)).toBeInTheDocument();
     expect(screen.getByText('Next')).toBeInTheDocument();
   });
 
@@ -206,7 +204,7 @@ describe('RankingsPage', () => {
     expect(overallTab).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('displays medal colors for top 3 ranks', () => {
+  it('displays medal colors for top 3 ranks', async () => {
     const top3 = [
       {
         rank: 1,
@@ -243,32 +241,26 @@ describe('RankingsPage', () => {
       },
     ];
 
-    mockRankingsQuery.mockReturnValue({
-      data: {
-        data: top3,
-        pagination: { total: 3, limit: 25, offset: 0, hasMore: false },
-      },
-      isLoading: false,
-      error: null,
-    });
+    mockComparisonsRankings.mockResolvedValue(
+      rankingsResult(top3, { total: 3, limit: 25, offset: 0, hasMore: false })
+    );
 
     renderPage();
-    expect(screen.getByText('#1')).toBeInTheDocument();
+    expect(await screen.findByText('#1')).toBeInTheDocument();
     expect(screen.getByText('#2')).toBeInTheDocument();
     expect(screen.getByText('#3')).toBeInTheDocument();
   });
 
-  it('displays confidence percentage for items with comparisons', () => {
+  it('displays confidence percentage for items with comparisons', async () => {
     renderPage();
-    // Both entries have confidence 0.59 → 59% conf
-    const confLabels = screen.getAllByText('59% conf');
+    const confLabels = await screen.findAllByText('59% conf');
     expect(confLabels).toHaveLength(2);
   });
 
-  it("shows 'Unknown' for media without metadata", () => {
-    mockRankingsQuery.mockReturnValue({
-      data: {
-        data: [
+  it("shows 'Unknown' for media without metadata", async () => {
+    mockComparisonsRankings.mockResolvedValue(
+      rankingsResult(
+        [
           {
             rank: 1,
             mediaType: 'movie',
@@ -281,14 +273,12 @@ describe('RankingsPage', () => {
             confidence: 0.29,
           },
         ],
-        pagination: { total: 1, limit: 25, offset: 0, hasMore: false },
-      },
-      isLoading: false,
-      error: null,
-    });
+        { total: 1, limit: 25, offset: 0, hasMore: false }
+      )
+    );
 
     renderPage();
-    const unknowns = screen.getAllByText('Unknown');
+    const unknowns = await screen.findAllByText('Unknown');
     expect(unknowns.length).toBeGreaterThanOrEqual(1);
   });
 });

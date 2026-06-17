@@ -1,8 +1,9 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../media-api-helpers.js';
+import { watchHistoryDelete, watchHistoryListRecent } from '../../media-api/index.js';
 import { PAGE_SIZE, type HistoryEntry, type MediaTypeFilter } from './types';
 
 interface WatchHistoryListResult {
@@ -19,26 +20,24 @@ function useDeleteFlow({
   offset: number;
   setOffset: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const utils = usePillarUtils('media');
+  const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  const deleteMutation = usePillarMutation<{ id: number }, unknown>(
-    'media',
-    ['watchHistory', 'delete'],
-    {
-      onSuccess: () => {
-        toast.success('Watch event removed');
-        void utils.invalidate(['watchHistory']);
-        void utils.invalidate(['watchlist']);
-        if (entriesLength === 1 && offset > 0) {
-          setOffset(Math.max(0, offset - PAGE_SIZE));
-        }
-      },
-      onError: (err) => {
-        toast.error(`Failed to delete watch event: ${err.message}`);
-      },
-    }
-  );
+  const deleteMutation = useMutation({
+    mutationFn: async (input: { id: number }) =>
+      unwrap(await watchHistoryDelete({ path: { id: input.id } })),
+    onSuccess: () => {
+      toast.success('Watch event removed');
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchHistory'] });
+      void queryClient.invalidateQueries({ queryKey: ['media', 'watchlist'] });
+      if (entriesLength === 1 && offset > 0) {
+        setOffset(Math.max(0, offset - PAGE_SIZE));
+      }
+    },
+    onError: (err: Error) => {
+      toast.error(`Failed to delete watch event: ${err.message}`);
+    },
+  });
 
   const handleDeleteClick = useCallback((id: number) => setDeleteTarget(id), []);
   const handleDeleteConfirm = useCallback(() => {
@@ -60,11 +59,10 @@ export function useHistoryPageModel() {
     offset,
   };
 
-  const { data, isLoading, error } = usePillarQuery<WatchHistoryListResult>(
-    'media',
-    ['watchHistory', 'listRecent'],
-    queryInput
-  );
+  const { data, isLoading, error } = useQuery<WatchHistoryListResult>({
+    queryKey: ['media', 'watchHistory', 'listRecent', queryInput],
+    queryFn: async () => unwrap(await watchHistoryListRecent({ query: queryInput })),
+  });
 
   const entries = data?.data ?? [];
   const total = data?.pagination?.total ?? 0;
