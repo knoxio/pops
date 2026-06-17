@@ -12,9 +12,7 @@ COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/core-db/package.json ./packages/core-db/
 COPY packages/cerebrum-contract/package.json ./packages/cerebrum-contract/
 COPY packages/core-contract/package.json ./packages/core-contract/
-COPY packages/media-contract/package.json ./packages/media-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
-COPY packages/media-db/package.json ./packages/media-db/
 COPY packages/cerebrum-db/package.json ./packages/cerebrum-db/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
@@ -32,15 +30,11 @@ COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.bu
 COPY packages/core-db/src ./packages/core-db/src
 COPY packages/core-db/tsconfig.json ./packages/core-db/
 COPY packages/core-db/migrations ./packages/core-db/migrations
-COPY packages/media-db/src ./packages/media-db/src
-COPY packages/media-db/tsconfig.json ./packages/media-db/
-COPY packages/media-db/migrations ./packages/media-db/migrations
 COPY packages/cerebrum-db/src ./packages/cerebrum-db/src
 COPY packages/cerebrum-db/tsconfig.json ./packages/cerebrum-db/
 COPY packages/cerebrum-db/migrations ./packages/cerebrum-db/migrations
 COPY packages/cerebrum-contract/ ./packages/cerebrum-contract/
 COPY packages/core-contract/ ./packages/core-contract/
-COPY packages/media-contract/ ./packages/media-contract/
 COPY packages/pillar-sdk/ ./packages/pillar-sdk/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
@@ -50,8 +44,6 @@ COPY apps/pops-api/scripts ./apps/pops-api/scripts
 # packages own their schemas and `@pops/db-types` is a leaf constants
 # package — order between db-types and the pillars no longer matters.
 WORKDIR /app/packages/db-types
-RUN pnpm build
-WORKDIR /app/packages/media-db
 RUN pnpm build
 WORKDIR /app/packages/cerebrum-db
 RUN pnpm build
@@ -64,8 +56,6 @@ RUN pnpm build
 WORKDIR /app/packages/cerebrum-contract
 RUN pnpm build
 WORKDIR /app/packages/core-contract
-RUN pnpm build
-WORKDIR /app/packages/media-contract
 RUN pnpm build
 WORKDIR /app/packages/pillar-sdk
 RUN pnpm build
@@ -101,9 +91,6 @@ COPY --from=builder /app/packages/module-registry/package.json ./node_modules/@p
 COPY --from=builder /app/packages/core-db/dist ./node_modules/@pops/core-db/dist
 COPY --from=builder /app/packages/core-db/package.json ./node_modules/@pops/core-db/
 COPY --from=builder /app/packages/core-db/migrations ./node_modules/@pops/core-db/migrations
-COPY --from=builder /app/packages/media-db/dist ./node_modules/@pops/media-db/dist
-COPY --from=builder /app/packages/media-db/package.json ./node_modules/@pops/media-db/
-COPY --from=builder /app/packages/media-db/migrations ./node_modules/@pops/media-db/migrations
 COPY --from=builder /app/packages/cerebrum-db/dist ./node_modules/@pops/cerebrum-db/dist
 COPY --from=builder /app/packages/cerebrum-db/package.json ./node_modules/@pops/cerebrum-db/
 COPY --from=builder /app/packages/cerebrum-db/migrations ./node_modules/@pops/cerebrum-db/migrations

@@ -82,6 +82,14 @@ module.exports = {
       from: { path: '.*' },
       to: { path: '^@pops/(cerebrum-db|cerebrum-contract|cerebrum-api)(/|$)' },
     },
+    {
+      name: 'no-dead-media-pkgs',
+      severity: 'error',
+      comment:
+        'Media is collapsing into `pillars/media/` — `@pops/app-media-db`, `@pops/media-db`, `@pops/media-contract`, and `@pops/media-api` are the retirement tombstone (deleted once the pops-api media module is gone). No new code may import them; consumers go through `@pops/media` (contract types + api-types + openapi) and the media REST API for cross-pillar calls. Existing pops-api media-module imports are grandfathered in the known-violations baseline until they are removed.',
+      from: { path: '.*' },
+      to: { path: '^@pops/(app-media-db|media-db|media-contract|media-api)(/|$)' },
+    },
     ...contractBoundaryRules,
   ],
   options: {
