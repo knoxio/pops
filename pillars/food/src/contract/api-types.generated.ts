@@ -3437,7 +3437,119 @@ export interface operations {
             | {
                 /** @enum {boolean} */
                 ok: true;
-                review: unknown;
+                review: {
+                  draft: {
+                    bodyDsl: string;
+                    compileError: {
+                      errorCount: number;
+                      errors: {
+                        code: string;
+                        loc?: {
+                          endCol: number;
+                          endLine: number;
+                          startCol: number;
+                          startLine: number;
+                        };
+                        message: string;
+                      }[];
+                      /** @enum {string} */
+                      phase: 'parse' | 'resolve' | 'cycle' | 'materialise';
+                      proposedSlugsCount: number;
+                    } | null;
+                    /** @enum {string} */
+                    compileStatus: 'uncompiled' | 'compiled' | 'failed';
+                    compiledAt: string | null;
+                    creations: {
+                      createdAt: string;
+                      /** @enum {string} */
+                      defaultUnit: 'g' | 'ml' | 'count';
+                      /** @enum {string} */
+                      kind: 'ingredient' | 'variant';
+                      parentIngredientSlug: string | null;
+                      slug: string;
+                    }[];
+                    proposedSlugs: {
+                      createdAt: string;
+                      fromLoc: {
+                        endCol: number;
+                        endLine: number;
+                        startCol: number;
+                        startLine: number;
+                      };
+                      slug: string;
+                      /** @enum {string|null} */
+                      suggestedKind: 'ingredient' | 'recipe' | 'prep_state' | null;
+                    }[];
+                    quality: {
+                      /** @enum {string} */
+                      band: 'clean' | 'minor' | 'attention' | 'blocked';
+                      score: number;
+                      signals: {
+                        code: string;
+                        detail?: string;
+                        weight: number;
+                      }[];
+                    };
+                    recipeArchivedAt: string | null;
+                    recipeSlug: string;
+                    rejection: {
+                      note: string | null;
+                      /** @enum {string} */
+                      reason:
+                        | 'wrong-recipe'
+                        | 'low-quality-extraction'
+                        | 'duplicate'
+                        | 'not-a-recipe'
+                        | 'other';
+                      rejectedAt: string;
+                    } | null;
+                    /** @enum {string} */
+                    status: 'draft' | 'current' | 'archived';
+                    title: string | null;
+                    versionId: number;
+                    versionNo: number;
+                  } | null;
+                  source: {
+                    archivedAt: string | null;
+                    attempts: number;
+                    caption: string | null;
+                    errorCode: string | null;
+                    errorMessage: string | null;
+                    extractorVersion: string;
+                    id: number;
+                    inferenceLogs: {
+                      cached: boolean;
+                      costUsd: number;
+                      createdAt: string;
+                      inputTokens: number;
+                      latencyMs: number;
+                      model: string;
+                      operation: string;
+                      outputTokens: number;
+                      provider: string;
+                      status: string;
+                    }[];
+                    ingestedAt: string;
+                    /** @enum {string} */
+                    kind: 'url-web' | 'url-instagram' | 'text' | 'screenshot';
+                    meta: {
+                      [key: string]: unknown;
+                    } | null;
+                    /** @enum {string} */
+                    partialReason?:
+                      | 'auth-dead'
+                      | 'rate-limited'
+                      | 'stt-failed'
+                      | 'vision-failed'
+                      | 'caption-only-fallback'
+                      | 'empty-extraction';
+                    reviewedAt: string | null;
+                    /** @enum {string} */
+                    state: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
+                    totalCostUsd: number;
+                    url: string | null;
+                  };
+                };
               }
             | {
                 /** @enum {boolean} */
@@ -5137,7 +5249,32 @@ export interface operations {
         };
         content: {
           'application/json': {
-            compile: unknown;
+            compile:
+              | {
+                  creationCount: number;
+                  lineCount: number;
+                  /** @enum {boolean} */
+                  ok: true;
+                  stepCount: number;
+                }
+              | {
+                  readonly errors: {
+                    cause?: string;
+                    code: string;
+                    loc?: {
+                      endCol: number;
+                      endLine: number;
+                      startCol: number;
+                      startLine: number;
+                    };
+                    message: string;
+                    slug?: string;
+                  }[];
+                  /** @enum {boolean} */
+                  ok: false;
+                  /** @enum {string} */
+                  phase: 'parse' | 'resolve' | 'cycle' | 'materialise';
+                };
             recipeId: number;
             slug: string;
             versionId: number;
@@ -5277,7 +5414,32 @@ export interface operations {
         };
         content: {
           'application/json': {
-            compile: unknown;
+            compile:
+              | {
+                  creationCount: number;
+                  lineCount: number;
+                  /** @enum {boolean} */
+                  ok: true;
+                  stepCount: number;
+                }
+              | {
+                  readonly errors: {
+                    cause?: string;
+                    code: string;
+                    loc?: {
+                      endCol: number;
+                      endLine: number;
+                      startCol: number;
+                      startLine: number;
+                    };
+                    message: string;
+                    slug?: string;
+                  }[];
+                  /** @enum {boolean} */
+                  ok: false;
+                  /** @enum {string} */
+                  phase: 'parse' | 'resolve' | 'cycle' | 'materialise';
+                };
           };
         };
       };
@@ -5413,7 +5575,12 @@ export interface operations {
           'application/json': {
             items: {
               createdAt: string;
-              fromLoc: unknown;
+              fromLoc: {
+                endCol: number;
+                endLine: number;
+                startCol: number;
+                startLine: number;
+              };
               slug: string;
               /** @enum {string|null} */
               suggestedKind: 'ingredient' | 'recipe' | 'prep_state' | null;
@@ -5789,7 +5956,117 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': unknown;
+          'application/json': {
+            lines: {
+              /** @enum {string} */
+              canonicalUnit: 'g' | 'ml' | 'count';
+              id: number;
+              ingredientId: number;
+              ingredientName: string;
+              ingredientSlug: string;
+              isRecipeRef: boolean;
+              notes: string | null;
+              optional: boolean;
+              originalQty: number;
+              originalText: string;
+              originalUnit: string;
+              position: number;
+              prepStateId: number | null;
+              prepStateName: string | null;
+              prepStateSlug: string | null;
+              qtyCount: number | null;
+              qtyG: number | null;
+              qtyMl: number | null;
+              recipeRefId: number | null;
+              recipeRefSlug: string | null;
+              recipeRefTitle: string | null;
+              variantId: number | null;
+              variantName: string | null;
+              variantSlug: string | null;
+            }[];
+            recipe: {
+              archivedAt: string | null;
+              createdAt: string;
+              currentVersionId: number | null;
+              heroImagePath: string | null;
+              id: number;
+              /** @enum {string} */
+              recipeType:
+                | 'plate'
+                | 'component'
+                | 'technique'
+                | 'sauce'
+                | 'dressing'
+                | 'drink'
+                | 'condiment';
+              slug: string;
+            };
+            steps: {
+              bodyMd: string;
+              bodyResolvedJson: string;
+              durationMinutes: number | null;
+              id: number;
+              position: number;
+              recipeVersionId: number;
+              /** @enum {string|null} */
+              temperatureUnit: 'c' | 'f' | 'gas' | null;
+              temperatureValue: number | null;
+            }[];
+            tags: string[];
+            version: {
+              bodyDsl: string;
+              compileError: string | null;
+              /** @enum {string} */
+              compileStatus: 'uncompiled' | 'compiled' | 'failed';
+              compiledAt: string | null;
+              cookMinutes: number | null;
+              createdAt: string;
+              id: number;
+              prepMinutes: number | null;
+              recipeId: number;
+              servings: number | null;
+              sourceId: number | null;
+              /** @enum {string} */
+              status: 'draft' | 'current' | 'archived';
+              summary: string | null;
+              title: string;
+              versionNo: number;
+              yieldIngredientId: number | null;
+              yieldPrepStateId: number | null;
+              yieldQty: number | null;
+              yieldUnit: string | null;
+              yieldVariantId: number | null;
+            };
+            yieldIngredient: {
+              createdAt: string;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              densityGPerMl: number | null;
+              id: number;
+              name: string;
+              notes: string | null;
+              parentId: number | null;
+              slug: string;
+            } | null;
+            yieldPrepState: {
+              id: number;
+              name: string;
+              slug: string;
+            } | null;
+            yieldVariant: {
+              createdAt: string;
+              defaultShelfLifeDaysFreezer: number | null;
+              defaultShelfLifeDaysFridge: number | null;
+              /** @enum {string} */
+              defaultUnit: 'g' | 'ml' | 'count';
+              id: number;
+              ingredientId: number;
+              name: string;
+              notes: string | null;
+              packageSizeG: number | null;
+              slug: string;
+            } | null;
+          };
         };
       };
       /** @description 400 */

@@ -4671,7 +4671,438 @@
                           "enum": [true],
                           "type": "boolean"
                         },
-                        "review": {}
+                        "review": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "draft": {
+                              "additionalProperties": false,
+                              "nullable": true,
+                              "properties": {
+                                "bodyDsl": {
+                                  "type": "string"
+                                },
+                                "compileError": {
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "properties": {
+                                    "errorCount": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": -9007199254740991,
+                                      "type": "integer"
+                                    },
+                                    "errors": {
+                                      "items": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "code": {
+                                            "type": "string"
+                                          },
+                                          "loc": {
+                                            "additionalProperties": false,
+                                            "properties": {
+                                              "endCol": {
+                                                "maximum": 9007199254740991,
+                                                "minimum": -9007199254740991,
+                                                "type": "integer"
+                                              },
+                                              "endLine": {
+                                                "maximum": 9007199254740991,
+                                                "minimum": -9007199254740991,
+                                                "type": "integer"
+                                              },
+                                              "startCol": {
+                                                "maximum": 9007199254740991,
+                                                "minimum": -9007199254740991,
+                                                "type": "integer"
+                                              },
+                                              "startLine": {
+                                                "maximum": 9007199254740991,
+                                                "minimum": -9007199254740991,
+                                                "type": "integer"
+                                              }
+                                            },
+                                            "required": [
+                                              "startLine",
+                                              "startCol",
+                                              "endLine",
+                                              "endCol"
+                                            ],
+                                            "type": "object"
+                                          },
+                                          "message": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": ["code", "message"],
+                                        "type": "object"
+                                      },
+                                      "type": "array"
+                                    },
+                                    "phase": {
+                                      "enum": ["parse", "resolve", "cycle", "materialise"],
+                                      "type": "string"
+                                    },
+                                    "proposedSlugsCount": {
+                                      "maximum": 9007199254740991,
+                                      "minimum": -9007199254740991,
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "phase",
+                                    "errors",
+                                    "errorCount",
+                                    "proposedSlugsCount"
+                                  ],
+                                  "type": "object"
+                                },
+                                "compileStatus": {
+                                  "enum": ["uncompiled", "compiled", "failed"],
+                                  "type": "string"
+                                },
+                                "compiledAt": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "creations": {
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "createdAt": {
+                                        "type": "string"
+                                      },
+                                      "defaultUnit": {
+                                        "enum": ["g", "ml", "count"],
+                                        "type": "string"
+                                      },
+                                      "kind": {
+                                        "enum": ["ingredient", "variant"],
+                                        "type": "string"
+                                      },
+                                      "parentIngredientSlug": {
+                                        "nullable": true,
+                                        "type": "string"
+                                      },
+                                      "slug": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "slug",
+                                      "parentIngredientSlug",
+                                      "defaultUnit",
+                                      "createdAt"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "type": "array"
+                                },
+                                "proposedSlugs": {
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "createdAt": {
+                                        "type": "string"
+                                      },
+                                      "fromLoc": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "endCol": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": -9007199254740991,
+                                            "type": "integer"
+                                          },
+                                          "endLine": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": -9007199254740991,
+                                            "type": "integer"
+                                          },
+                                          "startCol": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": -9007199254740991,
+                                            "type": "integer"
+                                          },
+                                          "startLine": {
+                                            "maximum": 9007199254740991,
+                                            "minimum": -9007199254740991,
+                                            "type": "integer"
+                                          }
+                                        },
+                                        "required": ["startLine", "startCol", "endLine", "endCol"],
+                                        "type": "object"
+                                      },
+                                      "slug": {
+                                        "type": "string"
+                                      },
+                                      "suggestedKind": {
+                                        "enum": ["ingredient", "recipe", "prep_state"],
+                                        "nullable": true,
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["slug", "suggestedKind", "fromLoc", "createdAt"],
+                                    "type": "object"
+                                  },
+                                  "type": "array"
+                                },
+                                "quality": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "band": {
+                                      "enum": ["clean", "minor", "attention", "blocked"],
+                                      "type": "string"
+                                    },
+                                    "score": {
+                                      "type": "number"
+                                    },
+                                    "signals": {
+                                      "items": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "code": {
+                                            "type": "string"
+                                          },
+                                          "detail": {
+                                            "type": "string"
+                                          },
+                                          "weight": {
+                                            "type": "number"
+                                          }
+                                        },
+                                        "required": ["code", "weight"],
+                                        "type": "object"
+                                      },
+                                      "type": "array"
+                                    }
+                                  },
+                                  "required": ["band", "score", "signals"],
+                                  "type": "object"
+                                },
+                                "recipeArchivedAt": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "recipeSlug": {
+                                  "type": "string"
+                                },
+                                "rejection": {
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "properties": {
+                                    "note": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "reason": {
+                                      "enum": [
+                                        "wrong-recipe",
+                                        "low-quality-extraction",
+                                        "duplicate",
+                                        "not-a-recipe",
+                                        "other"
+                                      ],
+                                      "type": "string"
+                                    },
+                                    "rejectedAt": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["reason", "note", "rejectedAt"],
+                                  "type": "object"
+                                },
+                                "status": {
+                                  "enum": ["draft", "current", "archived"],
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "versionId": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                },
+                                "versionNo": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "versionId",
+                                "versionNo",
+                                "recipeSlug",
+                                "recipeArchivedAt",
+                                "status",
+                                "title",
+                                "bodyDsl",
+                                "compileStatus",
+                                "compileError",
+                                "compiledAt",
+                                "rejection",
+                                "proposedSlugs",
+                                "creations",
+                                "quality"
+                              ],
+                              "type": "object"
+                            },
+                            "source": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "archivedAt": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "attempts": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                },
+                                "caption": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "errorCode": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "errorMessage": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "extractorVersion": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "maximum": 9007199254740991,
+                                  "minimum": -9007199254740991,
+                                  "type": "integer"
+                                },
+                                "inferenceLogs": {
+                                  "items": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "cached": {
+                                        "type": "boolean"
+                                      },
+                                      "costUsd": {
+                                        "type": "number"
+                                      },
+                                      "createdAt": {
+                                        "type": "string"
+                                      },
+                                      "inputTokens": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "latencyMs": {
+                                        "type": "number"
+                                      },
+                                      "model": {
+                                        "type": "string"
+                                      },
+                                      "operation": {
+                                        "type": "string"
+                                      },
+                                      "outputTokens": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "provider": {
+                                        "type": "string"
+                                      },
+                                      "status": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "operation",
+                                      "provider",
+                                      "model",
+                                      "costUsd",
+                                      "inputTokens",
+                                      "outputTokens",
+                                      "latencyMs",
+                                      "status",
+                                      "cached",
+                                      "createdAt"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "type": "array"
+                                },
+                                "ingestedAt": {
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "enum": ["url-web", "url-instagram", "text", "screenshot"],
+                                  "type": "string"
+                                },
+                                "meta": {
+                                  "additionalProperties": {},
+                                  "nullable": true,
+                                  "type": "object"
+                                },
+                                "partialReason": {
+                                  "enum": [
+                                    "auth-dead",
+                                    "rate-limited",
+                                    "stt-failed",
+                                    "vision-failed",
+                                    "caption-only-fallback",
+                                    "empty-extraction"
+                                  ],
+                                  "type": "string"
+                                },
+                                "reviewedAt": {
+                                  "nullable": true,
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "enum": [
+                                    "pending",
+                                    "processing",
+                                    "completed",
+                                    "failed",
+                                    "partial"
+                                  ],
+                                  "type": "string"
+                                },
+                                "totalCostUsd": {
+                                  "type": "number"
+                                },
+                                "url": {
+                                  "nullable": true,
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "url",
+                                "caption",
+                                "ingestedAt",
+                                "extractorVersion",
+                                "state",
+                                "reviewedAt",
+                                "archivedAt",
+                                "errorCode",
+                                "errorMessage",
+                                "attempts",
+                                "meta",
+                                "inferenceLogs",
+                                "totalCostUsd"
+                              ],
+                              "type": "object"
+                            }
+                          },
+                          "required": ["source", "draft"],
+                          "type": "object"
+                        }
                       },
                       "required": ["ok", "review"],
                       "type": "object"
@@ -8194,7 +8625,101 @@
                 "schema": {
                   "additionalProperties": false,
                   "properties": {
-                    "compile": {},
+                    "compile": {
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "creationCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "lineCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "ok": {
+                              "enum": [true],
+                              "type": "boolean"
+                            },
+                            "stepCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            }
+                          },
+                          "required": ["ok", "lineCount", "stepCount", "creationCount"],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "errors": {
+                              "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "cause": {
+                                    "type": "string"
+                                  },
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "loc": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "endCol": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "endLine": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "startCol": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "startLine": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": ["startLine", "startCol", "endLine", "endCol"],
+                                    "type": "object"
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["code", "message"],
+                                "type": "object"
+                              },
+                              "readOnly": true,
+                              "type": "array"
+                            },
+                            "ok": {
+                              "enum": [false],
+                              "type": "boolean"
+                            },
+                            "phase": {
+                              "enum": ["parse", "resolve", "cycle", "materialise"],
+                              "type": "string"
+                            }
+                          },
+                          "required": ["ok", "phase", "errors"],
+                          "type": "object"
+                        }
+                      ]
+                    },
                     "recipeId": {
                       "maximum": 9007199254740991,
                       "minimum": -9007199254740991,
@@ -8501,7 +9026,101 @@
                 "schema": {
                   "additionalProperties": false,
                   "properties": {
-                    "compile": {}
+                    "compile": {
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "creationCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "lineCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            },
+                            "ok": {
+                              "enum": [true],
+                              "type": "boolean"
+                            },
+                            "stepCount": {
+                              "maximum": 9007199254740991,
+                              "minimum": -9007199254740991,
+                              "type": "integer"
+                            }
+                          },
+                          "required": ["ok", "lineCount", "stepCount", "creationCount"],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "errors": {
+                              "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "cause": {
+                                    "type": "string"
+                                  },
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "loc": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "endCol": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "endLine": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "startCol": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      },
+                                      "startLine": {
+                                        "maximum": 9007199254740991,
+                                        "minimum": -9007199254740991,
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": ["startLine", "startCol", "endLine", "endCol"],
+                                    "type": "object"
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["code", "message"],
+                                "type": "object"
+                              },
+                              "readOnly": true,
+                              "type": "array"
+                            },
+                            "ok": {
+                              "enum": [false],
+                              "type": "boolean"
+                            },
+                            "phase": {
+                              "enum": ["parse", "resolve", "cycle", "materialise"],
+                              "type": "string"
+                            }
+                          },
+                          "required": ["ok", "phase", "errors"],
+                          "type": "object"
+                        }
+                      ]
+                    }
                   },
                   "required": ["compile"],
                   "type": "object"
@@ -8746,7 +9365,33 @@
                           "createdAt": {
                             "type": "string"
                           },
-                          "fromLoc": {},
+                          "fromLoc": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "endCol": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "endLine": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "startCol": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              },
+                              "startLine": {
+                                "maximum": 9007199254740991,
+                                "minimum": -9007199254740991,
+                                "type": "integer"
+                              }
+                            },
+                            "required": ["startLine", "startCol", "endLine", "endCol"],
+                            "type": "object"
+                          },
                           "slug": {
                             "type": "string"
                           },
@@ -9548,7 +10193,520 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "lines": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "canonicalUnit": {
+                            "enum": ["g", "ml", "count"],
+                            "type": "string"
+                          },
+                          "id": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "ingredientId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "ingredientName": {
+                            "type": "string"
+                          },
+                          "ingredientSlug": {
+                            "type": "string"
+                          },
+                          "isRecipeRef": {
+                            "type": "boolean"
+                          },
+                          "notes": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "optional": {
+                            "type": "boolean"
+                          },
+                          "originalQty": {
+                            "type": "number"
+                          },
+                          "originalText": {
+                            "type": "string"
+                          },
+                          "originalUnit": {
+                            "type": "string"
+                          },
+                          "position": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "prepStateId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "prepStateName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "prepStateSlug": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "qtyCount": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "qtyG": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "qtyMl": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "recipeRefId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "recipeRefSlug": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "recipeRefTitle": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "variantId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "variantName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "variantSlug": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "position",
+                          "ingredientId",
+                          "variantId",
+                          "prepStateId",
+                          "isRecipeRef",
+                          "recipeRefId",
+                          "originalText",
+                          "originalQty",
+                          "originalUnit",
+                          "qtyG",
+                          "qtyMl",
+                          "qtyCount",
+                          "canonicalUnit",
+                          "optional",
+                          "notes",
+                          "ingredientName",
+                          "ingredientSlug",
+                          "variantName",
+                          "variantSlug",
+                          "prepStateName",
+                          "prepStateSlug",
+                          "recipeRefSlug",
+                          "recipeRefTitle"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "recipe": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "archivedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "currentVersionId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "heroImagePath": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "recipeType": {
+                          "enum": [
+                            "plate",
+                            "component",
+                            "technique",
+                            "sauce",
+                            "dressing",
+                            "drink",
+                            "condiment"
+                          ],
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "slug",
+                        "recipeType",
+                        "currentVersionId",
+                        "heroImagePath",
+                        "archivedAt",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "steps": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "bodyMd": {
+                            "type": "string"
+                          },
+                          "bodyResolvedJson": {
+                            "type": "string"
+                          },
+                          "durationMinutes": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "id": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "position": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "recipeVersionId": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "temperatureUnit": {
+                            "enum": ["c", "f", "gas"],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "temperatureValue": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "recipeVersionId",
+                          "position",
+                          "bodyMd",
+                          "bodyResolvedJson",
+                          "durationMinutes",
+                          "temperatureValue",
+                          "temperatureUnit"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "version": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "bodyDsl": {
+                          "type": "string"
+                        },
+                        "compileError": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "compileStatus": {
+                          "enum": ["uncompiled", "compiled", "failed"],
+                          "type": "string"
+                        },
+                        "compiledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "cookMinutes": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "prepMinutes": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "recipeId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "servings": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "sourceId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "status": {
+                          "enum": ["draft", "current", "archived"],
+                          "type": "string"
+                        },
+                        "summary": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "versionNo": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "yieldIngredientId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "yieldPrepStateId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "yieldQty": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "yieldUnit": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "yieldVariantId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "recipeId",
+                        "versionNo",
+                        "status",
+                        "title",
+                        "summary",
+                        "bodyDsl",
+                        "yieldIngredientId",
+                        "yieldVariantId",
+                        "yieldPrepStateId",
+                        "yieldQty",
+                        "yieldUnit",
+                        "servings",
+                        "prepMinutes",
+                        "cookMinutes",
+                        "sourceId",
+                        "compileStatus",
+                        "compileError",
+                        "compiledAt",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "yieldIngredient": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "defaultUnit": {
+                          "enum": ["g", "ml", "count"],
+                          "type": "string"
+                        },
+                        "densityGPerMl": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "parentId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "slug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "parentId",
+                        "name",
+                        "slug",
+                        "defaultUnit",
+                        "densityGPerMl",
+                        "notes",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "yieldPrepState": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "name", "slug"],
+                      "type": "object"
+                    },
+                    "yieldVariant": {
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "properties": {
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "defaultShelfLifeDaysFreezer": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "defaultShelfLifeDaysFridge": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "defaultUnit": {
+                          "enum": ["g", "ml", "count"],
+                          "type": "string"
+                        },
+                        "id": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "ingredientId": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "packageSizeG": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "slug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "ingredientId",
+                        "name",
+                        "slug",
+                        "defaultUnit",
+                        "packageSizeG",
+                        "notes",
+                        "defaultShelfLifeDaysFridge",
+                        "defaultShelfLifeDaysFreezer",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "version",
+                    "recipe",
+                    "lines",
+                    "steps",
+                    "yieldIngredient",
+                    "yieldVariant",
+                    "yieldPrepState",
+                    "tags"
+                  ],
+                  "type": "object"
+                }
               }
             },
             "description": "200"
