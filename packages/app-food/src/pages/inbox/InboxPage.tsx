@@ -8,12 +8,13 @@
  * The Rejected + Failed tab content lands from PRD-138 (already on `main`).
  * This PRD owns the shell + the Drafts tab + the URL plumbing.
  */
+import { useQuery } from '@tanstack/react-query';
 import { type ReactElement, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useLocation, useNavigate } from 'react-router';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../food-api-helpers.js';
+import { inboxPendingCount } from '../../food-api/index.js';
 import { decodeFiltersHash, encodeFiltersHash, type DraftsFiltersState } from './drafts-filters.js';
 import { DraftsTab } from './DraftsTab.js';
 import { FailedTab } from './FailedTab.js';
@@ -21,12 +22,7 @@ import { DEFAULT_INBOX_TAB, type InboxTabKey, parseTabKey } from './inbox-tabs.j
 import { InboxLayout } from './InboxLayout.js';
 import { RejectedTab } from './RejectedTab.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
 import type { NavigateFunction } from 'react-router';
-
-import type { AppRouter } from '@pops/api';
-
-type InboxPendingCountOutput = inferRouterOutputs<AppRouter>['food']['inbox']['pendingCount'];
 
 interface Props {
   /** Override "now" so tests can pin relative-time strings. */
@@ -72,15 +68,12 @@ export function InboxPage({ now }: Props = {}): ReactElement {
 }
 
 function usePendingCount(): number | null {
-  const query = usePillarQuery<InboxPendingCountOutput>(
-    'food',
-    ['inbox', 'pendingCount'],
-    undefined,
-    {
-      refetchInterval: 60_000,
-      refetchIntervalInBackground: false,
-    }
-  );
+  const query = useQuery({
+    queryKey: ['food', 'inbox', 'pendingCount'],
+    queryFn: async () => unwrap(await inboxPendingCount()),
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+  });
   return query.data?.count ?? null;
 }
 

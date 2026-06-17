@@ -75,10 +75,10 @@ describe('ViewSourceDialog — PRD-138', () => {
     expect(iframe).toHaveAttribute('src', 'https://example.com/recipes/123');
   });
 
-  it('renders an <img> for screenshot kind pointing at /api/food/ingest/source/:id/screenshot', () => {
+  it('renders an <img> for screenshot kind pointing at /food-api/ingest/source/:id/screenshot', () => {
     renderDialog(row({ ingestKind: 'screenshot', sourceUrl: null, sourceId: 99 }));
     const img = screen.getByRole('img', { name: 'Ingested screenshot' });
-    expect(img).toHaveAttribute('src', '/api/food/ingest/source/99/screenshot');
+    expect(img).toHaveAttribute('src', '/food-api/ingest/source/99/screenshot');
   });
 
   it('renders the placeholder copy for text kind', () => {

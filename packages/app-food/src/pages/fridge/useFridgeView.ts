@@ -1,25 +1,25 @@
 /**
- * tRPC client wrapper for `food.fridge.view` — PRD-147.
+ * REST client wrapper for `fridge.view` — PRD-147.
  *
  * Owns the cache key for the fridge query so the mutation handlers in
  * the sibling modals can invalidate one place when a batch changes.
  */
-import { usePillarQuery } from '@pops/pillar-sdk/react';
+import { useQuery } from '@tanstack/react-query';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../food-api-helpers.js';
+import { fridgeView } from '../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
-import type { FridgeView } from '@pops/app-food-db';
+import type { FridgeViewResponses } from '../../food-api/types.gen.js';
 
-type FridgeViewOutput = inferRouterOutputs<AppRouter>['food']['fridge']['view'];
+type FridgeViewOutput = FridgeViewResponses[200];
 
 /**
  * PRD-147's overview blurb mentions a prep-state filter, but the spec
- * body (filter chips, `food.fridge.view` Zod schema) does not enumerate
- * one. Treating it as a documented deferral for v1 — re-instate by
- * adding `prepStateId` here, in `FridgeViewInputSchema`, and a SQL
- * `prep_state_id =` clause in `view-query.ts` once the design picks a
- * single-select vs multi-select shape.
+ * body (filter chips, `fridge.view` schema) does not enumerate one.
+ * Treating it as a documented deferral for v1 — re-instate by adding
+ * `prepStateId` here, in the request body, and a SQL `prep_state_id =`
+ * clause in `view-query.ts` once the design picks a single-select vs
+ * multi-select shape.
  */
 export interface FridgeFilterState {
   search: string;
@@ -43,7 +43,7 @@ interface UseFridgeViewArgs {
 }
 
 export interface UseFridgeViewResult {
-  data: FridgeView | undefined;
+  data: FridgeViewOutput | undefined;
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
@@ -62,7 +62,10 @@ export function useFridgeView({
     includeDeleted: filters.showAll || undefined,
   };
 
-  const query = usePillarQuery<FridgeViewOutput>('food', ['fridge', 'view'], input);
+  const query = useQuery({
+    queryKey: ['food', 'fridge', 'view', input],
+    queryFn: async () => unwrap(await fridgeView({ body: input })),
+  });
 
   return {
     data: query.data,

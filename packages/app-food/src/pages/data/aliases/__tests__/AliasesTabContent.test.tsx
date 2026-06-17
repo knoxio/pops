@@ -1,13 +1,13 @@
 /**
  * RTL coverage for `/food/data/aliases` (PRD-122-C).
  *
- * `vi.mock('@pops/pillar-sdk/react', ...)` is declared at the top level so
- * vitest can hoist it (a helper function-wrapped mock works but
- * produces a deprecation warning). Each procedure's behaviour reads
- * from the module-scoped `state` object so tests can seed + assert
- * via mutable handles.
+ * The food SDK is mocked at the top level so vitest can hoist it. Each
+ * SDK fn reads + records against the module-scoped `state` object so
+ * tests can seed and assert via mutable handles. Mutations resolve
+ * asynchronously, so call assertions are wrapped in `waitFor`.
  */
-import { render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,69 +35,40 @@ const state: MutableState = {
   slugMatches: [],
 };
 
-function makeMutationHandler<TArgs>(
-  handler: (input: TArgs) => void,
-  opts?: { onSuccess?: () => void }
-) {
-  return {
-    mutate: (input: TArgs) => {
-      handler(input);
-      opts?.onSuccess?.();
-    },
-    mutateAsync: vi.fn(),
-    isPending: false,
-  };
-}
+const aliasesListWithTargetsMock = vi.hoisted(() => vi.fn());
+const aliasesCreateMock = vi.hoisted(() => vi.fn());
+const aliasesUpdateTextMock = vi.hoisted(() => vi.fn());
+const aliasesDeleteMock = vi.hoisted(() => vi.fn());
+const aliasesMergeMock = vi.hoisted(() => vi.fn());
+const aliasesBulkApproveMock = vi.hoisted(() => vi.fn());
+const slugsSearchMock = vi.hoisted(() => vi.fn());
+const ingredientsGetMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'aliases.list') {
-      return { data: undefined, isLoading: false, isError: false };
-    }
-    if (key === 'aliases.listWithTargets') {
-      state.lastListQuery = input as Record<string, unknown>;
-      return { data: { items: state.items }, isLoading: false, isError: false };
-    }
-    if (key === 'ingredients.get') {
-      return { data: { variants: [] }, isLoading: false, isError: false };
-    }
-    if (key === 'slugs.search') {
-      return { data: { items: state.slugMatches }, isLoading: false, isError: false };
-    }
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: { onSuccess?: () => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'aliases.create') {
-      return makeMutationHandler((input: never) => state.createCalls.push(input), opts);
-    }
-    if (key === 'aliases.updateText') {
-      return makeMutationHandler((input: never) => state.updateTextCalls.push(input), opts);
-    }
-    if (key === 'aliases.delete') {
-      return makeMutationHandler((input: never) => state.deleteCalls.push(input), opts);
-    }
-    if (key === 'aliases.merge') {
-      return makeMutationHandler((input: never) => state.mergeCalls.push(input), opts);
-    }
-    if (key === 'aliases.bulkApprove') {
-      return makeMutationHandler((input: never) => state.bulkApproveCalls.push(input), opts);
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: () => Promise.resolve(),
-  }),
+vi.mock('../../../../food-api/index.js', () => ({
+  aliasesListWithTargets: aliasesListWithTargetsMock,
+  aliasesCreate: aliasesCreateMock,
+  aliasesUpdateText: aliasesUpdateTextMock,
+  aliasesDelete: aliasesDeleteMock,
+  aliasesMerge: aliasesMergeMock,
+  aliasesBulkApprove: aliasesBulkApproveMock,
+  slugsSearch: slugsSearchMock,
+  ingredientsGet: ingredientsGetMock,
 }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { AliasesTabContent } from '../AliasesTabContent';
+
+function renderTab(): void {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={client}>
+      <AliasesTabContent />
+    </QueryClientProvider>
+  );
+}
 
 const banana: AliasWithTargetServer = {
   alias: { id: 1, alias: 'platano', source: 'user', createdAt: '2026-06-01' },
@@ -120,6 +91,7 @@ const variantAlias: AliasWithTargetServer = {
 };
 
 beforeEach(() => {
+  vi.clearAllMocks();
   state.items = [banana, llmAlias, variantAlias];
   state.lastListQuery = null;
   state.createCalls.length = 0;
@@ -128,23 +100,62 @@ beforeEach(() => {
   state.mergeCalls.length = 0;
   state.bulkApproveCalls.length = 0;
   state.slugMatches = [];
+
+  aliasesListWithTargetsMock.mockImplementation(
+    async (opts: { query?: Record<string, unknown> }) => {
+      state.lastListQuery = opts.query ?? {};
+      return { data: { items: state.items } };
+    }
+  );
+  aliasesCreateMock.mockImplementation(
+    async (opts: {
+      body: { alias: string; target: { kind: string; id: number }; source?: string };
+    }) => {
+      state.createCalls.push(opts.body);
+      return { data: {} };
+    }
+  );
+  aliasesUpdateTextMock.mockImplementation(
+    async (opts: { path: { id: number }; body: { alias: string } }) => {
+      state.updateTextCalls.push({ id: opts.path.id, alias: opts.body.alias });
+      return { data: {} };
+    }
+  );
+  aliasesDeleteMock.mockImplementation(async (opts: { path: { id: number } }) => {
+    state.deleteCalls.push({ id: opts.path.id });
+    return { data: { ok: true } };
+  });
+  aliasesMergeMock.mockImplementation(
+    async (opts: { body: { aliasIds: number[]; target: { kind: string; id: number } } }) => {
+      state.mergeCalls.push(opts.body);
+      return { data: { mergedCount: 1 } };
+    }
+  );
+  aliasesBulkApproveMock.mockImplementation(async (opts: { body: { aliasIds: number[] } }) => {
+    state.bulkApproveCalls.push(opts.body);
+    return { data: { updatedCount: 1 } };
+  });
+  slugsSearchMock.mockImplementation(async () => ({ data: { items: state.slugMatches } }));
+  ingredientsGetMock.mockImplementation(async () => ({
+    data: { ingredient: {}, variants: [] },
+  }));
 });
 
 describe('AliasesTabContent', () => {
   it('renders the description sub-line', async () => {
-    render(<AliasesTabContent />);
+    renderTab();
     expect(await screen.findByText(/alternate names that resolve/i)).toBeInTheDocument();
   });
 
   it('lists every alias with its target label + slug', async () => {
-    render(<AliasesTabContent />);
+    renderTab();
     expect(await screen.findByText('platano')).toBeInTheDocument();
     expect(screen.getByText('Banana — Ripe')).toBeInTheDocument();
     expect(screen.getByText('banana:ripe')).toBeInTheDocument();
   });
 
   it('toggles sort direction on repeated header clicks', async () => {
-    render(<AliasesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     const aliasHeader = await screen.findByRole('button', { name: /^alias/i });
     expect(aliasHeader.closest('th')?.getAttribute('aria-sort')).toBe('ascending');
@@ -153,19 +164,19 @@ describe('AliasesTabContent', () => {
   });
 
   it('filters by source via the chip group', async () => {
-    render(<AliasesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     await screen.findByText('platano');
     await user.click(screen.getByRole('button', { name: /^llm$/i }));
-    expect(state.lastListQuery).toMatchObject({ source: 'llm' });
+    await waitFor(() => expect(state.lastListQuery).toMatchObject({ source: 'llm' }));
   });
 
   it('enables Merge only with ≥2 selections and opens the dialog', async () => {
-    render(<AliasesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     const merge = await screen.findByRole('button', { name: /^merge/i });
     expect(merge).toBeDisabled();
-    await user.click(screen.getByRole('checkbox', { name: /select alias platano/i }));
+    await user.click(await screen.findByRole('checkbox', { name: /select alias platano/i }));
     await user.click(screen.getByRole('checkbox', { name: /select alias bnana/i }));
     expect(merge).toBeEnabled();
     await user.click(merge);
@@ -173,19 +184,19 @@ describe('AliasesTabContent', () => {
   });
 
   it('enables Approve LLM when the selection contains an llm-sourced row', async () => {
-    render(<AliasesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     const approve = await screen.findByRole('button', { name: /approve llm/i });
     expect(approve).toBeDisabled();
-    await user.click(screen.getByRole('checkbox', { name: /select alias bnana/i }));
+    await user.click(await screen.findByRole('checkbox', { name: /select alias bnana/i }));
     expect(approve).toBeEnabled();
     await user.click(approve);
-    expect(state.bulkApproveCalls.at(-1)).toEqual({ aliasIds: [2] });
+    await waitFor(() => expect(state.bulkApproveCalls.at(-1)).toEqual({ aliasIds: [2] }));
   });
 
   it('opens Add → submits a new alias against a picked ingredient', async () => {
     state.slugMatches = [{ slug: 'banana', kind: 'ingredient', targetId: 10, name: 'Banana' }];
-    render(<AliasesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /^add alias/i }));
     const dialog = await screen.findByRole('dialog', { name: /^add alias/i });
@@ -193,24 +204,26 @@ describe('AliasesTabContent', () => {
     await user.type(within(dialog).getByLabelText(/search ingredients/i), 'ban');
     await user.click(await within(dialog).findByRole('button', { name: /banana/i }));
     await user.click(within(dialog).getByRole('button', { name: /^add$/i }));
-    expect(state.createCalls.at(-1)).toMatchObject({
-      alias: 'novo',
-      source: 'user',
-      target: { kind: 'ingredient', id: 10 },
-    });
+    await waitFor(() =>
+      expect(state.createCalls.at(-1)).toMatchObject({
+        alias: 'novo',
+        source: 'user',
+        target: { kind: 'ingredient', id: 10 },
+      })
+    );
   });
 
   it('fires a delete mutation when the row Delete button is clicked', async () => {
-    render(<AliasesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     const del = await screen.findByRole('button', { name: /delete alias platano/i });
     await user.click(del);
-    expect(state.deleteCalls.at(-1)).toEqual({ id: 1 });
+    await waitFor(() => expect(state.deleteCalls.at(-1)).toEqual({ id: 1 }));
   });
 
   it('renders the empty state when the server returns no rows', async () => {
     state.items = [];
-    render(<AliasesTabContent />);
+    renderTab();
     expect(await screen.findByText(/no aliases yet/i)).toBeInTheDocument();
   });
 });

@@ -1,17 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
-import { isNotFound } from '@pops/pillar-sdk/client';
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { isNotFoundError, unwrap } from '../../food-api-helpers.js';
+import { recipesListDrafts } from '../../food-api/index.js';
 import { RecipeEditShell } from './RecipeEditPage.js';
-
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type ListDraftsOutput = inferRouterOutputs<AppRouter>['food']['recipes']['listDrafts'];
 
 /**
  * `/food/recipes/:slug/drafts/:draftNo` — same edit surface as
@@ -39,8 +33,9 @@ export function RecipeDraftEditPage(): ReactElement {
 
 function RecipeDraftEditBody({ slug, draftNo }: { slug: string; draftNo: number }): ReactElement {
   const { t } = useTranslation('food');
-  const draftsQuery = usePillarQuery<ListDraftsOutput>('food', ['recipes', 'listDrafts'], {
-    slug,
+  const draftsQuery = useQuery({
+    queryKey: ['food', 'recipes', 'listDrafts', { slug }],
+    queryFn: async () => unwrap(await recipesListDrafts({ path: { slug } })),
   });
   const match = useMemo(
     () => draftsQuery.data?.drafts.find((d) => d.versionNo === draftNo) ?? null,
@@ -51,7 +46,7 @@ function RecipeDraftEditBody({ slug, draftNo }: { slug: string; draftNo: number 
     return <Status text={t('recipes.draftEdit.loading')} />;
   }
   if (draftsQuery.error !== null) {
-    if (isNotFound(draftsQuery.error)) {
+    if (isNotFoundError(draftsQuery.error)) {
       return <Alert text={t('recipes.detail.notFound')} />;
     }
     return <Alert text={t('recipes.draftEdit.error', { message: draftsQuery.error.message })} />;

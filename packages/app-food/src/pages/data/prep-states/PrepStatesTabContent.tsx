@@ -7,11 +7,11 @@
  * to a future PRD. The placeholder UI surfaces this via a disabled
  * delete button with a Tooltip explaining "not in v1".
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import {
   Button,
   Table,
@@ -26,32 +26,32 @@ import {
   TooltipTrigger,
 } from '@pops/ui';
 
+import { unwrap } from '../../../food-api-helpers.js';
+import { prepStatesCreate, prepStatesList } from '../../../food-api/index.js';
 import { AddPrepStateDialog } from './AddPrepStateDialog.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { PrepStatesCreateData, PrepStatesListResponses } from '../../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-
-type PrepStatesListOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['list'];
-type PrepStatesCreateInput = inferRouterInputs<AppRouter>['food']['prepStates']['create'];
-type PrepStatesCreateOutput = inferRouterOutputs<AppRouter>['food']['prepStates']['create'];
+type PrepStatesListOutput = PrepStatesListResponses[200];
+type PrepStatesCreateInput = NonNullable<PrepStatesCreateData['body']>;
 
 export function PrepStatesTabContent() {
   const { t } = useTranslation('food');
-  const utils = usePillarUtils('food');
-  const list = usePillarQuery<PrepStatesListOutput>('food', ['prepStates', 'list'], undefined);
+  const qc = useQueryClient();
+  const list = useQuery({
+    queryKey: ['food', 'prepStates', 'list'],
+    queryFn: async (): Promise<PrepStatesListOutput> => unwrap(await prepStatesList({})),
+  });
   const [addOpen, setAddOpen] = useState(false);
-  const createMutation = usePillarMutation<PrepStatesCreateInput, PrepStatesCreateOutput>(
-    'food',
-    ['prepStates', 'create'],
-    {
-      onSuccess: () => {
-        void utils.invalidate(['prepStates', 'list']);
-        setAddOpen(false);
-      },
-      onError: (err) => toast.error(err.message),
-    }
-  );
+  const createMutation = useMutation({
+    mutationFn: async (input: PrepStatesCreateInput) =>
+      unwrap(await prepStatesCreate({ body: input })),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['food', 'prepStates', 'list'] });
+      setAddOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   const rows = list.data?.items ?? [];
   const sortedRows = [...rows].toSorted((a, b) => a.slug.localeCompare(b.slug));

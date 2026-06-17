@@ -1,20 +1,18 @@
 /**
  * Aliases tab data + selection state (PRD-122-C).
  *
- * Wraps `trpc.food.aliases.listWithTargets` plus the table's own UI state
+ * Wraps `aliasesListWithTargets` plus the table's own UI state
  * (sort, filter, selection). Mutations live alongside in
  * `use-aliases-mutations.ts` so each hook stays narrowly focused.
  */
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../../food-api-helpers.js';
+import { aliasesListWithTargets } from '../../../food-api/index.js';
 import { sortAliases } from './format.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
+import type { AliasesListWithTargetsResponses } from '../../../food-api/types.gen.js';
 import type {
   AliasesFilter,
   AliasRow,
@@ -24,8 +22,7 @@ import type {
   SortState,
 } from './types.js';
 
-type AliasesListWithTargetsOutput =
-  inferRouterOutputs<AppRouter>['food']['aliases']['listWithTargets'];
+type AliasesListWithTargetsOutput = AliasesListWithTargetsResponses[200];
 
 const DEFAULT_SORT: SortState = { key: 'alias', direction: 'asc' };
 
@@ -81,15 +78,15 @@ export function useAliasesData(): UseAliasesData {
     return input;
   }, [filter]);
 
-  const query = usePillarQuery<AliasesListWithTargetsOutput>(
-    'food',
-    ['aliases', 'listWithTargets'],
-    queryInput
-  );
+  const query = useQuery({
+    queryKey: ['food', 'aliases', 'listWithTargets', queryInput],
+    queryFn: async (): Promise<AliasesListWithTargetsOutput> =>
+      unwrap(await aliasesListWithTargets({ query: queryInput })),
+  });
 
   const rows = useMemo(() => {
     if (query.data === undefined) return [];
-    const all = toRows(query.data.items as readonly AliasRowFromServer[]);
+    const all = toRows(query.data.items);
     return sortAliases(all, sort.key, sort.direction);
   }, [query.data, sort]);
 

@@ -6,19 +6,16 @@
  *
  * No polling — the preview is a snapshot at range-change time.
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../food-api-helpers.js';
+import { shoppingGenerate, shoppingPreview } from '../../food-api/index.js';
 import { validateRange } from './range-helpers.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { ShoppingGenerateData } from '../../food-api/types.gen.js';
 
-import type { AppRouter } from '@pops/api';
-
-type PreviewFromPlanOutput = inferRouterOutputs<AppRouter>['food']['shopping']['previewFromPlan'];
-type GenerateFromPlanInput = inferRouterInputs<AppRouter>['food']['shopping']['generateFromPlan'];
-type GenerateFromPlanOutput = inferRouterOutputs<AppRouter>['food']['shopping']['generateFromPlan'];
+type GenerateFromPlanInput = NonNullable<ShoppingGenerateData['body']>;
 
 export interface UseFromPlanPageOpts {
   startDate: string;
@@ -26,25 +23,23 @@ export interface UseFromPlanPageOpts {
 }
 
 export function useFromPlanPage(opts: UseFromPlanPageOpts) {
-  const utils = usePillarUtils('food');
+  const queryClient = useQueryClient();
   const isValid = validateRange(opts.startDate, opts.endDate).ok;
-  const previewQuery = usePillarQuery<PreviewFromPlanOutput>(
-    'food',
-    ['shopping', 'previewFromPlan'],
-    { startDate: opts.startDate, endDate: opts.endDate },
-    {
-      enabled: isValid,
-      staleTime: 30_000,
-    }
-  );
-  const generateMutation = usePillarMutation<GenerateFromPlanInput, GenerateFromPlanOutput>(
-    'food',
-    ['shopping', 'generateFromPlan']
-  );
+  const previewInput = { startDate: opts.startDate, endDate: opts.endDate };
+  const previewQuery = useQuery({
+    queryKey: ['food', 'shopping', 'preview', previewInput],
+    queryFn: async () => unwrap(await shoppingPreview({ body: previewInput })),
+    enabled: isValid,
+    staleTime: 30_000,
+  });
+  const generateMutation = useMutation({
+    mutationFn: async (input: GenerateFromPlanInput) =>
+      unwrap(await shoppingGenerate({ body: input })),
+  });
 
   const refresh = useCallback(() => {
-    void utils.invalidate(['shopping', 'previewFromPlan']);
-  }, [utils]);
+    void queryClient.invalidateQueries({ queryKey: ['food', 'shopping', 'preview'] });
+  }, [queryClient]);
 
   return { previewQuery, generateMutation, refresh } as const;
 }

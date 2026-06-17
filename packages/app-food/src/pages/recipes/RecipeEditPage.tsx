@@ -1,27 +1,25 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
 import { Button } from '@pops/ui';
 
 import { DslEditor } from '../../components/DslEditor.js';
 import { HeroImageUploader } from '../../components/HeroImageUploader.js';
+import { unwrap } from '../../food-api-helpers.js';
+import {
+  recipesCreateNewDraft,
+  recipesGetForRendering,
+  recipesListProposedSlugs,
+} from '../../food-api/index.js';
 import { AutoCreatedBanner } from './AutoCreatedBanner.js';
 import { buildEditorIssues } from './compile-result-issues.js';
+import { asRenderingPayload } from './recipe-payloads.js';
 import { useRecipeEditMutations } from './useRecipeEditMutations.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
 import type { CompileResult } from '@pops/app-food-db';
-
-type GetForRenderingOutput = inferRouterOutputs<AppRouter>['food']['recipes']['getForRendering'];
-type ListProposedSlugsOutput =
-  inferRouterOutputs<AppRouter>['food']['recipes']['listProposedSlugs'];
-type CreateNewDraftInput = inferRouterInputs<AppRouter>['food']['recipes']['createNewDraft'];
-type CreateNewDraftOutput = inferRouterOutputs<AppRouter>['food']['recipes']['createNewDraft'];
 
 /**
  * `/food/recipes/:slug/edit` — edits the latest draft of `:slug`. If the
@@ -74,14 +72,9 @@ export function RecipeEditShell({
   const [dsl, setDsl] = useState<string>('');
   const dslSeeded = useRef(false);
   const [latestCompile, setLatestCompile] = useState<CompileResult | null>(null);
-  const utils = usePillarUtils('food');
+  const queryClient = useQueryClient();
 
-  const renderingQuery = usePillarQuery<GetForRenderingOutput>(
-    'food',
-    ['recipes', 'getForRendering'],
-    { slug, versionNo: versionNo ?? undefined },
-    { enabled: versionNo !== null }
-  );
+  const { renderingQuery, proposedRows } = useRecipeEditQueries(slug, versionId, versionNo);
   useEffect(() => {
     if (!dslSeeded.current && renderingQuery.data) {
       setDsl(renderingQuery.data.version.bodyDsl);
@@ -89,17 +82,9 @@ export function RecipeEditShell({
     }
   }, [renderingQuery.data]);
 
-  const proposedSlugsQuery = usePillarQuery<ListProposedSlugsOutput>(
-    'food',
-    ['recipes', 'listProposedSlugs'],
-    { versionId: versionId ?? 0 },
-    { enabled: versionId !== null }
-  );
-  const proposedRows = proposedSlugsQuery.data?.items ?? [];
-
   const actions = useRecipeEditMutations({ slug, versionId, dsl, setLatestCompile });
   const issues = buildEditorIssues(latestCompile, proposedRows);
-  const canPromote = latestCompile !== null && latestCompile.ok === true && !actions.isSaving;
+  const canPromote = latestCompile?.ok === true && !actions.isSaving;
 
   if (versionId === null || !dslSeeded.current || !renderingQuery.data) {
     return <Status text={t('recipes.edit.opening')} />;
@@ -107,8 +92,8 @@ export function RecipeEditShell({
 
   const recipe = renderingQuery.data.recipe;
   const refreshHero = (): void => {
-    void utils.invalidate(['recipes', 'getForRendering']);
-    void utils.invalidate(['recipes', 'list']);
+    void queryClient.invalidateQueries({ queryKey: ['food', 'recipes', 'getForRendering'] });
+    void queryClient.invalidateQueries({ queryKey: ['food', 'recipes', 'list'] });
   };
 
   return (
@@ -126,6 +111,29 @@ export function RecipeEditShell({
   );
 }
 
+function useRecipeEditQueries(slug: string, versionId: number | null, versionNo: number | null) {
+  const renderingQuery = useQuery({
+    queryKey: ['food', 'recipes', 'getForRendering', { slug, versionNo }],
+    queryFn: async () =>
+      asRenderingPayload(
+        unwrap(
+          await recipesGetForRendering({
+            path: { slug },
+            query: { versionNo: versionNo ?? undefined },
+          })
+        )
+      ),
+    enabled: versionNo !== null,
+  });
+  const proposedSlugsQuery = useQuery({
+    queryKey: ['food', 'recipes', 'listProposedSlugs', { versionId }],
+    queryFn: async () =>
+      unwrap(await recipesListProposedSlugs({ path: { versionId: versionId ?? 0 } })),
+    enabled: versionId !== null,
+  });
+  return { renderingQuery, proposedRows: proposedSlugsQuery.data?.items ?? [] };
+}
+
 /**
  * Fire `createNewDraft({ slug })` once per slug. The hook is its own
  * helper so the page body stays under the per-function line cap, and so
@@ -134,19 +142,17 @@ export function RecipeEditShell({
  */
 function useOpenDraftOnMount(slug: string, onOpen: (next: DraftState) => void): void {
   const { t } = useTranslation('food');
-  const mutation = usePillarMutation<CreateNewDraftInput, CreateNewDraftOutput>(
-    'food',
-    ['recipes', 'createNewDraft'],
-    {
-      onSuccess: (res) => onOpen({ versionId: res.versionId, versionNo: res.versionNo }),
-      onError: (err) => toast.error(t('recipes.edit.openError', { message: err.message })),
-    }
-  );
+  const mutation = useMutation({
+    mutationFn: async (targetSlug: string) =>
+      unwrap(await recipesCreateNewDraft({ path: { slug: targetSlug } })),
+    onSuccess: (res) => onOpen({ versionId: res.versionId, versionNo: res.versionNo }),
+    onError: (err: Error) => toast.error(t('recipes.edit.openError', { message: err.message })),
+  });
   const opened = useRef<string | null>(null);
   useEffect(() => {
     if (opened.current === slug) return;
     opened.current = slug;
-    mutation.mutate({ slug });
+    mutation.mutate(slug);
   }, [slug, mutation]);
 }
 

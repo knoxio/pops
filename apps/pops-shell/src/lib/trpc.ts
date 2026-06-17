@@ -48,7 +48,6 @@ const PILLAR_TRPC_URLS: Readonly<Record<TrpcPillarId, string>> = {
   core: '/trpc-core',
   media: '/trpc-media',
   cerebrum: '/trpc-cerebrum',
-  food: '/trpc-food',
 };
 
 /** Legacy pops-api URL — catches every procedure that isn't pillar-prefixed. */

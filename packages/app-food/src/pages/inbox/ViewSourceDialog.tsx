@@ -8,7 +8,7 @@
  *     `ingest_sources.caption` column on the row; PRD-138 v1 receives
  *     this through a follow-up tRPC peek, but for now we render a stub
  *     copy explaining how to inspect via the source endpoint).
- *   - screenshot → `<img src="/api/food/ingest/source/<id>/screenshot">`.
+ *   - screenshot → `<img src="/food-api/ingest/source/<id>/screenshot">`.
  *
  * No DSL editor — there's no draft to edit at this point.
  *
@@ -74,7 +74,7 @@ function ViewSourceBody({
   if (row.ingestKind === 'screenshot') {
     return (
       <img
-        src={`/api/food/ingest/source/${row.sourceId}/screenshot`}
+        src={`/food-api/ingest/source/${row.sourceId}/screenshot`}
         alt={t('inbox.failed.viewSource.screenshotAlt')}
         className="max-h-[60vh] w-full rounded border bg-muted object-contain"
       />

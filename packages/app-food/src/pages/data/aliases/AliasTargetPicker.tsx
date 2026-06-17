@@ -12,20 +12,20 @@
  * (an `AliasTarget | null`) and reacts to `onChange`. Reset behaviour
  * is the parent's responsibility (e.g. on dialog close).
  */
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { usePillarQuery } from '@pops/pillar-sdk/react';
 import { Button, Input } from '@pops/ui';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientsGet, slugsSearch } from '../../../food-api/index.js';
 
-import type { AppRouter } from '@pops/api';
-
+import type { IngredientsGetResponses, SlugsSearchResponses } from '../../../food-api/types.gen.js';
 import type { AliasTarget } from './types';
 
-type SlugSearchOutput = inferRouterOutputs<AppRouter>['food']['slugs']['search'];
-type IngredientsGetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['get'];
+type SlugSearchOutput = SlugsSearchResponses[200];
+type IngredientsGetOutput = IngredientsGetResponses[200];
 
 export interface AliasTargetPickerProps {
   readonly value: AliasTarget | null;
@@ -36,12 +36,12 @@ export interface AliasTargetPickerProps {
 export function AliasTargetPicker({ value, onChange, inputId }: AliasTargetPickerProps) {
   const { t } = useTranslation('food');
   const [query, setQuery] = useState('');
-  const search = usePillarQuery<SlugSearchOutput>(
-    'food',
-    ['slugs', 'search'],
-    { query, kinds: ['ingredient'], limit: 10 },
-    { enabled: query.length > 0 }
-  );
+  const search = useQuery({
+    queryKey: ['food', 'slugs', 'search', { query, kinds: ['ingredient'], limit: 10 }],
+    queryFn: async (): Promise<SlugSearchOutput> =>
+      unwrap(await slugsSearch({ query: { query, kinds: ['ingredient'], limit: 10 } })),
+    enabled: query.length > 0,
+  });
 
   const matches = search.data?.items ?? [];
 
@@ -105,12 +105,12 @@ interface SelectedTargetRowProps {
 function SelectedTargetRow({ target, onClear, onPickVariant }: SelectedTargetRowProps) {
   const { t } = useTranslation('food');
   const ingredientId = target.kind === 'ingredient' ? target.id : null;
-  const variants = usePillarQuery<IngredientsGetOutput>(
-    'food',
-    ['ingredients', 'get'],
-    { idOrSlug: ingredientId ?? 0 },
-    { enabled: ingredientId !== null }
-  );
+  const variants = useQuery({
+    queryKey: ['food', 'ingredients', 'get', { idOrSlug: ingredientId ?? 0 }],
+    queryFn: async (): Promise<IngredientsGetOutput> =>
+      unwrap(await ingredientsGet({ path: { idOrSlug: String(ingredientId ?? 0) } })),
+    enabled: ingredientId !== null,
+  });
   return (
     <div className="space-y-2">
       <div className="border-input flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">

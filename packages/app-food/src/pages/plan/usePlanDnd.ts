@@ -15,21 +15,19 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../food-api-helpers.js';
+import { planMoveEntry, planReorderSlot } from '../../food-api/index.js';
 import { resolveGridDrop } from './plan-grid-dnd.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
 import type { WirePlanEntryRow } from '@pops/app-food-db';
 
-type PlanMoveEntryInput = inferRouterInputs<AppRouter>['food']['plan']['moveEntry'];
-type PlanMoveEntryOutput = inferRouterOutputs<AppRouter>['food']['plan']['moveEntry'];
-type PlanReorderSlotInput = inferRouterInputs<AppRouter>['food']['plan']['reorderSlot'];
-type PlanReorderSlotOutput = inferRouterOutputs<AppRouter>['food']['plan']['reorderSlot'];
+import type { PlanMoveEntryData, PlanReorderSlotData } from '../../food-api/types.gen.js';
+
+type PlanMoveEntryInput = NonNullable<PlanMoveEntryData['body']> & { id: number };
+type PlanReorderSlotInput = NonNullable<PlanReorderSlotData['body']>;
 
 export function usePlanDndSensors() {
   return useSensors(
@@ -40,18 +38,19 @@ export function usePlanDndSensors() {
 }
 
 export function usePlanDndHandlers(entries: readonly WirePlanEntryRow[]) {
-  const utils = usePillarUtils('food');
-  const invalidate = () => void utils.invalidate(['plan', 'weekView']);
-  const moveEntry = usePillarMutation<PlanMoveEntryInput, PlanMoveEntryOutput>(
-    'food',
-    ['plan', 'moveEntry'],
-    { onSuccess: invalidate }
-  );
-  const reorderSlot = usePillarMutation<PlanReorderSlotInput, PlanReorderSlotOutput>(
-    'food',
-    ['plan', 'reorderSlot'],
-    { onSuccess: invalidate }
-  );
+  const queryClient = useQueryClient();
+  const invalidate = () =>
+    void queryClient.invalidateQueries({ queryKey: ['food', 'plan', 'weekView'] });
+  const moveEntry = useMutation({
+    mutationFn: async ({ id, ...body }: PlanMoveEntryInput) =>
+      unwrap(await planMoveEntry({ path: { id }, body })),
+    onSuccess: invalidate,
+  });
+  const reorderSlot = useMutation({
+    mutationFn: async (input: PlanReorderSlotInput) =>
+      unwrap(await planReorderSlot({ body: input })),
+    onSuccess: invalidate,
+  });
   const onDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;

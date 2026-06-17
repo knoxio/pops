@@ -1,84 +1,43 @@
 /**
  * PRD-143 — RTL coverage for the planning page.
  *
- * Mocks the tRPC client so the test pins exactly what every procedure
- * returns and asserts the rendered grid, add modal, edit sheet, and
- * slot drawer wire the mutations correctly. The drag-and-drop behavior
- * is exercised at the @dnd-kit unit level via library coverage; this
- * test focuses on the wiring + happy paths the PRD calls out.
+ * Mocks the generated food SDK so the test pins exactly what every
+ * endpoint returns and asserts the rendered grid, add modal, edit sheet,
+ * and slot drawer wire the mutations correctly. The drag-and-drop
+ * behavior is exercised at the @dnd-kit unit level via library coverage;
+ * this test focuses on the wiring + happy paths the PRD calls out.
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { type ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockWeekView = vi.fn();
-const mockListSlots = vi.fn();
-const mockListRecipes = vi.fn();
-const mockAddEntryMutate = vi.fn();
-const mockUpdateEntryMutate = vi.fn();
-const mockDeleteEntryMutate = vi.fn();
-const mockAddSlotMutate = vi.fn();
-const mockUpdateSlotMutate = vi.fn();
-const mockDeleteSlotMutate = vi.fn();
-const mockMoveEntryMutate = vi.fn();
-const mockReorderSlotMutate = vi.fn();
-const mockInvalidate = vi.fn();
+const planWeekViewMock = vi.hoisted(() => vi.fn());
+const planListSlotsMock = vi.hoisted(() => vi.fn());
+const recipesListMock = vi.hoisted(() => vi.fn());
+const planAddEntryMock = vi.hoisted(() => vi.fn());
+const planUpdateEntryMock = vi.hoisted(() => vi.fn());
+const planDeleteEntryMock = vi.hoisted(() => vi.fn());
+const planAddSlotMock = vi.hoisted(() => vi.fn());
+const planUpdateSlotMock = vi.hoisted(() => vi.fn());
+const planDeleteSlotMock = vi.hoisted(() => vi.fn());
+const planMoveEntryMock = vi.hoisted(() => vi.fn());
+const planReorderSlotMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'plan.weekView') return mockWeekView(input);
-    if (key === 'plan.listSlots') return mockListSlots();
-    if (key === 'recipes.list') return mockListRecipes(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: { onSuccess?: (r: unknown) => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'plan.addEntry') {
-      return {
-        mutate: (vars: unknown) => mockAddEntryMutate(vars, opts),
-        mutateAsync: async (vars: unknown) => mockAddEntryMutate(vars, opts),
-        isPending: false,
-      };
-    }
-    if (key === 'plan.updateEntry') {
-      return { mutate: mockUpdateEntryMutate, isPending: false };
-    }
-    if (key === 'plan.deleteEntry') {
-      return { mutate: mockDeleteEntryMutate, isPending: false };
-    }
-    if (key === 'plan.addSlot') {
-      return {
-        mutate: mockAddSlotMutate,
-        mutateAsync: async (vars: unknown) => {
-          mockAddSlotMutate(vars);
-          return { ok: true } as const;
-        },
-        isPending: false,
-      };
-    }
-    if (key === 'plan.updateSlot') {
-      return { mutate: mockUpdateSlotMutate, isPending: false };
-    }
-    if (key === 'plan.deleteSlot') {
-      return { mutate: mockDeleteSlotMutate, isPending: false };
-    }
-    if (key === 'plan.moveEntry') {
-      return { mutate: mockMoveEntryMutate, isPending: false };
-    }
-    if (key === 'plan.reorderSlot') {
-      return { mutate: mockReorderSlotMutate, isPending: false };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: (path: readonly string[]) => mockInvalidate(path),
-  }),
+vi.mock('../../../food-api/index.js', () => ({
+  planWeekView: planWeekViewMock,
+  planListSlots: planListSlotsMock,
+  recipesList: recipesListMock,
+  planAddEntry: planAddEntryMock,
+  planUpdateEntry: planUpdateEntryMock,
+  planDeleteEntry: planDeleteEntryMock,
+  planAddSlot: planAddSlotMock,
+  planUpdateSlot: planUpdateSlotMock,
+  planDeleteSlot: planDeleteSlotMock,
+  planMoveEntry: planMoveEntryMock,
+  planReorderSlot: planReorderSlotMock,
 }));
 
 import { PlanPage } from '../PlanPage.js';
@@ -153,41 +112,52 @@ const recipesData = {
   nextCursor: null,
 };
 
+function withClient(children: ReactElement): ReactElement {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
+
 function renderPage(initialUrl = `/food/plan?week=${monday}`) {
   return render(
-    <MemoryRouter initialEntries={[initialUrl]}>
-      <PlanPage />
-    </MemoryRouter>
+    withClient(
+      <MemoryRouter initialEntries={[initialUrl]}>
+        <PlanPage />
+      </MemoryRouter>
+    )
   );
+}
+
+function primeHappyPath(): void {
+  planWeekViewMock.mockResolvedValue({ data: weekViewData });
+  planListSlotsMock.mockResolvedValue({ data: slotsData });
+  recipesListMock.mockResolvedValue({ data: recipesData });
+  for (const m of [
+    planAddEntryMock,
+    planUpdateEntryMock,
+    planDeleteEntryMock,
+    planAddSlotMock,
+    planUpdateSlotMock,
+    planDeleteSlotMock,
+    planMoveEntryMock,
+    planReorderSlotMock,
+  ]) {
+    m.mockResolvedValue({ data: { ok: true } });
+  }
 }
 
 describe('PlanPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockWeekView.mockReturnValue({
-      data: weekViewData,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
-    mockListSlots.mockReturnValue({
-      data: slotsData,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
-    mockListRecipes.mockReturnValue({
-      data: recipesData,
-      isLoading: false,
-      isError: false,
-    });
+    primeHappyPath();
   });
 
-  it('renders the week label and the grid with entries', () => {
+  it('renders the week label and the grid with entries', async () => {
     renderPage();
     expect(screen.getByTestId('week-label').textContent).toContain('15 Jun');
+    expect(await screen.findByText('Pancakes')).toBeTruthy();
     expect(screen.getByTestId('plan-week-grid')).toBeTruthy();
-    expect(screen.getByText('Pancakes')).toBeTruthy();
     expect(screen.getByTestId('servings-badge-1')).toBeTruthy();
     expect(screen.getByTestId('cooked-chip-2')).toBeTruthy();
   });
@@ -195,7 +165,7 @@ describe('PlanPage', () => {
   it('opens the add modal pre-filled with (date, slot) and submits', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByTestId(`cell-add-${monday}::dinner`));
+    await user.click(await screen.findByTestId(`cell-add-${monday}::dinner`));
     const modal = await screen.findByTestId('add-plan-entry-modal');
     expect(modal).toBeTruthy();
     expect(within(modal).getByText(/Add to dinner/)).toBeTruthy();
@@ -204,14 +174,14 @@ describe('PlanPage', () => {
   it('opens the edit sheet when an entry is clicked', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByTestId('plan-entry-1'));
+    await user.click(await screen.findByTestId('plan-entry-1'));
     expect(await screen.findByTestId('plan-entry-edit-sheet')).toBeTruthy();
   });
 
   it('locks the edit sheet for a cooked entry (no delete button)', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByTestId('plan-entry-2'));
+    await user.click(await screen.findByTestId('plan-entry-2'));
     const sheet = await screen.findByTestId('plan-entry-edit-sheet');
     expect(within(sheet).queryByTestId('delete-plan-entry')).toBeNull();
     expect(within(sheet).getByText(/Cooked on/)).toBeTruthy();
@@ -236,7 +206,7 @@ describe('PlanPage', () => {
     await user.type(within(drawer).getByTestId('add-slot-name'), 'Bad');
     await user.click(within(drawer).getByTestId('add-slot-submit'));
     expect(within(drawer).getByText(/kebab-case/i)).toBeTruthy();
-    expect(mockAddSlotMutate).not.toHaveBeenCalled();
+    expect(planAddSlotMock).not.toHaveBeenCalled();
   });
 });
 
@@ -286,31 +256,16 @@ describe('PlanPage (mobile)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     restoreMatchMedia = installMobileMatchMedia();
-    mockWeekView.mockReturnValue({
-      data: weekViewData,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
-    mockListSlots.mockReturnValue({
-      data: slotsData,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
-    mockListRecipes.mockReturnValue({
-      data: recipesData,
-      isLoading: false,
-      isError: false,
-    });
+    primeHappyPath();
   });
 
   afterEach(() => {
     restoreMatchMedia();
   });
 
-  it('renders the day swiper instead of the grid on narrow viewports', () => {
+  it('renders the day swiper instead of the grid on narrow viewports', async () => {
     renderPage();
+    await screen.findByText('Pancakes');
     expect(screen.queryByTestId('plan-week-grid')).toBeNull();
     expect(screen.getByTestId('plan-day-swiper')).toBeTruthy();
     expect(screen.getByTestId('plan-day-label').textContent).toContain('Mon');
@@ -319,7 +274,7 @@ describe('PlanPage (mobile)', () => {
   it('navigates between days with prev / next arrows', async () => {
     const user = userEvent.setup();
     renderPage();
-    expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
+    expect((await screen.findByTestId('plan-day-label')).textContent).toContain('15 Jun');
     await user.click(screen.getByRole('button', { name: 'Next day' }));
     expect(screen.getByTestId('plan-day-label').textContent).toContain('16 Jun');
     await user.click(screen.getByRole('button', { name: 'Previous day' }));
@@ -329,6 +284,7 @@ describe('PlanPage (mobile)', () => {
   it('disables previous arrow on Monday and next arrow on Sunday', async () => {
     const user = userEvent.setup();
     renderPage();
+    await screen.findByText('Pancakes');
     expect(screen.getByRole('button', { name: 'Previous day' })).toHaveProperty('disabled', true);
     for (let i = 0; i < 6; i++) {
       await user.click(screen.getByRole('button', { name: 'Next day' }));
@@ -340,7 +296,7 @@ describe('PlanPage (mobile)', () => {
   it('shows only the visible day’s entries — Tuesday is empty so the cooked chip is absent', async () => {
     const user = userEvent.setup();
     renderPage();
-    expect(screen.getByText('Pancakes')).toBeTruthy();
+    expect(await screen.findByText('Pancakes')).toBeTruthy();
     expect(screen.getByTestId('cooked-chip-2')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Next day' }));
     expect(screen.queryByText('Pancakes')).toBeNull();
@@ -350,14 +306,15 @@ describe('PlanPage (mobile)', () => {
   it('renders the edit sheet as a bottom-sheet on mobile', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByTestId('plan-entry-1'));
+    await user.click(await screen.findByTestId('plan-entry-1'));
     const sheet = await screen.findByTestId('plan-entry-edit-sheet');
     expect(sheet.getAttribute('data-variant')).toBe('bottom-sheet');
     expect(sheet.className).toContain('bottom-0');
   });
 
-  it('does not navigate days when the touch gesture starts on a drag handle', () => {
+  it('does not navigate days when the touch gesture starts on a drag handle', async () => {
     renderPage();
+    await screen.findByText('Pancakes');
     expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
     const body = screen.getByTestId('plan-day-swiper-body');
     const handle = body.querySelector('[data-draghandle="true"]');
@@ -372,8 +329,9 @@ describe('PlanPage (mobile)', () => {
     expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
   });
 
-  it('navigates when the swipe starts on empty space inside the day view', () => {
+  it('navigates when the swipe starts on empty space inside the day view', async () => {
     renderPage();
+    await screen.findByText('Pancakes');
     expect(screen.getByTestId('plan-day-label').textContent).toContain('15 Jun');
     const body = screen.getByTestId('plan-day-swiper-body');
     fireEvent.touchStart(body, {

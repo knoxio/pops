@@ -1,33 +1,30 @@
 /**
  * PRD-138 — data + retry mutation hook for the Failed-ingests tab.
  *
- * Wraps PRD-125's `food.ingest.retry` mutation. Optimistic update removes
+ * Wraps PRD-125's `ingest.retry` mutation. Optimistic update removes
  * the row from the cached page; on success the row is gone (the next
  * `listFailed` poll won't surface it because `error_code` is now NULL);
  * on failure the snapshot is restored.
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { usePillarMutation, usePillarQuery, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { unwrap } from '../../food-api-helpers.js';
+import { inboxFailedErrorCodes, inboxListFailed, ingestRetry } from '../../food-api/index.js';
 import { type FailedFiltersState } from './FailedFilters.js';
 
-import type { inferRouterOutputs } from '@trpc/server';
+import type { IngestSourceKind } from '@pops/app-food-db';
 
-import type { AppRouter } from '@pops/api';
-import type { UsePillarUtilsResult } from '@pops/pillar-sdk/react';
+import type { InboxListFailedResponses } from '../../food-api/types.gen.js';
 
-type ListFailedOutput = inferRouterOutputs<AppRouter>['food']['inbox']['listFailed'];
-type FailedErrorCodesOutput = inferRouterOutputs<AppRouter>['food']['inbox']['failedErrorCodes'];
-type RetryOutput = inferRouterOutputs<AppRouter>['food']['ingest']['retry'];
+type ListFailedOutput = InboxListFailedResponses[200];
 
 type RetryInput = { sourceId: number };
-type RetryContext = { snapshot: ListFailedOutput | undefined };
 type Translate = (key: string, opts?: Record<string, unknown>) => string;
 type QueryInput = {
-  errorCodes: readonly string[] | undefined;
-  kinds: readonly string[] | undefined;
+  errorCodes: string[] | undefined;
+  kinds: IngestSourceKind[] | undefined;
   sinceDays: FailedFiltersState['sinceDays'];
 };
 
@@ -36,22 +33,25 @@ interface UseFailedTabOpts {
   t: Translate;
 }
 
-function useRetryMutation(utils: UsePillarUtilsResult, queryInput: QueryInput, t: Translate) {
-  return usePillarMutation<RetryInput, RetryOutput, RetryContext>('food', ['ingest', 'retry'], {
-    onMutate: ({ sourceId }) => {
-      const snapshot = utils.setData<ListFailedOutput>(
-        ['inbox', 'listFailed'],
-        queryInput,
-        (prev) =>
-          prev === undefined
-            ? prev
-            : { ...prev, items: prev.items.filter((row) => row.sourceId !== sourceId) }
+function useRetryMutation(queryInput: QueryInput, t: Translate) {
+  const qc = useQueryClient();
+  const listKey = ['food', 'inbox', 'listFailed', queryInput] as const;
+  return useMutation({
+    mutationFn: async (input: RetryInput) =>
+      unwrap(await ingestRetry({ body: { sourceId: input.sourceId } })),
+    onMutate: async ({ sourceId }) => {
+      await qc.cancelQueries({ queryKey: ['food', 'inbox', 'listFailed'] });
+      const snapshot = qc.getQueryData<ListFailedOutput>(listKey);
+      qc.setQueryData<ListFailedOutput>(listKey, (prev) =>
+        prev === undefined
+          ? prev
+          : { ...prev, items: prev.items.filter((row) => row.sourceId !== sourceId) }
       );
       return { snapshot };
     },
-    onError: (err, _input, ctx) => {
+    onError: (err: Error, _input, ctx) => {
       if (ctx?.snapshot !== undefined) {
-        utils.setData<ListFailedOutput>(['inbox', 'listFailed'], queryInput, () => ctx.snapshot);
+        qc.setQueryData<ListFailedOutput>(listKey, ctx.snapshot);
       }
       toast.error(t('inbox.failed.retry.error', { message: err.message }));
     },
@@ -59,33 +59,43 @@ function useRetryMutation(utils: UsePillarUtilsResult, queryInput: QueryInput, t
       toast.success(t('inbox.failed.retry.success'));
     },
     onSettled: () => {
-      void utils.invalidate(['inbox', 'listFailed']);
-      void utils.invalidate(['inbox', 'failedErrorCodes']);
+      void qc.invalidateQueries({ queryKey: ['food', 'inbox', 'listFailed'] });
+      void qc.invalidateQueries({ queryKey: ['food', 'inbox', 'failedErrorCodes'] });
     },
   });
 }
 
 export function useFailedTab({ filters, t }: UseFailedTabOpts) {
-  const utils = usePillarUtils('food');
   const queryInput: QueryInput = {
     errorCodes: filters.errorCodes.length > 0 ? [...filters.errorCodes] : undefined,
     kinds: filters.kinds.length > 0 ? [...filters.kinds] : undefined,
     sinceDays: filters.sinceDays,
   };
-  const query = usePillarQuery<ListFailedOutput>('food', ['inbox', 'listFailed'], queryInput);
-  const errorCodesQuery = usePillarQuery<FailedErrorCodesOutput>(
-    'food',
-    ['inbox', 'failedErrorCodes'],
-    undefined
-  );
-  const retryMutation = useRetryMutation(utils, queryInput, t);
+  const query = useQuery({
+    queryKey: ['food', 'inbox', 'listFailed', queryInput],
+    queryFn: async () =>
+      unwrap(
+        await inboxListFailed({
+          body: {
+            errorCodes: queryInput.errorCodes,
+            kinds: queryInput.kinds,
+            sinceDays: queryInput.sinceDays,
+          },
+        })
+      ),
+  });
+  const errorCodesQuery = useQuery({
+    queryKey: ['food', 'inbox', 'failedErrorCodes'],
+    queryFn: async () => unwrap(await inboxFailedErrorCodes()),
+  });
+  const retryMutation = useRetryMutation(queryInput, t);
   const retry = useCallback(
     (sourceId: number) => retryMutation.mutate({ sourceId }),
     [retryMutation]
   );
   return {
     rows: query.data?.items ?? [],
-    availableErrorCodes: errorCodesQuery.data ?? [],
+    availableErrorCodes: errorCodesQuery.data?.items ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,

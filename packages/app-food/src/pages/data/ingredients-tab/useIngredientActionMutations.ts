@@ -1,33 +1,40 @@
 /**
- * The three ingredient-action tRPC mutations (rename / changeParent /
- * delete), wrapped so `useIngredientActions` can stay declarative.
+ * The three ingredient-action mutations (rename / changeParent / delete),
+ * wrapped so `useIngredientActions` can stay declarative.
  *
  * On delete:
  *   - `{ ok: true }`              → close all dialogs, invalidate caches
  *   - `{ ok: false, blockers }`   → leave the modal open, refetch blockers
- *   - `TRPCError code='CONFLICT'` → set `hasOtherFkRefs` so the dialog
+ *   - 409 (conflict)             → set `hasOtherFkRefs` so the dialog
  *     surfaces the generic "other refs" copy for FK violations not
  *     enumerated by `getIngredientDeleteBlockers`
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { isConflict } from '@pops/pillar-sdk/client';
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
-
+import { FoodApiError, unwrap } from '../../../food-api-helpers.js';
+import {
+  ingredientsChangeParent,
+  ingredientsDelete,
+  ingredientsRename,
+} from '../../../food-api/index.js';
 import { mapMutationError } from './errors';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { QueryClient } from '@tanstack/react-query';
 import type { TFunction } from 'i18next';
 
-import type { AppRouter } from '@pops/api';
-
-type RenameInput = inferRouterInputs<AppRouter>['food']['ingredients']['rename'];
-type RenameOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['rename'];
-type ChangeParentInput = inferRouterInputs<AppRouter>['food']['ingredients']['changeParent'];
-type ChangeParentOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['changeParent'];
-type DeleteInput = inferRouterInputs<AppRouter>['food']['ingredients']['delete'];
-type DeleteOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['delete'];
+interface RenameInput {
+  oldSlug: string;
+  newSlug: string;
+}
+interface ChangeParentInput {
+  id: number;
+  newParentId: number | null;
+}
+interface DeleteInput {
+  id: number;
+}
 
 interface ErrorState {
   rename: string | null;
@@ -40,6 +47,10 @@ const EMPTY_ERRORS: ErrorState = { rename: null, changeParent: null, delete: nul
 interface Args {
   closeAll: () => void;
   onDeleteOtherFkRef: () => void;
+}
+
+function isConflict(err: unknown): boolean {
+  return err instanceof FoodApiError && err.status === 409;
 }
 
 function deriveDeleteError(err: unknown, t: TFunction): string {
@@ -55,12 +66,13 @@ function useRenameMutation(
   setErrors: SetErrors,
   t: TFunction
 ) {
-  return usePillarMutation<RenameInput, RenameOutput>('food', ['ingredients', 'rename'], {
+  return useMutation({
+    mutationFn: async (input: RenameInput) => unwrap(await ingredientsRename({ body: input })),
     onSuccess: async () => {
       await invalidate();
       closeAll();
     },
-    onError: (err) =>
+    onError: (err: Error) =>
       setErrors((prev) => ({
         ...prev,
         rename: mapMutationError(err, t, { fallbackKey: 'data.ingredients.rename.error.generic' }),
@@ -74,23 +86,21 @@ function useChangeParentMutation(
   setErrors: SetErrors,
   t: TFunction
 ) {
-  return usePillarMutation<ChangeParentInput, ChangeParentOutput>(
-    'food',
-    ['ingredients', 'changeParent'],
-    {
-      onSuccess: async () => {
-        await invalidate();
-        closeAll();
-      },
-      onError: (err) =>
-        setErrors((prev) => ({
-          ...prev,
-          changeParent: mapMutationError(err, t, {
-            fallbackKey: 'data.ingredients.changeParent.error.generic',
-          }),
-        })),
-    }
-  );
+  return useMutation({
+    mutationFn: async ({ id, newParentId }: ChangeParentInput) =>
+      unwrap(await ingredientsChangeParent({ path: { id }, body: { newParentId } })),
+    onSuccess: async () => {
+      await invalidate();
+      closeAll();
+    },
+    onError: (err: Error) =>
+      setErrors((prev) => ({
+        ...prev,
+        changeParent: mapMutationError(err, t, {
+          fallbackKey: 'data.ingredients.changeParent.error.generic',
+        }),
+      })),
+  });
 }
 
 interface UseDeleteMutationArgs {
@@ -98,7 +108,7 @@ interface UseDeleteMutationArgs {
   closeAll: () => void;
   setErrors: SetErrors;
   onDeleteOtherFkRef: () => void;
-  utils: ReturnType<typeof usePillarUtils>;
+  queryClient: QueryClient;
   t: TFunction;
 }
 
@@ -107,19 +117,20 @@ function useDeleteMutation({
   closeAll,
   setErrors,
   onDeleteOtherFkRef,
-  utils,
+  queryClient,
   t,
 }: UseDeleteMutationArgs) {
-  return usePillarMutation<DeleteInput, DeleteOutput>('food', ['ingredients', 'delete'], {
+  return useMutation({
+    mutationFn: async ({ id }: DeleteInput) => unwrap(await ingredientsDelete({ path: { id } })),
     onSuccess: async (result) => {
       if (result.ok) {
         await invalidate();
         closeAll();
         return;
       }
-      await utils.invalidate(['ingredients', 'blockers']);
+      await queryClient.invalidateQueries({ queryKey: ['food', 'ingredients', 'blockers'] });
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       if (isConflict(err)) onDeleteOtherFkRef();
       setErrors((prev) => ({ ...prev, delete: deriveDeleteError(err, t) }));
     },
@@ -128,22 +139,29 @@ function useDeleteMutation({
 
 export function useIngredientActionMutations({ closeAll, onDeleteOtherFkRef }: Args) {
   const { t } = useTranslation('food');
-  const utils = usePillarUtils('food');
+  const queryClient = useQueryClient();
   const [errors, setErrors] = useState<ErrorState>(EMPTY_ERRORS);
 
   const clearErrors = useCallback(() => setErrors(EMPTY_ERRORS), []);
   const invalidate = useCallback(async () => {
     await Promise.all([
-      utils.invalidate(['ingredients', 'list']),
-      utils.invalidate(['ingredients', 'get']),
+      queryClient.invalidateQueries({ queryKey: ['food', 'ingredients', 'list'] }),
+      queryClient.invalidateQueries({ queryKey: ['food', 'ingredients', 'get'] }),
     ]);
-  }, [utils]);
+  }, [queryClient]);
 
   return {
     errors,
     clearErrors,
     rename: useRenameMutation(invalidate, closeAll, setErrors, t),
     changeParent: useChangeParentMutation(invalidate, closeAll, setErrors, t),
-    delete: useDeleteMutation({ invalidate, closeAll, setErrors, onDeleteOtherFkRef, utils, t }),
+    delete: useDeleteMutation({
+      invalidate,
+      closeAll,
+      setErrors,
+      onDeleteOtherFkRef,
+      queryClient,
+      t,
+    }),
   };
 }

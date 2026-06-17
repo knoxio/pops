@@ -13,16 +13,16 @@
  * stays under the per-function lint cap (60 lines) and so the draft
  * machinery is unit-testable in isolation.
  */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-import { usePillarMutation, usePillarUtils } from '@pops/pillar-sdk/react';
+import { unwrap } from '../../../food-api-helpers.js';
+import { ingredientTagsSet } from '../../../food-api/index.js';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type TagsSetInput = inferRouterInputs<AppRouter>['food']['ingredients']['tags']['set'];
-type TagsSetOutput = inferRouterOutputs<AppRouter>['food']['ingredients']['tags']['set'];
+interface TagsSetInput {
+  ingredientId: number;
+  tags: readonly string[];
+}
 
 export interface TagsDraft {
   tags: readonly string[];
@@ -96,13 +96,15 @@ export function useTagsDraft({ ingredientId, remoteTags }: UseTagsDraftInput): T
 }
 
 function useSetMutation() {
-  const utils = usePillarUtils('food');
-  return usePillarMutation<TagsSetInput, TagsSetOutput>('food', ['ingredients', 'tags', 'set'], {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ingredientId, tags }: TagsSetInput) =>
+      unwrap(await ingredientTagsSet({ path: { ingredientId }, body: { tags: [...tags] } })),
     onSuccess: async (result) => {
       if (result.ok) {
         await Promise.all([
-          utils.invalidate(['ingredients', 'tags', 'list']),
-          utils.invalidate(['ingredients', 'tags', 'distinct']),
+          qc.invalidateQueries({ queryKey: ['food', 'ingredients', 'tags', 'list'] }),
+          qc.invalidateQueries({ queryKey: ['food', 'ingredients', 'tags', 'distinct'] }),
         ]);
       }
     },

@@ -3,11 +3,12 @@
  *
  * Drives the page through `createMemoryRouter` so the `useSearchParams`
  * + URL-state machinery exercises React Router's real resolution path.
- * The `food.substitutions.graphView` query is mocked at the
- * `@pops/pillar-sdk` module boundary; the force-directed canvas is
- * substituted via `forceGraphRenderImpl` so vitest doesn't need a real
+ * The `substitutionsGraphView` SDK call is mocked at the generated
+ * `food-api` module boundary; the force-directed canvas is substituted
+ * via `forceGraphRenderImpl` so vitest doesn't need a real
  * `HTMLCanvasElement`.
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Suspense } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -16,36 +17,36 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ForceGraphInternalProps } from '../ForceGraphCanvas';
 import type { SubGraphEdge, SubGraphNode, SubGraphView } from '../types';
 
-const refetchFn = vi.fn();
-const graphViewState: {
-  data: SubGraphView | undefined;
-  isLoading: boolean;
-  isError: boolean;
-  lastInput: unknown;
-} = {
+const substitutionsGraphViewMock = vi.hoisted(() => vi.fn());
+
+const graphViewState: { data: SubGraphView | undefined } = {
   data: undefined,
-  isLoading: false,
-  isError: false,
-  lastInput: undefined,
 };
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'substitutions.graphView') {
-      graphViewState.lastInput = input;
-      return {
-        data: graphViewState.data,
-        isLoading: graphViewState.isLoading,
-        isError: graphViewState.isError,
-        refetch: refetchFn,
-      };
-    }
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
+vi.mock('../../../../food-api/index.js', () => ({
+  substitutionsGraphView: substitutionsGraphViewMock,
+}));
+
+substitutionsGraphViewMock.mockImplementation(async () => ({
+  data: graphViewState.data ?? { nodes: [], edges: [] },
 }));
 
 import { SubGraphPage } from '../SubGraphPage';
+
+function lastGraphQuery(): {
+  scope?: string;
+  contextTag?: string;
+  search?: string;
+  recipeId?: number;
+} {
+  const call = substitutionsGraphViewMock.mock.lastCall;
+  return (call?.[0]?.query ?? {}) as {
+    scope?: string;
+    contextTag?: string;
+    search?: string;
+    recipeId?: number;
+  };
+}
 
 function makeIngredientNode(id: number, slug: string, name: string): SubGraphNode {
   return {
@@ -115,23 +116,23 @@ function renderAt(initialPath: string) {
     ],
     { initialEntries: [initialPath] }
   );
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <Suspense fallback={<div>loading</div>}>
-      <RouterProvider router={router} />
+      <QueryClientProvider client={client}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
     </Suspense>
   );
 }
 
 beforeEach(() => {
   graphViewState.data = undefined;
-  graphViewState.isLoading = false;
-  graphViewState.isError = false;
-  graphViewState.lastInput = undefined;
-  refetchFn.mockReset();
+  substitutionsGraphViewMock.mockClear();
 });
 
 describe('SubGraphPage', () => {
-  it('renders the graph header + nodes + edges from the fixture', () => {
+  it('renders the graph header + nodes + edges from the fixture', async () => {
     const banana = makeIngredientNode(1, 'banana', 'Banana');
     const apple = makeIngredientNode(2, 'apple', 'Apple');
     const butter = makeIngredientNode(3, 'butter', 'Butter');
@@ -145,7 +146,7 @@ describe('SubGraphPage', () => {
     };
     renderAt('/food/data/substitutions/graph');
     expect(screen.getByRole('heading', { name: /substitution graph/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'node:Butter' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'node:Butter' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'node:Olive oil' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'edge:11' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'edge:12' })).toBeInTheDocument();
@@ -159,7 +160,7 @@ describe('SubGraphPage', () => {
       edges: [makeEdge(11, butter, olive, { ratio: 0.75 })],
     };
     renderAt('/food/data/substitutions/graph');
-    fireEvent.click(screen.getByRole('button', { name: 'node:Butter' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'node:Butter' }));
     await waitFor(() => {
       expect(screen.getByRole('complementary', { name: 'Butter' })).toBeInTheDocument();
     });
@@ -176,7 +177,7 @@ describe('SubGraphPage', () => {
       edges: [makeEdge(11, butter, olive, { ratio: 0.75, scope: 'global' })],
     };
     renderAt('/food/data/substitutions/graph');
-    fireEvent.click(screen.getByRole('button', { name: 'edge:11' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'edge:11' }));
     await waitFor(() => {
       const panels = screen.getAllByRole('complementary');
       const detail = panels.find((p) => p.textContent?.includes('Ratio'));
@@ -186,13 +187,15 @@ describe('SubGraphPage', () => {
     });
   });
 
-  it('passes header filters into the tRPC query input', () => {
+  it('passes header filters into the graphView query input', async () => {
     graphViewState.data = { nodes: [], edges: [] };
     renderAt('/food/data/substitutions/graph?scope=global&contextTag=baking&q=butter');
-    expect(graphViewState.lastInput).toMatchObject({
-      scope: 'global',
-      contextTag: 'baking',
-      search: 'butter',
+    await waitFor(() => {
+      expect(lastGraphQuery()).toMatchObject({
+        scope: 'global',
+        contextTag: 'baking',
+        search: 'butter',
+      });
     });
   });
 
@@ -202,7 +205,7 @@ describe('SubGraphPage', () => {
     expect(screen.getByText(/recipe picker arrives with PRD-119/i)).toBeInTheDocument();
   });
 
-  it('renders the radial focus view when ?node=<slug> is present', () => {
+  it('renders the radial focus view when ?node=<slug> is present', async () => {
     const butter = makeIngredientNode(3, 'butter', 'Butter');
     const olive = makeIngredientNode(4, 'olive-oil', 'Olive oil');
     graphViewState.data = {
@@ -210,12 +213,12 @@ describe('SubGraphPage', () => {
       edges: [makeEdge(11, butter, olive, { ratio: 0.75 })],
     };
     renderAt('/food/data/substitutions/graph?node=butter');
-    expect(screen.getByRole('img', { name: /radial view: butter/i })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: /radial view: butter/i })).toBeInTheDocument();
     // The stub force graph should NOT be rendered in radial mode.
     expect(screen.queryByTestId('stub-force-graph')).toBeNull();
   });
 
-  it('opens the edge detail panel on initial load when ?edge=<id> is present', () => {
+  it('opens the edge detail panel on initial load when ?edge=<id> is present', async () => {
     const butter = makeIngredientNode(3, 'butter', 'Butter');
     const olive = makeIngredientNode(4, 'olive-oil', 'Olive oil');
     graphViewState.data = {
@@ -223,15 +226,15 @@ describe('SubGraphPage', () => {
       edges: [makeEdge(11, butter, olive, { ratio: 0.5, contextTags: ['savory'] })],
     };
     renderAt('/food/data/substitutions/graph?edge=11');
-    const panel = screen.getByRole('complementary', { name: /substitution detail/i });
+    const panel = await screen.findByRole('complementary', { name: /substitution detail/i });
     expect(panel.textContent).toContain('0.50');
     expect(panel.textContent).toContain('savory');
   });
 
-  it('shows the empty state when the filtered view has zero edges', () => {
+  it('shows the empty state when the filtered view has zero edges', async () => {
     graphViewState.data = { nodes: [], edges: [] };
     renderAt('/food/data/substitutions/graph');
-    expect(screen.getByText(/no substitutions match your filters/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no substitutions match your filters/i)).toBeInTheDocument();
   });
 
   it('view-as-table link points back to the substitutions tab', () => {
@@ -244,28 +247,30 @@ describe('SubGraphPage', () => {
   it('empty state surfaces a "Clear filters" action that resets URL params', async () => {
     graphViewState.data = { nodes: [], edges: [] };
     renderAt('/food/data/substitutions/graph?scope=global&contextTag=baking&q=butter');
-    const clear = screen.getByRole('button', { name: /clear filters/i });
+    const clear = await screen.findByRole('button', { name: /clear filters/i });
     expect(clear).toBeInTheDocument();
     fireEvent.click(clear);
     await waitFor(() => {
       // After clearing, the filter pass-through (covered in another test)
       // should see undefined contextTag + search.
-      expect(graphViewState.lastInput).toMatchObject({ scope: 'global' });
-      const input = graphViewState.lastInput as { contextTag?: string; search?: string };
+      const input = lastGraphQuery();
+      expect(input).toMatchObject({ scope: 'global' });
       expect(input.contextTag).toBeUndefined();
       expect(input.search).toBeUndefined();
     });
   });
 
-  it('coerces invalid URL params to safe defaults', () => {
+  it('coerces invalid URL params to safe defaults', async () => {
     graphViewState.data = { nodes: [], edges: [] };
     renderAt('/food/data/substitutions/graph?scope=bogus&recipeId=not-a-number&contextTag=');
     // Bogus scope falls back to 'global'; NaN recipeId drops out; empty
     // contextTag is treated as null and never reaches the query input.
-    expect(graphViewState.lastInput).toMatchObject({ scope: 'global' });
-    const input = graphViewState.lastInput as { recipeId?: number; contextTag?: string };
-    expect(input.recipeId).toBeUndefined();
-    expect(input.contextTag).toBeUndefined();
+    await waitFor(() => {
+      const input = lastGraphQuery();
+      expect(input).toMatchObject({ scope: 'global' });
+      expect(input.recipeId).toBeUndefined();
+      expect(input.contextTag).toBeUndefined();
+    });
   });
 
   it('debounces the search input by 200ms before pushing it into the query', async () => {
@@ -277,15 +282,13 @@ describe('SubGraphPage', () => {
     fireEvent.change(searchBox, { target: { value: 'bu' } });
     fireEvent.change(searchBox, { target: { value: 'but' } });
     // No URL/query update should have fired yet — the input is local.
-    const before = graphViewState.lastInput as { search?: string };
-    expect(before.search).toBeUndefined();
+    expect(lastGraphQuery().search).toBeUndefined();
     // Advance past the 200ms debounce; the latest value should land.
     vi.advanceTimersByTime(220);
     await vi.runAllTimersAsync();
     vi.useRealTimers();
     await waitFor(() => {
-      const after = graphViewState.lastInput as { search?: string };
-      expect(after.search).toBe('but');
+      expect(lastGraphQuery().search).toBe('but');
     });
   });
 });

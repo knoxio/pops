@@ -7,7 +7,8 @@
  *   - the row Delete button is disabled and the tooltip text is wired up
  *   - the Add dialog submits via `food.prepStates.create`
  */
-import { render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,48 +29,44 @@ function ensure(): PrepStatesMockApi {
   return current;
 }
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[]) => {
-    const key = path.join('.');
-    if (key === 'prepStates.list') {
-      return { data: { items: ensure().items }, isLoading: false, isError: false };
-    }
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts?: { onSuccess?: () => void }
-  ) => {
-    const key = path.join('.');
-    if (key === 'prepStates.create') {
-      return {
-        mutate: (input: unknown) => {
-          ensure().createCalls.push(input as never);
-          opts?.onSuccess?.();
-        },
-        mutateAsync: vi.fn(),
-        isPending: false,
-      };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: () => Promise.resolve(),
-  }),
+const prepStatesListMock = vi.hoisted(() => vi.fn());
+const prepStatesCreateMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../../../food-api/index.js', () => ({
+  prepStatesList: prepStatesListMock,
+  prepStatesCreate: prepStatesCreateMock,
 }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { PrepStatesTabContent } from '../PrepStatesTabContent';
 
+function renderTab(): void {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={client}>
+      <PrepStatesTabContent />
+    </QueryClientProvider>
+  );
+}
+
 beforeEach(() => {
+  vi.clearAllMocks();
   current = { items: [], createCalls: [] };
+  prepStatesListMock.mockImplementation(async () => ({ data: { items: ensure().items } }));
+  prepStatesCreateMock.mockImplementation(
+    async (opts: { body: { slug: string; name: string } }) => {
+      ensure().createCalls.push(opts.body);
+      return { data: { id: 1, ...opts.body } };
+    }
+  );
 });
 
 describe('PrepStatesTabContent', () => {
   it('renders the description header', async () => {
-    render(<PrepStatesTabContent />);
+    renderTab();
     expect(await screen.findByText(/knife and process modifiers/i)).toBeInTheDocument();
   });
 
@@ -79,7 +76,7 @@ describe('PrepStatesTabContent', () => {
       { id: 2, slug: 'diced', name: 'Diced' },
       { id: 3, slug: 'grated', name: 'Grated' },
     ];
-    render(<PrepStatesTabContent />);
+    renderTab();
     const rows = await screen.findAllByTestId(/prep-state-row-/);
     // First cell of each row holds the slug (font-mono).
     const slugs = rows.map((row) => row.firstElementChild?.textContent ?? '');
@@ -88,7 +85,7 @@ describe('PrepStatesTabContent', () => {
 
   it('marks every row Delete button as aria-disabled with an explanatory tooltip', async () => {
     ensure().items = [{ id: 1, slug: 'diced', name: 'Diced' }];
-    render(<PrepStatesTabContent />);
+    renderTab();
     const del = (await screen.findAllByRole('button', { name: /delete disabled/i }))[0];
     // Per the keyboard-accessibility fix: the button is focusable
     // (`aria-disabled` instead of HTML `disabled`) so the tooltip can
@@ -99,23 +96,25 @@ describe('PrepStatesTabContent', () => {
   });
 
   it('renders the empty state when no rows', async () => {
-    render(<PrepStatesTabContent />);
+    renderTab();
     expect(await screen.findByText(/no prep states yet/i)).toBeInTheDocument();
   });
 
   it('opens Add → submits slug + name to the create mutation', async () => {
-    render(<PrepStatesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /add prep state/i }));
     const dialog = await screen.findByRole('dialog', { name: /add prep state/i });
     await user.type(within(dialog).getByLabelText(/^slug$/i), 'diced');
     await user.type(within(dialog).getByLabelText(/^name$/i), 'Diced');
     await user.click(within(dialog).getByRole('button', { name: /^add$/i }));
-    expect(ensure().createCalls.at(-1)).toEqual({ slug: 'diced', name: 'Diced' });
+    await waitFor(() =>
+      expect(ensure().createCalls.at(-1)).toEqual({ slug: 'diced', name: 'Diced' })
+    );
   });
 
   it('disables Add submit until both slug and name are non-empty', async () => {
-    render(<PrepStatesTabContent />);
+    renderTab();
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /add prep state/i }));
     const dialog = await screen.findByRole('dialog', { name: /add prep state/i });

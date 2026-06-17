@@ -73,7 +73,7 @@ function ProvenanceUrlWeb({ source }: Props): ReactElement {
 
 function ProvenanceUrlInstagram({ source }: Props): ReactElement {
   const { t } = useTranslation('food');
-  const videoSrc = `/api/food/ingest/source/${source.id}/video`;
+  const videoSrc = `/food-api/ingest/source/${source.id}/video`;
   return (
     <div className="space-y-3">
       {source.url !== null && (
@@ -140,7 +140,7 @@ function ProvenanceText({ source }: Props): ReactElement {
 
 function ProvenanceScreenshot({ source }: Props): ReactElement {
   const { t } = useTranslation('food');
-  const src = `/api/food/ingest/source/${source.id}/screenshot`;
+  const src = `/food-api/ingest/source/${source.id}/screenshot`;
   return (
     <div>
       <img

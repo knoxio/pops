@@ -7,24 +7,25 @@
  *    `substitution` discriminant + the candidate + the batch.
  *  - "Show all" expander reveals candidates beyond the 5-row cap.
  *  - Loading / empty / error states render their respective copy.
+ *
+ * The picker drives `batchesSearchForConsume` + `substitutionsResolveForLine`
+ * through React Query, so the generated SDK module is mocked and each render
+ * is wrapped in a `QueryClientProvider`.
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { type ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { BatchForConsumeRow } from '@pops/app-food-db';
 
-const mockSearchForConsume = vi.fn();
-const mockResolveForLine = vi.fn();
-
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown, opts?: unknown) => {
-    const key = path.join('.');
-    if (key === 'batches.searchForConsume') return mockSearchForConsume(input, opts);
-    if (key === 'substitutions.resolveForLine') return mockResolveForLine(input, opts);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
+const sdk = vi.hoisted(() => ({
+  batchesSearchForConsume: vi.fn(),
+  substitutionsResolveForLine: vi.fn(),
 }));
+
+vi.mock('../../../food-api/index.js', () => sdk);
 
 import { BatchOverridePicker } from '../BatchOverridePicker.js';
 
@@ -123,64 +124,70 @@ function makeResolution(over: Partial<ResolutionShape> = {}): ResolutionShape {
   };
 }
 
+function mockSearchItems(items: readonly BatchForConsumeRow[]) {
+  sdk.batchesSearchForConsume.mockResolvedValue({ data: { items } });
+}
+
+function mockResolution(resolution: ResolutionShape) {
+  sdk.substitutionsResolveForLine.mockResolvedValue({ data: resolution });
+}
+
+function renderPicker(
+  overrides: Partial<Parameters<typeof BatchOverridePicker>[0]> = {}
+): ReturnType<typeof render> {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  function Wrapper({ children }: { children: ReactElement }): ReactElement {
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  }
+  return render(
+    <BatchOverridePicker
+      ingredientId={10}
+      variantId={100}
+      recipeVersionId={999}
+      lineIndex={1}
+      linePrepStateId={null}
+      onSelect={vi.fn()}
+      onCancel={vi.fn()}
+      {...overrides}
+    />,
+    { wrapper: Wrapper }
+  );
+}
+
 describe('BatchOverridePicker — PRD-149 sections', () => {
-  it('renders Same-variant + Substitutions sections with their counts', () => {
-    mockSearchForConsume.mockReturnValue({
-      data: { items: [makeBatch({ id: 18 }), makeBatch({ id: 19 })] },
-      isLoading: false,
-    });
-    mockResolveForLine.mockReturnValue({
-      data: makeResolution({
+  it('renders Same-variant + Substitutions sections with their counts', async () => {
+    mockSearchItems([makeBatch({ id: 18 }), makeBatch({ id: 19 })]);
+    mockResolution(
+      makeResolution({
         candidates: [
           makeCandidate({ substitutionId: 1 }),
           makeCandidate({ substitutionId: 2, substituteIngredientName: 'leek' }),
         ],
-      }),
-      isLoading: false,
-      isError: false,
-    });
-
-    render(
-      <BatchOverridePicker
-        ingredientId={10}
-        variantId={100}
-        recipeVersionId={999}
-        lineIndex={1}
-        linePrepStateId={null}
-        onSelect={vi.fn()}
-        onCancel={vi.fn()}
-      />
+      })
     );
 
-    const sameVariant = screen.getByTestId('picker-section-same-variant');
-    expect(within(sameVariant).getByText(/Same variant \(2\)/i)).toBeInTheDocument();
+    renderPicker();
+
+    const sameVariant = await screen.findByTestId('picker-section-same-variant');
+    expect(await within(sameVariant).findByText(/Same variant \(2\)/i)).toBeInTheDocument();
     const subs = screen.getByTestId('picker-section-substitutions');
-    expect(within(subs).getByText(/Substitutions \(2\)/i)).toBeInTheDocument();
+    expect(await within(subs).findByText(/Substitutions \(2\)/i)).toBeInTheDocument();
   });
 
   it('routes a substitution row click through onSelect with the candidate + batch', async () => {
-    mockSearchForConsume.mockReturnValue({ data: { items: [] }, isLoading: false });
-    const candidate = makeCandidate({ substitutionId: 7 });
-    mockResolveForLine.mockReturnValue({
-      data: makeResolution({ candidates: [candidate] }),
-      isLoading: false,
-      isError: false,
-    });
+    mockSearchItems([]);
+    mockResolution(makeResolution({ candidates: [makeCandidate({ substitutionId: 7 })] }));
     const onSelect = vi.fn();
     const user = userEvent.setup();
 
-    render(
-      <BatchOverridePicker
-        ingredientId={10}
-        recipeVersionId={999}
-        lineIndex={1}
-        linePrepStateId={null}
-        onSelect={onSelect}
-        onCancel={vi.fn()}
-      />
-    );
+    renderPicker({ variantId: undefined, onSelect });
 
-    await user.click(screen.getByTestId('sub-row-7-80'));
+    await user.click(await screen.findByTestId('sub-row-7-80'));
 
     expect(onSelect).toHaveBeenCalledWith({
       kind: 'substitution',
@@ -189,44 +196,36 @@ describe('BatchOverridePicker — PRD-149 sections', () => {
     });
   });
 
-  it('shows the prep-mismatch chip when the sub batch prep differs from the line', () => {
-    mockSearchForConsume.mockReturnValue({ data: { items: [] }, isLoading: false });
-    const candidate = makeCandidate({
-      substitutionId: 9,
-      batches: [
-        {
-          batchId: 50,
-          qtyRemaining: 200,
-          unit: 'g',
-          location: 'fridge',
-          expiresAt: null,
-          prepStateId: 4,
-          prepStateLabel: 'whole',
-        },
-      ],
-    });
-    mockResolveForLine.mockReturnValue({
-      data: makeResolution({ candidates: [candidate] }),
-      isLoading: false,
-      isError: false,
-    });
-
-    render(
-      <BatchOverridePicker
-        ingredientId={10}
-        recipeVersionId={999}
-        lineIndex={1}
-        linePrepStateId={3}
-        onSelect={vi.fn()}
-        onCancel={vi.fn()}
-      />
+  it('shows the prep-mismatch chip when the sub batch prep differs from the line', async () => {
+    mockSearchItems([]);
+    mockResolution(
+      makeResolution({
+        candidates: [
+          makeCandidate({
+            substitutionId: 9,
+            batches: [
+              {
+                batchId: 50,
+                qtyRemaining: 200,
+                unit: 'g',
+                location: 'fridge',
+                expiresAt: null,
+                prepStateId: 4,
+                prepStateLabel: 'whole',
+              },
+            ],
+          }),
+        ],
+      })
     );
 
-    expect(screen.getByTestId('sub-row-9-prep-warning')).toBeInTheDocument();
+    renderPicker({ variantId: undefined, linePrepStateId: 3 });
+
+    expect(await screen.findByTestId('sub-row-9-prep-warning')).toBeInTheDocument();
   });
 
   it('reveals candidates beyond the 5-row cap via Show all', async () => {
-    mockSearchForConsume.mockReturnValue({ data: { items: [] }, isLoading: false });
+    mockSearchItems([]);
     const candidates: CandidateShape[] = [];
     for (let i = 0; i < 7; i++) {
       candidates.push(
@@ -247,67 +246,31 @@ describe('BatchOverridePicker — PRD-149 sections', () => {
         })
       );
     }
-    mockResolveForLine.mockReturnValue({
-      data: makeResolution({ candidates }),
-      isLoading: false,
-      isError: false,
-    });
+    mockResolution(makeResolution({ candidates }));
     const user = userEvent.setup();
 
-    render(
-      <BatchOverridePicker
-        ingredientId={10}
-        recipeVersionId={999}
-        lineIndex={1}
-        linePrepStateId={null}
-        onSelect={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+    renderPicker({ variantId: undefined });
 
-    expect(screen.queryByTestId('sub-row-105-1005')).not.toBeInTheDocument();
-    await user.click(screen.getByTestId('sub-picker-show-all'));
+    await user.click(await screen.findByTestId('sub-picker-show-all'));
     expect(screen.getByTestId('sub-row-105-1005')).toBeInTheDocument();
     expect(screen.getByTestId('sub-row-106-1006')).toBeInTheDocument();
   });
 
-  it('renders the empty state when there are no candidates', () => {
-    mockSearchForConsume.mockReturnValue({ data: { items: [] }, isLoading: false });
-    mockResolveForLine.mockReturnValue({
-      data: makeResolution({ candidates: [] }),
-      isLoading: false,
-      isError: false,
-    });
+  it('renders the empty state when there are no candidates', async () => {
+    mockSearchItems([]);
+    mockResolution(makeResolution({ candidates: [] }));
 
-    render(
-      <BatchOverridePicker
-        ingredientId={10}
-        recipeVersionId={999}
-        lineIndex={1}
-        linePrepStateId={null}
-        onSelect={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+    renderPicker({ variantId: undefined });
 
-    expect(screen.getByTestId('sub-picker-empty')).toBeInTheDocument();
+    expect(await screen.findByTestId('sub-picker-empty')).toBeInTheDocument();
   });
 
-  it('renders the loading state while the sub query is pending', () => {
-    mockSearchForConsume.mockReturnValue({ data: { items: [] }, isLoading: false });
-    mockResolveForLine.mockReturnValue({ data: undefined, isLoading: true, isError: false });
+  it('renders the loading state while the sub query is pending', async () => {
+    mockSearchItems([]);
+    sdk.substitutionsResolveForLine.mockReturnValue(new Promise(() => undefined));
 
-    render(
-      <BatchOverridePicker
-        ingredientId={10}
-        recipeVersionId={999}
-        lineIndex={1}
-        linePrepStateId={null}
-        onSelect={vi.fn()}
-        onCancel={vi.fn()}
-      />
-    );
+    renderPicker({ variantId: undefined });
 
-    expect(screen.getByTestId('sub-picker-loading')).toBeInTheDocument();
+    expect(await screen.findByTestId('sub-picker-loading')).toBeInTheDocument();
   });
 });

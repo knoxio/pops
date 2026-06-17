@@ -3,20 +3,16 @@
  * `food.inbox.approve` mutation. On success navigates to the promoted
  * recipe's detail page.
  */
+import { useMutation } from '@tanstack/react-query';
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { usePillarMutation } from '@pops/pillar-sdk/react';
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@pops/ui';
 
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-
-import type { AppRouter } from '@pops/api';
-
-type InboxApproveInput = inferRouterInputs<AppRouter>['food']['inbox']['approve'];
-type InboxApproveOutput = inferRouterOutputs<AppRouter>['food']['inbox']['approve'];
+import { unwrap } from '../../../food-api-helpers.js';
+import { inboxApprove } from '../../../food-api/index.js';
 
 interface Props {
   open: boolean;
@@ -35,24 +31,21 @@ export function ApproveDialog({
 }: Props): ReactElement {
   const { t } = useTranslation('food');
   const navigate = useNavigate();
-  const mutation = usePillarMutation<InboxApproveInput, InboxApproveOutput>(
-    'food',
-    ['inbox', 'approve'],
-    {
-      onSuccess: (res) => {
-        if (res.ok) {
-          toast.success(t('inbox.inspector.decision.approve.success'));
-          onApproved();
-          onOpenChange(false);
-          void navigate(`/food/recipes/${recipeSlug}`);
-        } else {
-          toast.error(t(`inbox.inspector.decision.approve.error.${res.reason}` as const));
-        }
-      },
-      onError: (err) =>
-        toast.error(t('inbox.inspector.decision.approve.error.generic', { message: err.message })),
-    }
-  );
+  const mutation = useMutation({
+    mutationFn: async (input: { versionId: number }) => unwrap(await inboxApprove({ body: input })),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(t('inbox.inspector.decision.approve.success'));
+        onApproved();
+        onOpenChange(false);
+        void navigate(`/food/recipes/${recipeSlug}`);
+      } else {
+        toast.error(t(`inbox.inspector.decision.approve.error.${res.reason}` as const));
+      }
+    },
+    onError: (err: Error) =>
+      toast.error(t('inbox.inspector.decision.approve.error.generic', { message: err.message })),
+  });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="inspector-approve-dialog">

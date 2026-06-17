@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
@@ -8,48 +9,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import enAUFood from '../../../../../../apps/pops-shell/src/i18n/locales/en-AU/food.json';
 
-const mockListDrafts = vi.fn();
-const mockListDraftsInvalidate = vi.fn();
-const mockPromoteMutate = vi.fn();
-let mockPromoteOnSuccess:
-  | ((res: { ok: boolean; reason?: string; versionId?: number }) => void)
-  | undefined;
-const mockDiscardMutate = vi.fn();
-let mockDiscardOnSuccess: (() => void) | undefined;
+const recipesListDraftsMock = vi.hoisted(() => vi.fn());
+const recipesPromoteMock = vi.hoisted(() => vi.fn());
+const recipesArchiveVersionMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@pops/pillar-sdk/react', () => ({
-  usePillarQuery: (_pillarId: string, path: readonly string[], input: unknown) => {
-    const key = path.join('.');
-    if (key === 'recipes.listDrafts') return mockListDrafts(input);
-    throw new Error(`Unexpected pillar query: ${key}`);
-  },
-  usePillarMutation: (
-    _pillarId: string,
-    path: readonly string[],
-    opts: {
-      onSuccess?: (res: { ok: boolean; reason?: string; versionId?: number }) => void;
-      onError?: (err: Error) => void;
-    }
-  ) => {
-    const key = path.join('.');
-    if (key === 'recipes.promote') {
-      mockPromoteOnSuccess = opts.onSuccess;
-      return { mutate: mockPromoteMutate, isPending: false };
-    }
-    if (key === 'recipes.archiveVersion') {
-      mockDiscardOnSuccess = opts.onSuccess as (() => void) | undefined;
-      return { mutate: mockDiscardMutate, isPending: false };
-    }
-    throw new Error(`Unexpected pillar mutation: ${key}`);
-  },
-  usePillarUtils: () => ({
-    invalidate: (path: readonly string[]) => {
-      const key = path.join('.');
-      if (key === 'recipes.listDrafts') return mockListDraftsInvalidate();
-      return undefined;
-    },
-    setData: vi.fn(),
-  }),
+vi.mock('../../../food-api/index.js', () => ({
+  recipesListDrafts: recipesListDraftsMock,
+  recipesPromote: recipesPromoteMock,
+  recipesArchiveVersion: recipesArchiveVersionMock,
 }));
 
 const navigateMock = vi.fn();
@@ -98,24 +65,36 @@ function Wrapper({ children }: { children: ReactElement }): ReactElement {
     });
     return instance;
   }, []);
+  const client = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
+    []
+  );
   return (
-    <I18nextProvider i18n={i18n}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </I18nextProvider>
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
 
+function resolveDrafts(drafts: ReturnType<typeof makeDraft>[]): void {
+  recipesListDraftsMock.mockResolvedValue({ data: { drafts } });
+}
+
 beforeEach(() => {
-  mockListDrafts.mockReset();
-  mockListDraftsInvalidate.mockReset();
-  mockPromoteMutate.mockReset();
-  mockDiscardMutate.mockReset();
+  recipesListDraftsMock.mockReset();
+  recipesPromoteMock.mockReset();
+  recipesArchiveVersionMock.mockReset();
   navigateMock.mockReset();
 });
 
 describe('PRD-119-D — RecipeDraftsPage', () => {
   it('shows the loading state while drafts are fetching', () => {
-    mockListDrafts.mockReturnValue({ isLoading: true, data: undefined, error: null });
+    recipesListDraftsMock.mockReturnValue(new Promise(() => {}));
     render(
       <Wrapper>
         <RecipeDraftsPage />
@@ -124,111 +103,91 @@ describe('PRD-119-D — RecipeDraftsPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/loading drafts/i);
   });
 
-  it('shows the empty state when no drafts exist', () => {
-    mockListDrafts.mockReturnValue({ isLoading: false, data: { drafts: [] }, error: null });
+  it('shows the empty state when no drafts exist', async () => {
+    resolveDrafts([]);
     render(
       <Wrapper>
         <RecipeDraftsPage />
       </Wrapper>
     );
-    expect(screen.getByText(/no drafts yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no drafts yet/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /start a draft/i })).toHaveAttribute(
       'href',
       '/food/recipes/pancakes/edit'
     );
   });
 
-  it('renders one row per draft with Edit / Promote / Discard buttons', () => {
-    mockListDrafts.mockReturnValue({
-      isLoading: false,
-      data: {
-        drafts: [
-          makeDraft(),
-          makeDraft({ versionId: 12, versionNo: 3, compileStatus: 'uncompiled' }),
-        ],
-      },
-      error: null,
-    });
+  it('renders one row per draft with Edit / Promote / Discard buttons', async () => {
+    resolveDrafts([
+      makeDraft(),
+      makeDraft({ versionId: 12, versionNo: 3, compileStatus: 'uncompiled' }),
+    ]);
     render(
       <Wrapper>
         <RecipeDraftsPage />
       </Wrapper>
     );
-    const rows = screen.getAllByRole('article');
-    expect(rows).toHaveLength(2);
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(2));
     expect(screen.getAllByRole('link', { name: /edit/i })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: /^promote/i })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: /discard/i })).toHaveLength(2);
   });
 
-  it('disables Promote for uncompiled drafts', () => {
-    mockListDrafts.mockReturnValue({
-      isLoading: false,
-      data: { drafts: [makeDraft({ compileStatus: 'uncompiled' })] },
-      error: null,
-    });
+  it('disables Promote for uncompiled drafts', async () => {
+    resolveDrafts([makeDraft({ compileStatus: 'uncompiled' })]);
     render(
       <Wrapper>
         <RecipeDraftsPage />
       </Wrapper>
     );
-    expect(screen.getByRole('button', { name: /promote/i })).toBeDisabled();
+    await waitFor(() => expect(screen.getByRole('button', { name: /promote/i })).toBeDisabled());
   });
 
   it('fires promote mutation and navigates to detail on success', async () => {
     const user = userEvent.setup();
-    mockListDrafts.mockReturnValue({
-      isLoading: false,
-      data: { drafts: [makeDraft({ versionId: 99 })] },
-      error: null,
-    });
+    resolveDrafts([makeDraft({ versionId: 99 })]);
+    recipesPromoteMock.mockResolvedValue({ data: { ok: true, versionId: 99 } });
     render(
       <Wrapper>
         <RecipeDraftsPage />
       </Wrapper>
     );
-    await user.click(screen.getByRole('button', { name: /promote/i }));
-    expect(mockPromoteMutate).toHaveBeenCalledWith({ versionId: 99 });
-    mockPromoteOnSuccess?.({ ok: true, versionId: 99 });
+    await user.click(await screen.findByRole('button', { name: /promote/i }));
+    await waitFor(() =>
+      expect(recipesPromoteMock).toHaveBeenCalledWith({ path: { versionId: 99 } })
+    );
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/food/recipes/pancakes'));
   });
 
   it('confirms before discarding and fires archiveVersion', async () => {
     const user = userEvent.setup();
-    mockListDrafts.mockReturnValue({
-      isLoading: false,
-      data: { drafts: [makeDraft({ versionId: 77 })] },
-      error: null,
-    });
+    resolveDrafts([makeDraft({ versionId: 77 })]);
+    recipesArchiveVersionMock.mockResolvedValue({ data: { ok: true } });
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(
       <Wrapper>
         <RecipeDraftsPage />
       </Wrapper>
     );
-    await user.click(screen.getByRole('button', { name: /discard/i }));
+    await user.click(await screen.findByRole('button', { name: /discard/i }));
     expect(confirmSpy).toHaveBeenCalled();
-    expect(mockDiscardMutate).toHaveBeenCalledWith({ versionId: 77 });
-    mockDiscardOnSuccess?.();
-    await waitFor(() => expect(mockListDraftsInvalidate).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(recipesArchiveVersionMock).toHaveBeenCalledWith({ path: { versionId: 77 } })
+    );
     confirmSpy.mockRestore();
   });
 
   it('skips the discard mutation when the user cancels the confirm', async () => {
     const user = userEvent.setup();
-    mockListDrafts.mockReturnValue({
-      isLoading: false,
-      data: { drafts: [makeDraft()] },
-      error: null,
-    });
+    resolveDrafts([makeDraft()]);
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(
       <Wrapper>
         <RecipeDraftsPage />
       </Wrapper>
     );
-    await user.click(screen.getByRole('button', { name: /discard/i }));
-    expect(mockDiscardMutate).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole('button', { name: /discard/i }));
+    expect(recipesArchiveVersionMock).not.toHaveBeenCalled();
     confirmSpy.mockRestore();
   });
 });
