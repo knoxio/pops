@@ -10,7 +10,7 @@
  * existing candidate or library row, falling back to the tmdbId string so the
  * NOT NULL constraint always holds.
  */
-import { eq } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 
 import { movies, rotationCandidates, rotationExclusions } from '../../schema.js';
 
@@ -21,6 +21,16 @@ export type RotationExclusionRow = typeof rotationExclusions.$inferSelect;
 export interface AddExclusionInput {
   tmdbId: number;
   reason?: string | null;
+}
+
+export interface ListExclusionsInput {
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListExclusionsResult {
+  rows: RotationExclusionRow[];
+  total: number;
 }
 
 /** Resolve a display title for an exclusion from existing candidate/movie rows. */
@@ -56,6 +66,21 @@ export function addExclusion(db: MediaDb, input: AddExclusionInput): void {
       .where(eq(rotationCandidates.tmdbId, input.tmdbId))
       .run();
   });
+}
+
+/** List exclusion entries, most-recent first, with pagination. Defaults match the monolith. */
+export function listExclusions(db: MediaDb, input: ListExclusionsInput = {}): ListExclusionsResult {
+  const limit = input.limit ?? 50;
+  const offset = input.offset ?? 0;
+  const rows = db
+    .select()
+    .from(rotationExclusions)
+    .orderBy(desc(rotationExclusions.excludedAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+  const totalRow = db.select({ value: count() }).from(rotationExclusions).get();
+  return { rows, total: totalRow?.value ?? 0 };
 }
 
 /** Fetch an exclusion by tmdbId, or `null` when absent. */

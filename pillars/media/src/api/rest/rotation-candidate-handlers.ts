@@ -63,6 +63,12 @@ export function makeRotationCandidateHandlers(db: MediaDb) {
         return { status: 200 as const, body: { message: 'Excluded from rotation' } };
       }),
 
+    listExclusions: ({ query }: Req['listExclusions']) =>
+      runHttp(() => {
+        const { rows, total } = rotationExclusionsService.listExclusions(db, query);
+        return { status: 200 as const, body: { data: { items: rows, total } } };
+      }),
+
     getExclusion: ({ params }: Req['getExclusion']) =>
       runHttp(() => ({
         status: 200 as const,

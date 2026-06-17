@@ -61,6 +61,7 @@ export const MEDIA_ROUTES: ManifestPayload['routes'] = {
     'media.comparisons.getTierListMovies',
     'media.rotation.listCandidates',
     'media.rotation.getCandidateStatus',
+    'media.rotation.listExclusions',
     'media.rotation.getExclusion',
     'media.rotation.sourceTypes',
     'media.rotation.listPlexFriends',

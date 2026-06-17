@@ -27,6 +27,8 @@ import {
   ExclusionSchema,
   ListCandidatesQuery,
   ListCandidatesResultSchema,
+  ListExclusionsQuery,
+  ListExclusionsResultSchema,
   PlexFriendsResultSchema,
   SaveSettingsBody,
   SaveSettingsResultSchema,
@@ -87,6 +89,13 @@ export const mediaRotationContract = c.router({
     body: AddExclusionBody,
     responses: { 200: MessageSchema, ...ERR_RESPONSES },
     summary: 'Exclude a movie from rotation',
+  },
+  listExclusions: {
+    method: 'GET',
+    path: '/rotation/exclusions',
+    query: ListExclusionsQuery,
+    responses: { 200: z.object({ data: ListExclusionsResultSchema }), ...ERR_RESPONSES },
+    summary: 'List exclusion entries, most-recent first, with pagination',
   },
   getExclusion: {
     method: 'GET',

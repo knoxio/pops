@@ -642,6 +642,10 @@ function makeRotationClient(r: ReturnType<typeof supertest>) {
       ),
     addExclusion: (body: Record<string, unknown>) =>
       send<{ message: string }>(r.post('/rotation/exclusions').send(body)),
+    listExclusions: (query: { limit?: number; offset?: number } = {}) =>
+      send<{ data: { items: ExclusionWire[]; total: number } }>(
+        r.get('/rotation/exclusions').query(query)
+      ),
     getExclusion: (tmdbId: number) =>
       send<{ data: ExclusionWire | null }>(r.get(`/rotation/exclusions/${tmdbId}`)),
     removeExclusion: (tmdbId: number) =>

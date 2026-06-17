@@ -11,11 +11,13 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   moviesService,
   openMediaDb,
+  rotationExclusions,
   rotationSourcesService,
   type OpenedMediaDb,
 } from '../../db/index.js';
@@ -203,6 +205,68 @@ describe('rotation — exclusions', () => {
   it('returns success:false when removing a non-existent exclusion', async () => {
     const res = await client().rotation.removeExclusion(nextTmdb());
     expect(res.data.success).toBe(false);
+  });
+});
+
+describe('rotation — list exclusions', () => {
+  it('returns an empty list with total 0 when none are excluded', async () => {
+    const { data } = await client().rotation.listExclusions();
+    expect(data.items).toEqual([]);
+    expect(data.total).toBe(0);
+  });
+
+  it('lists an exclusion right after it is added', async () => {
+    const tmdbId = nextTmdb();
+    await client().rotation.addExclusion({ tmdbId, reason: 'meh' });
+
+    const { data } = await client().rotation.listExclusions();
+    expect(data.total).toBe(1);
+    expect(data.items).toHaveLength(1);
+    expect(data.items[0]).toMatchObject({ tmdbId, reason: 'meh', title: String(tmdbId) });
+  });
+
+  it('paginates with limit/offset while reporting the full total', async () => {
+    const ids = [nextTmdb(), nextTmdb(), nextTmdb(), nextTmdb(), nextTmdb()];
+    for (const tmdbId of ids) await client().rotation.addExclusion({ tmdbId });
+
+    const page1 = await client().rotation.listExclusions({ limit: 2, offset: 0 });
+    expect(page1.data.total).toBe(5);
+    expect(page1.data.items).toHaveLength(2);
+
+    const page2 = await client().rotation.listExclusions({ limit: 2, offset: 2 });
+    expect(page2.data.total).toBe(5);
+    expect(page2.data.items).toHaveLength(2);
+
+    const page3 = await client().rotation.listExclusions({ limit: 2, offset: 4 });
+    expect(page3.data.items).toHaveLength(1);
+
+    const seen = [...page1.data.items, ...page2.data.items, ...page3.data.items].map(
+      (e) => e.tmdbId
+    );
+    expect(seen.toSorted()).toEqual(ids.toSorted());
+  });
+
+  it('orders most-recently-excluded first', async () => {
+    const older = nextTmdb();
+    const newer = nextTmdb();
+    await client().rotation.addExclusion({ tmdbId: older });
+    await client().rotation.addExclusion({ tmdbId: newer });
+
+    // excludedAt defaults to second-granularity datetime('now'); pin distinct
+    // values so the DESC ordering assertion is deterministic rather than a tie.
+    mediaDb.db
+      .update(rotationExclusions)
+      .set({ excludedAt: '2020-01-01 00:00:00' })
+      .where(eq(rotationExclusions.tmdbId, older))
+      .run();
+    mediaDb.db
+      .update(rotationExclusions)
+      .set({ excludedAt: '2024-01-01 00:00:00' })
+      .where(eq(rotationExclusions.tmdbId, newer))
+      .run();
+
+    const { data } = await client().rotation.listExclusions();
+    expect(data.items.map((e) => e.tmdbId)).toEqual([newer, older]);
   });
 });
 
