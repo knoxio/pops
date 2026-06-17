@@ -20,9 +20,5 @@ export { environments } from './schema/environments.js';
 export { pillarRegistry } from './schema/pillar-registry.js';
 export { serviceAccounts } from './schema/service-accounts.js';
 export { settings } from './schema/settings.js';
+export { syncJobResults } from './schema/sync-job-results.js';
 export { userSettings } from './schema/user-settings.js';
-
-// `syncJobResults` is owned by `@pops/media-db` (PRD-245 US-04) but the
-// historical sync-results service in this package writes to it. Re-exported
-// here so existing imports keep resolving.
-export { syncJobResults } from '@pops/media-db';
