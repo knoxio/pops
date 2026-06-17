@@ -18,6 +18,7 @@ import { makeAiHandlers } from './ai-handlers.js';
 import { makeAliasesHandlers } from './aliases-handlers.js';
 import { makeBatchesHandlers } from './batches-handlers.js';
 import { makeConversionsHandlers } from './conversions-handlers.js';
+import { makeCookHandlers } from './cook-handlers.js';
 import { makeFridgeHandlers } from './fridge-handlers.js';
 import { makeHeroImageHandlers } from './hero-image-handlers.js';
 import { makeInboxHandlers } from './inbox-handlers.js';
@@ -51,6 +52,7 @@ export function makeFoodRestHandlers(
     aliases: makeAliasesHandlers(db),
     batches: makeBatchesHandlers(db),
     conversions: makeConversionsHandlers(db),
+    cook: makeCookHandlers(db),
     fridge: makeFridgeHandlers(db),
     heroImage: makeHeroImageHandlers(db),
     inbox: makeInboxHandlers(db),

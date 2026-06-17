@@ -18,6 +18,7 @@ import { foodAiContract } from './rest-ai.js';
 import { foodAliasesContract } from './rest-aliases.js';
 import { foodBatchesContract } from './rest-batches.js';
 import { foodConversionsContract } from './rest-conversions.js';
+import { foodCookContract } from './rest-cook.js';
 import { foodFridgeContract } from './rest-fridge.js';
 import { foodHeroImageContract } from './rest-hero-image.js';
 import { foodInboxContract } from './rest-inbox.js';
@@ -42,6 +43,7 @@ export const foodContract = c.router(
     aliases: foodAliasesContract,
     batches: foodBatchesContract,
     conversions: foodConversionsContract,
+    cook: foodCookContract,
     fridge: foodFridgeContract,
     heroImage: foodHeroImageContract,
     inbox: foodInboxContract,
