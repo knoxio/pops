@@ -22,7 +22,9 @@ import { AnthropicQueryLlm, AnthropicQueryStreamLlm } from '../modules/query/llm
 import { HybridSearchService } from '../modules/retrieval/hybrid-search.js';
 import { getEmbeddingsQueue } from '../modules/thalamus/queue.js';
 import { AnthropicContradictionDetector } from '../modules/workers/llm.js';
+import { makeDebriefHandlers } from './debrief-handlers.js';
 import { makeEgoHandlers } from './ego-handlers.js';
+import { makeEmbeddingsHandlers } from './embeddings-handlers.js';
 import { makeEmitHandlers } from './emit-handlers.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
 import { makeGliaHandlers } from './glia-handlers.js';
@@ -113,5 +115,7 @@ export function makeCerebrumRestHandlers(
       contradictionDetector:
         deps.auditorContradictionDetector ?? new AnthropicContradictionDetector(),
     }),
+    embeddings: makeEmbeddingsHandlers(db),
+    debrief: makeDebriefHandlers(db),
   });
 }

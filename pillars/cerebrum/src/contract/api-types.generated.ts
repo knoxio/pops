@@ -3,6 +3,142 @@
  * Do not edit by hand — regenerate via `pnpm -F @pops/cerebrum generate:api-types`.
  */
 export interface paths {
+  '/debrief': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a debrief session; replaces any prior pending/active session for the media tuple. */
+    post: operations['debrief.create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/debrief/delete-by-watch-history': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cascade-delete debrief rows pinned to a watch_history id. */
+    post: operations['debrief.deleteByWatchHistoryId'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/debrief/get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Fetch a debrief session by id; null when absent. */
+    post: operations['debrief.get'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/debrief/get-by-media': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Most recent pending/active session for a media tuple; null when absent. */
+    post: operations['debrief.getByMedia'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/debrief/list-pending': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Paginated list of pending sessions, optionally narrowed by media tuple. */
+    post: operations['debrief.listPending'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/debrief/log-watch-completion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Option D entry point — creates a session; dimensionsQueued is 0. */
+    post: operations['debrief.logWatchCompletion'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/debrief/record': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Record a per-dimension reflection result for a session. */
+    post: operations['debrief.record'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/debrief/{sessionId}/dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dismiss a session (status → complete); idempotent, 404 on unknown id. */
+    post: operations['debrief.dismiss'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/ego/chat': {
     parameters: {
       query?: never;
@@ -100,6 +236,40 @@ export interface paths {
     put?: never;
     /** Replace the active scopes for a conversation. */
     post: operations['ego.setScopes'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/embeddings/source-ids': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Distinct source ids recorded against a given source type. */
+    post: operations['embeddings.listSourceIdsByType'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/embeddings/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Embedded-row coverage stats, optionally scoped to a source type. */
+    post: operations['embeddings.getStatus'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1379,6 +1549,336 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  'debrief.create': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          mediaId: number;
+          /** @enum {string} */
+          mediaType: 'movie' | 'episode';
+          watchHistoryId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              id: number;
+              mediaId: number | null;
+              /** @enum {string|null} */
+              mediaType: 'movie' | 'episode' | null;
+              /** @enum {string} */
+              status: 'pending' | 'active' | 'complete';
+              watchHistoryId: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'debrief.deleteByWatchHistoryId': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          watchHistoryId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            deletedResults: number;
+            deletedSessions: number;
+          };
+        };
+      };
+    };
+  };
+  'debrief.get': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          sessionId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              id: number;
+              mediaId: number | null;
+              /** @enum {string|null} */
+              mediaType: 'movie' | 'episode' | null;
+              /** @enum {string} */
+              status: 'pending' | 'active' | 'complete';
+              watchHistoryId: number;
+            } | null;
+          };
+        };
+      };
+    };
+  };
+  'debrief.getByMedia': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          mediaId: number;
+          /** @enum {string} */
+          mediaType: 'movie' | 'episode';
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              id: number;
+              mediaId: number | null;
+              /** @enum {string|null} */
+              mediaType: 'movie' | 'episode' | null;
+              /** @enum {string} */
+              status: 'pending' | 'active' | 'complete';
+              watchHistoryId: number;
+            } | null;
+          };
+        };
+      };
+    };
+  };
+  'debrief.listPending': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          limit?: number;
+          mediaId?: number;
+          /** @enum {string} */
+          mediaType?: 'movie' | 'episode';
+          offset?: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              id: number;
+              mediaId: number | null;
+              /** @enum {string|null} */
+              mediaType: 'movie' | 'episode' | null;
+              /** @enum {string} */
+              status: 'pending' | 'active' | 'complete';
+              watchHistoryId: number;
+            }[];
+            pagination: {
+              limit: number;
+              offset: number;
+              total: number;
+            };
+          };
+        };
+      };
+    };
+  };
+  'debrief.logWatchCompletion': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          mediaId: number;
+          /** @enum {string} */
+          mediaType: 'movie' | 'episode';
+          watchHistoryId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            dimensionsQueued: number;
+            sessionId: number;
+          };
+        };
+      };
+    };
+  };
+  'debrief.record': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          comparisonId: number | null;
+          dimensionId: number;
+          sessionId: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              comparisonId: number | null;
+              createdAt: string;
+              dimensionId: number;
+              id: number;
+              sessionId: number;
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'debrief.dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sessionId: number;
+      };
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            data: {
+              createdAt: string;
+              id: number;
+              mediaId: number | null;
+              /** @enum {string|null} */
+              mediaType: 'movie' | 'episode' | null;
+              /** @enum {string} */
+              status: 'pending' | 'active' | 'complete';
+              watchHistoryId: number;
+            };
+          };
+        };
+      };
+      /** @description 404 */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            code?: string;
+            message: string;
+            messageKey?: string;
+          };
+        };
+      };
+    };
+  };
   'ego.chat': {
     parameters: {
       query?: never;
@@ -1727,6 +2227,66 @@ export interface operations {
             code?: string;
             message: string;
             messageKey?: string;
+          };
+        };
+      };
+    };
+  };
+  'embeddings.listSourceIdsByType': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          sourceType: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            sourceIds: string[];
+          };
+        };
+      };
+    };
+  };
+  'embeddings.getStatus': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Body */
+    requestBody?: {
+      content: {
+        'application/json': {
+          sourceType?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description 200 */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            pending: number;
+            stale: number;
+            total: number;
           };
         };
       };

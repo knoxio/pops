@@ -12,7 +12,9 @@
  */
 import { initContract } from '@ts-rest/core';
 
+import { cerebrumDebriefContract } from './rest-debrief.js';
 import { cerebrumEgoContract } from './rest-ego.js';
+import { cerebrumEmbeddingsContract } from './rest-embeddings.js';
 import { cerebrumEmitContract } from './rest-emit.js';
 import { cerebrumEngramsContract } from './rest-engrams.js';
 import { cerebrumGliaContract } from './rest-glia.js';
@@ -47,6 +49,8 @@ export const cerebrumContract = c.router(
     workers: cerebrumWorkersContract,
     emit: cerebrumEmitContract,
     query: cerebrumQueryContract,
+    embeddings: cerebrumEmbeddingsContract,
+    debrief: cerebrumDebriefContract,
   },
   {
     pathPrefix: '',

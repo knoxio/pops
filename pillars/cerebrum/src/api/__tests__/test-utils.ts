@@ -14,12 +14,18 @@ import { TemplateRegistry } from '../modules/templates/registry.js';
 import type { Express } from 'express';
 
 import type {
+  DebriefMediaTypeWire,
+  DebriefResultWire,
+  DebriefSessionWire,
+} from '../../contract/rest-debrief-schemas.js';
+import type {
   ConversationMessageWire,
   ConversationWire,
   EgoChatBodyWire,
   EgoChatResponseWire,
   GetActiveContextResponseWire,
 } from '../../contract/rest-ego-schemas.js';
+import type { EmbeddingsStatusWire } from '../../contract/rest-embeddings.js';
 import type {
   EmitSourceCitationWire,
   GeneratedDocumentWire,
@@ -465,6 +471,30 @@ type QueryExplainResponse = {
   secretNotice: string | null;
 };
 
+export interface DebriefRecordInput {
+  sessionId: number;
+  dimensionId: number;
+  comparisonId: number | null;
+}
+
+export interface DebriefCreateInput {
+  watchHistoryId: number;
+  mediaType: DebriefMediaTypeWire;
+  mediaId: number;
+}
+
+export interface DebriefListPendingInput {
+  mediaType?: DebriefMediaTypeWire;
+  mediaId?: number;
+  limit?: number;
+  offset?: number;
+}
+
+type DebriefListPendingResponse = {
+  data: DebriefSessionWire[];
+  pagination: { limit: number; offset: number; total: number };
+};
+
 export function makeClient(app: Express) {
   const r = supertest.agent(app);
   return {
@@ -710,6 +740,38 @@ export function makeClient(app: Express) {
         send<{ sources: QuerySourceCitationWire[] }>(r.post('/query/retrieve').send(body)),
       explain: (question: string) =>
         send<QueryExplainResponse>(r.post('/query/explain').send({ question })),
+    },
+    embeddings: {
+      getStatus: (sourceType?: string) =>
+        send<EmbeddingsStatusWire>(
+          r.post('/embeddings/status').send(sourceType ? { sourceType } : {})
+        ),
+      listSourceIdsByType: (sourceType: string) =>
+        send<{ sourceIds: string[] }>(r.post('/embeddings/source-ids').send({ sourceType })),
+    },
+    debrief: {
+      get: (sessionId: number) =>
+        send<{ data: DebriefSessionWire | null }>(r.post('/debrief/get').send({ sessionId })),
+      getByMedia: (mediaType: DebriefMediaTypeWire, mediaId: number) =>
+        send<{ data: DebriefSessionWire | null }>(
+          r.post('/debrief/get-by-media').send({ mediaType, mediaId })
+        ),
+      listPending: (input: DebriefListPendingInput = {}) =>
+        send<DebriefListPendingResponse>(r.post('/debrief/list-pending').send(input)),
+      record: (input: DebriefRecordInput) =>
+        send<{ data: DebriefResultWire }>(r.post('/debrief/record').send(input)),
+      create: (input: DebriefCreateInput) =>
+        send<{ data: DebriefSessionWire }>(r.post('/debrief').send(input)),
+      logWatchCompletion: (input: DebriefCreateInput) =>
+        send<{ sessionId: number; dimensionsQueued: number }>(
+          r.post('/debrief/log-watch-completion').send(input)
+        ),
+      dismiss: (sessionId: number) =>
+        send<{ data: DebriefSessionWire }>(r.post(`/debrief/${sessionId}/dismiss`).send({})),
+      deleteByWatchHistoryId: (watchHistoryId: number) =>
+        send<{ deletedSessions: number; deletedResults: number }>(
+          r.post('/debrief/delete-by-watch-history').send({ watchHistoryId })
+        ),
     },
   };
 }
