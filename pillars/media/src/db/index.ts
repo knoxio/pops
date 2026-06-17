@@ -69,11 +69,20 @@ export type {
 
 export * as tvShowsService from './services/tv-shows.js';
 
-export type { CreateSeasonInput, SeasonListResult } from './services/seasons.js';
+export type {
+  CreateSeasonInput,
+  SeasonListResult,
+  UpsertSeasonInput,
+  UpsertSeasonResult,
+} from './services/seasons.js';
 
 export * as seasonsService from './services/seasons.js';
 
-export type { CreateEpisodeInput, EpisodeListResult } from './services/episodes.js';
+export type {
+  CreateEpisodeInput,
+  EpisodeListResult,
+  UpsertEpisodeInput,
+} from './services/episodes.js';
 
 export * as episodesService from './services/episodes.js';
 
