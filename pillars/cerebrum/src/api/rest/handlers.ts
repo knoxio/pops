@@ -9,6 +9,7 @@ import { initServer } from '@ts-rest/express';
 
 import { cerebrumContract } from '../../contract/rest.js';
 import { makeEngramsHandlers } from './engrams-handlers.js';
+import { makeNudgesHandlers } from './nudges-handlers.js';
 import { makePlexusHandlers } from './plexus-handlers.js';
 import { makeReflexHandlers } from './reflex-handlers.js';
 import { makeScopesHandlers } from './scopes-handlers.js';
@@ -34,5 +35,6 @@ export function makeCerebrumRestHandlers(
     engrams: makeEngramsHandlers(engramDeps),
     scopes: makeScopesHandlers(engramDeps),
     tags: makeTagsHandlers(deps.cerebrumDb.db),
+    nudges: makeNudgesHandlers(deps.cerebrumDb.db),
   });
 }

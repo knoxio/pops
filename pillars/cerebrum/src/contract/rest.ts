@@ -13,6 +13,7 @@
 import { initContract } from '@ts-rest/core';
 
 import { cerebrumEngramsContract } from './rest-engrams.js';
+import { cerebrumNudgesContract } from './rest-nudges.js';
 import { cerebrumPlexusContract } from './rest-plexus.js';
 import { cerebrumReflexContract } from './rest-reflex.js';
 import { cerebrumScopesContract } from './rest-scopes.js';
@@ -29,6 +30,7 @@ export const cerebrumContract = c.router(
     engrams: cerebrumEngramsContract,
     scopes: cerebrumScopesContract,
     tags: cerebrumTagsContract,
+    nudges: cerebrumNudgesContract,
   },
   {
     pathPrefix: '',
