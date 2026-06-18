@@ -1,6 +1,6 @@
 # Spike — `app-food`: recipes, components, meal prep, ingestion
 
-Investigation only — recommendations, no code changes. Captures decisions reached in scoping; intended as the starting point for the PRD set under a future `docs/themes/<n>-food/` theme.
+Investigation only — recommendations, no code changes. Captures decisions reached in scoping; intended as the starting point for the PRD set now living under `pillars/food/docs/`.
 
 Roadmap context: `docs/roadmap.md` lists "Recipe Book" at priority 8 ("long-term feature, lower daily urgency"). This spike treats it as the next major app after the current Phase 2 work, on the basis that meal prep is a high-frequency daily-life pain point and the data model unlocks downstream cross-domain value (finance ↔ grocery spend, inventory ↔ kitchen gear, cerebrum ↔ "what should I cook tonight").
 
@@ -56,7 +56,7 @@ apps/
                      consumes food.ingest jobs, writes back via internal API
 ```
 
-`pops-worker-food` is a separate image so yt-dlp, ffmpeg, and the Python STT stack stay out of the main API image. Same compose stack, same Redis. The worker is stateless; it writes through `pops-api` rather than touching SQLite directly. New entries in [`modular-apps-spike.md`](./modular-apps-spike.md) module table: `food` and `lists` as page-routed modules.
+`pops-worker-food` is a separate image so yt-dlp, ffmpeg, and the Python STT stack stay out of the main API image. Same compose stack, same Redis. The worker is stateless; it writes through `pops-api` rather than touching SQLite directly. New entries in [`modular-apps-spike.md`](../../../../docs/ideas/modular-apps-spike.md) module table: `food` and `lists` as page-routed modules.
 
 ## Data model (SQLite, normative for the schema PRD)
 
@@ -319,7 +319,7 @@ The graph also enables "I have a glut of zucchini, what recipes use it OR have i
 
 - **Finance** — match grocery-line-items from transaction imports to canonical ingredients (long-tail of fuzzy matching; lean on the existing ingest pattern). Answers "how much did I spend on tomatoes this year".
 - **Inventory** — kitchen gear tied to recipes ("requires stand mixer"). Recipe filter "what can I make with what I own".
-- **Cerebrum** — recipes and cook events are an embeddable source per [PRD 079](../themes/06-cerebrum/prds/079-engram-indexing/us-04-cross-source-index.md). Surfaces "what should I cook tonight" suggestions from engrams about preferences, mood, weather.
+- **Cerebrum** — recipes and cook events are an embeddable source per [PRD 079](../../../../docs/themes/06-cerebrum/prds/079-engram-indexing/us-04-cross-source-index.md). Surfaces "what should I cook tonight" suggestions from engrams about preferences, mood, weather.
 - **Travel** — destination cuisine research; saved recipes tagged by trip.
 
 ## Risks and open spec items

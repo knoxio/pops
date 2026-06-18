@@ -298,7 +298,7 @@ Inline per theme protocol.
 ### Documentation
 
 - [ ] PRD-113 cross-link landed in PRD-107's "Out of Scope" section (or the recipe service docs) so future doc readers know where the seed is.
-- [ ] `docs/themes/07-food/README.md` epic table status for Epic 00 may flip to `Done` once this PRD's acceptance is met AND the prior 6 PRDs' acceptance is met.
+- [ ] `pillars/food/docs/README.md` epic table status for Epic 00 may flip to `Done` once this PRD's acceptance is met AND the prior 6 PRDs' acceptance is met.
 
 ## Implementation phasing
 

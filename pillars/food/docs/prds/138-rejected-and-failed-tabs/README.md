@@ -147,7 +147,7 @@ No editing — read-only.
 
 - Rejected tab is driven by the `recipe_version_rejections` table (PRD-136). PRD-119's "Discard a draft" archives versions without writing a rejections row; those drafts NEVER appear in this tab.
 - Failed tab is driven by `ingest_sources.extracted_json` where the persisted meta corresponds to a failed `workerComplete` (PRD-125). Pending or processing ingests (no terminal meta yet) are NOT in this tab.
-- Auth-dead Instagram reels do NOT appear in this tab. Per PRD-130, they surface as partial drafts in the Drafts tab with PRD-137 marking them `blocked`. The user follows the IG cookie refresh runbook (`docs/runbooks/instagram-cookie-refresh.md`) then opens the inspector on the partial draft and triggers Retry there (see PRD-135).
+- Auth-dead Instagram reels do NOT appear in this tab. Per PRD-130, they surface as partial drafts in the Drafts tab with PRD-137 marking them `blocked`. The user follows the IG cookie refresh runbook (`pillars/food/docs/runbooks/instagram-cookie-refresh.md`) then opens the inspector on the partial draft and triggers Retry there (see PRD-135).
 - Failed tab does not "auto-clean" on retry; the row disappears the next time the user refreshes (or the tab's React Query invalidation fires) because the underlying meta has flipped to success/pending.
 - Undo on a Rejected row puts the version back to `status='draft'` and removes the rejections row. PRD-134's Drafts tab will surface it again on next load.
 - Both tabs use cursor pagination; default `limit=20`.
@@ -191,7 +191,7 @@ Inline per theme protocol.
 - [x] `FailedTab.tsx` renders rows with kind chip, error code chip, error message truncated to 120 chars, attempts count, ingested-at relative time.
 - [x] Per-row Retry button calls PRD-125's `food.ingest.retry`; on success removes the row optimistically and toasts "Re-queued."
 - [x] Per-row "View source" opens `ViewSourceDialog` rendering per-kind content.
-- [ ] Auth-dead rows show a disabled Retry with a tooltip linking to `docs/runbooks/instagram-cookie-refresh.md`. _Auth-dead drafts never reach this tab per PRD-130 (they surface in the Drafts tab as partial drafts); the disabled-retry-tooltip surface is only reachable if a future handler emits an `error_code` for auth-dead — left unchecked until that path exists._
+- [ ] Auth-dead rows show a disabled Retry with a tooltip linking to `pillars/food/docs/runbooks/instagram-cookie-refresh.md`. _Auth-dead drafts never reach this tab per PRD-130 (they surface in the Drafts tab as partial drafts); the disabled-retry-tooltip surface is only reachable if a future handler emits an `error_code` for auth-dead — left unchecked until that path exists._
 
 ### View source dialog
 

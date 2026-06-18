@@ -196,8 +196,8 @@ Inline per theme protocol.
 
 ### Documentation
 
-- [x] `packages/app-food/README.md` describes the package, its scope, and points at `docs/themes/07-food/` for the spec.
-- [x] `docs/themes/07-food/README.md` epic 01 row stays "Not started" until at least one downstream Epic 01 PRD is in progress. (PRD-118 is foundational, not downstream — epic 01 stays "Not started" as instructed.)
+- [x] `packages/app-food/README.md` describes the package, its scope, and points at `pillars/food/docs/` for the spec.
+- [x] `pillars/food/docs/README.md` epic 01 row stays "Not started" until at least one downstream Epic 01 PRD is in progress. (PRD-118 is foundational, not downstream — epic 01 stays "Not started" as instructed.)
 
 ## Out of Scope
 

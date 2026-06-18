@@ -4,7 +4,7 @@
 
 ## Overview
 
-Define the canonical ingredient hierarchy, the variant catalogue (presentations of an ingredient: fresh vs canned vs frozen), the prep_state catalogue (orthogonal cut/process modifiers), the alias table that lets the ingest pipeline resolve "spring onion" to canonical "scallion", and the **slug registry** that enforces a single global namespace for entities referenceable from the recipe DSL ([ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md)). Every other food schema PRD references these tables; nothing else in the theme can ship until this lands.
+Define the canonical ingredient hierarchy, the variant catalogue (presentations of an ingredient: fresh vs canned vs frozen), the prep_state catalogue (orthogonal cut/process modifiers), the alias table that lets the ingest pipeline resolve "spring onion" to canonical "scallion", and the **slug registry** that enforces a single global namespace for entities referenceable from the recipe DSL ([ADR-023](../../architecture/adr-023-recipe-markdown-dsl.md)). Every other food schema PRD references these tables; nothing else in the theme can ship until this lands.
 
 This PRD is schema-only. No tRPC procedures, no UI — those live in Epic 01 PRDs. Direct Drizzle queries from server code are the contract for now.
 
@@ -49,7 +49,7 @@ CREATE INDEX idx_variants_ingredient ON ingredient_variants(ingredient_id);
 CREATE INDEX idx_variants_name       ON ingredient_variants(name COLLATE NOCASE);
 ```
 
-A _variant_ is a presentation of an ingredient: under `corn` you might have `fresh-cob`, `canned-brine`, `frozen-kernels`. Variant slugs are **scoped under their parent ingredient** — `raw` is a valid variant slug under both `banana` and `apple` because the resolver always knows the parent. Variants do NOT participate in the global slug registry; the DSL references them via the compact descriptor `ingredient-slug:variant-slug:prep-slug` (see [ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md)). `package_size_g` is informational for shopping list rounding (deferred to Epic 04+).
+A _variant_ is a presentation of an ingredient: under `corn` you might have `fresh-cob`, `canned-brine`, `frozen-kernels`. Variant slugs are **scoped under their parent ingredient** — `raw` is a valid variant slug under both `banana` and `apple` because the resolver always knows the parent. Variants do NOT participate in the global slug registry; the DSL references them via the compact descriptor `ingredient-slug:variant-slug:prep-slug` (see [ADR-023](../../architecture/adr-023-recipe-markdown-dsl.md)). `package_size_g` is informational for shopping list rounding (deferred to Epic 04+).
 
 ### `prep_states`
 
@@ -93,7 +93,7 @@ CREATE TABLE slug_registry (
 CREATE INDEX idx_slug_registry_kind_target ON slug_registry(kind, target_id);
 ```
 
-A single global namespace for every entity that can be referenced by slug from the recipe DSL ([ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md)): ingredients, recipes (PRD-107), and prep_states. The `slug` column is the primary key — uniqueness across all three kinds is enforced by SQLite at the storage level. The DSL resolver looks up `@banana` or `@smash-patty` in this single table and disambiguates via the `kind` column.
+A single global namespace for every entity that can be referenced by slug from the recipe DSL ([ADR-023](../../architecture/adr-023-recipe-markdown-dsl.md)): ingredients, recipes (PRD-107), and prep_states. The `slug` column is the primary key — uniqueness across all three kinds is enforced by SQLite at the storage level. The DSL resolver looks up `@banana` or `@smash-patty` in this single table and disambiguates via the `kind` column.
 
 Variants are deliberately **excluded** from the registry — they're scoped under their parent ingredient and referenced via the compact descriptor `ingredient:variant:prep`. Tags are also excluded (free-form, high-churn).
 
@@ -194,7 +194,7 @@ Inline per theme protocol — see the `Doc protocol` row in [theme key decisions
 
 - Recipe lines referencing these tables — defined in **PRD-107**.
 - Recipe slug registration into `slug_registry` — handled in **PRD-107** (recipes table service inserts into the shared registry).
-- DSL parser and resolver — defined in **PRD-107** per [ADR-023](../../../../architecture/adr-023-recipe-markdown-dsl.md).
+- DSL parser and resolver — defined in **PRD-107** per [ADR-023](../../architecture/adr-023-recipe-markdown-dsl.md).
 - Substitution edges between ingredients/variants — defined in **PRD-109**.
 - Unit conversion table (cup→ml, "1 medium onion = 150 g") — deferred to an Epic 01 PRD once the recipe-line editor consumes it.
 - Tag taxonomy for ingredients (`store-section:produce`, `aisle:dairy`) — deferred to Epic 07 (pantry-aware shopping).

@@ -211,8 +211,8 @@ Inline per theme protocol.
 
 ### Documentation
 
-- [x] `packages/app-lists/README.md` describes the package, its scope, and points at `docs/themes/07-food/` for the food-side spec (with a note that lists itself is theme-agnostic).
-- [x] `docs/themes/07-food/README.md` epic 04 row stays "Not started" until at least one downstream Epic 04 PRD is in progress.
+- [x] `packages/app-lists/README.md` describes the package, its scope, and points at `pillars/food/docs/` for the food-side spec (with a note that lists itself is theme-agnostic).
+- [x] `pillars/food/docs/README.md` epic 04 row stays "Not started" until at least one downstream Epic 04 PRD is in progress.
 
 ## Out of Scope
 

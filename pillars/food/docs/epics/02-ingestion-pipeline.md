@@ -39,7 +39,7 @@ This epic is pipeline-only. The review queue UI that promotes drafts to canonica
 - **127–132** all consume the queue and write drafts independently. They can be built in parallel but each is a self-contained ingest kind.
 - **130** depends on **129** (yt-dlp must download the video before STT/vision can process it). The two PRDs are split because acquisition (auth, cookies, rate limits) is a distinct concern from STT/vision processing (CPU work, model loading, prompt design).
 - **133** is consumed by 127–132 but can be built first or in parallel — it provides the `logInference()` helper and the prompt-registration shape.
-- IG cookie refresh runbook lives at `docs/runbooks/instagram-cookie-refresh.md` and is referenced from PRD-129's edge cases.
+- IG cookie refresh runbook lives at `../runbooks/instagram-cookie-refresh.md` and is referenced from PRD-129's edge cases.
 
 PRD count is 9 (not 8 as the question batch hinted) — the splits asked for added up to 9 once Instagram became two PRDs. The extra PRD keeps each focused on a single concern.
 

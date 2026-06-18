@@ -258,7 +258,7 @@ Inline per theme protocol.
 - Per-kind extraction logic — **PRDs 127-132**.
 - Producer side (API endpoint, queue config) — **PRD-125**.
 - AI usage logging integration — **PRD-133**.
-- Instagram cookie refresh procedure — **PRD-129** + `docs/runbooks/instagram-cookie-refresh.md`.
+- Instagram cookie refresh procedure — **PRD-129** + `pillars/food/docs/runbooks/instagram-cookie-refresh.md`.
 - GPU acceleration for faster-whisper — CPU only in v1 (theme decision).
 - Horizontal scaling of workers across machines — operator can scale; PRD doesn't prescribe deployment topology.
 - Worker-side dedup or queue manipulation — BullMQ defaults.

@@ -99,7 +99,7 @@ The canonical file extension for serialised DSL content is `.recipe`. The extens
 - Import: a file ending in `.recipe` is dispatched to the DSL parser without further sniffing.
 - Editor hinting: pops-shell's DSL editor (and any external editor with appropriate language support) keys off the extension to load the DSL grammar / autocomplete.
 
-If the storage model is later promoted to "recipes are files on disk" (the Cerebrum-engram pattern per [ADR-019](./adr-019-engram-storage-model.md)), the extension is already in place and the SQLite tables become a regeneratable index. That promotion is a separate ADR; this ADR commits only to the extension convention.
+If the storage model is later promoted to "recipes are files on disk" (the Cerebrum-engram pattern per [ADR-019](../../../cerebrum/docs/architecture/adr-019-engram-storage-model.md)), the extension is already in place and the SQLite tables become a regeneratable index. That promotion is a separate ADR; this ADR commits only to the extension convention.
 
 ### Renderer
 
@@ -133,6 +133,6 @@ The renderer is out of scope for this ADR (lives in PRD-107 + an Epic 01 PRD), b
 ## References
 
 - [ADR-022](./adr-022-unified-recipe-ingredient-model.md) — recipes-as-ingredients (the basis for `@ingredient(N, recipe-slug, qty:unit)` syntax)
-- [PRD-106](../themes/07-food/prds/106-ingredient-model/README.md) — slug_registry table (amended as part of this ADR)
+- [PRD-106](../prds/106-ingredient-model/README.md) — slug_registry table (amended as part of this ADR)
 - PRD-107 — Recipe & Version Model (stores `body_dsl`, materializes `recipe_lines` and `recipe_steps`)
 - Future PRD in Epic 01 — DSL-aware editor with autocomplete and chip rendering
