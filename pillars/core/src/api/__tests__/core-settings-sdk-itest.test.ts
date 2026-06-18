@@ -39,12 +39,11 @@
  * `PLEX_USERNAME`, `PLEX_ENCRYPTION_SEED`) the audit calls out as the
  * dominant hot-path consumers — no need to widen the enum for the test.
  *
- * The pillar SDK's HTTP-call helper always POSTs to `/trpc/<path>`.
- * tRPC 11's HTTP adapter refuses POST against `.query(...)` procedures
- * and answers `405 METHOD_NOT_SUPPORTED`. A test-only `fetch` impl
- * rewrites POSTs against the known query-shaped paths into GETs with
- * the input encoded as `?input=…`. The tRPC envelope is identical on
- * both verbs, so the SDK reads `{ result: { data } }` either way.
+ * The server SDK resolves `pillar('core').settings.*` over the REST
+ * transport — it fetches the pillar's `/openapi`, builds the operationId
+ * route map, and issues idiomatic REST requests (`GET /settings/:key`,
+ * `POST /settings/get-many`, `PUT /settings/:key`). The media-shaped handler
+ * therefore exercises the exact wire a production consumer uses.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -145,38 +144,6 @@ class CountingDiscoveryTransport implements DiscoveryTransport {
     this.fetchCount += 1;
     return Promise.resolve(this.snapshot);
   }
-}
-
-/**
- * Test-only `fetch` impl: tRPC 11's HTTP adapter rejects POST against
- * `.query(...)` procedures. The SDK posts unconditionally — rewrite
- * the outbound request to a GET with the input encoded as a query
- * string so the read-only surface is exercised over the wire without
- * forking the SDK.
- */
-function makeQueryRewriteFetch(queryPathFragments: readonly string[]): typeof fetch {
-  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    if (init?.method !== 'POST') return fetch(input, init);
-    const urlString = typeof input === 'string' ? input : input.toString();
-    if (!urlString.includes('/trpc/')) return fetch(input, init);
-    const isQuery = queryPathFragments.some((frag) => urlString.includes(frag));
-    if (!isQuery) return fetch(input, init);
-
-    const bodyText = ((): string => {
-      const body = init.body;
-      if (typeof body === 'string') return body;
-      if (body === null || body === undefined) return 'null';
-      return '{}';
-    })();
-    const rewrittenUrl = `${urlString}?input=${encodeURIComponent(bodyText)}`;
-    const headers = new Headers(init.headers);
-    headers.delete('content-type');
-    headers.delete('content-length');
-    return fetch(rewrittenUrl, {
-      method: 'GET',
-      headers,
-    });
-  };
 }
 
 interface MediaHandlerDeps {
@@ -291,10 +258,7 @@ beforeAll(async () => {
 
   __resetServerPillarCache();
   __resetServerSdkConfig();
-  configureServerSdk({
-    apiKey: sa.plaintextKey,
-    fetchImpl: makeQueryRewriteFetch(['core.settings.get', 'core.settings.getMany']),
-  });
+  configureServerSdk({ apiKey: sa.plaintextKey });
 
   const popsApiApp = createMediaHandlerApp({ transport });
   const popsApiServer = await listenOnEphemeralPort(popsApiApp);

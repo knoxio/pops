@@ -14,13 +14,12 @@ import { createServer, get as httpGet, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { openCoreDb, type OpenedCoreDb } from '../../db/index.js';
 import { createCoreApiApp } from '../app.js';
 import { registryEventBus, registryEventListenerCount } from '../modules/registry/event-bus.js';
-import { appRouter } from '../router.js';
-import { type Context } from '../trpc.js';
 
 import type { AddressInfo } from 'node:net';
 
@@ -28,6 +27,7 @@ import type { ManifestPayload } from '@pops/pillar-sdk';
 
 let tmpDir: string;
 let coreDb: OpenedCoreDb;
+let app: ReturnType<typeof createCoreApiApp>;
 let server: Server;
 let baseUrl: string;
 
@@ -35,7 +35,7 @@ beforeEach(async () => {
   registryEventBus.removeAllListeners();
   tmpDir = mkdtempSync(join(tmpdir(), 'core-api-subscribe-test-'));
   coreDb = openCoreDb(join(tmpDir, 'core.db'));
-  const app = createCoreApiApp({
+  app = createCoreApiApp({
     coreDb,
     version: '0.0.1-test',
     selfBaseUrl: 'http://core-api:3001',
@@ -53,13 +53,14 @@ afterEach(async () => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
 
-function caller(): ReturnType<typeof appRouter.createCaller> {
-  const ctx: Context = {
-    user: { email: 'dev@example.com' },
-    serviceAccount: null,
-    coreDb: coreDb.db,
-  };
-  return appRouter.createCaller(ctx);
+/** Register a pillar over the raw HTTP route — this emits the registry event the SSE stream forwards. */
+async function registerFinance(): Promise<void> {
+  const res = await request(app).post('/core.registry.register').send({
+    pillarId: 'finance',
+    baseUrl: 'http://finance-api:3004',
+    manifest: financeManifest(),
+  });
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
 }
 
 function financeManifest(): ManifestPayload {
@@ -224,10 +225,7 @@ async function waitForListenerCount(expected: number, timeoutMs = 2000): Promise
 
 describe('GET /registry/subscribe', () => {
   it('emits a pillar.snapshot on connect with the current registry state', async () => {
-    await caller().core.registry.register({
-      baseUrl: 'http://finance-api:3004',
-      manifest: financeManifest(),
-    });
+    await registerFinance();
 
     const client = await openSseClient(`${baseUrl}/registry/subscribe`);
     const snapshot = await client.waitFor((evt) => evt.event === 'pillar.snapshot');
@@ -244,10 +242,7 @@ describe('GET /registry/subscribe', () => {
     const client = await openSseClient(`${baseUrl}/registry/subscribe`);
     await client.waitFor((evt) => evt.event === 'pillar.snapshot');
 
-    await caller().core.registry.register({
-      baseUrl: 'http://finance-api:3004',
-      manifest: financeManifest(),
-    });
+    await registerFinance();
 
     const registered = await client.waitFor((evt) => evt.event === 'pillar.registered');
     const payload = registered.data as {
@@ -289,10 +284,7 @@ describe('GET /registry/subscribe', () => {
     await a.close();
     expect(await waitForListenerCount(1)).toBe(1);
 
-    await caller().core.registry.register({
-      baseUrl: 'http://finance-api:3004',
-      manifest: financeManifest(),
-    });
+    await registerFinance();
     await b.waitFor((evt) => evt.event === 'pillar.registered');
 
     await b.close();

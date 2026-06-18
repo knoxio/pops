@@ -6,8 +6,8 @@
  * handle as its first argument. The cutover (PR 3 of phase 1) flips
  * pops-api to call into here.
  *
- * Mirrors `@pops/core-db`'s service-account pattern: db-arg services,
- * typed domain errors, no HTTP concerns.
+ * Follows the standard service pattern: db-arg services, typed domain
+ * errors, no HTTP concerns.
  */
 import { and, asc, count, eq, like } from 'drizzle-orm';
 

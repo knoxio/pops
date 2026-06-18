@@ -1,8 +1,6 @@
 /**
  * Integration tests for the `entities.*` REST surface, driven through the
- * real Express app via supertest. This is the exemplar for the core REST
- * (ts-rest) migration — it runs against the SAME app that still serves the
- * legacy `/trpc` router, proving the dual-serve wiring.
+ * real Express app via supertest.
  *
  * The suite focuses on the wire contract: envelope shapes (bare entity rows,
  * `{ data, pagination }` for list, NO transactionCount), the `toEntity`

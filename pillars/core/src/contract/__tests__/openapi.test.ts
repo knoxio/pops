@@ -91,8 +91,8 @@ describe('@pops/core REST openapi projection', () => {
         `${p} is not under a migrated domain root`
       ).toBe(true);
     }
-    // The legacy tRPC-era `/core/*` snapshot must be gone — it is served from
-    // `/trpc` now, not described by this ts-rest projection.
+    // The legacy tRPC-era `/core/*` snapshot must be gone — this ts-rest
+    // projection describes only the migrated REST domains.
     expect(paths.some((p) => p.startsWith('/core/'))).toBe(false);
   });
 });

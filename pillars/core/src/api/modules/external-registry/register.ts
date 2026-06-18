@@ -4,11 +4,10 @@ import { validateManifestPayload } from '@pops/pillar-sdk';
  * HTTP-JSON register handler for external pillars (Theme 13 PRD-228 US-01).
  *
  * External pillars — those that ship from a different repository and run
- * outside the in-tree `bootstrapPillar` path — register themselves with
- * `pops-core-api` by POSTing to `/core.registry.register`. The endpoint
- * deliberately sits OUTSIDE the `/trpc/` namespace because PRD-161's
- * nginx block explicitly blocks mutating `/trpc/core.registry.*` from
- * external traffic; PRD-228 carves a sibling allow-list at
+ * outside the in-tree `bootstrapPillar` path — register themselves with the
+ * core registry by POSTing to `/core.registry.register`. The nginx edge
+ * blocks the mutating `core.registry.*` paths from external traffic
+ * (PRD-161); PRD-228 carves a sibling allow-list at
  * `^/core\.registry\.(register|heartbeat|deregister)$` for this plain
  * HTTP-JSON surface.
  *
@@ -21,8 +20,8 @@ import { validateManifestPayload } from '@pops/pillar-sdk';
  */
 import { pillarRegistryService, type CoreDb } from '../../../db/index.js';
 import { emitRegistryEvent } from '../registry/event-bus.js';
-import { computeStatus, registryNow } from '../registry/status.js';
-import { RegistryEntrySchema, type RegistryEntry } from '../registry/types.js';
+import { toRegistryEntry } from '../registry/snapshot.js';
+import { registryNow } from '../registry/status.js';
 import {
   HEARTBEAT_INTERVAL_MS,
   PILLAR_ID_PATTERN,
@@ -32,30 +31,8 @@ import {
 
 import type { Request, Response } from 'express';
 
-import type { PillarRegistration } from '../../../db/index.js';
-
 export interface ExternalRegisterDeps {
   readonly coreDb: CoreDb;
-}
-
-function toRegistryEntry(reg: PillarRegistration, now: Date): RegistryEntry {
-  const manifest = RegistryEntrySchema.shape.manifest.parse(reg.manifest);
-  const status =
-    reg.status === 'unknown' ? 'unknown' : computeStatus(new Date(reg.lastHeartbeatAt), now);
-  return {
-    pillarId: reg.pillarId,
-    baseUrl: reg.baseUrl,
-    manifest,
-    contract: {
-      package: reg.contractPackage,
-      version: reg.contractVersion,
-      tag: reg.contractTag,
-    },
-    registeredAt: reg.registeredAt,
-    lastHeartbeatAt: reg.lastHeartbeatAt,
-    status,
-    statusUpdatedAt: reg.statusUpdatedAt,
-  };
 }
 
 function rejectPillarIdShape(res: Response, pillarId: string): boolean {

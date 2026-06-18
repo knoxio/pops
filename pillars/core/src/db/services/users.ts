@@ -16,8 +16,8 @@
  * §"Existence is best-effort").
  *
  * No write surface is exposed: owning-pillar writes are forbidden by the
- * PRD-251 business rules, and the dev-fallback email in `core-api/trpc.ts`
- * is mint-on-demand.
+ * PRD-251 business rules, and the dev-fallback email resolved by the identity
+ * middleware is mint-on-demand.
  */
 import { eq } from 'drizzle-orm';
 

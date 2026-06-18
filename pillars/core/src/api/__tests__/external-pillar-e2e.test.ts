@@ -4,13 +4,13 @@
  *
  * The test does not stub the consumer SDK nor the registry. It boots:
  *
- *   1. `pops-core-api` against a temp-dir core.db on an ephemeral port —
+ *   1. the core pillar against a temp-dir core.db on an ephemeral port —
  *      the surface that owns `POST /core.registry.register`,
- *      `POST /core.registry.deregister`, and `GET /trpc/core.registry.list`.
- *   2. A throwaway tRPC pillar on a second ephemeral port that exposes
- *      a single `echo` router with one query (`echo({ value })`) and one
- *      mutation (`store({ key, value })`) — the smallest surface that
- *      exercises both procedure kinds.
+ *      `POST /core.registry.deregister`, and `GET /core.registry.list`.
+ *   2. A throwaway REST pillar on a second ephemeral port that serves an
+ *      `/openapi` doc plus two operations — `echo.echo` and `echo.store` —
+ *      the smallest surface that exercises both call kinds over the SDK's
+ *      REST transport.
  *
  * It then drives the full lifecycle through HTTP:
  *
@@ -160,6 +160,32 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(raw);
 }
 
+/**
+ * Minimal OpenAPI doc so the consumer SDK builds a REST route map for the
+ * throwaway pillar (operationId `<router>.<proc>`, concatenated-path style).
+ * Both procedures are POST-with-body, so the SDK ships `input` as the JSON body.
+ */
+const THROWAWAY_OPENAPI = {
+  openapi: '3.0.0',
+  info: { title: PILLAR_ID, version: '0.1.0' },
+  paths: {
+    '/echo/echo': {
+      post: {
+        operationId: 'echo.echo',
+        requestBody: { content: { 'application/json': {} } },
+        responses: { '200': { description: 'ok' } },
+      },
+    },
+    '/echo/store': {
+      post: {
+        operationId: 'echo.store',
+        requestBody: { content: { 'application/json': {} } },
+        responses: { '200': { description: 'ok' } },
+      },
+    },
+  },
+};
+
 async function handleRequest(
   req: IncomingMessage,
   res: ServerResponse,
@@ -172,53 +198,41 @@ async function handleRequest(
     res.end(JSON.stringify({ ok: true, status: 'healthy', pillar: PILLAR_ID }));
     return;
   }
-  if (req.method !== 'POST' || !url.pathname.startsWith('/trpc/')) {
-    res.statusCode = 404;
+  if (url.pathname === '/openapi' && req.method === 'GET') {
+    res.statusCode = 200;
     res.setHeader('content-type', 'application/json; charset=utf-8');
-    res.end(
-      JSON.stringify({
-        error: {
-          code: 'NOT_FOUND',
-          message: 'unknown path',
-          data: { code: 'NOT_FOUND', httpStatus: 404 },
-        },
-      })
-    );
+    res.end(JSON.stringify(THROWAWAY_OPENAPI));
     return;
   }
-  const path = url.pathname.slice('/trpc/'.length);
-  const input = await readJsonBody(req);
-  calls.push({ path, input });
-
-  const data = runProcedure(path, input);
-  if (data === undefined) {
-    res.statusCode = 404;
+  if (req.method === 'POST' && (url.pathname === '/echo/echo' || url.pathname === '/echo/store')) {
+    const input = await readJsonBody(req);
+    calls.push({ path: url.pathname, input });
+    const data = runProcedure(url.pathname, input);
+    if (data === undefined) {
+      res.statusCode = 400;
+      res.setHeader('content-type', 'application/json; charset=utf-8');
+      res.end(JSON.stringify({ message: `bad input for ${url.pathname}` }));
+      return;
+    }
+    // REST handlers return the value directly — no tRPC `{ result: { data } }` envelope.
+    res.statusCode = 200;
     res.setHeader('content-type', 'application/json; charset=utf-8');
-    res.end(
-      JSON.stringify({
-        error: {
-          code: 'NOT_FOUND',
-          message: `unknown procedure ${path}`,
-          data: { code: 'NOT_FOUND', httpStatus: 404 },
-        },
-      })
-    );
+    res.end(JSON.stringify(data));
     return;
   }
-
-  res.statusCode = 200;
+  res.statusCode = 404;
   res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.end(JSON.stringify({ result: { data } }));
+  res.end(JSON.stringify({ message: 'unknown path' }));
 }
 
 function runProcedure(path: string, input: unknown): unknown | undefined {
-  if (path === `${PILLAR_ID}.echo.echo`) {
+  if (path === '/echo/echo') {
     if (isRecord(input) && typeof input.value === 'string') {
       return { value: input.value };
     }
     return undefined;
   }
-  if (path === `${PILLAR_ID}.echo.store`) {
+  if (path === '/echo/store') {
     if (isRecord(input) && typeof input.key === 'string' && typeof input.value === 'string') {
       return { ok: true };
     }
@@ -317,9 +331,9 @@ describe('PRD-242 US-04 — external pillar register + callDynamic + deregister'
     expect(persisted?.status).toBe('healthy');
     expect(persisted?.baseUrl).toBe(env.throwaway.baseUrl);
 
-    const snapshot = await request(env.coreApiBaseUrl).get('/trpc/core.registry.list');
+    const snapshot = await request(env.coreApiBaseUrl).get('/core.registry.list');
     expect(snapshot.status).toBe(200);
-    const snapshotPillars = snapshot.body?.result?.data?.pillars as
+    const snapshotPillars = snapshot.body?.pillars as
       | Array<{ pillarId: string; baseUrl: string }>
       | undefined;
     expect(Array.isArray(snapshotPillars)).toBe(true);
@@ -348,8 +362,8 @@ describe('PRD-242 US-04 — external pillar register + callDynamic + deregister'
     }
 
     expect(env.throwaway.calls).toEqual([
-      { path: `${PILLAR_ID}.echo.echo`, input: { value: 'ping' } },
-      { path: `${PILLAR_ID}.echo.store`, input: { key: 'k', value: 'v' } },
+      { path: '/echo/echo', input: { value: 'ping' } },
+      { path: '/echo/store', input: { key: 'k', value: 'v' } },
     ]);
 
     const dereg = await request(env.coreApiBaseUrl).post('/core.registry.deregister').send({

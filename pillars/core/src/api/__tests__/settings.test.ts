@@ -1,11 +1,8 @@
 /**
  * Integration tests for the `settings.*` REST surface (PRD-247 cross-pillar
- * primitive), driven through the real Express app via supertest. Runs against
- * the SAME app that still serves the legacy `/trpc` router, proving the
- * dual-serve wiring.
+ * primitive), driven through the real Express app via supertest.
  *
- * Coverage mirrors the tRPC router test (`modules/settings/__tests__`) plus
- * the REST-specific concerns:
+ * Coverage:
  *   - Every procedure (`get`/`set`/`ensure`/`delete`/`getMany`/`setMany`).
  *   - `getMany` Record-omitted semantics (missing keys absent, not null).
  *   - `setMany` transactional mirror.

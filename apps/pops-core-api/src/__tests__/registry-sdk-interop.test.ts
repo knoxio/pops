@@ -13,15 +13,10 @@
  *   2. Listen on an ephemeral port via `http.createServer(app).listen(0)`.
  *   3. Inject a tracing `fetchImpl` into `HttpDiscoveryTransport` to
  *      capture the URL the SDK constructs.
- *   4. Assert the URL is `/trpc/core.registry.list` and the HTTP
- *      transport's `fetch` returns a 200 with the registry's tRPC
- *      envelope shape (`{ result: { data: { pillars, fetchedAt } } }`).
- *
- * The SDK's runtime parser (`parseRegistryEntry`) currently expects a
- * `lastSeenAt` field that the router does not emit — that field-name
- * mismatch is tracked as a separate precondition and is intentionally
- * NOT exercised here: this test guards the procedure-name fix in
- * isolation so it can fail loudly if either side regresses.
+ *   4. Assert the URL is the raw `/core.registry.list` route and the HTTP
+ *      transport's `fetch` returns a 200 with the bare snapshot body
+ *      (`{ pillars, fetchedAt }` — no tRPC envelope), and that the SDK
+ *      resolves it into `DiscoveredPillar[]`.
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -117,7 +112,7 @@ function financeManifest(): ManifestPayload {
 }
 
 describe('SDK ↔ core.registry procedure-name interop', () => {
-  it('HttpDiscoveryTransport hits /trpc/core.registry.list on the live server', async () => {
+  it('HttpDiscoveryTransport hits /core.registry.list on the live server', async () => {
     await caller().core.registry.register({
       baseUrl: 'http://finance-api:3004',
       manifest: financeManifest(),
@@ -138,23 +133,18 @@ describe('SDK ↔ core.registry procedure-name interop', () => {
       fetchImpl: tracingFetch,
     });
 
-    await transport.fetchSnapshot().catch(() => {
-      // Parser-level mismatches (e.g. `lastSeenAt` vs `lastHeartbeatAt`)
-      // are out of scope for this test — we only pin the wire URL and
-      // confirm the registry served the request. Body-level fixes land
-      // in their own change.
-    });
+    const snapshot = await transport.fetchSnapshot();
 
-    expect(seenUrls).toEqual([`${baseUrl}/trpc/core.registry.list`]);
-    expect(lastResponse).toBeDefined();
+    expect(seenUrls).toEqual([`${baseUrl}/core.registry.list`]);
     expect(lastResponse?.status).toBe(200);
 
-    const body = (await lastResponse?.json()) as {
-      result: { data: { pillars: unknown[]; fetchedAt: string } };
-    };
-    expect(Array.isArray(body.result.data.pillars)).toBe(true);
-    expect(body.result.data.pillars).toHaveLength(1);
-    expect(typeof body.result.data.fetchedAt).toBe('string');
+    // Bare body — the raw snapshot route carries no tRPC `{ result: { data } }` envelope.
+    const body = (await lastResponse?.json()) as { pillars: unknown[]; fetchedAt: string };
+    expect(Array.isArray(body.pillars)).toBe(true);
+    expect(body.pillars).toHaveLength(1);
+    expect(typeof body.fetchedAt).toBe('string');
+    expect(snapshot).toHaveLength(1);
+    expect(snapshot[0]?.pillarId).toBe('finance');
   });
 
   it('returns an empty pillar list on a fresh registry (no 404)', async () => {
@@ -170,10 +160,9 @@ describe('SDK ↔ core.registry procedure-name interop', () => {
       fetchImpl: tracingFetch,
     });
 
-    await transport.fetchSnapshot().catch(() => {
-      // see above — parser-shape issues tracked separately.
-    });
+    const snapshot = await transport.fetchSnapshot();
 
-    expect(seenUrls).toEqual([`${baseUrl}/trpc/core.registry.list`]);
+    expect(seenUrls).toEqual([`${baseUrl}/core.registry.list`]);
+    expect(snapshot).toEqual([]);
   });
 });

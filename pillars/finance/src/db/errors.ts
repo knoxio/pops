@@ -3,7 +3,7 @@
  *
  * These are plain Error subclasses — the service layer doesn't know about
  * HTTP. The pops-api router/middleware maps them to the appropriate status
- * codes when surfacing to clients. Mirrors `@pops/core-db`'s error pattern.
+ * codes when surfacing to clients. Follows the standard typed-error pattern.
  */
 
 export class WishListItemNotFoundError extends Error {

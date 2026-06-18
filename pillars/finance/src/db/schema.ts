@@ -7,9 +7,8 @@
  *
  *
  * `entities` is re-exported from `@pops/shared-schema` — the canonical
- * cross-pillar owner per PRD-245 US-07. Previously this barrel pulled from
- * `@pops/core-db`; the shared defs were extracted out of core-db so finance
- * no longer depends on it.
+ * cross-pillar owner per PRD-245 US-07. The shared defs now live in
+ * `@pops/shared-schema`, so finance depends only on that package.
  */
 export { entities, ENTITY_TYPES } from '@pops/shared-schema';
 

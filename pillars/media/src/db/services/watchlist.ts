@@ -5,8 +5,8 @@
  * Mirrors the legacy `apps/pops-api/src/modules/media/watchlist/service.ts`
  * surface but takes a `MediaDb` handle as the first argument so the calling
  * layer (pops-media-api routers, or future cross-pillar consumers) owns the
- * handle lifecycle. Matches the `@pops/core-db` / `@pops/finance-db`
- * per-pillar service signature pattern.
+ * handle lifecycle. Matches the standard per-pillar service signature
+ * pattern (db handle first, typed domain errors, no HTTP concerns).
  *
  * Read-side enrichment (joining `title`/`posterUrl` against `movies` and
  * `tv_shows`) lives on the legacy pops-api list handler — those tables

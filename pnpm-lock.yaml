@@ -1463,9 +1463,12 @@ importers:
         specifier: workspace:*
         version: link:../types
     devDependencies:
-      '@pops/core-contract':
+      '@pops/cerebrum':
         specifier: workspace:*
-        version: link:../core-contract
+        version: link:../../pillars/cerebrum
+      '@pops/core':
+        specifier: workspace:*
+        version: link:../../pillars/core
       '@pops/finance':
         specifier: workspace:*
         version: link:../../pillars/finance
@@ -1971,9 +1974,6 @@ importers:
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@trpc/server':
-        specifier: ^11.17.0
-        version: 11.17.0(typescript@6.0.3)
       '@ts-rest/core':
         specifier: 3.53.0-rc.1
         version: 3.53.0-rc.1(@types/node@25.9.3)
@@ -2208,9 +2208,6 @@ importers:
 
   pillars/inventory:
     dependencies:
-      '@pops/core-contract':
-        specifier: workspace:*
-        version: link:../../packages/core-contract
       '@pops/pillar-sdk':
         specifier: workspace:*
         version: link:../../packages/pillar-sdk
