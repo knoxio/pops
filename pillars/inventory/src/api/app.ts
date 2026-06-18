@@ -17,6 +17,7 @@ import { createExpressEndpoints } from '@ts-rest/express';
 import express, { type Express, type Request, type Response } from 'express';
 
 import { inventoryContract } from '../contract/rest.js';
+import { createInventoryFilesRouter } from './files/router.js';
 import { type InventoryApiDeps, makeRequestHandler } from './handlers.js';
 import { makeInventoryRestHandlers } from './rest/handlers.js';
 
@@ -72,6 +73,12 @@ export function createInventoryApiApp(deps: InventoryApiDeps): Express {
   });
 
   createExpressEndpoints(inventoryContract, makeInventoryRestHandlers(deps), app);
+
+  // Raw (non-ts-rest) byte-serving routes for item photos, direct-upload docs,
+  // and the Paperless thumbnail proxy. Mounted after the contract endpoints;
+  // their `/api/inventory/...` + `/inventory/documents/:id/thumbnail` paths
+  // don't collide with any contract path, so they add no OpenAPI surface.
+  app.use(createInventoryFilesRouter());
 
   return app;
 }
