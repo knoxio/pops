@@ -136,11 +136,28 @@ describe('pillar() factory — failure modes (REST transport)', () => {
     expect(result.kind).toBe('unavailable');
   });
 
-  it("returns 'unavailable' when the pillar's OpenAPI document cannot be fetched", async () => {
+  it('falls back to the tRPC transport when the pillar serves no OpenAPI document', async () => {
+    // A tRPC-only peer (e.g. a PRD-242 external dropin) does not serve /openapi;
+    // the REST default degrades to tRPC rather than failing.
+    const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
+    let calledUrl: string | undefined;
+    const fetchImpl = fakeFetch((url) => {
+      if (url.endsWith('/openapi')) return new Response('boom', { status: 503 });
+      calledUrl = url;
+      return jsonResponse({ result: { data: { items: [] } } });
+    });
+    const finance = pillar('finance', { transport, fetchImpl });
+    const result = await finance.wishlist.list({});
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') expect(result.value).toEqual({ items: [] });
+    expect(calledUrl).toMatch(/\/trpc\/finance\.wishlist\.list$/);
+  });
+
+  it("returns 'unavailable' when neither OpenAPI nor the tRPC fallback answer", async () => {
     const transport = new FakeRegistryTransport({ pillars: [discoveredPillar()] });
     const fetchImpl = fakeFetch((url) => {
       if (url.endsWith('/openapi')) return new Response('boom', { status: 503 });
-      return jsonResponse(null);
+      throw new Error('connection refused');
     });
     const finance = pillar('finance', { transport, fetchImpl });
     const result = await finance.wishlist.list({});
