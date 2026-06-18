@@ -41,7 +41,6 @@
     "@pops/pillar-sdk": "workspace:*",
     "@pops/shared-schema": "workspace:*",
     "@pops/types": "workspace:*",
-    "@trpc/server": "^11.17.0",
     "@ts-rest/core": "3.53.0-rc.1",
     "@ts-rest/express": "3.53.0-rc.1",
     "@ts-rest/open-api": "3.53.0-rc.1",

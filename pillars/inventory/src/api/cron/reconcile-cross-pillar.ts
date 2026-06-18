@@ -28,17 +28,16 @@ import {
 import { crossPillarUrisService, type InventoryDb } from '../../db/index.js';
 import { reconcileUriBatch, type ReconcileLogger } from './reconcile-cross-pillar-runner.js';
 
-import type { AnyTRPCRouter } from '@trpc/server';
-
 import type { CoreRouter } from '@pops/core-contract';
 
 /**
  * Opaque cross-pillar router type for the finance proxy. `@pops/finance`
- * speaks REST now, so there is no concrete tRPC router to import — the
- * proxy is fully opaque (parity with the source `@pops/finance-contract`
- * `FinanceRouter = AnyTRPCRouter` it replaces).
+ * speaks REST now, so there is no concrete tRPC router to import — the proxy
+ * is fully opaque (`unknown`), matching the source `@pops/finance` contract's
+ * `FinanceRouter = unknown`. `PillarHandle<unknown>` resolves to a fully opaque
+ * handle with no procedure keys.
  */
-export type FinanceRouter = AnyTRPCRouter;
+export type FinanceRouter = unknown;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
