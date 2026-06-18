@@ -20,12 +20,10 @@ import { aiUsageRouter } from './ai-usage/router.js';
 import { correctionsRouter } from './corrections/router.js';
 import { embeddingsRouter } from './embeddings/router.js';
 import { entitiesRouter } from './entities/router.js';
-import { entitiesSearchAdapter } from './entities/search-adapter.js';
 import { coreFeaturesManifest } from './features/manifest.js';
 import { featuresRouter } from './features/router.js';
 import { jobsRouter } from './jobs/router.js';
 import { coreMigrations } from './migrations.js';
-import { searchRouter } from './search/router.js';
 import { settingsRouter } from './settings/router.js';
 import { shellRouter } from './shell/router.js';
 import { tagRulesRouter } from './tag-rules/router.js';
@@ -46,7 +44,6 @@ export const coreRouter = router({
   tagRules: tagRulesRouter,
   settings: settingsRouter,
   features: featuresRouter,
-  search: searchRouter,
   shell: shellRouter,
   uri: uriRouter,
 });
@@ -70,10 +67,8 @@ export const manifest: ModuleManifest<typeof coreRouter> = {
   name: 'Core',
   version: '0.1.0',
   surfaces: ['app'],
-  description:
-    'Cross-cutting platform services: entities, AI usage/providers, settings, features, search.',
+  description: 'Cross-cutting platform services: entities, AI usage/providers, settings, features.',
   backend: { router: coreRouter, migrations: coreMigrations },
   settings: [aiConfigManifest, coreOperationalManifest],
   features: [coreFeaturesManifest],
-  search: [entitiesSearchAdapter],
 };
