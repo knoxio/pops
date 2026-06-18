@@ -32,4 +32,4 @@ As a developer, I want the media_watchlist, watch_history, comparison_dimensions
 
 ## Notes
 
-Watchlist and watch history use polymorphic references (mediaType + mediaId) without database-level FKs — application-layer validation ensures referential integrity. The watchlist tracks movies and TV shows; watch history tracks movies and individual episodes. Comparison and scoring tables support the pairwise Elo system per [ADR-010](../../../../architecture/adr-010-pairwise-elo-ratings.md).
+Watchlist and watch history use polymorphic references (mediaType + mediaId) without database-level FKs — application-layer validation ensures referential integrity. The watchlist tracks movies and TV shows; watch history tracks movies and individual episodes. Comparison and scoring tables support the pairwise Elo system per [ADR-010](../../architecture/adr-010-pairwise-elo-ratings.md).

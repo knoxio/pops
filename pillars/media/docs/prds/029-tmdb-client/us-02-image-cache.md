@@ -24,4 +24,4 @@ As a developer, I want poster and backdrop images downloaded from TMDB and cache
 
 ## Notes
 
-Per [ADR-011](../../../../architecture/adr-011-local-image-cache.md), images are downloaded once on add-to-library and served locally forever. The image serving endpoint should be a simple static file handler with the cache directory as root. The fallback chain logic lives in the API layer — the frontend always hits the same endpoint regardless of where the image actually comes from.
+Per [ADR-011](../../architecture/adr-011-local-image-cache.md), images are downloaded once on add-to-library and served locally forever. The image serving endpoint should be a simple static file handler with the cache directory as root. The fallback chain logic lives in the API layer — the frontend always hits the same endpoint regardless of where the image actually comes from.

@@ -5,7 +5,7 @@
 
 ## Overview
 
-Build an HTTP client for TheTVDB that handles TV show search, metadata fetch for shows/seasons/episodes, and poster download with local caching per [ADR-011](../../../../architecture/adr-011-local-image-cache.md). JWT-based authentication with automatic token refresh handles TheTVDB's auth model. The client powers the add-to-library flow: search TheTVDB, select a show, fetch the full show with all seasons and episodes, download images, create all records.
+Build an HTTP client for TheTVDB that handles TV show search, metadata fetch for shows/seasons/episodes, and poster download with local caching per [ADR-011](../../architecture/adr-011-local-image-cache.md). JWT-based authentication with automatic token refresh handles TheTVDB's auth model. The client powers the add-to-library flow: search TheTVDB, select a show, fetch the full show with all seasons and episodes, download images, create all records.
 
 ## Data Model
 
@@ -60,7 +60,7 @@ No new tables — uses the `tv_shows`, `seasons`, and `episodes` tables from PRD
 - Show poster: `/media/images/tv/{tvdbId}/poster.jpg`
 - Season poster: `/media/images/tv/{tvdbId}/season_{num}.jpg`
 
-**Fallback chain (same as TMDB per [ADR-011](../../../../architecture/adr-011-local-image-cache.md)):**
+**Fallback chain (same as TMDB per [ADR-011](../../architecture/adr-011-local-image-cache.md)):**
 
 1. User override (`posterOverridePath`) — highest priority
 2. Local cache (`/media/images/tv/{tvdbId}/poster.jpg`)

@@ -32,4 +32,4 @@ As a developer, I want tRPC CRUD procedures for movies and TV shows (including s
 
 ## Notes
 
-Movie and TV show routers are nested under `media.movies` and `media.tvShows` per [ADR-014](../../../../architecture/adr-014-trpc.md). Season and episode procedures are sub-routes of tvShows since they are tightly coupled to the TV hierarchy. Genres are stored as JSON arrays in the database — parse them into typed arrays when returning to the client.
+Movie and TV show routers are nested under `media.movies` and `media.tvShows` per [ADR-014](../../../../../docs/architecture/adr-014-trpc.md). Season and episode procedures are sub-routes of tvShows since they are tightly coupled to the TV hierarchy. Genres are stored as JSON arrays in the database — parse them into typed arrays when returning to the client.
