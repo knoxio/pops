@@ -3,7 +3,6 @@
 # until it does, this file is maintained manually. Keep it narrow: only
 # @pops/core and its transitive @pops/* deps (queried via
 # `pnpm m ls --filter "@pops/core..." --json --depth -1`):
-# core-contract (transitive via pillar-sdk), pillar-sdk, shared-schema, types,
 # and wire-conformance (a test-only workspace devDep pulled in by the
 # `@pops/core...` install filter).
 #
@@ -18,7 +17,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 
 # Phase 1: package.json of @pops/core + its transitive @pops/* deps.
 COPY pillars/core/package.json ./pillars/core/
-COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/shared-schema/package.json ./packages/shared-schema/
 COPY packages/types/package.json ./packages/types/
@@ -28,10 +26,6 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile --filter "@pops/core..."
 
 # Phase 2: source for the transitive @pops/* deps, then the pillar itself.
-COPY packages/core-contract/src ./packages/core-contract/src
-COPY packages/core-contract/scripts ./packages/core-contract/scripts
-COPY packages/core-contract/openapi ./packages/core-contract/openapi
-COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
 
 COPY packages/pillar-sdk/src ./packages/pillar-sdk/src
 COPY packages/pillar-sdk/tsconfig.json ./packages/pillar-sdk/tsconfig.json

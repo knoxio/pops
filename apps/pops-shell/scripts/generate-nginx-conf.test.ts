@@ -167,18 +167,26 @@ describe('generate-nginx-conf', () => {
       );
     });
 
-    it('keeps /pillars on core-api and /pillars/health on pops-api (health probe unchanged)', () => {
+    it('keeps /pillars on core-api and moves /pillars/health onto core-api too', () => {
       expect(rendered).toMatch(
         /location ~ \^\/pillars\/\?\$ \{[\s\S]*?set \$pillars_upstream http:\/\/core-api:3001;/
       );
       expect(rendered).toMatch(
-        /location ~ \^\/pillars\/health\/\?\$ \{[\s\S]*?proxy_pass http:\/\/pops-api:3000;/
+        /location ~ \^\/pillars\/health\/\?\$ \{[\s\S]*?set \$pillars_health_upstream http:\/\/core-api:3001;/
       );
     });
 
-    it('keeps the legacy /trpc fallback proxying to pops-api', () => {
+    it('no longer renders the legacy /trpc → pops-api catch-all (02 decommission)', () => {
+      expect(rendered).not.toContain('location /trpc {');
+      expect(rendered).not.toMatch(/proxy_pass http:\/\/pops-api:3000/);
+    });
+
+    it('routes the relocated raw routes to their new pillars (02 R1/R2)', () => {
       expect(rendered).toMatch(
-        /location \/trpc \{[\s\S]*?proxy_pass http:\/\/pops-api:3000\/trpc;/
+        /location \/webhooks\/up \{[\s\S]*?set \$up_webhook_upstream http:\/\/finance-api:3004;/
+      );
+      expect(rendered).toMatch(
+        /location ~ \^\/\(api\/inventory\|inventory\/documents\)\/ \{[\s\S]*?set \$inventory_upstream http:\/\/inventory-api:3002;/
       );
     });
 
@@ -215,14 +223,14 @@ describe('generate-nginx-conf', () => {
       expect(Object.keys(PILLAR_UPSTREAMS)).not.toContain('orchestrator');
     });
 
-    it('renders the orchestrator block after the pillar REST blocks and before the legacy /trpc fallback', () => {
+    it('renders the orchestrator block after the pillar REST blocks and before the relocated raw routes', () => {
       const lastRestIdx = Math.max(
         ...PILLAR_RENDER_ORDER.map((id) => rendered.indexOf(`location /${id}-api/ {`))
       );
       const orchestratorIdx = rendered.indexOf('location /orchestrator-api/ {');
-      const legacyTrpcIdx = rendered.indexOf('location /trpc {');
+      const webhookIdx = rendered.indexOf('location /webhooks/up {');
       expect(orchestratorIdx).toBeGreaterThan(lastRestIdx);
-      expect(legacyTrpcIdx).toBeGreaterThan(orchestratorIdx);
+      expect(webhookIdx).toBeGreaterThan(orchestratorIdx);
     });
 
     it('renders pillar blocks in PILLAR_RENDER_ORDER', () => {
@@ -365,7 +373,7 @@ describe('generate-nginx-conf', () => {
       const rendered = renderNginxConfFromUpstreams([]);
       expect(rendered).not.toMatch(/location \/trpc-[a-z]/);
       expect(rendered).toContain('resolver 127.0.0.11');
-      expect(rendered).toContain('location /trpc {');
+      expect(rendered).not.toContain('location /trpc {');
       expect(rendered).toContain('location ~ ^/pillars/?$ {');
       expect(rendered).toContain('location /docs/ {');
       expect(rendered).toMatch(/location \/ \{[\s\S]*?try_files \$uri \$uri\/ \/index\.html;/);
@@ -428,7 +436,7 @@ describe('generate-nginx-conf', () => {
       for (const id of PILLARS) {
         expect(rendered).not.toContain(`location /trpc-${id}/ {`);
       }
-      expect(rendered).toContain('location /trpc {');
+      expect(rendered).not.toContain('location /trpc {');
     });
 
     it('renders a single external pillar with parsed host:port', async () => {

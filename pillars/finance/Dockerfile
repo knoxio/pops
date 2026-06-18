@@ -16,7 +16,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json .oxfmtrc
 # resolution to that subgraph; unrelated pillars never need to exist in
 # this image's build context.
 COPY pillars/finance/package.json ./pillars/finance/
-COPY packages/core-contract/package.json ./packages/core-contract/
 COPY packages/shared-schema/package.json ./packages/shared-schema/
 COPY packages/pillar-sdk/package.json ./packages/pillar-sdk/
 COPY packages/types/package.json ./packages/types/
@@ -26,10 +25,6 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 
 # Phase 2: source for the transitive @pops/* deps, then the pillar itself.
 
-COPY packages/core-contract/src ./packages/core-contract/src
-COPY packages/core-contract/scripts ./packages/core-contract/scripts
-COPY packages/core-contract/openapi ./packages/core-contract/openapi
-COPY packages/core-contract/tsconfig.json ./packages/core-contract/tsconfig.json
 
 COPY packages/shared-schema/src ./packages/shared-schema/src
 COPY packages/shared-schema/tsconfig.json ./packages/shared-schema/tsconfig.json

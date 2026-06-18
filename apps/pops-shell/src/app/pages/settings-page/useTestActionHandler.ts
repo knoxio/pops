@@ -41,7 +41,8 @@ export function useTestActionHandler() {
       if (
         result.kind === 'not-found' ||
         result.kind === 'conflict' ||
-        result.kind === 'bad-request'
+        result.kind === 'bad-request' ||
+        result.kind === 'unauthorized'
       ) {
         throw new Error(result.message ?? `Pillar '${pillarId}' call failed: ${result.kind}`);
       }
